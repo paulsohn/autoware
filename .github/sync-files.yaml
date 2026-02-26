@@ -21,6 +21,8 @@
     - source: .markdownlint.yaml
     - source: .pre-commit-config-optional.yaml
     - source: .pre-commit-config.yaml
+      pre-command: |
+        sd "ci:\n" "ci:\n  # test\n" .pre-commit-config.yaml
     - source: .prettierignore
     - source: .prettierrc.yaml
     - source: .yamllint.yaml
