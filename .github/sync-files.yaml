@@ -22,7 +22,7 @@
     - source: .pre-commit-config-optional.yaml
     - source: .pre-commit-config.yaml
       pre-commands: |
-        sd "ci:\n" "ci:\n  # test\n" {source}
+        sd --across "ci:\n" "ci:\n  # test2\n" {source}
     - source: .prettierignore
     - source: .prettierrc.yaml
     - source: .yamllint.yaml

@@ -28,7 +28,8 @@ jobs:
         uses: autowarefoundation/autoware-github-actions/sync-files@sohn/fix-sd-version
         with:
           token: ${{ steps.generate-token.outputs.token }}
-          pr-branch: sync-files-fix1
+          sd-version: 1.1.0
+          pr-branch: sync-files-fix2
           pr-labels: |
             tag:bot
             tag:sync-files
