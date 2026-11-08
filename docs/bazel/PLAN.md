@@ -63,6 +63,7 @@ Verified 2026-11-09 against the HF API (lidar_centerpoint v4.1 -> `494c8171…`)
 Design:
 - `bazel/tools/lock_models.py` (the only code that talks to the HF API) turns `{repo, tag, dest}` entries into `models.lock.json`.
 - A module extension creates one external repo per (repo, revision), with `http_file`s and a `filegroup`. Only models a built target uses get fetched; Bazel's repository cache stores them by content and checks the sha256.
+- Each HF repo becomes two external repos, split by whether the API reports an `lfs` entry: `@<model>_config` (non-LFS: `*.param.yaml`, class remappers, a few KB) and `@<model>` (LFS weights, `*.onnx`). CI tests (e.g. validating param files against the node's `schema/*.schema.json`) depend only on `_config`, so weights are never downloaded. A target that needs undeclared weights fails at build time. (Submodule equivalent: `GIT_LFS_SKIP_SMUDGE=1`, but it leaves pointer files at the weights' paths, which fails silently.)
 - Several revisions of the same repo (diffusion_planner v3.0–v5.0) are just separate entries.
 - Models go into their own `rules_oci` layer at the `dest` path the launch files expect.
 - Gated/private repos later: `.netrc` or `--credential_helper` for huggingface.co.
