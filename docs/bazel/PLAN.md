@@ -3,7 +3,7 @@
 ## Goals
 - Reproducible and traceable builds: every input pinned and recorded in git.
 - Build caching (Bazel disk cache now, remote cache once CI exists).
-- One image family from a single base, for local development, CI and the vehicle.
+- Developer, CI and vehicle environments may differ, but the differences must not matter: the same commit gives the same artifacts, and the runtime image is identical by digest (see "Environments").
 
 ## Decisions (and why)
 | Decision | Why |
@@ -76,12 +76,30 @@ Alternative (documented, not chosen): one git submodule per HF repo, pinned to t
 
 Rejected: DVC needs its own storage remote and duplicates HF's versioning.
 
+## Environments
+| | Developer (local) | CI | Vehicle |
+|---|---|---|---|
+| Where the build runs | Host (Ubuntu 24.04) | `dev` image (pinned `ubuntu:24.04` + bazelisk + git) | Not built there; receives the runtime image |
+| Toolchain, ROS, third-party libs | Bazel (hermetic, `MODULE.bazel.lock`) | Same | Same artifacts |
+| Shell/coreutils seen by build actions | Host's (drifts with `apt upgrade`) | Pinned by image digest | n/a |
+| Bazel sandbox | `linux-sandbox` | Likely `processwrapper-sandbox` (no user namespaces in Docker) | n/a |
+| Where things run | `bazel run` / `bazel test` on the host | In the runtime image | Runtime image (`rules_oci`, base = pinned `ubuntu:24.04`) |
+| From the machine, never from Bazel | GPU driver, Mesa/GL, kernel, devices, sysctl/DDS tuning, agnocast kmod | Same | Same (JetPack 7 on Thor) |
+
+Why the differences must not matter:
+- Build outputs depend only on Bazel-declared inputs. Host-only inputs (shell, coreutils) must not change them, and this is checked by comparing digests (below).
+- Runtime: the runtime image is the single runtime environment for integration tests and the vehicle, identical by digest. Host `bazel run` is for fast iteration only.
+- What comes from the machine is listed above and kept to the driver/kernel boundary. Versions tested against are recorded in the progress log.
+- x86 and Thor cannot be byte-identical (different architecture). There, the guarantee is the same commit, the same pinned inputs and the same base image digest, compared by test results.
+
+Checks (exit criteria in Phases): host vs container build digests match (P0, P2); planning simulator passes in the runtime image on the dev host (P4); the same tests pass on Thor (P5).
+
 ## Phases
 | Phase | Work | Done when |
 |---|---|---|
-| P0 | Bazel 9 + RCR on x86 24.04; check the hermetic toolchain's glibc target (must be <= 2.39); `rclcpp` hello node; `dev` image on `ubuntu:24.04` | Hello node runs on the host and in the container |
+| P0 | Bazel 9 + RCR on x86 24.04; check the hermetic toolchain's glibc target (must be <= 2.39); `rclcpp` hello node; `dev` image on `ubuntu:24.04` | Hello node runs on the host and in the container; talker sha256 is identical whether built on the host or in the `dev` container |
 | P1 | Rule library, BUILD generator; core msgs + `autoware_utils_*` | All core msgs and utils build |
-| P2 | Registry modules (scope 1); `autoware_core`; Jazzy->Lyrical source fixes | `autoware_core` tests pass |
+| P2 | Registry modules (scope 1); `autoware_core`; Jazzy->Lyrical source fixes | `autoware_core` tests pass; host vs container output digests match |
 | P3 | `rules_cuda` x86 + SBSA, TensorRT; `autoware_cuda_utils`, `cuda_blackboard`, `negotiated` | CUDA tests pass on x86 |
 | P4 | `runtime` image via `rules_oci`; planning simulator via core launch | Demo runs from the `runtime` image |
 | P5 | Thor (`--config=thor`) | Same tests pass on Thor |
