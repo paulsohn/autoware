@@ -1,0 +1,357 @@
+// Copyright 2023 TIER IV, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#ifndef AUTOWARE__CONTROL_VALIDATOR__CONTROL_VALIDATOR_HPP_
+#define AUTOWARE__CONTROL_VALIDATOR__CONTROL_VALIDATOR_HPP_
+
+#include "autoware/control_validator/debug_marker.hpp"
+#include "autoware_vehicle_info_utils/vehicle_info.hpp"
+#include "diagnostic_updater/diagnostic_updater.hpp"
+
+#include <autoware/agnocast_wrapper/autoware_agnocast_wrapper.hpp>
+#include <autoware/agnocast_wrapper/diagnostic_updater.hpp>
+#include <autoware/agnocast_wrapper/node.hpp>
+#include <autoware/agnocast_wrapper/polling_subscriber.hpp>
+#include <autoware/signal_processing/lowpass_filter_1d.hpp>
+#include <autoware_control_validator/control_validator_parameters.hpp>
+#include <autoware_control_validator/msg/control_validator_status.hpp>
+#include <autoware_utils/system/stop_watch.hpp>
+#include <rclcpp/rclcpp.hpp>
+
+#include <autoware_adapi_v1_msgs/msg/operation_mode_state.hpp>
+#include <autoware_control_msgs/msg/control.hpp>
+#include <autoware_internal_debug_msgs/msg/float64_stamped.hpp>
+#include <autoware_planning_msgs/msg/trajectory.hpp>
+#include <diagnostic_msgs/msg/diagnostic_array.hpp>
+#include <geometry_msgs/msg/accel_with_covariance_stamped.hpp>
+#include <nav_msgs/msg/odometry.hpp>
+
+#include <cstdint>
+#include <memory>
+#include <optional>
+#include <string>
+#include <tuple>
+#include <utility>
+
+namespace autoware::control_validator
+{
+using autoware_adapi_v1_msgs::msg::OperationModeState;
+using autoware_control_msgs::msg::Control;
+using autoware_control_validator::msg::ControlValidatorStatus;
+using autoware_planning_msgs::msg::Trajectory;
+using autoware_planning_msgs::msg::TrajectoryPoint;
+using diagnostic_updater::DiagnosticStatusWrapper;
+using diagnostic_updater::Updater;
+using geometry_msgs::msg::AccelWithCovarianceStamped;
+using nav_msgs::msg::Odometry;
+using Params = ::control_validator::Params;
+
+/**
+ * @class LatencyValidator
+ * @brief Validates latency of the control module.
+ */
+class LatencyValidator
+{
+public:
+  explicit LatencyValidator(const Params & params) : params_(params.latency_validator) {}
+
+  void update_parameters(const Params & params) { params_ = params.latency_validator; }
+
+  void validate(
+    ControlValidatorStatus & res, const Control & control_cmd,
+    autoware::agnocast_wrapper::Node & node) const;
+
+private:
+  Params::LatencyValidator params_;
+};
+
+/**
+ * @class TrajectoryValidator
+ * @brief Calculate the maximum lateral distance between the reference trajectory and the predicted
+ * trajectory.
+ */
+class TrajectoryValidator
+{
+public:
+  explicit TrajectoryValidator(const Params & params) : params_(params.trajectory_validator) {}
+
+  void update_parameters(const Params & params) { params_ = params.trajectory_validator; }
+
+  void validate(
+    ControlValidatorStatus & res, const Trajectory & predicted_trajectory,
+    const Trajectory & reference_trajectory);
+
+private:
+  Params::TrajectoryValidator params_;
+  std::optional<Trajectory> prev_reference_trajectory_;
+};
+
+/**
+ * @class LateralJerkValidator
+ * @brief Validates lateral jerk is not too high.
+ */
+class LateralJerkValidator
+{
+public:
+  LateralJerkValidator(const rclcpp::Logger & logger, const Params & params)
+  : logger_{logger}, params_{params.lateral_jerk_validator}, measured_vel_lpf{params.vel_lpf_gain}
+  {
+  }
+
+  void update_parameters(const Params & params)
+  {
+    params_ = params.lateral_jerk_validator;
+    measured_vel_lpf.setGain(params.vel_lpf_gain);
+  }
+
+  void validate(
+    ControlValidatorStatus & res, const Odometry & kinematic_state, const Control & control_cmd,
+    const double wheel_base);
+
+private:
+  rclcpp::Logger logger_;
+  Params::LateralJerkValidator params_;
+  std::unique_ptr<Control> prev_control_cmd_{};
+  autoware::signal_processing::LowpassFilter1d measured_vel_lpf;
+};
+
+/**
+ * @class AccelerationValidator
+ * @brief Validates deviation between output acceleration and measured acceleration.
+ */
+class AccelerationValidator
+{
+public:
+  friend class AccelerationValidatorTest;
+  explicit AccelerationValidator(const Params & params)
+  : params_{params.acceleration_validator},
+    desired_acc_lpf{params.acceleration_validator.acc_lpf_gain},
+    measured_acc_lpf{params.acceleration_validator.acc_lpf_gain}
+  {
+  }
+
+  void update_parameters(const Params & params)
+  {
+    params_ = params.acceleration_validator;
+    desired_acc_lpf.setGain(params_.acc_lpf_gain);
+    measured_acc_lpf.setGain(params_.acc_lpf_gain);
+  }
+
+  void validate(
+    ControlValidatorStatus & res, const Odometry & kinematic_state, const Control & control_cmd,
+    const AccelWithCovarianceStamped & loc_acc);
+
+private:
+  bool is_in_error_range() const;
+
+  Params::AccelerationValidator params_;
+  autoware::signal_processing::LowpassFilter1d desired_acc_lpf;
+  autoware::signal_processing::LowpassFilter1d measured_acc_lpf;
+};
+
+/**
+ * @class VelocityValidator
+ * @brief Validates deviation between target velocity and measured velocity.
+ */
+class VelocityValidator
+{
+public:
+  explicit VelocityValidator(const Params & params)
+  : params_{params.velocity_validator},
+    vehicle_vel_lpf{params.vel_lpf_gain},
+    target_vel_lpf{params.vel_lpf_gain},
+    over_velocity_vehicle_vel_lpf{params.velocity_validator.vel_lpf_gain},
+    over_velocity_target_vel_lpf{params.velocity_validator.vel_lpf_gain}
+  {
+  }
+
+  void update_parameters(const Params & params)
+  {
+    params_ = params.velocity_validator;
+    vehicle_vel_lpf.setGain(params.vel_lpf_gain);
+    target_vel_lpf.setGain(params.vel_lpf_gain);
+    over_velocity_vehicle_vel_lpf.setGain(params_.vel_lpf_gain);
+    over_velocity_target_vel_lpf.setGain(params_.vel_lpf_gain);
+  }
+
+  void validate(
+    ControlValidatorStatus & res, const Trajectory & reference_trajectory,
+    const Odometry & kinematics);
+
+private:
+  Params::VelocityValidator params_;
+  autoware::signal_processing::LowpassFilter1d vehicle_vel_lpf;
+  autoware::signal_processing::LowpassFilter1d target_vel_lpf;
+  autoware::signal_processing::LowpassFilter1d over_velocity_vehicle_vel_lpf;
+  autoware::signal_processing::LowpassFilter1d over_velocity_target_vel_lpf;
+};
+
+/**
+ * @class OverrunValidator
+ * @brief Calculate whether the vehicle has overrun a stop point in the trajectory.
+ */
+class OverrunValidator
+{
+public:
+  explicit OverrunValidator(const Params & params)
+  : params_{params.overrun_validator}, vehicle_vel_lpf{params.vel_lpf_gain}
+  {
+  }
+
+  void update_parameters(const Params & params)
+  {
+    params_ = params.overrun_validator;
+    vehicle_vel_lpf.setGain(params.vel_lpf_gain);
+  }
+
+  void validate(
+    ControlValidatorStatus & res, const Trajectory & reference_trajectory,
+    const Odometry & kinematics);
+
+private:
+  Params::OverrunValidator params_;
+  autoware::signal_processing::LowpassFilter1d vehicle_vel_lpf;
+};
+
+/**
+ * @class YawValidator
+ * @brief Calculate whether the vehicle orientation deviated from the trajectory
+ */
+class YawValidator
+{
+public:
+  explicit YawValidator(const Params & params) : params_(params.yaw_validator) {}
+
+  void update_parameters(const Params & params) { params_ = params.yaw_validator; }
+
+  void validate(
+    ControlValidatorStatus & res, const Trajectory & reference_trajectory,
+    const Odometry & kinematics) const;
+
+private:
+  Params::YawValidator params_;
+};
+
+/**
+ * @class ControlValidator
+ * @brief Validates control commands by comparing predicted trajectories against reference
+ * trajectories.
+ */
+class ControlValidator : public autoware::agnocast_wrapper::Node
+{
+public:
+  /**
+   * @brief Constructor
+   * @param options Node options
+   */
+  explicit ControlValidator(const rclcpp::NodeOptions & options);
+
+  /**
+   * @brief Callback function for the control component output.
+   * @param msg Control message
+   */
+  void on_control_cmd(const AUTOWARE_MESSAGE_CONST_SHARED_PTR(Control) & msg);
+
+private:
+  /**
+   * @brief Setup diagnostic updater
+   */
+  void setup_diag();
+
+  /**
+   * @brief Setup parameters from the parameter server
+   */
+  void setup_parameters();
+
+  /**
+   * @brief Publish debug information
+   */
+  void publish_debug_info(const geometry_msgs::msg::Pose & ego_pose);
+
+  /**
+   * @brief Generate error message based on validation status
+   */
+  std::string generate_error_message(const ControlValidatorStatus & s);
+
+  /**
+   * @brief Display validation status on terminal
+   */
+  void display_status();
+
+  /**
+   * @brief Set the diagnostic status
+   * @param stat Diagnostic status wrapper
+   * @param is_ok Boolean indicating if the status is okay
+   * @param msg Status message
+   */
+  void set_status(
+    DiagnosticStatusWrapper & stat, const bool & is_ok, const std::string & msg) const;
+
+  /**
+   * @brief Infer autonomous control state
+   */
+  bool infer_autonomous_control_state(const OperationModeState::ConstSharedPtr);
+
+  /**
+   * @brief Postprocessing while keeping debug values
+   */
+  void validation_filtering(ControlValidatorStatus & res);
+
+  // Subscribers and publishers
+  AUTOWARE_SUBSCRIPTION_PTR(Control) sub_control_cmd_;
+  autoware::agnocast_wrapper::polling::PollingSubscriber<OperationModeState>::SharedPtr
+    sub_operational_state_;
+  autoware::agnocast_wrapper::polling::PollingSubscriber<Odometry>::SharedPtr sub_kinematics_;
+  autoware::agnocast_wrapper::polling::PollingSubscriber<Trajectory>::SharedPtr sub_reference_traj_;
+  autoware::agnocast_wrapper::polling::PollingSubscriber<Trajectory>::SharedPtr sub_predicted_traj_;
+  autoware::agnocast_wrapper::polling::PollingSubscriber<AccelWithCovarianceStamped>::SharedPtr
+    sub_measured_acc_;
+  AUTOWARE_PUBLISHER_PTR(ControlValidatorStatus) pub_status_;
+  AUTOWARE_PUBLISHER_PTR(visualization_msgs::msg::MarkerArray) pub_markers_;
+  AUTOWARE_PUBLISHER_PTR(autoware_internal_debug_msgs::msg::Float64Stamped) pub_processing_time_;
+
+  // parameters (generated by generate_parameter_library)
+  ::control_validator::ParamListener param_listener_;
+  ::control_validator::Params params_;
+
+  // system parameters
+  int64_t diag_error_count_threshold_ = 0;
+  bool display_on_terminal_ = true;
+  autoware::agnocast_wrapper::diagnostic_updater::Updater diag_updater_{this};
+  ControlValidatorStatus validation_status_;
+  vehicle_info_utils::VehicleInfo vehicle_info_;
+  bool flag_autonomous_control_enabled_ = false;
+  /**
+   * @brief Check if all validation criteria are met
+   * @param status Validation status
+   * @return Boolean indicating if all criteria are met
+   */
+  static bool is_all_valid(const ControlValidatorStatus & status);
+
+  // debug
+  std::shared_ptr<ControlValidatorDebugMarkerPublisher> debug_pose_publisher_;
+  autoware_utils::StopWatch<std::chrono::milliseconds> stop_watch;
+
+  // individual validators
+  LatencyValidator latency_validator;
+  LateralJerkValidator lateral_jerk_validator;
+  TrajectoryValidator trajectory_validator;
+  AccelerationValidator acceleration_validator;
+  VelocityValidator velocity_validator;
+  OverrunValidator overrun_validator;
+  YawValidator yaw_validator;
+};
+}  // namespace autoware::control_validator
+
+#endif  // AUTOWARE__CONTROL_VALIDATOR__CONTROL_VALIDATOR_HPP_
