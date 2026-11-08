@@ -17,6 +17,9 @@
 | CUDA 13 via `rules_cuda` hermetic redist (`linux-x86_64`, `linux-sbsa`); TensorRT/cuDNN as sha256-pinned tarballs | Thor (JetPack 7) is SBSA, so no L4T-specific libraries are needed at build time. Only the driver comes from the host |
 | Runtime image built by Bazel (`rules_oci`), not by `docker build` | git SHA leads straight to the image digest; no Docker daemon needed |
 | Deferred: remote cache server, signing, SBOM, vendoring, multi-arch CI | Personal PoC. These are hardening work for later |
+| `autoware_cmake` is not ported. Its `autoware_package()` flags become `.bazelrc` / macro defaults: `-std=c++17 -Wall -Wextra -Wpedantic -Werror`, `-DBOOST_ALLOW_DEPRECATED_HEADERS -DEIGEN_DONT_PARALLELIZE`, Clang `-Wno-gnu-anonymous-struct -Wno-nested-anon-types` | It only sets compile options and calls ament_cmake_auto. `ROS_DISTRO_*` defines are only checked for GALACTIC/HUMBLE, so Lyrical takes the default branch with no define |
+| `autoware_system_designer` (and its only consumer `autoware_sample_designs`) removed | Orthogonal to the Bazel integration |
+| ML models: pinned in `models.lock.json` (HF repo, tag, commit SHA, per-file sha256), fetched by Bazel `http_file` from `huggingface.co/<repo>/resolve/<sha>/<path>`. No git submodule, LFS, Xet client or DVC | See "ML models" below |
 
 ## Target layout
 ```
@@ -39,7 +42,7 @@ src/
 - Lint stays out of the build (pre-commit / clang-tidy).
 
 ## Scope 1 dependencies (core/ + core/cuda)
-"core" pulls in all of `src/core/` (msgs, adapi/internal msgs, utils, lanelet2_extension, autoware_cmake)
+"core" pulls in all of `src/core/` (msgs, adapi/internal msgs, utils, lanelet2_extension)
 plus `velodyne_description`. `autoware_behavior_velocity_template_module` is a universe test dependency: drop or stub it.
 
 - Probably in the RCR (verify against `ros-*.txt`): rclcpp(+components, lifecycle), tf2*, message_filters,
@@ -48,6 +51,23 @@ plus `velodyne_description`. `autoware_behavior_velocity_template_module` is a u
 - Private registry: lanelet2 (core/io/projection/routing/traffic_rules), grid_map_core,
   generate_parameter_library, geographiclib, osqp, proxsuite, pcl_ros, point_cloud_msg_wrapper,
   range-v3, tl_expected, glog, nlohmann_json, rclpy_message_converter, topic_tools, pybind11, CUDA/TensorRT.
+
+## ML models
+Source: 21 AutowareFoundation HF repos listed in `ansible/roles/artifacts/tasks/main.yaml`, pinned by **tag**. Tags can move, so the lock records the commit SHA.
+
+Verified 2026-11-09 against the HF API (lidar_centerpoint v4.1 -> `494c8171…`):
+- `GET /api/models/<repo>/revision/<tag>` returns the commit `sha`.
+- `GET /api/models/<repo>/tree/<sha>?recursive=true&expand=true` returns per-file `size`, plus `lfs.oid` (= sha256 of the content) and `xetHash` for large files. Small files (yaml, README) have no hash, so the lock script downloads and hashes them.
+- `resolve/<sha>/<path>` serves Xet-stored files over plain HTTPS (302 to the xet-bridge CDN, `x-linked-etag` = sha256). No git, git-lfs or git-xet client is needed.
+
+Design:
+- `bazel/tools/lock_models.py` (the only code that talks to the HF API) turns `{repo, tag, dest}` entries into `models.lock.json`.
+- A module extension creates one external repo per (repo, revision), with `http_file`s and a `filegroup`. Only models a built target uses get fetched; Bazel's repository cache stores them by content and checks the sha256.
+- Several revisions of the same repo (diffusion_planner v3.0–v5.0) are just separate entries.
+- Models go into their own `rules_oci` layer at the `dest` path the launch files expect.
+- Gated/private repos later: `.netrc` or `--credential_helper` for huggingface.co.
+
+Rejected: a git submodule of the HF repo needs git-lfs/git-xet in every environment, downloads all variants, needs one submodule per revision, and bypasses Bazel's cache. DVC needs its own storage remote and duplicates HF's versioning.
 
 ## Phases
 | Phase | Work | Done when |
@@ -68,3 +88,6 @@ plus `velodyne_description`. `autoware_behavior_velocity_template_module` is a u
 ## Progress log
 - 2026-11-08: Imported all 36 repos into `src/` with `git subtree --squash` (versions from
   `repositories/*.repos` at commit a7397a7). Added this plan and `CLAUDE.md`. Next: P0.
+- 2026-11-09: GitHub workflows disabled on the fork. Removed autoware_system_designer and
+  autoware_sample_designs. Decided: autoware_cmake not ported (flags -> .bazelrc); models pinned via
+  `models.lock.json` + `http_file` (HF API checked). Next: P0.
