@@ -4,9 +4,11 @@ Personal proof of concept: build Autoware natively with Bazel on top of the
 ROS Central Registry (RCR, https://bazel.ros.org, ROS 2 Lyrical).
 This fork has diverged from autowarefoundation/autoware and does not sync either way.
 
-**Read [docs/bazel/PLAN.md](docs/bazel/PLAN.md) first**: it holds the plan, the
-decisions taken and why, and the progress log. Update its progress log at the end
-of every session.
+**Read [docs/bazel/PLAN.md](docs/bazel/PLAN.md) first** (goals, decisions and why), then the end of
+[docs/bazel/JOURNAL.md](docs/bazel/JOURNAL.md) (what was done last). The journal must let someone
+repeat the integration on another ROS project: as you work, append steps with exact commands,
+results, and every issue as symptom → cause → fix, plus lessons that generalize.
+Record new decisions in PLAN.md.
 
 ## Layout
 - `src/`: all source, imported with `git subtree add --squash`. It is ordinary

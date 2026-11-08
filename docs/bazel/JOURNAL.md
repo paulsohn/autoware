@@ -1,0 +1,113 @@
+# Bazel integration journal
+
+A reproducible record of how this fork was moved to Bazel: what was done, with which
+commands, what went wrong, and what carries over to other Autoware-based or plain ROS 2
+projects. Goals and decisions (the *why*) live in [PLAN.md](PLAN.md); this file is the *how*.
+
+Each entry: steps (with commands), result, issues (symptom → cause → fix), lessons.
+Append new entries at the end. Paths and versions are exact so a step can be repeated.
+
+Environment for all entries unless stated otherwise: x86_64, Ubuntu 24.04 (glibc 2.39),
+32 cores, 30 GB RAM, host ROS 2 Jazzy installed under `/opt/ros/jazzy` (never sourced for Bazel).
+
+---
+
+## 2026-11-08: Import sources as a monorepo
+
+Steps:
+1. Start from the vcs-imported workspace (`vcs import src < repositories/*.repos`), every clone clean and non-shallow.
+2. Move the clones out of `src/` (here to `.vcs_src/`, excluded via `.git/info/exclude`), and remove the
+   placeholder `src/.gitignore` (it ignored everything) and `src/README.md`.
+3. For each clone, add it as a squashed subtree from the local clone at its exact HEAD (no network):
+   ```bash
+   git subtree add --squash --prefix=src/<path> .vcs_src/<path> <sha> \
+     -m "chore(src): import <path> <tag-or-sha>" -m "Upstream: <url> @ <sha>"
+   ```
+4. Verify: `diff -rq --exclude=.git .vcs_src src` prints nothing.
+
+Result: 36 repos, 15,478 files, one squash + one merge commit per repo. Each import commit records upstream URL and SHA.
+
+Lessons:
+- `--squash` keeps the repo small (full history would add ~1.2 GB and ~35k upstream commits) while every file stays traceable to an upstream SHA.
+- Importing from the local clones (not the URLs) guarantees the tree is exactly what was built before.
+
+## 2026-11-09: Scope cleanup
+
+Steps:
+- Disabled all GitHub workflows on the fork (they target AWF infrastructure; plain semver tags would trigger docker/release workflows).
+- Removed `src/core/autoware_system_designer` and its only consumer `src/launcher/autoware_launch/autoware_sample_designs`.
+
+Decisions recorded in PLAN.md: `autoware_cmake` not ported; models pinned via `models.lock.json` + `http_file`.
+
+## 2026-11-09: P0 bootstrap (host)
+
+Steps:
+1. Install bazelisk as `bazel`, verifying the release checksum (the `.sha256` asset holds only the hash):
+   ```bash
+   gh release download v1.30.0 -R bazelbuild/bazelisk -p bazelisk-linux-amd64 -p bazelisk-linux-amd64.sha256
+   [ "$(cut -d' ' -f1 bazelisk-linux-amd64.sha256)" = "$(sha256sum bazelisk-linux-amd64 | cut -d' ' -f1)" ]
+   install -m755 bazelisk-linux-amd64 ~/.local/bin/bazel
+   ```
+2. Workspace files (commit 9aff67c):
+   - `.bazelversion`: `9.3.2` (latest 9.x; the RCR requires Bazel 9).
+   - `MODULE.bazel`: `bazel_dep` on `ros_core@lyrical.2026-10-05.rcr.0`, plus `rclcpp`, `rosdistro`, `std_msgs` at `0.0.0`
+     (MVS resolves them to the ros_core release). Toolchains and rules copied from the RCR examples
+     (`llvm@0.8.25.rcr.0` with LLVM 21.1.8, `rules_cc@0.2.26.rcr.0`, `rules_python@2.4.1`, `rules_rs@0.1.0`, `protobuf@36.2`).
+   - `.bazelrc`: Linux subset of `BAZELRC_TEMPLATE` in the RCR's `tools/ci/setup_workspace.py` (see issue 2).
+   - `bazel/platforms/BUILD.bazel`: platform with `@llvm//constraints/libc:gnu.2.34`.
+   - `.bazelignore`: `src` (until packages get BUILD files; `src/universe/external/glog` ships its own BUILD files).
+   - `user.bazelrc` (gitignored): machine-local resource limits (see issue 1).
+   - `bazel/smoke/`: a `std_msgs` talker using `collect_transitive_dynamic_deps` like the RCR examples.
+3. Build and run, always from a clean environment:
+   ```bash
+   env -i HOME=$HOME PATH=$HOME/.local/bin:/usr/bin:/bin bazel build //bazel/smoke:talker
+   env -i HOME=$HOME PATH=$HOME/.local/bin:/usr/bin:/bin bazel run --script_path=/tmp/talker.sh //bazel/smoke:talker
+   bash /tmp/talker.sh   # prints "hello from bazel N" every 500 ms
+   ```
+4. Check the glibc requirement: `objdump -T <binary and its .so files> | grep -oE 'GLIBC_[0-9.]+' | sort -uV | tail -1` → `GLIBC_2.34`.
+
+Result: talker builds (7 min with a matching cache config) and runs on the host with FastDDS (RCR default).
+Talker sha256 (host): `b181422b6fa2d86de1054fdb568176fbbfde4b0af036cfad99bfa5c82c32b82c`.
+
+Issues:
+1. **OOM crash during the first cold build.**
+   Symptom: the machine ran out of memory, the session died.
+   Cause: Bazel defaults to one job per core (32) on 30 GB RAM; LLVM-compiled C++ (Qt, Ogre, FastDDS) plus a concurrent `docker build`.
+   Fix: `user.bazelrc` with `build --jobs=12`, `--local_resources=cpu=12`, `--local_resources=memory=HOST_RAM*.5`; never run other heavy jobs alongside a cold build.
+2. **FastDDS fails to compile** (`invalid application of 'sizeof' to an incomplete type 'eprosima::fastdds::statistics::StatisticsAncillary'`), after 45 min.
+   Cause: `.bazelrc` was copied from the RCR's `examples/.bazelrc`, which lacks the per-file C++ standard exceptions. The RCR CI uses the `.bazelrc` generated by `tools/ci/setup_workspace.py`, which compiles fastdds and popf as C++17 and gz-sim as C++20 (C++23 elsewhere).
+   How it was found: same module versions (`bazel mod explain fastdds`), no host leakage (`bazel aquery` shows `--sysroot=/dev/null`, no `/usr` paths), RCR CI badges green; then grep the generator.
+   Fix: copy the exceptions plus `--action_env=LC_CTYPE/PATH` pins from `BAZELRC_TEMPLATE`.
+3. **Low remote cache hit rate.** First run: 1,504 hits of ~23k actions from Intrinsic's cache. After issue 2's fix: 10,746 hits, 2 local compiles.
+   Cause: action keys include flags and action env; differing from the RCR CI config means cache misses.
+4. **`bazel run` killed by a short `timeout`.** Bazel re-checks the build before running; a 4 s timeout interrupts it.
+   Fix: `bazel run --script_path=<file>` once, then run the script.
+
+Lessons (apply to any RCR-based workspace):
+- The source of truth for flags is `BAZELRC_TEMPLATE` in `tools/ci/setup_workspace.py`, not `examples/.bazelrc`. Re-check it when bumping the RCR release.
+- Match the RCR CI flags exactly to get remote cache hits; a cold build without hits takes ~45 min+ on 12 jobs.
+- Set resource limits before the first build on machines with high cores-to-RAM ratios.
+- Start Bazel with `env -i` when a ROS distro is installed on the host.
+
+Open: the talker's graph includes Ogre/OpenCV/PySide6 (~93k targets configured); not yet explained.
+
+## 2026-11-09: P0 bootstrap (container)
+
+Steps:
+1. `images/dev.Dockerfile`: pinned `ubuntu:24.04` digest, `ca-certificates curl git unzip zip`, bazelisk with checksum check, user `ubuntu` (uid 1000).
+2. Build in the container with the host caches mounted, without overwriting the host's convenience symlinks:
+   ```bash
+   docker build -f images/dev.Dockerfile -t autoware-bazel-dev images
+   docker run --rm -v "$PWD":/workspace \
+     -v ~/.cache/bazel-disk:/home/ubuntu/.cache/bazel-disk \
+     -v ~/.cache/bazel-repo:/home/ubuntu/.cache/bazel-repo \
+     -v ~/.cache/bazelisk:/home/ubuntu/.cache/bazelisk \
+     autoware-bazel-dev bazel build --experimental_convenience_symlinks=ignore //bazel/smoke:talker
+   ```
+
+Issues:
+1. **`FATAL: mkdir('/home/ubuntu/.cache/bazel/_bazel_ubuntu'): Permission denied`.**
+   Cause: Docker creates missing parent directories of bind mounts as root, so `~/.cache` became root-owned.
+   Fix: `RUN install -d -o ubuntu -g ubuntu /home/ubuntu/.cache` before `USER ubuntu`.
+
+Result: pending (host vs container talker sha256 comparison).

@@ -111,8 +111,4 @@ Checks (exit criteria in Phases): host vs container build digests match (P0, P2)
 - Cold builds are slow (Qt, PCL from source): keep the disk cache mounted from day one.
 
 ## Progress log
-- 2026-11-08: Imported all 36 repos into `src/` with `git subtree --squash` (versions from
-  `repositories/*.repos` at commit a7397a7). Added this plan and `CLAUDE.md`. Next: P0.
-- 2026-11-09: GitHub workflows disabled on the fork. Removed autoware_system_designer and
-  autoware_sample_designs. Decided: autoware_cmake not ported (flags -> .bazelrc); models pinned via
-  `models.lock.json` + `http_file` (HF API checked). Next: P0.
+See [JOURNAL.md](JOURNAL.md): steps taken, commands, issues and lessons, in order.
