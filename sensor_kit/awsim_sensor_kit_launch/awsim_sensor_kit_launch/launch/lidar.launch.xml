@@ -1,0 +1,38 @@
+<launch>
+  <!-- AWSIM publishes pointcloud_raw_ex directly; the kit runs preprocessing only -->
+  <arg name="pointcloud_container_name" default="pointcloud_container"/>
+  <arg name="crop_box_filter_self_param_path" default="$(find-pkg-share awsim_sensor_kit_launch)/config/crop_box_filter_self.param.yaml"/>
+  <arg name="crop_box_filter_mirror_param_path" default="$(find-pkg-share awsim_sensor_kit_launch)/config/crop_box_filter_mirror.param.yaml"/>
+
+  <group>
+    <push-ros-namespace namespace="lidar"/>
+
+    <group>
+      <push-ros-namespace namespace="top"/>
+      <let name="target_container" value="/sensing/lidar/top/pointcloud_preprocessor/pointcloud_container"/>
+
+      <include file="$(find-pkg-share autoware_sensing_launch)/launch/pointcloud_container.launch.xml">
+        <arg name="container_namespace" value="/sensing/lidar/top/pointcloud_preprocessor"/>
+        <arg name="container_name" value="pointcloud_container"/>
+        <arg name="use_multithread" value="false"/>
+      </include>
+
+      <include file="$(find-pkg-share autoware_sensing_launch)/launch/pointcloud_preprocessor_cpu.launch.xml">
+        <arg name="target_container" value="$(var target_container)"/>
+        <arg name="output_as_sensor_frame" value="false"/>
+        <arg name="use_intra_process" value="true"/>
+        <arg name="crop_box_filter_self_param_path" value="$(var crop_box_filter_self_param_path)"/>
+        <arg name="crop_box_filter_secondary_param_path" value="$(var crop_box_filter_mirror_param_path)"/>
+      </include>
+    </group>
+
+    <load_composable_node target="$(var pointcloud_container_name)">
+      <composable_node pkg="topic_tools" plugin="topic_tools::RelayNode" name="pointcloud_relay_ring_to_concat" namespace="concatenated">
+        <param name="input_topic" value="/sensing/lidar/top/pointcloud_before_sync"/>
+        <param name="output_topic" value="/sensing/lidar/concatenated/pointcloud"/>
+        <param name="type" value="sensor_msgs/msg/PointCloud2"/>
+        <param name="reliability" value="best_effort"/>
+      </composable_node>
+    </load_composable_node>
+  </group>
+</launch>
