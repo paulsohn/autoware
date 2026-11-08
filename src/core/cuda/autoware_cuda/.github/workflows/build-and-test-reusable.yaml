@@ -1,0 +1,145 @@
+name: Reusable Build and Test Workflow
+
+on:
+  workflow_call:
+    secrets:
+      codecov-token:
+        required: false
+    inputs:
+      rosdistro:
+        type: string
+        required: true
+      container:
+        type: string
+        required: true
+      above:
+        description: True if the packages of packages_above.repos that depend on this repository should be built and tested too.
+        type: boolean
+        default: false
+        required: false
+      upload-coverage:
+        type: boolean
+        default: false
+        required: false
+      codecov-flag:
+        type: string
+        default: other
+        required: false
+
+jobs:
+  build-and-test:
+    name: build-and-test-${{ inputs.rosdistro }}${{ inputs.above && '-above' || '' }}
+    # The CUDA images do not fit on the disk of the GitHub-hosted runners.
+    runs-on: [self-hosted, Linux, X64]
+    container:
+      image: ${{ inputs.container }}
+      options: --cap-add=NET_ADMIN
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+        with:
+          # get-modified-packages needs the merge base with the base branch.
+          fetch-depth: 0
+
+      - name: Tune DDS network settings
+        uses: ./.github/actions/tune-dds-network
+
+      - name: Show disk space before the tasks
+        run: df -h
+
+      - name: Remove exec_depend
+        uses: autowarefoundation/autoware-github-actions/remove-exec-depend@v1
+
+      - name: Get self packages
+        id: get-self-packages
+        uses: autowarefoundation/autoware-github-actions/get-self-packages@v1
+
+      - name: Get modified packages
+        id: get-modified-packages
+        if: ${{ inputs.above && github.event_name == 'pull_request' }}
+        uses: autowarefoundation/autoware-github-actions/get-modified-packages@v1
+
+      # On a PR, the above job checks only the packages above the modified packages.
+      # A PR that changes the above job itself checks the packages above all packages.
+      - name: Get target packages
+        id: get-target-packages
+        run: |
+          target_packages="${{ steps.get-self-packages.outputs.self-packages }}"
+          if [ "${{ inputs.above && github.event_name == 'pull_request' }}" = "true" ]; then
+            if ! git diff --name-only "origin/${{ github.base_ref }}...HEAD" \
+              | grep -qE '^(\.github/workflows/build-and-test|packages_above\.repos)'; then
+              target_packages="${{ steps.get-modified-packages.outputs.modified-packages }}"
+            fi
+          fi
+          echo "target-packages=$target_packages" >> "$GITHUB_OUTPUT"
+        shell: bash
+
+      # After the autoware-core-*-cuda images exist, /opt/autoware holds released copies of these packages.
+      - name: Remove self packages from underlay
+        run: |
+          for pkg_xml in $(find . -name package.xml); do
+            pkg_name=$(xmllint --xpath 'string(//package/name)' "$pkg_xml")
+            if [ -d "/opt/autoware/$pkg_name" ]; then
+              echo "Removing /opt/autoware/$pkg_name"
+              sudo rm -rf "/opt/autoware/$pkg_name"
+            fi
+          done
+        shell: bash
+
+      - name: Import packages above
+        if: ${{ inputs.above && steps.get-target-packages.outputs.target-packages != '' }}
+        run: |
+          mkdir -p dependency_ws
+          vcs import --recursive dependency_ws < packages_above.repos
+
+          # Use the same source dependencies as the CI of autoware_universe.
+          # The nightly entries take precedence over the stable entries at the same path.
+          universe=dependency_ws/universe/autoware_universe
+          vcs import --recursive dependency_ws < "$universe/build_depends_nightly.repos"
+          vcs import --recursive --skip-existing dependency_ws < "$universe/build_depends_stable.repos"
+
+          # TODO: Remove this loop after neither autoware_universe nor its build_depends_*.repos
+          # contain the packages of this repository, that is, after the CI images contain autoware_cuda.
+          # Until then, colcon would find each of them twice.
+          self_packages=" ${{ steps.get-self-packages.outputs.self-packages }} "
+          for pkg_xml in $(find dependency_ws -name package.xml); do
+            pkg_name=$(xmllint --xpath 'string(//package/name)' "$pkg_xml")
+            if [[ "$self_packages" == *" $pkg_name "* ]]; then
+              echo "Ignoring the copy of $pkg_name at $(dirname "$pkg_xml")"
+              touch "$(dirname "$pkg_xml")/COLCON_IGNORE"
+            fi
+          done
+        shell: bash
+
+      - name: Build
+        if: ${{ steps.get-target-packages.outputs.target-packages != '' }}
+        uses: autowarefoundation/autoware-github-actions/colcon-build@v1
+        with:
+          rosdistro: ${{ inputs.rosdistro }}
+          target-packages: ${{ steps.get-target-packages.outputs.target-packages }}
+          cache-key-element: build-and-test${{ inputs.above && '-above' || '' }}
+          underlay-workspace: /opt/autoware
+
+      - name: Test
+        if: ${{ steps.get-target-packages.outputs.target-packages != '' }}
+        id: test
+        uses: autowarefoundation/autoware-github-actions/colcon-test@v1
+        with:
+          rosdistro: ${{ inputs.rosdistro }}
+          target-packages: ${{ steps.get-target-packages.outputs.target-packages }}
+          underlay-workspace: /opt/autoware
+
+      - name: Upload coverage to CodeCov
+        if: ${{ inputs.upload-coverage && steps.test.outputs.coverage-report-files != '' }}
+        uses: codecov/codecov-action@v7
+        with:
+          files: ${{ steps.test.outputs.coverage-report-files }}
+          disable_search: true
+          plugins: noop
+          fail_ci_if_error: false
+          verbose: true
+          flags: ${{ inputs.codecov-flag }}
+          token: ${{ secrets.codecov-token }}
+
+      - name: Show disk space after the tasks
+        run: df -h

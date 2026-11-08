@@ -1,0 +1,28 @@
+name: build-and-test
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build-and-test:
+    strategy:
+      fail-fast: false
+      matrix:
+        rosdistro: [humble, jazzy]
+        above: [false, true]
+    uses: ./.github/workflows/build-and-test-reusable.yaml
+    with:
+      rosdistro: ${{ matrix.rosdistro }}
+      container: ghcr.io/autowarefoundation/autoware:universe-dependencies-cuda-${{ matrix.rosdistro }}
+      above: ${{ matrix.above }}
+      upload-coverage: ${{ matrix.rosdistro == 'jazzy' && !matrix.above }}
+      codecov-flag: total
+    secrets:
+      codecov-token: ${{ secrets.CODECOV_TOKEN }}
