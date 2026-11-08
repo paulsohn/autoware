@@ -18,7 +18,7 @@
 | Runtime image built by Bazel (`rules_oci`), not by `docker build` | git SHA leads straight to the image digest; no Docker daemon needed |
 | Deferred: remote cache server, signing, SBOM, vendoring, multi-arch CI | Personal PoC. These are hardening work for later |
 | `autoware_cmake` is not ported. Its `autoware_package()` flags become `.bazelrc` / macro defaults: `-std=c++17 -Wall -Wextra -Wpedantic -Werror`, `-DBOOST_ALLOW_DEPRECATED_HEADERS -DEIGEN_DONT_PARALLELIZE`, Clang `-Wno-gnu-anonymous-struct -Wno-nested-anon-types` | It only sets compile options and calls ament_cmake_auto. `ROS_DISTRO_*` defines are only checked for GALACTIC/HUMBLE, so Lyrical takes the default branch with no define |
-| `autoware_system_designer` (and its only consumer `autoware_sample_designs`) removed | Orthogonal to the Bazel integration |
+| `autoware_system_designer` (and its only consumer `autoware_sample_designs`) removed. Leftovers are dropped, not ported: any `autoware_system_designer_*` CMake call (none in the 2026-11-09 snapshot; the BUILD generator must skip them if they appear), `design/*.{node,module,system,parameter_set}.yaml` files (318, inert data, not built), and the `lint-system-design-format` pre-commit hooks / CI workflows inside subtrees | Orthogonal to the Bazel integration |
 | ML models: pinned in `models.lock.json` (HF repo, tag, commit SHA, per-file sha256), fetched by Bazel `http_file` from `huggingface.co/<repo>/resolve/<sha>/<path>`. No git submodule, LFS, Xet client or DVC | See "ML models" below |
 
 ## Target layout
