@@ -121,6 +121,7 @@ Result: **P0 done.**
 - Talker sha256 in the container: `b181422b6fa2d86de1054fdb568176fbbfde4b0af036cfad99bfa5c82c32b82c`, identical to the host build.
 - The talker runs in the container (glibc 2.39 base).
 
+Issues (continued):
 2. **The talker aborts in a read-only runfiles tree** (`spdlog_ex: Failed opening file .ros/log/... Read-only file system`).
    Cause: the RCR `.bazelrc` sets `--run_env=ROS_HOME=.ros`, relative to the runfiles directory.
    Fix: set `ROS_LOG_DIR` (or `ROS_HOME`) to a writable absolute path. The runtime image (P4) must do this.
