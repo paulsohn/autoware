@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <ament_index_cpp/get_package_share_directory.hpp>
+#include <ament_index_cpp/get_package_share_path.hpp>
 #include <autoware/vehicle_info_utils/vehicle_info_utils.hpp>
 #include <autoware_utils_geometry/geometry.hpp>
 
@@ -30,7 +30,7 @@ protected:
     rclcpp::NodeOptions options;
     options.arguments(
       {"--ros-args", "--params-file",
-       ament_index_cpp::get_package_share_directory("autoware_vehicle_info_utils") +
+       ament_index_cpp::get_package_share_path("autoware_vehicle_info_utils").string() +
          "/config/vehicle_info.param.yaml"});
     node_ = std::make_shared<rclcpp::Node>("test_vehicle_info_utils", options);
   }
