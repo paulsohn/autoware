@@ -1,0 +1,46 @@
+autoware_system_design_format: 0.3.0
+
+name: planning_simulation.parameter_set
+parameters:
+  - node: /*
+    param_files: []
+    param_values:
+      - name: use_sim_time
+        value: false
+  - node: /ros2_system/global_parameter_loader
+    param_files: []
+    param_values:
+      - name: use_sim_time
+        value: false
+  - node: /perception/object_recognition/tracking/multi_object_tracker
+    param_values:
+      - name: input/detection01/channel
+        value: detected_objects
+  - node: /system/component_state_monitor/component
+    param_values:
+      - name: launch.map
+        value: ["topic_state_monitor_vector_map: map_topic_status"]
+      - name: autonomous.localization
+        value: ["topic_state_monitor_transform_map_to_base_link: localization_topic_status"]
+      - name: launch.perception
+        value: []
+      - name: autonomous.perception
+        value: ["topic_state_monitor_object_recognition_objects: perception_topic_status"]
+  - node: /dummy_diag_publisher
+    param_files:
+      - param_file: $(find-pkg-share autoware_launch)/config/system/diagnostics/dummy_diag_publisher.param.yaml
+      - extra_param_file: $(find-pkg-share sample_sensor_kit_launch)/config/dummy_diag_publisher/sensor_kit.param.yaml
+  - node: /perception/occupancy_grid_map/occupancy_grid_map_node
+    param_values:
+      - name: input_obstacle_pointcloud
+        value: true
+      - name: input_obstacle_and_raw_pointcloud
+        value: false
+      - name: v_ratio
+        value: 10.0
+  - node: /planning/scenario_planning/lane_driving/behavior_planning/behavior_velocity_planner
+    param_values:
+      - name: is_simulation
+        value: true
+      - name: enable_all_modules_auto_mode
+        value: false

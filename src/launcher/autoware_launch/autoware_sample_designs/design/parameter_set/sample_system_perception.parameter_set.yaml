@@ -1,0 +1,151 @@
+autoware_system_design_format: 0.3.0
+
+name: sample_system_perception.parameter_set
+parameters:
+  - node: /perception/object_recognition/detection/centerpoint/lidar_centerpoint
+    param_files:
+      - common_param_path: $(find-pkg-share autoware_lidar_centerpoint)/config/centerpoint_common.param.yaml
+      - ml_package_param_path: $(var data_path)/lidar_centerpoint/base/ml_package.param.yaml
+    param_values:
+      - name: build_only
+        value: false
+      - name: logger_name
+        value: lidar_centerpoint
+      - name: model_path
+        value: $(var data_path)/lidar_centerpoint/base
+  - node: /perception/object_recognition/tracking/multi_object_tracker
+    param_files: []
+    param_values:
+      - name: input/detection01/channel
+        value: lidar_centerpoint
+      - name: input/detection03/channel
+        value: lidar_clustering
+      - name: publish_merged_objects
+        value: false
+      - name: enable_delay_compensation
+        value: true
+      - name: tracker_lifetime
+        value: 1.0
+      - name: publish_processing_time
+        value: true
+      - name: association.can_assign.unknown
+        value: [polygon_tracker, multi_vehicle_tracker, pedestrian_and_bicycle_tracker]
+      - name: publish_debug_markers
+        value: true
+
+  - node: /perception/obstacle_segmentation/ptv3
+    param_files:
+      - encoder_ml_package_param_path: $(var data_path)/ptv3/ml_package_ptv3_encoder.param.yaml
+      - seg3d_head_ml_package_param_path: $(var data_path)/ptv3/ml_package_ptv3_seg3d_head.param.yaml
+      - det3d_head_ml_package_param_path: $(var data_path)/ptv3/ml_package_ptv3_det3d_head.param.yaml
+    param_values:
+      - name: build_only
+        value: false
+      - name: model_path
+        value: $(var data_path)/ptv3
+      - name: model_variant
+        value: ptv3
+      # only the segmentation head feeds the pipeline
+      - name: use_det3d_head
+        value: false
+
+  - node: /perception/obstacle_segmentation/label_based_euclidean_cluster
+    param_files:
+      - param_path: $(find-pkg-share autoware_perception_config)/config/object_recognition/detection/euclidean_cluster/label_based_euclidean_cluster.param.yaml
+    param_values: []
+
+  - node: /perception/occupancy_grid_map/occupancy_grid_map_node
+    param_files: []
+    param_values:
+      - name: downsample_input_pointcloud
+        value: false
+      - name: downsample_voxel_size
+        value: 0.125
+      - name: v_ratio
+        value: 10.0
+
+  - node: /perception/traffic_light_recognition/camera1/map_based_detector
+    param_files: []
+    param_values:
+      - name: min_timestamp_offset
+        value: -0.3
+      - name: timestamp_sample_len
+        value: 0.02
+  - node: /perception/traffic_light_recognition/camera1/detection
+    param_files: []
+    param_values:
+      - name: model_path
+        value: $(var data_path)/traffic_light_fine_detector/tlr_car_ped_yolox_s_batch_6.onnx
+      - name: label_path
+        value: $(var data_path)/traffic_light_fine_detector/tlr_labels.txt
+      - name: build_only
+        value: false
+  - node: /perception/traffic_light_recognition/camera1/classifier_car
+    param_files: []
+    param_values:
+      - name: model_path
+        value: $(var data_path)/traffic_light_classifier/traffic_light_classifier_mobilenetv2_batch_6.onnx
+      - name: label_path
+        value: $(var data_path)/traffic_light_classifier/lamp_labels.txt
+      - name: build_only
+        value: false
+  - node: /perception/traffic_light_recognition/camera1/classifier_pedestrian
+    param_files: []
+    param_values:
+      - name: model_path
+        value: $(var data_path)/traffic_light_classifier/ped_traffic_light_classifier_mobilenetv2_batch_6.onnx
+      - name: label_path
+        value: $(var data_path)/traffic_light_classifier/lamp_labels_ped.txt
+      - name: build_only
+        value: false
+  - node: /perception/traffic_light_recognition/camera1/occlusion_predictor
+    param_files: []
+    param_values: []
+  - node: /perception/traffic_light_recognition/camera2/map_based_detector
+    param_files: []
+    param_values:
+      - name: min_timestamp_offset
+        value: -0.04
+      - name: timestamp_sample_len
+        value: 0.02
+  - node: /perception/traffic_light_recognition/camera2/detection
+    param_files: []
+    param_values:
+      - name: model_path
+        value: $(var data_path)/traffic_light_fine_detector/tlr_car_ped_yolox_s_batch_6.onnx
+      - name: label_path
+        value: $(var data_path)/traffic_light_fine_detector/tlr_labels.txt
+      - name: build_only
+        value: false
+  - node: /perception/traffic_light_recognition/camera2/classifier_car
+    param_files: []
+    param_values:
+      - name: model_path
+        value: $(var data_path)/traffic_light_classifier/traffic_light_classifier_mobilenetv2_batch_6.onnx
+      - name: label_path
+        value: $(var data_path)/traffic_light_classifier/lamp_labels.txt
+      - name: build_only
+        value: false
+  - node: /perception/traffic_light_recognition/camera2/classifier_pedestrian
+    param_files: []
+    param_values:
+      - name: model_path
+        value: $(var data_path)/traffic_light_classifier/ped_traffic_light_classifier_mobilenetv2_batch_6.onnx
+      - name: label_path
+        value: $(var data_path)/traffic_light_classifier/lamp_labels_ped.txt
+      - name: build_only
+        value: false
+  - node: /perception/traffic_light_recognition/camera2/occlusion_predictor
+    param_files: []
+    param_values: []
+  - node: /perception/traffic_light_recognition/multi_camera_fusion
+    param_files: []
+    param_values:
+      - name: message_lifespan
+        value: 0.12
+  - node: /perception/traffic_light_recognition/traffic_light_arbiter
+    param_files: []
+    param_values: []
+  - node: /perception/traffic_light_recognition/traffic_light_crosswalk_estimator
+    param_files: []
+    param_values: []
