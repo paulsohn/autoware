@@ -1,0 +1,26 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>bevdet_vendor</name>
+  <version>0.2.1</version>
+  <description>The bevdet tensorrt package</description>
+
+  <maintainer email="cynthia.liu@autocore.ai">cyn-liu</maintainer>
+
+  <license>LCH1238</license>
+
+  <buildtool_depend>ament_cmake_auto</buildtool_depend>
+
+  <build_depend>tensorrt_cmake_module</build_depend>
+
+  <depend>eigen</depend>
+  <depend>rclcpp</depend>
+  <depend>rclcpp_components</depend>
+  <depend>yaml-cpp</depend>
+
+  <test_depend>ament_lint_auto</test_depend>
+  <test_depend>ament_lint_common</test_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>
