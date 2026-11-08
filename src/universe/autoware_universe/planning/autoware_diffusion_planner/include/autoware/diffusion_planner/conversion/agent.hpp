@@ -1,0 +1,203 @@
+// Copyright 2025 TIER IV, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+// cspell:ignore dedup
+
+#ifndef AUTOWARE__DIFFUSION_PLANNER__CONVERSION__AGENT_HPP_
+#define AUTOWARE__DIFFUSION_PLANNER__CONVERSION__AGENT_HPP_
+
+#include "Eigen/Dense"
+
+#include <autoware_utils_uuid/uuid_helper.hpp>
+#include <rclcpp/time.hpp>
+
+#include <autoware_perception_msgs/msg/tracked_object.hpp>
+#include <autoware_perception_msgs/msg/tracked_objects.hpp>
+
+#include <array>
+#include <cstddef>
+#include <deque>
+#include <optional>
+#include <stdexcept>
+#include <string>
+#include <unordered_map>
+#include <unordered_set>
+#include <vector>
+namespace autoware::diffusion_planner
+{
+using autoware_perception_msgs::msg::ObjectClassification;
+using autoware_perception_msgs::msg::TrackedObject;
+using autoware_perception_msgs::msg::TrackedObjects;
+
+// Defined in agent_history_resampler.hpp; referenced here only by const-ref.
+struct HistoryResamplingParams;
+
+constexpr size_t AGENT_STATE_DIM = 11;
+
+// Raw-observation buffer depth for aligned neighbor histories. Larger than the 31-sample model
+// window so the ~3s history is spanned even with message jitter at ~10Hz.
+constexpr size_t NEIGHBOR_HISTORY_BUFFER_SIZE = 40;
+
+enum AgentLabel { VEHICLE = 0, PEDESTRIAN = 1, BICYCLE = 2, IGNORE = 3 };
+
+/**
+ * @brief A class to represent a single state of an agent.
+ */
+struct AgentState
+{
+  AgentState() = default;
+
+  AgentState(const TrackedObject & object, const rclcpp::Time & timestamp);
+
+  [[nodiscard]] std::array<float, AGENT_STATE_DIM> as_array() const noexcept;
+
+  // Re-express the state under the opposite heading convention: pose and orientation rotated by
+  // pi about the body z-axis, body-frame linear twist negated. The described physical motion is
+  // unchanged.
+  void flip_heading_convention();
+
+  // Mutable kinematics (`apply_transform` rewrites the pose; `flip_heading_convention` rewrites
+  // pose and original_info together); the identity fields below are immutable.
+  Eigen::Matrix4d pose{Eigen::Matrix4d::Identity()};
+  TrackedObject original_info;
+
+  const rclcpp::Time timestamp;
+  const AgentLabel label{AgentLabel::VEHICLE};
+  const std::string object_id;
+};
+
+/**
+ * @brief A class to represent the state history of an agent.
+ */
+struct AgentHistory
+{
+  explicit AgentHistory(const size_t max_size) : max_size_(max_size) {}
+
+  // Build a history from an ordered list of states (oldest first), subject to the max_size cap.
+  // Used to construct a fresh, grid-aligned history during resampling.
+  static AgentHistory from_states(const std::vector<AgentState> & states, const size_t max_size)
+  {
+    AgentHistory history(max_size);
+    for (const auto & state : states) {
+      history.push_back(state);
+    }
+    return history;
+  }
+
+  void fill(const AgentState & state)
+  {
+    while (!full()) {
+      push_back(state);
+    }
+  }
+
+  // Ingest one observation. A heading jump beyond the flip threshold is a tracker orientation
+  // correction: every buffered state is re-expressed to the incoming convention (yaw + pi,
+  // negated linear twist) before the push, so the stored history is flip-free.
+  void update(const TrackedObject & object, const rclcpp::Time & timestamp);
+
+  [[nodiscard]] std::vector<float> as_array() const noexcept
+  {
+    std::vector<float> output;
+    for (const auto & state : queue_) {
+      for (const auto & v : state.as_array()) {
+        output.push_back(v);
+      }
+    }
+    return output;
+  }
+
+  [[nodiscard]] const AgentState & get_latest_state() const { return queue_.back(); }
+
+  [[nodiscard]] const std::deque<AgentState> & states() const { return queue_; }
+
+  [[nodiscard]] bool empty() const { return queue_.empty(); }
+
+  [[nodiscard]] size_t size() const { return queue_.size(); }
+
+  void apply_transform(const Eigen::Matrix4d & transform)
+  {
+    for (auto & state : queue_) {
+      state.pose = transform * state.pose;
+    }
+  }
+
+private:
+  void push_back(const AgentState & state)
+  {
+    if (full()) {
+      queue_.pop_front();
+    }
+    queue_.push_back(state);
+  }
+
+  bool full() const { return queue_.size() >= max_size_; }
+
+  std::deque<AgentState> queue_;
+  size_t max_size_{0};
+};
+
+/**
+ * @brief A class containing whole state histories of all agent.
+ */
+struct AgentData
+{
+  // Legacy buffering: push unconditionally, fill new agents with copies, erase disappeared agents.
+  void update_histories(
+    const TrackedObjects & objects, const bool remap_unsupported_objects_to_pedestrian = false);
+
+  // Resampled buffering: dedup on advancing header stamp, reset on a backward time jump, grow
+  // histories without repeat-fill, and retain absent agents until their newest observation ages
+  // out of the history window.
+  void update_histories(
+    const TrackedObjects & objects, const HistoryResamplingParams & params,
+    const bool remap_unsupported_objects_to_pedestrian = false);
+
+  // Transform histories, trim to max_num_agent, and return the processed vector.
+  std::vector<AgentHistory> transformed_and_trimmed_histories(
+    const Eigen::Matrix4d & transform, size_t max_num_agent) const;
+
+  // Resampled counterpart of transformed_and_trimmed_histories: emit only agents present in the
+  // latest message, re-timing each history onto the odometry-anchored constant grid (see
+  // resample_history) before transform, sort, and trim.
+  std::vector<AgentHistory> resampled_transformed_and_trimmed_histories(
+    const rclcpp::Time & frame_time, const Eigen::Matrix4d & transform, size_t max_num_agent,
+    const HistoryResamplingParams & params) const;
+
+private:
+  std::unordered_map<std::string, AgentHistory> histories_map_;
+  // UUIDs present in the latest ingested message; only these are emitted by the resampled path.
+  std::unordered_set<std::string> latest_ids_;
+  std::optional<rclcpp::Time> last_processed_stamp_;
+};
+
+// Convert histories to a flattened vector
+inline std::vector<float> flatten_histories_to_vector(
+  const std::vector<AgentHistory> & histories, size_t max_num_agent, size_t time_length)
+{
+  std::vector<float> data;
+  data.reserve(histories.size() * time_length * AGENT_STATE_DIM);
+
+  for (const auto & history : histories) {
+    const auto history_array = history.as_array();
+    data.insert(data.end(), history_array.begin(), history_array.end());
+  }
+
+  data.resize(max_num_agent * time_length * AGENT_STATE_DIM, 0.0f);
+
+  return data;
+}
+
+}  // namespace autoware::diffusion_planner
+#endif  // AUTOWARE__DIFFUSION_PLANNER__CONVERSION__AGENT_HPP_

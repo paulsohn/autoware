@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<launch>
+  <group>
+    <push-ros-namespace namespace="control"/>
+    <include file="$(find-pkg-share autoware_external_cmd_converter)/launch/external_cmd_converter.launch.py"/>
+  </group>
+</launch>
