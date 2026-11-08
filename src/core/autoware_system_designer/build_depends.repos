@@ -1,5 +1,0 @@
-repositories:
-  common/autoware_cmake:
-    type: git
-    url: git@github.com:autowarefoundation/autoware_cmake.git
-    version: main
