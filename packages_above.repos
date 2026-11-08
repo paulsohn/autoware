@@ -1,0 +1,7 @@
+# The above jobs also import build_depends_stable.repos and build_depends_nightly.repos of
+# autoware_universe, so the source dependencies match the CI of autoware_universe.
+repositories:
+  universe/autoware_universe:
+    type: git
+    url: https://github.com/autowarefoundation/autoware_universe.git
+    version: main
