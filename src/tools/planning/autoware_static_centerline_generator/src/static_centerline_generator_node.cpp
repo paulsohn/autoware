@@ -1,0 +1,1257 @@
+// Copyright 2022 Tier IV, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#include "static_centerline_generator_node.hpp"
+
+#include "autoware/map_loader/lanelet2_map_loader_node.hpp"
+#include "autoware/map_projection_loader/load_info_from_lanelet2_map.hpp"
+#include "autoware/map_projection_loader/map_projection_loader.hpp"
+#include "autoware/motion_utils/resample/resample.hpp"
+#include "autoware/motion_utils/trajectory/conversion.hpp"
+#include "autoware/motion_utils/trajectory/trajectory.hpp"
+#include "autoware/universe_utils/geometry/geometry.hpp"
+#include "autoware/universe_utils/math/unit_conversion.hpp"
+#include "autoware/universe_utils/ros/parameter.hpp"
+#include "autoware_lanelet2_extension/utility/message_conversion.hpp"
+#include "autoware_lanelet2_extension/utility/query.hpp"
+#include "autoware_lanelet2_extension/utility/utilities.hpp"
+#include "autoware_static_centerline_generator/msg/points_with_lane_id.hpp"
+#include "centerline_source/bag_ego_trajectory_based_centerline.hpp"
+#include "type_alias.hpp"
+#include "utils.hpp"
+
+#include <autoware/geography_utils/lanelet2_projector.hpp>
+#include <autoware/mission_planner_universe/default_planner.hpp>
+#include <autoware/qos_utils/qos_compatibility.hpp>
+#include <autoware/universe_utils/ros/marker_helper.hpp>
+
+#include "std_msgs/msg/empty.hpp"
+#include "std_msgs/msg/float32.hpp"
+#include "std_msgs/msg/int32.hpp"
+
+#include <boost/algorithm/string.hpp>
+#include <boost/geometry/algorithms/correct.hpp>
+#include <boost/geometry/algorithms/distance.hpp>
+
+#include <glog/logging.h>
+#include <lanelet2_core/LaneletMap.h>
+#include <lanelet2_core/geometry/Lanelet.h>
+#include <lanelet2_io/Io.h>
+#include <lanelet2_projection/UTM.h>
+
+#include <algorithm>
+#include <chrono>
+#include <cinttypes>
+#include <filesystem>
+#include <fstream>
+#include <iostream>
+#include <limits>
+#include <memory>
+#include <string>
+#include <unordered_map>
+#include <utility>
+#include <vector>
+
+#define RESET_TEXT "\x1B[0m"
+#define RED_TEXT "\x1B[31m"
+#define YELLOW_TEXT "\x1b[33m"
+#define BOLD_TEXT "\x1B[1m"
+
+namespace autoware::static_centerline_generator
+{
+namespace
+{
+lanelet::BasicPoint2d convert_to_lanelet_point(const geometry_msgs::msg::Point & geom_point)
+{
+  lanelet::BasicPoint2d point(geom_point.x, geom_point.y);
+  return point;
+}
+
+LinearRing2d create_vehicle_footprint(
+  const geometry_msgs::msg::Pose & pose,
+  const autoware::vehicle_info_utils::VehicleInfo & vehicle_info, const double margin = 0.0)
+{
+  const auto & i = vehicle_info;
+
+  const double x_front = i.front_overhang_m + i.wheel_base_m + margin;
+  const double x_rear = -(i.rear_overhang_m + margin);
+  const double y_left = i.wheel_tread_m / 2.0 + i.left_overhang_m + margin;
+  const double y_right = -(i.wheel_tread_m / 2.0 + i.right_overhang_m + margin);
+
+  std::vector<geometry_msgs::msg::Point> geom_points;
+  geom_points.push_back(
+    autoware::universe_utils::calcOffsetPose(pose, x_front, y_left, 0.0).position);
+  geom_points.push_back(
+    autoware::universe_utils::calcOffsetPose(pose, x_front, y_right, 0.0).position);
+  geom_points.push_back(
+    autoware::universe_utils::calcOffsetPose(pose, x_rear, y_right, 0.0).position);
+  geom_points.push_back(
+    autoware::universe_utils::calcOffsetPose(pose, x_rear, y_left, 0.0).position);
+
+  LinearRing2d footprint;
+  for (const auto & geom_point : geom_points) {
+    footprint.push_back(Point2d{geom_point.x, geom_point.y});
+  }
+  footprint.push_back(footprint.back());
+
+  boost::geometry::correct(footprint);
+
+  return footprint;
+}
+
+geometry_msgs::msg::Pose get_text_pose(
+  const geometry_msgs::msg::Pose & pose,
+  const autoware::vehicle_info_utils::VehicleInfo & vehicle_info, const double x_offset = 0.0)
+{
+  const auto & i = vehicle_info;
+
+  const double x_front = i.front_overhang_m + i.wheel_base_m;
+  const double y_left = i.wheel_tread_m / 2.0 + i.left_overhang_m + 0.5;
+
+  return autoware::universe_utils::calcOffsetPose(pose, x_front + x_offset, y_left, 0.0);
+}
+
+std::array<double, 3> convert_hex_string_to_decimal(const std::string & hex_str_color)
+{
+  unsigned int hex_int_color;
+  std::istringstream iss(hex_str_color);
+  iss >> std::hex >> hex_int_color;
+
+  unsigned int unit = 16 * 16;
+  unsigned int b = hex_int_color % unit;
+  unsigned int g = (hex_int_color - b) / unit % unit;
+  unsigned int r = (hex_int_color - g * unit - b) / unit / unit;
+
+  return std::array<double, 3>{r / 255.0, g / 255.0, b / 255.0};
+}
+
+std::vector<lanelet::Id> check_lanelet_connection(
+  const RouteHandler & route_handler, const lanelet::ConstLanelets & route_lanelets)
+{
+  std::vector<lanelet::Id> unconnected_lane_ids;
+
+  for (size_t i = 0; i < route_lanelets.size() - 1; ++i) {
+    const auto next_lanelets = route_handler.getNextLanelets(route_lanelets.at(i));
+
+    const bool is_connected =
+      std::find_if(next_lanelets.begin(), next_lanelets.end(), [&](const auto & next_lanelet) {
+        return next_lanelet.id() == route_lanelets.at(i + 1).id();
+      }) != next_lanelets.end();
+    if (!is_connected) {
+      unconnected_lane_ids.push_back(route_lanelets.at(i).id());
+    }
+  }
+
+  return unconnected_lane_ids;
+}
+
+void assign_centerline_points_to_lanelets(
+  const std::vector<TrajectoryPoint> & optimized_traj_points,
+  const lanelet::ConstLanelets & route_lanelets, PlanPath::Response::SharedPtr response,
+  const rclcpp::Logger & logger)
+{
+  std::vector<std::vector<geometry_msgs::msg::Point>> points_per_lanelet(route_lanelets.size());
+  size_t current_lanelet_idx = 0;
+  size_t points_outside_any = 0;
+
+  for (const auto & traj_point : optimized_traj_points) {
+    const auto pt = convert_to_lanelet_point(traj_point.pose.position);
+
+    if (
+      current_lanelet_idx < route_lanelets.size() &&
+      lanelet::geometry::inside(route_lanelets.at(current_lanelet_idx), pt)) {
+      points_per_lanelet.at(current_lanelet_idx).push_back(traj_point.pose.position);
+      continue;
+    }
+
+    bool assigned = false;
+    for (size_t k = 0; k < route_lanelets.size(); ++k) {
+      const size_t idx = (current_lanelet_idx + k) % route_lanelets.size();
+      if (lanelet::geometry::inside(route_lanelets.at(idx), pt)) {
+        points_per_lanelet.at(idx).push_back(traj_point.pose.position);
+        current_lanelet_idx = idx;
+        assigned = true;
+        break;
+      }
+    }
+
+    if (!assigned) {
+      if (current_lanelet_idx < route_lanelets.size()) {
+        points_per_lanelet.at(current_lanelet_idx).push_back(traj_point.pose.position);
+      }
+      points_outside_any++;
+    }
+  }
+
+  if (points_outside_any > 0) {
+    RCLCPP_WARN(
+      logger,
+      "PlanPath: %zu trajectory point(s) were outside all lanelet polygons and assigned to "
+      "nearest segment (e.g. sharp curves or optimization). Consider checking map or route.",
+      points_outside_any);
+  }
+
+  for (size_t i = 0; i < route_lanelets.size(); ++i) {
+    if (!points_per_lanelet.at(i).empty()) {
+      autoware_static_centerline_generator::msg::PointsWithLaneId points_with_lane_id;
+      points_with_lane_id.lane_id = route_lanelets.at(i).id();
+      points_with_lane_id.points = points_per_lanelet.at(i);
+      response->points_with_lane_ids.push_back(points_with_lane_id);
+    } else {
+      RCLCPP_WARN(
+        logger,
+        "PlanPath: lanelet id %" PRId64
+        " has no assigned points (trajectory may skip this segment).",
+        static_cast<int64_t>(route_lanelets.at(i).id()));
+    }
+  }
+}
+
+std_msgs::msg::Header create_header(const rclcpp::Time & now)
+{
+  std_msgs::msg::Header header;
+  header.frame_id = "map";
+  header.stamp = now;
+  return header;
+}
+
+std::vector<TrajectoryPoint> resample_trajectory_points(
+  const std::vector<TrajectoryPoint> & input_traj_points, const double resample_interval)
+{
+  // resample and calculate trajectory points' orientation
+  const auto input_traj = autoware::motion_utils::convertToTrajectory(input_traj_points);
+  auto resampled_input_traj =
+    autoware::motion_utils::resampleTrajectory(input_traj, resample_interval);
+  return autoware::motion_utils::convertToTrajectoryPointArray(resampled_input_traj);
+}
+
+std::vector<std::vector<geometry_msgs::msg::Point>> convert_to_geometry_points_vector(
+  const std::unordered_map<lanelet::Id, LineString2d> & lanelet_points_map,
+  const std::vector<lanelet::Id> & centerline_lane_id_map_order)
+{
+  std::vector<std::vector<geometry_msgs::msg::Point>> points_vec;
+  for (const lanelet::Id centerline_lane_id : centerline_lane_id_map_order) {
+    points_vec.push_back(std::vector<geometry_msgs::msg::Point>{});
+    for (const auto & lanelet_point : lanelet_points_map.at(centerline_lane_id)) {
+      geometry_msgs::msg::Point point;
+      point.x = lanelet_point.x();
+      point.y = lanelet_point.y();
+      points_vec.back().push_back(point);
+    }
+  }
+
+  return points_vec;
+}
+
+std::vector<std::vector<geometry_msgs::msg::Point>> convert_to_geometry_points_vector(
+  const std::vector<TrajectoryPoint> & centerline,
+  const std::vector<lanelet::Id> & centerline_lane_ids)
+{
+  std::vector<std::vector<geometry_msgs::msg::Point>> points_vec;
+  std::vector<geometry_msgs::msg::Point> points;
+  for (size_t i = 0; i < centerline.size(); ++i) {
+    points.push_back(centerline.at(i).pose.position);
+
+    if (i == centerline.size() - 1) {
+      points_vec.push_back(points);
+      break;
+    }
+    if (centerline_lane_ids.at(i) != centerline_lane_ids.at(i + 1)) {
+      points_vec.push_back(points);
+      points.clear();
+    }
+  }
+
+  return points_vec;
+}
+}  // namespace
+
+StaticCenterlineGeneratorNode::StaticCenterlineGeneratorNode(
+  const rclcpp::NodeOptions & node_options)
+: Node("static_centerline_generator", node_options)
+{
+  // glog for debug
+  if (!google::IsGoogleLoggingInitialized()) {
+    google::InitGoogleLogging("multi_object_tracker");
+    google::InstallFailureSignalHandler();
+  }
+
+  // publishers
+  pub_map_bin_ =
+    create_publisher<LaneletMapBin>("lanelet2_map_topic", utils::create_transient_local_qos());
+  pub_whole_centerline_ =
+    create_publisher<Trajectory>("~/output/whole_centerline", utils::create_transient_local_qos());
+  pub_centerline_ =
+    create_publisher<Trajectory>("~/output/centerline", utils::create_transient_local_qos());
+  pub_map_saved_ = create_publisher<std_msgs::msg::Empty>(
+    "~/output/map_saved", utils::create_transient_local_qos());
+
+  // debug publishers
+  pub_validation_results_ =
+    create_publisher<MarkerArray>("~/validation_results", utils::create_transient_local_qos());
+  pub_debug_markers_ =
+    create_publisher<MarkerArray>("~/debug/markers", utils::create_transient_local_qos());
+
+  pub_debug_ego_footprint_bounds_ = create_publisher<MarkerArray>(
+    "~/debug/ego_footprint_bounds", utils::create_transient_local_qos());
+
+  // subscribers
+  sub_footprint_margin_for_road_bound_ = create_subscription<std_msgs::msg::Float32>(
+    "/static_centerline_generator/road_boundary_lateral_margin", rclcpp::QoS{1},
+    [this](const std_msgs::msg::Float32 & msg) { footprint_margin_for_road_bound_ = msg.data; });
+  sub_traj_start_index_ = create_subscription<std_msgs::msg::Int32>(
+    "/static_centerline_generator/traj_start_index", rclcpp::QoS{1},
+    [this](const std_msgs::msg::Int32 & msg) {
+      if (centerline_handler_.update_start_index(msg.data)) {
+        visualize_selected_centerline();
+      }
+    });
+  sub_traj_end_index_ = create_subscription<std_msgs::msg::Int32>(
+    "/static_centerline_generator/traj_end_index", rclcpp::QoS{1},
+    [this](const std_msgs::msg::Int32 & msg) {
+      if (centerline_handler_.update_end_index(msg.data)) {
+        visualize_selected_centerline();
+      }
+    });
+  sub_save_map_ = create_subscription<std_msgs::msg::Empty>(
+    "/static_centerline_generator/save_map", rclcpp::QoS{1},
+    [this]([[maybe_unused]] const std_msgs::msg::Empty & msg) {
+      if (!centerline_handler_.is_valid()) {
+        return;
+      }
+      save_map();
+    });
+  sub_validate_ = create_subscription<std_msgs::msg::Empty>(
+    "/static_centerline_generator/validate", rclcpp::QoS{1},
+    [this]([[maybe_unused]] const std_msgs::msg::Empty & msg) {
+      connect_centerline_to_lanelet();
+      validate_centerline();
+    });
+
+  // services
+  callback_group_ = create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
+  srv_load_map_ = create_service<LoadMap>(
+    "/planning/static_centerline_generator/load_map",
+    std::bind(
+      &StaticCenterlineGeneratorNode::on_load_map, this, std::placeholders::_1,
+      std::placeholders::_2),
+    AUTOWARE_DEFAULT_SERVICES_QOS_PROFILE(), callback_group_);
+  srv_plan_route_ = create_service<PlanRoute>(
+    "/planning/static_centerline_generator/plan_route",
+    std::bind(
+      &StaticCenterlineGeneratorNode::on_plan_route, this, std::placeholders::_1,
+      std::placeholders::_2),
+    AUTOWARE_DEFAULT_SERVICES_QOS_PROFILE(), callback_group_);
+  srv_plan_path_ = create_service<PlanPath>(
+    "/planning/static_centerline_generator/plan_path",
+    std::bind(
+      &StaticCenterlineGeneratorNode::on_plan_path, this, std::placeholders::_1,
+      std::placeholders::_2),
+    AUTOWARE_DEFAULT_SERVICES_QOS_PROFILE(), callback_group_);
+
+  // vehicle info
+  vehicle_info_ = autoware::vehicle_info_utils::VehicleInfoUtils(*this).getVehicleInfo();
+
+  // parameters of the route planner
+  default_planner_param_.goal_angle_threshold_deg =
+    declare_parameter<double>("goal_angle_threshold_deg");
+  default_planner_param_.enable_correct_goal_pose =
+    declare_parameter<bool>("enable_correct_goal_pose");
+  default_planner_param_.consider_no_drivable_lanes =
+    declare_parameter<bool>("consider_no_drivable_lanes");
+  default_planner_param_.check_footprint_inside_lanes =
+    declare_parameter<bool>("check_footprint_inside_lanes");
+  default_planner_param_.allow_area = declare_parameter<bool>("allow_area", false);
+
+  centerline_source_ = [&]() {
+    const auto centerline_source_param = declare_parameter<std::string>("centerline_source");
+    if (centerline_source_param == "optimization_trajectory_base") {
+      optimization_trajectory_based_centerline_ = OptimizationTrajectoryBasedCenterline(*this);
+      return CenterlineSource::OptimizationTrajectoryBase;
+    } else if (centerline_source_param == "bag_ego_trajectory_base") {
+      return CenterlineSource::BagEgoTrajectoryBase;
+    }
+    throw std::logic_error(
+      "The centerline source is not supported in autoware_static_centerline_generator.");
+  }();
+}
+
+void StaticCenterlineGeneratorNode::visualize_selected_centerline()
+{
+  // publish selected centerline
+  const auto selected_centerline = centerline_handler_.get_selected_centerline();
+  pub_centerline_->publish(
+    autoware::motion_utils::convertToTrajectory(selected_centerline, create_header(this->now())));
+
+  // delete markers for validation
+  pub_validation_results_->publish(utils::create_delete_all_marker_array({}, now()));
+  pub_debug_markers_->publish(
+    utils::create_delete_all_marker_array(
+      {"unsafe_footprints", "unsafe_footprints_distance", "jitter_sections", "jitter_values"},
+      now()));
+  pub_debug_ego_footprint_bounds_->publish(
+    utils::create_delete_all_marker_array({"road_bounds"}, now()));
+}
+
+void StaticCenterlineGeneratorNode::generate_centerline()
+{
+  // declare planning setting parameters
+  const auto lanelet2_input_file_path = declare_parameter<std::string>("lanelet2_input_file_path");
+  if (lanelet2_input_file_path == "") {
+    throw std::invalid_argument("The `lanelet2_input_file_path` is empty.");
+  }
+
+  // process
+  load_map(lanelet2_input_file_path);
+  const auto whole_centerline_with_route = generate_whole_centerline_with_route();
+  centerline_handler_ = CenterlineHandler(whole_centerline_with_route);
+
+  visualize_selected_centerline();
+}
+
+void StaticCenterlineGeneratorNode::load_centerline()
+{
+  // declare planning setting parameters
+  const auto lanelet2_input_file_path = declare_parameter<std::string>("lanelet2_input_file_path");
+  if (lanelet2_input_file_path == "") {
+    throw std::invalid_argument("The `lanelet2_input_file_path` is empty.");
+  }
+
+  // process
+  load_map(lanelet2_input_file_path);
+  const auto start_lanelet_id = declare_parameter<int64_t>("start_lanelet_id");
+  const auto end_lanelet_id = declare_parameter<int64_t>("end_lanelet_id");
+  const auto route = plan_route_by_lane_ids(start_lanelet_id, end_lanelet_id);
+  const auto lanelet_sequence = get_lanelet_sequence_from_param();
+  const auto [centerline, lane_ids] = get_centerline_from_lane_ids(lanelet_sequence);
+  centerline_handler_ = CenterlineHandler(CenterlineWithRoute{centerline, route});
+  centerline_handler_.add_centerline_lane_ids(lane_ids);
+
+  visualize_selected_centerline();
+}
+
+std::vector<lanelet::Id> StaticCenterlineGeneratorNode::get_lanelet_sequence_from_param()
+{
+  const auto lanelet_sequence_str =
+    autoware::universe_utils::getOrDeclareParameter<std::string>(*this, "lanelet_sequence");
+  std::vector<lanelet::Id> lanelet_sequence;
+  if (!lanelet_sequence_str.empty()) {
+    std::vector<std::string> tokens;
+    boost::split(tokens, lanelet_sequence_str, boost::is_any_of(","), boost::token_compress_on);
+    for (const auto & token : tokens) {
+      lanelet_sequence.push_back(std::stoll(token));
+    }
+  }
+  return lanelet_sequence;
+}
+
+std::pair<std::vector<TrajectoryPoint>, std::vector<lanelet::Id>>
+StaticCenterlineGeneratorNode::get_centerline_from_lane_ids(
+  const std::vector<lanelet::Id> & lane_ids) const
+{
+  std::vector<TrajectoryPoint> centerline_points;
+  std::vector<lanelet::Id> lane_ids_for_points;
+
+  for (size_t i = 0; i < lane_ids.size(); ++i) {
+    const auto id = lane_ids[i];
+    const auto lanelet = route_handler_ptr_->getLaneletsFromId(id);
+
+    const auto & centerline = lanelet.centerline();
+    for (size_t j = 0; j + 1 < centerline.size(); ++j) {
+      // skip duplicated points
+      if (!centerline_points.empty() && j == 0 && i > 0) {
+        const auto & prev = centerline_points.back().pose.position;
+        const auto & curr = centerline[j];
+        if (prev.x == curr.x() && prev.y == curr.y() && prev.z == curr.z()) {
+          continue;
+        }
+      }
+
+      TrajectoryPoint pt;
+      // position
+      pt.pose.position.x = centerline[j].x();
+      pt.pose.position.y = centerline[j].y();
+      pt.pose.position.z = centerline[j].z();
+
+      // orientation
+      geometry_msgs::msg::Point curr_pt;
+      curr_pt.x = centerline[j].x();
+      curr_pt.y = centerline[j].y();
+      curr_pt.z = centerline[j].z();
+
+      geometry_msgs::msg::Point next_pt;
+      next_pt.x = centerline[j + 1].x();
+      next_pt.y = centerline[j + 1].y();
+      next_pt.z = centerline[j + 1].z();
+
+      const double yaw = autoware_utils::calc_azimuth_angle(curr_pt, next_pt);
+      pt.pose.orientation = autoware_utils_geometry::create_quaternion_from_yaw(yaw);
+
+      centerline_points.push_back(pt);
+      lane_ids_for_points.push_back(id);
+    }
+  }
+  if (centerline_points.empty()) {
+    throw std::runtime_error("The centerline is empty.");
+  }
+  return {centerline_points, lane_ids_for_points};
+}
+
+CenterlineWithRoute StaticCenterlineGeneratorNode::generate_whole_centerline_with_route()
+{
+  if (!route_handler_ptr_) {
+    RCLCPP_ERROR(get_logger(), "Route handler is not ready. Return empty trajectory.");
+    return CenterlineWithRoute{};
+  }
+
+  // generate centerline with route
+  auto centerline_with_route = [&]() {
+    if (centerline_source_ == CenterlineSource::OptimizationTrajectoryBase) {
+      const lanelet::Id start_lanelet_id = declare_parameter<int64_t>("start_lanelet_id");
+      const lanelet::Id end_lanelet_id = declare_parameter<int64_t>("end_lanelet_id");
+      const auto route = plan_route_by_lane_ids(start_lanelet_id, end_lanelet_id);
+      const auto optimized_centerline =
+        optimization_trajectory_based_centerline_.generate_centerline_with_optimization(
+          *this, route_handler_ptr_, map_bin_ptr_, route);
+      return CenterlineWithRoute{optimized_centerline, route};
+    } else if (centerline_source_ == CenterlineSource::BagEgoTrajectoryBase) {
+      const auto bag_centerline = generate_centerline_with_bag(*this);
+      const auto route = plan_route(bag_centerline.front().pose, bag_centerline.back().pose);
+      return CenterlineWithRoute{bag_centerline, route};
+    }
+    throw std::logic_error(
+      "The centerline source is not supported in autoware_static_centerline_generator.");
+  }();
+
+  // resample
+  const double output_trajectory_interval = declare_parameter<double>("output_trajectory_interval");
+  centerline_with_route.centerline =
+    resample_trajectory_points(centerline_with_route.centerline, output_trajectory_interval);
+
+  pub_whole_centerline_->publish(
+    autoware::motion_utils::convertToTrajectory(
+      centerline_with_route.centerline, create_header(this->now())));
+
+  return centerline_with_route;
+}
+
+void StaticCenterlineGeneratorNode::load_map(const std::string & lanelet2_input_file_path)
+{
+  // copy the input LL2 map to the temporary file for debugging
+  const std::string debug_input_file_dir{"/tmp/autoware_static_centerline_generator/input/"};
+  std::filesystem::create_directories(debug_input_file_dir);
+  std::filesystem::copy(
+    lanelet2_input_file_path, debug_input_file_dir + "lanelet2_map.osm",
+    std::filesystem::copy_options::overwrite_existing);
+
+  // load map by the map_loader package
+  map_bin_ptr_ = [&]() -> LaneletMapBin::ConstSharedPtr {
+    // load map
+    map_projector_info_ = std::make_unique<MapProjectorInfo>(
+      autoware::map_projection_loader::load_info_from_lanelet2_map(lanelet2_input_file_path));
+    const auto map_ptr = autoware::map_loader::Lanelet2MapLoaderNode::load_map(
+      lanelet2_input_file_path, *map_projector_info_);
+    if (!map_ptr) {
+      return nullptr;
+    }
+
+    // NOTE: The original map is stored here since the centerline will be added to all the
+    //       lanelet when lanelet::utils::overwriteLaneletCenterline is called.
+    original_map_ptr_ = autoware::map_loader::Lanelet2MapLoaderNode::load_map(
+      lanelet2_input_file_path, *map_projector_info_);
+
+    // overwrite more dense centerline
+    // NOTE: overwriteLaneletsCenterlineWithWaypoints is used only in real time calculation.
+    lanelet::utils::overwriteLaneletsCenterline(map_ptr, 5.0, false);
+
+    // create map bin msg
+    const auto map_bin_msg = autoware::map_loader::Lanelet2MapLoaderNode::create_map_bin_msg(
+      map_ptr, lanelet2_input_file_path, now());
+
+    return std::make_shared<LaneletMapBin>(map_bin_msg);
+  }();
+
+  // check if map_bin_ptr_ is not null pointer
+  if (!map_bin_ptr_) {
+    RCLCPP_ERROR(get_logger(), "Loading map failed");
+    return;
+  }
+  RCLCPP_INFO(get_logger(), "Loaded map.");
+
+  // publish map bin msg
+  pub_map_bin_->publish(*map_bin_ptr_);
+  RCLCPP_INFO(get_logger(), "Published map.");
+
+  // create route_handler
+  route_handler_ptr_ = std::make_shared<RouteHandler>();
+  route_handler_ptr_->setMap(*map_bin_ptr_);
+}
+
+void StaticCenterlineGeneratorNode::on_load_map(
+  const LoadMap::Request::SharedPtr request, const LoadMap::Response::SharedPtr response)
+{
+  const std::string tmp_lanelet2_input_file_path = "/tmp/input_lanelet2_map.osm";
+
+  // save map file temporarily since load map's input must be a file
+  std::ofstream map_writer;
+  map_writer.open(tmp_lanelet2_input_file_path, std::ios::out);
+  map_writer << request->map;
+  map_writer.close();
+
+  // load map from the saved map file
+  load_map(tmp_lanelet2_input_file_path);
+
+  if (map_bin_ptr_) {
+    return;
+  }
+
+  response->message = "InvalidMapFormat";
+}
+
+LaneletRoute StaticCenterlineGeneratorNode::plan_route_by_lane_ids(
+  const lanelet::Id start_lanelet_id, const lanelet::Id end_lanelet_id)
+{
+  if (!route_handler_ptr_) {
+    RCLCPP_ERROR(get_logger(), "Map or route handler is not ready. Return empty lane ids.");
+    return LaneletRoute{};
+  }
+
+  // calculate start pose
+  const auto start_pose_param =
+    autoware::universe_utils::getOrDeclareParameter<std::vector<double>>(*this, "start_pose");
+  const bool is_start_pose_param_invalid = std::all_of(
+    start_pose_param.begin(), start_pose_param.end(), [](double x) { return x == 0.0; });
+  const auto start_pose = [&]() {
+    if (is_start_pose_param_invalid) {
+      return utils::get_center_pose(*route_handler_ptr_, start_lanelet_id);
+    }
+    return utils::create_pose(
+      start_pose_param[0], start_pose_param[1], start_pose_param[2], start_pose_param[3],
+      start_pose_param[4], start_pose_param[5], start_pose_param[6]);
+  }();
+
+  // calculate end pose
+  const auto end_pose_param =
+    autoware::universe_utils::getOrDeclareParameter<std::vector<double>>(*this, "end_pose");
+  const bool is_end_pose_param_invalid =
+    std::all_of(end_pose_param.begin(), end_pose_param.end(), [](double x) { return x == 0.0; });
+  const auto end_pose = [&]() {
+    if (is_end_pose_param_invalid) {
+      return utils::get_center_pose(*route_handler_ptr_, end_lanelet_id);
+    }
+    return utils::create_pose(
+      end_pose_param[0], end_pose_param[1], end_pose_param[2], end_pose_param[3], end_pose_param[4],
+      end_pose_param[5], end_pose_param[6]);
+  }();
+
+  // plan route
+  const auto lanelet_sequence = get_lanelet_sequence_from_param();
+  if (!lanelet_sequence.empty()) {
+    return plan_route_from_lanelet_sequence(lanelet_sequence);
+  } else {
+    return plan_route(start_pose, end_pose);
+  }
+}
+
+LaneletRoute StaticCenterlineGeneratorNode::plan_route_from_lanelet_sequence(
+  const std::vector<lanelet::Id> & lanelet_sequence) const
+{
+  LaneletRoute route;
+  route.start_pose = utils::get_center_pose(*route_handler_ptr_, lanelet_sequence.front());
+  route.goal_pose = utils::get_center_pose(*route_handler_ptr_, lanelet_sequence.back());
+  for (const auto & id : lanelet_sequence) {
+    LaneletSegment segment;
+    segment.preferred_primitive.id = id;
+    segment.primitives.push_back(segment.preferred_primitive);
+    route.segments.push_back(segment);
+  }
+  return route;
+}
+
+LaneletRoute StaticCenterlineGeneratorNode::plan_route(
+  const geometry_msgs::msg::Pose & start_center_pose,
+  const geometry_msgs::msg::Pose & end_center_pose)
+{
+  if (!map_bin_ptr_) {
+    RCLCPP_ERROR(get_logger(), "Map or route handler is not ready. Return empty lane ids.");
+    return LaneletRoute{};
+  }
+
+  // calculate check points
+  RCLCPP_INFO(get_logger(), "Calculated check points.");
+  const auto check_points =
+    std::vector<geometry_msgs::msg::Pose>{start_center_pose, end_center_pose};
+
+  // plan route
+  autoware::mission_planner_universe::lanelet2::DefaultPlanner mission_planner(
+    default_planner_param_, vehicle_info_);
+  mission_planner.set_map(*map_bin_ptr_);
+  return mission_planner.plan(check_points).route;
+}
+
+void StaticCenterlineGeneratorNode::on_plan_route(
+  const PlanRoute::Request::SharedPtr request, const PlanRoute::Response::SharedPtr response)
+{
+  if (!map_bin_ptr_ || !route_handler_ptr_) {
+    response->message = "MapNotFound";
+    RCLCPP_ERROR(get_logger(), "Map is not ready.");
+    return;
+  }
+
+  const lanelet::Id start_lanelet_id = request->start_lane_id;
+  const lanelet::Id end_lanelet_id = request->end_lane_id;
+
+  // plan route
+  const auto route = plan_route_by_lane_ids(start_lanelet_id, end_lanelet_id);
+  const auto route_lanelets = utils::get_lanelets_from_route(*route_handler_ptr_, route);
+
+  // extract lane ids
+  std::vector<lanelet::Id> lane_ids;
+  for (const auto & lanelet : route_lanelets) {
+    lane_ids.push_back(lanelet.id());
+  }
+
+  // check calculation result
+  if (lane_ids.empty()) {
+    response->message = "RouteNotFound";
+    RCLCPP_ERROR(get_logger(), "Route planning failed.");
+    return;
+  }
+
+  // set response
+  response->lane_ids = lane_ids;
+}
+
+void StaticCenterlineGeneratorNode::on_plan_path(
+  const PlanPath::Request::SharedPtr request, const PlanPath::Response::SharedPtr response)
+{
+  if (!route_handler_ptr_) {
+    response->message = "MapNotFound";
+    RCLCPP_ERROR(get_logger(), "Route handler is not ready.");
+    return;
+  }
+
+  // get lanelets from route lane ids
+  const auto route_lane_ids = request->route;
+  if (route_lane_ids.empty()) {
+    response->message = "InvalidRoute";
+    RCLCPP_ERROR(get_logger(), "PlanPath: route is empty.");
+    return;
+  }
+
+  const auto route_lanelets = utils::get_lanelets_from_ids(*route_handler_ptr_, route_lane_ids);
+
+  // create route
+  LaneletRoute route;
+  try {
+    route.start_pose = utils::get_center_pose(*route_handler_ptr_, route_lane_ids.front());
+    route.goal_pose = utils::get_center_pose(*route_handler_ptr_, route_lane_ids.back());
+  } catch (const std::exception & e) {
+    response->message = "InvalidLanelet";
+    RCLCPP_ERROR(get_logger(), "PlanPath: get_center_pose failed: %s", e.what());
+    return;
+  }
+  std::vector<lanelet::Id> lane_ids;
+  for (const auto route_lane_id : route_lane_ids) {
+    LaneletSegment segment;
+    segment.preferred_primitive.id = route_lane_id;
+    route.segments.push_back(segment);
+  }
+
+  // check if input route lanelets are connected to each other.
+  const auto unconnected_lane_ids = check_lanelet_connection(*route_handler_ptr_, route_lanelets);
+  if (!unconnected_lane_ids.empty()) {
+    response->message = "LaneletsNotConnected";
+    response->unconnected_lane_ids = unconnected_lane_ids;
+    RCLCPP_ERROR(get_logger(), "Lanelets are not connected.");
+    return;
+  }
+
+  // plan path
+  const auto optimized_traj_points =
+    optimization_trajectory_based_centerline_.generate_centerline_with_optimization(
+      *this, route_handler_ptr_, map_bin_ptr_, route);
+
+  // check calculation result
+  if (optimized_traj_points.empty()) {
+    response->message = "PathNotFound";
+    RCLCPP_ERROR(
+      get_logger(),
+      "Path planning failed (optimization returned no points). Check goal_method, route shape, and "
+      "lanelet connectivity.");
+    return;
+  }
+
+  centerline_handler_ = CenterlineHandler(CenterlineWithRoute{optimized_traj_points, route});
+  assign_centerline_points_to_lanelets(
+    optimized_traj_points, route_lanelets, response, get_logger());
+
+  // publish unsafe_footprints and run validation (for rviz / logging only)
+  connect_centerline_to_lanelet();
+  validate_centerline();
+
+  response->message = "";
+}
+
+void StaticCenterlineGeneratorNode::connect_centerline_to_lanelet()
+{
+  centerline_handler_.clear_centerline_lane_ids();
+
+  const auto centerline = centerline_handler_.get_selected_centerline();
+  if (centerline.empty()) {
+    return;
+  }
+  const auto route = centerline_handler_.get_route();
+  const auto route_lanelets = utils::get_lanelets_from_route(*route_handler_ptr_, route);
+
+  // 1. calculate the lanelet of the centerline's front.
+  std::optional<size_t> centerline_front_lanelet_idx{std::nullopt};
+  for (size_t i = 0; i < route_lanelets.size(); ++i) {
+    const auto & lanelet = route_lanelets.at(i);
+    const bool is_inside =
+      lanelet::geometry::inside(lanelet, convert_to_lanelet_point(centerline.at(0).pose.position));
+    if (is_inside) {
+      centerline_front_lanelet_idx = i;
+      break;
+    }
+  }
+
+  // 2. update centerline_lane_ids in centerline_handler_
+  size_t centerline_idx = 0;
+  bool is_end_lanelet = false;
+  bool was_once_inside_lanelet = false;
+  lanelet::Id last_assigned_lane_id = route_lanelets.empty() ? 0 : route_lanelets.front().id();
+  for (size_t lanelet_idx = centerline_front_lanelet_idx ? centerline_front_lanelet_idx.value() : 0;
+       lanelet_idx < route_lanelets.size(); ++lanelet_idx) {
+    const auto & lanelet = route_lanelets.at(lanelet_idx);
+
+    while (true) {
+      // check if target point is inside the lanelet
+      const bool is_inside = lanelet::geometry::inside(
+        lanelet, convert_to_lanelet_point(centerline.at(centerline_idx).pose.position));
+      if (is_inside) {
+        was_once_inside_lanelet = true;
+      }
+
+      const bool is_target_lanelet = [&]() {
+        if (!centerline_front_lanelet_idx && !was_once_inside_lanelet) {
+          // If the centerline's front is before the route_lanelets, use the first
+          // lane in the route_lanelets as a target.
+          return true;
+        }
+        return is_inside;
+      }();
+      if (!is_target_lanelet) {
+        break;
+      }
+
+      // register the lane of the centerline point.
+      last_assigned_lane_id = lanelet.id();
+      centerline_handler_.add_centerline_lane_id(last_assigned_lane_id);
+      centerline_idx++;
+
+      if (centerline_idx == centerline.size()) {
+        is_end_lanelet = true;
+        break;
+      }
+    }
+
+    if (is_end_lanelet) {
+      break;
+    }
+  }
+
+  // 3. Assign lane_id to remaining centerline points that were not assigned
+  // This can happen if the centerline extends beyond the last lanelet
+  while (centerline_idx < centerline.size()) {
+    centerline_handler_.add_centerline_lane_id(last_assigned_lane_id);
+    centerline_idx++;
+  }
+
+  if (centerline.size() != centerline_handler_.get_centerline_lane_ids().size()) {
+    RCLCPP_ERROR_STREAM(
+      get_logger(), "The size of the centerline and its lanelets is not the same. "
+                      << centerline.size() << " "
+                      << centerline_handler_.get_centerline_lane_ids().size());
+  }
+}
+
+JitterDetectionResult StaticCenterlineGeneratorNode::detect_jitter_sections(
+  const std::vector<TrajectoryPoint> & centerline)
+{
+  JitterDetectionResult result;
+
+  if (centerline.size() < 4) {
+    return result;  // Need at least 4 points for jitter analysis
+  }
+
+  std::vector<double> angle_diffs;
+  const int64_t jitter_deg_threshold =
+    autoware::universe_utils::getOrDeclareParameter<int64_t>(*this, "jitter_deg_threshold");
+  const double jitter_rad_threshold = jitter_deg_threshold * M_PI / 180.0;
+
+  // Detect centerline jitter from angle differences
+  for (size_t i = 0; i < centerline.size() - 3; ++i) {
+    const auto & p1 = centerline[i].pose.position;
+    const auto & p2 = centerline[i + 1].pose.position;
+    const auto & p3 = centerline[i + 2].pose.position;
+    const auto & p4 = centerline[i + 3].pose.position;
+
+    double angle1 = std::atan2(p2.y - p1.y, p2.x - p1.x);
+    double angle2 = std::atan2(p3.y - p2.y, p3.x - p2.x);
+    double angle3 = std::atan2(p4.y - p3.y, p4.x - p3.x);
+
+    double angle_diff1 = autoware_utils_math::normalize_radian(angle1 - angle2);
+    double angle_diff2 = autoware_utils_math::normalize_radian(angle2 - angle3);
+    double angle_diff_delta = autoware_utils_math::normalize_radian(angle_diff1 - angle_diff2);
+
+    if (std::abs(angle_diff_delta) > jitter_rad_threshold) {
+      result.jitter_indices.push_back(i + 1);
+    }
+
+    angle_diffs.push_back(angle_diff_delta);
+  }
+
+  // Always collect all angle differences for analysis
+  for (size_t i = 0; i < angle_diffs.size(); ++i) {
+    result.angle_differences.push_back(std::abs(angle_diffs[i]));
+  }
+
+  result.total_error_points = result.jitter_indices.size();
+
+  return result;
+}
+
+void StaticCenterlineGeneratorNode::visualize_jitter_sections(
+  const std::vector<TrajectoryPoint> & centerline, const JitterDetectionResult & jitter_result,
+  MarkerArray & marker_array)
+{
+  // Add markers for detected jitter sections only
+  for (size_t i = 0; i < jitter_result.jitter_indices.size(); ++i) {
+    const auto & jitter_idx = jitter_result.jitter_indices[i];
+    if (jitter_idx < centerline.size()) {
+      const auto & jitter_pose = centerline[jitter_idx].pose;
+      const auto jitter_footprint = create_vehicle_footprint(jitter_pose, vehicle_info_);
+
+      // White footprint marker for detected jitter section
+      const auto jitter_marker = utils::create_footprint_marker(
+        "jitter_sections", jitter_footprint, 0.08, 0.0, 0.4, 1.0, 0.95, now(), jitter_idx);
+      marker_array.markers.push_back(jitter_marker);
+
+      // Text marker showing the angle change at jitter location
+      const auto jitter_text_pose = get_text_pose(jitter_pose, vehicle_info_, 0.5);
+      // Use the actual jitter index to get the corresponding angle difference
+      const double angle_diff_rad =
+        (jitter_idx > 0 && (jitter_idx - 1) < jitter_result.angle_differences.size())
+          ? jitter_result.angle_differences[jitter_idx - 1]
+          : 0.0;
+      const double angle_diff_deg = autoware::universe_utils::rad2deg(angle_diff_rad);
+      const auto jitter_text_marker = utils::create_text_marker(
+        "jitter_values", jitter_text_pose, std::round(angle_diff_deg * 10.0) / 10.0, 0.0, 0.4, 1.0,
+        0.95, now(), jitter_idx);
+      marker_array.markers.push_back(jitter_text_marker);
+    }
+  }
+}
+
+void StaticCenterlineGeneratorNode::validate_centerline()
+{
+  const auto centerline = centerline_handler_.get_selected_centerline();
+  const auto centerline_lane_ids = centerline_handler_.get_centerline_lane_ids();
+
+  // Check if sizes match
+  if (centerline.size() != centerline_lane_ids.size()) {
+    RCLCPP_ERROR_STREAM(
+      get_logger(), "Cannot validate centerline: size mismatch. centerline: "
+                      << centerline.size() << ", lane_ids: " << centerline_lane_ids.size());
+    return;
+  }
+
+  const double dist_thresh_to_road_border =
+    getRosParameter<double>("validation.dist_threshold_to_road_border");
+  const double max_steer_angle_margin =
+    getRosParameter<double>("validation.max_steer_angle_margin");
+
+  // calculate color for distance to road border
+  const auto dist_thresh_vec = getRosParameter<std::vector<double>>("marker_color_dist_thresh");
+  const auto marker_color_vec = getRosParameter<std::vector<std::string>>("marker_color");
+  const auto get_marker_color = [&](const double dist) -> boost::optional<std::array<double, 3>> {
+    for (size_t i = 0; i < dist_thresh_vec.size(); ++i) {
+      const double dist_thresh = dist_thresh_vec.at(i);
+      if (dist < dist_thresh) {
+        return convert_hex_string_to_decimal(marker_color_vec.at(i));
+      }
+    }
+    return boost::none;
+  };
+
+  // create right/left bound for each lanelet
+  std::unordered_map<lanelet::Id, LineString2d> lanelet_right_bound_map;
+  std::unordered_map<lanelet::Id, LineString2d> lanelet_left_bound_map;
+  std::vector<lanelet::Id> centerline_lane_id_map_order;
+  for (size_t centerline_idx = 0; centerline_idx < centerline_lane_ids.size(); ++centerline_idx) {
+    const lanelet::Id centerline_lane_id = centerline_lane_ids.at(centerline_idx);
+    if (0 < lanelet_right_bound_map.count(centerline_lane_id)) {
+      continue;
+    }
+
+    lanelet_right_bound_map.emplace(centerline_lane_id, LineString2d{});
+    lanelet_left_bound_map.emplace(centerline_lane_id, LineString2d{});
+    centerline_lane_id_map_order.push_back(centerline_lane_id);
+
+    const auto lanelet = route_handler_ptr_->getLaneletsFromId(centerline_lane_id);
+    for (const auto & point : lanelet.rightBound()) {
+      boost::geometry::append(
+        lanelet_right_bound_map.at(centerline_lane_id), Point2d(point.x(), point.y()));
+    }
+    for (const auto & point : lanelet.leftBound()) {
+      boost::geometry::append(
+        lanelet_left_bound_map.at(centerline_lane_id), Point2d(point.x(), point.y()));
+    }
+  }
+
+  // calculate curvature
+  const auto curvature_vec = autoware::motion_utils::calcCurvature(centerline);
+  const double steer_angle_threshold = vehicle_info_.max_steer_angle_rad - max_steer_angle_margin;
+
+  // calculate the distance between footprint and right/left bounds
+  MarkerArray marker_array;
+  double min_dist = std::numeric_limits<double>::max();
+  double max_curvature = std::numeric_limits<double>::min();
+  for (size_t i = 0; i < centerline.size(); ++i) {
+    const auto & traj_point = centerline.at(i);
+    const lanelet::Id centerline_lane_id = centerline_lane_ids.at(i);
+
+    const auto footprint_poly = create_vehicle_footprint(traj_point.pose, vehicle_info_);
+
+    const double dist_to_right =
+      boost::geometry::distance(footprint_poly, lanelet_right_bound_map.at(centerline_lane_id));
+    const double dist_to_left =
+      boost::geometry::distance(footprint_poly, lanelet_left_bound_map.at(centerline_lane_id));
+    const double min_dist_to_bound = std::min(dist_to_right, dist_to_left);
+
+    if (min_dist_to_bound < min_dist) {
+      min_dist = min_dist_to_bound;
+    }
+
+    // create marker
+    const auto marker_color_opt = get_marker_color(min_dist_to_bound);
+    const auto text_pose = get_text_pose(traj_point.pose, vehicle_info_);
+    if (marker_color_opt) {
+      const auto & marker_color = marker_color_opt.get();
+
+      // add footprint marker
+      const auto footprint_marker = utils::create_footprint_marker(
+        "unsafe_footprints", footprint_poly, 0.05, marker_color.at(0), marker_color.at(1),
+        marker_color.at(2), 0.7, now(), i);
+      marker_array.markers.push_back(footprint_marker);
+
+      // add text of distance to bounds marker
+      const auto text_marker = utils::create_text_marker(
+        "unsafe_footprints_distance", text_pose, min_dist_to_bound, marker_color.at(0),
+        marker_color.at(1), marker_color.at(2), 0.999, now(), i);
+      marker_array.markers.push_back(text_marker);
+    }
+
+    const double curvature = curvature_vec.at(i);
+    const auto curvature_text_pose = get_text_pose(traj_point.pose, vehicle_info_, -0.4);
+    const auto text_marker = utils::create_text_marker(
+      "curvature", curvature_text_pose, curvature, 1.0, 1.0, 1.0, 0.8, now(), i);
+    marker_array.markers.push_back(text_marker);
+
+    if (max_curvature < std::abs(curvature)) {
+      max_curvature = std::abs(curvature);
+    }
+  }
+  const double max_steer_angle = vehicle_info_.calcSteerAngleFromCurvature(max_curvature);
+
+  // visualize jitter
+  const auto jitter_result = detect_jitter_sections(centerline);
+  visualize_jitter_sections(centerline, jitter_result, marker_array);
+
+  // add centerline and road boundaries to debug markers
+  const auto centerline_vec = convert_to_geometry_points_vector(centerline, centerline_lane_ids);
+  const auto left_bound_vec =
+    convert_to_geometry_points_vector(lanelet_left_bound_map, centerline_lane_id_map_order);
+  const auto right_bound_vec =
+    convert_to_geometry_points_vector(lanelet_right_bound_map, centerline_lane_id_map_order);
+
+  // add start/goal pose to debug markers
+  const auto route = centerline_handler_.get_route();
+  const auto start_footprint_poly = create_vehicle_footprint(route.start_pose, vehicle_info_);
+  const auto goal_footprint_poly = create_vehicle_footprint(route.goal_pose, vehicle_info_);
+  const auto start_footprint_marker = utils::create_footprint_marker(
+    "start_pose", start_footprint_poly, 0.1, 0.0, 0.8, 1.0, 0.3, now(), 0);
+  const auto goal_footprint_marker = utils::create_footprint_marker(
+    "goal_pose", goal_footprint_poly, 0.1, 0.0, 0.8, 1.0, 0.3, now(), 0);
+  marker_array.markers.push_back(start_footprint_marker);
+  marker_array.markers.push_back(goal_footprint_marker);
+
+  // add centerline and left/right bounds to debug markers
+  utils::create_points_marker(marker_array, "centerline", centerline_vec, 0.05, now());
+  utils::create_points_marker(marker_array, "left_bound", left_bound_vec, 0.05, now());
+  utils::create_points_marker(marker_array, "right_bound", right_bound_vec, 0.05, now());
+
+  // publish debug markers
+  pub_debug_markers_->publish(marker_array);
+
+  // show the validation results
+  std::cerr << std::endl
+            << "############################################## Validation Results "
+               "##############################################"
+            << std::endl;
+
+  // 1. distance from footprints to road boundaries
+  const bool are_footprints_inside_lanelets = [&]() {
+    std::cerr << "1. Footprints inside Lanelets:" << std::endl;
+    if (dist_thresh_to_road_border < min_dist) {
+      std::cerr << "  The generated centerline is inside the lanelet. (threshold:"
+                << dist_thresh_to_road_border << "[m] < actual:" << min_dist << "[m])" << std::endl
+                << "  Passed." << std::endl;
+      return true;
+    }
+    std::cerr << RED_TEXT
+              << " The generated centerline is outside the lanelet. (actual:" << min_dist
+              << "[m] <= threshold:" << dist_thresh_to_road_border << "[m])" << std::endl
+              << "  Failed." << RESET_TEXT << std::endl;
+    return false;
+  }();
+  // 2. centerline's curvature
+  std::cerr << "2. Curvature:" << std::endl;
+  const bool is_curvature_low =
+    true;  // always tre for now since the curvature is just estimated and not enough precise.
+  if (max_steer_angle < steer_angle_threshold) {
+    std::cerr << "  The generated centerline has no high steer angle. (estimated:"
+              << autoware::universe_utils::rad2deg(max_steer_angle)
+              << "[deg] < threshold:" << autoware::universe_utils::rad2deg(steer_angle_threshold)
+              << "[deg])" << std::endl
+              << "  Passed." << std::endl;
+  } else {
+    std::cerr << YELLOW_TEXT << "  The generated centerline has a too high steer angle. (threshold:"
+              << autoware::universe_utils::rad2deg(steer_angle_threshold)
+              << "[deg] <= estimated:" << autoware::universe_utils::rad2deg(max_steer_angle)
+              << "[deg])" << std::endl
+              << "  However, the estimated steer angle is not enough precise, so the result is "
+                 "conditional pass."
+              << std::endl
+              << "  Conditionally Passed." << RESET_TEXT << std::endl;
+  }
+
+  // 3. jitter / rough sections detection
+  const int64_t jitter_deg_threshold =
+    autoware::universe_utils::getOrDeclareParameter<int64_t>(*this, "jitter_deg_threshold");
+  const double max_angle_diff =
+    jitter_result.angle_differences.empty()
+      ? 0.0
+      : *std::max_element(
+          jitter_result.angle_differences.begin(), jitter_result.angle_differences.end());
+  const double max_angle_diff_deg =
+    std::round(autoware::universe_utils::rad2deg(max_angle_diff) * 10.0) / 10.0;
+
+  std::string jitter_indices_str;
+  for (size_t i = 0; i < jitter_result.jitter_indices.size(); ++i) {
+    jitter_indices_str += std::to_string(jitter_result.jitter_indices[i]);
+    if (i < jitter_result.jitter_indices.size() - 1) jitter_indices_str += ", ";
+  }
+
+  std::string jitter_section;
+  std::cerr << "3. Jitter:" << std::endl;
+  if (jitter_result.total_error_points == 0) {
+    std::cerr << "  The generated centerline has no jitter. (estimated:"
+              << std::to_string(max_angle_diff_deg)
+              << " [deg] < threshold:" << std::to_string(jitter_deg_threshold) << " [deg])"
+              << std::endl;
+  } else {
+    const auto threshold_message =
+      (max_angle_diff_deg > jitter_deg_threshold)
+        ? "( > " + std::to_string(jitter_deg_threshold) + " [deg] threshold)"
+        : "( <= " + std::to_string(jitter_deg_threshold) + " [deg] threshold)";
+    std::cerr
+      << YELLOW_TEXT << "  The generated centerline has "
+      << std::to_string(jitter_result.total_error_points) << " sections with jitter detected."
+      << std::endl
+      << "  All detected indices: " << jitter_indices_str << std::endl
+      << "  Maximum jitter: " << std::to_string(max_angle_diff_deg) << " [deg]" << threshold_message
+      << std::endl
+      << "  (Warning: May affect ride comfort)" << RESET_TEXT << std::endl
+      << "  However, the estimated jitter is not enough precise, so the result is conditional pass."
+      << std::endl
+      << "  Conditionally Passed." << std::endl;
+  }
+
+  // 4. result
+  std::cerr << std::endl << BOLD_TEXT << "Result:" << RESET_TEXT << std::endl;
+  if (are_footprints_inside_lanelets && is_curvature_low) {
+    std::cerr << BOLD_TEXT << "  Passed!" << RESET_TEXT << std::endl;
+  } else {
+    std::cerr << BOLD_TEXT << RED_TEXT << "  Failed!" << RESET_TEXT << std::endl;
+  }
+
+  std::cerr << "###################################################################################"
+               "#############################"
+            << std::endl
+            << std::endl;
+  RCLCPP_INFO(get_logger(), "Validated the generated centerline.");
+}
+
+void StaticCenterlineGeneratorNode::save_map()
+{
+  if (!route_handler_ptr_) {
+    return;
+  }
+
+  // Recompute the centerline lane ids for the current selection. The cached lane ids are produced
+  // by connect_centerline_to_lanelet() against whatever selection existed when `validate` ran, but
+  // get_selected_centerline() is sliced dynamically by start/end index. If the selection changed
+  // after validate (e.g. the GUI index updates were applied after the validate request), the cache
+  // goes stale and the size check below aborts the save. Refreshing here keeps the centerline and
+  // its lane ids consistent for the selection actually being saved.
+  connect_centerline_to_lanelet();
+
+  const auto centerline = centerline_handler_.get_selected_centerline();
+  const auto centerline_lane_ids = centerline_handler_.get_centerline_lane_ids();
+
+  // Check if sizes match
+  if (centerline.size() != centerline_lane_ids.size()) {
+    RCLCPP_ERROR_STREAM(
+      get_logger(), "Cannot save map: size mismatch. centerline: "
+                      << centerline.size() << ", lane_ids: " << centerline_lane_ids.size());
+    return;
+  }
+
+  const auto lanelet2_output_file_path = getRosParameter<std::string>("lanelet2_output_file_path");
+
+  // update centerline in map
+  utils::update_centerline(original_map_ptr_, centerline, centerline_lane_ids);
+  RCLCPP_INFO(get_logger(), "Updated centerline in map.");
+
+  // save map with modified center line
+  std::filesystem::create_directory("/tmp/autoware_static_centerline_generator");
+  const auto map_projector =
+    autoware::geography_utils::get_lanelet2_projector(*map_projector_info_);
+  lanelet::write(lanelet2_output_file_path, *original_map_ptr_, *map_projector);
+  RCLCPP_INFO(
+    get_logger(), "Saved map in %s", "/tmp/autoware_static_centerline_generator/lanelet2_map.osm");
+
+  // copy the output LL2 map to the temporary file for debugging
+  const std::string debug_output_file_dir{"/tmp/autoware_static_centerline_generator/output/"};
+  std::filesystem::create_directories(debug_output_file_dir);
+  std::filesystem::copy(
+    lanelet2_output_file_path, debug_output_file_dir + "lanelet2_map.osm",
+    std::filesystem::copy_options::overwrite_existing);
+
+  std_msgs::msg::Empty empty_msg;
+  pub_map_saved_->publish(empty_msg);
+}
+}  // namespace autoware::static_centerline_generator
