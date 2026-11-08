@@ -1,0 +1,62 @@
+load("@autoware_cmake//:defs.bzl", "AUTOWARE_CXXOPTS", "AUTOWARE_DEFINES", "autoware_copts")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps", "ros_local_defines")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+DEPENDENCIES = {
+    "@osqp_vendor//:osqp": "@osqp_vendor//:osqp_library",
+    "@rclcpp//:rclcpp": "@rclcpp//:rclcpp_library",
+    "@rclcpp_components//:rclcpp_components": "@rclcpp_components//:rclcpp_components_library",
+}
+
+cc_library(
+    name = "autoware_qp_interface_library",
+    srcs = [
+        "src/osqp_csc_matrix_conv.cpp",
+        "src/osqp_interface.cpp",
+        "src/proxqp_interface.cpp",
+        "src/qp_interface.cpp",
+    ],
+    hdrs = glob(["include/**/*.hpp"]),
+    copts = autoware_copts() + ["-Wno-error=old-style-cast"],
+    cxxopts = AUTOWARE_CXXOPTS,
+    local_defines = ros_local_defines() + AUTOWARE_DEFINES,
+    includes = ["include"],
+    deps = DEPENDENCIES.values() + [
+        "@proxsuite",
+        "@rosdistro//cc:eigen",
+    ],
+)
+
+cc_shared_library(
+    name = "autoware_qp_interface",
+    dynamic_deps = DEPENDENCIES.keys(),
+    exports_filter = [":autoware_qp_interface_library"],
+    deps = [":autoware_qp_interface_library"],
+)
+
+collect_transitive_dynamic_deps(
+    name = "test_dynamic_deps",
+    dynamic_deps = [":autoware_qp_interface"],
+    visibility = ["//visibility:private"],
+)
+
+cc_test(
+    name = "test_osqp_interface",
+    srcs = [
+        "test/test_csc_matrix_conv.cpp",
+        "test/test_osqp_interface.cpp",
+        "test/test_proxqp_interface.cpp",
+        "test/test_qp_interface.cpp",
+    ],
+    copts = autoware_copts(),
+    cxxopts = AUTOWARE_CXXOPTS,
+    local_defines = ros_local_defines() + AUTOWARE_DEFINES,
+    data = ["@@//bazel/config:cyclonedds.xml"],
+    dynamic_deps = [":test_dynamic_deps"],
+    deps = [
+        ":autoware_qp_interface_library",
+        "@rosdistro//cc:googletest",
+    ],
+)

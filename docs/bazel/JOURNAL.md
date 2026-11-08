@@ -367,3 +367,37 @@ Lessons:
 - Turn on `-Werror` early, but scope it to your own headers; with the RCR toolchain that needs
   `--system-header-prefix`, since `includes` are not `-isystem`.
 - Don't enable global features or copts that change third-party compile commands; they lose the remote cache.
+
+## 2026-11-09: P2 layer 0 (first batch) — 7 `autoware_core` packages
+
+Order: build/runtime dependencies only (`autoware_lint_common` and test-only deps ignored, otherwise
+`autoware_lanelet2_utils` <-> `autoware_test_utils` look cyclic). The `autoware_core` closure is 81 packages in 11 layers,
+including agnocast, `autoware_lanelet2_extension` and `velodyne_description`. Only `autoware_lanelet2_extension` has an
+RCR overlay, at an older version (0.7.2, ours is 1.3.0).
+
+Ported by hand from CMakeLists.txt: `autoware_interpolation`, `autoware_kalman_filter`, `autoware_signal_processing`,
+`autoware_vehicle_info_utils`, `autoware_point_types`, `autoware_qos_utils`, `autoware_localization_util`.
+`bazel test --keep_going --target_pattern_file=<those @pkg//... lines>` → 11 tests pass.
+
+Patterns:
+- Package data installed with `INSTALL_TO_SHARE` → `ament_index(name = "ament_index", data = glob(["config/**",
+  "launch/**"]), libraries = [...], package_xml = "package.xml")` from `@rosdistro//ament:defs.bzl`; tests that call
+  `get_package_share_path()` add `data = [":ament_index"]`. ament_index_cpp finds the tree in runfiles without
+  `AMENT_PREFIX_PATH` (verified: `test_autoware_vehicle_info_utils` loads `config/vehicle_info.param.yaml`).
+- `cc_test` has no `includes`: test-only headers go in a private `testonly` `cc_library`.
+- CMake library names that differ from the package (`lowpass_filters`, `vehicle_info_utils`) become `<pkg>`; noted
+  in a comment. Matters only for anything that dlopens by file name (components and plugins, later).
+
+Issues (symptom → cause → fix):
+1. `'osqp/glob_opts.h' file not found` (`autoware_osqp_interface`, `autoware_qp_interface`) → Lyrical's `osqp_vendor`
+   is OSQP 1.0 (`osqp@1.0.0.bcr.3`), Autoware uses the 0.6 API (`glob_opts.h`, `c_int`, ~170 references). The BCR also
+   has `osqp@0.6.3.bcr.3`. Open decision: port to OSQP 1.0, or give Autoware 0.6.3 with `multiple_version_override`.
+   Both packages have BUILD files but are not registered yet.
+2. `undefined symbol: main` (`test_util_func`) → its `main()` is defined inside `namespace autoware::localization_util`,
+   so it is not the program entry point; CMake links gtest_main → `@rosdistro//cc:googletest` (upstream oddity, kept).
+3. `'get_package_share_directory' is deprecated: Use get_package_share_path(...)` → Lyrical ament_index_cpp → replace
+   with `get_package_share_path(pkg).string()`. 153 such lines in `autoware_core`; patched per package as it is ported.
+
+Lessons:
+- Check the major versions of the vendored third-party libraries (OSQP 0.6 → 1.0) before porting packages that use them.
+- Don't decide "has its own main" by grepping `int main`; check its scope.

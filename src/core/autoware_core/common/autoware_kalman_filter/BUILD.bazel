@@ -1,0 +1,44 @@
+load("@autoware_cmake//:defs.bzl", "AUTOWARE_CXXOPTS", "AUTOWARE_DEFINES", "autoware_copts")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps", "ros_local_defines")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "autoware_kalman_filter_library",
+    srcs = [
+        "src/kalman_filter.cpp",
+        "src/time_delay_kalman_filter.cpp",
+    ],
+    hdrs = glob(["include/**/*.hpp"]),
+    copts = autoware_copts(),
+    cxxopts = AUTOWARE_CXXOPTS,
+    local_defines = ros_local_defines() + AUTOWARE_DEFINES,
+    includes = ["include"],
+    deps = ["@rosdistro//cc:eigen"],
+)
+
+cc_shared_library(
+    name = "autoware_kalman_filter",
+    exports_filter = [":autoware_kalman_filter_library"],
+    deps = [":autoware_kalman_filter_library"],
+)
+
+collect_transitive_dynamic_deps(
+    name = "test_dynamic_deps",
+    dynamic_deps = [":autoware_kalman_filter"],
+    visibility = ["//visibility:private"],
+)
+
+cc_test(
+    name = "test_autoware_kalman_filter",
+    srcs = glob(["test/*.cpp"]),
+    copts = autoware_copts(),
+    cxxopts = AUTOWARE_CXXOPTS,
+    local_defines = ros_local_defines() + AUTOWARE_DEFINES,
+    dynamic_deps = [":test_dynamic_deps"],
+    deps = [
+        ":autoware_kalman_filter_library",
+        "@googletest//:gtest",
+    ],
+)

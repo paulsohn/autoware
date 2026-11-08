@@ -1,0 +1,57 @@
+load("@autoware_cmake//:defs.bzl", "AUTOWARE_CXXOPTS", "AUTOWARE_DEFINES", "autoware_copts")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps", "ros_local_defines")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+DEPENDENCIES = {
+    "@autoware_internal_planning_msgs//:cc_shared": "@autoware_internal_planning_msgs//:cc",
+    "@autoware_planning_msgs//:cc_shared": "@autoware_planning_msgs//:cc",
+    "@autoware_utils_geometry//:autoware_utils_geometry": "@autoware_utils_geometry//:autoware_utils_geometry_library",
+    "@geometry_msgs//:cc_shared": "@geometry_msgs//:cc",
+    "@tf2//:tf2": "@tf2//:tf2_library",
+    "@tf2_geometry_msgs//:tf2_geometry_msgs": "@tf2_geometry_msgs//:tf2_geometry_msgs_library",
+}
+
+cc_library(
+    name = "autoware_interpolation_library",
+    srcs = [
+        "src/linear_interpolation.cpp",
+        "src/spherical_linear_interpolation.cpp",
+        "src/spline_interpolation.cpp",
+        "src/spline_interpolation_points_2d.cpp",
+    ],
+    hdrs = glob(["include/**/*.hpp"]),
+    copts = autoware_copts(),
+    cxxopts = AUTOWARE_CXXOPTS,
+    local_defines = ros_local_defines() + AUTOWARE_DEFINES,
+    includes = ["include"],
+    deps = DEPENDENCIES.values() + ["@rosdistro//cc:eigen"],
+)
+
+cc_shared_library(
+    name = "autoware_interpolation",
+    dynamic_deps = DEPENDENCIES.keys(),
+    exports_filter = [":autoware_interpolation_library"],
+    deps = [":autoware_interpolation_library"],
+)
+
+collect_transitive_dynamic_deps(
+    name = "test_dynamic_deps",
+    dynamic_deps = [":autoware_interpolation"],
+    visibility = ["//visibility:private"],
+)
+
+cc_test(
+    name = "test_interpolation",
+    srcs = glob(["test/**/*.cpp"]),
+    copts = autoware_copts(),
+    cxxopts = AUTOWARE_CXXOPTS,
+    local_defines = ros_local_defines() + AUTOWARE_DEFINES,
+    data = ["@@//bazel/config:cyclonedds.xml"],
+    dynamic_deps = [":test_dynamic_deps"],
+    deps = [
+        ":autoware_interpolation_library",
+        "@googletest//:gtest",
+    ],
+)

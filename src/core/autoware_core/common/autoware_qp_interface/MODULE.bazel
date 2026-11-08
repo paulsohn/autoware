@@ -1,0 +1,9 @@
+module(name = "autoware_qp_interface")
+
+bazel_dep(name = "autoware_cmake")
+bazel_dep(name = "osqp_vendor", version = "0.0.0")
+bazel_dep(name = "proxsuite", version = "0.0.0")
+bazel_dep(name = "rclcpp", version = "0.0.0")
+bazel_dep(name = "rclcpp_components", version = "0.0.0")
+bazel_dep(name = "rosdistro", version = "0.0.0")
+bazel_dep(name = "rules_cc", version = "0.2.26.rcr.0")

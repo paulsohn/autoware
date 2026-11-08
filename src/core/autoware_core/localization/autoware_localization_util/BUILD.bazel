@@ -1,0 +1,69 @@
+load("@autoware_cmake//:defs.bzl", "AUTOWARE_CXXOPTS", "AUTOWARE_DEFINES", "autoware_copts")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps", "ros_local_defines")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+DEPENDENCIES = {
+    "@autoware_utils_geometry//:autoware_utils_geometry": "@autoware_utils_geometry//:autoware_utils_geometry_library",
+    "@autoware_utils_math//:autoware_utils_math": "@autoware_utils_math//:autoware_utils_math_library",
+    "@diagnostic_msgs//:cc_shared": "@diagnostic_msgs//:cc",
+    "@geometry_msgs//:cc_shared": "@geometry_msgs//:cc",
+    "@rclcpp//:rclcpp": "@rclcpp//:rclcpp_library",
+    "@std_msgs//:cc_shared": "@std_msgs//:cc",
+    "@tf2//:tf2": "@tf2//:tf2_library",
+    "@tf2_eigen//:tf2_eigen": "@tf2_eigen//:tf2_eigen_library",
+    "@tf2_geometry_msgs//:tf2_geometry_msgs": "@tf2_geometry_msgs//:tf2_geometry_msgs_library",
+    "@visualization_msgs//:cc_shared": "@visualization_msgs//:cc",
+}
+
+cc_library(
+    name = "autoware_localization_util_library",
+    srcs = [
+        "src/covariance_ellipse.cpp",
+        "src/smart_pose_buffer.cpp",
+        "src/tree_structured_parzen_estimator.cpp",
+        "src/util_func.cpp",
+    ],
+    hdrs = glob(["include/**/*.hpp"]),
+    copts = autoware_copts(),
+    cxxopts = AUTOWARE_CXXOPTS,
+    local_defines = ros_local_defines() + AUTOWARE_DEFINES,
+    includes = ["include"],
+    deps = DEPENDENCIES.values() + ["@rosdistro//cc:eigen"],
+)
+
+cc_shared_library(
+    name = "autoware_localization_util",
+    dynamic_deps = DEPENDENCIES.keys(),
+    exports_filter = [":autoware_localization_util_library"],
+    deps = [":autoware_localization_util_library"],
+)
+
+TEST_DEPENDENCIES = {
+    "@ament_index_cpp//:ament_index_cpp": "@ament_index_cpp//:ament_index_cpp_library",
+    "@rcl_yaml_param_parser//:rcl_yaml_param_parser": "@rcl_yaml_param_parser//:rcl_yaml_param_parser_library",
+}
+
+collect_transitive_dynamic_deps(
+    name = "test_dynamic_deps",
+    dynamic_deps = [":autoware_localization_util"] + TEST_DEPENDENCIES.keys(),
+    visibility = ["//visibility:private"],
+)
+
+# test_smart_pose_buffer defines main(); test_util_func's main() sits inside a namespace, so it needs gtest_main.
+[cc_test(
+    name = name,
+    srcs = [src],
+    copts = autoware_copts(),
+    cxxopts = AUTOWARE_CXXOPTS,
+    local_defines = ros_local_defines() + AUTOWARE_DEFINES,
+    data = ["@@//bazel/config:cyclonedds.xml"],
+    dynamic_deps = [":test_dynamic_deps"],
+    deps = [":autoware_localization_util_library"] + TEST_DEPENDENCIES.values() + [gtest],
+) for name, src, gtest in [
+    ("test_covariance_ellipse", "test/test_covariance_ellipse.cpp", "@rosdistro//cc:googletest"),
+    ("test_smart_pose_buffer", "test/test_smart_pose_buffer.cpp", "@googletest//:gtest"),
+    ("test_tpe", "test/test_tpe.cpp", "@rosdistro//cc:googletest"),
+    ("test_util_func", "test/test_util_func.cpp", "@rosdistro//cc:googletest"),
+]]

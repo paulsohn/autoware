@@ -1,0 +1,51 @@
+load("@autoware_cmake//:defs.bzl", "AUTOWARE_CXXOPTS", "AUTOWARE_DEFINES", "autoware_copts")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps", "ros_local_defines")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+DEPENDENCIES = {
+    "@sensor_msgs//:cc_shared": "@sensor_msgs//:cc",
+}
+
+cc_library(
+    name = "autoware_point_types_library",
+    hdrs = glob(["include/**/*.hpp"]),
+    copts = autoware_copts(),
+    cxxopts = AUTOWARE_CXXOPTS,
+    local_defines = ros_local_defines() + AUTOWARE_DEFINES,
+    includes = ["include"],
+    deps = DEPENDENCIES.values() + [
+        "@point_cloud_msg_wrapper",
+        "@rosdistro//cc:pcl_common",
+    ],
+)
+
+cc_shared_library(
+    name = "autoware_point_types",
+    dynamic_deps = DEPENDENCIES.keys(),
+    exports_filter = [":autoware_point_types_library"],
+    deps = [":autoware_point_types_library"],
+)
+
+collect_transitive_dynamic_deps(
+    name = "test_dynamic_deps",
+    dynamic_deps = [":autoware_point_types"],
+    visibility = ["//visibility:private"],
+)
+
+[cc_test(
+    name = name,
+    srcs = [src],
+    copts = autoware_copts(),
+    cxxopts = AUTOWARE_CXXOPTS,
+    local_defines = ros_local_defines() + AUTOWARE_DEFINES,
+    dynamic_deps = [":test_dynamic_deps"],
+    deps = [
+        ":autoware_point_types_library",
+        "@rosdistro//cc:googletest",
+    ],
+) for name, src in {
+    "test_autoware_point_types": "test/test_point_types.cpp",
+    "test_autoware_point_types_memory": "test/test_memory.cpp",
+}.items()]

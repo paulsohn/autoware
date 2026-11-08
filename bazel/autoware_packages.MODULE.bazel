@@ -107,3 +107,26 @@ local_path_override(module_name = "negotiated_interfaces", path = "src/core/cuda
 
 bazel_dep(name = "ros2agnocast_discovery_msgs")
 local_path_override(module_name = "ros2agnocast_discovery_msgs", path = "src/core/agnocast/src/ros2agnocast_discovery_msgs")
+
+bazel_dep(name = "autoware_interpolation")
+local_path_override(module_name = "autoware_interpolation", path = "src/core/autoware_core/common/autoware_interpolation")
+
+bazel_dep(name = "autoware_kalman_filter")
+local_path_override(module_name = "autoware_kalman_filter", path = "src/core/autoware_core/common/autoware_kalman_filter")
+
+bazel_dep(name = "autoware_signal_processing")
+local_path_override(module_name = "autoware_signal_processing", path = "src/core/autoware_core/common/autoware_signal_processing")
+
+bazel_dep(name = "autoware_vehicle_info_utils")
+local_path_override(module_name = "autoware_vehicle_info_utils", path = "src/core/autoware_core/common/autoware_vehicle_info_utils")
+
+bazel_dep(name = "autoware_point_types")
+local_path_override(module_name = "autoware_point_types", path = "src/core/autoware_core/common/autoware_point_types")
+
+bazel_dep(name = "autoware_qos_utils")
+local_path_override(module_name = "autoware_qos_utils", path = "src/core/autoware_core/common/autoware_qos_utils")
+
+
+
+bazel_dep(name = "autoware_localization_util")
+local_path_override(module_name = "autoware_localization_util", path = "src/core/autoware_core/localization/autoware_localization_util")

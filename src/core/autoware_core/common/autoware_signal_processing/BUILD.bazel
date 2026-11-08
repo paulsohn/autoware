@@ -1,0 +1,67 @@
+load("@autoware_cmake//:defs.bzl", "AUTOWARE_CXXOPTS", "AUTOWARE_DEFINES", "autoware_copts")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps", "ros_local_defines")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+DEPENDENCIES = {
+    "@geometry_msgs//:cc_shared": "@geometry_msgs//:cc",
+    "@rclcpp//:rclcpp": "@rclcpp//:rclcpp_library",
+}
+
+# CMake builds this as liblowpass_filters.so.
+cc_library(
+    name = "autoware_signal_processing_library",
+    srcs = [
+        "src/butterworth.cpp",
+        "src/lowpass_filter.cpp",
+        "src/lowpass_filter_1d.cpp",
+    ],
+    hdrs = glob(["include/**/*.hpp"]),
+    copts = autoware_copts(),
+    cxxopts = AUTOWARE_CXXOPTS,
+    local_defines = ros_local_defines() + AUTOWARE_DEFINES,
+    includes = ["include"],
+    deps = DEPENDENCIES.values() + ["@rosdistro//cc:boost.optional"],
+)
+
+cc_shared_library(
+    name = "autoware_signal_processing",
+    dynamic_deps = DEPENDENCIES.keys(),
+    exports_filter = [":autoware_signal_processing_library"],
+    deps = [":autoware_signal_processing_library"],
+)
+
+collect_transitive_dynamic_deps(
+    name = "test_dynamic_deps",
+    dynamic_deps = [":autoware_signal_processing"],
+    visibility = ["//visibility:private"],
+)
+
+cc_library(
+    name = "test_headers",
+    testonly = True,
+    hdrs = ["test/include/butterworth_filter_test.hpp"],
+    includes = ["test/include"],
+    visibility = ["//visibility:private"],
+    deps = ["@rosdistro//cc:googletest"],
+)
+
+cc_test(
+    name = "test_signal_processing",
+    srcs = [
+        "test/src/butterworth_filter_test.cpp",
+        "test/src/lowpass_filter_1d_test.cpp",
+        "test/src/lowpass_filter_test.cpp",
+    ],
+    copts = autoware_copts(),
+    cxxopts = AUTOWARE_CXXOPTS,
+    local_defines = ros_local_defines() + AUTOWARE_DEFINES,
+    data = ["@@//bazel/config:cyclonedds.xml"],
+    dynamic_deps = [":test_dynamic_deps"],
+    deps = [
+        ":autoware_signal_processing_library",
+        ":test_headers",
+        "@rosdistro//cc:googletest",
+    ],
+)

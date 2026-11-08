@@ -1,0 +1,83 @@
+load("@autoware_cmake//:defs.bzl", "AUTOWARE_CXXOPTS", "AUTOWARE_DEFINES", "autoware_copts")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps", "ros_local_defines")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
+load("@rosdistro//ament:defs.bzl", "ament_index")
+
+package(default_visibility = ["//visibility:public"])
+
+DEPENDENCIES = {
+    "@autoware_utils_geometry//:autoware_utils_geometry": "@autoware_utils_geometry//:autoware_utils_geometry_library",
+    "@autoware_utils_rclcpp//:autoware_utils_rclcpp": "@autoware_utils_rclcpp//:autoware_utils_rclcpp_library",
+    "@geometry_msgs//:cc_shared": "@geometry_msgs//:cc",
+    "@rclcpp//:rclcpp": "@rclcpp//:rclcpp_library",
+}
+
+# CMake builds this as libvehicle_info_utils.so.
+cc_library(
+    name = "autoware_vehicle_info_utils_library",
+    srcs = [
+        "src/vehicle_info.cpp",
+        "src/vehicle_info_utils.cpp",
+    ],
+    hdrs = glob(["include/**/*.hpp"]),
+    copts = autoware_copts(),
+    cxxopts = AUTOWARE_CXXOPTS,
+    local_defines = ros_local_defines() + AUTOWARE_DEFINES,
+    includes = ["include"],
+    deps = DEPENDENCIES.values(),
+)
+
+cc_shared_library(
+    name = "autoware_vehicle_info_utils",
+    dynamic_deps = DEPENDENCIES.keys(),
+    exports_filter = [":autoware_vehicle_info_utils_library"],
+    deps = [":autoware_vehicle_info_utils_library"],
+)
+
+# share/autoware_vehicle_info_utils/{config,launch} (INSTALL_TO_SHARE).
+ament_index(
+    name = "ament_index",
+    data = glob(["config/**", "launch/**"]),
+    libraries = [":autoware_vehicle_info_utils"],
+    package_xml = "package.xml",
+)
+
+collect_transitive_dynamic_deps(
+    name = "test_dynamic_deps",
+    dynamic_deps = [
+        ":autoware_vehicle_info_utils",
+        "@ament_index_cpp//:ament_index_cpp",
+    ],
+    visibility = ["//visibility:private"],
+)
+
+cc_test(
+    name = "test_autoware_vehicle_info_utils",
+    srcs = ["test/test_vehicle_info_utils.cpp"],
+    copts = autoware_copts(),
+    cxxopts = AUTOWARE_CXXOPTS,
+    local_defines = ros_local_defines() + AUTOWARE_DEFINES,
+    data = [
+        ":ament_index",
+        "@@//bazel/config:cyclonedds.xml",
+    ],
+    dynamic_deps = [":test_dynamic_deps"],
+    deps = [
+        ":autoware_vehicle_info_utils_library",
+        "@ament_index_cpp//:ament_index_cpp_library",
+        "@rosdistro//cc:googletest",
+    ],
+)
+
+cc_test(
+    name = "test_vehicle_info",
+    srcs = ["test/test_vehicle_info.cpp"],
+    copts = autoware_copts(),
+    cxxopts = AUTOWARE_CXXOPTS,
+    local_defines = ros_local_defines() + AUTOWARE_DEFINES,
+    dynamic_deps = [":test_dynamic_deps"],
+    deps = [
+        ":autoware_vehicle_info_utils_library",
+        "@rosdistro//cc:googletest",
+    ],
+)
