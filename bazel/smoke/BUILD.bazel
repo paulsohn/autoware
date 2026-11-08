@@ -1,0 +1,20 @@
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_binary")
+
+# P0 smoke test: a std_msgs talker built against RCR rclcpp.
+DEPS = {
+    "@rclcpp//:rclcpp": "@rclcpp//:rclcpp_library",
+    "@std_msgs//:cc_shared": "@std_msgs//:cc",
+}
+
+collect_transitive_dynamic_deps(
+    name = "talker_dynamic_deps",
+    dynamic_deps = DEPS.keys(),
+)
+
+cc_binary(
+    name = "talker",
+    srcs = ["talker.cc"],
+    dynamic_deps = [":talker_dynamic_deps"],
+    deps = DEPS.values(),
+)

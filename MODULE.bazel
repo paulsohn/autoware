@@ -1,0 +1,33 @@
+module(name = "autoware")
+
+# Toolchains and rules. Versions follow the RCR examples workspace
+# (openrobotics/ros-central-registry examples/MODULE.bazel @ b3bbf458).
+bazel_dep(name = "llvm", version = "0.8.25.rcr.0")
+bazel_dep(name = "platforms", version = "1.1.0")
+bazel_dep(name = "protobuf", version = "36.2")
+bazel_dep(name = "rules_cc", version = "0.2.26.rcr.0")
+bazel_dep(name = "rules_python", version = "2.4.1")
+bazel_dep(name = "rules_rs", version = "0.1.0")
+
+# ROS 2 Lyrical from the RCR. Packages are pinned by the ros_core release;
+# 0.0.0 lets MVS pick the version that release selects.
+bazel_dep(name = "ros_core", version = "lyrical.2026-10-05.rcr.0")
+bazel_dep(name = "rclcpp", version = "0.0.0")
+bazel_dep(name = "rosdistro", version = "0.0.0")
+bazel_dep(name = "std_msgs", version = "0.0.0")
+
+register_toolchains("@llvm//toolchain:all")
+
+llvm = use_extension("@llvm//extensions:llvm.bzl", "llvm")
+llvm.version(llvm_version = "21.1.8")
+llvm.configure(targets = ["AArch64", "X86"])
+use_repo(llvm, "llvm-project")
+
+python = use_extension("@rules_python//python/extensions:python.bzl", "python")
+python.toolchain(is_default = True, python_version = "3.12")
+
+rs_toolchains = use_extension("@rules_rs//rs/toolchains:module_extension.bzl", "toolchains")
+rs_toolchains.toolchain(edition = "2021", version = "1.93.0")
+use_repo(rs_toolchains, "default_rust_toolchains")
+
+register_toolchains("@default_rust_toolchains//...")

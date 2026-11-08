@@ -1,0 +1,76 @@
+# Linux subset of the .bazelrc the RCR CI generates (BAZELRC_TEMPLATE in
+# openrobotics/ros-central-registry tools/ci/setup_workspace.py @ b3bbf458).
+# Not examples/.bazelrc: it lacks the per-file C++ standard exceptions below.
+
+## COMMON
+# Lets 0.0.0 RCR deps resolve to the version the ros_core release selects.
+common --check_direct_dependencies=off
+common --registry=https://bazel.ros.org --registry=https://bcr.bazel.build
+
+# Intrinsic's read-only cache for RCR modules: much faster cold builds.
+common --remote_cache=https://storage.googleapis.com/intrinsic-opensource-buildcache
+common --remote_upload_local_results=false
+common --remote_cache_compression=true
+
+# Local caches, shared across checkouts and mounted into containers.
+common --disk_cache=~/.cache/bazel-disk
+common --repository_cache=~/.cache/bazel-repo
+
+common --test_env=ROS_DISTRO=lyrical
+common --test_env=ROS_HOME=.ros
+common --test_env=RMW_IMPLEMENTATION=rmw_fastrtps_cpp
+common --test_env=LD_LIBRARY_PATH=lib
+common --test_env=TMPDIR=/tmp
+common --test_env=QT_QPA_PLATFORM=offscreen
+common --run_env=ROS_DISTRO=lyrical
+common --run_env=ROS_HOME=.ros
+common --run_env=RMW_IMPLEMENTATION=rmw_fastrtps_cpp
+common --run_env=LD_LIBRARY_PATH=lib
+common --run_env=TMPDIR=/tmp
+common --run_env=QT_QPA_PLATFORM=xcb
+common --test_env=DISPLAY
+common --test_env=XAUTHORITY
+common --test_env=WAYLAND_DISPLAY
+
+common --incompatible_default_to_explicit_init_py
+# Keeps the host environment (e.g. a sourced /opt/ros/jazzy) out of build actions.
+common --incompatible_strict_action_env
+common --noexperimental_collect_system_network_usage
+
+# Upstream Qt produces only false positives under -Wthread-safety.
+common --per_file_copt=external/qt[^/]*[+]/.*@-Wno-thread-safety-analysis
+common --host_per_file_copt=external/qt[^/]*[+]/.*@-Wno-thread-safety-analysis
+
+## BUILD
+build --@llvm//config:fastbuild_optimization_mode=O1
+build --remote_download_outputs=all
+build --define=TMPDIR=/tmp
+build --repo_env=BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN=1
+build --repo_env=PIP_CONFIG_FILE=/dev/null
+build --@protobuf//bazel/toolchains:prefer_prebuilt_protoc
+build --@llvm//config:experimental_stub_libgcc_s=True
+# RCR builds everything as C++23; never set -std per target.
+build --cxxopt=-std=c++23
+build --host_cxxopt=-std=c++23
+# Upstream code that cannot compile as C++23 (reasons documented in setup_workspace.py).
+build --per_file_copt=external/.*fastdds.*@-std=c++17
+build --host_per_file_copt=external/.*fastdds.*@-std=c++17
+build --per_file_copt=external/.*popf.*@-std=c++17
+build --host_per_file_copt=external/.*popf.*@-std=c++17
+build --per_file_copt=external/.*gz-sim.*@-std=c++20
+build --host_per_file_copt=external/.*gz-sim.*@-std=c++20
+# Same locale and tool PATH for actions on any host or container.
+common --action_env=LC_CTYPE=C.UTF-8
+common --host_action_env=LC_CTYPE=C.UTF-8
+common --action_env=PATH=/bin:/usr/bin:/usr/local/bin
+common --host_action_env=PATH=/bin:/usr/bin:/usr/local/bin
+build --platforms=//bazel/platforms:linux
+build --extra_execution_platforms=//bazel/platforms:linux
+
+## TEST
+test --sandbox_default_allow_network=false
+test --test_env=ROS_AUTOMATIC_DISCOVERY_RANGE=LOCALHOST
+test --run_under=@rosdistro//python:run_test_isolated
+
+# Personal overrides (not committed).
+try-import %workspace%/user.bazelrc

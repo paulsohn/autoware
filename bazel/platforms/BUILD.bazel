@@ -1,0 +1,8 @@
+# glibc 2.34 target: runs on Ubuntu 24.04 (2.39) and JetPack 7. Unpinned builds
+# fall back to the toolchain's 2.28 floor, too old for the from-source Qt.
+platform(
+    name = "linux",
+    constraint_values = ["@llvm//constraints/libc:gnu.2.34"],
+    parents = ["@platforms//host"],
+    visibility = ["//visibility:public"],
+)
