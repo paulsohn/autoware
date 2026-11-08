@@ -89,7 +89,7 @@ Lessons (apply to any RCR-based workspace):
 - Set resource limits before the first build on machines with high cores-to-RAM ratios.
 - Start Bazel with `env -i` when a ROS distro is installed on the host.
 
-Open: the talker's graph includes Ogre/OpenCV/PySide6 (~93k targets configured); not yet explained.
+Open: the talker's graph includes Ogre/OpenCV/PySide6 (~93k targets configured). Resolved in "P1: Trim the dependency graph" below.
 
 ## 2026-11-09: P0 bootstrap (container)
 
@@ -205,3 +205,27 @@ that attaches it implicitly is deferred until its contents are clear.
 
 Lesson: a shared runtime config can be a `data` dependency of every binary and test without hurting incremental builds.
 The cost is boilerplate, not build time.
+
+## 2026-11-09: P1 start: trim the dependency graph (static CycloneDDS)
+
+Steps:
+1. Find why a talker pulls Ogre:
+   ```bash
+   bazel cquery 'somepath(//bazel/smoke:talker, @@ogre+//...)'
+   ```
+   → `rclcpp → rcl → rmw_implementation_dynamic_library → :ament_index → @rmw_fastrtps_dynamic_cpp//:ament_package
+   → @rosdistro//:ament_package → @rosdistro//cc:RenderSystem_GL3Plus → @ogre`.
+   `@rosdistro//:ament_package` bundles every third-party shared library and every pip package of the distribution
+   (it builds a self-contained install tree). With `--@rosdistro//:rmw=dynamic` (the RCR default), the RMW loader's
+   ament index depends on all RMWs' `ament_package` targets, and through them on that catch-all.
+2. With `--@rosdistro//:rmw=rmw_cyclonedds_cpp`, `rmw_implementation` is a plain alias to the CycloneDDS library and the
+   edge disappears. Measured with `bazel cquery 'deps(//bazel/smoke:talker)' | wc -l`: 89,186 → 19,268 targets.
+3. `.bazelrc`: `build --@rosdistro//:rmw=rmw_cyclonedds_cpp`, plus `--config=rmw_dynamic` to restore runtime switching.
+
+Result: switch-over build 152 s (140 local actions: the rcl/rclcpp chain relinks against CycloneDDS directly); talker/
+listener 7/7; cold-server analysis of `//bazel/smoke:all` 46 s (was ~5 min).
+
+Lessons:
+- In the RCR, anything that depends on the dynamic RMW loader inherits the whole distribution. Pick the RMW at build time
+  unless runtime switching is needed.
+- `bazel cquery 'somepath(<target>, @@<repo>+//...)'` is the quickest way to explain an unexpected dependency.

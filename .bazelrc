@@ -68,6 +68,12 @@ common --action_env=LC_CTYPE=C.UTF-8
 common --host_action_env=LC_CTYPE=C.UTF-8
 common --action_env=PATH=/bin:/usr/bin:/usr/local/bin
 common --host_action_env=PATH=/bin:/usr/bin:/usr/local/bin
+# Link CycloneDDS directly instead of the dynamic RMW loader. The loader's ament_index
+# pulls @rosdistro//:ament_package, which bundles every third-party library of the distro
+# (Ogre, OpenCV, Qt, all pip packages): 89k vs 19k targets for a talker.
+# --config=rmw_dynamic restores runtime switching via RMW_IMPLEMENTATION.
+build --@rosdistro//:rmw=rmw_cyclonedds_cpp
+build:rmw_dynamic --@rosdistro//:rmw=dynamic
 build --platforms=//bazel/platforms:linux
 build --extra_execution_platforms=//bazel/platforms:linux
 
