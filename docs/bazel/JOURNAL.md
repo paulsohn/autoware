@@ -129,3 +129,21 @@ Issues (continued):
 Lessons:
 - Progress lines name each action ("Compiling ...") and cached compiler warnings are replayed, even for cache hits. Judge cache behaviour by the final `processes:` summary, not by the scrolling output.
 - A fresh container repeats analysis (~5 min here) because the output base is not shared. Compiles come from the disk cache.
+
+## 2026-11-09: P0 listener test (FastDDS and CycloneDDS)
+
+Steps:
+1. Added `//bazel/smoke:listener` (subscribes to `chatter`), reusing the talker's dynamic deps. Incremental build: 43 s, 2 local actions.
+2. The default build (`--@rosdistro//:rmw=dynamic`) contains every RMW; `RMW_IMPLEMENTATION` picks one at runtime.
+   The `bazel run --script_path` scripts hard-code `RMW_IMPLEMENTATION=rmw_fastrtps_cpp` (from `--run_env`), so per RMW
+   make a copy with the value replaced (`sed`), then run listener first and talker 1 s later, both with
+   `ROS_DOMAIN_ID=73 ROS_AUTOMATIC_DISCOVERY_RANGE=LOCALHOST ROS_LOG_DIR=<writable dir>` (isolated from the host's Jazzy).
+
+Result (4 s of talker, 7 messages):
+- `rmw_cyclonedds_cpp` (Autoware's RMW): 7 sent, 7 received.
+- `rmw_fastrtps_cpp`: 7 sent, 2 received. The first five were published before discovery completed; volatile QoS drops them. Expected.
+
+Lessons:
+- One dynamic build covers all RMWs; switching is a runtime env var, no rebuild.
+- `--run_env` values are baked into `bazel run` scripts and override the caller's environment: set RMW/ROS variables
+  in `.bazelrc` (or override in the runtime image), not by exporting them before `bazel run`.
