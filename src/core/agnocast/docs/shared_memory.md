@@ -1,0 +1,65 @@
+
+## What is shared memory in Linux?
+
+See official man page: <https://man7.org/linux/man-pages/man7/shm_overview.7.html>
+
+## How shared memory is used in Agnocast?
+
+### Basic usage
+
+- A publisher opens a shared memory with a writable privilege.
+- A subscriber opens the shared memory with a read-only privilege which the corresponding publisher opened.
+
+### Detailed usage
+
+There are three invocations for shared memory related procedures.
+
+#### Initialization of a process
+
+Each process linked with Agnocast opens a shared memory, which is writable only for the process.
+When a process first calls malloc or other memory related functions, Agnocast starts and the shared memory is opened in the following steps:
+
+1. get an allocatable area through `AGNOCAST_ADD_PROCESS_CMD` ioctl.
+2. open a writable shared memory on the allocatable area, with `shm_open`, `ftruncate` and `mmap` system calls.
+
+#### Creation of a publisher
+
+When a process calls `create_publisher` for a topic `T`, the shared memory of the process should be mapped by processes which have a subscription for `T`.
+Thus the following procedures are executed:
+
+1. The publisher process gets the information about subscribers already registered for the topic `T` through `AGNOCAST_ADD_PUBLISHER_CMD` ioctl.
+2. The kernel module returns the new publisher's shared memory information to each subscriber on its next `AGNOCAST_RECEIVE_MSG_CMD` or `AGNOCAST_TAKE_MSG_CMD` ioctl.
+3. The subscriber process maps the publisher's shared memory area with a read-only privilege.
+
+#### Creation of a subscriber
+
+When a process calls `create_subscription` for topic `T`, then the process maps the corresponding publisher's shared memory area with a read-only privilege in the following steps:
+
+1. get the information about the publishers for the topic `T` through `AGNOCAST_ADD_SUBSCRIBER_CMD` ioctl.
+2. map the publisher's shared memories with a read-only privilege.
+
+### Naming rule and restrictions
+
+In Agnocast, there is exactly one writable process and there are some read-only processes for a shared memory.
+Suppose the writable process's id is `pid`, then the shared memory is named as "/agnocast@pid".
+The name should start with '/' and should not include '/' any more.
+
+## Memory allocation for shared memory
+
+In the [original paper](https://www.arxiv.org/pdf/2506.16882) and its corresponding prototype implementation ([sykwer/agnocast](https://github.com/sykwer/agnocast)), all heap allocations are redirected to shared memory.
+In contrast, in the [autowarefoundation/agnocast](https://github.com/autowarefoundation/agnocast) implementation, not all heap allocations are redirected to shared memory.
+Ideally, only objects referenced by `agnocast::ipc_shared_ptr` should be placed in shared memory, while all other allocations should reside in the process-private heap.
+However, since it is difficult to fully achieve this in practice, the implementation is designed to approximate this ideal as closely as possible.
+Those interested may refer to the `agnocast_get_borrowed_publisher_num()` function in `agnocastlib` and `agnocast_heaphook`.
+The current approach is that heap allocations occurring between the `AgnocastPublisher::borrow_loaned_message()` call and the subsequent `AgnocastPublisher::publish()` call are redirected to shared memory.
+This is because it is not possible to determine exactly when, within this interval, a heap allocation for an object referenced by `agnocast::ipc_shared_ptr` will occur.
+
+The virtual address space resources are managed in [agnocast_kmod/agnocast_memory_allocator.h](https://github.com/autowarefoundation/agnocast/blob/main/agnocast_kmod/agnocast_memory_allocator.h), and the ranges defined in this file are arbitrarily chosen.
+
+## Mempool size configuration
+
+The mempool size per process can be configured when loading the kernel module. See [Environment Setup](https://autowarefoundation.github.io/agnocast_doc/environment-setup/) on the documentation site for the module parameters (`mempool_num`, `mempool_size_gb`, `mempool_start_addr`) and their defaults.
+
+## Known issues
+
+- The current implementation suppose that the memory after 0x40000000000 is always allocatable, though it is not investigated in detail.
