@@ -1,0 +1,53 @@
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps", "ros_local_defines")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+DEPENDENCIES = {
+    "@rclcpp//:rclcpp": "@rclcpp//:rclcpp_library",
+}
+
+cc_library(
+    name = "autoware_utils_system_library",
+    srcs = [
+        "src/backtrace.cpp",
+    ],
+    hdrs = glob([
+        "include/**/*.hpp",
+    ]),
+    includes = ["include"],
+    local_defines = ros_local_defines(),
+    deps = DEPENDENCIES.values(),
+)
+
+cc_shared_library(
+    name = "autoware_utils_system",
+    dynamic_deps = DEPENDENCIES.keys(),
+    exports_filter = [":autoware_utils_system_library"],
+    deps = [":autoware_utils_system_library"],
+)
+
+TEST_DEPENDENCIES = {}
+
+collect_transitive_dynamic_deps(
+    name = "test_dynamic_deps",
+    dynamic_deps = [":autoware_utils_system"] + TEST_DEPENDENCIES.keys(),
+    visibility = ["//visibility:private"],
+)
+
+cc_test(
+    name = "test_autoware_utils_system",
+    srcs = [
+        "test/cases/backtrace.cpp",
+        "test/cases/lru_cache.cpp",
+        "test/cases/stop_watch.cpp",
+        "test/main.cpp",
+    ],
+    data = [
+        "@@//bazel/config:cyclonedds.xml",
+    ],
+    dynamic_deps = [":test_dynamic_deps"],
+    deps = [":autoware_utils_system_library"] + DEPENDENCIES.values() + TEST_DEPENDENCIES.values() + [
+        "@googletest//:gtest",
+    ],
+)

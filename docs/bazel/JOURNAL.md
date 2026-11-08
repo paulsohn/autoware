@@ -274,3 +274,55 @@ Lessons:
 - With the RCR, make each ROS package its own Bazel module; its rules assume module name = package name.
 - Depend on the top-level `ros` release module, not `ros_core`, or packages outside the core variant resolve to stubs.
 - Generate the first BUILD files mechanically from `package.xml` and interface files, then treat them as sources.
+
+## 2026-11-09: P1 C++ packages (autoware_utils) — P1 done
+
+Steps:
+1. RCR C++ package pattern (e.g. `tf2_eigen` overlay): `cc_library(name = "<pkg>_library", includes = ["include"],
+   local_defines = ros_local_defines())` + `cc_shared_library(name = "<pkg>", dynamic_deps = DEPENDENCIES.keys(),
+   exports_filter = [":<pkg>_library"])`, where `DEPENDENCIES = {"@x//:x": "@x//:x_library", "@m//:cc_shared": "@m//:cc"}`;
+   tests use `collect_transitive_dynamic_deps` and `@rosdistro//cc:googletest`; third-party libs via `@rosdistro//cc:*`
+   (`eigen`, `fmt`, `boost.<component>`, `pcl_common`, ...).
+2. Migration aid `//bazel/tools/gen_build:gen_cc -- <pkg dirs>` for the `ament_auto_add_library(${PROJECT_NAME} SHARED ...)`
+   shape: ROS deps from `package.xml`, third-party targets from `#include`s, tests from `test/**/*.cpp`; warns about
+   included-but-undeclared ROS packages. Applied to the 12 `src/core/autoware_utils/*` packages.
+3. Build/test: `bazel test --keep_going --target_pattern_file=<list of @autoware_utils_*//...>`.
+
+Result: all 12 packages build; 11 test suites pass (the umbrella `autoware_utils` is header-only, no tests).
+Together with the 23 interface packages: `bazel test --target_pattern_file=bazel/autoware_packages.txt` + `//bazel/...`
+→ 13 tests pass. A cold build of the PCL-dependent chain took ~55 min (PCL from source).
+
+Issues (symptom → cause → fix):
+1. `unknown repo 'rules_cc' requested from @@autoware_utils_debug+` → a module sees only repos it declares →
+   `bazel_dep(name = "rules_cc", ...)` in every package module.
+2. `@googletest` invisible despite `bazel_dep(..., dev_dependency = True)` → dev dependencies of non-root modules are
+   ignored → plain `bazel_dep`.
+3. `glob pattern 'include/**/*.h' didn't match anything` → Bazel 9 disallows empty glob patterns → emit only matching
+   patterns; list test headers/data explicitly.
+4. Duplicate `main()` risk → `@rosdistro//cc:googletest` includes `gtest_main`; 10 of 12 packages have their own
+   `test/main.cpp` (for `rclcpp::init`) → use `@googletest//:gtest` there (`googletest@1.18.0.bcr.1`, as resolved).
+5. `'std_msgs/msg/string.hpp' file not found` (autoware_utils_debug) → header uses a package not declared in
+   `package.xml`; colcon resolves it transitively → declared the missing deps in `package.xml` (commit 6fde311:
+   debug: std_msgs, rosidl_runtime_cpp; geometry: geometry_msgs, autoware_perception/planning_msgs; pcl: rclcpp).
+6. `no such target '@@tf2_geometry_msgs+//:cc'` / `'@@logging_demo+//:logging_demo'` → package type guessed from the
+   name suffix → override table (`tf2_geometry_msgs` is C++; `logging_demo` provides the `ConfigLogger` service, `:cc`).
+7. `no such target '@@rosdistro+//cc:boost.version'` → `boost/version.hpp` belongs to `boost.config`.
+8. `Two shared libraries in dependencies link the same library statically. Both autoware_utils_geometry and
+   @rosdistro//cc:boost.serialization_shared link statically @boost.serialization` → `boost.geometry` pulls compiled
+   Boost libs that end up static in our shared library, while PCL provides them shared → list
+   `boost.{chrono,container,serialization,thread}_shared` pairs in `DEPENDENCIES` (hand edit, as the RCR does).
+9. `autoware_utils_pcl` → `pcl_ros` targets are split (`pcl_ros_tf`, `pcl_ros_filter`) → headers only need
+   `pcl_conversions` + `@rosdistro//cc:pcl_common`; dropped `pcl_ros` from the BUILD/MODULE (hand edit).
+10. Deleting a package's `MODULE.bazel` while `bazel/autoware_packages.MODULE.bazel` still lists it blocks every
+    `bazel` command, including `bazel run` of the migration aid → run the stdlib-only tools as
+    `python3 -m bazel.tools.gen_build.<tool>` from the repo root.
+
+Discovery: the RCR already contains 36 Autoware modules (all autoware_msgs, internal/adapi msgs, autoware_utils_*,
+autoware_lanelet2_extension) at their ROS-released versions, with hand-written overlays. Our `local_path_override`s
+win everywhere; their overlays (`modules/<pkg>/<ver>/overlay/BUILD.bazel` in the RCR repo) are the best reference for
+porting the rest.
+
+Lessons:
+- Bazel's strict dependency checking finds real upstream bugs (undeclared deps). Fix them in `package.xml`.
+- Before writing a BUILD file for a ROS package, check whether the RCR already has an overlay for it.
+- Header-only Boost components can drag compiled Boost libraries into your shared library; link those shared.

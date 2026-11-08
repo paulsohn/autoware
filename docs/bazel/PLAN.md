@@ -130,7 +130,7 @@ Checks (exit criteria in Phases): host vs container build digests match (P0, P2)
 | Phase | Work | Done when |
 |---|---|---|
 | P0 | Bazel 9 + RCR on x86 24.04; check the hermetic toolchain's glibc target (must be <= 2.39); `rclcpp` hello node; `dev` image on `ubuntu:24.04` | Hello node runs on the host and in the container; talker sha256 is identical whether built on the host or in the `dev` container |
-| P1 | Rule library, BUILD generator; core msgs + `autoware_utils_*` | All core msgs and utils build |
+| P1 ✅ 2026-11-09 | Rule library, BUILD generator; core msgs + `autoware_utils_*` | All core msgs and utils build |
 | P2 | Registry modules (scope 1); `autoware_core`; Jazzy->Lyrical source fixes | `autoware_core` tests pass; host vs container output digests match |
 | P3 | `rules_cuda` x86 + SBSA, TensorRT; `autoware_cuda_utils`, `cuda_blackboard`, `negotiated` | CUDA tests pass on x86 |
 | P4 | `runtime` image via `rules_oci`; planning simulator via core launch | Demo runs from the `runtime` image |

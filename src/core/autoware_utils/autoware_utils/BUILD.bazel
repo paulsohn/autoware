@@ -1,0 +1,40 @@
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps", "ros_local_defines")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library")
+
+package(default_visibility = ["//visibility:public"])
+
+DEPENDENCIES = {
+    "@autoware_internal_debug_msgs//:cc_shared": "@autoware_internal_debug_msgs//:cc",
+    "@autoware_internal_msgs//:cc_shared": "@autoware_internal_msgs//:cc",
+    "@autoware_internal_planning_msgs//:cc_shared": "@autoware_internal_planning_msgs//:cc",
+    "@autoware_perception_msgs//:cc_shared": "@autoware_perception_msgs//:cc",
+    "@autoware_planning_msgs//:cc_shared": "@autoware_planning_msgs//:cc",
+    "@autoware_utils_debug//:autoware_utils_debug": "@autoware_utils_debug//:autoware_utils_debug_library",
+    "@autoware_utils_diagnostics//:autoware_utils_diagnostics": "@autoware_utils_diagnostics//:autoware_utils_diagnostics_library",
+    "@autoware_utils_geometry//:autoware_utils_geometry": "@autoware_utils_geometry//:autoware_utils_geometry_library",
+    "@autoware_utils_logging//:autoware_utils_logging": "@autoware_utils_logging//:autoware_utils_logging_library",
+    "@autoware_utils_math//:autoware_utils_math": "@autoware_utils_math//:autoware_utils_math_library",
+    "@autoware_utils_pcl//:autoware_utils_pcl": "@autoware_utils_pcl//:autoware_utils_pcl_library",
+    "@autoware_utils_rclcpp//:autoware_utils_rclcpp": "@autoware_utils_rclcpp//:autoware_utils_rclcpp_library",
+    "@autoware_utils_system//:autoware_utils_system": "@autoware_utils_system//:autoware_utils_system_library",
+    "@autoware_utils_tf//:autoware_utils_tf": "@autoware_utils_tf//:autoware_utils_tf_library",
+    "@autoware_utils_uuid//:autoware_utils_uuid": "@autoware_utils_uuid//:autoware_utils_uuid_library",
+    "@autoware_utils_visualization//:autoware_utils_visualization": "@autoware_utils_visualization//:autoware_utils_visualization_library",
+}
+
+cc_library(
+    name = "autoware_utils_library",
+    hdrs = glob([
+        "include/**/*.hpp",
+    ]),
+    includes = ["include"],
+    local_defines = ros_local_defines(),
+    deps = DEPENDENCIES.values(),
+)
+
+cc_shared_library(
+    name = "autoware_utils",
+    dynamic_deps = DEPENDENCIES.keys(),
+    exports_filter = [":autoware_utils_library"],
+    deps = [":autoware_utils_library"],
+)

@@ -1,0 +1,85 @@
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps", "ros_local_defines")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+DEPENDENCIES = {
+    "@autoware_internal_planning_msgs//:cc_shared": "@autoware_internal_planning_msgs//:cc",
+    "@autoware_perception_msgs//:cc_shared": "@autoware_perception_msgs//:cc",
+    "@autoware_planning_msgs//:cc_shared": "@autoware_planning_msgs//:cc",
+    "@autoware_utils_math//:autoware_utils_math": "@autoware_utils_math//:autoware_utils_math_library",
+    "@geometry_msgs//:cc_shared": "@geometry_msgs//:cc",
+    # boost.geometry pulls these compiled Boost libraries; link them shared, or packages that also
+    # get them shared (e.g. via PCL) fail with "Two shared libraries ... link the same library statically".
+    "@rosdistro//cc:boost.chrono_shared": "@rosdistro//cc:boost.chrono",
+    "@rosdistro//cc:boost.container_shared": "@rosdistro//cc:boost.container",
+    "@rosdistro//cc:boost.serialization_shared": "@rosdistro//cc:boost.serialization",
+    "@rosdistro//cc:boost.thread_shared": "@rosdistro//cc:boost.thread",
+    "@tf2//:tf2": "@tf2//:tf2_library",
+    "@tf2_eigen//:tf2_eigen": "@tf2_eigen//:tf2_eigen_library",
+    "@tf2_geometry_msgs//:tf2_geometry_msgs": "@tf2_geometry_msgs//:tf2_geometry_msgs_library",
+}
+
+cc_library(
+    name = "autoware_utils_geometry_library",
+    srcs = [
+        "src/geometry/alt_geometry.cpp",
+        "src/geometry/boost_polygon_utils.cpp",
+        "src/geometry/ear_clipping.cpp",
+        "src/geometry/geometry.cpp",
+        "src/geometry/gjk_2d.cpp",
+        "src/geometry/pose_deviation.cpp",
+        "src/geometry/random_concave_polygon.cpp",
+        "src/geometry/random_convex_polygon.cpp",
+        "src/geometry/sat_2d.cpp",
+        "src/msg/operation.cpp",
+    ],
+    hdrs = glob([
+        "include/**/*.hpp",
+    ]),
+    includes = ["include"],
+    local_defines = ros_local_defines(),
+    deps = DEPENDENCIES.values() + [
+        "@rosdistro//cc:boost.config",
+        "@rosdistro//cc:boost.geometry",
+        "@rosdistro//cc:eigen",
+    ],
+)
+
+cc_shared_library(
+    name = "autoware_utils_geometry",
+    dynamic_deps = DEPENDENCIES.keys(),
+    exports_filter = [":autoware_utils_geometry_library"],
+    deps = [":autoware_utils_geometry_library"],
+)
+
+TEST_DEPENDENCIES = {
+    "@autoware_utils_system//:autoware_utils_system": "@autoware_utils_system//:autoware_utils_system_library",
+}
+
+collect_transitive_dynamic_deps(
+    name = "test_dynamic_deps",
+    dynamic_deps = [":autoware_utils_geometry"] + TEST_DEPENDENCIES.keys(),
+    visibility = ["//visibility:private"],
+)
+
+cc_test(
+    name = "test_autoware_utils_geometry",
+    srcs = [
+        "test/cases/alt_geometry.cpp",
+        "test/cases/boost_geometry.cpp",
+        "test/cases/boost_polygon_utils.cpp",
+        "test/cases/geometry.cpp",
+        "test/cases/msg/operation.cpp",
+        "test/cases/path_with_lane_id_geometry.cpp",
+        "test/cases/pose_deviation.cpp",
+        "test/main.cpp",
+    ],
+    data = [
+        "@@//bazel/config:cyclonedds.xml",
+    ],
+    dynamic_deps = [":test_dynamic_deps"],
+    deps = [":autoware_utils_geometry_library"] + DEPENDENCIES.values() + TEST_DEPENDENCIES.values() + [
+        "@googletest//:gtest",
+    ],
+)

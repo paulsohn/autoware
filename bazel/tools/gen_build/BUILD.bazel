@@ -10,3 +10,9 @@ py_test(
     srcs = ["gen_interfaces_test.py"],
     deps = [":gen_interfaces"],
 )
+
+py_binary(
+    name = "gen_cc",
+    srcs = ["gen_cc.py"],
+    deps = [":gen_interfaces"],
+)

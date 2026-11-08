@@ -57,6 +57,42 @@ local_path_override(module_name = "autoware_simulation_msgs", path = "src/core/a
 bazel_dep(name = "autoware_system_msgs")
 local_path_override(module_name = "autoware_system_msgs", path = "src/core/autoware_msgs/autoware_system_msgs")
 
+bazel_dep(name = "autoware_utils")
+local_path_override(module_name = "autoware_utils", path = "src/core/autoware_utils/autoware_utils")
+
+bazel_dep(name = "autoware_utils_debug")
+local_path_override(module_name = "autoware_utils_debug", path = "src/core/autoware_utils/autoware_utils_debug")
+
+bazel_dep(name = "autoware_utils_diagnostics")
+local_path_override(module_name = "autoware_utils_diagnostics", path = "src/core/autoware_utils/autoware_utils_diagnostics")
+
+bazel_dep(name = "autoware_utils_geometry")
+local_path_override(module_name = "autoware_utils_geometry", path = "src/core/autoware_utils/autoware_utils_geometry")
+
+bazel_dep(name = "autoware_utils_logging")
+local_path_override(module_name = "autoware_utils_logging", path = "src/core/autoware_utils/autoware_utils_logging")
+
+bazel_dep(name = "autoware_utils_math")
+local_path_override(module_name = "autoware_utils_math", path = "src/core/autoware_utils/autoware_utils_math")
+
+bazel_dep(name = "autoware_utils_pcl")
+local_path_override(module_name = "autoware_utils_pcl", path = "src/core/autoware_utils/autoware_utils_pcl")
+
+bazel_dep(name = "autoware_utils_rclcpp")
+local_path_override(module_name = "autoware_utils_rclcpp", path = "src/core/autoware_utils/autoware_utils_rclcpp")
+
+bazel_dep(name = "autoware_utils_system")
+local_path_override(module_name = "autoware_utils_system", path = "src/core/autoware_utils/autoware_utils_system")
+
+bazel_dep(name = "autoware_utils_tf")
+local_path_override(module_name = "autoware_utils_tf", path = "src/core/autoware_utils/autoware_utils_tf")
+
+bazel_dep(name = "autoware_utils_uuid")
+local_path_override(module_name = "autoware_utils_uuid", path = "src/core/autoware_utils/autoware_utils_uuid")
+
+bazel_dep(name = "autoware_utils_visualization")
+local_path_override(module_name = "autoware_utils_visualization", path = "src/core/autoware_utils/autoware_utils_visualization")
+
 bazel_dep(name = "autoware_v2x_msgs")
 local_path_override(module_name = "autoware_v2x_msgs", path = "src/core/autoware_msgs/autoware_v2x_msgs")
 
