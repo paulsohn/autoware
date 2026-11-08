@@ -1,3 +1,4 @@
+load("@autoware_cmake//:defs.bzl", "AUTOWARE_CXXOPTS", "AUTOWARE_DEFINES", "autoware_copts")
 load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps", "ros_local_defines")
 load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
 
@@ -16,7 +17,9 @@ cc_library(
         "include/**/*.hpp",
     ]),
     includes = ["include"],
-    local_defines = ros_local_defines(),
+    copts = autoware_copts(),
+    cxxopts = AUTOWARE_CXXOPTS,
+    local_defines = ros_local_defines() + AUTOWARE_DEFINES,
     # Headers use only pcl_conversions and PCL common; pcl_ros (in package.xml) is not needed here.
     deps = DEPENDENCIES.values() + [
         "@rosdistro//cc:eigen",
@@ -48,6 +51,9 @@ cc_test(
     data = [
         "@@//bazel/config:cyclonedds.xml",
     ],
+    copts = autoware_copts(),
+    cxxopts = AUTOWARE_CXXOPTS,
+    local_defines = ros_local_defines() + AUTOWARE_DEFINES,
     dynamic_deps = [":test_dynamic_deps"],
     deps = [":autoware_utils_pcl_library"] + DEPENDENCIES.values() + TEST_DEPENDENCIES.values() + [
         "@rosdistro//cc:googletest",

@@ -1,5 +1,6 @@
 module(name = "autoware_utils_math")
 
+bazel_dep(name = "autoware_cmake")
 bazel_dep(name = "rosdistro", version = "0.0.0")
 bazel_dep(name = "googletest", version = "1.18.0.bcr.1")
 bazel_dep(name = "rules_cc", version = "0.2.26.rcr.0")

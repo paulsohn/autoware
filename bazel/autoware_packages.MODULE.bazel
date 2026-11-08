@@ -1,5 +1,8 @@
 # Every ROS package module under src/, included by the root MODULE.bazel.
 
+bazel_dep(name = "autoware_cmake")
+local_path_override(module_name = "autoware_cmake", path = "src/core/autoware_cmake/autoware_cmake")
+
 bazel_dep(name = "agnocast_cie_config_msgs")
 local_path_override(module_name = "agnocast_cie_config_msgs", path = "src/core/agnocast/src/agnocast_cie_config_msgs")
 

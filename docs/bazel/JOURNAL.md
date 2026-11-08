@@ -326,3 +326,44 @@ Lessons:
 - Bazel's strict dependency checking finds real upstream bugs (undeclared deps). Fix them in `package.xml`.
 - Before writing a BUILD file for a ROS package, check whether the RCR already has an overlay for it.
 - Header-only Boost components can drag compiled Boost libraries into your shared library; link those shared.
+
+## 2026-11-09: P2 start — `autoware_package()` settings as a Bazel module; `gen_cc` dropped
+
+Review of `gen_cc` against the 12 `autoware_utils` CMakeLists.txt: sources and tests matched, but it missed
+everything `autoware_package()` sets (`-Wall -Wextra -Wpedantic -Werror`, `-std=c++17`,
+`BOOST_ALLOW_DEPRECATED_HEADERS`, `EIGEN_DONT_PARALLELIZE`), and of the 73 `autoware_core` CMakeLists.txt, 12 register
+components, 5 add executables and 36 install launch/config, none of which it handled. Deleted; C++ BUILD files are
+written by hand from CMakeLists.txt from now on.
+
+Steps:
+1. `src/core/autoware_cmake/autoware_cmake/{MODULE.bazel,BUILD.bazel,defs.bzl}`: module `autoware_cmake` exporting
+   `autoware_copts()`, `AUTOWARE_CXXOPTS`, `AUTOWARE_DEFINES`; registered in `bazel/autoware_packages.MODULE.bazel`.
+   It overrides the RCR's `autoware_cmake` module (which only has an `ament_package` target).
+2. Every utils package: `bazel_dep(name = "autoware_cmake")`, and on each `cc_library`/`cc_test`
+   `copts = autoware_copts(), cxxopts = AUTOWARE_CXXOPTS, local_defines = ros_local_defines() + AUTOWARE_DEFINES`.
+3. `bazel test --keep_going --target_pattern_file=<@autoware_utils_*//... lines>` → 11 tests pass.
+
+Issues (symptom → cause → fix):
+1. With `-Werror`, hundreds of errors inside `external/boost.geometry+`, `rosidl_runtime_cpp+`, `pcl+`, googletest
+   headers → the hermetic LLVM toolchain passes dependency `includes` as `-I` (CMake passes imported targets as
+   `-isystem`). Bazel's `external_include_paths` feature makes them `-isystem`, but only when enabled on the
+   *dependency* target: `package(features = [...])` in our BUILD files changed only our own paths (8 of 277), and
+   enabling it globally changes every RCR compile command (full rebuild, remote cache misses) → clang
+   `--system-header-prefix=` (every `#include` is a system header) followed by `--no-system-header-prefix=<pkg>/`
+   and `autoware/<x>/` for the package's own headers. Better than CMake's behaviour for our packages: own headers
+   are still checked, dependencies' headers are not (verified with a two-header test).
+2. `-std=c++17` vs the global `--cxxopt=-std=c++23` → per-target `cxxopts` come later on the command line and win;
+   Lyrical's rclcpp headers compile as C++17.
+3. Own-code warnings found and fixed in commit 2e2693a: GCC-only pragma under clang (clang defines `__GNUC__`),
+   unused lambda capture, non-const `SharedPtr` subscription callback (deprecated in Lyrical's rclcpp),
+   `INSTANTIATE_TEST_CASE_P`.
+
+Correction: header-only packages keep their (nearly empty) `cc_shared_library`. It is not pointless: it carries the
+package's transitive `dynamic_deps`, so consumers only list the package itself. The RCR's overlay for
+`autoware_utils_uuid` uses a plain `cc_library`, which pushes the dependency list onto every consumer.
+
+Lessons:
+- When porting a CMake helper macro, translate what it sets on the compiler, not just the targets.
+- Turn on `-Werror` early, but scope it to your own headers; with the RCR toolchain that needs
+  `--system-header-prefix`, since `includes` are not `-isystem`.
+- Don't enable global features or copts that change third-party compile commands; they lose the remote cache.

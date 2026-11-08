@@ -17,7 +17,7 @@
 | CUDA 13 via `rules_cuda` hermetic redist (`linux-x86_64`, `linux-sbsa`); TensorRT/cuDNN as sha256-pinned tarballs | Thor (JetPack 7) is SBSA, so no L4T-specific libraries are needed at build time. Only the driver comes from the host |
 | Runtime image built by Bazel (`rules_oci`), not by `docker build` | git SHA leads straight to the image digest; no Docker daemon needed |
 | Deferred: remote cache server, signing, SBOM, vendoring, multi-arch CI | Personal PoC. These are hardening work for later |
-| `autoware_cmake` is not ported. Its `autoware_package()` flags become `.bazelrc` / macro defaults: `-std=c++17 -Wall -Wextra -Wpedantic -Werror`, `-DBOOST_ALLOW_DEPRECATED_HEADERS -DEIGEN_DONT_PARALLELIZE`, Clang `-Wno-gnu-anonymous-struct -Wno-nested-anon-types` | It only sets compile options and calls ament_cmake_auto. `ROS_DISTRO_*` defines are only checked for GALACTIC/HUMBLE, so Lyrical takes the default branch with no define |
+| `autoware_cmake` becomes a small Bazel module (`src/core/autoware_cmake/autoware_cmake/defs.bzl`) holding the `autoware_package()` settings: `autoware_copts()` (`-Wall -Wextra -Wpedantic -Werror`, Clang PCL exceptions), `AUTOWARE_CXXOPTS` (`-std=c++17`), `AUTOWARE_DEFINES` (`BOOST_ALLOW_DEPRECATED_HEADERS`, `EIGEN_DONT_PARALLELIZE`). Every Autoware C++ target uses them | Every package.xml already depends on `autoware_cmake`, so the module mirrors it; one place to change flags. `ROS_DISTRO_*` defines are only checked for GALACTIC/HUMBLE, so Lyrical takes the default branch with no define. `-Werror` stays on: if a warning cannot be fixed with a small source patch, comment it out in `defs.bzl` and record why |
 | `autoware_system_designer` (and its only consumer `autoware_sample_designs`) removed. Leftovers are dropped, not ported: any `autoware_system_designer_*` CMake call (none in the 2026-11-09 snapshot; the BUILD generator must skip them if they appear), `design/*.{node,module,system,parameter_set}.yaml` files (318, inert data, not built), and the `lint-system-design-format` pre-commit hooks / CI workflows inside subtrees | Orthogonal to the Bazel integration |
 | ML models: pinned in `models.lock.json` (HF repo, tag, commit SHA, per-file sha256), fetched by Bazel `http_file` from `huggingface.co/<repo>/resolve/<sha>/<path>`. No git submodule, LFS, Xet client or DVC | See "ML models" below |
 
@@ -26,7 +26,7 @@
 MODULE.bazel  MODULE.bazel.lock  .bazelversion  .bazelrc
 bazel/rules/       # autoware_package(), gen_param_library(), pluginlib_export(), xacro, launch
 bazel/platforms/   # x86_64, thor
-bazel/tools/gen_build/  # package.xml + CMakeLists.txt -> BUILD.bazel generator (output committed)
+bazel/tools/gen_build/  # migration aid for interface packages only (gen_interfaces)
 registry/          # private Bazel registry
 images/            # base/dev Dockerfiles + rules_oci runtime image
 src/
@@ -51,6 +51,14 @@ src/
   package, included by the root `MODULE.bazel`). Target list: `bazel/autoware_packages.txt`, used as
   `bazel build --target_pattern_file=bazel/autoware_packages.txt` because `//...` does not reach package modules.
   The migration aid rewrites both from the package modules present under `src/`; afterwards they are edited by hand.
+- C++ packages: written by hand from `CMakeLists.txt` (the `gen_cc` generator was dropped: it could not see what
+  `autoware_package()` sets and only handled the plain `ament_auto_add_library` shape, while most of `autoware_core`
+  uses components, executables or installed launch/config). Shape: `<pkg>_library` (`cc_library`) + `<pkg>`
+  (`cc_shared_library`, also for header-only packages, because it carries the transitive `dynamic_deps` so consumers
+  need not list them), `DEPENDENCIES = {shared: static}`, and on every C++ target
+  `copts = autoware_copts(), cxxopts = AUTOWARE_CXXOPTS, local_defines = ros_local_defines() + AUTOWARE_DEFINES`
+  from `@autoware_cmake//:defs.bzl` (plus `bazel_dep(name = "autoware_cmake")`). Check the RCR overlay of the
+  package first, if one exists.
 - Adding an interface to an existing package: add the `.msg`/`.srv`/`.action` file, then in that directory's
   `BUILD.bazel` add a `ros_message`/`ros_service`/`ros_action` with its `deps` (one label per non-primitive field
   type: `:Same`, `@other_pkg//msg:Type`), add its label to `default_generators(deps = ...)` in the package root

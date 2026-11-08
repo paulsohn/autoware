@@ -1,5 +1,6 @@
 module(name = "autoware_utils")
 
+bazel_dep(name = "autoware_cmake")
 bazel_dep(name = "autoware_internal_debug_msgs")
 bazel_dep(name = "autoware_internal_msgs")
 bazel_dep(name = "autoware_internal_planning_msgs")

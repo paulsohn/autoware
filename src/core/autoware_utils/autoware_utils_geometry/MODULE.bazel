@@ -1,5 +1,6 @@
 module(name = "autoware_utils_geometry")
 
+bazel_dep(name = "autoware_cmake")
 bazel_dep(name = "autoware_internal_planning_msgs")
 bazel_dep(name = "autoware_perception_msgs")
 bazel_dep(name = "autoware_planning_msgs")
