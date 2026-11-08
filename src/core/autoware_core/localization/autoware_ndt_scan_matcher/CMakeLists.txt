@@ -1,0 +1,131 @@
+cmake_minimum_required(VERSION 3.14)
+project(autoware_ndt_scan_matcher)
+
+# cspell:ignore multigrid
+
+find_package(autoware_cmake REQUIRED)
+autoware_package()
+
+# Compile flags for SIMD instructions
+# Be careful to change these options, especially when `ndt_omp` implementation is used.
+# All packages linked to `ndt_omp` should use the same SIMD instruction set.
+# In case mismatched instruction set are used, program causes a crash at its initialization
+# because of a misaligned access to the `Eigen` libraries' data structure.
+if(${CMAKE_SYSTEM_PROCESSOR} MATCHES "x86_64")
+  # For x86_64 architecture, SIMD instruction set is fixed below versions,
+  # because the `ndt_omp` is optimized to these versions.
+  add_compile_options(-msse -msse2 -msse3 -msse4 -msse4.1 -msse4.2)
+else()
+  # For other architecture, like arm64, compile flags are generally prepared by compiler
+  # march=native is disabled as default for specific depending pcl libraries
+  # or pre-building packages for other computers.
+  if(BUILD_WITH_MARCH_NATIVE)
+    add_compile_options(-march=native)
+  endif()
+endif()
+
+find_package(OpenMP)
+
+find_package(PCL REQUIRED COMPONENTS common io registration)
+include_directories(${PCL_INCLUDE_DIRS})
+
+ament_auto_add_library(multigrid_ndt_omp SHARED
+  src/ndt_omp/multi_voxel_grid_covariance_omp.cpp
+  src/ndt_omp/multigrid_ndt_omp.cpp
+  src/ndt_omp/estimate_covariance.cpp
+)
+target_link_libraries(multigrid_ndt_omp ${PCL_LIBRARIES})
+
+if(OpenMP_CXX_FOUND)
+  target_link_libraries(multigrid_ndt_omp OpenMP::OpenMP_CXX)
+else()
+  message(WARNING "OpenMP not found")
+endif()
+
+ament_auto_add_library(${PROJECT_NAME} SHARED
+  src/map_update_module.cpp
+  src/ndt_scan_matcher_core.cpp
+  src/ndt_scan_matcher_helper.cpp
+  src/particle.cpp
+)
+
+link_directories(${PCL_LIBRARY_DIRS})
+target_link_libraries(${PROJECT_NAME} ${PCL_LIBRARIES} multigrid_ndt_omp)
+
+autoware_agnocast_wrapper_register_node(${PROJECT_NAME}
+  PLUGIN "autoware::ndt_scan_matcher::NDTScanMatcher"
+  EXECUTABLE ${PROJECT_NAME}_node
+  ROS2_EXECUTOR MultiThreadedExecutor
+  AGNOCAST_EXECUTOR AgnocastOnlyCallbackIsolatedExecutor
+)
+
+if(BUILD_TESTING)
+  if(NOT (DEFINED ENV{ENABLE_AGNOCAST} AND "$ENV{ENABLE_AGNOCAST}" STREQUAL "1"))
+    add_launch_test(
+      test/test_ndt_scan_matcher_launch.py
+      TIMEOUT "30"
+    )
+
+    find_package(ament_cmake_gtest REQUIRED)
+    find_package(ament_cmake_ros REQUIRED)
+
+    ament_add_ros_isolated_gtest(standard_sequence_for_initial_pose_estimation
+      test/test_cases/standard_sequence_for_initial_pose_estimation.cpp
+      TIMEOUT "300"
+    )
+    target_link_libraries(standard_sequence_for_initial_pose_estimation ${PROJECT_NAME})
+    ament_target_dependencies(standard_sequence_for_initial_pose_estimation
+      ament_index_cpp rcl_yaml_param_parser)
+
+    ament_add_ros_isolated_gtest(once_initialize_at_out_of_map_then_initialize_correctly
+      test/test_cases/once_initialize_at_out_of_map_then_initialize_correctly.cpp
+      TIMEOUT "300"
+    )
+    target_link_libraries(once_initialize_at_out_of_map_then_initialize_correctly ${PROJECT_NAME})
+    ament_target_dependencies(once_initialize_at_out_of_map_then_initialize_correctly
+      ament_index_cpp rcl_yaml_param_parser)
+
+    ament_add_ros_isolated_gtest(particles_num_less_than_publish_num
+      test/test_cases/particles_num_less_than_publish_num.cpp
+      TIMEOUT "300"
+    )
+    target_link_libraries(particles_num_less_than_publish_num ${PROJECT_NAME})
+    ament_target_dependencies(particles_num_less_than_publish_num
+      ament_index_cpp rcl_yaml_param_parser)
+
+    # Characterization tests: they pin the node's current observable behaviour through
+    # `/diagnostics`, its output topics and its services, so that extracting the decision logic into
+    # a ROS-free core can be shown to preserve it.
+    ament_add_ros_isolated_gtest(test_ndt_scan_matcher_characteristics
+      test/test_ndt_scan_matcher_characteristics.cpp
+      TIMEOUT "600"
+    )
+    target_link_libraries(test_ndt_scan_matcher_characteristics ${PROJECT_NAME})
+    ament_target_dependencies(test_ndt_scan_matcher_characteristics
+      ament_index_cpp rcl_yaml_param_parser)
+  endif()
+
+  # Fast, dependency-light unit tests for the pure covariance / oscillation math.
+  ament_auto_add_gtest(test_estimate_covariance
+    test/test_estimate_covariance.cpp
+  )
+  target_link_libraries(test_estimate_covariance multigrid_ndt_omp ${PCL_LIBRARIES})
+
+  ament_auto_add_gtest(test_ndt_scan_matcher_helper
+    test/test_ndt_scan_matcher_helper.cpp
+  )
+  target_link_libraries(test_ndt_scan_matcher_helper ${PROJECT_NAME})
+
+  # Unit tests for the map update module driven by an injected fake pcd loader (no ROS service).
+  ament_auto_add_gtest(test_map_update_module
+    test/test_map_update_module.cpp
+  )
+  target_link_libraries(test_map_update_module ${PROJECT_NAME} multigrid_ndt_omp ${PCL_LIBRARIES})
+endif()
+
+autoware_ament_auto_package(
+  USE_SCOPED_HEADER_INSTALL_DIR
+  INSTALL_TO_SHARE
+  launch
+  config
+)
