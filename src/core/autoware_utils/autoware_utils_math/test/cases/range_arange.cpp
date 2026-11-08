@@ -52,7 +52,7 @@ TEST_P(TestArange, StepInverse)
   EXPECT_THROW(autoware_utils_math::arange(p.start, p.stop, -p.step), std::invalid_argument);
 }
 
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
   TestRange, TestArange,
   testing::Values(
     ParamArange{0.0, 1.0, +0.1, {0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9}},

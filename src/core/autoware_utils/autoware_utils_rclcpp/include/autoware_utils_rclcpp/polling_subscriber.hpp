@@ -215,7 +215,7 @@ public:
 
     subscriber_ = node->create_subscription<MessageT>(
       topic_name, qos,
-      [node]([[maybe_unused]] const typename MessageT::ConstSharedPtr msg) { assert(false); },
+      []([[maybe_unused]] const typename MessageT::ConstSharedPtr msg) { assert(false); },
       noexec_subscription_options);
   }
 

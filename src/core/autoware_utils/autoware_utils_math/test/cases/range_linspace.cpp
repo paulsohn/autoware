@@ -40,7 +40,7 @@ TEST_P(TestLinspace, Normal)
   }
 }
 
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
   TestRange, TestLinspace,
   testing::Values(
     ParamLinspace{0.0, 1.0, 11, {0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0}},

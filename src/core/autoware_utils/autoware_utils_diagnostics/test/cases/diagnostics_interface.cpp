@@ -48,7 +48,7 @@ TEST(TestDiagnosticsInterface, PubSubAcrossClearCycles)
   [[maybe_unused]] const auto sub =
     node->create_subscription<diagnostic_msgs::msg::DiagnosticArray>(
       "/diagnostics", rclcpp::QoS(10),
-      [&mutex, &last_received](const diagnostic_msgs::msg::DiagnosticArray::SharedPtr msg) {
+      [&mutex, &last_received](const diagnostic_msgs::msg::DiagnosticArray::ConstSharedPtr msg) {
         std::lock_guard<std::mutex> lock(mutex);
         last_received = *msg;
       });
