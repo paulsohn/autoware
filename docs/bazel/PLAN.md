@@ -67,7 +67,13 @@ Design:
 - Models go into their own `rules_oci` layer at the `dest` path the launch files expect.
 - Gated/private repos later: `.netrc` or `--credential_helper` for huggingface.co.
 
-Rejected: a git submodule of the HF repo needs git-lfs/git-xet in every environment, downloads all variants, needs one submodule per revision, and bypasses Bazel's cache. DVC needs its own storage remote and duplicates HF's versioning.
+Alternative (documented, not chosen): one git submodule per HF repo, pinned to the commit, files fetched with git-lfs.
+- Equivalent on integrity and traceability: the superproject pins the commit, the commit pins the LFS pointer (which holds the sha256). Files are ordinary source inputs to Bazel, so action caching works the same.
+- Simpler: no lock script, no module extension. Keeping only the latest version avoids multiple submodules per repo.
+- Why `http_file` instead: submodules download everything up front, per clone (each worktree, CI runner and image build fetches again unless a shared `lfs.storage` is set up), need git-lfs on every machine, and get no help from Bazel's shared repository cache, `bazel vendor`, `--distdir` or `--remote_downloader`. `http_file` downloads lazily, only for targets being built.
+- Switching later is cheap in either direction: both pin the same HF commit SHA.
+
+Rejected: DVC needs its own storage remote and duplicates HF's versioning.
 
 ## Phases
 | Phase | Work | Done when |
