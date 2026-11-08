@@ -1,0 +1,348 @@
+// Copyright 2024 TIER IV, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#ifndef GROUND_FILTER_HPP_
+#define GROUND_FILTER_HPP_
+
+#include "data.hpp"
+#include "grid.hpp"
+
+#include <autoware_utils_debug/time_keeper.hpp>
+#include <pcl/impl/point_types.hpp>
+#include <rcpputils/tl_expected/expected.hpp>
+
+#include <sensor_msgs/msg/point_cloud2.hpp>
+
+#include <pcl/PointIndices.h>
+#include <pcl/pcl_base.h>
+
+#include <algorithm>
+#include <cmath>
+#include <memory>
+#include <string>
+#include <utility>
+#include <vector>
+
+namespace autoware::ground_filter
+{
+using PointCloud2ConstPtr = sensor_msgs::msg::PointCloud2::ConstSharedPtr;
+
+struct PointsCentroid
+{
+  float radius_avg;
+  float height_avg;
+  float height_max;
+  float height_min;
+  std::vector<size_t> pcl_indices;
+  std::vector<float> height_list;
+  std::vector<float> radius_list;
+  std::vector<bool> is_ground_list;
+
+  PointsCentroid() : radius_avg(0.0f), height_avg(0.0f), height_max(-10.0f), height_min(10.0f) {}
+
+  void initialize()
+  {
+    radius_avg = 0.0f;
+    height_avg = 0.0f;
+    height_max = -10.0f;
+    height_min = 10.0f;
+    pcl_indices.clear();
+    height_list.clear();
+    radius_list.clear();
+    is_ground_list.clear();
+  }
+
+  inline void addPoint(const float radius, const float height, const size_t index)
+  {
+    pcl_indices.push_back(index);
+    height_list.push_back(height);
+    radius_list.push_back(radius);
+    is_ground_list.push_back(true);
+  }
+
+  int getGroundPointNum() const
+  {
+    return std::count(is_ground_list.begin(), is_ground_list.end(), true);
+  }
+
+  void processAverage()
+  {
+    // process only if is_ground_list is true
+    const int ground_point_num = getGroundPointNum();
+    if (ground_point_num == 0) {
+      return;
+    }
+
+    float radius_sum = 0.0f;
+    float height_sum = 0.0f;
+    height_max = -10.0f;
+    height_min = 10.0f;
+
+    for (size_t i = 0; i < is_ground_list.size(); ++i) {
+      if (!is_ground_list[i]) {
+        continue;
+      }
+      radius_sum += radius_list[i];
+      height_sum += height_list[i];
+      height_max = std::max(height_max, height_list[i]);
+      height_min = std::min(height_min, height_list[i]);
+    }
+
+    radius_avg = radius_sum / ground_point_num;
+    height_avg = height_sum / ground_point_num;
+  }
+
+  float getMinHeightOnly() const
+  {
+    float min_height = 10.0f;
+    for (size_t i = 0; i < is_ground_list.size(); ++i) {
+      if (!is_ground_list[i]) {
+        continue;
+      }
+      min_height = std::min(min_height, height_list[i]);
+    }
+    return min_height;
+  }
+
+  float getAverageSlope() const { return std::atan2(height_avg, radius_avg); }
+  float getAverageHeight() const { return height_avg; }
+  float getAverageRadius() const { return radius_avg; }
+  float getMaxHeight() const { return height_max; }
+  float getMinHeight() const { return height_min; }
+  const std::vector<size_t> & getIndicesRef() const { return pcl_indices; }
+  const std::vector<float> & getHeightListRef() const { return height_list; }
+};
+
+struct GroundFilterParameter
+{
+  bool elevation_grid_mode;
+
+  // Common params
+  float global_slope_max_angle_rad;
+  float local_slope_max_angle_rad;
+  float radial_divider_angle_rad;
+
+  // Grid params
+  bool use_recheck_ground_cluster;
+  bool use_lowest_point;
+  float detection_range_z_max;
+  float non_ground_height_threshold;
+  const uint16_t ground_grid_continual_thresh = 3;
+
+  float grid_size_m;
+  float grid_mode_switch_radius;
+  int ground_grid_buffer_size;
+
+  // Radial/ray algorithm params
+  bool use_virtual_ground_point;
+  float split_points_distance_tolerance;  // Distance in meters between concentric divisions.
+  float split_height_distance;  // Minimum height threshold regardless the slope. Useful for close
+                                // points.
+
+  float wheel_base_m;
+  float center_pcl_shift;
+  float vehicle_height_m;
+};
+
+class GroundFilter
+{
+public:
+  explicit GroundFilter(const GroundFilterParameter & param);
+
+  ~GroundFilter() = default;
+
+  void setTimeKeeper(std::shared_ptr<autoware_utils_debug::TimeKeeper> time_keeper_ptr)
+  {
+    time_keeper_ = std::move(time_keeper_ptr);
+
+    // set time keeper for grid
+    grid_ptr_->setTimeKeeper(time_keeper_);
+  }
+
+  tl::expected<sensor_msgs::msg::PointCloud2, std::string> filter(
+    const PointCloud2ConstPtr & in_cloud);
+
+private:
+  // parameters
+  GroundFilterParameter param_;
+
+  // pre-computed math variables
+  size_t radial_dividers_num_;
+  float global_slope_max_ratio_;
+  float virtual_lidar_x_;
+  float virtual_lidar_y_;
+  float virtual_lidar_z_;
+
+  // data
+  PointCloud2ConstPtr in_cloud_;
+  PclDataAccessor data_accessor_;
+
+  // grid data
+  std::unique_ptr<Grid> grid_ptr_;
+
+  // debug information
+  std::shared_ptr<autoware_utils_debug::TimeKeeper> time_keeper_;
+
+  void setDataAccessor(const PointCloud2ConstPtr & in_cloud)
+  {
+    if (!data_accessor_.isInitialized()) {
+      data_accessor_.setField(in_cloud);
+    }
+  }
+
+  void process(const PointCloud2ConstPtr & in_cloud, pcl::PointIndices & out_no_ground_indices);
+
+  bool recursiveSearch(const int check_idx, const int search_cnt, std::vector<int> & idx) const;
+  bool recursiveSearch(
+    const int check_idx, const int search_cnt, std::vector<int> & idx, size_t count) const;
+  void fitLineFromGndGrid(const std::vector<int> & idx, float & a, float & b) const;
+
+  void convert();
+  void preprocess();
+  void initializeGround(pcl::PointIndices & out_no_ground_indices);
+
+  void SegmentContinuousCell(
+    const Cell & cell, PointsCentroid & ground_bin, pcl::PointIndices & out_no_ground_indices);
+  void SegmentDiscontinuousCell(
+    const Cell & cell, PointsCentroid & ground_bin, pcl::PointIndices & out_no_ground_indices);
+  void SegmentBreakCell(
+    const Cell & cell, PointsCentroid & ground_bin, pcl::PointIndices & out_no_ground_indices);
+  void classify(pcl::PointIndices & out_no_ground_indices);
+
+  // Enum classes for each point to better characterize algorithm's behavior on each point
+  enum class PointLabel : uint16_t {
+    INIT = 0,
+    GROUND,
+    NON_GROUND,
+    POINT_FOLLOW,
+    UNKNOWN,
+    VIRTUAL_GROUND,
+    OUT_OF_RANGE
+  };
+
+  // Struct to hold point data and its label for radial ordered point cloud
+  struct PointData
+  {
+    float radius;
+    PointLabel point_state{PointLabel::INIT};
+    size_t data_index;
+  };
+  using PointCloudVector = std::vector<PointData>;
+
+  // Centroid struct for points in each ray for radial ordered point cloud
+  struct RayPointsCentroid
+  {
+    float radius_sum;
+    float height_sum;
+    float radius_avg;
+    float height_avg;
+    float height_max;
+    float height_min;
+    uint32_t point_num;
+    std::vector<size_t> pcl_indices;
+    std::vector<float> height_list;
+    std::vector<float> radius_list;
+
+    RayPointsCentroid()
+    : radius_sum(0.0f),
+      height_sum(0.0f),
+      radius_avg(0.0f),
+      height_avg(0.0f),
+      height_max(-10.0f),
+      height_min(10.0f),
+      point_num(0)
+    {
+    }
+
+    // Helper func to init all members to default values
+    void initialize()
+    {
+      radius_sum = 0.0f;
+      height_sum = 0.0f;
+      radius_avg = 0.0f;
+      height_avg = 0.0f;
+      height_max = -10.0f;
+      height_min = 10.0f;
+      point_num = 0;
+      pcl_indices.clear();
+      height_list.clear();
+    }
+
+    /**
+     * @brief Add a point to centroid calculation, updating sums, averages, and min/max heights.
+     *
+     * @param radius Radius of point in cylindrical coordinates.
+     * @param height Height of point.
+     */
+    void addPoint(const float radius, const float height)
+    {
+      radius_sum += radius;
+      height_sum += height;
+      ++point_num;
+      radius_avg = radius_sum / point_num;
+      height_avg = height_sum / point_num;
+      height_max = height_max < height ? height : height_max;
+      height_min = height_min > height ? height : height_min;
+    }
+
+    /**
+     * @brief Similar as the helper func right above, but also stores point index and height in
+     * lists for later use in ground/obstacle classification.
+     *
+     * @param radius Radius of point in cylindrical coordinates.
+     * @param height Height of point.
+     * @param index Index of point in original point cloud.
+     */
+    void addPoint(const float radius, const float height, const size_t index)
+    {
+      pcl_indices.push_back(index);
+      height_list.push_back(height);
+      addPoint(radius, height);
+    }
+
+    // Helper func to calculate average slope of points in ray
+    float getAverageSlope() const { return std::atan2(height_avg, radius_avg); }
+
+    // Helper func to get average height of points in ray
+    float getAverageHeight() const { return height_avg; }
+
+    // Helper func to get average radius of points in ray
+    float getAverageRadius() const { return radius_avg; }
+  };
+
+  // Helper func to convert point cloud to radial ordered point cloud
+  void convertPointCloud(
+    const PointCloud2ConstPtr & in_cloud,
+    std::vector<PointCloudVector> & out_radial_ordered_points) const;
+
+  // Helper func to calculate virtual ground point based on vehicle info
+  void calcVirtualGroundOrigin(pcl::PointXYZ & point) const;
+
+  // Helper func to classify points in radial ordered point cloud into ground & obstacle points.
+  // Also fills out_no_ground_indices with indices of points classified as obstacle.
+  void classifyPointCloud(
+    const PointCloud2ConstPtr & in_cloud,
+    const std::vector<PointCloudVector> & in_radial_ordered_clouds,
+    pcl::PointIndices & out_no_ground_indices) const;
+
+  // Helper func to extract object points from input point cloud based on indices of points
+  // classified as obstacle.
+  void extractObjectPoints(
+    const PointCloud2ConstPtr & in_cloud_ptr, const pcl::PointIndices & in_indices,
+    sensor_msgs::msg::PointCloud2 & out_object_cloud) const;
+};
+
+};  // namespace autoware::ground_filter
+
+#endif  // GROUND_FILTER_HPP_

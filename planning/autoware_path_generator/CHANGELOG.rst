@@ -1,0 +1,811 @@
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Changelog for package autoware_path_generator
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+1.1.0 (2025-05-01)
+------------------
+* fix(path_generator): set both lane IDs to point on border of adjacent lanes (`#384 <https://github.com/autowarefoundation/autoware_core/issues/384>`_)
+  set both lane IDs to point on border of adjacent lanes
+* feat(path_generator): move generate_path public (`#380 <https://github.com/autowarefoundation/autoware_core/issues/380>`_)
+  * feat(path_generator): move generate_path public
+  * style(pre-commit): autofix
+  * fix pre-commit
+  * fix test include path
+  ---------
+  Co-authored-by: t4-adc <grp-rd-1-adc-admin@tier4.jp>
+  Co-authored-by: pre-commit-ci[bot] <66853113+pre-commit-ci[bot]@users.noreply.github.com>
+* refactor(autoware_trajectory)!: move everything to namespace experimetal (`#371 <https://github.com/autowarefoundation/autoware_core/issues/371>`_)
+  refactor(autoware_trajectory)!: move everything to namespace experimental
+* test(path_generator): add tests for path cut feature (`#268 <https://github.com/autowarefoundation/autoware_core/issues/268>`_)
+  * add map for test
+  * add overpass map
+  * refactor & enhance base test class
+  * add tests
+  * style(pre-commit): autofix
+  * fix year created
+  Co-authored-by: Kosuke Takeuchi <kosuke.tnp@gmail.com>
+  * anonymize test map
+  * style(pre-commit): autofix
+  * add test map info to README
+  * style(pre-commit): autofix
+  * make tests work with autoware_trajectory
+  * include necessary header
+  * fix test case
+  * style(pre-commit): autofix
+  ---------
+  Co-authored-by: pre-commit-ci[bot] <66853113+pre-commit-ci[bot]@users.noreply.github.com>
+  Co-authored-by: Kosuke Takeuchi <kosuke.tnp@gmail.com>
+  Co-authored-by: Yutaka Kondo <yutaka.kondo@youtalk.jp>
+* fix(path_generator): deal with unintended input (`#336 <https://github.com/autowarefoundation/autoware_core/issues/336>`_)
+  * prevent segfault
+  * fix self-intersection search range
+  * define behavior for unintended input
+  * prevent segfault
+  * check builder output instead of input size
+  ---------
+* refactor(path_generator): avoid using fixed-size array (`#353 <https://github.com/autowarefoundation/autoware_core/issues/353>`_)
+  * avoid using fixed-size array
+  * include necessary headers
+  * avoid capturing structured bindings in lambdas
+  ---------
+* docs(path_generator): add description of path cut & turn signal feature (`#359 <https://github.com/autowarefoundation/autoware_core/issues/359>`_)
+  * add diagrams of path cut feature
+  * add diagrams of turn signal feature
+  * update parameter list
+  * update README
+  * style(pre-commit): autofix
+  ---------
+  Co-authored-by: pre-commit-ci[bot] <66853113+pre-commit-ci[bot]@users.noreply.github.com>
+* fix(path_generator): avoid shortcuts at overlaps (`#352 <https://github.com/autowarefoundation/autoware_core/issues/352>`_)
+  * track current lane to avoid shortcut
+  * add constraints for current lane search
+  ---------
+* feat(autoware_path_generator): use autoware_trajectory for cropping bounds (`#349 <https://github.com/autowarefoundation/autoware_core/issues/349>`_)
+* Contributors: Kazunori-Nakajima, Mamoru Sobue, Mitsuhiro Sakamoto, Yukinari Hisaki
+
+1.10.0 (2026-09-28)
+-------------------
+* Merge remote-tracking branch 'origin/main' into tmp/bot/bump_version_base
+* fix(design): align the autoware_core node designs with the packages they describe (`#1416 <https://github.com/autowarefoundation/autoware_core/issues/1416>`_)
+  * fix(autoware_velocity_smoother): correct the velocity limit message type in the node design
+  The node publishes current_velocity_limit_mps as
+  autoware_internal_planning_msgs/msg/VelocityLimit (node.hpp), while the
+  design declared the pre-migration tier4_planning_msgs type, failing the
+  connection check against downstream ports.
+  * fix(autoware_motion_velocity_planner): correct the velocity limit message types and drop absent publishers in the node design
+  * fix(autoware_path_generator): correct the path publisher message type in the node design
+  The node publishes autoware_internal_planning_msgs/msg/PathWithLaneId on
+  ~/output/path (node.hpp:84), not autoware_planning_msgs/msg/Path.
+  * fix(autoware_velocity_smoother): declare the kinematic state subscriber in the node design
+  The node polls /localization/kinematic_state for the ego odometry
+  (node.hpp:94-97); the design did not list the input at all.
+  * fix(autoware_motion_velocity_planner): name the module-side subscriber topics in the node design
+  The boundary departure prevention module subscribes on absolute topic
+  names, so the default ~/input/<name> remap targets addressed topics the
+  node never opens and the module connections resolved to nothing. Declare
+  the real names and add the steering status input the module also takes.
+  * fix(autoware_gnss_poser): declare the map projector info subscriber in the node design
+  The node blocks pose conversion until /map/map_projector_info arrives
+  (gnss_poser_node.cpp:43); the design did not list the input at all.
+  * fix(autoware_behavior_velocity_planner): add additional planning factors to publishers in the node design
+  ---------
+* feat(autoware_path_generator): implement characterization test (`#1403 <https://github.com/autowarefoundation/autoware_core/issues/1403>`_)
+  * implement integration test class
+  * implement test 1 of nominal standard route
+  * added test 2 of turn signal state machine test
+  * added test 3 for failsafe runtime test
+  * updated CMakeLists.txt
+  * removed old useless integration tests
+  * updated CKAmeLists
+  * fixed, build test complete and all good
+  * refactor that re-pub code snippet to be more ELEGANTO~
+  * further reafactor the map fetch snippet
+  * added test 4 of path cut scenario
+  * added TEST 5 for dense centerline scenario
+  * added TEST 6 of the missing dependency scenario
+  * minor fix on func type dec
+  * style(pre-commit): autofix
+  * added funcs to replace map bin and route with mocked versions
+  * temporal attempts to create a moc map moc route helper funcs
+  * style(pre-commit): autofix
+  * finally TEST 1 works fine now
+  * successfully applied create_mock_turn_map_bin() for TEST 2
+  * successfully implemented mock funcs into TEST 3
+  * successfully added map egn for X case, and applied it to TEST 4
+  * finally made TEST 5 works
+  * done rebasing
+  * finally adapted TEST 6, all good now
+  * successfully stripped away autoware_test_utils dependencies
+  * style(pre-commit): autofix
+  * make codes of map gen funcs SUPER-ELEGANTO!
+  * style(pre-commit): autofix
+  * precommit fix check
+  * bring back those old useless integration tests
+  * reduce git diff
+  * finally removed the 2 smokke tests
+  * added ASCII map vis comments for X map
+  * removed the create_mock_turn_map() func cuz its a lil bit redundant, and updating its edpendencies
+  * attempt to fix
+  * [sobue] replaced loop map bin with a P shaped self intersecting map
+  * added mock route for this single loop map
+  * fix comment section from // with /**/
+  * self intersection all good
+  * further attempting to fix
+  * added robust helper to wait for ros race
+  * style(pre-commit): autofix
+  * further reduce delay time
+  * fix the comments describing loop map a lil bit i guess
+  ---------
+  Co-authored-by: pre-commit-ci[bot] <66853113+pre-commit-ci[bot]@users.noreply.github.com>
+* fix(planning_test_manager): handle slow path output (`#1435 <https://github.com/autowarefoundation/autoware_core/issues/1435>`_)
+* feat: add spinUntilReceived to wait for subscription on ROS build farm (`#1176 <https://github.com/autowarefoundation/autoware_core/issues/1176>`_)
+  feat(planning_test_manager): add spinUntilReceived for ROS build farm
+* docs(planning): point the autoware_launch config links at their current path (`#1406 <https://github.com/autowarefoundation/autoware_core/issues/1406>`_)
+  `pre-commit-optional` fails on every PR with three dead links, all pointing
+  into `autoware_launch/config/planning/`. That tree moved to the
+  `autoware_planning_config` package:
+  autoware_launch/config/planning/scenario_planning/common/
+  -> autoware_universe_launch/autoware_planning_config/config/scenario_planning/common/
+  `autoware_motion_velocity_planner/README.md` linked `nearest_search.param.yaml`
+  and `common.param.yaml`; `autoware_path_generator/README.md` linked the former.
+  All three now resolve.
+  `autoware_motion_velocity_obstacle_stop_module/README.md` names the planning
+  preset in prose rather than as a link, so the checker never flagged it, but the
+  path was stale for the same reason and 404s too. Its target moved to
+  `autoware_universe_launch/autoware_planning_config/config/preset/`.
+  No `autoware_launch/config/planning` path is left in the repository.
+  `pre-commit run --config .pre-commit-config-optional.yaml markdown-link-check`
+  passes on all three files.
+* fix(planning): declare the dependencies these packages use (`#1372 <https://github.com/autowarefoundation/autoware_core/issues/1372>`_)
+  Each of these packages uses a package it never declares. Either it includes a
+  header of that package, or it names a symbol of it while the header arrives
+  through another dependency. Both build today only because some declared
+  dependency re-exports the owner, so a change in an unrelated repository can
+  break them without anything here changing.
+  The tag follows where the dependency is used: a use in an installed header or
+  in code compiled into the library takes <depend>, one reached only from test/
+  takes <test_depend>. System libraries are named by the rosdep key this
+  workspace already prefers.
+  A clean-context review of the pull request found five more direct uses with no manifest entry. Add one entry for each:
+  - autoware_path_generator: tf2 (tf2::getYaw in src/utils.cpp)
+  - autoware_motion_velocity_planner_common: tf2 (tf2::getYaw in src/planner_data.cpp and src/polygon_utils.cpp)
+  - autoware_motion_velocity_obstacle_stop_module: autoware_planning_factor_interface (constructed in src/obstacle_stop_module.cpp)
+  - autoware_behavior_velocity_stop_line_module: autoware_planning_factor_interface (used in src/experimental/scene.cpp)
+  - autoware_velocity_smoother: rclcpp_components (register_node_macro.hpp in src/node.cpp)
+* refactor: migrate node design files from autoware_universe (`#1381 <https://github.com/autowarefoundation/autoware_core/issues/1381>`_)
+  Node design files for packages that moved to autoware_core, placed at
+  the in-package convention <package>/design/<Name>.node.yaml.
+  Co-authored-by: Claude Fable 5 <noreply@anthropic.com>
+* Contributors: Mete Fatih Cırıt, Ryohsuke Mitsudome, Taekjin LEE, Takayuki AKAMINE, Tran Huu Nhat Huy, github-actions
+
+1.9.0 (2026-06-24)
+------------------
+* Merge remote-tracking branch 'origin/main' into tmp/bot/bump_version_base
+* chore(autoware_path_generator): increase timeout for tests (`#1172 <https://github.com/autowarefoundation/autoware_core/issues/1172>`_)
+  * chore(autoware_path_generator): increase timeout for tests
+  * fix spell check error
+  ---------
+  Co-authored-by: Junya Sasaki <j2sasaki1990@gmail.com>
+* perf(autoware_path_generator): make goal-connection closest-point fallback lazy and hoist path length (`#1118 <https://github.com/autowarefoundation/autoware_core/issues/1118>`_)
+  * perf(autoware_path_generator): make goal-connection closest-point fallback lazy and hoist path length
+  In connect_path_to_goal, the unconstrained trajectory::closest() search was
+  always evaluated as the value_or argument of the constrained search, so it ran
+  even on the common happy path where the constrained search already succeeded.
+  Replace value_or with an explicit branch so the unconstrained scan is only
+  performed when the constrained search fails.
+  In is_path_inside_lanelets, hoist path.length() out of the sampling loop so the
+  trajectory length is computed once instead of on every 0.1 m step. This
+  function is invoked repeatedly inside the per-cycle goal-connection retry loop,
+  so the redundant work compounds.
+  Both changes are behavior-preserving. Add a direct unit test for
+  get_first_self_intersection_arc_length that feeds a hand-built self-crossing
+  line string with a known expected arc length, covering the nested-loop
+  arc-length accumulation and the cross-iteration return that was previously
+  exercised only indirectly.
+  Refs: `autowarefoundation/autoware_core#1096 <https://github.com/autowarefoundation/autoware_core/issues/1096>`_
+  * style(pre-commit): autofix
+  ---------
+  Co-authored-by: pre-commit-ci[bot] <66853113+pre-commit-ci[bot]@users.noreply.github.com>
+* Contributors: Ryohsuke Mitsudome, Yutaka Kondo, github-actions
+
+1.8.0 (2026-05-01)
+------------------
+* Merge remote-tracking branch 'origin/main' into tmp/bot/bump_version_base
+* feat(autoware_trajectory): handle sparse points with interpolator fallback (`#994 <https://github.com/mitsudome-r/autoware_core/issues/994>`_)
+  * feat(trajectory): handle sparse points with interpolator fallback
+  * feat(autoware_trajectory): skip orientation alignment when insufficient points are available
+  * feat(autoware_trajectory): add minimum distance threshold check for trajectory building
+  * refactor(autoware_trajectory): reorganize and rename test cases for clarity and consistency
+  * fix(autoware_trajectory): cover restore for degenerate trajectories
+  * refactor(autoware_trajectory): simplify restore output
+  * fix(autoware_path_generator): align degenerate trajectory handling
+  * feat(autoware_trajectory): enhance fallback interpolator functionality and improve documentation
+  * refactor(trajectory): replace array indexing with at() for safer access
+  * feat(autoware_trajectory): add error handling for empty bases in start, end, and range methods
+  * fix(autoware_trajectory): guard degenerate interpolation math
+  * refactor(autoware_trajectory): simplify point restoration logic and improve test clarity
+  * refactor(autoware_trajectory): remove unused includes and improve code clarity
+  * chore: add missing includes for string and utility in example and test files
+  * fix(autoware_trajectory): initialize point coordinates in buildCroppedTrajectory test
+  * revert shift changes
+  * fix
+  ---------
+* chore(path_generator): remove deprecated function (`#847 <https://github.com/mitsudome-r/autoware_core/issues/847>`_)
+  * use route_manager
+  * fix tests
+  * update planner data in initialize_route_manager()
+  * remove unused utility functions
+  * restore old interface for static_centerline_generator
+  * remove planner_data
+  * remove unused header and old function
+  * restore old class and function
+  * add null check
+  * remove deprecated class and function
+  This reverts commit d4f976184ddad5cfc5e67254b96a922d2561d360.
+  * fix format
+  * fix deprecated
+  * fix
+  ---------
+  Co-authored-by: Mamoru Sobue <mamoru.sobue@tier4.jp>
+  Co-authored-by: Mamoru Sobue <hilo.soblin@gmail.com>
+* fix(path_generator): prevent path truncation before current lanelet (`#979 <https://github.com/mitsudome-r/autoware_core/issues/979>`_)
+  Fix path generator truncation before current lane
+* fix(autoware_path_generator): fix bugprone-narrowing-conversions warnings (`#921 <https://github.com/mitsudome-r/autoware_core/issues/921>`_)
+  * fix(autoware_path_generator): fix bugprone-narrowing-conversions warnings
+  * style(pre-commit): autofix
+  ---------
+  Co-authored-by: pre-commit-ci[bot] <66853113+pre-commit-ci[bot]@users.noreply.github.com>
+* chore(planning, bvp): remove unused lanelet2_extension header (`#902 <https://github.com/mitsudome-r/autoware_core/issues/902>`_)
+  * remove unused lanelet2_extension in bvp modules
+  * remove unused lanelet2_extension in planning components
+  ---------
+* fix(autoware_path_generator): remove unused variable path_points_with_lane_id (`#954 <https://github.com/mitsudome-r/autoware_core/issues/954>`_)
+  The variable was declared but never read or written to beyond initialization.
+  Detected by cppcheck [unreadVariable].
+  Co-authored-by: ryuta.kambe <ryuta.kambe@npc2302009.local>
+  Co-authored-by: Claude Sonnet 4.6 <noreply@anthropic.com>
+* fix(lanelet2_utils): change is_in_lanelet argument order (`#890 <https://github.com/mitsudome-r/autoware_core/issues/890>`_)
+* fix(autoware_path_generator): remove getArcCoordinates (`#891 <https://github.com/mitsudome-r/autoware_core/issues/891>`_)
+  replace remaining getArcCoordinates
+* feat(lanelet2_extension): port lanelet2_extension utilities functions (final)  (`#838 <https://github.com/mitsudome-r/autoware_core/issues/838>`_)
+  Co-authored-by: pre-commit-ci[bot] <66853113+pre-commit-ci[bot]@users.noreply.github.com>
+  Co-authored-by: Mamoru Sobue <hilo.soblin@gmail.com>
+* feat(path_generator): use `route_manager` to handle route data (`#803 <https://github.com/mitsudome-r/autoware_core/issues/803>`_)
+  Co-authored-by: Mamoru Sobue <hilo.soblin@gmail.com>
+  Co-authored-by: Mamoru Sobue <mamoru.sobue@tier4.jp>
+* feat(autoware_lanelet2_extension): replace remaining lanelet2_extension utilities functions (`#842 <https://github.com/mitsudome-r/autoware_core/issues/842>`_)
+  * replace getArcCoordinates usage
+  * replace combineLaneletsShape
+  * remove null return for get_dirty_expanded_lanelet
+  * change get_dirty_expanded_lanelet(s) positive right_offset (and negative left_offset) handler
+  ---------
+  Co-authored-by: Mamoru Sobue <hilo.soblin@gmail.com>
+* Contributors: Mitsuhiro Sakamoto, NorahXiong, Ryuta Kambe, Sarun MUKDAPITAK, Yukinari Hisaki, github-actions, teranishi
+
+1.7.0 (2026-02-14)
+------------------
+* Merge remote-tracking branch 'origin/main' into humble
+* refactor(planning): deprecate lanelet_extension geometry conversion function (`#834 <https://github.com/autowarefoundation/autoware_core/issues/834>`_)
+  Co-authored-by: Junya Sasaki <j2sasaki1990@gmail.com>
+* chore: reflect the move of the description packages (`#811 <https://github.com/autowarefoundation/autoware_core/issues/811>`_)
+* refactor(planning, common): replace lanelet2_extension function (`#796 <https://github.com/autowarefoundation/autoware_core/issues/796>`_)
+* revert: feat(path_generator): use `route_manager` to handle route data `#725 <https://github.com/autowarefoundation/autoware_core/issues/725>`_ (`#801 <https://github.com/autowarefoundation/autoware_core/issues/801>`_)
+  This reverts commit 2403cb5952d33db8e4a403d6cc7b368521d47f5e.
+* feat(path_generator): use `route_manager` to handle route data (`#725 <https://github.com/autowarefoundation/autoware_core/issues/725>`_)
+* Contributors: Mamoru Sobue, Mitsuhiro Sakamoto, Ryohsuke Mitsudome, Takagi, Isamu
+
+1.6.0 (2025-12-30)
+------------------
+* Merge remote-tracking branch 'origin/main' into tmp/bot/bump_version_base
+* chore(path_generator): add new maintainers to package.xml of path_generator (`#768 <https://github.com/autowarefoundation/autoware_core/issues/768>`_)
+  * chore: add new maintainers to package.xml of path_generator
+  * chore: remove maintainers
+  ---------
+* feat(autoware_lanelet2_utils): replace from/toBinMsg (`#737 <https://github.com/autowarefoundation/autoware_core/issues/737>`_)
+  Co-authored-by: Junya Sasaki <j2sasaki1990@gmail.com>
+  Co-authored-by: Mamoru Sobue <hilo.soblin@gmail.com>
+* fix(path_generator): cut path before loop prior to intersection check (`#758 <https://github.com/autowarefoundation/autoware_core/issues/758>`_)
+  * fix(path_generator): cut path before loop prior to intersection check
+  * fix(path_generator): prevent crash when trimming short bounds in intersection check
+  Add defensive check in trim_bound lambda to prevent calling crop() on trajectories that are too short. This fixes SIGSEGV crashes that occurred when lanelet_sequence was shortened by loop detection, resulting in bounds that were shorter than vehicle_length.
+  The fix ensures that:
+  - If bound.length() <= vehicle_length, the original bound is returned
+  - If bound.length() > vehicle_length, crop() is safely executed
+  - After crop(), if the result is empty, the original bound is returned
+  This resolves test failures in:
+  - test_test_static_centerline_generator_path_generator_case1_launch.test.py (Test 6)
+  - test_test_static_centerline_generator_path_generator_case4_launch.test.py (Test 9)
+  Both tests were timing out due to crashes in get_first_start_edge_bound_intersection_arc_length() when calling Trajectory<>::restore() on invalid cropped trajectories.
+  ---------
+* refactor(vehicle_info_utils): reduce autoware_utils deps (`#754 <https://github.com/autowarefoundation/autoware_core/issues/754>`_)
+* feat(QC, path_generator): use build_reference_path() for path generation (`#736 <https://github.com/autowarefoundation/autoware_core/issues/736>`_)
+* fix(autoware_path_generator): fix maybe-unitialized warning from test code (`#730 <https://github.com/autowarefoundation/autoware_core/issues/730>`_)
+  Co-authored-by: pre-commit-ci[bot] <66853113+pre-commit-ci[bot]@users.noreply.github.com>
+  Co-authored-by: Junya Sasaki <j2sasaki1990@gmail.com>
+* ci(pre-commit): autoupdate (`#723 <https://github.com/autowarefoundation/autoware_core/issues/723>`_)
+  * pre-commit formatting changes
+* Contributors: Mamoru Sobue, Masahiro Kubota, Mete Fatih Cırıt, Ryohsuke Mitsudome, Sarun MUKDAPITAK, github-actions, tera24
+
+1.5.0 (2025-11-16)
+------------------
+* Merge remote-tracking branch 'origin/main' into humble
+* feat(lanelet2_utils): organize maps by vm-map-spec id (`#716 <https://github.com/autowarefoundation/autoware_core/issues/716>`_)
+* feat(autoware_lanelet2_utils): replace ported functions from autoware_lanelet2_extension (`#695 <https://github.com/autowarefoundation/autoware_core/issues/695>`_)
+* feat: replace `ament_auto_package` to `autoware_ament_auto_package` (`#700 <https://github.com/autowarefoundation/autoware_core/issues/700>`_)
+  * replace ament_auto_package to autoware_ament_auto_package
+  * style(pre-commit): autofix
+  ---------
+  Co-authored-by: pre-commit-ci[bot] <66853113+pre-commit-ci[bot]@users.noreply.github.com>
+* fix(path_generator): add border point to/before waypoint group (`#620 <https://github.com/autowarefoundation/autoware_core/issues/620>`_)
+  * add function to find border point
+  * add field to store next lane id
+  * add border point to waypoint group when merging
+  * interpolate point on centerline in 3d
+  * add validation
+  * add border point to path if necessary
+  * add loop detection
+  * add tests for get_border_point()
+  * style(pre-commit): autofix
+  * fix function description
+  * rename variable to avoid shadowing
+  * flatten nest
+  * add comments for clarity
+  * style(pre-commit): autofix
+  ---------
+  Co-authored-by: pre-commit-ci[bot] <66853113+pre-commit-ci[bot]@users.noreply.github.com>
+* feat(path_generator): add validation to avoid segfault (`#604 <https://github.com/autowarefoundation/autoware_core/issues/604>`_)
+  add validation
+  Co-authored-by: Junya Sasaki <j2sasaki1990@gmail.com>
+* chore: bump version (1.4.0) and update changelog (`#608 <https://github.com/autowarefoundation/autoware_core/issues/608>`_)
+* Contributors: Mamoru Sobue, Mete Fatih Cırıt, Mitsuhiro Sakamoto, Sarun MUKDAPITAK, Yutaka Kondo, mitsudome-r
+
+1.4.0 (2025-08-11)
+------------------
+* Merge remote-tracking branch 'origin/main' into humble
+* fix(path_generator): avoid far goal connection (`#594 <https://github.com/autowarefoundation/autoware_core/issues/594>`_)
+  * use autoware_trajectory instead of vector of path points
+  * fix goal connection algorithm
+  * perform goal connection only if path reaches goal
+  * fix tests
+  * style(pre-commit): autofix
+  * add description of goal connection feature
+  * style(pre-commit): autofix
+  ---------
+  Co-authored-by: pre-commit-ci[bot] <66853113+pre-commit-ci[bot]@users.noreply.github.com>
+  Co-authored-by: Kosuke Takeuchi <kosuke.tnp@gmail.com>
+* fix(path_generator): fix start edge intersection search (`#595 <https://github.com/autowarefoundation/autoware_core/issues/595>`_)
+  * return cropped line string as autoware_trajectory
+  * separate intersection search into functions & fix start edge intersection search
+  * fix tests
+  * add tests for intersection search functions
+  * ensure intersection point is not ends of start edge
+  * update doxygen comment
+  ---------
+* fix(path_generator): merge waypoint groups with shared overlap interval (`#586 <https://github.com/autowarefoundation/autoware_core/issues/586>`_)
+  * merge waypoint groups with shared overlap intervals
+  * replace parameters with new ones
+  * update figure in description
+  * style(pre-commit): autofix
+  * fix(path_generator): apply clang-tidy
+  ---------
+  Co-authored-by: pre-commit-ci[bot] <66853113+pre-commit-ci[bot]@users.noreply.github.com>
+  Co-authored-by: Junya Sasaki <j2sasaki1990@gmail.com>
+  Co-authored-by: Junya Sasaki <junya.sasaki@tier4.jp>
+* chore: bump version to 1.3.0 (`#554 <https://github.com/autowarefoundation/autoware_core/issues/554>`_)
+* fix(path_generator): update unit tests (`#577 <https://github.com/autowarefoundation/autoware_core/issues/577>`_)
+  * fix tests to use new goal connection functions
+  * fix dense centerline test
+  ---------
+* feat(path_generator): improve goal connection for goal on the side (`#564 <https://github.com/autowarefoundation/autoware_core/issues/564>`_)
+  * change goal connection method
+  * apply goal connection
+  * rename parameter
+  * change parameter name
+  ---------
+* test(path_generator): add extra tests (`#449 <https://github.com/autowarefoundation/autoware_core/issues/449>`_)
+  * add map for test
+  * update test cases for get_turn_signal()
+  * rename test route files
+  * add test with dense centerline
+  * move dense centerline map to sample_map directory
+  * add tests for get_arc_length_on_path
+  * modify path start point to be inside route lanelet
+  * add tests for smooth goal connection
+  * include necessary header
+  * remove ineffective test case
+  * fix comment
+  * remove unnecessary lines
+  * fix test case for refine_path_for_goal
+  * rename parameters
+  * add missing argument
+  * remove include guard
+  ---------
+* fix(path_generator): fix waypoint interval calculation (`#567 <https://github.com/autowarefoundation/autoware_core/issues/567>`_)
+  fix waypoint interval calculation
+* fix(path_generator): support 0s turn signal search time (`#557 <https://github.com/autowarefoundation/autoware_core/issues/557>`_)
+* Contributors: Kosuke Takeuchi, Mitsuhiro Sakamoto, Ryohsuke Mitsudome
+
+1.3.0 (2025-06-23)
+------------------
+* fix: to be consistent version in all package.xml(s)
+* feat(path_generator): publish processing time (`#549 <https://github.com/autowarefoundation/autoware_core/issues/549>`_)
+* fix(path_generator): deal with short path (`#536 <https://github.com/autowarefoundation/autoware_core/issues/536>`_)
+  * use pretty_build to handle short path
+  * add error message
+  ---------
+* fix(path_generator): ensure refined path connects start and goal (`#511 <https://github.com/autowarefoundation/autoware_core/issues/511>`_)
+  * ensure refined path connects start and goal
+  * rename and add parameters for smooth goal connection
+  * parameterize pre-goal offset
+  * delegate validation to generate_parameter_library
+  ---------
+  Co-authored-by: Yutaka Kondo <yutaka.kondo@youtalk.jp>
+* refactor(path_generator): remove refine_goal (`#500 <https://github.com/autowarefoundation/autoware_core/issues/500>`_)
+* refactor(path_generator): remove unused functions (`#499 <https://github.com/autowarefoundation/autoware_core/issues/499>`_)
+  * remove unused functions
+  * fix function declaration to match implementation
+  * add declaration of is_trajectory_inside_lanelets
+  * fix declaration of refine_path_for_goal
+  ---------
+* fix(path_generator): fix crop range when waypoints exist (`#461 <https://github.com/autowarefoundation/autoware_core/issues/461>`_)
+  * fix crop range when waypoints exist
+  * add get_arc_length_on_path function
+  * fix handling of waypoints on overlapping lanes
+  * check for self-intersections of bounds of lanelets extended outside route
+  * fix cropping at goal
+  * fix cropping trajectory
+  * add comments about lanelet extension
+  * fix behavior in edge cases
+  ---------
+* docs(path_generator): replace flowchart with raw plantuml code (`#482 <https://github.com/autowarefoundation/autoware_core/issues/482>`_)
+  * add flowchart
+  * style(pre-commit): autofix
+  ---------
+  Co-authored-by: pre-commit-ci[bot] <66853113+pre-commit-ci[bot]@users.noreply.github.com>
+* fix(path_generator): add missing autoware planning msgs (`#480 <https://github.com/autowarefoundation/autoware_core/issues/480>`_)
+* chore: bump up version to 1.1.0 (`#462 <https://github.com/autowarefoundation/autoware_core/issues/462>`_) (`#464 <https://github.com/autowarefoundation/autoware_core/issues/464>`_)
+* refactor(path_generator): avoid using non-API functions (`#432 <https://github.com/autowarefoundation/autoware_core/issues/432>`_)
+  * avoid using lanelet::geometry::internal functions
+  * use meaningful struct instead of pair
+  ---------
+* feat(autoware_path_generator): add smooth goal connection (`#394 <https://github.com/autowarefoundation/autoware_core/issues/394>`_)
+* fix(path_generator): set both lane IDs to point on border of adjacent lanes (`#384 <https://github.com/autowarefoundation/autoware_core/issues/384>`_)
+  set both lane IDs to point on border of adjacent lanes
+* feat(path_generator): move generate_path public (`#380 <https://github.com/autowarefoundation/autoware_core/issues/380>`_)
+  * feat(path_generator): move generate_path public
+  * style(pre-commit): autofix
+  * fix pre-commit
+  * fix test include path
+  ---------
+  Co-authored-by: t4-adc <grp-rd-1-adc-admin@tier4.jp>
+  Co-authored-by: pre-commit-ci[bot] <66853113+pre-commit-ci[bot]@users.noreply.github.com>
+* refactor(autoware_trajectory)!: move everything to namespace experimetal (`#371 <https://github.com/autowarefoundation/autoware_core/issues/371>`_)
+  refactor(autoware_trajectory)!: move everything to namespace experimental
+* test(path_generator): add tests for path cut feature (`#268 <https://github.com/autowarefoundation/autoware_core/issues/268>`_)
+  * add map for test
+  * add overpass map
+  * refactor & enhance base test class
+  * add tests
+  * style(pre-commit): autofix
+  * fix year created
+  Co-authored-by: Kosuke Takeuchi <kosuke.tnp@gmail.com>
+  * anonymize test map
+  * style(pre-commit): autofix
+  * add test map info to README
+  * style(pre-commit): autofix
+  * make tests work with autoware_trajectory
+  * include necessary header
+  * fix test case
+  * style(pre-commit): autofix
+  ---------
+  Co-authored-by: pre-commit-ci[bot] <66853113+pre-commit-ci[bot]@users.noreply.github.com>
+  Co-authored-by: Kosuke Takeuchi <kosuke.tnp@gmail.com>
+  Co-authored-by: Yutaka Kondo <yutaka.kondo@youtalk.jp>
+* fix(path_generator): deal with unintended input (`#336 <https://github.com/autowarefoundation/autoware_core/issues/336>`_)
+  * prevent segfault
+  * fix self-intersection search range
+  * define behavior for unintended input
+  * prevent segfault
+  * check builder output instead of input size
+  ---------
+* refactor(path_generator): avoid using fixed-size array (`#353 <https://github.com/autowarefoundation/autoware_core/issues/353>`_)
+  * avoid using fixed-size array
+  * include necessary headers
+  * avoid capturing structured bindings in lambdas
+  ---------
+* docs(path_generator): add description of path cut & turn signal feature (`#359 <https://github.com/autowarefoundation/autoware_core/issues/359>`_)
+  * add diagrams of path cut feature
+  * add diagrams of turn signal feature
+  * update parameter list
+  * update README
+  * style(pre-commit): autofix
+  ---------
+  Co-authored-by: pre-commit-ci[bot] <66853113+pre-commit-ci[bot]@users.noreply.github.com>
+* fix(path_generator): avoid shortcuts at overlaps (`#352 <https://github.com/autowarefoundation/autoware_core/issues/352>`_)
+  * track current lane to avoid shortcut
+  * add constraints for current lane search
+  ---------
+* feat(autoware_path_generator): use autoware_trajectory for cropping bounds (`#349 <https://github.com/autowarefoundation/autoware_core/issues/349>`_)
+* Contributors: Kazunori-Nakajima, Kosuke Takeuchi, Mamoru Sobue, Mitsuhiro Sakamoto, Yukinari Hisaki, Yutaka Kondo, github-actions, taikitanaka3
+
+1.0.0 (2025-03-31)
+------------------
+* test(autoware_path_generator): add turn signal RequiredEndPoint position test (`#323 <https://github.com/autowarefoundation/autoware_core/issues/323>`_)
+  test(autoware_path_generator): add RequiredEndPoint position test
+* test(path_generator): add tests for turn signal activation feature (`#253 <https://github.com/autowarefoundation/autoware_core/issues/253>`_)
+  * add tests
+  * style(pre-commit): autofix
+  * Update planning/autoware_path_generator/test/test_turn_signal.cpp
+  Co-authored-by: Kosuke Takeuchi <kosuke.tnp@gmail.com>
+  ---------
+  Co-authored-by: pre-commit-ci[bot] <66853113+pre-commit-ci[bot]@users.noreply.github.com>
+  Co-authored-by: Yutaka Kondo <yutaka.kondo@youtalk.jp>
+  Co-authored-by: Kosuke Takeuchi <kosuke.tnp@gmail.com>
+* fix(autoware_path_generator): remove redundant move (`#318 <https://github.com/autowarefoundation/autoware_core/issues/318>`_)
+  Remove redundant move
+* fix(path_generator): fix path bound generation for overlapped lanes (`#285 <https://github.com/autowarefoundation/autoware_core/issues/285>`_)
+  * fix path bound generation for overlapped lanes
+  * check for intersection between start edge of drivable area and path bounds
+  * fix start edge intersection search
+  * temporarily disuse autoware_trajectory
+  * check intersection between start edge of drivable area and center line
+  * fix get_first_self_intersection_arc_length idx
+  * fix redundantInitialization
+  * fix structure bindings for clang-tidy
+  ---------
+  Co-authored-by: kosuke55 <kosuke.tnp@gmail.com>
+* Contributors: Kosuke Takeuchi, Mitsuhiro Sakamoto, Shane Loretz
+
+0.3.0 (2025-03-21)
+------------------
+* chore: fix versions in package.xml
+* chore: rename from `autoware.core` to `autoware_core` (`#290 <https://github.com/autowarefoundation/autoware.core/issues/290>`_)
+* feat: adaptation to ROS nodes guidelines about directory structure (`#272 <https://github.com/autowarefoundation/autoware.core/issues/272>`_)
+* fix(path_generator): fix path bound generation (`#267 <https://github.com/autowarefoundation/autoware.core/issues/267>`_)
+  fix path bound generation
+* feat(autoware_path_generator): function to smooth the path (`#227 <https://github.com/autowarefoundation/autoware.core/issues/227>`_)
+  * feat: function to smooth the route (see below)
+  Description:
+  This commit is kind of feature porting from `autoware.universe` as follows
+  * Import `PathWithLaneId DefaultFixedGoalPlanner::modifyPathForSmoothGoalConnection` from the following `autoware.universe` code
+  https://github.com/autowarefoundation/autoware.universe/blob/a0816b7e3e35fbe822fefbb9c9a8132365608b49/planning/behavior_path_planner/autoware_behavior_path_goal_planner_module/src/default_fixed_goal_planner.cpp#L74-L104
+  * Also import all related functions from the `autoware.universe` side
+  * style(pre-commit): autofix
+  * bugs: fix remaining conflicts
+  * Update planning/autoware_path_generator/src/utils.cpp
+  Co-authored-by: Kosuke Takeuchi <kosuke.tnp@gmail.com>
+  * Update planning/autoware_path_generator/src/utils.cpp
+  Co-authored-by: Kosuke Takeuchi <kosuke.tnp@gmail.com>
+  * refactor: as follows
+  * Enhance error handlings
+  * Remove unused variables
+  * Simplify the code
+  * Improve readability a little bit
+  * style(pre-commit): autofix
+  * refactor: enhance error handling
+  * style(pre-commit): autofix
+  * bug: fix wrong function declaration in header
+  * bug: fix wrong point index calculation
+  * bug: remove meaningless comment
+  * This comment is wrote because of my misunderstanding
+  * fix: apply `pre-commit`
+  * fix: smooth path before cropping trajectory points
+  * bug: fix shadow variable
+  * bug: fix missing parameters for `autoware_path_generator`
+  * bug: fix by cpplint
+  * style(pre-commit): autofix
+  * bug: apply missing fix proposed by cpplint
+  * style(pre-commit): autofix
+  * bug: `autoware_test_utils` should be in the `test_depend`
+  * fix(autoware_path_generator): add maintainer and author
+  * style(pre-commit): autofix
+  * fix: by pre-commit
+  * Sorry, I was forgetting to do this on my local env.
+  * fix: smooth path only when a goal point is included
+  * bug: do error handling
+  * style(pre-commit): autofix
+  * bug: fix wrong distance calculation
+  * The goal position is generally separate from the path points
+  * fix: remove sanity check temporary as following reasons
+  * CI (especially unit tests) fails due to this sanity check
+  * As this is out of scope for this PR, we will fix the bug
+  where the start and end are reversed in another PR
+  * refactor: fix complexity
+  * We should start from the simple one
+  * Then we can add the necessary optimization later
+  * bug: missing fixes in the include header
+  * bug: inconsistent function declaration
+  * The type of returned value and arguments were wrong
+  * Update planning/autoware_path_generator/include/autoware/path_generator/common_structs.hpp
+  Co-authored-by: Kosuke Takeuchi <kosuke.tnp@gmail.com>
+  * Update planning/autoware_path_generator/src/node.cpp
+  Co-authored-by: Kosuke Takeuchi <kosuke.tnp@gmail.com>
+  * Update planning/autoware_path_generator/src/utils.cpp
+  Co-authored-by: Kosuke Takeuchi <kosuke.tnp@gmail.com>
+  * Update planning/autoware_path_generator/src/utils.cpp
+  Co-authored-by: Kosuke Takeuchi <kosuke.tnp@gmail.com>
+  * style(pre-commit): autofix
+  * fix: apply comment in the following PR
+  * https://github.com/autowarefoundation/autoware.core/pull/227#discussion_r1986045016
+  * fix: sorry, I was missing one comment to be applied
+  * style(pre-commit): autofix
+  * bug: fix wrong goal point interpolation
+  * feat: add test case (goal on left side)
+  * bug: fix as follows
+  * Prevent name duplication (path_up_to_just_before_pre_goal)
+  * Fix missing left/right bound
+  * Goal must have zero velocity
+  * Improve readability
+  * Other minor fixes
+  * bug: fix duplicated zero velocity set
+  * Zero velocity is set after the removed lines by this commit
+  * feat: add one test case (goal on left side)
+  * Update planning/autoware_path_generator/src/utils.cpp
+  Co-authored-by: Kosuke Takeuchi <kosuke.tnp@gmail.com>
+  * fix: apply comment from reviewer
+  * fix(package.xml): update maintainer for the following packages
+  * `autoware_planning_test_manager`
+  * `autoware_test_utils`
+  * Update planning/autoware_path_generator/src/node.cpp
+  Co-authored-by: Kosuke Takeuchi <kosuke.tnp@gmail.com>
+  * Update planning/autoware_path_generator/src/utils.cpp
+  Co-authored-by: Mitsuhiro Sakamoto <50359861+mitukou1109@users.noreply.github.com>
+  * Update planning/autoware_path_generator/src/utils.cpp
+  Co-authored-by: Mitsuhiro Sakamoto <50359861+mitukou1109@users.noreply.github.com>
+  * bug: fix missing header in the path
+  * This finally causes an issue that the vehicle cannot engage
+  * bug: fix an issue that smooth connection does not work
+  * refactor: simplify code
+  * bug: fix wrong pose at the goal (see below)
+  * If we return nullopt here, the original path
+  whose goal position is located at the center line is used.
+  * Unless far from the goal point, the path becomes smoothed one
+  whose goal position is located at the side of road correctly.
+  * But as the goal approaches very closely, the goal position is
+  shifted from smoothed one to the original one
+  * Thus, the goal pose finally becomes wrong due to the goal position shift
+  * refactor: no need this line here
+  * style(pre-commit): autofix
+  * bug: fix so we follow the provided review comments
+  * bug: sorry, this is unsaved fix, ...
+  * cosmetic: fix wrong comment
+  * bug: unused function `get_goal_lanelet()` remaining
+  * bug: carefully handle the pre goal velocity
+  * It seems zero pre goal velocity makes scenario fail
+  - We need to insert appropriate velocity for pre goal
+  * Update planning/autoware_path_generator/src/utils.cpp
+  Co-authored-by: Kosuke Takeuchi <kosuke.tnp@gmail.com>
+  * Update planning/autoware_path_generator/src/utils.cpp
+  Co-authored-by: Kosuke Takeuchi <kosuke.tnp@gmail.com>
+  * style(pre-commit): autofix
+  ---------
+  Co-authored-by: pre-commit-ci[bot] <66853113+pre-commit-ci[bot]@users.noreply.github.com>
+  Co-authored-by: Kosuke Takeuchi <kosuke.tnp@gmail.com>
+  Co-authored-by: Mitsuhiro Sakamoto <50359861+mitukou1109@users.noreply.github.com>
+* feat(path_generator): publish hazard signal (`#252 <https://github.com/autowarefoundation/autoware.core/issues/252>`_)
+  publish hazard signal (no command)
+* fix(path_generator): set current pose appropriately in test (`#250 <https://github.com/autowarefoundation/autoware.core/issues/250>`_)
+  set start pose of route as current pose
+* feat(path_generator): add turn signal activation feature (`#220 <https://github.com/autowarefoundation/autoware.core/issues/220>`_)
+  * add path_generator package
+  fix spell check error
+  include necessary headers
+  change package version to 0.0.0
+  Co-authored-by: Yutaka Kondo <yutaka.kondo@youtalk.jp>
+  fix include guard name
+  Co-authored-by: Yutaka Kondo <yutaka.kondo@youtalk.jp>
+  replace flowchart uml with pre-generated image
+  Co-authored-by: Yutaka Kondo <yutaka.kondo@youtalk.jp>
+  style(pre-commit): autofix
+  replace tier4_planning_msgs with autoware_internal_planning_msgs
+  style(pre-commit): autofix
+  use LaneletSequence instead of ConstLanelets
+  set orientation to path points
+  crop path bound to fit trajectory
+  offset path bound
+  no need to make return value optional
+  address deprecation warning
+  add doxygen comments
+  support multiple previous/next lanelets
+  fix path bound cut issue
+  group parameters
+  add turn signal activation feature
+  fix turn direction check process
+  consider required end point
+  keep turn signal activated until reaching desired end point if without conflicts
+  add missing parameters
+  * add include
+  * use trajectory class
+  * minor change
+  ---------
+  Co-authored-by: mitukou1109 <mitukou1109@gmail.com>
+* test(path_generator): add tests (`#215 <https://github.com/autowarefoundation/autoware.core/issues/215>`_)
+  * test(path_generator): add tests
+  * add tests
+  * adapt test to new test manager
+  * migrate to autoware_internal_planning_msgs
+  * use intersection map for unit tests
+  ---------
+  fix pre-commit
+  fix pre-commit
+  * Update planning/autoware_path_generator/test/test_path_generator_node_interface.cpp
+  Co-authored-by: Satoshi OTA <44889564+satoshi-ota@users.noreply.github.com>
+  * fix for latest
+  ---------
+  Co-authored-by: Mitsuhiro Sakamoto <50359861+mitukou1109@users.noreply.github.com>
+  Co-authored-by: Satoshi OTA <44889564+satoshi-ota@users.noreply.github.com>
+* feat(path_generator): add path cut feature (`#216 <https://github.com/autowarefoundation/autoware.core/issues/216>`_)
+  * feat(path_generator): add path cut feature
+  add path_generator package
+  fix spell check error
+  include necessary headers
+  change package version to 0.0.0
+  Co-authored-by: Yutaka Kondo <yutaka.kondo@youtalk.jp>
+  fix include guard name
+  Co-authored-by: Yutaka Kondo <yutaka.kondo@youtalk.jp>
+  replace flowchart uml with pre-generated image
+  Co-authored-by: Yutaka Kondo <yutaka.kondo@youtalk.jp>
+  style(pre-commit): autofix
+  replace tier4_planning_msgs with autoware_internal_planning_msgs
+  style(pre-commit): autofix
+  use LaneletSequence instead of ConstLanelets
+  set orientation to path points
+  crop path bound to fit trajectory
+  offset path bound
+  no need to make return value optional
+  address deprecation warning
+  add doxygen comments
+  support multiple previous/next lanelets
+  fix path bound cut issue
+  group parameters
+  add path cut feature
+  ensure s_end is not negative
+  simplify return value selection
+  add doxygen comments
+  * ignore makeIndexedSegmenTree from spell check
+  * delete comments from cspell for pre-commit
+  ---------
+  Co-authored-by: mitukou1109 <mitukou1109@gmail.com>
+* feat(path_generator): add path_generator package (`#138 <https://github.com/autowarefoundation/autoware.core/issues/138>`_)
+  * add path_generator package
+  * fix spell check error
+  * include necessary headers
+  * change package version to 0.0.0
+  Co-authored-by: Yutaka Kondo <yutaka.kondo@youtalk.jp>
+  * fix include guard name
+  Co-authored-by: Yutaka Kondo <yutaka.kondo@youtalk.jp>
+  * replace flowchart uml with pre-generated image
+  Co-authored-by: Yutaka Kondo <yutaka.kondo@youtalk.jp>
+  * style(pre-commit): autofix
+  * replace tier4_planning_msgs with autoware_internal_planning_msgs
+  * style(pre-commit): autofix
+  * use LaneletSequence instead of ConstLanelets
+  * set orientation to path points
+  * crop path bound to fit trajectory
+  * offset path bound
+  * no need to make return value optional
+  * address deprecation warning
+  * add doxygen comments
+  * support multiple previous/next lanelets
+  * fix path bound cut issue
+  * group parameters
+  * use autoware_utils
+  * test(path_generator): add tests (`#1 <https://github.com/autowarefoundation/autoware.core/issues/1>`_)
+  * add tests
+  * adapt test to new test manager
+  * migrate to autoware_internal_planning_msgs
+  * use intersection map for unit tests
+  ---------
+  * fix pre-commit
+  * fix pre-commit
+  * Revert "fix pre-commit"
+  This reverts commit 9b3ae3e93c826f571101203f2b0defc5e238741b.
+  Revert "fix pre-commit"
+  This reverts commit 6a3c5312920ba4551ced5247674209318b31c657.
+  Revert "test(path_generator): add tests (`#1 <https://github.com/autowarefoundation/autoware.core/issues/1>`_)"
+  This reverts commit 7773976d3651e7e3b0b12f405f800abebfb6abe8.
+  ---------
+  Co-authored-by: Yutaka Kondo <yutaka.kondo@youtalk.jp>
+  Co-authored-by: pre-commit-ci[bot] <66853113+pre-commit-ci[bot]@users.noreply.github.com>
+  Co-authored-by: kosuke55 <kosuke.tnp@gmail.com>
+* Contributors: Junya Sasaki, Kosuke Takeuchi, Mitsuhiro Sakamoto, NorahXiong, Yutaka Kondo, mitsudome-r

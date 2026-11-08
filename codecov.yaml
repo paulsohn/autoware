@@ -1,0 +1,77 @@
+coverage:
+  status:
+    project:
+      default:
+        target: auto
+    patch:
+      default:
+        target: auto
+
+comment:
+  show_carryforward_flags: true
+
+flag_management:
+  default_rules:
+    carryforward: true
+    statuses:
+      - name_prefix: project-
+        type: project
+        target: auto
+      - name_prefix: patch-
+        type: patch
+        target: auto
+
+ignore:
+  - "**/test/*"
+  - "**/test/**/*"
+  - "**/debug.*"
+  - tools/**
+  - "**/examples/*"
+  - "**/examples/**/*"
+
+component_management:
+  individual_components:
+    - component_id: api-packages
+      name: API Packages
+      paths:
+        - api/**/**
+
+    - component_id: common-packages
+      name: Common Packages
+      paths:
+        - common/**/**
+
+    - component_id: control-packages
+      name: Control Packages
+      paths:
+        - control/**/**
+
+    - component_id: localization-packages
+      name: Localization Packages
+      paths:
+        - localization/**/**
+
+    - component_id: map-packages
+      name: Map Packages
+      paths:
+        - map/**/**
+
+    - component_id: perception-packages
+      name: Perception Packages
+      paths:
+        - perception/**/**
+
+    - component_id: planning-packages
+      name: Planning Packages
+      paths:
+        - planning/**/**
+
+    - component_id: sensing-packages
+      name: Sensing Packages
+      paths:
+        - sensing/**/**
+
+    - component_id: testing-packages
+      name: Testing Packages
+      paths:
+        - testing/**/**

@@ -1,0 +1,77 @@
+// Copyright 2021 Tier IV, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#ifndef AUTOWARE__MAP_LOADER__LANELET2_MAP_LOADER_NODE_HPP_
+#define AUTOWARE__MAP_LOADER__LANELET2_MAP_LOADER_NODE_HPP_
+
+#include <autoware/agnocast_wrapper/node.hpp>
+#include <autoware/component_interface_specs/map.hpp>
+#include <autoware_lanelet2_extension/version.hpp>
+#include <rclcpp/rclcpp.hpp>
+
+#include <autoware_map_msgs/msg/lanelet_map_bin.hpp>
+#include <autoware_map_msgs/msg/lanelet_map_meta_data.hpp>
+#include <autoware_map_msgs/msg/map_projector_info.hpp>
+#include <autoware_map_msgs/srv/get_selected_lanelet2_map.hpp>
+
+#include <lanelet2_projection/UTM.h>
+
+#include <memory>
+#include <string>
+
+namespace autoware::map_loader
+{
+// Forward declaration — full definition lives in the private source directory.
+class Lanelet2SelectedMapLoaderModule;
+
+class Lanelet2MapLoaderNode : public autoware::agnocast_wrapper::Node
+{
+public:
+  static constexpr lanelet::autoware::Version version = lanelet::autoware::version;
+
+public:
+  explicit Lanelet2MapLoaderNode(const rclcpp::NodeOptions & options);
+  ~Lanelet2MapLoaderNode() override;  // defined in .cpp so unique_ptr can see the full module type
+
+  static lanelet::LaneletMapPtr load_map(
+    const std::string & lanelet2_filename,
+    const autoware_map_msgs::msg::MapProjectorInfo & projector_info);
+  static autoware_map_msgs::msg::LaneletMapBin create_map_bin_msg(
+    const lanelet::LaneletMapPtr map, const std::string & lanelet2_filename,
+    const rclcpp::Time & now);
+
+private:
+  using MapProjectorInfo = autoware::component_interface_specs::map::MapProjectorInfo;
+  using VectorMap = autoware::component_interface_specs::map::VectorMap;
+
+  void on_map_projector_info(
+    const AUTOWARE_MESSAGE_CONST_SHARED_PTR(MapProjectorInfo::Message) & msg);
+
+  bool on_get_selected_lanelet2_map(
+    AUTOWARE_SERVER_REQUEST_PTR(autoware_map_msgs::srv::GetSelectedLanelet2Map) req,
+    AUTOWARE_SERVER_RESPONSE_PTR(autoware_map_msgs::srv::GetSelectedLanelet2Map) res);
+
+  AUTOWARE_SUBSCRIPTION_PTR(MapProjectorInfo::Message) sub_map_projector_info_;
+  AUTOWARE_PUBLISHER_PTR(VectorMap::Message) pub_map_bin_;
+
+  // ROS interfaces, moved from utility module into Node wrapper
+  AUTOWARE_PUBLISHER_PTR(autoware_map_msgs::msg::LaneletMapMetaData) pub_metadata_;
+  AUTOWARE_SERVICE_PTR(autoware_map_msgs::srv::GetSelectedLanelet2Map)
+  srv_get_selected_lanelet2_map_;
+
+  std::unique_ptr<Lanelet2SelectedMapLoaderModule> selected_map_loader_module_;
+};
+}  // namespace autoware::map_loader
+
+#endif  // AUTOWARE__MAP_LOADER__LANELET2_MAP_LOADER_NODE_HPP_

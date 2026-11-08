@@ -1,0 +1,111 @@
+// Copyright 2020 Tier IV, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+#ifndef GNSS_POSER_NODE_HPP_
+#define GNSS_POSER_NODE_HPP_
+
+#include <autoware/agnocast_wrapper/node.hpp>
+#include <autoware/agnocast_wrapper/tf2.hpp>
+#include <rclcpp/rclcpp.hpp>
+#include <tf2/transform_datatypes.hpp>
+
+#include <autoware_internal_debug_msgs/msg/bool_stamped.hpp>
+#include <autoware_map_msgs/msg/map_projector_info.hpp>
+#include <autoware_sensing_msgs/msg/gnss_ins_orientation_stamped.hpp>
+#include <geometry_msgs/msg/pose_stamped.hpp>
+#include <geometry_msgs/msg/pose_with_covariance_stamped.hpp>
+#include <sensor_msgs/msg/nav_sat_fix.hpp>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
+
+#include <boost/circular_buffer.hpp>
+
+#include <string>
+
+// Forward declaration so the unit-test fixture (defined at global scope) can be granted access to
+// the pure static helpers below without spinning up a node.
+class GNSSPoserHelpersTest;
+
+namespace autoware::gnss_poser
+{
+// How the published position is derived from the incoming fixes: the latest one as-is, or the
+// average / component-wise median of the last `buff_epoch` ones.
+enum class GnssPosePubMethod { Instant = 0, Average = 1, Median = 2 };
+
+class GNSSPoser : public autoware::agnocast_wrapper::Node
+{
+public:
+  explicit GNSSPoser(const rclcpp::NodeOptions & node_options);
+
+private:
+  // Allow unit tests to exercise the pure static helpers directly.
+  friend class ::GNSSPoserHelpersTest;
+
+  void callback_map_projector_info(
+    const AUTOWARE_MESSAGE_CONST_SHARED_PTR(autoware_map_msgs::msg::MapProjectorInfo) & msg);
+  void callback_nav_sat_fix(
+    const AUTOWARE_MESSAGE_CONST_SHARED_PTR(sensor_msgs::msg::NavSatFix) & nav_sat_fix_msg_ptr);
+  void callback_gnss_ins_orientation_stamped(
+    const AUTOWARE_MESSAGE_CONST_SHARED_PTR(autoware_sensing_msgs::msg::GnssInsOrientationStamped) &
+    msg);
+
+  static bool is_fixed(const sensor_msgs::msg::NavSatStatus & nav_sat_status_msg);
+  static bool can_get_covariance(const sensor_msgs::msg::NavSatFix & nav_sat_fix_msg);
+  static geometry_msgs::msg::Point get_median_position(
+    const boost::circular_buffer<geometry_msgs::msg::Point> & position_buffer);
+  static geometry_msgs::msg::Point get_average_position(
+    const boost::circular_buffer<geometry_msgs::msg::Point> & position_buffer);
+  static geometry_msgs::msg::Quaternion get_quaternion_by_position_difference(
+    const geometry_msgs::msg::Point & point, const geometry_msgs::msg::Point & prev_point);
+
+  bool get_static_transform(
+    const std::string & target_frame, const std::string & source_frame,
+    const geometry_msgs::msg::TransformStamped::SharedPtr transform_stamped_ptr,
+    const builtin_interfaces::msg::Time & stamp);
+  void publish_tf(
+    const std::string & frame_id, const std::string & child_frame_id,
+    const geometry_msgs::msg::PoseStamped & pose_msg);
+
+  tf2::BufferCore tf2_buffer_;
+  autoware::agnocast_wrapper::TransformListener tf2_listener_;
+  autoware::agnocast_wrapper::TransformBroadcaster tf2_broadcaster_;
+
+  AUTOWARE_SUBSCRIPTION_PTR(autoware_map_msgs::msg::MapProjectorInfo) sub_map_projector_info_;
+  AUTOWARE_SUBSCRIPTION_PTR(sensor_msgs::msg::NavSatFix) nav_sat_fix_sub_;
+  AUTOWARE_SUBSCRIPTION_PTR(autoware_sensing_msgs::msg::GnssInsOrientationStamped)
+  autoware_orientation_sub_;
+
+  AUTOWARE_PUBLISHER_PTR(geometry_msgs::msg::PoseStamped) pose_pub_;
+  AUTOWARE_PUBLISHER_PTR(geometry_msgs::msg::PoseWithCovarianceStamped) pose_cov_pub_;
+  AUTOWARE_PUBLISHER_PTR(autoware_internal_debug_msgs::msg::BoolStamped) fixed_pub_;
+
+  autoware_map_msgs::msg::MapProjectorInfo projector_info_;
+  const std::string base_frame_;
+  const std::string gnss_base_frame_;
+  const std::string map_frame_;
+  bool received_map_projector_info_ = false;
+  bool use_gnss_ins_orientation_;
+
+  boost::circular_buffer<geometry_msgs::msg::Point> position_buffer_;
+
+  // Previous antenna position used to derive orientation from motion. Owned per instance so the
+  // orientation-from-motion path is deterministic and reset on construction.
+  geometry_msgs::msg::Point prev_position_;
+  bool has_prev_position_ = false;
+
+  autoware_sensing_msgs::msg::GnssInsOrientationStamped::SharedPtr
+    msg_gnss_ins_orientation_stamped_;
+  GnssPosePubMethod gnss_pose_pub_method_;
+};
+}  // namespace autoware::gnss_poser
+
+#endif  // GNSS_POSER_NODE_HPP_
