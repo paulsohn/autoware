@@ -190,3 +190,18 @@ Lessons:
   device itself; on a shared dev machine, prefer the host service.
 - Check `docker info` (`OperatingSystem`) before drawing kernel/network conclusions from containers: Docker Desktop
   inserts a VM. It also lacks `--gpus` support on Linux, which P3/P4 need.
+
+## 2026-11-09: Cost of a runtime config as a `data` dependency
+
+Steps: build `//bazel/smoke:all`, change a value in `bazel/config/cyclonedds.xml` (`WhcHigh` 500kB -> 600kB), rebuild
+with `--explain=<file>`, revert.
+
+Result: the rebuild executed no actions (only the unconditional `BazelWorkspaceStatusAction`). Runfiles entries for
+source files are symlinks, so editing a `data` file does not recompile, relink or copy anything. Tests that list it
+re-run, because it is a test input.
+
+Decision (PLAN.md, "Rules needed"): keep `data = ["//bazel/config:cyclonedds.xml"]` explicit for now; a wrapper rule
+that attaches it implicitly is deferred until its contents are clear.
+
+Lesson: a shared runtime config can be a `data` dependency of every binary and test without hurting incremental builds.
+The cost is boilerplate, not build time.

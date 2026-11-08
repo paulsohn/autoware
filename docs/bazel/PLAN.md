@@ -40,6 +40,12 @@ src/
 - msgs/srv/action: RCR `ros_interface` + `cc_ros_library` / `py_ros_library`.
 - xacro: `genrule`. Launch, config and map files: `ament_index` data, then `ros2 launch` from the `:tar` install tree.
 - Lint stays out of the build (pre-commit / clang-tidy).
+- Runtime config (`//bazel/config:cyclonedds.xml`, runfiles-relative `CYCLONEDDS_URI`): for now every ROS binary/test
+  lists it in `data` explicitly. Idea, deferred until we know what it must contain: a wrapper rule (working name
+  `autoware_cc_binary`, plus a test counterpart) that attaches runtime config, `collect_transitive_dynamic_deps` and
+  similar boilerplate implicitly, so package authors never write non-local settings. Decide its contents after
+  porting enough packages to see the repeated pattern. Measured: changing the XML executes no build actions
+  (runfiles entries are symlinks); only tests re-run, which is intended.
 
 ## Scope 1 dependencies (core/ + core/cuda)
 "core" pulls in all of `src/core/` (msgs, adapi/internal msgs, utils, lanelet2_extension)
