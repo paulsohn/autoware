@@ -1,0 +1,4 @@
+# Copy of docker/files/cyclonedds.xml (CYCLONEDDS_URI in .bazelrc points here).
+exports_files(["cyclonedds.xml"])
+
+exports_files(["dds_setup.sh"])

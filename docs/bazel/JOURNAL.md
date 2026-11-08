@@ -147,3 +147,46 @@ Lessons:
 - One dynamic build covers all RMWs; switching is a runtime env var, no rebuild.
 - `--run_env` values are baked into `bazel run` scripts and override the caller's environment: set RMW/ROS variables
   in `.bazelrc` (or override in the runtime image), not by exporting them before `bazel run`.
+
+## 2026-11-09: CycloneDDS as default, with the legacy cyclonedds.xml
+
+Steps:
+1. `bazel/config/cyclonedds.xml`: exact copy of `docker/files/cyclonedds.xml`.
+2. `.bazelrc`: `--run_env`/`--test_env` `RMW_IMPLEMENTATION=rmw_cyclonedds_cpp` and
+   `CYCLONEDDS_URI=file://bazel/config/cyclonedds.xml`. The path is runfiles-relative (cwd of `bazel run`/`bazel test`),
+   so each target lists `data = ["//bazel/config:cyclonedds.xml"]` (to be automatic in `autoware_package()`).
+3. `bazel/config/dds_setup.sh`: applies the kernel settings the XML needs in the current context, or exits 1 with one
+   clear line per unmet requirement. `host/autoware-dds-setup.service` runs it at boot on a bare-metal/OTA host.
+4. Dev image: added `iproute2` (the script uses `ip`).
+
+Result: on the configured host, talker/listener with the XML: 7 sent, 7 received (no discovery-range override).
+
+Issues:
+1. **`%workspace%` is not expanded in `--run_env`** (it ends up literally in the run script).
+   Fix: runfiles-relative path. An absolute path would also have put the checkout path into test action keys,
+   making host (`/home/...`) and container (`/workspace`) keys differ.
+2. **CycloneDDS aborts with the XML on a default host**: `failed to increase socket receive buffer size to at least
+   10485760 bytes, current is 8388608` → `rmw_create_node: failed to create domain`; also `selected interface "lo" is not
+   multicast-capable: disabling multicast`.
+   Cause: the XML (`SocketReceiveBufferSize min="10MB"`, multicast on `lo`) assumes host tuning from the Autoware DDS
+   settings guide; the legacy ansible does not apply it.
+   Fix: `net.core.rmem_max=2147483647`, `net.ipv4.ipfrag_time=3`, `net.ipv4.ipfrag_high_thresh=134217728`, `ip link set lo
+   multicast on` (applied on this host via sysctl.d + a systemd unit; now `dds_setup.sh` + `host/autoware-dds-setup.service`).
+3. **Can a container apply these itself?**
+   - `net.core.rmem_max`: machine-wide. `docker run --sysctl net.core.rmem_max=...` is refused (`open sysctl ... permission
+     denied`); `CAP_NET_ADMIN` does not help (CycloneDDS does not use `SO_RCVBUFFORCE`). Only a privileged container
+     (which writes the host kernel) or host setup. Privileged container not tested (blocked by the agent permission check).
+   - `lo` multicast: needs `CAP_NET_ADMIN` in the namespace the nodes run in (verified: own netns + `--cap-add NET_ADMIN`
+     turns it on).
+   - `net.ipv4.ipfrag_*`: per namespace, `docker run --sysctl` works.
+4. **Docker on this dev machine is Docker Desktop** (containers run in a `linuxkit` VM, kernel 7.0.14-linuxkit), not
+   Docker Engine. Containers, even with `--network host`, see the VM's kernel settings and loopback, not the host's.
+   Container results about kernel settings therefore describe the VM. Build results (P0 digests) are unaffected.
+
+Lessons:
+- DDS config files carry host requirements. Ship the XML together with a check script that fails loudly, instead of
+  letting the RMW abort with `failed to create domain`.
+- On the vehicle (Docker Engine, host network), the boot service or a privileged entrypoint applies the settings to the
+  device itself; on a shared dev machine, prefer the host service.
+- Check `docker info` (`OperatingSystem`) before drawing kernel/network conclusions from containers: Docker Desktop
+  inserts a VM. It also lacks `--gpus` support on Linux, which P3/P4 need.

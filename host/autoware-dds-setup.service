@@ -1,0 +1,16 @@
+# Applies bazel/config/dds_setup.sh at boot on a bare-metal/OTA host.
+# Install: sudo install -m 755 bazel/config/dds_setup.sh /usr/local/sbin/autoware-dds-setup \
+#          && sudo install -m 644 host/autoware-dds-setup.service /etc/systemd/system/ \
+#          && sudo systemctl daemon-reload && sudo systemctl enable --now autoware-dds-setup
+[Unit]
+Description=Kernel settings for Autoware CycloneDDS
+After=network-pre.target
+Before=network.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/autoware-dds-setup
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

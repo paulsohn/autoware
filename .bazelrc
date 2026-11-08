@@ -18,13 +18,17 @@ common --repository_cache=~/.cache/bazel-repo
 
 common --test_env=ROS_DISTRO=lyrical
 common --test_env=ROS_HOME=.ros
-common --test_env=RMW_IMPLEMENTATION=rmw_fastrtps_cpp
+common --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
 common --test_env=LD_LIBRARY_PATH=lib
 common --test_env=TMPDIR=/tmp
 common --test_env=QT_QPA_PLATFORM=offscreen
 common --run_env=ROS_DISTRO=lyrical
 common --run_env=ROS_HOME=.ros
-common --run_env=RMW_IMPLEMENTATION=rmw_fastrtps_cpp
+common --run_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+# Same CycloneDDS config as the legacy docker images (docker/files/cyclonedds.xml).
+# Runfiles-relative (cwd of bazel run/test): targets need data = ["//bazel/config:cyclonedds.xml"].
+common --run_env=CYCLONEDDS_URI=file://bazel/config/cyclonedds.xml
+common --test_env=CYCLONEDDS_URI=file://bazel/config/cyclonedds.xml
 common --run_env=LD_LIBRARY_PATH=lib
 common --run_env=TMPDIR=/tmp
 common --run_env=QT_QPA_PLATFORM=xcb

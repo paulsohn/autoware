@@ -12,7 +12,7 @@ ARG BAZELISK_VERSION=v1.30.0
 ARG TARGETARCH
 
 RUN apt-get update \
-  && apt-get install -y --no-install-recommends ca-certificates curl git unzip zip \
+  && apt-get install -y --no-install-recommends ca-certificates curl git iproute2 unzip zip \
   && rm -rf /var/lib/apt/lists/*
 
 RUN curl -fsSL -o /usr/local/bin/bazel \

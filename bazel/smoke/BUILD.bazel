@@ -15,6 +15,7 @@ collect_transitive_dynamic_deps(
 cc_binary(
     name = "talker",
     srcs = ["talker.cc"],
+    data = ["//bazel/config:cyclonedds.xml"],
     dynamic_deps = [":talker_dynamic_deps"],
     deps = DEPS.values(),
 )
@@ -22,6 +23,7 @@ cc_binary(
 cc_binary(
     name = "listener",
     srcs = ["listener.cc"],
+    data = ["//bazel/config:cyclonedds.xml"],
     dynamic_deps = [":talker_dynamic_deps"],
     deps = DEPS.values(),
 )
