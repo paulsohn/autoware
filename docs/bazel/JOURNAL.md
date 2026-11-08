@@ -110,4 +110,21 @@ Issues:
    Cause: Docker creates missing parent directories of bind mounts as root, so `~/.cache` became root-owned.
    Fix: `RUN install -d -o ubuntu -g ubuntu /home/ubuntu/.cache` before `USER ubuntu`.
 
-Result: pending (host vs container talker sha256 comparison).
+3. Run the host-built talker in the container (output base mounted at the same absolute path, so the runfiles paths resolve):
+   ```bash
+   docker run --rm -e ROS_LOG_DIR=/tmp -v $HOME/.cache/bazel:$HOME/.cache/bazel:ro \
+     -v /tmp/talker.sh:/talker.sh:ro autoware-bazel-dev bash /talker.sh
+   ```
+
+Result: **P0 done.**
+- Container build: 284 s, `12090 disk cache hit, 14057 internal`, 0 local compiles. Host and container produce the same action keys.
+- Talker sha256 in the container: `b181422b6fa2d86de1054fdb568176fbbfde4b0af036cfad99bfa5c82c32b82c`, identical to the host build.
+- The talker runs in the container (glibc 2.39 base).
+
+2. **The talker aborts in a read-only runfiles tree** (`spdlog_ex: Failed opening file .ros/log/... Read-only file system`).
+   Cause: the RCR `.bazelrc` sets `--run_env=ROS_HOME=.ros`, relative to the runfiles directory.
+   Fix: set `ROS_LOG_DIR` (or `ROS_HOME`) to a writable absolute path. The runtime image (P4) must do this.
+
+Lessons:
+- Progress lines name each action ("Compiling ...") and cached compiler warnings are replayed, even for cache hits. Judge cache behaviour by the final `processes:` summary, not by the scrolling output.
+- A fresh container repeats analysis (~5 min here) because the output base is not shared. Compiles come from the disk cache.
