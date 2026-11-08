@@ -1,0 +1,30 @@
+load("@rosidl_default_generators//:defs.bzl", "ros_service")
+
+package(default_visibility = ["//visibility:public"])
+
+ros_service(
+    name = "GetCooperationPolicies",
+    src = "GetCooperationPolicies.srv",
+    deps = [
+        "//common/msg:ResponseStatus",
+        "//planning/msg:CooperationPolicy",
+    ],
+)
+
+ros_service(
+    name = "SetCooperationCommands",
+    src = "SetCooperationCommands.srv",
+    deps = [
+        "//common/msg:ResponseStatus",
+        "//planning/msg:CooperationCommand",
+    ],
+)
+
+ros_service(
+    name = "SetCooperationPolicies",
+    src = "SetCooperationPolicies.srv",
+    deps = [
+        "//common/msg:ResponseStatus",
+        "//planning/msg:CooperationPolicy",
+    ],
+)

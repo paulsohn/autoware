@@ -1,0 +1,17 @@
+load("@rosidl_default_generators//:defs.bzl", "ros_message")
+
+package(default_visibility = ["//visibility:public"])
+
+ros_message(
+    name = "Metric",
+    src = "Metric.msg",
+)
+
+ros_message(
+    name = "MetricArray",
+    src = "MetricArray.msg",
+    deps = [
+        ":Metric",
+        "@builtin_interfaces//msg:Time",
+    ],
+)

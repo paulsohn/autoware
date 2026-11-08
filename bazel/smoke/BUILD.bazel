@@ -1,5 +1,5 @@
 load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
-load("@rules_cc//cc:defs.bzl", "cc_binary")
+load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_test")
 
 # P0 smoke test: std_msgs talker/listener built against RCR rclcpp.
 DEPS = {
@@ -26,4 +26,20 @@ cc_binary(
     data = ["//bazel/config:cyclonedds.xml"],
     dynamic_deps = [":talker_dynamic_deps"],
     deps = DEPS.values(),
+)
+
+INTERFACE_DEPS = {
+    "@autoware_localization_msgs//:cc_shared": "@autoware_localization_msgs//:cc",
+}
+
+collect_transitive_dynamic_deps(
+    name = "interfaces_test_dynamic_deps",
+    dynamic_deps = INTERFACE_DEPS.keys(),
+)
+
+cc_test(
+    name = "interfaces_test",
+    srcs = ["interfaces_test.cc"],
+    dynamic_deps = [":interfaces_test_dynamic_deps"],
+    deps = INTERFACE_DEPS.values(),
 )

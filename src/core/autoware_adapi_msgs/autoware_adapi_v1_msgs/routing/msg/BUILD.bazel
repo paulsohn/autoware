@@ -1,0 +1,47 @@
+load("@rosidl_default_generators//:defs.bzl", "ros_message")
+
+package(default_visibility = ["//visibility:public"])
+
+ros_message(
+    name = "Route",
+    src = "Route.msg",
+    deps = [
+        ":RouteData",
+        "@std_msgs//msg:Header",
+    ],
+)
+
+ros_message(
+    name = "RouteData",
+    src = "RouteData.msg",
+    deps = [
+        ":RouteSegment",
+        "@geometry_msgs//msg:Pose",
+    ],
+)
+
+ros_message(
+    name = "RouteOption",
+    src = "RouteOption.msg",
+)
+
+ros_message(
+    name = "RoutePrimitive",
+    src = "RoutePrimitive.msg",
+)
+
+ros_message(
+    name = "RouteSegment",
+    src = "RouteSegment.msg",
+    deps = [
+        ":RoutePrimitive",
+    ],
+)
+
+ros_message(
+    name = "RouteState",
+    src = "RouteState.msg",
+    deps = [
+        "@builtin_interfaces//msg:Time",
+    ],
+)

@@ -1,0 +1,15 @@
+load("@rosidl_default_generators//:defs.bzl", "default_generators")
+
+package(default_visibility = ["//visibility:public"])
+
+default_generators(
+    dependencies = [
+        "@autoware_perception_msgs",
+        "@sensor_msgs",
+        "@std_msgs",
+    ],
+    package_xml = "package.xml",
+    deps = [
+        "//msg:SegmentationMask",
+    ],
+)

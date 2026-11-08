@@ -1,0 +1,3 @@
+module(name = "autoware_common_msgs")
+
+bazel_dep(name = "rosidl_default_generators", version = "0.0.0")

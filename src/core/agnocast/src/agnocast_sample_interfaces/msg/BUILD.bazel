@@ -1,0 +1,13 @@
+load("@rosidl_default_generators//:defs.bzl", "ros_message")
+
+package(default_visibility = ["//visibility:public"])
+
+ros_message(
+    name = "DynamicSizeArray",
+    src = "DynamicSizeArray.msg",
+)
+
+ros_message(
+    name = "StaticSizeArray",
+    src = "StaticSizeArray.msg",
+)

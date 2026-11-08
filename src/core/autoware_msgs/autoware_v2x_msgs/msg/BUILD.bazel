@@ -1,0 +1,36 @@
+load("@rosidl_default_generators//:defs.bzl", "ros_message")
+
+package(default_visibility = ["//visibility:public"])
+
+ros_message(
+    name = "VirtualGateAreaCommand",
+    src = "VirtualGateAreaCommand.msg",
+    deps = [
+        "@builtin_interfaces//msg:Time",
+    ],
+)
+
+ros_message(
+    name = "VirtualGateAreaStatus",
+    src = "VirtualGateAreaStatus.msg",
+    deps = [
+        "@builtin_interfaces//msg:Time",
+    ],
+)
+
+ros_message(
+    name = "VirtualGateCommand",
+    src = "VirtualGateCommand.msg",
+    deps = [
+        ":VirtualGateAreaCommand",
+        "@builtin_interfaces//msg:Time",
+    ],
+)
+
+ros_message(
+    name = "VirtualGateStatus",
+    src = "VirtualGateStatus.msg",
+    deps = [
+        ":VirtualGateAreaStatus",
+    ],
+)

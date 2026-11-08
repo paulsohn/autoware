@@ -1,0 +1,84 @@
+load("@rosidl_default_generators//:defs.bzl", "ros_message")
+
+package(default_visibility = ["//visibility:public"])
+
+ros_message(
+    name = "AccelerationCommand",
+    src = "AccelerationCommand.msg",
+    deps = [
+        "@builtin_interfaces//msg:Time",
+    ],
+)
+
+ros_message(
+    name = "GearCommand",
+    src = "GearCommand.msg",
+    deps = [
+        "//vehicle/msg:Gear",
+        "@builtin_interfaces//msg:Time",
+    ],
+)
+
+ros_message(
+    name = "HazardLightsCommand",
+    src = "HazardLightsCommand.msg",
+    deps = [
+        "//vehicle/msg:HazardLights",
+        "@builtin_interfaces//msg:Time",
+    ],
+)
+
+ros_message(
+    name = "ManualControlMode",
+    src = "ManualControlMode.msg",
+)
+
+ros_message(
+    name = "ManualControlModeStatus",
+    src = "ManualControlModeStatus.msg",
+    deps = [
+        ":ManualControlMode",
+        "@builtin_interfaces//msg:Time",
+    ],
+)
+
+ros_message(
+    name = "ManualOperatorHeartbeat",
+    src = "ManualOperatorHeartbeat.msg",
+    deps = [
+        "@builtin_interfaces//msg:Time",
+    ],
+)
+
+ros_message(
+    name = "PedalsCommand",
+    src = "PedalsCommand.msg",
+    deps = [
+        "@builtin_interfaces//msg:Time",
+    ],
+)
+
+ros_message(
+    name = "SteeringCommand",
+    src = "SteeringCommand.msg",
+    deps = [
+        "@builtin_interfaces//msg:Time",
+    ],
+)
+
+ros_message(
+    name = "TurnIndicatorsCommand",
+    src = "TurnIndicatorsCommand.msg",
+    deps = [
+        "//vehicle/msg:TurnIndicators",
+        "@builtin_interfaces//msg:Time",
+    ],
+)
+
+ros_message(
+    name = "VelocityCommand",
+    src = "VelocityCommand.msg",
+    deps = [
+        "@builtin_interfaces//msg:Time",
+    ],
+)

@@ -1,0 +1,14 @@
+load("@rosidl_default_generators//:defs.bzl", "default_generators")
+
+package(default_visibility = ["//visibility:public"])
+
+default_generators(
+    dependencies = [],
+    package_xml = "package.xml",
+    deps = [
+        "//msg:NegotiatedTopicInfo",
+        "//msg:NegotiatedTopicsInfo",
+        "//msg:SupportedType",
+        "//msg:SupportedTypes",
+    ],
+)

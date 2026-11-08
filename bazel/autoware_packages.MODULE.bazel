@@ -1,0 +1,70 @@
+# Every ROS package module under src/, included by the root MODULE.bazel.
+
+bazel_dep(name = "agnocast_cie_config_msgs")
+local_path_override(module_name = "agnocast_cie_config_msgs", path = "src/core/agnocast/src/agnocast_cie_config_msgs")
+
+bazel_dep(name = "agnocast_sample_interfaces")
+local_path_override(module_name = "agnocast_sample_interfaces", path = "src/core/agnocast/src/agnocast_sample_interfaces")
+
+bazel_dep(name = "autoware_adapi_v1_msgs")
+local_path_override(module_name = "autoware_adapi_v1_msgs", path = "src/core/autoware_adapi_msgs/autoware_adapi_v1_msgs")
+
+bazel_dep(name = "autoware_adapi_version_msgs")
+local_path_override(module_name = "autoware_adapi_version_msgs", path = "src/core/autoware_adapi_msgs/autoware_adapi_version_msgs")
+
+bazel_dep(name = "autoware_common_msgs")
+local_path_override(module_name = "autoware_common_msgs", path = "src/core/autoware_msgs/autoware_common_msgs")
+
+bazel_dep(name = "autoware_control_msgs")
+local_path_override(module_name = "autoware_control_msgs", path = "src/core/autoware_msgs/autoware_control_msgs")
+
+bazel_dep(name = "autoware_internal_debug_msgs")
+local_path_override(module_name = "autoware_internal_debug_msgs", path = "src/core/autoware_internal_msgs/autoware_internal_debug_msgs")
+
+bazel_dep(name = "autoware_internal_localization_msgs")
+local_path_override(module_name = "autoware_internal_localization_msgs", path = "src/core/autoware_internal_msgs/autoware_internal_localization_msgs")
+
+bazel_dep(name = "autoware_internal_metric_msgs")
+local_path_override(module_name = "autoware_internal_metric_msgs", path = "src/core/autoware_internal_msgs/autoware_internal_metric_msgs")
+
+bazel_dep(name = "autoware_internal_msgs")
+local_path_override(module_name = "autoware_internal_msgs", path = "src/core/autoware_internal_msgs/autoware_internal_msgs")
+
+bazel_dep(name = "autoware_internal_perception_msgs")
+local_path_override(module_name = "autoware_internal_perception_msgs", path = "src/core/autoware_internal_msgs/autoware_internal_perception_msgs")
+
+bazel_dep(name = "autoware_internal_planning_msgs")
+local_path_override(module_name = "autoware_internal_planning_msgs", path = "src/core/autoware_internal_msgs/autoware_internal_planning_msgs")
+
+bazel_dep(name = "autoware_localization_msgs")
+local_path_override(module_name = "autoware_localization_msgs", path = "src/core/autoware_msgs/autoware_localization_msgs")
+
+bazel_dep(name = "autoware_map_msgs")
+local_path_override(module_name = "autoware_map_msgs", path = "src/core/autoware_msgs/autoware_map_msgs")
+
+bazel_dep(name = "autoware_perception_msgs")
+local_path_override(module_name = "autoware_perception_msgs", path = "src/core/autoware_msgs/autoware_perception_msgs")
+
+bazel_dep(name = "autoware_planning_msgs")
+local_path_override(module_name = "autoware_planning_msgs", path = "src/core/autoware_msgs/autoware_planning_msgs")
+
+bazel_dep(name = "autoware_sensing_msgs")
+local_path_override(module_name = "autoware_sensing_msgs", path = "src/core/autoware_msgs/autoware_sensing_msgs")
+
+bazel_dep(name = "autoware_simulation_msgs")
+local_path_override(module_name = "autoware_simulation_msgs", path = "src/core/autoware_msgs/autoware_simulation_msgs")
+
+bazel_dep(name = "autoware_system_msgs")
+local_path_override(module_name = "autoware_system_msgs", path = "src/core/autoware_msgs/autoware_system_msgs")
+
+bazel_dep(name = "autoware_v2x_msgs")
+local_path_override(module_name = "autoware_v2x_msgs", path = "src/core/autoware_msgs/autoware_v2x_msgs")
+
+bazel_dep(name = "autoware_vehicle_msgs")
+local_path_override(module_name = "autoware_vehicle_msgs", path = "src/core/autoware_msgs/autoware_vehicle_msgs")
+
+bazel_dep(name = "negotiated_interfaces")
+local_path_override(module_name = "negotiated_interfaces", path = "src/core/cuda/negotiated/negotiated_interfaces")
+
+bazel_dep(name = "ros2agnocast_discovery_msgs")
+local_path_override(module_name = "ros2agnocast_discovery_msgs", path = "src/core/agnocast/src/ros2agnocast_discovery_msgs")

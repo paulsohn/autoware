@@ -1,0 +1,13 @@
+load("@rosidl_default_generators//:defs.bzl", "ros_message")
+
+package(default_visibility = ["//visibility:public"])
+
+ros_message(
+    name = "SegmentationMask",
+    src = "SegmentationMask.msg",
+    deps = [
+        "@autoware_perception_msgs//msg:ObjectClassification",
+        "@sensor_msgs//msg:Image",
+        "@std_msgs//msg:Header",
+    ],
+)

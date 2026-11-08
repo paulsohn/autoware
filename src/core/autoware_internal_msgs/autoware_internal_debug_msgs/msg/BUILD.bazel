@@ -1,0 +1,108 @@
+load("@rosidl_default_generators//:defs.bzl", "ros_message")
+
+package(default_visibility = ["//visibility:public"])
+
+ros_message(
+    name = "BoolStamped",
+    src = "BoolStamped.msg",
+    deps = [
+        "@builtin_interfaces//msg:Time",
+    ],
+)
+
+ros_message(
+    name = "Float32MultiArrayStamped",
+    src = "Float32MultiArrayStamped.msg",
+    deps = [
+        "@builtin_interfaces//msg:Time",
+        "@std_msgs//msg:MultiArrayLayout",
+    ],
+)
+
+ros_message(
+    name = "Float32Stamped",
+    src = "Float32Stamped.msg",
+    deps = [
+        "@builtin_interfaces//msg:Time",
+    ],
+)
+
+ros_message(
+    name = "Float64MultiArrayStamped",
+    src = "Float64MultiArrayStamped.msg",
+    deps = [
+        "@builtin_interfaces//msg:Time",
+        "@std_msgs//msg:MultiArrayLayout",
+    ],
+)
+
+ros_message(
+    name = "Float64Stamped",
+    src = "Float64Stamped.msg",
+    deps = [
+        "@builtin_interfaces//msg:Time",
+    ],
+)
+
+ros_message(
+    name = "Int32MultiArrayStamped",
+    src = "Int32MultiArrayStamped.msg",
+    deps = [
+        "@builtin_interfaces//msg:Time",
+        "@std_msgs//msg:MultiArrayLayout",
+    ],
+)
+
+ros_message(
+    name = "Int32Stamped",
+    src = "Int32Stamped.msg",
+    deps = [
+        "@builtin_interfaces//msg:Time",
+    ],
+)
+
+ros_message(
+    name = "Int64MultiArrayStamped",
+    src = "Int64MultiArrayStamped.msg",
+    deps = [
+        "@builtin_interfaces//msg:Time",
+        "@std_msgs//msg:MultiArrayLayout",
+    ],
+)
+
+ros_message(
+    name = "Int64Stamped",
+    src = "Int64Stamped.msg",
+    deps = [
+        "@builtin_interfaces//msg:Time",
+    ],
+)
+
+ros_message(
+    name = "ProcessingTimeNode",
+    src = "ProcessingTimeNode.msg",
+)
+
+ros_message(
+    name = "ProcessingTimeTree",
+    src = "ProcessingTimeTree.msg",
+    deps = [
+        ":ProcessingTimeNode",
+    ],
+)
+
+ros_message(
+    name = "ServiceLog",
+    src = "ServiceLog.msg",
+    deps = [
+        "@builtin_interfaces//msg:Time",
+    ],
+)
+
+ros_message(
+    name = "StringStamped",
+    src = "StringStamped.msg",
+    deps = [
+        "@builtin_interfaces//msg:Time",
+    ],
+)

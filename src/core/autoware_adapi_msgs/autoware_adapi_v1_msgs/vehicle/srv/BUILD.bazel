@@ -1,0 +1,39 @@
+load("@rosidl_default_generators//:defs.bzl", "ros_service")
+
+package(default_visibility = ["//visibility:public"])
+
+ros_service(
+    name = "GetDoorLayout",
+    src = "GetDoorLayout.srv",
+    deps = [
+        "//common/msg:ResponseStatus",
+        "//vehicle/msg:DoorLayout",
+    ],
+)
+
+ros_service(
+    name = "GetVehicleDimensions",
+    src = "GetVehicleDimensions.srv",
+    deps = [
+        "//common/msg:ResponseStatus",
+        "//vehicle/msg:VehicleDimensions",
+    ],
+)
+
+ros_service(
+    name = "GetVehicleSpecs",
+    src = "GetVehicleSpecs.srv",
+    deps = [
+        "//common/msg:ResponseStatus",
+        "//vehicle/msg:VehicleSpecs",
+    ],
+)
+
+ros_service(
+    name = "SetDoorCommand",
+    src = "SetDoorCommand.srv",
+    deps = [
+        "//common/msg:ResponseStatus",
+        "//vehicle/msg:DoorCommand",
+    ],
+)

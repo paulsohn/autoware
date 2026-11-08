@@ -1,0 +1,29 @@
+load("@rosidl_default_generators//:defs.bzl", "ros_message")
+
+package(default_visibility = ["//visibility:public"])
+
+ros_message(
+    name = "NegotiatedTopicInfo",
+    src = "NegotiatedTopicInfo.msg",
+)
+
+ros_message(
+    name = "NegotiatedTopicsInfo",
+    src = "NegotiatedTopicsInfo.msg",
+    deps = [
+        ":NegotiatedTopicInfo",
+    ],
+)
+
+ros_message(
+    name = "SupportedType",
+    src = "SupportedType.msg",
+)
+
+ros_message(
+    name = "SupportedTypes",
+    src = "SupportedTypes.msg",
+    deps = [
+        ":SupportedType",
+    ],
+)

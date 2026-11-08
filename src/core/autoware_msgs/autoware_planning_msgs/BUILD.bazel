@@ -1,0 +1,29 @@
+load("@rosidl_default_generators//:defs.bzl", "default_generators")
+
+package(default_visibility = ["//visibility:public"])
+
+default_generators(
+    dependencies = [
+        "@autoware_common_msgs",
+        "@builtin_interfaces",
+        "@geometry_msgs",
+        "@std_msgs",
+        "@unique_identifier_msgs",
+    ],
+    package_xml = "package.xml",
+    deps = [
+        "//msg:LaneletPrimitive",
+        "//msg:LaneletRoute",
+        "//msg:LaneletSegment",
+        "//msg:Path",
+        "//msg:PathPoint",
+        "//msg:PoseWithUuidStamped",
+        "//msg:RouteState",
+        "//msg:Trajectory",
+        "//msg:TrajectoryPoint",
+        "//srv:ClearRoute",
+        "//srv:SetLaneletRoute",
+        "//srv:SetPreferredPrimitive",
+        "//srv:SetWaypointRoute",
+    ],
+)

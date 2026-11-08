@@ -1,0 +1,2 @@
+# Root package. rules_rust crate_universe (pulled in via the `ros` module) resolves
+# //:MODULE.bazel, which needs this package to exist.

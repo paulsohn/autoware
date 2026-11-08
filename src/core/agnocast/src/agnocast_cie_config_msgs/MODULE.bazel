@@ -1,0 +1,3 @@
+module(name = "agnocast_cie_config_msgs")
+
+bazel_dep(name = "rosidl_default_generators", version = "0.0.0")

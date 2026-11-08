@@ -1,0 +1,22 @@
+load("@rosidl_default_generators//:defs.bzl", "default_generators")
+
+package(default_visibility = ["//visibility:public"])
+
+default_generators(
+    dependencies = [
+        "@geometry_msgs",
+        "@std_msgs",
+    ],
+    package_xml = "package.xml",
+    deps = [
+        "//msg:ConcatenatedPointCloudInfo",
+        "//msg:GnssInsOrientation",
+        "//msg:GnssInsOrientationStamped",
+        "//msg:RadarClassification",
+        "//msg:RadarFieldInfo",
+        "//msg:RadarInfo",
+        "//msg:RadarObject",
+        "//msg:RadarObjects",
+        "//msg:SourcePointCloudInfo",
+    ],
+)

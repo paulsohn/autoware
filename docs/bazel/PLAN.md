@@ -10,7 +10,7 @@
 |---|---|
 | ROS 2 Lyrical from the RCR, built hermetically by Bazel. No apt or colcon Lyrical install | The RCR only covers Lyrical. Its build is hermetic (its own LLVM and Python), so the host OS only has to provide glibc |
 | Host and base image: Ubuntu 24.04 | Matches the dev machine and JetPack 7 on Thor. glibc 2.39 |
-| Monorepo, one `MODULE.bazel`; Autoware packages are plain Bazel packages | No upstream sync, so per-package modules buy nothing |
+| Monorepo (one git repo), but **one Bazel module per ROS package**: each package has its own `MODULE.bazel`; the root `MODULE.bazel` adds `bazel_dep` + `local_path_override` for each (generated, pulled in with `include()`) | The RCR rules derive the ROS package name from the module name and take interface `dependencies` as repository labels (`@std_msgs`); in-repo labels break both. Also matches a future split into repositories (autoware.repos style), where packages would come from a private registry instead of `local_path_override`. Costs: `//...` does not reach package modules (use generated target lists), dependencies are declared in both `MODULE.bazel` and `BUILD.bazel`, cross-module visibility is coarse |
 | `src/` imported with `git subtree --squash` | Small repo. Each import commit records the upstream SHA |
 | Bazel owns everything that gets linked. No apt, rosdep or Pixi for build deps | Avoids untracked inputs and ABI clashes |
 | Private registry in-repo (`registry/`, `file://`) listed ahead of bazel.ros.org and BCR | Third-party modules the RCR lacks. Registry and code changes share one history |
@@ -32,6 +32,32 @@ images/            # base/dev Dockerfiles + rules_oci runtime image
 src/
 ```
 
+## Package conventions
+- One Bazel module per ROS package: `MODULE.bazel` with `module(name = "<ros package name>")` and a `bazel_dep` for every
+  module the package's BUILD file references (mirrors `package.xml`).
+- One `BUILD.bazel` at the package root. Exception: interface packages put each interface kind in its own Bazel
+  package, `msg/BUILD.bazel`, `srv/BUILD.bazel`, `action/BUILD.bazel`, so labels mirror ROS type names
+  (`pkg/msg/Name` -> `@pkg//msg:Name`), exactly like RCR packages (`@std_msgs//msg:Header`). Autoware keeps interface
+  and non-interface packages separate, so the two shapes do not mix. Revisit if later phases need more subdirectory
+  BUILD files.
+- Interface packages: `default_generators(dependencies = ["@<dep_pkg>", ...], package_xml = "package.xml",
+  deps = ["//msg:X", "//srv:Y", ...])` in the root BUILD; `ros_message` / `ros_service` / `ros_action` per file, with
+  per-interface `deps` (`:Same`, `@other_pkg//msg:Type`). Consumers use `@pkg//:cc` + `@pkg//:cc_shared`, `@pkg//:py`.
+- `MODULE.bazel` and `BUILD.bazel` are ordinary sources, maintained by hand like `CMakeLists.txt`: whoever adds a
+  source file, interface or dependency edits them. In a split-repository setup each repository carries its own, with
+  no shared generator. `bazel/tools/gen_build/` is only a migration aid: it writes the initial files for packages that
+  have no `MODULE.bazel` yet, never touches existing ones, and is deleted once every package is migrated.
+- Registry of package modules: `bazel/autoware_packages.MODULE.bazel` (`bazel_dep` + `local_path_override` per
+  package, included by the root `MODULE.bazel`). Target list: `bazel/autoware_packages.txt`, used as
+  `bazel build --target_pattern_file=bazel/autoware_packages.txt` because `//...` does not reach package modules.
+  The migration aid rewrites both from the package modules present under `src/`; afterwards they are edited by hand.
+- Adding an interface to an existing package: add the `.msg`/`.srv`/`.action` file, then in that directory's
+  `BUILD.bazel` add a `ros_message`/`ros_service`/`ros_action` with its `deps` (one label per non-primitive field
+  type: `:Same`, `@other_pkg//msg:Type`), add its label to `default_generators(deps = ...)` in the package root
+  `BUILD.bazel`, and if it uses a new package, add that to `dependencies` there and a `bazel_dep` in `MODULE.bazel`.
+- Adding a package: `MODULE.bazel` + `BUILD.bazel` (copy a similar package), plus one entry each in
+  `bazel/autoware_packages.MODULE.bazel` and `bazel/autoware_packages.txt`.
+
 ## Rules needed (colcon/CMake feature -> Bazel)
 - `autoware_package()` / `ament_auto_*`: macro producing `cc_library` + `cc_shared_library` + `ament_index` + `ament_package` (RCR rules).
 - `rclcpp_components_register_node`: shared library plus the ament index resource. Needs `--dynamic_mode` on.
@@ -51,12 +77,12 @@ src/
 "core" pulls in all of `src/core/` (msgs, adapi/internal msgs, utils, lanelet2_extension)
 plus `velodyne_description`. `autoware_behavior_velocity_template_module` is a universe test dependency: drop or stub it.
 
-- Probably in the RCR (verify against `ros-*.txt`): rclcpp(+components, lifecycle), tf2*, message_filters,
-  diagnostic_updater, pluginlib, class_loader, cv_bridge, pcl_conversions, launch*, rviz2,
-  robot_state_publisher, xacro, Eigen, PCL, Boost, fmt, yaml-cpp.
-- Private registry: lanelet2 (core/io/projection/routing/traffic_rules), grid_map_core,
-  generate_parameter_library, geographiclib, osqp, proxsuite, pcl_ros, point_cloud_msg_wrapper,
-  range-v3, tl_expected, glog, nlohmann_json, rclpy_message_converter, topic_tools, pybind11, CUDA/TensorRT.
+- In the RCR (checked 2026-11-09 against `ros@lyrical.2026-10-05.rcr.0`, which pins the whole distribution, and the
+  `rosdistro` third-party targets): rclcpp, tf2*, diagnostic_updater, pcl_conversions, pcl_ros, lanelet2_*,
+  generate_parameter_library, point_cloud_msg_wrapper, osqp_vendor, proxsuite, rclpy_message_converter, topic_tools,
+  pybind11_vendor, geographic_msgs; via `@rosdistro//cc:...`: Eigen, PCL, Boost (per component, e.g.
+  `boost.geometry`), fmt, yaml-cpp, geographiclib, osqp, range-v3, tl_expected, glog, nlohmann_json.
+- Private registry: grid_map_core, CUDA/TensorRT. (Was a much longer list before the `ros` module pin.)
 
 ## ML models
 Source: 21 AutowareFoundation HF repos listed in `ansible/roles/artifacts/tasks/main.yaml`, pinned by **tag**. Tags can move, so the lock records the commit SHA.

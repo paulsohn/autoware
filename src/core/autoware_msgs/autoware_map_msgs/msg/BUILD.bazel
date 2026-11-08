@@ -1,0 +1,69 @@
+load("@rosidl_default_generators//:defs.bzl", "ros_message")
+
+package(default_visibility = ["//visibility:public"])
+
+ros_message(
+    name = "AreaInfo",
+    src = "AreaInfo.msg",
+)
+
+ros_message(
+    name = "LaneletMapBin",
+    src = "LaneletMapBin.msg",
+    deps = [
+        "@std_msgs//msg:Header",
+    ],
+)
+
+ros_message(
+    name = "LaneletMapCellMetaData",
+    src = "LaneletMapCellMetaData.msg",
+)
+
+ros_message(
+    name = "LaneletMapMetaData",
+    src = "LaneletMapMetaData.msg",
+    deps = [
+        ":LaneletMapCellMetaData",
+        "@std_msgs//msg:Header",
+    ],
+)
+
+ros_message(
+    name = "MapProjectorInfo",
+    src = "MapProjectorInfo.msg",
+    deps = [
+        "@geographic_msgs//msg:GeoPoint",
+    ],
+)
+
+ros_message(
+    name = "PointCloudMapCellMetaData",
+    src = "PointCloudMapCellMetaData.msg",
+)
+
+ros_message(
+    name = "PointCloudMapCellMetaDataWithID",
+    src = "PointCloudMapCellMetaDataWithID.msg",
+    deps = [
+        ":PointCloudMapCellMetaData",
+    ],
+)
+
+ros_message(
+    name = "PointCloudMapCellWithID",
+    src = "PointCloudMapCellWithID.msg",
+    deps = [
+        ":PointCloudMapCellMetaData",
+        "@sensor_msgs//msg:PointCloud2",
+    ],
+)
+
+ros_message(
+    name = "PointCloudMapMetaData",
+    src = "PointCloudMapMetaData.msg",
+    deps = [
+        ":PointCloudMapCellMetaDataWithID",
+        "@std_msgs//msg:Header",
+    ],
+)

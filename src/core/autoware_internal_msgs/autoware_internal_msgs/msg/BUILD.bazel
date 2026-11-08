@@ -1,0 +1,25 @@
+load("@rosidl_default_generators//:defs.bzl", "ros_message")
+
+package(default_visibility = ["//visibility:public"])
+
+ros_message(
+    name = "MissionRemainingDistanceTime",
+    src = "MissionRemainingDistanceTime.msg",
+)
+
+ros_message(
+    name = "PublishedTime",
+    src = "PublishedTime.msg",
+    deps = [
+        "@builtin_interfaces//msg:Time",
+        "@std_msgs//msg:Header",
+    ],
+)
+
+ros_message(
+    name = "ResourceUsageReport",
+    src = "ResourceUsageReport.msg",
+    deps = [
+        "@std_msgs//msg:Header",
+    ],
+)

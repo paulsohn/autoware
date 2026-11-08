@@ -1,0 +1,29 @@
+load("@rosidl_default_generators//:defs.bzl", "ros_service")
+
+package(default_visibility = ["//visibility:public"])
+
+ros_service(
+    name = "ListMrmDescription",
+    src = "ListMrmDescription.srv",
+    deps = [
+        "//common/msg:ResponseStatus",
+        "//system/msg:MrmDescription",
+    ],
+)
+
+ros_service(
+    name = "ResetDiagGraph",
+    src = "ResetDiagGraph.srv",
+    deps = [
+        "//common/msg:ResponseStatus",
+    ],
+)
+
+ros_service(
+    name = "SendMrmRequest",
+    src = "SendMrmRequest.srv",
+    deps = [
+        "//common/msg:ResponseStatus",
+        "//system/msg:MrmRequest",
+    ],
+)

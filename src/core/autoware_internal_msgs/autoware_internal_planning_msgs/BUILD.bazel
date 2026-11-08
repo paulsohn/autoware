@@ -1,0 +1,45 @@
+load("@rosidl_default_generators//:defs.bzl", "default_generators")
+
+package(default_visibility = ["//visibility:public"])
+
+default_generators(
+    dependencies = [
+        "@autoware_common_msgs",
+        "@autoware_perception_msgs",
+        "@autoware_planning_msgs",
+        "@autoware_vehicle_msgs",
+        "@builtin_interfaces",
+        "@geometry_msgs",
+        "@std_msgs",
+        "@unique_identifier_msgs",
+    ],
+    package_xml = "package.xml",
+    deps = [
+        "//msg:CandidateTrajectories",
+        "//msg:CandidateTrajectory",
+        "//msg:ControlPoint",
+        "//msg:GeneratorInfo",
+        "//msg:MetricReport",
+        "//msg:PathPointWithLaneId",
+        "//msg:PathWithLaneId",
+        "//msg:PlanningFactor",
+        "//msg:PlanningFactorArray",
+        "//msg:RiskLevel",
+        "//msg:RouteState",
+        "//msg:SafetyFactor",
+        "//msg:SafetyFactorArray",
+        "//msg:Scenario",
+        "//msg:ScoredCandidateTrajectories",
+        "//msg:ScoredCandidateTrajectory",
+        "//msg:ValidationReport",
+        "//msg:ValidationReportArray",
+        "//msg:VelocityLimit",
+        "//msg:VelocityLimitClearCommand",
+        "//msg:VelocityLimitConstraints",
+        "//srv:ClearRoute",
+        "//srv:LoadPlugin",
+        "//srv:SetLaneletRoute",
+        "//srv:SetWaypointRoute",
+        "//srv:UnloadPlugin",
+    ],
+)

@@ -1,0 +1,77 @@
+load("@rosidl_default_generators//:defs.bzl", "ros_message")
+
+package(default_visibility = ["//visibility:public"])
+
+ros_message(
+    name = "CooperationCommand",
+    src = "CooperationCommand.msg",
+    deps = [
+        ":CooperationDecision",
+        "@unique_identifier_msgs//msg:UUID",
+    ],
+)
+
+ros_message(
+    name = "CooperationDecision",
+    src = "CooperationDecision.msg",
+)
+
+ros_message(
+    name = "CooperationPolicy",
+    src = "CooperationPolicy.msg",
+)
+
+ros_message(
+    name = "CooperationStatus",
+    src = "CooperationStatus.msg",
+    deps = [
+        ":CooperationDecision",
+        "@unique_identifier_msgs//msg:UUID",
+    ],
+)
+
+ros_message(
+    name = "PlanningBehavior",
+    src = "PlanningBehavior.msg",
+)
+
+ros_message(
+    name = "PlanningSequence",
+    src = "PlanningSequence.msg",
+)
+
+ros_message(
+    name = "SteeringFactor",
+    src = "SteeringFactor.msg",
+    deps = [
+        ":CooperationStatus",
+        "@geometry_msgs//msg:Pose",
+    ],
+)
+
+ros_message(
+    name = "SteeringFactorArray",
+    src = "SteeringFactorArray.msg",
+    deps = [
+        ":SteeringFactor",
+        "@std_msgs//msg:Header",
+    ],
+)
+
+ros_message(
+    name = "VelocityFactor",
+    src = "VelocityFactor.msg",
+    deps = [
+        ":CooperationStatus",
+        "@geometry_msgs//msg:Pose",
+    ],
+)
+
+ros_message(
+    name = "VelocityFactorArray",
+    src = "VelocityFactorArray.msg",
+    deps = [
+        ":VelocityFactor",
+        "@std_msgs//msg:Header",
+    ],
+)

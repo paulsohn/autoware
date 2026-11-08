@@ -1,0 +1,34 @@
+load("@rosidl_default_generators//:defs.bzl", "ros_service")
+
+package(default_visibility = ["//visibility:public"])
+
+ros_service(
+    name = "ClearRoute",
+    src = "ClearRoute.srv",
+    deps = [
+        "//common/msg:ResponseStatus",
+    ],
+)
+
+ros_service(
+    name = "SetRoute",
+    src = "SetRoute.srv",
+    deps = [
+        "//common/msg:ResponseStatus",
+        "//routing/msg:RouteOption",
+        "//routing/msg:RouteSegment",
+        "@geometry_msgs//msg:Pose",
+        "@std_msgs//msg:Header",
+    ],
+)
+
+ros_service(
+    name = "SetRoutePoints",
+    src = "SetRoutePoints.srv",
+    deps = [
+        "//common/msg:ResponseStatus",
+        "//routing/msg:RouteOption",
+        "@geometry_msgs//msg:Pose",
+        "@std_msgs//msg:Header",
+    ],
+)

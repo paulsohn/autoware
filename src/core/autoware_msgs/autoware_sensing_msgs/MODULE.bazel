@@ -1,0 +1,5 @@
+module(name = "autoware_sensing_msgs")
+
+bazel_dep(name = "geometry_msgs", version = "0.0.0")
+bazel_dep(name = "rosidl_default_generators", version = "0.0.0")
+bazel_dep(name = "std_msgs", version = "0.0.0")

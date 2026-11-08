@@ -1,0 +1,85 @@
+load("@rosidl_default_generators//:defs.bzl", "ros_message")
+
+package(default_visibility = ["//visibility:public"])
+
+ros_message(
+    name = "DoorCommand",
+    src = "DoorCommand.msg",
+)
+
+ros_message(
+    name = "DoorLayout",
+    src = "DoorLayout.msg",
+)
+
+ros_message(
+    name = "DoorStatus",
+    src = "DoorStatus.msg",
+)
+
+ros_message(
+    name = "DoorStatusArray",
+    src = "DoorStatusArray.msg",
+    deps = [
+        ":DoorStatus",
+        "@builtin_interfaces//msg:Time",
+    ],
+)
+
+ros_message(
+    name = "Gear",
+    src = "Gear.msg",
+)
+
+ros_message(
+    name = "HazardLights",
+    src = "HazardLights.msg",
+)
+
+ros_message(
+    name = "TurnIndicators",
+    src = "TurnIndicators.msg",
+)
+
+ros_message(
+    name = "VehicleDimensions",
+    src = "VehicleDimensions.msg",
+    deps = [
+        "@geometry_msgs//msg:Polygon",
+    ],
+)
+
+ros_message(
+    name = "VehicleKinematics",
+    src = "VehicleKinematics.msg",
+    deps = [
+        "@geographic_msgs//msg:GeoPointStamped",
+        "@geometry_msgs//msg:AccelWithCovarianceStamped",
+        "@geometry_msgs//msg:PoseWithCovarianceStamped",
+        "@geometry_msgs//msg:TwistWithCovarianceStamped",
+    ],
+)
+
+ros_message(
+    name = "VehicleMetrics",
+    src = "VehicleMetrics.msg",
+    deps = [
+        "@builtin_interfaces//msg:Time",
+    ],
+)
+
+ros_message(
+    name = "VehicleSpecs",
+    src = "VehicleSpecs.msg",
+)
+
+ros_message(
+    name = "VehicleStatus",
+    src = "VehicleStatus.msg",
+    deps = [
+        ":Gear",
+        ":HazardLights",
+        ":TurnIndicators",
+        "@builtin_interfaces//msg:Time",
+    ],
+)

@@ -1,0 +1,78 @@
+load("@rosidl_default_generators//:defs.bzl", "ros_message")
+
+package(default_visibility = ["//visibility:public"])
+
+ros_message(
+    name = "ConcatenatedPointCloudInfo",
+    src = "ConcatenatedPointCloudInfo.msg",
+    deps = [
+        ":SourcePointCloudInfo",
+        "@std_msgs//msg:Header",
+    ],
+)
+
+ros_message(
+    name = "GnssInsOrientation",
+    src = "GnssInsOrientation.msg",
+    deps = [
+        "@geometry_msgs//msg:Quaternion",
+    ],
+)
+
+ros_message(
+    name = "GnssInsOrientationStamped",
+    src = "GnssInsOrientationStamped.msg",
+    deps = [
+        ":GnssInsOrientation",
+        "@std_msgs//msg:Header",
+    ],
+)
+
+ros_message(
+    name = "RadarClassification",
+    src = "RadarClassification.msg",
+)
+
+ros_message(
+    name = "RadarFieldInfo",
+    src = "RadarFieldInfo.msg",
+    deps = [
+        "@std_msgs//msg:String",
+    ],
+)
+
+ros_message(
+    name = "RadarInfo",
+    src = "RadarInfo.msg",
+    deps = [
+        ":RadarFieldInfo",
+        "@std_msgs//msg:Header",
+    ],
+)
+
+ros_message(
+    name = "RadarObject",
+    src = "RadarObject.msg",
+    deps = [
+        ":RadarClassification",
+        "@geometry_msgs//msg:Point",
+        "@geometry_msgs//msg:Vector3",
+    ],
+)
+
+ros_message(
+    name = "RadarObjects",
+    src = "RadarObjects.msg",
+    deps = [
+        ":RadarObject",
+        "@std_msgs//msg:Header",
+    ],
+)
+
+ros_message(
+    name = "SourcePointCloudInfo",
+    src = "SourcePointCloudInfo.msg",
+    deps = [
+        "@std_msgs//msg:Header",
+    ],
+)

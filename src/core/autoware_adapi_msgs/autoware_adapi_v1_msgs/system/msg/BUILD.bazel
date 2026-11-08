@@ -1,0 +1,95 @@
+load("@rosidl_default_generators//:defs.bzl", "ros_message")
+
+package(default_visibility = ["//visibility:public"])
+
+ros_message(
+    name = "DiagGraphStatus",
+    src = "DiagGraphStatus.msg",
+    deps = [
+        ":DiagLeafStatus",
+        ":DiagNodeStatus",
+        "@builtin_interfaces//msg:Time",
+    ],
+)
+
+ros_message(
+    name = "DiagGraphStruct",
+    src = "DiagGraphStruct.msg",
+    deps = [
+        ":DiagLeafStruct",
+        ":DiagLinkStruct",
+        ":DiagNodeStruct",
+        "@builtin_interfaces//msg:Time",
+    ],
+)
+
+ros_message(
+    name = "DiagLeafStatus",
+    src = "DiagLeafStatus.msg",
+    deps = [
+        "//common/msg:KvString",
+    ],
+)
+
+ros_message(
+    name = "DiagLeafStruct",
+    src = "DiagLeafStruct.msg",
+)
+
+ros_message(
+    name = "DiagLinkStruct",
+    src = "DiagLinkStruct.msg",
+)
+
+ros_message(
+    name = "DiagNodeStatus",
+    src = "DiagNodeStatus.msg",
+)
+
+ros_message(
+    name = "DiagNodeStruct",
+    src = "DiagNodeStruct.msg",
+)
+
+ros_message(
+    name = "Heartbeat",
+    src = "Heartbeat.msg",
+    deps = [
+        "@builtin_interfaces//msg:Time",
+    ],
+)
+
+ros_message(
+    name = "MrmDescription",
+    src = "MrmDescription.msg",
+)
+
+ros_message(
+    name = "MrmRequest",
+    src = "MrmRequest.msg",
+)
+
+ros_message(
+    name = "MrmRequestList",
+    src = "MrmRequestList.msg",
+    deps = [
+        ":MrmRequest",
+        "@builtin_interfaces//msg:Time",
+    ],
+)
+
+ros_message(
+    name = "MrmState",
+    src = "MrmState.msg",
+    deps = [
+        "@builtin_interfaces//msg:Time",
+    ],
+)
+
+ros_message(
+    name = "RtiState",
+    src = "RtiState.msg",
+    deps = [
+        "@builtin_interfaces//msg:Time",
+    ],
+)

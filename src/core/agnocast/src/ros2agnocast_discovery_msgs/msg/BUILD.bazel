@@ -1,0 +1,24 @@
+load("@rosidl_default_generators//:defs.bzl", "ros_message")
+
+package(default_visibility = ["//visibility:public"])
+
+ros_message(
+    name = "AgnocastDaemonState",
+    src = "AgnocastDaemonState.msg",
+    deps = [
+        ":AgnocastTopic",
+    ],
+)
+
+ros_message(
+    name = "AgnocastEndpoint",
+    src = "AgnocastEndpoint.msg",
+)
+
+ros_message(
+    name = "AgnocastTopic",
+    src = "AgnocastTopic.msg",
+    deps = [
+        ":AgnocastEndpoint",
+    ],
+)

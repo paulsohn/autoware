@@ -229,3 +229,48 @@ Lessons:
 - In the RCR, anything that depends on the dynamic RMW loader inherits the whole distribution. Pick the RMW at build time
   unless runtime switching is needed.
 - `bazel cquery 'somepath(<target>, @@<repo>+//...)'` is the quickest way to explain an unexpected dependency.
+
+## 2026-11-09: P1 interface packages (module per ROS package)
+
+Steps:
+1. Studied how RCR declares interface packages (`modules/<pkg>/<ver>/overlay/` in the RCR repo):
+   root `BUILD.bazel` with `default_generators(dependencies = ["@dep_pkg", ...], package_xml = "package.xml",
+   deps = ["//msg:X", ...])`, and `msg/BUILD.bazel` (`srv/`, `action/`) with one `ros_message`/`ros_service`/
+   `ros_action` per file and per-interface `deps`.
+2. Found that `core_generators` derives the ROS package name from `native.module_name()` (overridable with
+   `export_name`) and takes `dependencies` as repository labels (`"@std_msgs"` → `@std_msgs//:cc_shared`). In-repo
+   labels (`//src/...`) break both. Decision: one Bazel module per ROS package (PLAN.md "Package conventions"):
+   `src/.../<pkg>/MODULE.bazel` + root `bazel_dep(name = "<pkg>")` + `local_path_override(path = "src/...")`.
+   `local_path_override` works even though `src` is in `.bazelignore`.
+3. Prototype by hand (`autoware_common_msgs`, `autoware_localization_msgs`), verified with `//bazel/smoke:interfaces_test`
+   (includes generated headers, checks `rosidl_generator_traits::name<>()`, uses a cross-package field).
+4. Migration aid `//bazel/tools/gen_build:gen_interfaces` (stdlib Python, run with `bazel run`): parses field types of
+   every `.msg/.srv/.action` (arrays, bounded strings, bare `Header`, same-package types), writes `MODULE.bazel`,
+   root `BUILD.bazel`, and a `BUILD.bazel` per interface directory, for packages without a `MODULE.bazel`; rewrites
+   `bazel/autoware_packages.MODULE.bazel` (included by the root `MODULE.bazel` via `include()`) and
+   `bazel/autoware_packages.txt` (for `--target_pattern_file`). Parser covered by `gen_interfaces_test`.
+   The written files are hand-maintained afterwards (no "generated" header); the tool never overwrites them.
+5. Ran it on `src/core`: 23 interface packages, ~250 interfaces (incl. `autoware_adapi_v1_msgs` with `<group>/msg/`
+   directories, `agnocast_*`, `negotiated_interfaces`).
+6. Build: `bazel build --target_pattern_file=bazel/autoware_packages.txt`.
+
+Result: all 23 packages build (C, C++, Python bindings). Last full build 755 s, 2,940 local actions.
+
+Issues:
+1. **`autoware_motion_velocity_planner` is in `rosidl_interface_packages` but has no interface files** (stale
+   declaration). Fix: detect interface packages by their files, not by the `package.xml` group.
+2. **`no such package '@@geographic_msgs+//msg'`.** Cause: `0.0.0` resolves to a real version only if some module pins
+   it; `ros_core` (and the variant modules) do not pin `geographic_msgs`, so MVS picked the RCR's empty `0.0.0` stub.
+   Fix: depend on the top-level `ros@lyrical.2026-10-05.rcr.0` module, which pins the whole distribution (1,860
+   modules: also lanelet2, pcl_ros, generate_parameter_library, point_cloud_msg_wrapper, ...). Lockfile 8.5k → 11.7k
+   lines; first resolution 2.5 min.
+3. **`crate_universe` extension fails: `Unable to load package for //:MODULE.bazel`** after the `ros` pin.
+   Cause: rules_rust resolves `@@//:MODULE.bazel`, which requires a root package. Fix: empty root `BUILD.bazel`.
+4. **Python test cannot import the module under test** (`No module named 'gen_interfaces'`).
+   Fix: import by workspace path, `from bazel.tools.gen_build.gen_interfaces import ...`.
+5. `bazel test --target_pattern_file=... //other:target` is rejected (cannot combine both); concatenate into one file.
+
+Lessons:
+- With the RCR, make each ROS package its own Bazel module; its rules assume module name = package name.
+- Depend on the top-level `ros` release module, not `ros_core`, or packages outside the core variant resolve to stubs.
+- Generate the first BUILD files mechanically from `package.xml` and interface files, then treat them as sources.

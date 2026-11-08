@@ -1,0 +1,44 @@
+load("@rosidl_default_generators//:defs.bzl", "ros_service")
+
+package(default_visibility = ["//visibility:public"])
+
+ros_service(
+    name = "ClearRoute",
+    src = "ClearRoute.srv",
+    deps = [
+        "@autoware_common_msgs//msg:ResponseStatus",
+    ],
+)
+
+ros_service(
+    name = "LoadPlugin",
+    src = "LoadPlugin.srv",
+)
+
+ros_service(
+    name = "SetLaneletRoute",
+    src = "SetLaneletRoute.srv",
+    deps = [
+        "@autoware_common_msgs//msg:ResponseStatus",
+        "@autoware_planning_msgs//msg:LaneletSegment",
+        "@geometry_msgs//msg:Pose",
+        "@std_msgs//msg:Header",
+        "@unique_identifier_msgs//msg:UUID",
+    ],
+)
+
+ros_service(
+    name = "SetWaypointRoute",
+    src = "SetWaypointRoute.srv",
+    deps = [
+        "@autoware_common_msgs//msg:ResponseStatus",
+        "@geometry_msgs//msg:Pose",
+        "@std_msgs//msg:Header",
+        "@unique_identifier_msgs//msg:UUID",
+    ],
+)
+
+ros_service(
+    name = "UnloadPlugin",
+    src = "UnloadPlugin.srv",
+)

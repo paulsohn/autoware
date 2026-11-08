@@ -1,0 +1,2 @@
+# Exports the generated module include (see tools/gen_build/gen_interfaces.py).
+exports_files(["autoware_packages.MODULE.bazel"])

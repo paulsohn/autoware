@@ -1,0 +1,48 @@
+load("@rosidl_default_generators//:defs.bzl", "ros_message")
+
+package(default_visibility = ["//visibility:public"])
+
+ros_message(
+    name = "DynamicObject",
+    src = "DynamicObject.msg",
+    deps = [
+        ":DynamicObjectKinematics",
+        ":ObjectClassification",
+        "@shape_msgs//msg:SolidPrimitive",
+        "@unique_identifier_msgs//msg:UUID",
+    ],
+)
+
+ros_message(
+    name = "DynamicObjectArray",
+    src = "DynamicObjectArray.msg",
+    deps = [
+        ":DynamicObject",
+        "@std_msgs//msg:Header",
+    ],
+)
+
+ros_message(
+    name = "DynamicObjectKinematics",
+    src = "DynamicObjectKinematics.msg",
+    deps = [
+        ":DynamicObjectPath",
+        "@geometry_msgs//msg:Accel",
+        "@geometry_msgs//msg:Pose",
+        "@geometry_msgs//msg:Twist",
+    ],
+)
+
+ros_message(
+    name = "DynamicObjectPath",
+    src = "DynamicObjectPath.msg",
+    deps = [
+        "@builtin_interfaces//msg:Duration",
+        "@geometry_msgs//msg:Pose",
+    ],
+)
+
+ros_message(
+    name = "ObjectClassification",
+    src = "ObjectClassification.msg",
+)
