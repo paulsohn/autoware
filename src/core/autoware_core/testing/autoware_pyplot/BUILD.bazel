@@ -5,6 +5,10 @@ load(":defs.bzl", "pyplot_test")
 
 package(default_visibility = ["//visibility:public"])
 
+# Deliberate differences from CMakeLists.txt (checked by bazel/tools/cmake_parity):
+# cmake-diff copt:-fPIC: Bazel compiles position-independent code for anything linked into a shared library already.
+# cmake-diff dep:pybind11_vendor: pybind11 comes from @rosdistro//cc:pybind11.
+
 exports_files([
     "bazel/sitecustomize.py",
     "defs.bzl",

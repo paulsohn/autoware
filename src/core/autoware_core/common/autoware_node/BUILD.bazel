@@ -4,6 +4,9 @@ load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
 
 package(default_visibility = ["//visibility:public"])
 
+# Deliberate differences from CMakeLists.txt (checked by bazel/tools/cmake_parity):
+# cmake-diff timeout:test_an_init_shutdown: CMake TIMEOUT 10; Bazel has fixed tiers, "short" (60 s) is the smallest.
+
 DEPENDENCIES = {
     "@rclcpp//:rclcpp": "@rclcpp//:rclcpp_library",
 }
@@ -34,7 +37,7 @@ collect_transitive_dynamic_deps(
 
 cc_test(
     name = "test_an_init_shutdown",
-    timeout = "short",  # CMake: TIMEOUT 10
+    timeout = "short",
     srcs = ["test/test_an_init_shutdown.cpp"],
     copts = autoware_copts(),
     cxxopts = AUTOWARE_CXXOPTS,

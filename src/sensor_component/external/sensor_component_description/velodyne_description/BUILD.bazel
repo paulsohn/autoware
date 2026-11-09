@@ -2,6 +2,9 @@ load("@rosdistro//ament:defs.bzl", "ament_index")
 
 package(default_visibility = ["//visibility:public"])
 
+# Deliberate differences from CMakeLists.txt (checked by bazel/tools/cmake_parity):
+# cmake-diff env-hook:env-hooks/velodyne_description.dsv.in: adds share/ to GAZEBO_MODEL_PATH; Gazebo is not used.
+
 # No code: share/velodyne_description/... Not ported: the env hook that adds share/ to GAZEBO_MODEL_PATH (Gazebo only).
 ament_index(
     name = "ament_index",

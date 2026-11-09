@@ -4,6 +4,9 @@ load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
 
 package(default_visibility = ["//visibility:public"])
 
+# Deliberate differences from CMakeLists.txt (checked by bazel/tools/cmake_parity):
+# cmake-diff dep:pcl_ros: unused by the headers and tests; they need only PCL and point_cloud_msg_wrapper.
+
 DEPENDENCIES = {
     "@rosdistro//cc:pcl": "@rosdistro//cc:pcl_library",
     "@sensor_msgs//:cc_shared": "@sensor_msgs//:cc",

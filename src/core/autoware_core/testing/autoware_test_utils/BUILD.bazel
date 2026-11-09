@@ -5,6 +5,11 @@ load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library", "cc_shared_library", "
 
 package(default_visibility = ["//visibility:public"])
 
+# Deliberate differences from CMakeLists.txt (checked by bazel/tools/cmake_parity):
+# cmake-diff dep:autoware_pyplot: test_depend, but its tests do not use it; targets including visualization.hpp depend on autoware_pyplot themselves.
+# cmake-diff dep:yaml_cpp_vendor: yaml-cpp comes from @rosdistro//cc:yaml-cpp.
+# cmake-diff if:NOT TARGET yaml-cpp::yaml-cpp: compatibility shim for old yaml-cpp CMake configs; not needed with @rosdistro//cc:yaml-cpp.
+
 DEPENDENCIES = {
     "@ament_index_cpp//:ament_index_cpp": "@ament_index_cpp//:ament_index_cpp_library",
     "@autoware_adapi_v1_msgs//:cc_shared": "@autoware_adapi_v1_msgs//:cc",

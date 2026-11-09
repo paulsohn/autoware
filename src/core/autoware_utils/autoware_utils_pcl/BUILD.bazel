@@ -4,6 +4,9 @@ load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
 
 package(default_visibility = ["//visibility:public"])
 
+# Deliberate differences from CMakeLists.txt (checked by bazel/tools/cmake_parity):
+# cmake-diff dep:pcl_ros: the headers use only pcl_conversions and PCL; pcl_ros is not needed to build or test.
+
 DEPENDENCIES = {
     "@rosdistro//cc:pcl": "@rosdistro//cc:pcl_library",
     "@autoware_utils_tf//:autoware_utils_tf": "@autoware_utils_tf//:autoware_utils_tf_library",
@@ -21,7 +24,6 @@ cc_library(
     copts = autoware_copts(),
     cxxopts = AUTOWARE_CXXOPTS,
     local_defines = ros_local_defines() + AUTOWARE_DEFINES,
-    # Headers use only pcl_conversions and PCL (shared, as the RCR links it); pcl_ros (in package.xml) is not needed.
     deps = DEPENDENCIES.values() + [
         "@rosdistro//cc:eigen",
     ],

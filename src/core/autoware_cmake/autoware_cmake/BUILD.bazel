@@ -1,1 +1,4 @@
+# Deliberate differences from CMakeLists.txt (checked by bazel/tools/cmake_parity):
+# cmake-diff share:cmake: the CMake helpers (autoware_package() and friends) are replaced by defs.bzl; nothing installs them.
+
 exports_files(["defs.bzl"])

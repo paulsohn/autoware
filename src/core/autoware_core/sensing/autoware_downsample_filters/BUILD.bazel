@@ -6,6 +6,9 @@ load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
 
 package(default_visibility = ["//visibility:public"])
 
+# Deliberate differences from CMakeLists.txt (checked by bazel/tools/cmake_parity):
+# cmake-diff dep:tl_expected: the RCR has only a stub module for tl_expected; a forwarding header maps tl_expected/expected.hpp to @rosdistro//cc:tl_expected.
+
 DEPENDENCIES = {
     "@autoware_point_types//:autoware_point_types": "@autoware_point_types//:autoware_point_types_library",
     "@autoware_utils_debug//:autoware_utils_debug": "@autoware_utils_debug//:autoware_utils_debug_library",

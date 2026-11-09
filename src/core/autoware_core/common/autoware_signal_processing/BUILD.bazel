@@ -4,12 +4,14 @@ load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
 
 package(default_visibility = ["//visibility:public"])
 
+# Deliberate differences from CMakeLists.txt (checked by bazel/tools/cmake_parity):
+# cmake-diff library:lowpass_filters: named after the package (convention); only matters to CMake consumers linking "lowpass_filters".
+
 DEPENDENCIES = {
     "@geometry_msgs//:cc_shared": "@geometry_msgs//:cc",
     "@rclcpp//:rclcpp": "@rclcpp//:rclcpp_library",
 }
 
-# CMake builds this as liblowpass_filters.so.
 cc_library(
     name = "autoware_signal_processing_library",
     srcs = [

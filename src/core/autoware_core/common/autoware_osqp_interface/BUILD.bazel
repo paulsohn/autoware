@@ -4,6 +4,9 @@ load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
 
 package(default_visibility = ["//visibility:public"])
 
+# Deliberate differences from CMakeLists.txt (checked by bazel/tools/cmake_parity):
+# cmake-diff dep:osqp_vendor: uses OSQP 0.6.3 via multiple_version_override instead of osqp_vendor (OSQP 1.0); see PLAN.md.
+
 DEPENDENCIES = {
     "@rclcpp//:rclcpp": "@rclcpp//:rclcpp_library",
     "@rclcpp_components//:rclcpp_components": "@rclcpp_components//:rclcpp_components_library",

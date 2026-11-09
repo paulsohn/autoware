@@ -2,6 +2,9 @@ load("@rosdistro//ament:defs.bzl", "ament_index")
 
 package(default_visibility = ["//visibility:public"])
 
+# Deliberate differences from CMakeLists.txt (checked by bazel/tools/cmake_parity):
+# cmake-diff dep:ros_testing: the add_smoke_test() launch_testing helper is not ported; nothing in autoware_core calls it.
+
 # share/autoware_testing/{cmake,autoware_testing} (INSTALL_TO_SHARE). The add_smoke_test() CMake helper (launch_testing smoke tests) has no Bazel counterpart yet; nothing in autoware_core calls it.
 ament_index(
     name = "ament_index",

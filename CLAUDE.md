@@ -23,6 +23,9 @@ Record new decisions in PLAN.md.
 - Commits: Conventional Commits (`feat(bazel): ...`, `fix(src/autoware_core): ...`), with `git commit -s`.
   Keep `src/` source edits (Lyrical porting fixes) in separate commits from Bazel build-file additions.
 - Never run `vcs import` / `vcs pull` into `src/`.
+- Porting a package: after it builds and tests pass, run
+  `python3 -m bazel.tools.cmake_parity.check_cmake_parity <pkg dir>`; fix unintended differences and record each
+  deliberate one as `# cmake-diff <key>: <reason>` in its BUILD.bazel (rule: PLAN.md "Package conventions").
 - Local development builds on the host; CI builds in `images/dev.Dockerfile`; integration tests and the vehicle use the
   Bazel-built runtime image. The differences must not affect outputs (see "Environments" in PLAN.md).
 - Plain `bazel` is fine even from a shell that sourced `/opt/ros/*/setup.bash` (the host has Jazzy installed):

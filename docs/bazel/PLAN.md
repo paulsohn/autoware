@@ -30,6 +30,7 @@ MODULE.bazel  MODULE.bazel.lock  .bazelversion  .bazelrc
 bazel/rules/       # autoware_package(), gen_param_library(), pluginlib_export(), xacro, launch
 bazel/platforms/   # x86_64, thor
 bazel/tools/gen_build/  # migration aid for interface packages only (gen_interfaces)
+bazel/tools/cmake_parity/  # migration aid: CMakeLists.txt vs BUILD.bazel check (writes nothing)
 registry/          # private Bazel registry
 images/            # base/dev Dockerfiles + rules_oci runtime image
 src/
@@ -63,6 +64,19 @@ src/
   `copts = autoware_copts(), cxxopts = AUTOWARE_CXXOPTS, local_defines = ros_local_defines() + AUTOWARE_DEFINES`
   from `@autoware_cmake//:defs.bzl` (plus `bazel_dep(name = "autoware_cmake")`). Check the RCR overlay of the
   package first, if one exists.
+- **Faithful to CMakeLists.txt, best effort.** For every ported package, check the differences and record each
+  deliberate one in its BUILD.bazel (or MODULE.bazel) as `# cmake-diff <key>: <reason>`, in a block after
+  `package()`. `python3 -m bazel.tools.cmake_parity.check_cmake_parity <pkg dir>` lists the differences as keys
+  (`source:`, `test:`, `executable:`, `component:`, `library:`, `copt:`, `define:`, `feature:`, `share:`,
+  `program:`, `install:`, `dep:`, `if:`, `timeout:`, `unhandled:`, ...) and exits non-zero while any is open or a
+  recorded one is stale. Fix what is not deliberate; record the rest. Interface packages are not checked.
+  - Differences that apply to every package are not recorded per package: the `autoware_package()` flags come from
+    `@autoware_cmake//:defs.bzl`; every test runs isolated (the RCR test wrapper), so
+    `ament_add_ros_isolated_gtest` vs `ament_auto_add_gtest` does not matter; include directories and link lines
+    follow from `deps`; `ament_export_*`, `USE_SCOPED_HEADER_INSTALL_DIR` and `CONFIG_EXTRAS` concern the install
+    tree / CMake consumers (P4).
+  - `if()` branches: keep both branches where possible (`select()` on a flag). Checks of the compiler or C++ standard
+    are taken as true and not recorded: the RCR toolchain is a recent clang with C++23 available.
 - Adding an interface to an existing package: add the `.msg`/`.srv`/`.action` file, then in that directory's
   `BUILD.bazel` add a `ros_message`/`ros_service`/`ros_action` with its `deps` (one label per non-primitive field
   type: `:Same`, `@other_pkg//msg:Type`), add its label to `default_generators(deps = ...)` in the package root

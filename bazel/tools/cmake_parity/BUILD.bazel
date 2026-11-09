@@ -1,0 +1,14 @@
+load("@rules_python//python:defs.bzl", "py_library", "py_test")
+
+# Run with `python3 -m bazel.tools.cmake_parity.check_cmake_parity <pkg dirs>` from the repo root: it calls
+# `bazel query`, which cannot run inside `bazel run`.
+py_library(
+    name = "check_cmake_parity",
+    srcs = ["check_cmake_parity.py"],
+)
+
+py_test(
+    name = "check_cmake_parity_test",
+    srcs = ["check_cmake_parity_test.py"],
+    deps = [":check_cmake_parity"],
+)

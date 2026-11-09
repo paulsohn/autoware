@@ -4,6 +4,9 @@ load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library", "cc_shared_library", "
 
 package(default_visibility = ["//visibility:public"])
 
+# Deliberate differences from CMakeLists.txt (checked by bazel/tools/cmake_parity):
+# cmake-diff if:AUTOWARE_COMPONENT_INTERFACE_SPECS_HAS_CXX20: compiler capability check; the hermetic clang supports C++20, so the C++20 branch is taken unconditionally.
+
 DEPENDENCIES = {
     "@autoware_adapi_v1_msgs//:cc_shared": "@autoware_adapi_v1_msgs//:cc",
     "@autoware_control_msgs//:cc_shared": "@autoware_control_msgs//:cc",

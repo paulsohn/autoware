@@ -579,3 +579,41 @@ Lessons:
   toolchain.
 - The hermetic toolchain's glibc target (2.34) is older than the host's (2.39): glibc extensions newer than the
   target need fallbacks.
+
+## 2026-11-09: CMake parity check and recorded differences
+
+Goal: every port reflects its CMakeLists.txt as faithfully as possible, and each deliberate difference is written
+down (rule in PLAN.md "Package conventions"; CLAUDE.md requires the check per package).
+
+Steps:
+1. `bazel/tools/cmake_parity/check_cmake_parity.py` (stdlib only, writes nothing): reads CMakeLists.txt with a small
+   interpreter (`set`, `list(APPEND)`, `file(GLOB[_RECURSE])`, `foreach`, `get_filename_component`) and compares
+   with `bazel query --output=build 'kind(rule, @<pkg>//:*)'`, i.e. the targets after macros and list
+   comprehensions are expanded. Unknown CMake commands become `unhandled:` findings, so nothing passes silently.
+   Run: `python3 -m bazel.tools.cmake_parity.check_cmake_parity <pkg dirs>` (not `bazel run`: it calls bazel).
+2. Recording format, read by the checker: `# cmake-diff <key>: <reason>` in BUILD.bazel/MODULE.bazel. Recorded keys
+   that no longer match a finding are reported as stale.
+3. First run over the 47 non-interface packages ported so far: 22 real findings. Fixed:
+   - `program:` `min_turning_radius_calculator.py` (vehicle_info_utils) and `lanelet_id_aligner.py`
+     (lanelet2_utils) ported as `py_binary`s listed in `ament_index(executables)`; both run (`--help`).
+   - `dep:builtin_interfaces` (localization_util test uses it).
+   Recorded (each with its reason in the BUILD file): `lanelet_anonymizer.py` (needs `mgrs`, not in the RCR pip hub),
+   `test_case_generator.py` (needs unported `autoware_lanelet2_extension_python` + Tk), library names
+   (`lowpass_filters`, `vehicle_info_utils`), unused `package.xml` deps (`pcl_ros`, `lanelet2_maps`, ...),
+   substitutions (`osqp_vendor`, `tl_expected`, `yaml_cpp_vendor`, `pybind11_vendor`), GCC-only/implicit flags,
+   the C++20 capability `if()`, the 10 s TIMEOUT (Bazel's smallest tier is 60 s), the Gazebo env hook.
+4. After: checker exit 0 for all ported packages; `bazel test` full suite → 70 tests pass (incl. the checker's own
+   unit test).
+
+Issues (symptom → cause → fix):
+1. A script reads its own package's share directory, but the package's `ament_index` lists the script as an
+   executable → dependency cycle → split the share data into `ament_index(name = "share")`, used by the script and
+   absorbed by the main `ament_index` through `deps` (the RCR rule merges same-package indexes).
+2. Checker false positives found on the first run: interface packages (skip them), `file(GLOB)` paths relative to
+   the wrong directory, IMPORTED `add_library` shims, macro-generated `main.cpp` files, the rule kind
+   `ament_index_rule`, keys containing spaces. Each fixed in the checker; unit test covers the interpreter.
+
+Lessons:
+- Compare against the expanded target graph (`bazel query --output=build`), not the BUILD text: macros and
+  comprehensions hide target names.
+- Make the record of deliberate differences machine-checkable, or it goes stale.
