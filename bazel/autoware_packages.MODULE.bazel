@@ -235,3 +235,12 @@ local_path_override(module_name = "autoware_trajectory", path = "src/core/autowa
 
 bazel_dep(name = "autoware_awsim_sensor_kit_description")
 local_path_override(module_name = "autoware_awsim_sensor_kit_description", path = "src/core/autoware_core/description/autoware_awsim_sensor_kit_description")
+
+bazel_dep(name = "autoware_route_handler")
+local_path_override(module_name = "autoware_route_handler", path = "src/core/autoware_core/planning/autoware_route_handler")
+
+bazel_dep(name = "autoware_core_control")
+local_path_override(module_name = "autoware_core_control", path = "src/core/autoware_core/control/autoware_core_control")
+
+bazel_dep(name = "autoware_core_perception")
+local_path_override(module_name = "autoware_core_perception", path = "src/core/autoware_core/perception/autoware_core_perception")

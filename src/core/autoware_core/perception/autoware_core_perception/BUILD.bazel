@@ -1,0 +1,18 @@
+load("@rosdistro//ament:defs.bzl", "ament_index")
+
+package(default_visibility = ["//visibility:public"])
+
+# No code: share/autoware_core_perception/{config,launch} (INSTALL_TO_SHARE); the launch files start the packages below.
+ament_index(
+    name = "ament_index",
+    data = glob([
+        "config/**",
+        "launch/**",
+    ]),
+    package_xml = "package.xml",
+    deps = [
+        "@autoware_euclidean_cluster_object_detector//:ament_index",
+        "@autoware_ground_filter//:ament_index",
+        "@autoware_perception_objects_converter//:ament_index",
+    ],
+)

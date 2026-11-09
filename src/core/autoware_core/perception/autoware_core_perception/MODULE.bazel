@@ -1,0 +1,6 @@
+module(name = "autoware_core_perception")
+
+bazel_dep(name = "autoware_euclidean_cluster_object_detector", version = "0.0.0")
+bazel_dep(name = "autoware_ground_filter", version = "0.0.0")
+bazel_dep(name = "autoware_perception_objects_converter", version = "0.0.0")
+bazel_dep(name = "rosdistro", version = "0.0.0")

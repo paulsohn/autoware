@@ -1,0 +1,5 @@
+module(name = "autoware_core_control")
+
+bazel_dep(name = "autoware_command_gate", version = "0.0.0")
+bazel_dep(name = "autoware_simple_pure_pursuit", version = "0.0.0")
+bazel_dep(name = "rosdistro", version = "0.0.0")
