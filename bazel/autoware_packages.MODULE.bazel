@@ -160,3 +160,15 @@ local_path_override(module_name = "autoware_lanelet2_extension", path = "src/cor
 
 bazel_dep(name = "autoware_pyplot")
 local_path_override(module_name = "autoware_pyplot", path = "src/core/autoware_core/testing/autoware_pyplot")
+
+bazel_dep(name = "autoware_core_vehicle")
+local_path_override(module_name = "autoware_core_vehicle", path = "src/core/autoware_core/vehicle/autoware_core_vehicle")
+
+bazel_dep(name = "autoware_sample_vehicle_description")
+local_path_override(module_name = "autoware_sample_vehicle_description", path = "src/core/autoware_core/description/autoware_sample_vehicle_description")
+
+bazel_dep(name = "velodyne_description")
+local_path_override(module_name = "velodyne_description", path = "src/sensor_component/external/sensor_component_description/velodyne_description")
+
+bazel_dep(name = "autoware_testing")
+local_path_override(module_name = "autoware_testing", path = "src/core/autoware_core/testing/autoware_testing")

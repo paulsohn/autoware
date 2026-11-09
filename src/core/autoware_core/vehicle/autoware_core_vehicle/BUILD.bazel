@@ -1,0 +1,10 @@
+load("@rosdistro//ament:defs.bzl", "ament_index")
+
+package(default_visibility = ["//visibility:public"])
+
+# No code: share/autoware_core_vehicle/{launch,urdf} (INSTALL_TO_SHARE).
+ament_index(
+    name = "ament_index",
+    data = glob(["launch/**", "urdf/**"]),
+    package_xml = "package.xml",
+)

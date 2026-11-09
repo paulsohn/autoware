@@ -1,0 +1,10 @@
+load("@rosdistro//ament:defs.bzl", "ament_index")
+
+package(default_visibility = ["//visibility:public"])
+
+# No code: share/velodyne_description/... Not ported: the env hook that adds share/ to GAZEBO_MODEL_PATH (Gazebo only).
+ament_index(
+    name = "ament_index",
+    data = glob(["launch/**", "meshes/**", "rviz/**", "urdf/**", "world/**"]),
+    package_xml = "package.xml",
+)
