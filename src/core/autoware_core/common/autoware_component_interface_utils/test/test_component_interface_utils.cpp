@@ -375,7 +375,7 @@ bool spin_until(const rclcpp::Node::SharedPtr & node, const std::function<bool()
     if (done()) {
       return true;
     }
-    rclcpp::spin_some(node);
+    rclcpp::executors::SingleThreadedExecutor().spin_node_some(node);
     std::this_thread::sleep_for(std::chrono::milliseconds(20));
   }
   return done();

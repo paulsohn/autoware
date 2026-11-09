@@ -146,7 +146,7 @@ public:
   {
     using SpecT = typename SharedPtrT::element_type::SpecType;
     using std::placeholders::_1;
-    sub = create_subscription_impl<SpecT>(interface_, std::bind(callback, instance, _1));
+    sub = create_subscription_impl<SpecT>(interface_, std::bind(std::move(callback), instance, _1));
   }
 
   /// Create a subscription wrapper for reference callback.
@@ -158,7 +158,7 @@ public:
   {
     using SpecT = typename SharedPtrT::element_type::SpecType;
     using std::placeholders::_1;
-    sub = create_subscription_impl<SpecT>(interface_, std::bind(callback, instance, _1));
+    sub = create_subscription_impl<SpecT>(interface_, std::bind(std::move(callback), instance, _1));
   }
 
   /// Create a service wrapper for logging.
@@ -171,7 +171,7 @@ public:
     using SpecT = typename SharedPtrT::element_type::SpecType;
     using std::placeholders::_1;
     using std::placeholders::_2;
-    srv = create_service_impl<SpecT>(interface_, std::bind(callback, instance, _1, _2), group);
+    srv = create_service_impl<SpecT>(interface_, std::bind(std::move(callback), instance, _1, _2), group);
   }
 
   /// Create a publisher, returning it instead of assigning to an out-parameter.
@@ -196,7 +196,7 @@ public:
     InstanceT * instance, SpecMessagePtrCallback<SpecT, InstanceT> && callback)
   {
     using std::placeholders::_1;
-    return create_subscription<SpecT>(std::bind(callback, instance, _1));
+    return create_subscription<SpecT>(std::bind(std::move(callback), instance, _1));
   }
 
   /// Create a subscription bound to a member function taking the message by reference.
@@ -205,7 +205,7 @@ public:
     InstanceT * instance, SpecMessageRefCallback<SpecT, InstanceT> && callback)
   {
     using std::placeholders::_1;
-    return create_subscription<SpecT>(std::bind(callback, instance, _1));
+    return create_subscription<SpecT>(std::bind(std::move(callback), instance, _1));
   }
 
   /// Create a service server, returning it instead of assigning to an out-parameter.
@@ -225,7 +225,7 @@ public:
   {
     using std::placeholders::_1;
     using std::placeholders::_2;
-    return create_service<SpecT>(std::bind(callback, instance, _1, _2), group);
+    return create_service<SpecT>(std::bind(std::move(callback), instance, _1, _2), group);
   }
 
   /// Create a service client, returning it instead of assigning to an out-parameter.
