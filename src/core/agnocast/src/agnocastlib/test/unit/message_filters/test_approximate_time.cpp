@@ -25,7 +25,10 @@ struct Msg
 template <typename T>
 agnocast::ipc_shared_ptr<T> make_test_ipc_shared_ptr(T * ptr)
 {
-  return agnocast::ipc_shared_ptr<T>(ptr, "test_topic", 0, -1);
+  // entry_id=0 (subscriber side), as in test_exact_time.cpp: with -1 (publisher side, not published) the last
+  // reference calls decrement_borrowed_publisher_num(), which exits because nothing was borrowed, and frees the
+  // message that TestMsgManager frees again.
+  return agnocast::ipc_shared_ptr<T>(ptr, "test_topic", 0, 0);
 }
 
 namespace message_filters
