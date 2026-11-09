@@ -313,3 +313,15 @@ local_path_override(module_name = "autoware_default_adapi", path = "src/core/aut
 
 bazel_dep(name = "autoware_ndt_scan_matcher")
 local_path_override(module_name = "autoware_ndt_scan_matcher", path = "src/core/autoware_core/localization/autoware_ndt_scan_matcher")
+
+bazel_dep(name = "autoware_core_map")
+local_path_override(module_name = "autoware_core_map", path = "src/core/autoware_core/map/autoware_core_map")
+
+bazel_dep(name = "autoware_core_sensing")
+local_path_override(module_name = "autoware_core_sensing", path = "src/core/autoware_core/sensing/autoware_core_sensing")
+
+bazel_dep(name = "autoware_adapi_adaptors")
+local_path_override(module_name = "autoware_adapi_adaptors", path = "src/core/autoware_core/api/autoware_adapi_adaptors")
+
+bazel_dep(name = "autoware_pose_initializer")
+local_path_override(module_name = "autoware_pose_initializer", path = "src/core/autoware_core/localization/autoware_pose_initializer")

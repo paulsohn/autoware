@@ -975,3 +975,15 @@ Issues (symptom → cause → fix):
 
 Lesson: when a toolchain-provided runtime library exists only as a static archive, wrap it once as a shared
 library with the archive linked whole (alwayslink). Otherwise every consumer gets its own copy, or an empty library.
+
+## Layer 6: core_map, core_sensing, adapi_adaptors, pose_initializer
+
+- core_map and core_sensing contain no code: `ament_index` with their launch/config files, and `deps` on the
+  `:ament_index` of each exec_depend whose nodes their launch files start (as autoware_global_parameter_loader does).
+- adapi_adaptors: one component library with two registered executables (`routing_adaptor_node` takes CMake's
+  default executor, SingleThreadedExecutor, which is also the Bazel macro's default).
+- pose_initializer: standard pattern. Its tests include `"../src/....hpp"` (testonly `src_headers`). The node
+  integration test runs on the ROS 2 backend.
+
+`bazel test @autoware_adapi_adaptors//... @autoware_pose_initializer//...` → 4 pass. Parity 0 open on all four
+packages; pose_initializer has 1 record. No source changes were needed.

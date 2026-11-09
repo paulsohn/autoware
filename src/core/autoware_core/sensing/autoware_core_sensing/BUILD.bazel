@@ -1,0 +1,12 @@
+load("@rosdistro//ament:defs.bzl", "ament_index")
+
+package(default_visibility = ["//visibility:public"])
+
+# No code: share/autoware_core_sensing/launch (INSTALL_TO_SHARE). Its launch file starts the node of its
+# exec_depend.
+ament_index(
+    name = "ament_index",
+    data = glob(["launch/**"]),
+    package_xml = "package.xml",
+    deps = ["@autoware_vehicle_velocity_converter//:ament_index"],
+)

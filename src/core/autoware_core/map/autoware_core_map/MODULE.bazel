@@ -1,0 +1,6 @@
+module(name = "autoware_core_map")
+
+bazel_dep(name = "autoware_lanelet2_map_visualizer", version = "0.0.0")
+bazel_dep(name = "autoware_map_loader", version = "0.0.0")
+bazel_dep(name = "autoware_map_projection_loader", version = "0.0.0")
+bazel_dep(name = "rosdistro", version = "0.0.0")
