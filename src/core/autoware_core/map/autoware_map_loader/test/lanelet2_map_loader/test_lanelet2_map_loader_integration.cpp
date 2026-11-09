@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <ament_index_cpp/get_package_share_directory.hpp>
+#include <ament_index_cpp/get_package_share_path.hpp>
 #include <autoware/lanelet2_utils/conversion.hpp>
 #include <autoware/map_loader/lanelet2_map_loader_node.hpp>
 #include <rclcpp/rclcpp.hpp>
@@ -114,7 +114,7 @@ protected:
 
   // Standard test map
   const std::string map_path_ =
-    ament_index_cpp::get_package_share_directory("autoware_map_loader") + "/test/data/test_map.osm";
+    ament_index_cpp::get_package_share_path("autoware_map_loader").string() + "/test/data/test_map.osm";
 };
 
 // TEST 1. Main integration test to see if Lanelet2MapLoaderNode can load test map and work properly
@@ -128,7 +128,7 @@ TEST_F(Lanelet2MapLoaderIntegrationHarness, VerifiesNormalMapLoadingAndReading)
 {
   rclcpp::NodeOptions options;
   const std::string map_path =
-    ament_index_cpp::get_package_share_directory("autoware_map_loader") + "/test/data/test_map.osm";
+    ament_index_cpp::get_package_share_path("autoware_map_loader").string() + "/test/data/test_map.osm";
 
   options.append_parameter_override("lanelet2_map_path", map_path);
   options.append_parameter_override("center_line_resolution", 5.0);
@@ -164,7 +164,7 @@ TEST_F(Lanelet2MapLoaderIntegrationHarness, VerifiesStandardCenterlineInjection)
   // Re-init node options with use_waypoints = false
   rclcpp::NodeOptions options;
   const std::string map_path =
-    ament_index_cpp::get_package_share_directory("autoware_map_loader") + "/test/data/test_map.osm";
+    ament_index_cpp::get_package_share_path("autoware_map_loader").string() + "/test/data/test_map.osm";
   options.append_parameter_override("lanelet2_map_path", map_path);
   options.append_parameter_override("center_line_resolution", 5.0);
   options.append_parameter_override("allow_unsupported_version", true);
@@ -203,7 +203,7 @@ TEST_F(Lanelet2MapLoaderIntegrationHarness, VerifiesMetadataPublishedWhenSelecte
   // Re-init node options with enable_selected_map_loading = true
   rclcpp::NodeOptions options;
   const std::string map_path =
-    ament_index_cpp::get_package_share_directory("autoware_map_loader") + "/test/data/test_map.osm";
+    ament_index_cpp::get_package_share_path("autoware_map_loader").string() + "/test/data/test_map.osm";
   options.append_parameter_override("lanelet2_map_path", map_path);
   options.append_parameter_override("center_line_resolution", 5.0);
   options.append_parameter_override("use_waypoints", true);

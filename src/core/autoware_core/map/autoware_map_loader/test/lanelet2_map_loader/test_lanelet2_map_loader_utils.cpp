@@ -14,7 +14,7 @@
 
 #include "../src/lanelet2_map_loader/utils/lanelet2_map_loader_utils.hpp"
 
-#include <ament_index_cpp/get_package_share_directory.hpp>
+#include <ament_index_cpp/get_package_share_path.hpp>
 
 #include <gtest/gtest.h>
 #include <lanelet2_core/LaneletMap.h>
@@ -38,7 +38,7 @@ namespace
 {
 std::string test_map_path()
 {
-  return ament_index_cpp::get_package_share_directory("autoware_map_loader") +
+  return ament_index_cpp::get_package_share_path("autoware_map_loader").string() +
          "/test/data/test_map.osm";
 }
 }  // namespace
