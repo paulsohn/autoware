@@ -21,7 +21,7 @@
 #include "stub_sensor_pcd_publisher.hpp"
 #include "stub_trigger_node_client.hpp"
 
-#include <ament_index_cpp/get_package_share_directory.hpp>
+#include <ament_index_cpp/get_package_share_path.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <tf2_ros/static_transform_broadcaster.hpp>
 
@@ -42,7 +42,7 @@ protected:
   void SetUp() override
   {
     const std::string yaml_path =
-      ament_index_cpp::get_package_share_directory("autoware_ndt_scan_matcher") +
+      ament_index_cpp::get_package_share_path("autoware_ndt_scan_matcher").string() +
       "/config/ndt_scan_matcher.param.yaml";
 
     rcl_params_t * params_st = rcl_yaml_node_struct_init(rcl_get_default_allocator());

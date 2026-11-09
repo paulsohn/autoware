@@ -47,7 +47,7 @@
 #include <pcl/point_types.h>
 
 #ifdef ROS_DISTRO_GALACTIC
-#include <tf2_sensor_msgs/tf2_sensor_msgs.h>
+#include <tf2_sensor_msgs/tf2_sensor_msgs.hpp>
 #else
 #include <tf2_sensor_msgs/tf2_sensor_msgs.hpp>
 #endif

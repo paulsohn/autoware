@@ -280,7 +280,11 @@ void MultiGridNormalDistributionsTransform<PointSource, PointTarget>::computeTra
   Eigen::Matrix<double, 6, 1> delta_p;
   Eigen::Matrix<double, 6, 1> score_gradient;
   Eigen::Vector3f init_translation = eig_transformation.translation();
+  // Eigen 5 deprecates eulerAngles(); canonicalEulerAngles() returns other angle ranges, so keep it.
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
   Eigen::Vector3f init_rotation = eig_transformation.rotation().eulerAngles(0, 1, 2);
+#pragma GCC diagnostic pop
 
   p << init_translation(0), init_translation(1), init_translation(2), init_rotation(0),
     init_rotation(1), init_rotation(2);

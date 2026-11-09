@@ -20,7 +20,7 @@
 #include "stub_map_loader.hpp"
 #include "topic_capture.hpp"
 
-#include <ament_index_cpp/get_package_share_directory.hpp>
+#include <ament_index_cpp/get_package_share_path.hpp>
 #include <autoware/ndt_scan_matcher/ndt_scan_matcher_core.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <tf2_ros/static_transform_broadcaster.hpp>
@@ -485,7 +485,7 @@ private:
   [[nodiscard]] rclcpp::NodeOptions build_node_options() const
   {
     const std::string yaml_path =
-      ament_index_cpp::get_package_share_directory("autoware_ndt_scan_matcher") +
+      ament_index_cpp::get_package_share_path("autoware_ndt_scan_matcher").string() +
       "/config/ndt_scan_matcher.param.yaml";
 
     rcl_params_t * params_st = rcl_yaml_node_struct_init(rcl_get_default_allocator());
