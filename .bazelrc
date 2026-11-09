@@ -32,6 +32,16 @@ common --test_env=CYCLONEDDS_URI=file://bazel/config/cyclonedds.xml
 common --run_env=LD_LIBRARY_PATH=lib
 common --run_env=TMPDIR=/tmp
 common --run_env=QT_QPA_PLATFORM=xcb
+# Plain `bazel` works from a shell that sourced a ROS distro (e.g. the host's Jazzy). Build actions are isolated by
+# --incompatible_strict_action_env and `bazel test` passes only --test_env, but `bazel run` passes the shell's
+# environment through, which would point ament_index and Python at /opt/ros:
+# - binaries get --run_env; "=NAME" removes the variable;
+# - tests started with `bazel run` get --test_env and ignore removals, so set an empty value instead
+#   (ament_index_cpp and CPython treat empty as unset).
+common --run_env==AMENT_PREFIX_PATH --test_env=AMENT_PREFIX_PATH=
+common --run_env==PYTHONPATH --test_env=PYTHONPATH=
+common --run_env==CMAKE_PREFIX_PATH
+common --run_env==COLCON_PREFIX_PATH
 # Agnocast is always compiled in; ENABLE_AGNOCAST switches it at run time (default on, needs the agnocast kernel module).
 # --config=no-agnocast runs nodes and tests on the plain ROS 2 executor, e.g. on machines without the module.
 common --run_env=ENABLE_AGNOCAST=1

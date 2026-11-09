@@ -25,8 +25,9 @@ Record new decisions in PLAN.md.
 - Never run `vcs import` / `vcs pull` into `src/`.
 - Local development builds on the host; CI builds in `images/dev.Dockerfile`; integration tests and the vehicle use the
   Bazel-built runtime image. The differences must not affect outputs (see "Environments" in PLAN.md).
-- Never run `bazel` from a shell that sourced `/opt/ros/*/setup.bash` (the host has Jazzy installed).
-  Safe form: `env -i HOME=$HOME PATH=$HOME/.local/bin:/usr/bin:/bin bazel ...`.
+- Plain `bazel` is fine even from a shell that sourced `/opt/ros/*/setup.bash` (the host has Jazzy installed):
+  `.bazelrc` strips ROS variables from `bazel run`/`bazel test`. To rule out the shell entirely:
+  `env -i HOME=$HOME PATH=$HOME/.local/bin:/usr/bin:/bin bazel ...`. Day-to-day commands: docs/bazel/DEVELOPING.md.
 - Machine-specific Bazel flags (e.g. `--jobs`, memory limits) go in the gitignored `user.bazelrc`.
 - Pinned versions live in git: `.bazelversion`, `MODULE.bazel.lock`, image digests.
 - Target: x86_64 Ubuntu 24.04 host first, then Jetson Thor (JetPack 7, Ubuntu 24.04, SBSA).
