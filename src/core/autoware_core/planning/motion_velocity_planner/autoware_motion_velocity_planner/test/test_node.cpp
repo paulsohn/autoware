@@ -230,20 +230,20 @@ public:
         std::bind(&ListenerNode::on_clear_velocity_limit, this, std::placeholders::_1));
   }
 
-  void on_trajectory(const autoware_planning_msgs::msg::Trajectory::SharedPtr msg)
+  void on_trajectory(const autoware_planning_msgs::msg::Trajectory::ConstSharedPtr msg)
   {
     (void)msg;
     received_trajectory_ = true;
   }
 
-  void on_velocity_limit(const autoware_internal_planning_msgs::msg::VelocityLimit::SharedPtr msg)
+  void on_velocity_limit(const autoware_internal_planning_msgs::msg::VelocityLimit::ConstSharedPtr msg)
   {
     (void)msg;
     received_velocity_limit_ = true;
   }
 
   void on_clear_velocity_limit(
-    const autoware_internal_planning_msgs::msg::VelocityLimitClearCommand::SharedPtr msg)
+    const autoware_internal_planning_msgs::msg::VelocityLimitClearCommand::ConstSharedPtr msg)
   {
     (void)msg;
     received_clear_velocity_limit_ = true;
