@@ -527,3 +527,55 @@ Lessons:
   libstdc++. Any ROS project that embeds Python under the RCR toolchain hits this.
 - Tests that locate files with `Path(__file__).resolve()` escape runfiles into the source tree; declare those files
   as `data` anyway so changes re-run the tests.
+
+## 2026-11-09: P2 layer 1 (except agnocast)
+
+Ported: `autoware_motion_utils`, `autoware_geography_utils`, `autoware_marker_utils`,
+`autoware_object_recognition_utils`, `autoware_component_interface_utils`, `autoware_global_parameter_loader`,
+`autoware_test_utils`, `autoware_lanelet2_utils`, `autoware_crop_box_filter`, `autoware_downsample_filters`,
+`autoware_ground_filter`, `autoware_test_node`, `autoware_sample_sensor_kit_description`. Left in layer 1:
+`ros2agnocast_discovery_agent` (with the agnocast packages).
+Full suite: `bazel test --keep_going --target_pattern_file=<bazel/autoware_packages.txt + //bazel/...>` → 69 tests pass.
+
+Patterns:
+- `target_include_directories(<test> PRIVATE src)` → a private `testonly` `cc_library(name = "src_headers",
+  hdrs = glob(["src/**/*.hpp"]), includes = ["src"])` that the tests depend on. Checked that headers included with
+  quotes next to the including `.cpp` stay non-system under `--system-header-prefix=`, so `src/*.hpp` are still
+  warning-checked when the library compiles.
+- A CMake `PUBLIC` compile option reaches every target that links the library; Bazel has no propagated copts. For
+  `autoware_test_utils`' PUBLIC `-Wno-deprecated-declarations`, targets that link it repeat the flag, with a comment.
+  (Lyrical deprecations inside those tests are then hidden exactly as upstream would hide them.)
+- Several components per library (`downsample_filters`): one `rclcpp_components_register_node` per plugin, sharing
+  the `cc_shared_library`.
+
+Issues (symptom → cause → fix):
+1. `Two shared libraries in dependencies link the same library statically. Both @autoware_point_types and
+   @rosdistro//cc:pcl link statically @pcl//:common` → `pcl_ros` brings PCL as a shared library while our packages
+   used `@rosdistro//cc:pcl_common` statically → PCL as a shared pair
+   `"@rosdistro//cc:pcl": "@rosdistro//cc:pcl_library"` in every package (also `autoware_utils_pcl`).
+2. `function_traits.hpp: reference to overloaded function could not be resolved` (component_interface_utils) →
+   libc++'s `std::bind` keeps the callable type undecayed (`__bind<void (C::*&)(...)>`), so rclcpp's
+   `function_traits` specialization for member pointers does not match; libstdc++ decays it →
+   `std::bind(std::move(callback), ...)` in the Autoware header.
+3. 4 `nn_search` cases fail (wrong lanelet ID) → several lanelets tie at distance 0 and `find_nearest` leaves the
+   order of ties to `std::nth_element`/`std::sort`, which differs between libstdc++ and libc++. A stable sort
+   matched one case but not the others (libstdc++ is not stable for 4+ elements either), so no portable
+   implementation reproduces the expectations → the test asserts the expected lanelet is among the nearest. Found
+   with a throwaway test printing `(id, distance)` for the top 4 results.
+4. `'tf2/LinearMath/Quaternion.h' file not found`; `tf2_ros/buffer.h: BUFFER_HEADER_DEPRECATION [-W#warnings]` →
+   Lyrical removed the tf2 `.h` headers and the tf2_ros ones emit `#warning` (clang reports it even from a system
+   header) → use the `.hpp` headers (also in Jazzy).
+5. `'tl_expected/expected.hpp' file not found` → the RCR has only a `0.0.0` stub for the ROS `tl_expected`
+   package, but ships upstream tl::expected as `@rosdistro//cc:tl_expected` (`tl/expected.hpp`) → generated
+   forwarding header, as for OSQP.
+6. `use of undeclared identifier 'M_PIf'` → a glibc 2.35 addition; the hermetic toolchain targets glibc 2.34 →
+   `#ifndef M_PIf` fallbacks from `M_PI` in the source (raising the glibc target would change every compile command).
+7. `no matching member function for call to 'subscribe'` (message_filters) → Lyrical removed the
+   `rmw_qos_profile_t` overloads → pass the `rclcpp::QoS` itself. 13 more `get_rmw_qos_profile()` uses in `src/core`.
+
+Lessons:
+- Two standard libraries mean two sets of unspecified behaviour: tests that depend on the order of equal elements,
+  or on `std::bind`'s exact type, pass with libstdc++ and fail with libc++. Fix the test or the call, not the
+  toolchain.
+- The hermetic toolchain's glibc target (2.34) is older than the host's (2.39): glibc extensions newer than the
+  target need fallbacks.
