@@ -28,6 +28,7 @@ endif()
 if(SOMETHING)
 endif()
 autoware_ament_auto_package(USE_SCOPED_HEADER_INSTALL_DIR INSTALL_TO_SHARE config launch)
+generate_parameter_library(my_params param/p.yaml)
 weird_command(x)
 """
             cm = CMake(d)
@@ -41,6 +42,7 @@ weird_command(x)
             self.assertEqual(cm.share, {"config", "launch"})
             self.assertEqual(cm.ifs, {"SOMETHING"})
             self.assertEqual(cm.unhandled, {"weird_command"})
+            self.assertEqual(cm.param_libs, {"my_params"})
 
 
 if __name__ == "__main__":

@@ -1,0 +1,123 @@
+load("@autoware_cmake//:defs.bzl", "AUTOWARE_CXXOPTS", "AUTOWARE_DEFINES", "autoware_copts")
+load("@generate_parameter_library//:defs.bzl", "generate_parameter_library")
+load("@rclcpp_components//:defs.bzl", "rclcpp_components_register_node")
+load("@rosdistro//ament:defs.bzl", "ament_index")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps", "ros_local_defines")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+# Deliberate differences from CMakeLists.txt (checked by bazel/tools/cmake_parity):
+# cmake-diff timeout:test_autoware_path_generator: CMake TIMEOUT 180; Bazel's tiers are 60/300/900/3600 s,
+#   so "moderate" (300 s).
+
+DEPENDENCIES = {
+    "@autoware_internal_debug_msgs//:cc_shared": "@autoware_internal_debug_msgs//:cc",
+    "@autoware_internal_planning_msgs//:cc_shared": "@autoware_internal_planning_msgs//:cc",
+    "@autoware_lanelet2_utils//:autoware_lanelet2_utils": "@autoware_lanelet2_utils//:autoware_lanelet2_utils_library",
+    "@autoware_map_msgs//:cc_shared": "@autoware_map_msgs//:cc",
+    "@autoware_motion_utils//:autoware_motion_utils": "@autoware_motion_utils//:autoware_motion_utils_library",
+    "@autoware_planning_msgs//:cc_shared": "@autoware_planning_msgs//:cc",
+    "@autoware_planning_test_manager//:autoware_planning_test_manager": "@autoware_planning_test_manager//:autoware_planning_test_manager_library",
+    "@autoware_trajectory//:autoware_trajectory": "@autoware_trajectory//:autoware_trajectory_library",
+    "@autoware_utils_debug//:autoware_utils_debug": "@autoware_utils_debug//:autoware_utils_debug_library",
+    "@autoware_utils_geometry//:autoware_utils_geometry": "@autoware_utils_geometry//:autoware_utils_geometry_library",
+    "@autoware_utils_math//:autoware_utils_math": "@autoware_utils_math//:autoware_utils_math_library",
+    "@autoware_utils_rclcpp//:autoware_utils_rclcpp": "@autoware_utils_rclcpp//:autoware_utils_rclcpp_library",
+    "@autoware_utils_system//:autoware_utils_system": "@autoware_utils_system//:autoware_utils_system_library",
+    "@autoware_vehicle_info_utils//:autoware_vehicle_info_utils": "@autoware_vehicle_info_utils//:autoware_vehicle_info_utils_library",
+    "@autoware_vehicle_msgs//:cc_shared": "@autoware_vehicle_msgs//:cc",
+    "@geometry_msgs//:cc_shared": "@geometry_msgs//:cc",
+    "@lanelet2_core//:lanelet2_core": "@lanelet2_core//:lanelet2_core_library",
+    "@lanelet2_routing//:lanelet2_routing": "@lanelet2_routing//:lanelet2_routing_library",
+    "@nav_msgs//:cc_shared": "@nav_msgs//:cc",
+    "@rclcpp//:rclcpp": "@rclcpp//:rclcpp_library",
+    "@rclcpp_components//:rclcpp_components": "@rclcpp_components//:rclcpp_components_library",
+    "@tf2//:tf2": "@tf2//:tf2_library",
+}
+
+# CMake: -Wno-error=deprecated-declarations PUBLIC on this library, plus autoware_test_utils' PUBLIC
+# -Wno-deprecated-declarations reaching it through autoware_planning_test_manager.
+COPTS = autoware_copts() + [
+    "-Wno-error=deprecated-declarations",
+    "-Wno-deprecated-declarations",
+]
+
+# include/autoware_path_generator/path_generator_parameters.hpp
+generate_parameter_library(
+    name = "path_generator_parameters",
+    yaml_file = "param/path_generator_parameters.yaml",
+)
+
+# Component library (DIRECTORY src).
+cc_library(
+    name = "autoware_path_generator_library",
+    srcs = glob([
+        "src/*.cpp",
+        "src/*.hpp",
+    ]),
+    hdrs = glob(["include/**/*.hpp"]),
+    copts = COPTS,
+    cxxopts = AUTOWARE_CXXOPTS,
+    local_defines = ros_local_defines() + AUTOWARE_DEFINES,
+    includes = ["include"],
+    deps = DEPENDENCIES.values() + [":path_generator_parameters"],
+)
+
+cc_shared_library(
+    name = "autoware_path_generator",
+    dynamic_deps = DEPENDENCIES.keys(),
+    exports_filter = [":autoware_path_generator_library"],
+    deps = [":autoware_path_generator_library"],
+)
+
+rclcpp_components_register_node(
+    name = "path_generator_node",
+    component = ":autoware_path_generator",
+    data = ["@@//bazel/config:cyclonedds.xml"],
+    node_name = "path_generator_node",
+    plugin = "autoware::path_generator::PathGenerator",
+)
+
+# share/autoware_path_generator/{config,test_route} (INSTALL_TO_SHARE).
+ament_index(
+    name = "ament_index",
+    components = [":path_generator_node_record"],
+    data = glob([
+        "config/**",
+        "test_route/**",
+    ]),
+    executables = [":path_generator_node"],
+    libraries = [":autoware_path_generator"],
+    package_xml = "package.xml",
+)
+
+TEST_DEPENDENCIES = {
+    "@ament_index_cpp//:ament_index_cpp": "@ament_index_cpp//:ament_index_cpp_library",
+    "@autoware_test_utils//:autoware_test_utils": "@autoware_test_utils//:autoware_test_utils_library",
+}
+
+collect_transitive_dynamic_deps(
+    name = "test_dynamic_deps",
+    dynamic_deps = [":autoware_path_generator"] + TEST_DEPENDENCIES.keys(),
+    visibility = ["//visibility:private"],
+)
+
+cc_test(
+    name = "test_autoware_path_generator",
+    timeout = "moderate",
+    srcs = glob([
+        "test/*.cpp",
+        "test/*.hpp",
+    ]),
+    copts = COPTS,
+    cxxopts = AUTOWARE_CXXOPTS,
+    data = [
+        ":ament_index",
+        "@@//bazel/config:cyclonedds.xml",
+        "@autoware_test_utils//:ament_index",
+    ],
+    dynamic_deps = [":test_dynamic_deps"],
+    local_defines = ros_local_defines() + AUTOWARE_DEFINES,
+    deps = [":autoware_path_generator_library"] + TEST_DEPENDENCIES.values() + ["@rosdistro//cc:googletest"],
+)

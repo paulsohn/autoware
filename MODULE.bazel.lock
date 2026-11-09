@@ -1374,6 +1374,7 @@
     "https://bazel.ros.org/modules/gazelle/0.47.0/MODULE.bazel": "not found",
     "https://bazel.ros.org/modules/gazelle/0.51.3/MODULE.bazel": "not found",
     "https://bazel.ros.org/modules/generate_export_header/0.1.0/MODULE.bazel": "not found",
+    "https://bazel.ros.org/modules/generate_parameter_library/0.0.0/MODULE.bazel": "8bb87aad38d55f337edb48fc9167e5895cb87f5489723dd2adad293efd52ba9d",
     "https://bazel.ros.org/modules/generate_parameter_library/1.3.0-1.rcr.0/MODULE.bazel": "e81c637d2ac6bcd9d6b7944d8372b121298b6d0472de200eadf99c593c0415f0",
     "https://bazel.ros.org/modules/generate_parameter_library/1.3.0-1.rcr.0/source.json": "bc368683e182968308383ece833bb870872020ee8edc321989f8b06be8199c9e",
     "https://bazel.ros.org/modules/generate_parameter_library_py/1.3.0-1.rcr.0/MODULE.bazel": "46f447364535592d2c1b31c869e0be826bbc23841e5e7dc403729f8d76b64eef",

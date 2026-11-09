@@ -250,3 +250,6 @@ local_path_override(module_name = "autoware_planning_test_manager", path = "src/
 
 bazel_dep(name = "autoware_mission_planner")
 local_path_override(module_name = "autoware_mission_planner", path = "src/core/autoware_core/planning/autoware_mission_planner")
+
+bazel_dep(name = "autoware_path_generator")
+local_path_override(module_name = "autoware_path_generator", path = "src/core/autoware_core/planning/autoware_path_generator")

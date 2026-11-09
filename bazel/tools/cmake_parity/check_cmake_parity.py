@@ -8,7 +8,7 @@ Each finding has a key. A deliberate difference is recorded in the package's BUI
 and then reported as recorded instead of open. Recorded keys that no longer match a finding are reported as stale.
 Exit status 1 if anything is open or stale. Interface packages (rosidl_generate_interfaces) are skipped.
 
-Checked: libraries, executables, components, tests (names, sources, TIMEOUT), every source file CMake compiles and
+Checked: libraries, executables, components, generate_parameter_library targets, tests (names, sources, TIMEOUT), every source file CMake compiles and
 every .c/.cpp Bazel compiles, compile options/definitions/features, INSTALL_TO_SHARE and install() targets, Python
 packages, environment hooks, if() conditions, package.xml build/test dependencies vs MODULE.bazel, and any CMake
 command it does not know. Not reported, because handled the same way for every package (PLAN.md, "Package
@@ -68,6 +68,7 @@ class CMake:
         self.sources, self.copts, self.defines, self.features = set(), set(), set(), set()
         self.share, self.programs, self.installs, self.python, self.hooks = set(), set(), set(), set(), set()
         self.ifs, self.unhandled, self.timeouts, self.dynamic = set(), set(), {}, set()
+        self.param_libs = set()
 
     def expand(self, s):
         for _ in range(5):
@@ -208,6 +209,8 @@ class CMake:
                 self.share |= {x.rstrip("/") for x in items}
             else:
                 self.installs.add(f"{a[0]}:{','.join(self.rel(x) for x in items)}->{dest}")
+        elif name == "generate_parameter_library":
+            self.param_libs.add(a[0])
         elif name == "ament_python_install_package":
             self.python.add(a[0])
         elif name == "ament_environment_hooks":
@@ -277,6 +280,7 @@ def findings(pkg_dir):
         if not (lib in rules and rules[lib]["kind"] == want):
             found.add(f"library:{lib}")
     found |= {f"executable:{e}" for e in cm.executables if e not in rules}
+    found |= {f"parameter-library:{p}" for p in cm.param_libs if p not in rules}
     plugins = {r.get("plugin") for r in rules.values()} | strings("plugins")
     found |= {f"component:{p}" for p in cm.components if p not in plugins}
     found |= {f"test:{t}" for t in cm.tests if not (t in rules and rules[t]["kind"].endswith("test"))}
