@@ -376,3 +376,9 @@ local_path_override(module_name = "autoware_tensorrt_plugins", path = "src/unive
 
 bazel_dep(name = "cuda_blackboard")
 local_path_override(module_name = "cuda_blackboard", path = "src/core/cuda/cuda_blackboard")
+
+bazel_dep(name = "autoware_learning_based_vehicle_model")
+local_path_override(module_name = "autoware_learning_based_vehicle_model", path = "src/core/autoware_simple_planning_simulator/autoware_learning_based_vehicle_model")
+
+bazel_dep(name = "autoware_simple_planning_simulator")
+local_path_override(module_name = "autoware_simple_planning_simulator", path = "src/core/autoware_simple_planning_simulator/autoware_simple_planning_simulator")

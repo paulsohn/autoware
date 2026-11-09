@@ -6,7 +6,6 @@ load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
 package(default_visibility = ["//visibility:public"])
 
 # Deliberate differences from CMakeLists.txt (checked by bazel/tools/cmake_parity):
-# cmake-diff dep:pcl_ros: the headers use only pcl_conversions and PCL; pcl_ros is not needed to build or test.
 
 DEPENDENCIES = {
     "@rosdistro//cc:pcl": "@rosdistro//cc:pcl_library",

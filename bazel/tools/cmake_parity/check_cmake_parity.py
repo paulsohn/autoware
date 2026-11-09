@@ -374,13 +374,13 @@ def findings(pkg_dir):
     found |= {f"define:{d}" for d in cm.defines if d not in defines}
     std = {o for o in opts if o.startswith("-std=")}
     found |= {f"feature:{f}" for f in cm.features if f"-std=c++{f[len('cxx_std_'):]}" not in std}
-    data = {label_path(s) for s in strings("data", kinds=lambda k: k.startswith("ament_index"))}
+    data = {label_path(s) for s in strings("data", kinds=lambda k: k.startswith(("ament_index", "ament_package")))}
     found |= {f"share:{d}" for d in cm.share if not any(p.startswith(d + "/") for p in data)}
     found |= {f"program:{p}" for p in cm.programs if p not in bazel_files}
     found |= {f"install:{i}" for i in cm.installs}
     found |= {f"python-package:{p}" for p in cm.python if not any(r["kind"] == "py_library" for r in rules.values())}
     found |= {f"env-hook:{h}" for h in cm.hooks}
-    index_rules = [r for r in rules.values() if r["kind"].startswith("ament_index")]
+    index_rules = [r for r in rules.values() if r["kind"].startswith(("ament_index", "ament_package"))]
     found |= {f"plugin-export:{cat}:{xml}" for cat, xml in cm.plugin_exports
               if not any(r.get("plugin_category") == cat and xml in {label_path(x) for x in r.get("plugins") or []}
                          for r in index_rules)}

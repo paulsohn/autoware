@@ -1,0 +1,43 @@
+load("@autoware_cmake//:defs.bzl", "AUTOWARE_CXXOPTS", "AUTOWARE_DEFINES", "autoware_copts")
+load("@rosdistro//ament:defs.bzl", "ament_package")
+load("@rosdistro//cc:defs.bzl", "ros_local_defines")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library")
+
+package(default_visibility = ["//visibility:public"])
+
+# Deliberate differences from CMakeLists.txt (checked by bazel/tools/cmake_parity):
+# cmake-diff dep:pybind11_vendor: pybind11 comes from @rosdistro//cc:pybind11.
+
+# Embeds Python (pybind11::embed + libpython of the hermetic interpreter, as in autoware_pyplot).
+cc_library(
+    name = "autoware_learning_based_vehicle_model_library",
+    srcs = glob(["src/*.cpp"]),
+    hdrs = glob(["include/**/*.hpp"]),
+    copts = autoware_copts() + ["-fvisibility=hidden"],
+    cxxopts = AUTOWARE_CXXOPTS,
+    includes = ["include"],
+    local_defines = ros_local_defines() + AUTOWARE_DEFINES,
+    deps = [
+        "@rosdistro//cc:pybind11",
+        "@rules_python//python/cc:current_py_cc_libs",
+    ],
+)
+
+cc_shared_library(
+    name = "autoware_learning_based_vehicle_model",
+    exports_filter = [":autoware_learning_based_vehicle_model_library"],
+    deps = [":autoware_learning_based_vehicle_model_library"],
+)
+
+ament_package(
+    name = "ament_package",
+    libraries = [":autoware_learning_based_vehicle_model"],
+    package_xml = "package.xml",
+    deps = ["@rosdistro//:ament_package"],
+)
+
+# The installed package doubles as the runtime ament index of this package in tests.
+alias(
+    name = "ament_index",
+    actual = ":ament_package",
+)

@@ -1,0 +1,135 @@
+load("@autoware_cmake//:defs.bzl", "AUTOWARE_CXXOPTS", "AUTOWARE_DEFINES", "autoware_copts")
+load("@rclcpp_components//:defs.bzl", "rclcpp_components_register_node")
+load("@rosdistro//ament:defs.bzl", "ament_package")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps", "ros_local_defines")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+# Deliberate differences from CMakeLists.txt (checked by bazel/tools/cmake_parity):
+# cmake-diff timeout:test_simple_planning_simulator: CMake TIMEOUT 120; Bazel tier "moderate" (300 s).
+
+DEPENDENCIES = {
+    "@autoware_control_msgs//:cc_shared": "@autoware_control_msgs//:cc",
+    "@autoware_lanelet2_extension//:autoware_lanelet2_extension_lib": "@autoware_lanelet2_extension//:autoware_lanelet2_extension_lib_library",
+    "@autoware_lanelet2_utils//:autoware_lanelet2_utils": "@autoware_lanelet2_utils//:autoware_lanelet2_utils_library",
+    "@autoware_learning_based_vehicle_model//:autoware_learning_based_vehicle_model": "@autoware_learning_based_vehicle_model//:autoware_learning_based_vehicle_model_library",
+    "@autoware_map_msgs//:cc_shared": "@autoware_map_msgs//:cc",
+    "@autoware_motion_utils//:autoware_motion_utils": "@autoware_motion_utils//:autoware_motion_utils_library",
+    "@autoware_planning_msgs//:cc_shared": "@autoware_planning_msgs//:cc",
+    "@autoware_utils_geometry//:autoware_utils_geometry": "@autoware_utils_geometry//:autoware_utils_geometry_library",
+    "@autoware_utils_rclcpp//:autoware_utils_rclcpp": "@autoware_utils_rclcpp//:autoware_utils_rclcpp_library",
+    "@autoware_vehicle_info_utils//:autoware_vehicle_info_utils": "@autoware_vehicle_info_utils//:autoware_vehicle_info_utils_library",
+    "@autoware_vehicle_msgs//:cc_shared": "@autoware_vehicle_msgs//:cc",
+    "@geometry_msgs//:cc_shared": "@geometry_msgs//:cc",
+    "@lanelet2_core//:lanelet2_core": "@lanelet2_core//:lanelet2_core_library",
+    "@nav_msgs//:cc_shared": "@nav_msgs//:cc",
+    "@rclcpp//:rclcpp": "@rclcpp//:rclcpp_library",
+    "@rclcpp_components//:rclcpp_components": "@rclcpp_components//:rclcpp_components_library",
+    "@sensor_msgs//:cc_shared": "@sensor_msgs//:cc",
+    "@tf2//:tf2": "@tf2//:tf2_library",
+    "@tf2_geometry_msgs//:tf2_geometry_msgs": "@tf2_geometry_msgs//:tf2_geometry_msgs_library",
+    "@tf2_ros//:tf2_ros": "@tf2_ros//:tf2_ros_library",
+}
+
+# Component library (ament_auto: include/ and every build dependency).
+cc_library(
+    name = "autoware_simple_planning_simulator_library",
+    srcs = glob([
+        "src/**/*.cpp",
+    ]),
+    hdrs = glob(["include/**/*.hpp"]),
+    copts = autoware_copts(),
+    cxxopts = AUTOWARE_CXXOPTS,
+    includes = ["include"],
+    local_defines = ros_local_defines() + AUTOWARE_DEFINES,
+    deps = DEPENDENCIES.values() + ["@rosdistro//cc:eigen"],
+)
+
+cc_shared_library(
+    name = "autoware_simple_planning_simulator",
+    dynamic_deps = DEPENDENCIES.keys(),
+    exports_filter = [":autoware_simple_planning_simulator_library"],
+    deps = [":autoware_simple_planning_simulator_library"],
+)
+
+rclcpp_components_register_node(
+    name = "autoware_simple_planning_simulator_node",
+    component = ":autoware_simple_planning_simulator",
+    data = ["@@//bazel/config:cyclonedds.xml"],
+    node_name = "autoware_simple_planning_simulator_node",
+    plugin = "autoware::simulator::simple_planning_simulator::SimplePlanningSimulator",
+)
+
+# share/autoware_simple_planning_simulator/{param,data,launch,test} (INSTALL_TO_SHARE).
+ament_package(
+    name = "ament_package",
+    components = [":autoware_simple_planning_simulator_node_record"],
+    data = glob([
+        "data/**",
+        "launch/**",
+        "param/**",
+        "test/**",
+    ]),
+    executables = [":autoware_simple_planning_simulator_node"],
+    libraries = [":autoware_simple_planning_simulator"],
+    package_xml = "package.xml",
+    deps = [
+        "@autoware_control_msgs//:ament_package",
+        "@autoware_lanelet2_extension//:ament_package",
+        "@autoware_lanelet2_utils//:ament_package",
+        "@autoware_learning_based_vehicle_model//:ament_package",
+        "@autoware_map_msgs//:ament_package",
+        "@autoware_motion_utils//:ament_package",
+        "@autoware_planning_msgs//:ament_package",
+        "@autoware_utils_geometry//:ament_package",
+        "@autoware_utils_rclcpp//:ament_package",
+        "@autoware_vehicle_info_utils//:ament_package",
+        "@autoware_vehicle_msgs//:ament_package",
+        "@geometry_msgs//:ament_package",
+        "@lanelet2_core//:ament_package",
+        "@launch_ros//:ament_package",
+        "@nav_msgs//:ament_package",
+        "@rclcpp//:ament_package",
+        "@rclcpp_components//:ament_package",
+        "@rosdistro//:ament_package",
+        "@sensor_msgs//:ament_package",
+        "@tf2//:ament_package",
+        "@tf2_geometry_msgs//:ament_package",
+        "@tf2_ros//:ament_package",
+    ],
+)
+
+# The installed package doubles as the runtime ament index of this package in tests (data = [":ament_index"]).
+alias(
+    name = "ament_index",
+    actual = ":ament_package",
+)
+
+TEST_DEPENDENCIES = {
+    "@ament_index_cpp//:ament_index_cpp": "@ament_index_cpp//:ament_index_cpp_library",
+}
+
+collect_transitive_dynamic_deps(
+    name = "test_dynamic_deps",
+    dynamic_deps = [":autoware_simple_planning_simulator"] + TEST_DEPENDENCIES.keys(),
+    visibility = ["//visibility:private"],
+)
+
+cc_test(
+    name = "test_simple_planning_simulator",
+    timeout = "moderate",  # TIMEOUT 120
+    srcs = ["test/test_simple_planning_simulator.cpp"],
+    copts = autoware_copts(),
+    cxxopts = AUTOWARE_CXXOPTS,
+    data = [
+        ":ament_index",
+        "@@//bazel/config:cyclonedds.xml",
+    ],
+    dynamic_deps = [":test_dynamic_deps"],
+    local_defines = ros_local_defines() + AUTOWARE_DEFINES,
+    deps = [
+        ":autoware_simple_planning_simulator_library",
+        "@rosdistro//cc:googletest",
+    ] + TEST_DEPENDENCIES.values(),
+)

@@ -7,7 +7,6 @@ package(default_visibility = ["//visibility:public"])
 
 # Deliberate differences from CMakeLists.txt (checked by bazel/tools/cmake_parity):
 # cmake-diff copt:-Wno-error=maybe-uninitialized: GCC-only warning; clang rejects the unknown flag under -Werror.
-# cmake-diff dep:lanelet2_maps: map data package; nothing in the sources or tests uses it.
 
 # Based on the RCR overlay for 0.7.2; target names kept identical so RCR modules that depend on this one still work.
 

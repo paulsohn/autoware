@@ -1339,3 +1339,19 @@ Issues (symptom → cause → fix):
 
 The host's Docker has no NVIDIA runtime (`Runtimes: runc`); GPU in the container needs the NVIDIA container toolkit
 (host setup, outside Bazel). The planning-simulator demo does not need it.
+
+## P4 part 2: simple_planning_simulator, learning_based_vehicle_model
+
+- autoware_learning_based_vehicle_model embeds Python (`pybind11::embed`): `@rosdistro//cc:pybind11` +
+  `@rules_python//python/cc:current_py_cc_libs`, as autoware_pyplot does.
+- autoware_simple_planning_simulator: component library + `rclcpp_components_register_node`. It installs
+  `param`, `data`, `launch` and `test` to share.
+`bazel test @autoware_simple_planning_simulator//...` → 10 cases pass. Parity 0 open.
+
+Issues: `tf2_ros/buffer.h` and `transform_listener.h` (deprecated `.h`, -Werror) → `.hpp`. The test used
+`rclcpp::spin_some` and `get_package_share_directory` (deprecated) → executor `spin_node_some`,
+`get_package_share_path`. A self-dependency in the new ament_package (listing the module's own name) → cycle; removed.
+
+Parity checker: install data is now found on `ament_package` rules too (the P4 conversion made the checker report
+`share:*` for every package). Three `cmake-diff dep:` records (pcl_ros, lanelet2_maps) became stale, because those are
+now runtime dependencies of the installed packages; removed.
