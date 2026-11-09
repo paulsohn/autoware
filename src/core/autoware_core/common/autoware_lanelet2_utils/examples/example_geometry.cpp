@@ -15,7 +15,7 @@
 #include "autoware/lanelet2_utils/conversion.hpp"
 #include "autoware/lanelet2_utils/geometry.hpp"
 
-#include <ament_index_cpp/get_package_share_directory.hpp>
+#include <ament_index_cpp/get_package_share_path.hpp>
 
 #include <lanelet2_core/LaneletMap.h>
 #include <lanelet2_core/geometry/Lanelet.h>
@@ -32,7 +32,7 @@ namespace fs = std::filesystem;
 static lanelet::LaneletMapConstPtr set_up_lanelet_map_ptr()
 {
   const auto sample_map_dir =
-    fs::path(ament_index_cpp::get_package_share_directory("autoware_lanelet2_utils")) /
+    fs::path(ament_index_cpp::get_package_share_path("autoware_lanelet2_utils").string()) /
     "sample_map";
   const auto intersection_crossing_map_path = sample_map_dir / "vm_03/left_hand/lanelet2_map.osm";
 

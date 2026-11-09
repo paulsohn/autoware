@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <ament_index_cpp/get_package_share_directory.hpp>
+#include <ament_index_cpp/get_package_share_path.hpp>
 #include <autoware/lanelet2_utils/conversion.hpp>
 #include <autoware/lanelet2_utils/hatched_road_markings.hpp>
 
@@ -29,7 +29,7 @@ namespace fs = std::filesystem;
 static lanelet::LaneletMapConstPtr set_up_lanelet_map_ptr()
 {
   const auto sample_map_dir =
-    fs::path(ament_index_cpp::get_package_share_directory("autoware_lanelet2_utils")) /
+    fs::path(ament_index_cpp::get_package_share_path("autoware_lanelet2_utils").string()) /
     "sample_map";
   const auto map_path = sample_map_dir / "vm_06_01/lanelet2_map.osm";
 
