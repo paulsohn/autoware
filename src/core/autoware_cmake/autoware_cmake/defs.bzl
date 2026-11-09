@@ -9,6 +9,9 @@ Not carried over: ROS_DISTRO_* defines (only GALACTIC/HUMBLE are ever checked; L
 and the include_directories(SYSTEM ...) workarounds (covered by the system-header handling below).
 """
 
+load("@rules_cc//cc/common:cc_common.bzl", "cc_common")
+load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
+
 AUTOWARE_WARNINGS = [
     "-Wall",
     "-Wextra",
@@ -48,3 +51,20 @@ def autoware_copts(own_include_prefixes = None):
         "--no-system-header-prefix=" + p
         for p in own_include_prefixes
     ]
+
+def _cc_headers_only_impl(ctx):
+    return [CcInfo(compilation_context = cc_common.merge_compilation_contexts(
+        compilation_contexts = [d[CcInfo].compilation_context for d in ctx.attr.deps],
+    ))]
+
+cc_headers_only = rule(
+    implementation = _cc_headers_only_impl,
+    doc = """Headers and include paths of `deps`, without linking them.
+
+    For a library that includes a dependency's headers but leaves its symbols to the final executable, as CMake
+    allows (e.g. a test-helper shared library including gtest.h, linked into tests that link gtest themselves).
+    Linking such a dependency statically into the shared library would give the executable a second copy.
+    """,
+    attrs = {"deps": attr.label_list(providers = [CcInfo], mandatory = True)},
+    provides = [CcInfo],
+)

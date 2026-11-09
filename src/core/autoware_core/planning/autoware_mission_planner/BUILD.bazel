@@ -1,0 +1,132 @@
+load("@autoware_cmake//:defs.bzl", "AUTOWARE_CXXOPTS", "AUTOWARE_DEFINES", "autoware_copts")
+load("@rclcpp_components//:defs.bzl", "rclcpp_components_register_node")
+load("@rosdistro//ament:defs.bzl", "ament_index")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps", "ros_local_defines")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+DEPENDENCIES = {
+    "@autoware_adapi_v1_msgs//:cc_shared": "@autoware_adapi_v1_msgs//:cc",
+    "@autoware_common_msgs//:cc_shared": "@autoware_common_msgs//:cc",
+    "@autoware_component_interface_specs//:autoware_component_interface_specs": "@autoware_component_interface_specs//:autoware_component_interface_specs_library",
+    "@autoware_component_interface_utils//:autoware_component_interface_utils": "@autoware_component_interface_utils//:autoware_component_interface_utils_library",
+    "@autoware_internal_debug_msgs//:cc_shared": "@autoware_internal_debug_msgs//:cc",
+    "@autoware_lanelet2_extension//:autoware_lanelet2_extension_lib": "@autoware_lanelet2_extension//:autoware_lanelet2_extension_lib_library",
+    "@autoware_lanelet2_utils//:autoware_lanelet2_utils": "@autoware_lanelet2_utils//:autoware_lanelet2_utils_library",
+    "@autoware_map_msgs//:cc_shared": "@autoware_map_msgs//:cc",
+    "@autoware_motion_utils//:autoware_motion_utils": "@autoware_motion_utils//:autoware_motion_utils_library",
+    "@autoware_planning_msgs//:cc_shared": "@autoware_planning_msgs//:cc",
+    "@autoware_route_handler//:autoware_route_handler": "@autoware_route_handler//:autoware_route_handler_library",
+    "@autoware_utils_geometry//:autoware_utils_geometry": "@autoware_utils_geometry//:autoware_utils_geometry_library",
+    "@autoware_utils_logging//:autoware_utils_logging": "@autoware_utils_logging//:autoware_utils_logging_library",
+    "@autoware_utils_math//:autoware_utils_math": "@autoware_utils_math//:autoware_utils_math_library",
+    "@autoware_utils_system//:autoware_utils_system": "@autoware_utils_system//:autoware_utils_system_library",
+    "@autoware_utils_visualization//:autoware_utils_visualization": "@autoware_utils_visualization//:autoware_utils_visualization_library",
+    "@autoware_vehicle_info_utils//:autoware_vehicle_info_utils": "@autoware_vehicle_info_utils//:autoware_vehicle_info_utils_library",
+    "@geometry_msgs//:cc_shared": "@geometry_msgs//:cc",
+    "@lanelet2_core//:lanelet2_core": "@lanelet2_core//:lanelet2_core_library",
+    "@lanelet2_routing//:lanelet2_routing": "@lanelet2_routing//:lanelet2_routing_library",
+    "@lanelet2_traffic_rules//:lanelet2_traffic_rules": "@lanelet2_traffic_rules//:lanelet2_traffic_rules_library",
+    "@nav_msgs//:cc_shared": "@nav_msgs//:cc",
+    "@rclcpp//:rclcpp": "@rclcpp//:rclcpp_library",
+    "@rclcpp_components//:rclcpp_components": "@rclcpp_components//:rclcpp_components_library",
+    "@std_msgs//:cc_shared": "@std_msgs//:cc",
+    "@tf2//:tf2": "@tf2//:tf2_library",
+    "@tf2_geometry_msgs//:tf2_geometry_msgs": "@tf2_geometry_msgs//:tf2_geometry_msgs_library",
+    "@tf2_ros//:tf2_ros": "@tf2_ros//:tf2_ros_library",
+    "@visualization_msgs//:cc_shared": "@visualization_msgs//:cc",
+}
+
+# Libraries keep their CMake names (two are components, whose records store the .so file name).
+LIBRARIES = {
+    "goal_pose_visualizer_component": ("goal_pose_visualizer", []),
+    "autoware_mission_planner_lanelet2_plugins": ("lanelet2_plugins", []),
+    "autoware_mission_planner_component": ("mission_planner", [":autoware_mission_planner_lanelet2_plugins"]),
+}
+
+[cc_library(
+    name = lib + "_library",
+    srcs = glob([
+        "src/{}/*.cpp".format(subdir),
+        "src/{}/*.hpp".format(subdir),
+    ]),
+    copts = autoware_copts(),
+    cxxopts = AUTOWARE_CXXOPTS,
+    local_defines = ros_local_defines() + AUTOWARE_DEFINES,
+    deps = [l + "_library" for l in linked] + DEPENDENCIES.values() + ["@rosdistro//cc:boost.geometry"],
+) for lib, (subdir, linked) in LIBRARIES.items()]
+
+[cc_shared_library(
+    name = lib,
+    dynamic_deps = linked + DEPENDENCIES.keys(),
+    exports_filter = [":{}_library".format(lib)],
+    deps = [":{}_library".format(lib)],
+) for lib, (_, linked) in LIBRARIES.items()]
+
+COMPONENTS = {
+    "goal_pose_visualizer": ("goal_pose_visualizer_component", "autoware::mission_planner::GoalPoseVisualizer"),
+    "mission_planner": ("autoware_mission_planner_component", "autoware::mission_planner::MissionPlannerNode"),
+}
+
+[rclcpp_components_register_node(
+    name = exe,
+    component = ":" + lib,
+    data = ["@@//bazel/config:cyclonedds.xml"],
+    node_name = exe,
+    plugin = plugin,
+) for exe, (lib, plugin) in COMPONENTS.items()]
+
+# share/autoware_mission_planner/{config,launch} (INSTALL_TO_SHARE).
+ament_index(
+    name = "ament_index",
+    components = [":{}_record".format(exe) for exe in COMPONENTS],
+    data = glob([
+        "config/**",
+        "launch/**",
+    ]),
+    executables = [":" + exe for exe in COMPONENTS],
+    libraries = [":" + lib for lib in LIBRARIES],
+    package_xml = "package.xml",
+)
+
+TEST_DEPENDENCIES = {
+    "@ament_index_cpp//:ament_index_cpp": "@ament_index_cpp//:ament_index_cpp_library",
+    "@autoware_test_utils//:autoware_test_utils": "@autoware_test_utils//:autoware_test_utils_library",
+}
+
+collect_transitive_dynamic_deps(
+    name = "test_dynamic_deps",
+    dynamic_deps = [":autoware_mission_planner_component"] + TEST_DEPENDENCIES.keys(),
+    visibility = ["//visibility:private"],
+)
+
+# Tests that link autoware_test_utils inherit its PUBLIC -Wno-deprecated-declarations in CMake.
+[cc_test(
+    name = name,
+    srcs = srcs,
+    copts = autoware_copts() + (["-Wno-deprecated-declarations"] if test_utils else []),
+    cxxopts = AUTOWARE_CXXOPTS,
+    data = [
+        ":ament_index",
+        "@@//bazel/config:cyclonedds.xml",
+        "@autoware_test_utils//:ament_index",
+    ],
+    dynamic_deps = [":test_dynamic_deps"],
+    local_defines = ros_local_defines() + AUTOWARE_DEFINES,
+    deps = [lib + "_library"] + (TEST_DEPENDENCIES.values() if test_utils else []) + [gtest],
+) for name, srcs, lib, test_utils, gtest in [
+    (
+        "test_autoware_mission_planner",
+        [
+            "test/test_lanelet2_plugins_default_planner.cpp",
+            "test/test_utility_functions.cpp",
+        ],
+        ":autoware_mission_planner_lanelet2_plugins",
+        True,
+        "@rosdistro//cc:googletest",
+    ),
+    ("test_autoware_mission_planner_arrival_checker", ["test/test_arrival_checker.cpp"], ":autoware_mission_planner_component", False, "@googletest//:gtest"),
+    ("test_autoware_mission_planner_node", ["test/test_mission_planner_node.cpp"], ":autoware_mission_planner_component", True, "@googletest//:gtest"),
+    ("test_autoware_mission_planner_reroute_safety", ["test/test_reroute_safety.cpp"], ":autoware_mission_planner_component", False, "@rosdistro//cc:googletest"),
+]]

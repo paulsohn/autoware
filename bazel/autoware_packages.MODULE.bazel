@@ -244,3 +244,9 @@ local_path_override(module_name = "autoware_core_control", path = "src/core/auto
 
 bazel_dep(name = "autoware_core_perception")
 local_path_override(module_name = "autoware_core_perception", path = "src/core/autoware_core/perception/autoware_core_perception")
+
+bazel_dep(name = "autoware_planning_test_manager")
+local_path_override(module_name = "autoware_planning_test_manager", path = "src/core/autoware_core/planning/autoware_planning_test_manager")
+
+bazel_dep(name = "autoware_mission_planner")
+local_path_override(module_name = "autoware_mission_planner", path = "src/core/autoware_core/planning/autoware_mission_planner")
