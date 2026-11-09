@@ -1,0 +1,222 @@
+load("@autoware_agnocast_wrapper//:defs.bzl", "autoware_agnocast_wrapper_register_node")
+load("@autoware_cmake//:defs.bzl", "AUTOWARE_CXXOPTS", "AUTOWARE_DEFINES", "autoware_copts")
+load("@launch_testing_ros//:defs.bzl", "launch_ros_test")
+load("@openmp//:defs.bzl", "OPENMP_COPTS")
+load("@rosdistro//ament:defs.bzl", "ament_index")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps", "ros_local_defines")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+# Deliberate differences from CMakeLists.txt (checked by bazel/tools/cmake_parity):
+# cmake-diff if:${CMAKE_SYSTEM_PROCESSOR} MATCHES x86_64: kept as select() on @platforms//cpu:x86_64 (COPTS).
+# cmake-diff if:BUILD_WITH_MARCH_NATIVE: not ported; -march=native makes outputs depend on the build machine (PLAN.md "Environments"). CMake does not set it by default either.
+# cmake-diff copt:-march=native: see BUILD_WITH_MARCH_NATIVE above.
+# cmake-diff if:OpenMP_CXX_FOUND: always true here; OpenMP is LLVM's libomp from the hermetic toolchain (@openmp).
+# cmake-diff if:NOT (DEFINED ENV{ENABLE_AGNOCAST} AND $ENV{ENABLE_AGNOCAST} STREQUAL 1): the launch test and the node tests, which CMake builds only without Agnocast, are built and run on the ROS 2 backend (ENABLE_AGNOCAST=0); PLAN.md.
+# cmake-diff timeout:test_test_ndt_scan_matcher_launch.py: CMake TIMEOUT 30; Bazel has fixed tiers, "short" (60 s) is the smallest.
+# cmake-diff timeout:test_ndt_scan_matcher_characteristics: CMake TIMEOUT 600; Bazel tier "long" (900 s).
+# cmake-diff dep:ros_testing: test_depend, but no ros_testing CMake function is called; the launch test uses launch_ros_test.
+
+DEPENDENCIES = {
+    "@autoware_agnocast_wrapper//:autoware_agnocast_wrapper": "@autoware_agnocast_wrapper//:autoware_agnocast_wrapper_library",
+    "@autoware_internal_debug_msgs//:cc_shared": "@autoware_internal_debug_msgs//:cc",
+    "@autoware_internal_localization_msgs//:cc_shared": "@autoware_internal_localization_msgs//:cc",
+    "@autoware_localization_util//:autoware_localization_util": "@autoware_localization_util//:autoware_localization_util_library",
+    "@autoware_map_msgs//:cc_shared": "@autoware_map_msgs//:cc",
+    "@autoware_qos_utils//:autoware_qos_utils": "@autoware_qos_utils//:autoware_qos_utils_library",
+    "@autoware_utils_diagnostics//:autoware_utils_diagnostics": "@autoware_utils_diagnostics//:autoware_utils_diagnostics_library",
+    "@autoware_utils_geometry//:autoware_utils_geometry": "@autoware_utils_geometry//:autoware_utils_geometry_library",
+    "@autoware_utils_logging//:autoware_utils_logging": "@autoware_utils_logging//:autoware_utils_logging_library",
+    "@autoware_utils_pcl//:autoware_utils_pcl": "@autoware_utils_pcl//:autoware_utils_pcl_library",
+    "@autoware_utils_visualization//:autoware_utils_visualization": "@autoware_utils_visualization//:autoware_utils_visualization_library",
+    "@builtin_interfaces//:cc_shared": "@builtin_interfaces//:cc",
+    "@diagnostic_msgs//:cc_shared": "@diagnostic_msgs//:cc",
+    "@geometry_msgs//:cc_shared": "@geometry_msgs//:cc",
+    "@nav_msgs//:cc_shared": "@nav_msgs//:cc",
+    "@pcl_conversions//:pcl_conversions": "@pcl_conversions//:pcl_conversions_library",
+    "@rclcpp//:rclcpp": "@rclcpp//:rclcpp_library",
+    "@rclcpp_components//:rclcpp_components": "@rclcpp_components//:rclcpp_components_library",
+    "@rosdistro//cc:pcl": "@rosdistro//cc:pcl_library",
+    "@sensor_msgs//:cc_shared": "@sensor_msgs//:cc",
+    "@std_msgs//:cc_shared": "@std_msgs//:cc",
+    "@std_srvs//:cc_shared": "@std_srvs//:cc",
+    "@tf2//:tf2": "@tf2//:tf2_library",
+    "@tf2_eigen//:tf2_eigen": "@tf2_eigen//:tf2_eigen_library",
+    "@tf2_geometry_msgs//:tf2_geometry_msgs": "@tf2_geometry_msgs//:tf2_geometry_msgs_library",
+    "@tf2_ros//:tf2_ros": "@tf2_ros//:tf2_ros_library",
+    "@tf2_sensor_msgs//:tf2_sensor_msgs": "@tf2_sensor_msgs//:tf2_sensor_msgs_library",
+    "@visualization_msgs//:cc_shared": "@visualization_msgs//:cc",
+}
+
+# add_compile_options() applies to every target of the package.
+COPTS = autoware_copts() + select({
+    "@platforms//cpu:x86_64": [
+        "-msse",
+        "-msse2",
+        "-msse3",
+        "-msse4",
+        "-msse4.1",
+        "-msse4.2",
+    ],
+    "//conditions:default": [],
+})
+
+THIRD_PARTY = [
+    "@rosdistro//cc:boost.optional",
+    "@rosdistro//cc:eigen",
+    "@rosdistro//cc:fmt",
+]
+
+# ament_auto_add_library: both libraries get include/ and every build dependency.
+cc_library(
+    name = "multigrid_ndt_omp_library",
+    srcs = [
+        "src/ndt_omp/estimate_covariance.cpp",
+        "src/ndt_omp/multi_voxel_grid_covariance_omp.cpp",
+        "src/ndt_omp/multi_voxel_grid_covariance_omp_impl.hpp",
+        "src/ndt_omp/multigrid_ndt_omp.cpp",
+        "src/ndt_omp/multigrid_ndt_omp_impl.hpp",
+    ],
+    hdrs = glob([
+        "include/**/*.h",
+        "include/**/*.hpp",
+    ]),
+    copts = COPTS + OPENMP_COPTS,
+    cxxopts = AUTOWARE_CXXOPTS,
+    includes = ["include"],
+    local_defines = ros_local_defines() + AUTOWARE_DEFINES,
+    deps = DEPENDENCIES.values() + THIRD_PARTY + ["@openmp//:openmp_library"],
+)
+
+cc_shared_library(
+    name = "multigrid_ndt_omp",
+    dynamic_deps = DEPENDENCIES.keys() + ["@openmp"],
+    exports_filter = [":multigrid_ndt_omp_library"],
+    deps = [":multigrid_ndt_omp_library"],
+)
+
+# Component library.
+cc_library(
+    name = "autoware_ndt_scan_matcher_library",
+    srcs = [
+        "src/map_update_module.cpp",
+        "src/ndt_scan_matcher_core.cpp",
+        "src/ndt_scan_matcher_helper.cpp",
+        "src/ndt_scan_matcher_helper.hpp",
+        "src/particle.cpp",
+    ],
+    copts = COPTS,
+    cxxopts = AUTOWARE_CXXOPTS,
+    local_defines = ros_local_defines() + AUTOWARE_DEFINES,
+    deps = [":multigrid_ndt_omp_library"] + DEPENDENCIES.values() + THIRD_PARTY,
+)
+
+cc_shared_library(
+    name = "autoware_ndt_scan_matcher",
+    dynamic_deps = [":multigrid_ndt_omp"] + DEPENDENCIES.keys(),
+    exports_filter = [":autoware_ndt_scan_matcher_library"],
+    deps = [":autoware_ndt_scan_matcher_library"],
+)
+
+autoware_agnocast_wrapper_register_node(
+    agnocast_executor = "AgnocastOnlyCallbackIsolatedExecutor",
+    component = ":autoware_ndt_scan_matcher",
+    data = ["@@//bazel/config:cyclonedds.xml"],
+    executable = "autoware_ndt_scan_matcher_node",
+    plugin = "autoware::ndt_scan_matcher::NDTScanMatcher",
+    ros2_executor = "MultiThreadedExecutor",
+)
+
+# share/autoware_ndt_scan_matcher/{launch,config} (INSTALL_TO_SHARE).
+ament_index(
+    name = "ament_index",
+    components = [":autoware_ndt_scan_matcher_node_component_record"],
+    data = glob([
+        "config/**",
+        "launch/**",
+    ]),
+    executables = [":autoware_ndt_scan_matcher_node"],
+    libraries = [
+        ":autoware_ndt_scan_matcher",
+        ":multigrid_ndt_omp",
+    ],
+    package_xml = "package.xml",
+    deps = [":autoware_ndt_scan_matcher_node_autoware_node_plugin"],
+)
+
+# Test headers (fixtures, stubs, harness) and src/ndt_scan_matcher_helper.hpp, included relative to the tests.
+cc_library(
+    name = "test_headers",
+    testonly = True,
+    hdrs = glob([
+        "src/*.hpp",
+        "test/**/*.hpp",
+    ]),
+    visibility = ["//visibility:private"],
+)
+
+TEST_DEPENDENCIES = {
+    "@ament_index_cpp//:ament_index_cpp": "@ament_index_cpp//:ament_index_cpp_library",
+    "@rcl_yaml_param_parser//:rcl_yaml_param_parser": "@rcl_yaml_param_parser//:rcl_yaml_param_parser_library",
+    "@tf2_msgs//:cc_shared": "@tf2_msgs//:cc",
+}
+
+collect_transitive_dynamic_deps(
+    name = "test_dynamic_deps",
+    dynamic_deps = [":autoware_ndt_scan_matcher"] + TEST_DEPENDENCIES.keys(),
+    visibility = ["//visibility:private"],
+)
+
+[
+    cc_test(
+        name = name,
+        timeout = timeout,
+        srcs = [src],
+        copts = COPTS,
+        cxxopts = AUTOWARE_CXXOPTS,
+        data = [
+            ":ament_index",
+            "@@//bazel/config:cyclonedds.xml",
+        ],
+        dynamic_deps = [":test_dynamic_deps"],
+        # Written for the ROS 2 backend (PLAN.md).
+        env = {"ENABLE_AGNOCAST": "0"},
+        local_defines = ros_local_defines() + AUTOWARE_DEFINES,
+        deps = [
+            ":autoware_ndt_scan_matcher_library",
+            ":multigrid_ndt_omp_library",
+            ":test_headers",
+            "@rosdistro//cc:googletest",
+        ] + TEST_DEPENDENCIES.values() + THIRD_PARTY,
+    )
+    for name, src, timeout in [
+        ("standard_sequence_for_initial_pose_estimation", "test/test_cases/standard_sequence_for_initial_pose_estimation.cpp", "moderate"),
+        ("once_initialize_at_out_of_map_then_initialize_correctly", "test/test_cases/once_initialize_at_out_of_map_then_initialize_correctly.cpp", "moderate"),
+        ("particles_num_less_than_publish_num", "test/test_cases/particles_num_less_than_publish_num.cpp", "moderate"),
+        ("test_ndt_scan_matcher_characteristics", "test/test_ndt_scan_matcher_characteristics.cpp", "long"),
+        ("test_estimate_covariance", "test/test_estimate_covariance.cpp", None),
+        ("test_ndt_scan_matcher_helper", "test/test_ndt_scan_matcher_helper.cpp", None),
+        ("test_map_update_module", "test/test_map_update_module.cpp", None),
+    ]
+]
+
+# add_launch_test() names the test after its path ("/" -> "_").
+launch_ros_test(
+    name = "test_test_ndt_scan_matcher_launch.py",
+    src = "test/test_ndt_scan_matcher_launch.py",
+    data = [
+        ":ament_index",
+        "@@//bazel/config:cyclonedds.xml",
+        "@autoware_agnocast_wrapper//:ament_index",
+    ],
+    # Written for the ROS 2 backend (PLAN.md).
+    env = {"ENABLE_AGNOCAST": "0"},
+    timeout = "short",
+    deps = [
+        ":autoware_ndt_scan_matcher_node",
+        "@ament_index_python",
+        "@rclpy",
+        "@std_srvs//:py",
+    ],
+)

@@ -34,7 +34,7 @@ IGNORED = {
     "ament_auto_find_test_dependencies", "ament_lint_auto_find_test_dependencies", "include_directories",
     "target_include_directories", "target_link_libraries", "ament_target_dependencies", "ament_package",
     "message", "get_target_property", "else", "elseif", "endif", "mark_as_advanced", "option", "string",
-    "find_path", "find_library", "pkg_check_modules", "set_property", "add_dependencies",
+    "find_path", "find_library", "pkg_check_modules", "set_property", "add_dependencies", "link_directories",
     "autoware_agnocast_wrapper_setup",  # Agnocast test env (LD_PRELOAD); tests here run on ROS 2 (PLAN.md)
 }
 TOOLING_DEP = re.compile(r"^(ament_.*|launch_testing_ament_cmake|autoware_cmake|autoware_lint_common|ros_environment|rosidl_default_.*)$")
@@ -270,6 +270,21 @@ class CMake:
 
 
 # ---------------------------------------------------------------------------------------------- Bazel reading
+def literal(node):
+    """ast.literal_eval, plus select({...}) (the union of all branches) and list concatenation."""
+    if isinstance(node, ast.Call) and getattr(node.func, "id", "") == "select" and node.args:
+        branches = list(literal(node.args[0]).values())
+        if not all(isinstance(b, list) for b in branches):
+            return branches[-1]  # a scalar attribute (e.g. a bool): the default branch
+        return [v for branch in branches for v in branch]
+    if isinstance(node, ast.BinOp) and isinstance(node.op, ast.Add):
+        left, right = literal(node.left), literal(node.right)
+        return {**left, **right} if isinstance(left, dict) and isinstance(right, dict) else left + right
+    if isinstance(node, ast.Dict):
+        return {literal(k): literal(v) for k, v in zip(node.keys, node.values)}
+    return ast.literal_eval(node)
+
+
 def bazel_rules(module):
     """Rules of @module//:* after macro expansion, as {name: {"kind": ..., attr: value}}."""
     out = subprocess.run(
@@ -283,7 +298,7 @@ def bazel_rules(module):
         attrs = {"kind": getattr(node.value.func, "id", "")}
         for kw in node.value.keywords:
             try:
-                attrs[kw.arg] = ast.literal_eval(kw.value)
+                attrs[kw.arg] = literal(kw.value)
             except ValueError:
                 attrs[kw.arg] = None
         rules[attrs["name"]] = attrs

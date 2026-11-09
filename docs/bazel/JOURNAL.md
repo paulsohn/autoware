@@ -937,3 +937,41 @@ The log shows "Loaded node '/adapi/node/{interface,localization,routing}' in con
 Note: the parity checker compares only depend/build_depend/build_export_depend/test_depend. An exec_depend such
 as `autoware_global_parameter_loader` (used only by `launch/test_default_adapi.launch.xml`) belongs to the runtime
 install tree (P4).
+
+## ndt_scan_matcher; OpenMP from the hermetic LLVM
+
+ndt_scan_matcher has two libraries: `multigrid_ndt_omp` (PCL + OpenMP) and the component `autoware_ndt_scan_matcher`.
+There are 7 gtests (TIMEOUT 300 → "moderate", 600 → "long", recorded) and a launch test.
+The CMake `if()`s map as follows:
+- `${CMAKE_SYSTEM_PROCESSOR} MATCHES x86_64` → `select()` on `@platforms//cpu:x86_64` for the `-msse*` flags.
+- `BUILD_WITH_MARCH_NATIVE` → not ported (the output would depend on the build machine).
+- `OpenMP_CXX_FOUND` → always true.
+
+OpenMP: `multigrid_ndt_omp_impl.hpp` includes `<omp.h>` unconditionally, and the hermetic clang ships no OpenMP.
+The toolchain module (`llvm`, already `use_repo`'d by the root as `@llvm-project`) can build the runtime from
+source: `bazel build @llvm-project//openmp:libomp` gives `liblibomp.a` (a `cc_runtime_stage0_library` behind a
+transition). The new module `bazel/third_party/openmp` (root: `bazel_dep` + `local_path_override`; it does
+`use_repo(llvm, "llvm-project")` itself) wraps it as a shared `libomp.so`, and `defs.bzl` provides
+`OPENMP_COPTS = ["-fopenmp"]`. Check:
+```
+nm -D --defined-only bazel-bin/external/openmp+/libomp.so | grep -c "__kmpc_fork_call\|omp_get_max_threads"   # 2+
+ldd bazel-bin/external/autoware_ndt_scan_matcher+/libmultigrid_ndt_omp.so | grep omp                          # libomp.so
+bazel test @autoware_ndt_scan_matcher//...   # 8 pass (characteristics test ~16 s)
+```
+
+Issues (symptom → cause → fix):
+1. The first `libomp.so` was 5 KB with no OpenMP symbols → nothing in the shared library references the archive's
+   objects, so the linker dropped them → the archive also goes in `srcs` of an `alwayslink = True` cc_library (the
+   `deps` entry still provides `omp.h`).
+2. `'eulerAngles' is deprecated: Use .canonicalEulerAngles() instead` → the RCR's Eigen deprecates it, but
+   canonicalEulerAngles returns other angle ranges → keep the call, with `#pragma GCC diagnostic ignored
+   "-Wdeprecated-declarations"` around that one line (behaviour unchanged).
+3. `tf2_sensor_msgs/tf2_sensor_msgs.h` not found (in a public header) → `.hpp`.
+4. `get_package_share_directory` deprecated in `test/test_fixture.hpp` and `test/harness/ndt_harness.hpp` →
+   `get_package_share_path(...).string()`.
+5. Parity checker: `copts` built with `select()` read as unknown → `literal()` evaluates `select()` (the union of
+   the list branches; the default branch for scalars) and `+`. `link_directories` is ignored (no-op in Bazel).
+   Re-ran on all ported packages: only ndt_scan_matcher's `-march=native` (recorded).
+
+Lesson: when a toolchain-provided runtime library exists only as a static archive, wrap it once as a shared
+library with the archive linked whole (alwayslink). Otherwise every consumer gets its own copy, or an empty library.

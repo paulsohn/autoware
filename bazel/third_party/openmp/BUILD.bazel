@@ -1,0 +1,25 @@
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library")
+
+package(default_visibility = ["//visibility:public"])
+
+# OpenMP for the hermetic clang: omp.h and the libomp runtime, built from the toolchain's own llvm-project.
+# Consumers compile with OPENMP_COPTS (CMake's OpenMP::OpenMP_CXX adds -fopenmp to its users) and put
+# :openmp in dynamic_deps, so a process has exactly one OpenMP runtime.
+# The runtime archive as an alwayslink source, so the shared library keeps every object (nothing in it references
+# them); the dependency provides omp.h.
+cc_library(
+    name = "openmp_library",
+    srcs = ["@llvm-project//openmp:libomp"],
+    alwayslink = True,
+    deps = ["@llvm-project//openmp:libomp"],
+)
+
+cc_shared_library(
+    name = "openmp",
+    exports_filter = [
+        ":openmp_library",
+        "@llvm-project//openmp:__subpackages__",
+    ],
+    shared_lib_name = "libomp.so",
+    deps = [":openmp_library"],
+)

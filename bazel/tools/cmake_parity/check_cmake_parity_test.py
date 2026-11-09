@@ -2,7 +2,9 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from bazel.tools.cmake_parity.check_cmake_parity import CMake, commands
+import ast
+
+from bazel.tools.cmake_parity.check_cmake_parity import CMake, commands, literal
 
 
 class CMakeReaderTest(unittest.TestCase):
@@ -68,6 +70,12 @@ add_launch_test(test/other.py TARGET named)
             self.assertEqual(cm.timeouts, {"test_utils_test_launch.py": "30"})
             self.assertEqual(cm.sources, {"test/utils/test_a.cpp"})
             self.assertEqual(cm.unhandled, set())
+
+
+class LiteralTest(unittest.TestCase):
+    def test_select_and_concatenation(self):
+        node = ast.parse('["-a"] + select({"//x": ["-b"], "//conditions:default": []}) + ["-c"]').body[0].value
+        self.assertEqual(literal(node), ["-a", "-b", "-c"])
 
 
 if __name__ == "__main__":

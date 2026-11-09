@@ -310,3 +310,6 @@ local_path_override(module_name = "autoware_velocity_smoother", path = "src/core
 
 bazel_dep(name = "autoware_default_adapi")
 local_path_override(module_name = "autoware_default_adapi", path = "src/core/autoware_core/api/autoware_default_adapi")
+
+bazel_dep(name = "autoware_ndt_scan_matcher")
+local_path_override(module_name = "autoware_ndt_scan_matcher", path = "src/core/autoware_core/localization/autoware_ndt_scan_matcher")

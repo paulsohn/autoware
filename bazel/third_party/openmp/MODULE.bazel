@@ -1,0 +1,9 @@
+module(name = "openmp")
+
+# LLVM's OpenMP runtime (libomp) from the hermetic toolchain's llvm-project, as one shared library: CMake's
+# OpenMP::OpenMP_CXX (docs/bazel/PLAN.md, "OpenMP").
+bazel_dep(name = "llvm", version = "0.8.25.rcr.0")
+bazel_dep(name = "rules_cc", version = "0.2.26.rcr.0")
+
+llvm = use_extension("@llvm//extensions:llvm.bzl", "llvm")
+use_repo(llvm, "llvm-project")

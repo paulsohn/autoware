@@ -39,6 +39,9 @@ include("//bazel:autoware_packages.MODULE.bazel")
 
 # OSQP: the RCR's osqp_vendor is OSQP 1.0; autoware_osqp_interface and autoware_qp_interface use the 0.6 API.
 # Both versions coexist; Autoware modules ask for 0.6.3, the RCR for 1.0.0. See docs/bazel/PLAN.md.
+bazel_dep(name = "openmp")
+local_path_override(module_name = "openmp", path = "bazel/third_party/openmp")
+
 bazel_dep(name = "osqp_0_6")
 local_path_override(module_name = "osqp_0_6", path = "bazel/third_party/osqp_0_6")
 
