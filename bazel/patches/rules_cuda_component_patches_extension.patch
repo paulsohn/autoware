@@ -1,0 +1,62 @@
+Let the root module patch CUDA redist components: cuda.component_patch(component, patches) in the toolchain
+extension, applied to that component on every redist platform. Needed for CUDA headers that do not support
+the build's libc++ (see bazel/patches/cuda_crt_libcxx21_pow.patch).
+
+Part 2/2: the cuda.component_patch tag in the toolchain extension.
+
+--- a/cuda/extensions.bzl
++++ b/cuda/extensions.bzl
+@@ -74,6 +74,12 @@
+     ),
+ })
+ 
++cuda_component_patch_tag = tag_class(attrs = {
++    "component": attr.string(mandatory = True, doc = "Short component name (e.g. crt), on every redist platform."),
++    "patches": attr.label_list(mandatory = True, doc = "Patch files, paths relative to the component repo root."),
++    "patch_strip": attr.int(default = 1),
++})
++
+ def _find_modules(module_ctx):
+     root = None
+     our_module = None
+@@ -92,7 +98,7 @@
+ def _module_tag_to_dict(t):
+     return {attr: getattr(t, attr) for attr in dir(t)}
+ 
+-def _redist_json_impl(module_ctx, attr):
++def _redist_json_impl(module_ctx, attr, component_patches = {}):
+     """Instantiates cuda_component repos for every redist platform.
+ 
+     The repos are fetched lazily, so only the components of the platforms that
+@@ -118,6 +124,8 @@
+ 
+             spec_attr = {key: value for key, value in spec.items()}
+             spec_attr["name"] = repo_name
++            if spec["component_name"] in component_patches:
++                spec_attr["patches"], spec_attr["patch_strip"] = component_patches[spec["component_name"]]
+             cuda_component(**spec_attr)
+     return redist_ver, mapping, platform_mapping
+ 
+@@ -145,8 +153,13 @@
+     redist_version = None
+     components_mapping = None
+     platform_components_mapping = None
++    component_patches = {p.component: (p.patches, p.patch_strip) for p in root.tags.component_patch}
+     for redist_json in redist_jsons:
+-        redist_version, components_mapping, platform_components_mapping = _redist_json_impl(module_ctx, redist_json)
++        redist_version, components_mapping, platform_components_mapping = _redist_json_impl(
++            module_ctx,
++            redist_json,
++            component_patches,
++        )
+ 
+     registrations = {}
+     for toolkit in toolkits:
+@@ -176,6 +189,7 @@
+     implementation = _impl,
+     tag_classes = {
+         "component": cuda_component_tag,
++        "component_patch": cuda_component_patch_tag,
+         "redist_json": cuda_redist_json_tag,
+         "toolkit": cuda_toolkit_tag,
+     },

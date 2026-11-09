@@ -1,0 +1,15 @@
+CUDA 13 moved libculibos.a into its own component; the RCR's cudart patch tags cudadevrt_a LINKABLE_MORE_THAN_ONCE
+but not culibos_a, so two cc_shared_libraries using the CUDA runtime fail analysis ("linked statically by
+different cc_shared_libraries but not exported"). Same tag here.
+
+--- a/cuda/private/templates/BUILD.culibos
++++ b/cuda/private/templates/BUILD.culibos
+@@ -3,6 +3,8 @@
+     cc_library(
+         name = "culibos_a",
+         srcs = ["%{component_name}/%{libpath}/libculibos.a"],
++        # Linked into every cc_shared_library that uses the CUDA runtime (like cudadevrt_a).
++        tags = ["LINKABLE_MORE_THAN_ONCE"],
+         target_compatible_with = ["@platforms//os:linux"],
+     )
+     for name in if_cuda_toolkit_version_ge((13,0), ["culibos"])

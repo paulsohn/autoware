@@ -1,0 +1,9 @@
+module(name = "tensorrt")
+
+# TensorRT from NVIDIA's CUDA apt repository .debs, pinned in pins.bzl (update_pins.py); x86_64 and aarch64 (SBSA,
+# Jetson Thor). Replaces ansible/roles/tensorrt for building and testing. See docs/bazel/PLAN.md, "CUDA".
+bazel_dep(name = "platforms", version = "1.1.0")
+bazel_dep(name = "rules_cc", version = "0.2.26.rcr.0")
+
+tensorrt = use_extension("//:extensions.bzl", "tensorrt")
+use_repo(tensorrt, "tensorrt_aarch64", "tensorrt_paths", "tensorrt_x86_64")

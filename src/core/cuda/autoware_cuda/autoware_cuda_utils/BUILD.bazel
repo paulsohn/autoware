@@ -32,6 +32,8 @@ cuda_library(
     name = "test_kernels",
     testonly = True,
     srcs = glob(["test/*.cu"]),
+    # The gtest cases register through static initializers; keep every object.
+    alwayslink = True,
     copts = ["-std=c++17"],
     deps = [
         ":autoware_cuda_utils",

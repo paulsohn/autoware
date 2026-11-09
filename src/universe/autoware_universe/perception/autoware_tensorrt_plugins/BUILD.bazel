@@ -1,0 +1,91 @@
+load("@autoware_cmake//:defs.bzl", "autoware_copts")
+load("@rosdistro//ament:defs.bzl", "ament_index")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
+load("@rules_cuda//cuda:defs.bzl", "cuda_library")
+
+package(default_visibility = ["//visibility:public"])
+
+# Deliberate differences from CMakeLists.txt (checked by bazel/tools/cmake_parity):
+# cmake-diff library:autoware_tensorrt_plugins: the TensorRT plugin library is not built yet: 4 of its plugins need spconv/cumm (prebuilt, ansible/roles/spconv), not pinned in Bazel yet. The CUDA kernels (cuda_ops) and their test are built.
+# cmake-diff install-target:autoware_tensorrt_plugins: see library above.
+# cmake-diff source:src/*plugin*.cpp: sources of that plugin library (see above).
+# cmake-diff define:TV_CUDA: add_definitions for spconv's tensorview headers, used only by that plugin library.
+# cmake-diff if:${cumm_FOUND} AND ${spconv_FOUND}: see above; spconv is not available yet.
+# cmake-diff if:TRT_AVAIL AND CUDA_AVAIL AND SPCONV_AVAIL: CUDA and TensorRT are always present (bazel/cuda.MODULE.bazel, @tensorrt); spconv see above.
+# cmake-diff if:CUDA_FOUND: CUDA is always present.
+# cmake-diff if:NVINFER AND NVONNXPARSER: TensorRT is always present.
+# cmake-diff if:TENSORRT_VERSION VERSION_LESS 10.0: TensorRT is pinned to 10.x.
+# cmake-diff if:CUDA_VERBOSE: only prints messages.
+# cmake-diff if:CMAKE_BUILD_TYPE STREQUAL Debug: device debug info (-g -G) is not wired to Bazel's compilation_mode yet.
+# cmake-diff if:CUDA_VERSION VERSION_GREATER_EQUAL 12.8: GPU archs come from .bazelrc (the CUDA >= 13.0 list: sm_75/86/87/89/110/120 + compute_120).
+# cmake-diff if:CUDA_VERSION VERSION_LESS 13.0: see above (CUDA is 13.2).
+# cmake-diff if:TARGET reference_kernels_test: ament_add_gtest creates no target without gtest; here the test always exists.
+# cmake-diff define:_GLIBCXX_USE_CXX11_ABI: selects libstdc++'s ABI; this build uses libc++.
+
+# CUDA kernels (cuda_add_library(cuda_ops SHARED ...)). FindCUDA passes CMAKE_CXX_FLAGS, not autoware_package()'s
+# add_compile_options(), to the host compiler, so .cu files get no -Werror; GPU archs come from .bazelrc (the same
+# list as the CMake gencode flags for CUDA >= 12.8).
+cuda_library(
+    name = "cuda_ops_library",
+    srcs = glob(["src/*_ops/*.cu"]),
+    hdrs = glob([
+        "include/autoware/*_ops/*.h",
+        "include/autoware/*_ops/*.hpp",
+        "include/autoware/*_ops/*.cuh",
+        "include/autoware/tensorrt_plugins/kernel_utils.hpp",
+        "include/autoware/tensorrt_plugins/plugin_utils.hpp",
+    ]) + glob(["src/*_ops/*.cuh"]),
+    # list(APPEND CUDA_NVCC_FLAGS "--expt-relaxed-constexpr -diag-suppress 1675 --extended-lambda"): nvcc spellings;
+    # clang allows device lambdas and constexpr host calls from device code without flags.
+    copts = ["-std=c++17"] + select({
+        "@rules_cuda//cuda:compiler_is_nvcc": [
+            "--expt-relaxed-constexpr",
+            "-diag-suppress",
+            "1675",
+            "--extended-lambda",
+        ],
+        "//conditions:default": [],
+    }),
+    includes = ["include"],
+    deps = [
+        "@cuda//:cub",
+        "@cuda//:cublas",
+        "@cuda//:cuda_runtime",
+        "@cuda//:libcudacxx",
+        "@cuda//:thrust",
+        "@tensorrt",
+    ],
+)
+
+cc_shared_library(
+    name = "cuda_ops",
+    exports_filter = [":cuda_ops_library"],
+    deps = [":cuda_ops_library"],
+)
+
+ament_index(
+    name = "ament_index",
+    libraries = [":cuda_ops"],
+    package_xml = "package.xml",
+    deps = ["@autoware_cuda_dependency_meta//:ament_index"],
+)
+
+# reference_kernels_test: GPU kernels against CPU references.
+cc_test(
+    name = "reference_kernels_test",
+    srcs = [
+        "test/argsort_kernel_test.cpp",
+        "test/segment_csr_kernel_test.cpp",
+        "test/test_utils.hpp",
+        "test/unique_kernel_test.cpp",
+    ],
+    # add_compile_options(-Wno-deprecated-declarations); autoware_package()'s warning flags apply to C++ targets.
+    copts = autoware_copts() + ["-Wno-deprecated-declarations"],
+    cxxopts = ["-std=c++17"],
+    includes = ["test"],
+    deps = [
+        ":cuda_ops_library",
+        "@autoware_cuda_utils",
+        "@rosdistro//cc:googletest",
+    ],
+)

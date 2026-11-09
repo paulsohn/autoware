@@ -7,9 +7,9 @@
 # sha256 of every component archive, so these two values pin the whole toolkit, for linux-x86_64 and linux-sbsa.
 
 # 13.0 matches JetPack 7 (Jetson Thor) and the TensorRT build below (TensorRT 10.13.3 for CUDA 13.0).
-CUDA_VERSION = "13.0.3"
+CUDA_VERSION = "13.2.2"
 
-CUDA_REDIST_SHA256 = "d73344990be5d826cf6eedc5495c858eb5923e5ffe7ede7fd6ebdd7be928ffc9"
+CUDA_REDIST_SHA256 = "89d93e6de640d47eb43c63437fe1be426ed21dd58cc79933a29acbca33c6eeb8"
 
 cuda = use_extension("@rules_cuda//cuda:extensions.bzl", "toolchain")
 cuda.redist_json(
@@ -33,6 +33,12 @@ cuda.redist_json(
     ],
     sha256 = CUDA_REDIST_SHA256,
     version = CUDA_VERSION,
+)
+
+# CCCL deduction guides that clang rejects (see the patch header).
+cuda.component_patch(
+    component = "cccl",
+    patches = ["//bazel/patches:cuda_cccl_string_view_guides.patch"],
 )
 
 # Populated from redist_json: @cuda is the hermetic toolkit (aliases to the per-platform component repos).

@@ -70,3 +70,20 @@ bazel test --keep_going $(cat bazel/autoware_packages.txt)
 ```
 Re-check each patch first: drop it if the RCR module version moved past the fix (a patch that no longer applies fails
 the fetch). The RCR moving to LLVM ≥ 23 itself would make most of the third-party patches unnecessary.
+
+## Decider: autoware_tensorrt_plugins CUDA kernels (2026-11-10)
+
+The same package and BUILD as on `bazel-llvm21` (7 kernels + `reference_kernels_test`; nvcc-only flags behind a
+compiler `select()`), CUDA 13.2.2, clang 23 as CUDA compiler. Brought over from `bazel-llvm21`: the `tensorrt`
+module, `rules_cuda_culibos_linkable.patch`, the component-patch support for rules_cuda
+(`rules_cuda_component_patches_*`), cuda_utils' `alwayslink` fix, and the `argsort.hpp` `<cstddef>` fix.
+
+- The CUDA version-detection patch works: no PTX-version errors with 13.2.
+- 4 kernels and 4 cuda_utils test files compiled as they are. The 4 files that include CCCL's `cuda/std/string_view`
+  (via thrust/CUB) failed: "in CUDA/HIP, deduction guides may only be annotated with '__host__ __device__'". CCCL
+  13.2 declares four guides host-only (`_CCCL_HOST`). nvcc accepts that, clang 23 errors, and there is no flag to
+  disable it → `cuda_cccl_string_view_guides.patch` (annotate them `_CCCL_HOST_DEVICE`, like the other guide).
+- Then: `test_autoware_cuda_utils` 17 and `reference_kernels_test` 18 cases pass on the GPU (RTX 5070), as on route B.
+
+So the CUDA side costs both routes one NVIDIA-header patch (route B: CUDA's math headers for libc++; route A: CCCL's
+deduction guides for clang). The difference between the routes is the C++ side above.

@@ -1,0 +1,28 @@
+Let the root module patch CUDA redist components: cuda.component_patch(component, patches) in the toolchain
+extension, applied to that component on every redist platform. Needed for CUDA headers that do not support
+the build's libc++ (see bazel/patches/cuda_crt_libcxx21_pow.patch).
+
+Part 1/2: cuda_component gets patches/patch_strip.
+
+--- a/cuda/private/repositories.bzl
++++ b/cuda/private/repositories.bzl
+@@ -407,6 +407,10 @@
+     _patch_nvcc_profile_post(repository_ctx, patch_nvcc_profile)
+     _patch_nvvm(repository_ctx, component_name)
+ 
++    # Patches are relative to the repository root, i.e. paths start with the component name (e.g. crt/include/...).
++    for patch in repository_ctx.attr.patches:
++        repository_ctx.patch(patch, strip = repository_ctx.attr.patch_strip)
++
+     template_helper.generate_build(
+         repository_ctx,
+         libpath = "lib",
+@@ -445,6 +449,8 @@
+     attrs = {
+         "component_name": attr.string(doc = "Short name of the component defined in registry."),
+         "descriptive_name": attr.string(doc = "Official name of a component or simply the component name."),
++        "patches": attr.label_list(doc = "Patch files applied after extraction, relative to the repository root."),
++        "patch_strip": attr.int(default = 1, doc = "Leading path components stripped from patch file paths."),
+         "integrity": attr.string(
+             doc = "Expected checksum in Subresource Integrity format of the file downloaded. " +
+                   "This must match the checksum of the file downloaded.",
