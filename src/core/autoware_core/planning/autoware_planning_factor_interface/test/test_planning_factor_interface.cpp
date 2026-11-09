@@ -229,7 +229,7 @@ TEST_F(PlanningFactorInterfaceTest, PublishStampsAndForwardsFactors)
   // Spin until the subscription receives the published message (bounded wait).
   const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(5);
   while (!got_msg && std::chrono::steady_clock::now() < deadline) {
-    rclcpp::spin_some(node_->get_node_base_interface());
+    rclcpp::executors::SingleThreadedExecutor().spin_node_some(node_->get_node_base_interface());
     std::this_thread::sleep_for(std::chrono::milliseconds(10));
   }
 
