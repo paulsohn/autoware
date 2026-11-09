@@ -1808,6 +1808,7 @@
     "https://bazel.ros.org/modules/launch_testing_ament_cmake/3.9.8-1.rcr.0/source.json": "bd06a3af849568879e3d0011ab2d5dcad3f9ed7230974c5943317056165fac86",
     "https://bazel.ros.org/modules/launch_testing_examples/0.21.5-3.rcr.2/MODULE.bazel": "c834c5d9f0fed6e38171d598de888d92800e41291c65522ca1ff598af38319f7",
     "https://bazel.ros.org/modules/launch_testing_examples/0.21.5-3.rcr.2/source.json": "7dd2b311d60ec5721a9cd5a322c0d84148daf0dc7470a211433528ac81ffe494",
+    "https://bazel.ros.org/modules/launch_testing_ros/0.0.0/MODULE.bazel": "b49dac5b34558a9bd914e4e039101a39a262e8eac4c1843d4ab31a330c7de4d1",
     "https://bazel.ros.org/modules/launch_testing_ros/0.29.9-1.rcr.0/MODULE.bazel": "1397e6680fdef9c0aff2ac9832e2738b4fb9833286fc183970bd70b3c6f2d090",
     "https://bazel.ros.org/modules/launch_testing_ros/0.29.9-1.rcr.0/source.json": "e1f6e767eae39b28a644c4111a4a7da911026651a4a89cca3dc919edad691ee9",
     "https://bazel.ros.org/modules/launch_xml/0.0.0/MODULE.bazel": "420d9f0cddbea2e36be265c55107baa04dcae5ac7979be1327674a01a9bae4ce",

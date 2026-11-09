@@ -797,3 +797,39 @@ Issues (symptom → cause → fix):
    lambdas, plus the members and return types that store the message (same fix as in earlier packages).
 2. Parity checker reported the `if(NOT "$ENV{ENABLE_AGNOCAST}" STREQUAL "1")` key differently from the record →
    if-keys now drop all quotes, so a record does not depend on how CMakeLists.txt quotes the condition.
+
+## ekf_localizer: the first launch test
+
+`add_launch_test(test/utils/test_ekf_localizer_launch.py)` maps to the RCR's `launch_ros_test` (from
+`@launch_testing_ros//:defs.bzl`; it wraps `launch_test` from `@launch_testing`). The macro collects the node
+executables from `deps` into `bin/` and `lib/<pkg>/`. Packages that the launch file resolves with `find-pkg-share`
+come from their `:ament_index` targets in `data`. Here those are this package and `@autoware_agnocast_wrapper`
+(`agnocast_env.launch.xml`).
+```
+launch_ros_test(
+    name = "test_utils_test_ekf_localizer_launch.py",   # CMake's name: the path with "/" -> "_"
+    src = "test/utils/test_ekf_localizer_launch.py",
+    data = [":ament_index", "@@//bazel/config:cyclonedds.xml", "@autoware_agnocast_wrapper//:ament_index"],
+    env = {"ENABLE_AGNOCAST": "0"},
+    deps = [":autoware_ekf_localizer_node", "@ament_index_python", "@geometry_msgs//:py", "@nav_msgs//:py",
+            "@rclpy", "@std_srvs//:py"],
+)
+bazel test @autoware_ekf_localizer//...   # 11 tests pass (10 gtests + launch test)
+```
+The log shows the node started from the launch file ("Starting node with rclcpp mode", then "AgnocastOnly executor
+specified but ENABLE_AGNOCAST is not set, falling back to ROS 2 executor").
+
+The gtests come from `file(GLOB_RECURSE test/*.cpp)` and an `add_testcase()` function, so the BUILD file does the
+same with a list comprehension over `glob(["test/**/*.cpp"])`. In Agnocast mode CMake filters out
+`test_ekf_localizer_node_integration`. Here every gtest runs on ROS 2 (recorded).
+
+Parity checker: it now interprets `function()`/`macro()` (arguments are bound on each call), `string(REGEX REPLACE)`
+and `add_launch_test` (with CMake's target name and TIMEOUT). `list(FILTER)` occurs only inside reported `if()`s
+and is skipped. `launch_testing_ament_cmake` counts as CMake tooling (this made agnocastlib's record stale; removed).
+
+Issues (symptom → cause → fix):
+1. `string(REGEX REPLACE ".cpp" "" ...)` left `${test_name}` unexpanded → the checker's `words()` drops empty
+   arguments, so the replacement `""` disappeared → `string()` reads its raw arguments.
+
+Lesson: name ported tests as CMake/ctest does (here `test_utils_test_..._launch.py`). Then nobody has to map
+names, and the parity check needs no record.

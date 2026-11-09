@@ -45,6 +45,28 @@ weird_command(x)
             self.assertEqual(cm.unhandled, {"weird_command"})
             self.assertEqual(cm.param_libs, {"my_params"})
 
+    def test_function_regex_and_launch_test(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            d = Path(tmp)
+            (d / "test" / "utils").mkdir(parents=True)
+            text = """
+project(pkg)
+function(add_testcase filepath)
+  get_filename_component(filename ${filepath} NAME)
+  string(REGEX REPLACE ".cpp" "" test_name ${filename})
+  ament_add_gtest(${test_name} ${filepath})
+endfunction()
+add_testcase(test/utils/test_a.cpp)
+add_launch_test(test/utils/test_launch.py TIMEOUT "30")
+add_launch_test(test/other.py TARGET named)
+"""
+            cm = CMake(d)
+            cm.run(commands(text))
+            self.assertEqual(cm.tests, {"test_a": "cc", "test_utils_test_launch.py": "py", "named": "py"})
+            self.assertEqual(cm.timeouts, {"test_utils_test_launch.py": "30"})
+            self.assertEqual(cm.sources, {"test/utils/test_a.cpp"})
+            self.assertEqual(cm.unhandled, set())
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -12,7 +12,6 @@ package(default_visibility = ["//visibility:public"])
 # cmake-diff unhandled:add_link_options: --coverage, under the COVERAGE option above.
 # cmake-diff copt:--coverage: under the COVERAGE option above.
 # cmake-diff copt:-g: under the COVERAGE option above.
-# cmake-diff dep:launch_testing_ament_cmake: test_depend, but the CMakeLists adds no launch tests.
 # cmake-diff unhandled:execute_process: reads <version> from package.xml for agnocast_version.hpp; done by the
 #   :agnocast_version_hpp genrule.
 # cmake-diff unhandled:configure_file: agnocast_version.hpp.in -> :agnocast_version_hpp genrule.

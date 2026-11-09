@@ -286,3 +286,6 @@ local_path_override(module_name = "autoware_vehicle_velocity_converter", path = 
 
 bazel_dep(name = "autoware_gyro_odometer")
 local_path_override(module_name = "autoware_gyro_odometer", path = "src/core/autoware_core/localization/autoware_gyro_odometer")
+
+bazel_dep(name = "autoware_ekf_localizer")
+local_path_override(module_name = "autoware_ekf_localizer", path = "src/core/autoware_core/localization/autoware_ekf_localizer")

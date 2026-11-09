@@ -35,8 +35,9 @@ IGNORED = {
     "target_include_directories", "target_link_libraries", "ament_target_dependencies", "ament_package",
     "message", "get_target_property", "else", "elseif", "endif", "mark_as_advanced", "option", "string",
     "find_path", "find_library", "pkg_check_modules", "set_property", "add_dependencies",
+    "autoware_agnocast_wrapper_setup",  # Agnocast test env (LD_PRELOAD); tests here run on ROS 2 (PLAN.md)
 }
-TOOLING_DEP = re.compile(r"^(ament_.*|autoware_cmake|autoware_lint_common|ros_environment|rosidl_default_.*)$")
+TOOLING_DEP = re.compile(r"^(ament_.*|launch_testing_ament_cmake|autoware_cmake|autoware_lint_common|ros_environment|rosidl_default_.*)$")
 SYSTEM_DEP = re.compile(r"^(lib.*|python3-.*|.*-dev|eigen|boost|fmt|range-v3|geographiclib|yaml-cpp|.*_cmake_module)$")
 
 
@@ -69,6 +70,7 @@ class CMake:
         self.share, self.programs, self.installs, self.python, self.hooks = set(), set(), set(), set(), set()
         self.ifs, self.unhandled, self.timeouts, self.dynamic = set(), set(), {}, set()
         self.param_libs, self.installed_targets = set(), set()
+        self.functions = {}
 
     def expand(self, s):
         for _ in range(5):
@@ -115,6 +117,24 @@ class CMake:
         i = 0
         while i < len(cmds):
             name, raw = cmds[i]
+            if name in ("function", "macro"):
+                end, j = "end" + name, i + 1
+                while cmds[j][0] != end:
+                    j += 1
+                self.functions[raw[0].lower()] = (raw[1:], cmds[i + 1:j])
+                i = j + 1
+                continue
+            if name in self.functions:
+                params, body = self.functions[name]
+                args = self.words(raw)
+                saved = dict(self.vars)  # function scope; for a macro this is close enough
+                self.vars.update(zip(params, args))
+                self.vars.update({f"ARGV{k}": v for k, v in enumerate(args)})
+                self.vars["ARGN"] = ";".join(args[len(params):])
+                self.run(body)
+                self.vars = saved
+                i += 1
+                continue
             if name == "foreach":
                 depth, j = 1, i + 1
                 while depth:
@@ -146,6 +166,17 @@ class CMake:
         elif name == "list" and a[:1] == ["APPEND"]:
             cur = self.vars.get(a[1], "")
             self.vars[a[1]] = ";".join(([cur] if cur else []) + a[2:])
+        elif name == "list" and a[:1] == ["FILTER"]:
+            pass  # only seen inside if() blocks, which are reported as if: keys
+        elif name == "string" and a[:2] == ["REGEX", "REPLACE"]:
+            regex, repl, out, *inputs = [self.expand(x) for x in raw[2:]]  # keep "" (words() drops it)
+            self.vars[out] = re.sub(regex, repl, "".join(inputs))
+        elif name == "add_launch_test":
+            # launch_testing_ament_cmake: TARGET, else the file path relative to the package with "/" -> "_".
+            target = a[a.index("TARGET") + 1] if "TARGET" in a else self.rel(a[0]).replace("/", "_")
+            self.tests[target] = "py"
+            if "TIMEOUT" in a:
+                self.timeouts[target] = a[a.index("TIMEOUT") + 1]
         elif name == "file" and a[:1] and a[0] in ("GLOB", "GLOB_RECURSE"):
             found = []
             for p in a[2:]:
