@@ -721,3 +721,54 @@ Lessons:
   implements them needs a real port; check the callers (here the executor collector), not only the compiler errors.
 - Software that keys shared state on PIDs breaks under PID namespaces: run its tests unsandboxed.
 - Build scripts that probe the build machine (glibc version, stubs) must be replaced by explicit decisions.
+
+## 2026-11-09: agnocast_components, discovery agent, autoware_agnocast_wrapper; which backend tests run on
+
+Ported: `agnocast_components` (three containers; CMake helpers and `node_main*.cpp.in` as share data),
+`ros2agnocast_discovery_agent` (py_library, three `lib/` scripts as py_binary via a `.py` copy, 147 pytest cases),
+`autoware_agnocast_wrapper`, and the restored test of `autoware_planning_factor_interface`.
+
+autoware_agnocast_wrapper:
+- `USE_AGNOCAST_ENABLED` is PUBLIC in CMake → `defines` on the cc_library (propagates to dependents).
+- `defs.bzl`: `autoware_agnocast_wrapper_register_node(component, plugin, executable, ros2_executor,
+  agnocast_executor)`, the CMake macro's ENABLE_AGNOCAST=1 branch: `expand_template` of
+  `templates/node_main_switchable.cpp.in` with the same executor mapping, a `cc_binary` linked against the
+  component (class_loader then finds the already-loaded library by file name, as the RCR's component mains do), a
+  component record, and `register_ament_resource(category = "autoware_node_plugins", package_name =
+  "<pkg>__<exe>", content = "<plugin>;1")`. Dependencies inside the macro use `Label(...)` so they resolve in the
+  wrapper's module, not the caller's.
+- Lyrical: `message_filters::Subscriber<M>` lost its NodeType parameter and takes `rclcpp::QoS` (version-guarded,
+  rmw profile converted with `QoSInitialization::from_rmw`); clang-only `-Wbraced-scalar-init`
+  (`QosOverridingOptions{{X}}`) and `-Wunused-but-set-variable` in tests.
+- Tests: the CMake gtest on the ROS 2 backend, plus (addition) the same sources on the Agnocast backend through
+  `heaphook_test` (32 cases pass; the 4 generic pub/sub cases that assume the ROS 2 backend are excluded there).
+
+Which backend tests run on (decisions in PLAN.md):
+1. With the `.bazelrc` default `ENABLE_AGNOCAST=1` and no hook, an ordinary test creating an
+   `agnocast_wrapper::Node` fails at once: `libagnocast_heaphook.so not found in LD_PRELOAD`. Upstream runs its
+   tests without the hook, i.e. on the ROS 2 backend.
+2. First attempt: run them as `heaphook_test` on the Agnocast backend and rewrite tests that assumed ROS 2 (spin an
+   Agnocast executor in a thread; init through `autoware::agnocast_wrapper::init()`). It worked, but diverged from
+   upstream's tests, and 14 packages also have node tests that CMake builds only without Agnocast
+   (`if(NOT ENABLE_AGNOCAST == 1)`, "ROS-based test can be executed only when agnocast is disabled").
+3. Final: tests written for ROS 2 run on the ROS 2 backend via `env = {"ENABLE_AGNOCAST": "0"}` on the test target
+   (verified: the target's `env` wins over `--test_env`); test sources stay upstream's. The rewrite commit was
+   dropped from history (`git reset` to before it + `cherry-pick` of the following build commit; backup branch
+   `backup/agnocast-test-rewrite`, force-pushed).
+
+Issues (symptom → cause → fix):
+1. `logger.warn` → `AttributeError` (discovery agent) → Lyrical's rclpy removed the deprecated `warn()` alias →
+   `warning()` (also in Jazzy); tests' mock loggers follow.
+2. `py_binary`: `main must end in '.py'` → name the generated `.py` file as `main`, not the genrule.
+3. `Pre-existing shared libraries in LD_PRELOAD may have been overwritten` → agnocastlib expects CMake's
+   `<hook>:$LD_PRELOAD` form (two entries even when empty) → the `heaphook_test` launcher does the same. Its `args`
+   went to the inner cc_binary (only used by `bazel run`) → passed to the test rule.
+4. On the Agnocast backend, tests that spin an rclcpp executor never receive messages: Agnocast subscriptions are
+   dispatched only inside an Agnocast executor's blocking `spin()`. (ROS 2 subscribers can receive Agnocast messages
+   through the Agnocast→ROS 2 bridge, which loads a user-generated `agnocast_bridge_plugins` package; not in this
+   tree.)
+
+Lessons:
+- When a build compiles an optional backend in but switches it at run time, run each test on the backend it was
+  written for, and test the other backend with targets made for it.
+- A test target's `env` overrides `--test_env`: the place for per-test run-time modes.
