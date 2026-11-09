@@ -1,0 +1,45 @@
+load("@pip_ros//:requirements.bzl", "requirement")
+load("@rosdistro//ament:defs.bzl", "ament_index")
+load("@rosdistro//python:defs.bzl", "py_pytest")
+load("@rules_python//python:defs.bzl", "py_binary", "py_library")
+
+package(default_visibility = ["//visibility:public"])
+
+py_library(
+    name = "autoware_interface_spec_lint",
+    srcs = glob(["autoware_interface_spec_lint/*.py"]),
+    imports = ["."],
+    deps = [requirement("pyyaml")],
+)
+
+# console_scripts entry point in setup.py.
+py_binary(
+    name = "ament_autoware_interface_spec_lint",
+    srcs = ["autoware_interface_spec_lint/main.py"],
+    main = "autoware_interface_spec_lint/main.py",
+    deps = [":autoware_interface_spec_lint"],
+)
+
+ament_index(
+    name = "ament_index",
+    data = ["config/interface_gates.yaml"],
+    package_xml = "package.xml",
+)
+
+# test_copyright.py (ament_copyright) is left out: linters run outside the build.
+# The tests find sibling packages via Path(__file__).resolve(); spec_files makes those inputs explicit.
+py_pytest(
+    name = "test_autoware_interface_spec_lint",
+    srcs = glob(
+        ["test/test_*.py"],
+        exclude = ["test/test_copyright.py"],
+    ),
+    data = [
+        "config/interface_gates.yaml",
+        "test/conftest.py",
+        "@autoware_component_interface_specs//:generate_interface_manifest",
+        "@autoware_component_interface_specs//:spec_files",
+    ],
+    env = {"INTERFACE_MANIFEST_GENERATOR": "$(rootpath @autoware_component_interface_specs//:generate_interface_manifest)"},
+    deps = [":autoware_interface_spec_lint"],
+)

@@ -41,6 +41,15 @@ cc_shared_library(
     deps = [":autoware_component_interface_specs_library"],
 )
 
+# Read by autoware_interface_spec_lint's tests.
+filegroup(
+    name = "spec_files",
+    srcs = glob(["include/**/*.hpp"]) + [
+        "interface_manifest.json",
+        "interface_type_hashes.jazzy.lock",
+    ],
+)
+
 collect_transitive_dynamic_deps(
     name = "dynamic_deps",
     dynamic_deps = [":autoware_component_interface_specs"],

@@ -172,3 +172,6 @@ local_path_override(module_name = "velodyne_description", path = "src/sensor_com
 
 bazel_dep(name = "autoware_testing")
 local_path_override(module_name = "autoware_testing", path = "src/core/autoware_core/testing/autoware_testing")
+
+bazel_dep(name = "autoware_interface_spec_lint")
+local_path_override(module_name = "autoware_interface_spec_lint", path = "src/core/autoware_core/common/autoware_interface_spec_lint")
