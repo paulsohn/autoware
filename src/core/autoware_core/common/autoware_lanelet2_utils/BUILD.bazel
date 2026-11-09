@@ -2,8 +2,13 @@ load("@autoware_cmake//:defs.bzl", "AUTOWARE_CXXOPTS", "AUTOWARE_DEFINES", "auto
 load("@rosdistro//ament:defs.bzl", "ament_index")
 load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps", "ros_local_defines")
 load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library", "cc_shared_library", "cc_test")
+load("@rules_python//python:defs.bzl", "py_binary")
 
 package(default_visibility = ["//visibility:public"])
+
+# Deliberate differences from CMakeLists.txt (checked by bazel/tools/cmake_parity):
+# cmake-diff dep:autoware_pyplot: test_depend for the examples, which CMake links against Python/pybind11::embed but which use neither.
+# cmake-diff dep:rclpy_message_converter: test_depend used only by scripts/test_case_generator.py (not ported, see below).
 
 DEPENDENCIES = {
     "@autoware_lanelet2_extension//:autoware_lanelet2_extension_lib": "@autoware_lanelet2_extension//:autoware_lanelet2_extension_lib_library",
@@ -43,6 +48,16 @@ cc_shared_library(
     deps = [":autoware_lanelet2_utils_library"],
 )
 
+# install(PROGRAMS scripts/*.py DESTINATION lib/${PROJECT_NAME})
+# cmake-diff program:scripts/lanelet_anonymizer.py: needs the mgrs pip package, which the RCR's pip_ros hub lacks.
+# cmake-diff program:scripts/test_case_generator.py: needs autoware_lanelet2_extension_python (not ported) and Tk;
+#   it is an interactive tool, not used by builds or tests.
+py_binary(
+    name = "lanelet_id_aligner",
+    srcs = ["scripts/lanelet_id_aligner.py"],
+    main = "scripts/lanelet_id_aligner.py",
+)
+
 # share/autoware_lanelet2_utils/{sample_map,test_data} (INSTALL_TO_SHARE).
 ament_index(
     name = "ament_index",
@@ -50,6 +65,7 @@ ament_index(
         "sample_map/**",
         "test_data/**",
     ]),
+    executables = [":lanelet_id_aligner"],
     libraries = [":autoware_lanelet2_utils"],
     package_xml = "package.xml",
 )

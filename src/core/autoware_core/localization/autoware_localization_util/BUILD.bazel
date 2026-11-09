@@ -41,6 +41,7 @@ cc_shared_library(
 )
 
 TEST_DEPENDENCIES = {
+    "@builtin_interfaces//:cc_shared": "@builtin_interfaces//:cc",
     "@ament_index_cpp//:ament_index_cpp": "@ament_index_cpp//:ament_index_cpp_library",
     "@rcl_yaml_param_parser//:rcl_yaml_param_parser": "@rcl_yaml_param_parser//:rcl_yaml_param_parser_library",
 }

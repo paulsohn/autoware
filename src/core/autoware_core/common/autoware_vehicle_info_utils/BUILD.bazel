@@ -1,9 +1,14 @@
 load("@autoware_cmake//:defs.bzl", "AUTOWARE_CXXOPTS", "AUTOWARE_DEFINES", "autoware_copts")
 load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps", "ros_local_defines")
 load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
+load("@pip_ros//:requirements.bzl", "requirement")
 load("@rosdistro//ament:defs.bzl", "ament_index")
+load("@rules_python//python:defs.bzl", "py_binary")
 
 package(default_visibility = ["//visibility:public"])
+
+# Deliberate differences from CMakeLists.txt (checked by bazel/tools/cmake_parity):
+# cmake-diff library:vehicle_info_utils: named after the package (convention); only matters to CMake consumers linking "vehicle_info_utils".
 
 DEPENDENCIES = {
     "@autoware_utils_geometry//:autoware_utils_geometry": "@autoware_utils_geometry//:autoware_utils_geometry_library",
@@ -12,7 +17,6 @@ DEPENDENCIES = {
     "@rclcpp//:rclcpp": "@rclcpp//:rclcpp_library",
 }
 
-# CMake builds this as libvehicle_info_utils.so.
 cc_library(
     name = "autoware_vehicle_info_utils_library",
     srcs = [
@@ -34,12 +38,35 @@ cc_shared_library(
     deps = [":autoware_vehicle_info_utils_library"],
 )
 
-# share/autoware_vehicle_info_utils/{config,launch} (INSTALL_TO_SHARE).
+# install(PROGRAMS scripts/min_turning_radius_calculator.py DESTINATION lib/${PROJECT_NAME})
+py_binary(
+    name = "min_turning_radius_calculator",
+    srcs = ["scripts/min_turning_radius_calculator.py"],
+    data = [":share"],
+    main = "scripts/min_turning_radius_calculator.py",
+    deps = [
+        "@ament_index_python",
+        requirement("pyyaml"),
+    ],
+)
+
+# share/autoware_vehicle_info_utils/{config,launch} (INSTALL_TO_SHARE). Separate from :ament_index because the
+# script reads it and :ament_index lists the script (absorbed below, same package).
+ament_index(
+    name = "share",
+    data = glob([
+        "config/**",
+        "launch/**",
+    ]),
+    package_xml = "package.xml",
+)
+
 ament_index(
     name = "ament_index",
-    data = glob(["config/**", "launch/**"]),
+    executables = [":min_turning_radius_calculator"],
     libraries = [":autoware_vehicle_info_utils"],
     package_xml = "package.xml",
+    deps = [":share"],
 )
 
 collect_transitive_dynamic_deps(
