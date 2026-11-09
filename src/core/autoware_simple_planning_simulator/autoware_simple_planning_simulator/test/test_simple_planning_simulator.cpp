@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "ament_index_cpp/get_package_share_directory.hpp"
+#include "ament_index_cpp/get_package_share_path.hpp"
 #include "autoware/simple_planning_simulator/simple_planning_simulator_core.hpp"
 #include "gtest/gtest.h"
 
@@ -139,8 +139,8 @@ void resetInitialpose(rclcpp::Node::SharedPtr sim_node, std::shared_ptr<PubSubNo
   p.pose.pose.orientation.w = 1.0;  // yaw = 0
   for (int i = 0; i < 10; ++i) {
     pub_sub_node->pub_initialpose_->publish(p);
-    rclcpp::spin_some(sim_node);
-    rclcpp::spin_some(pub_sub_node);
+    rclcpp::executors::SingleThreadedExecutor().spin_node_some(sim_node);
+    rclcpp::executors::SingleThreadedExecutor().spin_node_some(pub_sub_node);
     std::this_thread::sleep_for(std::chrono::milliseconds{10LL});
   }
 }
@@ -153,8 +153,8 @@ void sendGear(
   cmd.command = gear;
   for (int i = 0; i < 10; ++i) {
     pub_sub_node->pub_gear_cmd_->publish(cmd);
-    rclcpp::spin_some(sim_node);
-    rclcpp::spin_some(pub_sub_node);
+    rclcpp::executors::SingleThreadedExecutor().spin_node_some(sim_node);
+    rclcpp::executors::SingleThreadedExecutor().spin_node_some(pub_sub_node);
     std::this_thread::sleep_for(std::chrono::milliseconds{10LL});
   }
 }
@@ -173,8 +173,8 @@ void sendAckermannCommand(
   for (int i = 0; i < 150; ++i) {
     cmd.stamp = sim_node->now();
     pub_sub_node->pub_ackermann_command_->publish(cmd);
-    rclcpp::spin_some(sim_node);
-    rclcpp::spin_some(pub_sub_node);
+    rclcpp::executors::SingleThreadedExecutor().spin_node_some(sim_node);
+    rclcpp::executors::SingleThreadedExecutor().spin_node_some(pub_sub_node);
     std::this_thread::sleep_for(std::chrono::milliseconds{10LL});
   }
 }
@@ -187,8 +187,8 @@ void sendActuationCommand(
   for (int i = 0; i < 150; ++i) {
     cmd.header.stamp = sim_node->now();
     pub_sub_node->pub_actuation_command_->publish(cmd);
-    rclcpp::spin_some(sim_node);
-    rclcpp::spin_some(pub_sub_node);
+    rclcpp::executors::SingleThreadedExecutor().spin_node_some(sim_node);
+    rclcpp::executors::SingleThreadedExecutor().spin_node_some(pub_sub_node);
     std::this_thread::sleep_for(std::chrono::milliseconds{10LL});
   }
 }
@@ -313,7 +313,7 @@ TEST_P(TestSimplePlanningSimulator, TestIdealSteerVel)
   node_options.append_parameter_override("convert_accel_cmd", true);
   node_options.append_parameter_override("convert_brake_cmd", true);
   const auto share_dir =
-    ament_index_cpp::get_package_share_directory("autoware_simple_planning_simulator");
+    ament_index_cpp::get_package_share_path("autoware_simple_planning_simulator").string();
   const auto accel_map_path = share_dir + "/test/actuation_cmd_map/accel_map.csv";
   const auto brake_map_path = share_dir + "/test/actuation_cmd_map/brake_map.csv";
   const auto steer_map_path = share_dir + "/test/actuation_cmd_map/steer_map.csv";
