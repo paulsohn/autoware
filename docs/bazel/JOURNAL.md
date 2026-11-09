@@ -617,3 +617,44 @@ Lessons:
 - Compare against the expanded target graph (`bazel query --output=build`), not the BUILD text: macros and
   comprehensions hide target names.
 - Make the record of deliberate differences machine-checkable, or it goes stale.
+
+## 2026-11-09: P2 — the Agnocast-free rest of autoware_core
+
+Order: packages whose dependencies (transitively, incl. test deps) contain no `agnocast*` package or
+`autoware_agnocast_wrapper` first. That is 13 packages; everything from `autoware_default_adapi` up needs the wrapper.
+Ported: `command_gate`, `euclidean_cluster_object_detector`, `planning_topic_converter`, `simple_pure_pursuit`,
+`planning_factor_interface` (library only), `trajectory`, `awsim_sensor_kit_description`, `route_handler`,
+`core_control`, `core_perception`, `mission_planner`, `planning_test_manager`, `path_generator`.
+Each: build + tests (`--config=no-agnocast`), then `check_cmake_parity` clean (differences recorded).
+Full suite: 90 tests pass.
+
+Patterns:
+- `generate_parameter_library(name yaml)` → `load("@generate_parameter_library//:defs.bzl",
+  "generate_parameter_library")`, same name; it generates `include/<pkg>/<name>.hpp` and a `cc_library`.
+  The parity check now knows the command.
+- Several libraries per package where one links another (`euclidean_cluster`, `mission_planner`,
+  `planning_topic_converter`): one `cc_shared_library` each, the dependent one listing the other in `dynamic_deps`.
+- A CMake `PUBLIC` option reaches targets through intermediate libraries too: `path_generator` gets
+  autoware_test_utils' `-Wno-deprecated-declarations` via `autoware_planning_test_manager`.
+- BUILD files reject `**kwargs`, so shared attribute sets are spelled out per target (a `COPTS` constant at most).
+
+Issues (symptom → cause → fix):
+1. `**kwargs arguments are not allowed in BUILD files` → Starlark restriction in BUILD files → explicit attributes.
+2. `undefined symbol: rclcpp_components::ComponentManager::ComponentManager` (command_gate test) → it lives in
+   rclcpp_components' separate `component_manager` library in the RCR → add that pair to the test's dependencies.
+3. `'gtest/gtest.h' file not found` compiling `autoware_planning_test_manager` → its public header includes gtest
+   for macros its users need; CMake leaves gtest's symbols to the test executables. Linking gtest statically into
+   the shared library would give tests two copies → `cc_headers_only` (new, `@autoware_cmake//:defs.bzl`): a rule
+   that forwards only a dependency's compilation context. Loading it needed `CcInfo`/`cc_common` from rules_cc
+   (`The CcInfo symbol has been removed` in Bazel 9) and `bazel_dep(rules_cc)` in `autoware_cmake`.
+4. `tf2_geometry_msgs/tf2_geometry_msgs/tf2_geometry_msgs.hpp` not found (trajectory) → that doubled path only works
+   with colcon's `include/<pkg>/<pkg>/` install layout → use `tf2_geometry_msgs/tf2_geometry_msgs.hpp`.
+5. Exact floating-point comparisons failing by a few ULPs (trajectory `LateralMetrics`, path_generator
+   `connectPathToGoal`'s orientation) → clang and GCC round differently along different computation paths →
+   `EXPECT_DOUBLE_EQ` / compare the orientation with the test's own epsilon, everything else exactly.
+6. More Lyrical removals/deprecations: tf2 `.h` headers, non-const `SharedPtr` callbacks (patched per package).
+
+Lessons:
+- Header-only use of a library by a shared library needs a headers-only dependency in Bazel; CMake hides this
+  because shared libraries may leave symbols undefined.
+- Tests comparing floating-point results exactly are toolchain-specific; expect a few when switching compilers.
