@@ -373,7 +373,7 @@ public:
   PeerNode()
   : rclcpp::Node("gnss_poser_characterization_peer"),
     tf_buffer_(get_clock()),
-    tf_listener_(tf_buffer_, this, /*spin_thread=*/false)
+    tf_listener_(tf_buffer_, *this, /*spin_thread=*/false)
   {
     projector_pub_ = create_publisher<MapProjectorInfo>(
       "/map/map_projector_info", rclcpp::QoS{1}.transient_local());

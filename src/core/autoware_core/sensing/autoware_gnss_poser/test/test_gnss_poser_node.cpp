@@ -176,7 +176,7 @@ protected:
     fixed_status_received_ = false;
 
     pose_sub_ = publisher_node_->create_subscription<geometry_msgs::msg::PoseStamped>(
-      "gnss_pose", rclcpp::QoS(1), [this](const geometry_msgs::msg::PoseStamped::SharedPtr msg) {
+      "gnss_pose", rclcpp::QoS(1), [this](const geometry_msgs::msg::PoseStamped::ConstSharedPtr msg) {
         last_pose_ = *msg;
         pose_received_ = true;
       });
@@ -184,7 +184,7 @@ protected:
     pose_cov_sub_ =
       publisher_node_->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
         "gnss_pose_cov", rclcpp::QoS(1),
-        [this](const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg) {
+        [this](const geometry_msgs::msg::PoseWithCovarianceStamped::ConstSharedPtr msg) {
           last_pose_cov_ = *msg;
           pose_cov_received_ = true;
         });
@@ -192,7 +192,7 @@ protected:
     fixed_sub_ =
       publisher_node_->create_subscription<autoware_internal_debug_msgs::msg::BoolStamped>(
         "gnss_fixed", rclcpp::QoS(1),
-        [this](const autoware_internal_debug_msgs::msg::BoolStamped::SharedPtr msg) {
+        [this](const autoware_internal_debug_msgs::msg::BoolStamped::ConstSharedPtr msg) {
           last_fixed_status_ = *msg;
           fixed_status_received_ = true;
         });
