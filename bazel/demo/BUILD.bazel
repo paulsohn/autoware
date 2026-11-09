@@ -1,0 +1,34 @@
+load("@rosdistro//ament:defs.bzl", "ament_package")
+
+package(default_visibility = ["//visibility:public"])
+
+# The headless planning simulation (P4 demo): launch/planning_simulator.launch.xml and the driving check
+# (lib/autoware_bazel_demo/drive_check.py). The map comes separately (//images:map_layer).
+ament_package(
+    name = "ament_package",
+    data = glob([
+        "config/**",
+        "launch/**",
+    ]),
+    executables = ["scripts/drive_check.py"],
+    package_xml = "package.xml",
+    deps = [
+        "@autoware_adapi_v1_msgs//:ament_package",
+        "@autoware_core_api//:ament_package",
+        "@autoware_core_control//:ament_package",
+        "@autoware_core_map//:ament_package",
+        "@autoware_core_planning//:ament_package",
+        "@autoware_core_vehicle//:ament_package",
+        "@autoware_dummy_perception_publisher//:ament_package",
+        "@autoware_global_parameter_loader//:ament_package",
+        "@autoware_sample_sensor_kit_description//:ament_package",
+        "@autoware_sample_vehicle_description//:ament_package",
+        "@autoware_simple_planning_simulator//:ament_package",
+        "@autoware_system_msgs//:ament_package",
+        "@geometry_msgs//:ament_package",
+        "@nav_msgs//:ament_package",
+        "@rclpy//:ament_package",
+        "@rviz2//:ament_package",
+        "@rosdistro//:ament_package",
+    ],
+)

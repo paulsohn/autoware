@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Planning simulation of autoware_core: core's map, planning, control, vehicle and API components, with the simple
+  planning simulator as the vehicle (and localization: it publishes /localization/kinematic_state) and an empty
+  object list as perception. Like autoware_launch's planning_simulator.launch.xml, but core only and headless.
+-->
+<launch>
+  <arg name="map_path" default="/opt/autoware/maps/sample-map-planning" description="lanelet2 + pointcloud map directory"/>
+  <arg name="vehicle_model" default="autoware_sample_vehicle" description="vehicle model name"/>
+  <arg name="sensor_model" default="autoware_sample_sensor_kit" description="sensor model name"/>
+  <arg name="rviz" default="false" description="launch rviz2 (needs a display)"/>
+
+  <group scoped="false">
+    <include file="$(find-pkg-share autoware_global_parameter_loader)/launch/global_params.launch.py">
+      <arg name="use_sim_time" value="false"/>
+      <arg name="vehicle_model" value="$(var vehicle_model)"/>
+    </include>
+  </group>
+
+  <include file="$(find-pkg-share autoware_core_map)/launch/autoware_core_map.launch.xml">
+    <arg name="lanelet2_map_path" value="$(var map_path)/lanelet2_map.osm"/>
+    <arg name="map_projector_info_path" value="$(var map_path)/map_projector_info.yaml"/>
+    <arg name="pointcloud_map_path" value="$(var map_path)/pointcloud_map.pcd"/>
+    <arg name="pointcloud_map_metadata_path" value="$(var map_path)/pointcloud_map/metadata.yaml"/>
+  </include>
+
+  <include file="$(find-pkg-share autoware_core_planning)/launch/autoware_core_planning.launch.xml"/>
+
+  <include file="$(find-pkg-share autoware_core_control)/launch/autoware_core_control.launch.xml">
+    <arg name="vehicle_model" value="$(var vehicle_model)"/>
+    <!-- core control only (no universe): core's command gate drives the vehicle. -->
+    <arg name="launch_command_gate" value="true"/>
+  </include>
+
+  <include file="$(find-pkg-share autoware_core_vehicle)/launch/autoware_core_vehicle.launch.xml">
+    <arg name="vehicle_model" value="$(var vehicle_model)"/>
+    <arg name="sensor_model" value="$(var sensor_model)"/>
+  </include>
+
+  <include file="$(find-pkg-share autoware_core_api)/launch/autoware_core_api.launch.xml"/>
+
+  <!-- The vehicle: simulates the kinematics and publishes the vehicle status and localization topics. -->
+  <include file="$(find-pkg-share autoware_simple_planning_simulator)/launch/simple_planning_simulator.launch.py">
+    <arg name="vehicle_info_param_file" value="$(find-pkg-share $(var vehicle_model)_description)/config/vehicle_info.param.yaml"/>
+    <arg name="simulator_model_param_file" value="$(find-pkg-share autoware_bazel_demo)/config/simulator_model.param.yaml"/>
+    <arg name="motion_publish_mode" value="full_motion"/>
+    <arg name="initial_engage_state" value="true"/>
+  </include>
+
+  <!-- Perception: an empty object list, and the obstacle pointcloud the motion velocity planner waits for (from the
+       dummy perception publisher, empty until objects are spawned on simulation/dummy_perception_publisher/object_info). -->
+  <include file="$(find-pkg-share autoware_dummy_perception_publisher)/launch/dummy_perception_publisher.launch.xml"/>
+  <node pkg="autoware_dummy_perception_publisher" exec="empty_objects_publisher" name="empty_objects_publisher">
+    <remap from="~/output/objects" to="/perception/object_recognition/objects"/>
+  </node>
+
+  <node pkg="rviz2" exec="rviz2" name="rviz2" args="-d $(find-pkg-share autoware_core)/rviz/autoware_core.rviz" if="$(var rviz)"/>
+</launch>

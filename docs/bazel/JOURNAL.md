@@ -1319,7 +1319,8 @@ Layers:
    looks for it).
 
 Env: `ENABLE_AGNOCAST=1`, `RMW_IMPLEMENTATION=rmw_cyclonedds_cpp`, `CYCLONEDDS_URI`, `ROS_DISTRO=lyrical`.
-`docker run --rm autoware-bazel-runtime:latest ros2 pkg list` → 344 packages (94 Autoware); `ros2 launch` works.
+`docker run --rm autoware-bazel-runtime:latest ros2 pkg list` → 344 packages (94 Autoware). (`ros2 launch` did not
+work yet: see P4 part 3.)
 
 Issues (symptom → cause → fix):
 1. `No module named 'numpy._core._multiarray_umath'` in the image → the RCR's `ament_package` installs only the
@@ -1355,3 +1356,86 @@ Issues: `tf2_ros/buffer.h` and `transform_listener.h` (deprecated `.h`, -Werror)
 Parity checker: install data is now found on `ament_package` rules too (the P4 conversion made the checker report
 `share:*` for every package). Three `cmake-diff dep:` records (pcl_ros, lanelet2_maps) became stale, because those are
 now runtime dependencies of the installed packages; removed.
+
+autoware_dummy_perception_publisher: `tf2_ros` `.h` → `.hpp` (source fix), BUILD with both executables
+(`autoware_dummy_perception_publisher_node`, `empty_objects_publisher`). `**kwargs` dicts are not allowed in BUILD
+files (only in .bzl) → attributes written out.
+
+## P4 part 3: planning simulator demo in the runtime image
+
+`bazel/demo` is a new module/package `autoware_bazel_demo` (in the underlay):
+- `launch/planning_simulator.launch.xml`: global params, core map/planning/control/vehicle/API launches, the simple
+  planning simulator (`full_motion`, engaged), `dummy_perception_publisher.launch.xml` and `empty_objects_publisher`,
+  optional RViz. Map: `sample-map-planning` (`http_archive` `@sample_map_planning`, sha256-pinned) in an image layer at
+  `/opt/autoware/maps/sample-map-planning`.
+- `scripts/drive_check.py`: initial pose on lanelet 102 → clear and set the route through the AD API → autonomous →
+  pass when the vehicle has driven 10 m toward the goal.
+
+Run (Docker Desktop host, see issue 3 for the URI):
+
+```sh
+bazel run //images:runtime_load
+docker run -d --name awdemo -e ENABLE_AGNOCAST=0 \
+  -e CYCLONEDDS_URI='file:///etc/autoware/cyclonedds.xml,<CycloneDDS><Domain><Internal><SocketReceiveBufferSize min="default"/></Internal></Domain></CycloneDDS>' \
+  autoware-bazel-runtime:latest ros2 launch autoware_bazel_demo planning_simulator.launch.xml
+sleep 60
+docker exec awdemo /usr/local/bin/autoware-entrypoint ros2 run autoware_bazel_demo drive_check.py
+# ... autonomous mode engaged
+# ... OK: drove 10.0 m toward the goal (speed 3.1 m/s)      (8.5 s after engaging)
+```
+
+Issues (symptom → cause → fix):
+1. `ros2: error: ... invalid choice: 'launch'` → `ros2cli_common_extensions` does not include ros2launch, ros2run,
+   ros2node, ros2service, ros2param, ros2component, ros2action, ros2lifecycle → `bazel_dep`s + underlay deps.
+   Still `invalid choice` → the RCR overlays of these 8 have no `entry_points.txt` (ros2topic's has) →
+   `bazel/tools/ros2cli_entry_points_patch.py <external dir>...` writes one `bazel/patches/<pkg>_entry_points.patch`
+   per package from its `setup.py` (same `write_file` as the ros2topic overlay), applied with
+   `single_version_override(patches = ...)` (no version: resolution unchanged). Report upstream to the RCR.
+2. `rmw_create_node: failed to create domain` → `cyclonedds.xml` requires `SocketReceiveBufferSize min="10MB"`, and
+   the container's `net.core.rmem_max` is 4 MB. This host's Docker is Docker Desktop (containers in a VM): the host's
+   sysctl does not apply, `--network host` is the VM's network, `--sysctl net.core.rmem_max` is refused → the vehicle
+   config stays; on such hosts append an inline override to `CYCLONEDDS_URI` (Cyclone merges comma-separated sources,
+   later wins) that relaxes only the minimum. A native Docker engine with the usual host DDS tuning needs none.
+3. Exit code 127, `libGL.so.1: cannot open shared object file` in map loaders, planners, API adaptors → the RCR's PCL
+   links VTK, which links PyPI Qt, which links the system OpenGL loader (glvnd: libGL, libGLX, libOpenGL, libEGL), a
+   manylinux "system library" the RCR does not ship. Tests passed on the host only because the host has it → pinned
+   Ubuntu packages in the image: `rules_distroless` 0.9.4 `apt` (`bazel/runtime_apt.MODULE.bazel`, snapshot.ubuntu.com
+   of the base digest's day; resolved versions/sha256 in `MODULE.bazel.lock` as extension facts), packages
+   libglvnd0 libgl1 libglx0 libopengl0 libegl1 + libx11-6 libx11-data libxcb1 libxau6 libxdmcp6 libbsd0.
+   - `include_transitive = False` has no effect in 0.9.4 (hard-coded `True` in the extension) and `:flat` holds the
+     whole closure (libc6, Mesa, LLVM) → `pkg_tar(deps = ["@runtime_apt//<pkg>:data", ...])` takes each listed
+     package's own files only; the base provides libc6/libmd0.
+   - `snapshot.ubuntu.com/ubuntu-ports` answered 401 → amd64 only for now (`shortcut:` comment; P5).
+   - `bazel run @runtime_apt//:lock` does not exist in 0.9.4 (the lock is the facts in `MODULE.bazel.lock`).
+   - The `dev` image gets `libegl1 libgl1 libopengl0` too, so CI tests see the same libraries.
+   After: `ldd` of every ELF in the image: nothing missing outside GUI code (Qt plugins, RViz, OpenCV's GUI).
+4. `launch configuration 'vehicle_model_pkg' does not exist` → the simulator's default param file is loaded with
+   substitutions on, and a *commented-out* line in it contains `$(var vehicle_model_pkg)` → the demo ships its own
+   simulator param file (issue 7).
+5. `ros2 topic echo/list` from `docker exec` hang → the ros2 daemon does not come up in the container (not
+   investigated) → `--no-daemon` for list/info/echo (`hz` has no such flag).
+6. `drive_check` waited forever for `is_autonomous_mode_available`, then `change_to_autonomous: no service` →
+   autoware_core has no operation mode transition manager: `autoware_command_gate` provides only
+   `/system/operation_mode/change_operation_mode` (`autoware_system_msgs/srv/ChangeOperationMode`) and publishes
+   `/api/operation_mode/state` only in reply to it (its README is out of date) → call that service.
+   Also: a rerun fails with `The route is already set` → clear the route first. The first `set_route_points` after a
+   clear still gets that answer once (the API node's cached state lags), so it is retried.
+7. Engaged but no `/planning/trajectory` → the motion velocity planner waits for its required inputs
+   (`/perception/obstacle_segmentation/pointcloud`) → `dummy_perception_publisher.launch.xml` (publishes it, empty
+   without objects), as universe's planning simulator does.
+8. Then the vehicle crept at 0.09 m/s: the velocity smoother holds `engage_velocity` 0.25 m/s until the measured speed
+   passes about half of it; the control command was 0.25 m/s at +0.16 m/s² while measured acceleration was ~0. The
+   route climbs ~0.8 %, `enable_road_slope_simulation` applies gravity along it, and core's controller is P-only on
+   velocity with no slope compensation (universe's PID controller has it), so it settles below the threshold →
+   `bazel/demo/config/simulator_model.param.yaml` = the simulator's default with slope simulation off.
+
+Not tested: `ENABLE_AGNOCAST=1` in the container (Docker Desktop's VM has no agnocast kernel module; needs a native
+engine with `/dev/agnocast`), the NVIDIA runtime, RViz in the container.
+
+Lessons:
+- An install tree finds what `bazel test` cannot: missing entry points, system libraries supplied by the developer
+  host. Check every new runtime environment with `ldd` over all ELFs, and with the actual commands.
+- "Hermetic" RCR still assumes the manylinux system libraries (GL, X11 for Qt). They belong to the image's pinned
+  system layer, not to the machine; only vendor GL/driver libraries come from the machine.
+- autoware_core is not universe: AD API features (operation mode availability, change_to_autonomous) and controller
+  features (slope compensation) differ, so a core-only demo needs core-specific glue.

@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>autoware_bazel_demo</name>
+  <version>0.0.0</version>
+  <description>Headless planning simulation of autoware_core for the Bazel runtime image (P4).</description>
+  <maintainer email="paulsohnjp@gmail.com">Taeseung Sohn</maintainer>
+  <license>Apache License 2.0</license>
+  <exec_depend>autoware_adapi_v1_msgs</exec_depend>
+  <exec_depend>autoware_core_api</exec_depend>
+  <exec_depend>autoware_core_control</exec_depend>
+  <exec_depend>autoware_core_map</exec_depend>
+  <exec_depend>autoware_core_planning</exec_depend>
+  <exec_depend>autoware_core_vehicle</exec_depend>
+  <exec_depend>autoware_dummy_perception_publisher</exec_depend>
+  <exec_depend>autoware_global_parameter_loader</exec_depend>
+  <exec_depend>autoware_sample_sensor_kit_description</exec_depend>
+  <exec_depend>autoware_sample_vehicle_description</exec_depend>
+  <exec_depend>autoware_simple_planning_simulator</exec_depend>
+  <exec_depend>autoware_system_msgs</exec_depend>
+  <exec_depend>geometry_msgs</exec_depend>
+  <exec_depend>nav_msgs</exec_depend>
+  <exec_depend>rclpy</exec_depend>
+  <exec_depend>rviz2</exec_depend>
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>

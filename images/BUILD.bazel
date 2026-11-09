@@ -21,12 +21,21 @@ autoware_underlay(
     package_dir = "opt/ros/lyrical",
     deps = [
         "@agnocast_heaphook//:ament_package",
+        "@autoware_bazel_demo//:ament_package",
         "@autoware_core//:ament_package",
         "@autoware_tensorrt_common//:ament_package",
         "@autoware_tensorrt_plugins//:ament_package",
         "@cuda_blackboard//:ament_package",
-        # ros2 launch, ros2 topic, ros2 node, ...: the command-line tools.
+        # The ros2 command-line tools (ros2cli_common_extensions lacks launch, run, node, service, ...).
         "@ros2cli_common_extensions//:ament_package",
+        "@ros2action//:ament_package",
+        "@ros2component//:ament_package",
+        "@ros2launch//:ament_package",
+        "@ros2lifecycle//:ament_package",
+        "@ros2node//:ament_package",
+        "@ros2param//:ament_package",
+        "@ros2run//:ament_package",
+        "@ros2service//:ament_package",
     ],
 )
 
@@ -60,12 +69,43 @@ pkg_mklink(
     target = "../agnocast_heaphook/lib/libagnocast_heaphook.so",
 )
 
+# sample-map-planning at the demo launch file's default map_path.
+pkg_files(
+    name = "sample_map",
+    srcs = ["@sample_map_planning//:files"],
+    prefix = "opt/autoware/maps/sample-map-planning",
+)
+
+pkg_tar(
+    name = "map_layer",
+    srcs = [":sample_map"],
+)
+
 pkg_tar(
     name = "config_layer",
     srcs = [
         ":dds_config",
         ":entrypoint_file",
         ":heaphook_link",
+    ],
+)
+
+# System libraries on top of the ubuntu base (bazel/runtime_apt.MODULE.bazel): each package's own files only, not
+# rules_distroless's dependency closure (which would replace the base's libc6 and pull in Mesa).
+pkg_tar(
+    name = "system_layer",
+    deps = [
+        "@runtime_apt//libbsd0:data",
+        "@runtime_apt//libegl1:data",
+        "@runtime_apt//libgl1:data",
+        "@runtime_apt//libglvnd0:data",
+        "@runtime_apt//libglx0:data",
+        "@runtime_apt//libopengl0:data",
+        "@runtime_apt//libx11-6:data",
+        "@runtime_apt//libx11-data:data",
+        "@runtime_apt//libxau6:data",
+        "@runtime_apt//libxcb1:data",
+        "@runtime_apt//libxdmcp6:data",
     ],
 )
 
@@ -83,8 +123,10 @@ oci_image(
         "ROS_DISTRO": "lyrical",
     },
     tars = [
+        ":system_layer",
         ":python_layer",
         ":autoware_underlay",
+        ":map_layer",
         ":config_layer",
     ],
 )

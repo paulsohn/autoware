@@ -46,6 +46,23 @@ Tests that load TensorRT need `data = ["@tensorrt//:runtime_libs"]` and `env = t
 `@tensorrt//:defs.bzl`): libnvinfer loads its builder resources by bare name. `bazel run` of a node that builds
 TensorRT engines does not set this up yet (runtime image, P4).
 
+## Runtime image and the planning simulator demo
+```sh
+bazel run //images:runtime_load                   # -> docker image autoware-bazel-runtime:latest
+docker run -d --name awdemo -e ENABLE_AGNOCAST=0 autoware-bazel-runtime:latest \
+  ros2 launch autoware_bazel_demo planning_simulator.launch.xml
+docker exec awdemo /usr/local/bin/autoware-entrypoint ros2 run autoware_bazel_demo drive_check.py   # after ~60 s
+```
+
+- `drive_check.py` drives the sample map through the AD API and exits 0 once the vehicle has moved 10 m.
+- Docker Desktop (containers in a VM, 4 MB `rmem_max`) fails with `failed to create domain`: the image's
+  `cyclonedds.xml` requires a 10 MB receive buffer. Add
+  `-e CYCLONEDDS_URI='file:///etc/autoware/cyclonedds.xml,<CycloneDDS><Domain><Internal><SocketReceiveBufferSize min="default"/></Internal></Domain></CycloneDDS>'`.
+- `ENABLE_AGNOCAST=1` (the image default) needs the agnocast kernel module and `--device /dev/agnocast`.
+- `ros2 topic list/echo` inside the container: use `--no-daemon` (the daemon hangs there).
+- System libraries for the image (OpenGL loader etc.) are listed in `bazel/runtime_apt.MODULE.bazel`; build once
+  after editing and commit `MODULE.bazel.lock`.
+
 ## Where a package comes from
 Each Autoware package resolves to one of:
 - **Local source**: `src/...`, selected by a `local_path_override` in `bazel/autoware_packages.MODULE.bazel`.
