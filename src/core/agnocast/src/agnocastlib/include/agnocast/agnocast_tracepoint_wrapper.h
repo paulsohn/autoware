@@ -1,6 +1,11 @@
 #pragma once
 #include "tracetools/tracetools.h"
 
+// Compatibility: Lyrical's tracetools removed the TRACEPOINT() spelling (TRACETOOLS_TRACEPOINT() exists since Jazzy).
+#if !defined(TRACEPOINT) && defined(TRACETOOLS_TRACEPOINT)
+#define TRACEPOINT(...) TRACETOOLS_TRACEPOINT(__VA_ARGS__)
+#endif
+
 // Compatibility: Jazzy uses _DECLARE_TRACEPOINT, Humble uses DECLARE_TRACEPOINT
 #ifndef DECLARE_TRACEPOINT
 #define DECLARE_TRACEPOINT(...) _DECLARE_TRACEPOINT(__VA_ARGS__)

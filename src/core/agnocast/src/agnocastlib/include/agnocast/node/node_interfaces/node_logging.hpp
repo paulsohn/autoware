@@ -1,6 +1,7 @@
 #pragma once
 
 #include "rclcpp/logger.hpp"
+#include "agnocast/agnocast_rclcpp_compat.hpp"
 #include "rclcpp/node_interfaces/node_logging_interface.hpp"
 #include "rclcpp/node_interfaces/node_services_interface.hpp"
 #include "rclcpp/version.h"
@@ -30,7 +31,7 @@ public:
   // rclcpp 28+ (Jazzy) added this method to NodeLoggingInterface.
 #if RCLCPP_VERSION_MAJOR >= 28
   void create_logger_services(
-    rclcpp::node_interfaces::NodeServicesInterface::SharedPtr node_services) override;
+    AGNOCAST_RCLCPP_SHARED_PTR_PARAM(rclcpp::node_interfaces::NodeServicesInterface::SharedPtr) node_services) override;
 #endif
 
 private:

@@ -20,6 +20,7 @@
 #pragma once
 
 #include "agnocast/internal/service_typesupport.hpp"
+#include "agnocast/agnocast_rclcpp_compat.hpp"
 
 #include <rclcpp/client.hpp>
 #include <rclcpp/node.hpp>
@@ -70,7 +71,8 @@ public:
   std::shared_ptr<void> create_response() override;
   std::shared_ptr<rmw_request_id_t> create_request_header() override;
   void handle_response(
-    std::shared_ptr<rmw_request_id_t> request_header, std::shared_ptr<void> response) override;
+    AGNOCAST_RCLCPP_SHARED_PTR_PARAM(std::shared_ptr<rmw_request_id_t>) request_header,
+    AGNOCAST_RCLCPP_SHARED_PTR_PARAM(std::shared_ptr<void>) response) override;
 
   SharedFutureAndRequestId async_send_request(const void *& request, CallbackType && cb);
 

@@ -215,4 +215,23 @@ size_t NodeGraph::count_services(const std::string & service_name) const
 }
 #endif
 
+// rclcpp 32 (Lyrical) added these to NodeGraphInterface; unsupported like the other endpoint-info queries.
+#if RCLCPP_VERSION_MAJOR >= 32
+std::vector<rclcpp::ServiceEndpointInfo> NodeGraph::get_clients_info_by_service(
+  const std::string & service_name, bool no_mangle) const
+{
+  (void)service_name;
+  (void)no_mangle;
+  throw std::runtime_error("NodeGraph::get_clients_info_by_service is not supported in agnocast.");
+}
+
+std::vector<rclcpp::ServiceEndpointInfo> NodeGraph::get_servers_info_by_service(
+  const std::string & service_name, bool no_mangle) const
+{
+  (void)service_name;
+  (void)no_mangle;
+  throw std::runtime_error("NodeGraph::get_servers_info_by_service is not supported in agnocast.");
+}
+#endif
+
 }  // namespace agnocast::node_interfaces

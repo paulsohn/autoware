@@ -23,7 +23,7 @@ const char * NodeLogging::get_logger_name() const
 // This is a stub implementation - logger services are not yet supported.
 #if RCLCPP_VERSION_MAJOR >= 28
 void NodeLogging::create_logger_services(
-  rclcpp::node_interfaces::NodeServicesInterface::SharedPtr /* node_services */)
+  AGNOCAST_RCLCPP_SHARED_PTR_PARAM(rclcpp::node_interfaces::NodeServicesInterface::SharedPtr) /* node_services */)
 {
   throw std::runtime_error("create_logger_services is not yet implemented");
 }

@@ -511,8 +511,13 @@ TEST_F(TestNodeBase, get_notify_guard_condition_throws_when_context_is_invalid)
   // the context exists but is not valid.
   auto node_base = create_node_base("my_node", "/my_ns");
 
-  // Act / Assert
+  // Act / Assert (rclcpp 32 removed get_notify_guard_condition() from NodeBaseInterface; executors use the shared
+  // getter instead)
+#if RCLCPP_VERSION_MAJOR >= 32
+  EXPECT_THROW(node_base->get_shared_notify_guard_condition(), std::runtime_error);
+#else
   EXPECT_THROW(node_base->get_notify_guard_condition(), std::runtime_error);
+#endif
 }
 
 TEST_F(TestNodeBase, get_notify_guard_condition_returns_guard_when_context_is_valid)
@@ -527,14 +532,20 @@ TEST_F(TestNodeBase, get_notify_guard_condition_returns_guard_when_context_is_va
     auto node_base = local_node->get_node_base_interface();
 
     // Act / Assert
+#if RCLCPP_VERSION_MAJOR >= 32
+    EXPECT_NE(node_base->get_shared_notify_guard_condition(), nullptr);
+    EXPECT_NO_THROW(node_base->trigger_notify_guard_condition());
+#else
     EXPECT_NO_THROW({
       auto & guard = node_base->get_notify_guard_condition();
       (void)guard;
     });
+#endif
   }
   context->shutdown("test cleanup");
 }
 
+// Without a valid context: stubs before rclcpp 32, no guard condition from rclcpp 32.
 #if RCLCPP_VERSION_MAJOR >= 28
 TEST_F(TestNodeBase, get_shared_notify_guard_condition_throws_runtime_error)
 {

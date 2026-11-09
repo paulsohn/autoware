@@ -2,7 +2,7 @@
 
 #include "agnocast/message_filters/message_event.hpp"
 
-#include <message_filters/null_types.h>
+#include <message_filters/null_types.hpp>
 
 #include <memory>
 #include <type_traits>

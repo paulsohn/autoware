@@ -1,5 +1,6 @@
 #pragma once
 #include "agnocast/agnocast_executor.hpp"
+#include "agnocast/agnocast_rclcpp_compat.hpp"
 #include "agnocast/agnocast_public_api.hpp"
 #include "rclcpp/rclcpp.hpp"
 
@@ -82,8 +83,9 @@ public:
   /// @param notify If true, wake the executor so it picks up the change immediately.
   AGNOCAST_PUBLIC
   void add_callback_group(
-    rclcpp::CallbackGroup::SharedPtr group_ptr,
-    rclcpp::node_interfaces::NodeBaseInterface::SharedPtr node_ptr, bool notify = true) override;
+    AGNOCAST_RCLCPP_SHARED_PTR_PARAM(rclcpp::CallbackGroup::SharedPtr) group_ptr,
+    AGNOCAST_RCLCPP_SHARED_PTR_PARAM(rclcpp::node_interfaces::NodeBaseInterface::SharedPtr) node_ptr,
+    bool notify = true) override;
 
   /// Return all callback groups known to this executor.
   /// @return Vector of weak pointers to callback groups.
@@ -106,33 +108,35 @@ public:
   /// @param notify If true, wake the executor so it picks up the change immediately.
   AGNOCAST_PUBLIC
   void remove_callback_group(
-    rclcpp::CallbackGroup::SharedPtr group_ptr, bool notify = true) override;
+    AGNOCAST_RCLCPP_SHARED_PTR_PARAM(rclcpp::CallbackGroup::SharedPtr) group_ptr, bool notify = true) override;
 
   /// Add a node to this executor.
   /// @param node_ptr Node to add.
   /// @param notify If true, wake the executor so it picks up the change immediately.
   AGNOCAST_PUBLIC
   void add_node(
-    rclcpp::node_interfaces::NodeBaseInterface::SharedPtr node_ptr, bool notify = true) override;
+    AGNOCAST_RCLCPP_SHARED_PTR_PARAM(rclcpp::node_interfaces::NodeBaseInterface::SharedPtr) node_ptr,
+    bool notify = true) override;
 
   /// Add a node to this executor.
   /// @param node_ptr Node to add.
   /// @param notify If true, wake the executor so it picks up the change immediately.
   AGNOCAST_PUBLIC
-  void add_node(rclcpp::Node::SharedPtr node_ptr, bool notify = true) override;
+  void add_node(AGNOCAST_RCLCPP_SHARED_PTR_PARAM(rclcpp::Node::SharedPtr) node_ptr, bool notify = true) override;
 
   /// Remove a node from this executor.
   /// @param node_ptr Node to remove.
   /// @param notify If true, wake the executor so it picks up the change immediately.
   AGNOCAST_PUBLIC
   void remove_node(
-    rclcpp::node_interfaces::NodeBaseInterface::SharedPtr node_ptr, bool notify = true) override;
+    AGNOCAST_RCLCPP_SHARED_PTR_PARAM(rclcpp::node_interfaces::NodeBaseInterface::SharedPtr) node_ptr,
+    bool notify = true) override;
 
   /// Remove a node from this executor.
   /// @param node_ptr Node to remove.
   /// @param notify If true, wake the executor so it picks up the change immediately.
   AGNOCAST_PUBLIC
-  void remove_node(rclcpp::Node::SharedPtr node_ptr, bool notify = true) override;
+  void remove_node(AGNOCAST_RCLCPP_SHARED_PTR_PARAM(rclcpp::Node::SharedPtr) node_ptr, bool notify = true) override;
 };
 
 }  // namespace agnocast

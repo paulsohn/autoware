@@ -6,9 +6,9 @@
 
 #include <rclcpp/rclcpp.hpp>
 
-#include <message_filters/connection.h>
-#include <message_filters/message_traits.h>
-#include <message_filters/null_types.h>
+#include <message_filters/connection.hpp>
+#include <message_filters/message_traits.hpp>
+#include <message_filters/null_types.hpp>
 
 #include <cassert>
 #include <map>

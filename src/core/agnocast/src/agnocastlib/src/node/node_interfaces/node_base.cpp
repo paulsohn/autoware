@@ -102,7 +102,7 @@ NodeBase::NodeBase(
   // Check both that context exists and is not shutdown to avoid "context argument is null" error
   // when creating GuardCondition during ROS shutdown
   if (context_ && context_->is_valid()) {
-    notify_guard_condition_.emplace(context_);
+    notify_guard_condition_ = std::make_shared<rclcpp::GuardCondition>(context_);
   }
 
   // Warned here rather than in get_use_intra_process_default() so that the count is one line per
@@ -237,12 +237,12 @@ std::atomic_bool & NodeBase::get_associated_with_executor_atomic()
 rclcpp::GuardCondition & NodeBase::get_notify_guard_condition()
 {
   std::lock_guard<std::recursive_mutex> lock(notify_guard_condition_mutex_);
-  if (!notify_guard_condition_.has_value()) {
+  if (!notify_guard_condition_) {
     throw std::runtime_error(
       "notify_guard_condition is not available. "
       "This agnocast::Node was created without a valid context.");
   }
-  return notify_guard_condition_.value();
+  return *notify_guard_condition_;
 }
 
 bool NodeBase::get_use_intra_process_default() const
@@ -368,9 +368,27 @@ cleanup:
   return output_topic_name;
 }
 
+// rclcpp 32 (Lyrical) executors register a node's guard condition through get_shared_notify_guard_condition()
+// (Jazzy's used get_notify_guard_condition()), so it returns the same guard condition here.
+#if RCLCPP_VERSION_MAJOR >= 32
+rclcpp::GuardCondition::SharedPtr NodeBase::get_shared_notify_guard_condition()
+{
+  std::lock_guard<std::recursive_mutex> lock(notify_guard_condition_mutex_);
+  if (!notify_guard_condition_) {
+    throw std::runtime_error(
+      "notify_guard_condition is not available. "
+      "This agnocast::Node was created without a valid context.");
+  }
+  return notify_guard_condition_;
+}
+
+void NodeBase::trigger_notify_guard_condition()
+{
+  get_shared_notify_guard_condition()->trigger();
+}
 // rclcpp 28+ (Jazzy) added these methods to NodeBaseInterface.
 // These are stub implementations - not yet integrated into executor notification.
-#if RCLCPP_VERSION_MAJOR >= 28
+#elif RCLCPP_VERSION_MAJOR >= 28
 rclcpp::GuardCondition::SharedPtr NodeBase::get_shared_notify_guard_condition()
 {
   throw std::runtime_error("get_shared_notify_guard_condition is not yet implemented");

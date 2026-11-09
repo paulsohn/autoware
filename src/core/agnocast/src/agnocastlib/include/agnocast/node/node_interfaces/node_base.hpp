@@ -52,7 +52,12 @@ public:
   void for_each_callback_group(const CallbackGroupFunction & func) override;
 
   std::atomic_bool & get_associated_with_executor_atomic() override;
+  // Removed from NodeBaseInterface in rclcpp 32 (Lyrical); kept here as a plain member there.
+#if RCLCPP_VERSION_MAJOR >= 32
+  rclcpp::GuardCondition & get_notify_guard_condition();
+#else
   rclcpp::GuardCondition & get_notify_guard_condition() override;
+#endif
 
   // rclcpp 28+ (Jazzy) added these methods to NodeBaseInterface.
 #if RCLCPP_VERSION_MAJOR >= 28
@@ -100,7 +105,8 @@ private:
   // agnocast::Node uses its own epoll-based dispatch and does not need this guard condition,
   // but rclcpp::Executor::add_node() (called by ComponentManager::add_node_to_executor())
   // requires it in add_callback_group_to_map().
-  std::optional<rclcpp::GuardCondition> notify_guard_condition_;
+  // shared_ptr so that get_shared_notify_guard_condition() (used by rclcpp 32 executors) can hand it out.
+  rclcpp::GuardCondition::SharedPtr notify_guard_condition_;
   mutable std::recursive_mutex notify_guard_condition_mutex_;
 };
 

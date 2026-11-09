@@ -4,9 +4,9 @@
 #include "agnocast/message_filters/message_event.hpp"
 #include "agnocast/message_filters/signal9.hpp"
 
-#include <message_filters/connection.h>
-#include <message_filters/null_types.h>
-#include <message_filters/synchronizer.h>
+#include <message_filters/connection.hpp>
+#include <message_filters/null_types.hpp>
+#include <message_filters/synchronizer.hpp>
 
 #include <cstdint>
 #include <string>
@@ -374,13 +374,23 @@ private:
   std::string name_;
 };
 
+// Number of entries of L that are not V, as std::integral_constant<int, N>. Jazzy's message_filters provided this
+// as mp_count (despite the name, it summed !std::is_same<T, V>); Lyrical's variadic message_filters dropped it.
+template <class L, class V>
+struct RealTypeCountOf;
+template <template <class...> class L, class... T, class V>
+struct RealTypeCountOf<L<T...>, V>
+{
+  using type = std::integral_constant<int, (0 + ... + static_cast<int>(!std::is_same<T, V>::value))>;
+};
+
 template <
   typename M0, typename M1, typename M2, typename M3, typename M4, typename M5, typename M6,
   typename M7, typename M8>
 struct PolicyBase
 {
-  using RealTypeCount = typename ::message_filters::mp_count<
-    std::tuple<M0, M1, M2, M3, M4, M5, M6, M7, M8>, NullType>::type;
+  using RealTypeCount =
+    typename RealTypeCountOf<std::tuple<M0, M1, M2, M3, M4, M5, M6, M7, M8>, NullType>::type;
   using Messages = std::tuple<M0, M1, M2, M3, M4, M5, M6, M7, M8>;
   using Signal = Signal9<M0, M1, M2, M3, M4, M5, M6, M7, M8>;
   using Events = std::tuple<

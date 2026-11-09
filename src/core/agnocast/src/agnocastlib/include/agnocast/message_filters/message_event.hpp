@@ -5,7 +5,7 @@
 
 #include <rclcpp/rclcpp.hpp>
 
-#include <message_filters/message_event.h>
+#include <message_filters/message_event.hpp>
 
 #include <memory>
 #include <type_traits>

@@ -3,8 +3,8 @@
 #include "agnocast/message_filters/message_event.hpp"
 #include "agnocast/message_filters/parameter_adapter.hpp"
 
-#include <message_filters/connection.h>
-#include <message_filters/null_types.h>
+#include <message_filters/connection.hpp>
+#include <message_filters/null_types.hpp>
 
 #include <functional>
 #include <memory>

@@ -205,8 +205,8 @@ void CallbackIsolatedAgnocastExecutor::spin()
 }
 
 void CallbackIsolatedAgnocastExecutor::add_callback_group(
-  rclcpp::CallbackGroup::SharedPtr group_ptr,
-  rclcpp::node_interfaces::NodeBaseInterface::SharedPtr node_ptr, bool notify)
+  AGNOCAST_RCLCPP_SHARED_PTR_PARAM(rclcpp::CallbackGroup::SharedPtr) group_ptr,
+  AGNOCAST_RCLCPP_SHARED_PTR_PARAM(rclcpp::node_interfaces::NodeBaseInterface::SharedPtr) node_ptr, bool notify)
 {
   (void)notify;
 
@@ -318,7 +318,7 @@ CallbackIsolatedAgnocastExecutor::get_automatically_added_callback_groups_from_n
 }
 
 void CallbackIsolatedAgnocastExecutor::remove_callback_group(
-  rclcpp::CallbackGroup::SharedPtr group_ptr, bool notify)
+  AGNOCAST_RCLCPP_SHARED_PTR_PARAM(rclcpp::CallbackGroup::SharedPtr) group_ptr, bool notify)
 {
   (void)notify;
 
@@ -338,7 +338,7 @@ void CallbackIsolatedAgnocastExecutor::remove_callback_group(
 }
 
 void CallbackIsolatedAgnocastExecutor::add_node(
-  rclcpp::node_interfaces::NodeBaseInterface::SharedPtr node_ptr, bool notify)
+  AGNOCAST_RCLCPP_SHARED_PTR_PARAM(rclcpp::node_interfaces::NodeBaseInterface::SharedPtr) node_ptr, bool notify)
 {
   (void)notify;
 
@@ -376,14 +376,15 @@ void CallbackIsolatedAgnocastExecutor::add_node(
   }
 }
 
-void CallbackIsolatedAgnocastExecutor::add_node(rclcpp::Node::SharedPtr node_ptr, bool notify)
+void CallbackIsolatedAgnocastExecutor::add_node(
+  AGNOCAST_RCLCPP_SHARED_PTR_PARAM(rclcpp::Node::SharedPtr) node_ptr, bool notify)
 {
   (void)notify;
   add_node(node_ptr->get_node_base_interface(), notify);
 }
 
 void CallbackIsolatedAgnocastExecutor::remove_node(
-  rclcpp::node_interfaces::NodeBaseInterface::SharedPtr node_ptr, bool notify)
+  AGNOCAST_RCLCPP_SHARED_PTR_PARAM(rclcpp::node_interfaces::NodeBaseInterface::SharedPtr) node_ptr, bool notify)
 {
   (void)notify;
 
@@ -404,7 +405,8 @@ void CallbackIsolatedAgnocastExecutor::remove_node(
   }
 }
 
-void CallbackIsolatedAgnocastExecutor::remove_node(rclcpp::Node::SharedPtr node_ptr, bool notify)
+void CallbackIsolatedAgnocastExecutor::remove_node(
+  AGNOCAST_RCLCPP_SHARED_PTR_PARAM(rclcpp::Node::SharedPtr) node_ptr, bool notify)
 {
   remove_node(node_ptr->get_node_base_interface(), notify);
 }
