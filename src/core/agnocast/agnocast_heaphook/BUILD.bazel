@@ -1,0 +1,35 @@
+load("@crates_agnocast_heaphook//:defs.bzl", "all_crate_deps")
+load("@rules_cc//cc:defs.bzl", "cc_import")
+load("@rules_rust//rust:defs.bzl", "rust_shared_library", "rust_test")
+
+package(default_visibility = ["//visibility:public"])
+
+# Not a ROS package: upstream builds it with cargo and ships it as a Debian package (libagnocast_heaphook.so),
+# which agnocast processes LD_PRELOAD. Differences from that build:
+# - Cargo.lock is generated and committed here (upstream's .gitignore excludes it), so crate versions are pinned.
+# - build.rs is not run. It (1) links against a stub libagnocast.so so that the hook records a dependency on
+#   libagnocast.so; here it links against agnocastlib's real libagnocast.so instead; and (2) sets the
+#   glibc_pre_2_35 cfg when the *build* machine's glibc is older than 2.35. Our targets (Ubuntu 24.04, JetPack 7)
+#   run glibc 2.39, so the cfg is not set, as an upstream build on those systems would decide.
+
+cc_import(
+    name = "libagnocast",
+    shared_library = "@agnocastlib//:agnocast",
+    visibility = ["//visibility:private"],
+)
+
+rust_shared_library(
+    name = "agnocast_heaphook",
+    srcs = glob(["src/*.rs"]),
+    crate_root = "src/lib.rs",
+    edition = "2021",
+    # CARGO_PKG_VERSION, which agnocast_heaphook_get_version() returns; agnocastlib requires an exact match with
+    # its own version. Keep in sync with Cargo.toml.
+    version = "2.4.1",
+    deps = all_crate_deps(normal = True) + [":libagnocast"],
+)
+
+rust_test(
+    name = "agnocast_heaphook_test",
+    crate = ":agnocast_heaphook",
+)

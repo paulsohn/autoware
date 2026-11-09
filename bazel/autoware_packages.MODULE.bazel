@@ -262,3 +262,6 @@ local_path_override(module_name = "agnocast_cie_thread_configurator", path = "sr
 
 bazel_dep(name = "agnocastlib")
 local_path_override(module_name = "agnocastlib", path = "src/core/agnocast/src/agnocastlib")
+
+bazel_dep(name = "agnocast_heaphook")
+local_path_override(module_name = "agnocast_heaphook", path = "src/core/agnocast/agnocast_heaphook")

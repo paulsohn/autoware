@@ -2,6 +2,7 @@ module(name = "agnocastlib")
 
 bazel_dep(name = "agnocast_cie_config_msgs", version = "0.0.0")
 bazel_dep(name = "agnocast_cie_thread_configurator", version = "0.0.0")
+bazel_dep(name = "agnocast_heaphook", version = "0.0.0")
 bazel_dep(name = "ament_index_cpp", version = "0.0.0")
 bazel_dep(name = "diagnostic_msgs", version = "0.0.0")
 bazel_dep(name = "diagnostic_updater", version = "0.0.0")

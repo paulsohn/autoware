@@ -1,0 +1,21 @@
+module(name = "agnocast_heaphook")
+
+bazel_dep(name = "agnocastlib", version = "0.0.0")
+bazel_dep(name = "rules_cc", version = "0.2.26.rcr.0")
+bazel_dep(name = "rules_rs", version = "0.1.0")
+
+rules_rust = use_extension("@rules_rs//rs:rules_rust.bzl", "rules_rust")
+use_repo(rules_rust, "rules_rust")
+
+# Crate versions pinned by Cargo.lock (upstream does not commit it; see BUILD.bazel).
+crate = use_extension("@rules_rs//rs:extensions.bzl", "crate")
+crate.from_cargo(
+    name = "crates_agnocast_heaphook",
+    cargo_lock = "//:Cargo.lock",
+    cargo_toml = "//:Cargo.toml",
+    platform_triples = [
+        "aarch64-unknown-linux-gnu",
+        "x86_64-unknown-linux-gnu",
+    ],
+)
+use_repo(crate, "crates_agnocast_heaphook")

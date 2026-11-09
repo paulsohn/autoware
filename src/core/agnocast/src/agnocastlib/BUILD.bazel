@@ -1,3 +1,4 @@
+load("@agnocast_heaphook//:defs.bzl", "heaphook_test")
 load("@rosdistro//ament:defs.bzl", "ament_index")
 load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps", "ros_local_defines")
 load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library", "cc_shared_library", "cc_test")
@@ -231,10 +232,18 @@ collect_transitive_dynamic_deps(
     visibility = ["//visibility:private"],
 )
 
-# CMake labels some tests "requires_kernel_module;requires_heaphook" (test_integration_agnocast_heaphook only
-# "requires_heaphook") and preloads libagnocast_heaphook.so for them (plus libinitialize_shutdown_mock.so for the
-# heaphook test); the same tags here. They stay manual until the heap hook is built with Bazel.
-REQUIRES_HEAPHOOK = ["requires_kernel_module", "requires_heaphook", "manual"]
+# CMake labels some tests "requires_kernel_module;requires_heaphook" and runs them with libagnocast_heaphook.so
+# preloaded (test_integration_agnocast_heaphook: only "requires_heaphook", with libinitialize_shutdown_mock.so
+# preloaded first): heaphook_test from @agnocast_heaphook does the same. --config=no-agnocast skips the
+# requires_kernel_module ones.
+# no-sandbox: Agnocast names shared memory after the process ID and the kernel module tracks host PIDs; Bazel's
+# Linux sandbox gives each test its own PID namespace, so concurrent sandboxed tests collide ("shm_open failed:
+# File exists").
+REQUIRES_HEAPHOOK = [
+    "requires_kernel_module",
+    "requires_heaphook",
+    "no-sandbox",
+]
 
 cc_test(
     name = "test_unit_agnocastlib",
@@ -354,7 +363,7 @@ cc_test(
     ] + TEST_DEPENDENCIES.values(),
 )
 
-cc_test(
+heaphook_test(
     name = "test_integration_message_filters_agnocastlib",
     srcs = [
         "test/integration/message_filters/test_subscriber.cpp",
@@ -396,7 +405,7 @@ cc_test(
     ] + TEST_DEPENDENCIES.values(),
 )
 
-cc_test(
+heaphook_test(
     name = "test_integration_agnocast_only_callback_isolated_executor_agnocastlib",
     timeout = "moderate",
     srcs = [
@@ -415,7 +424,7 @@ cc_test(
     ] + TEST_DEPENDENCIES.values(),
 )
 
-cc_test(
+heaphook_test(
     name = "test_integration_agnocast_node_agnocastlib",
     timeout = "short",
     srcs = [
@@ -434,7 +443,7 @@ cc_test(
     ] + TEST_DEPENDENCIES.values(),
 )
 
-cc_test(
+heaphook_test(
     name = "test_integration_node_graph_agnocastlib",
     timeout = "short",
     srcs = [
@@ -453,7 +462,7 @@ cc_test(
     ] + TEST_DEPENDENCIES.values(),
 )
 
-cc_test(
+heaphook_test(
     name = "test_integration_agnocast_publisher_counts_agnocastlib",
     timeout = "short",
     srcs = [
@@ -472,7 +481,7 @@ cc_test(
     ] + TEST_DEPENDENCIES.values(),
 )
 
-cc_test(
+heaphook_test(
     name = "test_integration_agnocast_parameter_service_agnocastlib",
     timeout = "moderate",
     srcs = [
@@ -491,7 +500,7 @@ cc_test(
     ] + TEST_DEPENDENCIES.values(),
 )
 
-cc_test(
+heaphook_test(
     name = "test_integration_diagnostic_updater_agnocastlib",
     timeout = "short",
     srcs = [
@@ -510,7 +519,7 @@ cc_test(
     ] + TEST_DEPENDENCIES.values(),
 )
 
-cc_test(
+heaphook_test(
     name = "test_integration_agnocast_epoll_update_agnocastlib",
     timeout = "moderate",
     srcs = [
@@ -529,7 +538,7 @@ cc_test(
     ] + TEST_DEPENDENCIES.values(),
 )
 
-cc_test(
+heaphook_test(
     name = "test_integration_agnocast_init_ok_shutdown_agnocastlib",
     timeout = "moderate",
     srcs = [
@@ -548,7 +557,7 @@ cc_test(
     ] + TEST_DEPENDENCIES.values(),
 )
 
-cc_test(
+heaphook_test(
     name = "test_integration_generic_subscription_agnocastlib",
     timeout = "short",
     srcs = [
@@ -568,7 +577,7 @@ cc_test(
     ] + TEST_DEPENDENCIES.values(),
 )
 
-cc_test(
+heaphook_test(
     name = "test_integration_generic_publisher_agnocastlib",
     timeout = "short",
     srcs = [
@@ -588,7 +597,7 @@ cc_test(
     ] + TEST_DEPENDENCIES.values(),
 )
 
-cc_test(
+heaphook_test(
     name = "test_integration_client_agnocastlib",
     timeout = "short",
     srcs = [
@@ -608,7 +617,7 @@ cc_test(
     ] + TEST_DEPENDENCIES.values(),
 )
 
-cc_test(
+heaphook_test(
     name = "test_integration_service_introspection_agnocastlib",
     timeout = "moderate",
     srcs = [
@@ -628,7 +637,7 @@ cc_test(
     ] + TEST_DEPENDENCIES.values(),
 )
 
-cc_test(
+heaphook_test(
     name = "test_integration_agnocast_heaphook",
     srcs = [
         "test/integration/test_agnocast_heaphook.cpp",
@@ -639,7 +648,8 @@ cc_test(
     dynamic_deps = [":test_dynamic_deps"],
     env = {"GTEST_DEATH_TEST_STYLE": "threadsafe"},
     local_defines = ros_local_defines(),
-    tags = ["requires_heaphook", "manual"],
+    preload = [":initialize_shutdown_mock"],
+    tags = ["requires_heaphook"],
     deps = [
         ":agnocast_library",
         "@googletest//:gtest_main",

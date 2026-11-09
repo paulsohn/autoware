@@ -48,6 +48,8 @@ common --run_env=ENABLE_AGNOCAST=1
 common --test_env=ENABLE_AGNOCAST=1
 common:no-agnocast --run_env=ENABLE_AGNOCAST=0
 common:no-agnocast --test_env=ENABLE_AGNOCAST=0
+# Tests that need /dev/agnocast (CMake label requires_kernel_module) cannot run there.
+test:no-agnocast --test_tag_filters=-requires_kernel_module
 common --test_env=DISPLAY
 common --test_env=XAUTHORITY
 common --test_env=WAYLAND_DISPLAY
