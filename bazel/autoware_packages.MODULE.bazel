@@ -289,3 +289,6 @@ local_path_override(module_name = "autoware_gyro_odometer", path = "src/core/aut
 
 bazel_dep(name = "autoware_ekf_localizer")
 local_path_override(module_name = "autoware_ekf_localizer", path = "src/core/autoware_core/localization/autoware_ekf_localizer")
+
+bazel_dep(name = "autoware_gnss_poser")
+local_path_override(module_name = "autoware_gnss_poser", path = "src/core/autoware_core/sensing/autoware_gnss_poser")

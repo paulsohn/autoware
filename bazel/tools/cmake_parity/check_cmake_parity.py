@@ -189,6 +189,7 @@ class CMake:
                               "DIRECTORY": str(path.parent)}.get(mode, a[1])
         elif name == "if":
             cond = " ".join(raw).replace('"', "")  # keys without quotes, however CMake quoted the operands
+            cond = re.sub(r"^BUILD_TESTING\s+AND\s+", "", cond)  # keep what else the condition tests
             if not TRIVIAL_IF.search(cond):
                 self.ifs.add(" ".join(cond.split()))
         elif name in ("ament_auto_add_library", "add_library") and "IMPORTED" not in a:

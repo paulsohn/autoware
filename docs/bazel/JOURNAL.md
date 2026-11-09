@@ -833,3 +833,20 @@ Issues (symptom → cause → fix):
 
 Lesson: name ported tests as CMake/ctest does (here `test_utils_test_..._launch.py`). Then nobody has to map
 names, and the parity check needs no record.
+
+## gnss_poser
+
+The pattern is unchanged: library `gnss_poser_node` and executable `gnss_poser`. Both tests are built by CMake only
+without Agnocast and run here on the ROS 2 backend.
+`bazel test @autoware_gnss_poser//...` → 2 pass (the characterization test takes about 24 s; CMake TIMEOUT 300 =
+"moderate").
+
+Issues (symptom → cause → fix):
+1. `GNSS_POSER_CONFIG_DIR="${CMAKE_CURRENT_SOURCE_DIR}/config"` is an absolute source path, which Bazel must not bake
+   in → the config goes in the test's `data`, and the define becomes the runfiles path relative to the test's
+   working directory (`<runfiles>/_main`): `"../%s/config" % repo_name()` (`"config"` in the main repo).
+2. `'TransformListener' is deprecated: Use rclcpp::node_interfaces::NodeInterfaces instead of NodeT` → Lyrical's
+   tf2_ros deprecates the `NodeT*` constructor → pass `*this` (converts to `NodeInterfaces`).
+3. Parity checker: `if(BUILD_TESTING AND NOT (... ENABLE_AGNOCAST ...))` counted as trivial because it contains
+   BUILD_TESTING, which hid the Agnocast condition → only a leading `BUILD_TESTING AND` is stripped, and the rest is
+   the key. Re-ran on all ported packages: nothing new.

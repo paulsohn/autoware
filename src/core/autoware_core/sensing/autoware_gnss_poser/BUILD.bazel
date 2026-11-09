@@ -1,0 +1,120 @@
+load("@autoware_agnocast_wrapper//:defs.bzl", "autoware_agnocast_wrapper_register_node")
+load("@autoware_cmake//:defs.bzl", "AUTOWARE_CXXOPTS", "AUTOWARE_DEFINES", "autoware_copts")
+load("@rosdistro//ament:defs.bzl", "ament_index")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps", "ros_local_defines")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+# Deliberate differences from CMakeLists.txt (checked by bazel/tools/cmake_parity):
+# cmake-diff if:NOT (DEFINED ENV{ENABLE_AGNOCAST} AND $ENV{ENABLE_AGNOCAST} STREQUAL 1): the tests, which CMake builds only without Agnocast, are built and run on the ROS 2 backend (ENABLE_AGNOCAST=0); PLAN.md.
+
+DEPENDENCIES = {
+    "@autoware_agnocast_wrapper//:autoware_agnocast_wrapper": "@autoware_agnocast_wrapper//:autoware_agnocast_wrapper_library",
+    "@autoware_geography_utils//:autoware_geography_utils": "@autoware_geography_utils//:autoware_geography_utils_library",
+    "@autoware_internal_debug_msgs//:cc_shared": "@autoware_internal_debug_msgs//:cc",
+    "@autoware_map_msgs//:cc_shared": "@autoware_map_msgs//:cc",
+    "@autoware_sensing_msgs//:cc_shared": "@autoware_sensing_msgs//:cc",
+    "@builtin_interfaces//:cc_shared": "@builtin_interfaces//:cc",
+    "@geographic_msgs//:cc_shared": "@geographic_msgs//:cc",
+    "@geometry_msgs//:cc_shared": "@geometry_msgs//:cc",
+    "@rclcpp//:rclcpp": "@rclcpp//:rclcpp_library",
+    "@rclcpp_components//:rclcpp_components": "@rclcpp_components//:rclcpp_components_library",
+    "@rosdistro//cc:geographiclib": "@rosdistro//cc:geographiclib_library",
+    "@sensor_msgs//:cc_shared": "@sensor_msgs//:cc",
+    "@tf2//:tf2": "@tf2//:tf2_library",
+    "@tf2_geometry_msgs//:tf2_geometry_msgs": "@tf2_geometry_msgs//:tf2_geometry_msgs_library",
+    "@tf2_ros//:tf2_ros": "@tf2_ros//:tf2_ros_library",
+}
+
+# Component library.
+cc_library(
+    name = "gnss_poser_node_library",
+    srcs = ["src/gnss_poser_node.cpp"],
+    hdrs = ["src/gnss_poser_node.hpp"],
+    copts = autoware_copts(),
+    cxxopts = AUTOWARE_CXXOPTS,
+    local_defines = ros_local_defines() + AUTOWARE_DEFINES,
+    deps = DEPENDENCIES.values() + ["@rosdistro//cc:boost.circular_buffer"],
+)
+
+cc_shared_library(
+    name = "gnss_poser_node",
+    dynamic_deps = DEPENDENCIES.keys(),
+    exports_filter = [":gnss_poser_node_library"],
+    deps = [":gnss_poser_node_library"],
+)
+
+autoware_agnocast_wrapper_register_node(
+    agnocast_executor = "AgnocastOnlyCallbackIsolatedExecutor",
+    component = ":gnss_poser_node",
+    data = ["@@//bazel/config:cyclonedds.xml"],
+    executable = "gnss_poser",
+    plugin = "autoware::gnss_poser::GNSSPoser",
+    ros2_executor = "SingleThreadedExecutor",
+)
+
+# share/autoware_gnss_poser/{config,launch} (INSTALL_TO_SHARE).
+ament_index(
+    name = "ament_index",
+    components = [":gnss_poser_component_record"],
+    data = glob([
+        "config/**",
+        "launch/**",
+    ]),
+    executables = [":gnss_poser"],
+    libraries = [":gnss_poser_node"],
+    package_xml = "package.xml",
+    deps = [":gnss_poser_autoware_node_plugin"],
+)
+
+# target_include_directories(<test> PRIVATE src)
+cc_library(
+    name = "src_headers",
+    testonly = True,
+    hdrs = glob(["src/*.hpp"]),
+    includes = ["src"],
+    visibility = ["//visibility:private"],
+)
+
+# The characterization test includes tf2_msgs/msg/tf_message.hpp (not in package.xml; CMake gets it transitively).
+TEST_DEPENDENCIES = {
+    "@tf2_msgs//:cc_shared": "@tf2_msgs//:cc",
+}
+
+collect_transitive_dynamic_deps(
+    name = "test_dynamic_deps",
+    dynamic_deps = [":gnss_poser_node"] + TEST_DEPENDENCIES.keys(),
+    visibility = ["//visibility:private"],
+)
+
+[
+    cc_test(
+        name = name,
+        srcs = [src],
+        copts = autoware_copts(),
+        cxxopts = AUTOWARE_CXXOPTS,
+        data = ["@@//bazel/config:cyclonedds.xml"] + glob(["config/**"]),
+        dynamic_deps = [":test_dynamic_deps"],
+        # Written for the ROS 2 backend (PLAN.md).
+        env = {"ENABLE_AGNOCAST": "0"},
+        local_defines = ros_local_defines() + AUTOWARE_DEFINES + defines,
+        timeout = timeout,
+        deps = [
+            ":gnss_poser_node_library",
+            ":src_headers",
+            "@rosdistro//cc:googletest",
+        ] + TEST_DEPENDENCIES.values(),
+    )
+    for name, src, defines, timeout in [
+        ("test_autoware_gnss_poser", "test/test_gnss_poser_node.cpp", [], None),
+        (
+            "test_autoware_gnss_poser_node_characterization",
+            "test/test_gnss_poser_node_characterization.cpp",
+            # CMake bakes in ${CMAKE_CURRENT_SOURCE_DIR}/config; here the runfiles copy, relative to the test's
+            # working directory (<runfiles>/_main).
+            ['GNSS_POSER_CONFIG_DIR=\\"../%s/config\\"' % repo_name() if repo_name() else 'GNSS_POSER_CONFIG_DIR=\\"config\\"'],
+            "moderate",  # TIMEOUT 300
+        ),
+    ]
+]
