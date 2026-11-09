@@ -1,0 +1,81 @@
+load("@autoware_cmake//:defs.bzl", "autoware_copts")
+load("@rosdistro//ament:defs.bzl", "ament_index")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps", "ros_local_defines")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
+load("@tensorrt//:defs.bzl", "TENSORRT_VERSION_MAJOR", "tensorrt_test_env")
+
+package(default_visibility = ["//visibility:public"])
+
+# Deliberate differences from CMakeLists.txt (checked by bazel/tools/cmake_parity):
+# cmake-diff if:NOT (CUDAToolkit_FOUND AND TENSORRT_FOUND): CUDA and TensorRT are always present (bazel/cuda.MODULE.bazel, @tensorrt).
+# cmake-diff if:TENSORRT_VERSION VERSION_LESS 10.0: TensorRT is pinned to 10.x (@tensorrt pins.bzl).
+# cmake-diff if:TARGET ${PROJECT_NAME}_test: ament_add_gtest creates no target without gtest; here the test always exists.
+
+DEPENDENCIES = {
+    "@rclcpp//:rclcpp": "@rclcpp//:rclcpp_library",
+}
+
+# The package sets its own flags (no autoware_package()): -Wall -Wextra -Wpedantic -Werror -Wno-deprecated-declarations
+# and C++17 (CXX_STANDARD 17).
+COPTS = autoware_copts() + ["-Wno-deprecated-declarations"]
+
+cc_library(
+    name = "autoware_tensorrt_common_library",
+    srcs = [
+        "src/profiler.cpp",
+        "src/tensorrt_common.cpp",
+    ],
+    hdrs = glob(["include/**/*.hpp"]),
+    copts = COPTS,
+    cxxopts = ["-std=c++17"],
+    includes = ["include"],
+    local_defines = ros_local_defines() + ["TENSORRT_VERSION_MAJOR=" + TENSORRT_VERSION_MAJOR],
+    deps = DEPENDENCIES.values() + [
+        "@cuda//:cuda_runtime",
+        "@tensorrt",
+    ],
+)
+
+cc_shared_library(
+    name = "autoware_tensorrt_common",
+    dynamic_deps = DEPENDENCIES.keys(),
+    exports_filter = [":autoware_tensorrt_common_library"],
+    deps = [":autoware_tensorrt_common_library"],
+)
+
+ament_index(
+    name = "ament_index",
+    libraries = [":autoware_tensorrt_common"],
+    package_xml = "package.xml",
+    deps = ["@autoware_cuda_dependency_meta//:ament_index"],
+)
+
+collect_transitive_dynamic_deps(
+    name = "test_dynamic_deps",
+    dynamic_deps = [":autoware_tensorrt_common"],
+    visibility = ["//visibility:private"],
+)
+
+cc_test(
+    name = "autoware_tensorrt_common_test",
+    timeout = "moderate",  # TIMEOUT 300
+    srcs = ["test/tensorrt_common_test.cpp"],
+    # target_compile_options(... PRIVATE -Wall ... -Werror) applies to the library only; the test has default flags.
+    cxxopts = ["-std=c++17"],
+    data = [
+        "test/data/dummy_network.onnx",
+        "@tensorrt//:runtime_libs",
+    ],
+    dynamic_deps = [":test_dynamic_deps"],
+    env = tensorrt_test_env(),
+    # CMake bakes in ${CMAKE_CURRENT_SOURCE_DIR}/test/data/...; here the runfiles copy, relative to the test's working
+    # directory (<runfiles>/_main).
+    local_defines = ros_local_defines() + [
+        'DUMMY_ONNX_PATH=\\"../%s/test/data/dummy_network.onnx\\"' % repo_name() if repo_name() else 'DUMMY_ONNX_PATH=\\"test/data/dummy_network.onnx\\"',
+    ],
+    deps = [
+        ":autoware_tensorrt_common_library",
+        "@autoware_cuda_utils",
+        "@rosdistro//cc:googletest",
+    ],
+)

@@ -3272,6 +3272,7 @@
     "https://bazel.ros.org/modules/rclcpp_components/0.0.0/MODULE.bazel": "353d3f4e140157b96a38c77123a2cff18d55154697f0ce7cf4d77770b86c72fa",
     "https://bazel.ros.org/modules/rclcpp_components/32.0.3-1.rcr.0/MODULE.bazel": "e181e1401d3aea16caaeb7ca98682c75c812799a423ac804e3f02696885aa099",
     "https://bazel.ros.org/modules/rclcpp_components/32.0.3-1.rcr.0/source.json": "a4fb41a3da9a2c7b955585e1083c81f044f323c3d0d91b55fa7a5dc287125468",
+    "https://bazel.ros.org/modules/rclcpp_lifecycle/0.0.0/MODULE.bazel": "c69d7d83884f181cb9b13b2b7239841217010bed57b9ad595d81018df9bf53ea",
     "https://bazel.ros.org/modules/rclcpp_lifecycle/32.0.3-1.rcr.0/MODULE.bazel": "77901c8fb86cf4dfe53a4a4cce5519547d6d7049e897c2b8d2aefbaad0e051b8",
     "https://bazel.ros.org/modules/rclcpp_lifecycle/32.0.3-1.rcr.0/source.json": "744bd35dfb8f5308cb663993d51d865b3bb29e963983bce09efea917552d96b0",
     "https://bazel.ros.org/modules/rclpy/0.0.0/MODULE.bazel": "bb4f8d7cdd16b420d85b85d1c3e92c59e24a49655b19c2baf957acf6fac77b5d",
@@ -6635,7 +6636,7 @@
     "@@rules_cuda+//cuda:extensions.bzl%toolchain": {
       "general": {
         "bzlTransitiveDigest": "CacIqMUU2g01KN0Y+W5whLTr9OZzya21lbu8ddhVNd4=",
-        "usagesDigest": "IgXllOZuWuoNpgdpnPSSNndeCDf9Y+9jC5y2a54a03c=",
+        "usagesDigest": "Bv6Lt81wyMWD2iUeKSwwRtsqcRm7t/napkyJCAUo+DI=",
         "recordedInputs": [
           "REPO_MAPPING:bazel_features+,bazel_features_globals bazel_features++version_extension+bazel_features_globals",
           "REPO_MAPPING:bazel_features+,bazel_features_version bazel_features++version_extension+bazel_features_version",
@@ -7774,6 +7775,31 @@
           "explicitRootModuleDirectDevDeps": [],
           "useAllRepos": "NO",
           "reproducible": false
+        }
+      }
+    },
+    "@@tensorrt+//:extensions.bzl%tensorrt": {
+      "general": {
+        "bzlTransitiveDigest": "hCHD1zsx1FFbulpAuDaFIoDC0WkSx39itKO1lcwfaQw=",
+        "usagesDigest": "BUmCpGUFsCU+sg11QnXl9xVYqfMDx9jz6wmLfd1k1Fc=",
+        "recordedInputs": [],
+        "generatedRepoSpecs": {
+          "tensorrt_aarch64": {
+            "repoRuleId": "@@tensorrt+//:extensions.bzl%_tensorrt_debs",
+            "attributes": {
+              "cpu": "aarch64"
+            }
+          },
+          "tensorrt_x86_64": {
+            "repoRuleId": "@@tensorrt+//:extensions.bzl%_tensorrt_debs",
+            "attributes": {
+              "cpu": "x86_64"
+            }
+          },
+          "tensorrt_paths": {
+            "repoRuleId": "@@tensorrt+//:extensions.bzl%_tensorrt_paths",
+            "attributes": {}
+          }
         }
       }
     },
