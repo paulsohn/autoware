@@ -1,4 +1,4 @@
-load("@agnocast_heaphook//:defs.bzl", "heaphook_test")
+load("@agnocast_heaphook//:defs.bzl", "AGNOCAST_TEST_TAGS", "heaphook_test")
 load("@autoware_cmake//:defs.bzl", "AUTOWARE_CXXOPTS", "AUTOWARE_DEFINES", "autoware_copts")
 load("@rosdistro//ament:defs.bzl", "ament_index")
 load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps", "ros_local_defines")
@@ -137,9 +137,9 @@ cc_test(
 )
 
 # Addition (not in CMake): the same test on the Agnocast backend, with the heap hook preloaded and the kernel module.
-# Upstream runs this gtest without the hook, so these cases were never run on this backend, and fail on it:
-# GenericPubSubMethod2Test.* call sub_node->get_rclcpp_node() unconditionally (throws in agnocast mode), and
-# GenericPubSubMethod1Test's two round trips receive nothing. Excluded here; to be reported upstream.
+# Upstream runs this gtest without the hook, so these cases were never run on this backend; they assume the ROS 2
+# backend (spin an rclcpp executor; Method2 calls get_rclcpp_node(), which throws in agnocast mode). The test target
+# above runs them on ROS 2; excluded here.
 AGNOCAST_BACKEND_EXCLUDED = [
     "GenericPubSubMethod1Test.MacroOnNodeRoundTrip",
     "GenericPubSubMethod1Test.MacroRoundTrip",
@@ -157,11 +157,7 @@ heaphook_test(
     dynamic_deps = [":test_dynamic_deps"],
     env = {"ENABLE_AGNOCAST": "1"},
     local_defines = ros_local_defines() + AUTOWARE_DEFINES,
-    tags = [
-        "no-sandbox",
-        "requires_heaphook",
-        "requires_kernel_module",
-    ],
+    tags = AGNOCAST_TEST_TAGS,
     deps = [
         ":autoware_agnocast_wrapper_library",
         ":test_headers",

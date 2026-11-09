@@ -7,6 +7,14 @@ LD_PRELOAD to the runfiles paths just before exec'ing the C++ test, so that wrap
 
 load("@rules_cc//cc:defs.bzl", "cc_binary")
 
+# Tags for tests that run on the Agnocast backend: they need /dev/agnocast (skipped by --config=no-agnocast) and run
+# unsandboxed (Agnocast names shared memory after the PID; the sandbox's PID namespace makes concurrent tests collide).
+AGNOCAST_TEST_TAGS = [
+    "no-sandbox",
+    "requires_heaphook",
+    "requires_kernel_module",
+]
+
 def _runfiles_path(file):
     # short_path is "../<repo>/<path>" for external files and "<path>" for the main repo.
     return file.short_path[3:] if file.short_path.startswith("../") else "_main/" + file.short_path
