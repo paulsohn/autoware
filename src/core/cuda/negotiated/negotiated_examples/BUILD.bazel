@@ -1,0 +1,95 @@
+load("@rclcpp_components//:defs.bzl", "rclcpp_components_register_node")
+load("@rosdistro//ament:defs.bzl", "ament_index")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps", "ros_local_defines")
+load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library", "cc_shared_library")
+
+package(default_visibility = ["//visibility:public"])
+
+# Not an autoware_package(): add_compile_options(-Wall -Wextra -Wpedantic) without -Werror, C++17.
+COPTS = [
+    "-Wall",
+    "-Wextra",
+    "-Wpedantic",
+]
+
+CXXOPTS = ["-std=c++17"]
+
+DEPENDENCIES = {
+    "@negotiated//:negotiated": "@negotiated//:negotiated_library",
+    "@rclcpp//:rclcpp": "@rclcpp//:rclcpp_library",
+    "@rclcpp_components//:rclcpp_components": "@rclcpp_components//:rclcpp_components_library",
+    "@std_msgs//:cc_shared": "@std_msgs//:cc",
+}
+
+# (library, source, executable, plugin): add_library + rclcpp_components_register_node.
+NODES = [
+    ("negotiated_sub_example1_node", "negotiated_sub_example1", "NegotiatedSubExample1"),
+    ("negotiated_sub_example2_node", "negotiated_sub_example2", "NegotiatedSubExample2"),
+    ("negotiated_sub_example3_node", "negotiated_sub_example3", "NegotiatedSubExample3"),
+    ("negotiated_pub_example1_node", "negotiated_pub_example1", "NegotiatedPubExample1"),
+    ("negotiated_pub_sub_pair_example1_node", "negotiated_pub_sub_pair_example1", "NegotiatedPubSubPairExample1"),
+    ("negotiated_pub_type_adapt_example1_node", "negotiated_pub_type_adapt_example1", "NegotiatedPubTypeAdaptExample1"),
+    ("negotiated_sub_type_adapt_example1_node", "negotiated_sub_type_adapt_example1", "NegotiatedSubTypeAdaptExample1"),
+    ("negotiated_pub_compatible_example1_node", "negotiated_pub_compatible_example1", "NegotiatedPubCompatibleExample1"),
+]
+
+[
+    (
+        cc_library(
+            name = lib + "_library",
+            srcs = [
+                "src/%s.cpp" % exe,
+                "src/example_type_info.hpp",
+            ],
+            copts = COPTS,
+            cxxopts = CXXOPTS,
+            local_defines = ros_local_defines(),
+            deps = DEPENDENCIES.values(),
+        ),
+        cc_shared_library(
+            name = lib,
+            dynamic_deps = DEPENDENCIES.keys(),
+            exports_filter = [":%s_library" % lib],
+            deps = [":%s_library" % lib],
+        ),
+        rclcpp_components_register_node(
+            name = exe,
+            component = ":" + lib,
+            data = ["@@//bazel/config:cyclonedds.xml"],
+            node_name = exe,
+            plugin = "negotiated_examples::" + plugin,
+        ),
+    )
+    for lib, exe, plugin in NODES
+]
+
+collect_transitive_dynamic_deps(
+    name = "lifecycle_dynamic_deps",
+    dynamic_deps = DEPENDENCIES.keys() + ["@rclcpp_lifecycle//:rclcpp_lifecycle"],
+    visibility = ["//visibility:private"],
+)
+
+# add_executable(negotiated_lifecycle_pub), installed to lib/negotiated_examples.
+cc_binary(
+    name = "negotiated_lifecycle_pub",
+    srcs = [
+        "src/example_type_info.hpp",
+        "src/negotiated_lifecycle_pub.cpp",
+    ],
+    copts = COPTS,
+    cxxopts = CXXOPTS,
+    data = ["@@//bazel/config:cyclonedds.xml"],
+    dynamic_deps = [":lifecycle_dynamic_deps"],
+    local_defines = ros_local_defines(),
+    deps = DEPENDENCIES.values() + ["@rclcpp_lifecycle//:rclcpp_lifecycle_library"],
+)
+
+# share/negotiated_examples/launch (install(DIRECTORY launch)).
+ament_index(
+    name = "ament_index",
+    components = [":%s_record" % exe for _, exe, _ in NODES],
+    data = glob(["launch/**"]),
+    executables = [":" + exe for _, exe, _ in NODES] + [":negotiated_lifecycle_pub"],
+    libraries = [":" + lib for lib, _, _ in NODES],
+    package_xml = "package.xml",
+)

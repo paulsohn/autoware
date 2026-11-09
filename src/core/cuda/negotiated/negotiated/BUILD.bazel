@@ -1,0 +1,77 @@
+load("@rosdistro//ament:defs.bzl", "ament_index")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps", "ros_local_defines")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+# Not an autoware_package(): add_compile_options(-Wall -Wextra -Wpedantic) without -Werror, C++17.
+COPTS = [
+    "-Wall",
+    "-Wextra",
+    "-Wpedantic",
+]
+
+CXXOPTS = ["-std=c++17"]
+
+DEPENDENCIES = {
+    "@negotiated_interfaces//:cc_shared": "@negotiated_interfaces//:cc",
+    "@rclcpp//:rclcpp": "@rclcpp//:rclcpp_library",
+}
+
+cc_library(
+    name = "negotiated_library",
+    srcs = [
+        "src/negotiated_publisher.cpp",
+        "src/negotiated_subscription.cpp",
+    ],
+    hdrs = glob(["include/negotiated/*.hpp"]),
+    copts = COPTS,
+    cxxopts = CXXOPTS,
+    includes = ["include"],
+    local_defines = ros_local_defines(),
+    deps = DEPENDENCIES.values(),
+)
+
+cc_shared_library(
+    name = "negotiated",
+    dynamic_deps = DEPENDENCIES.keys(),
+    exports_filter = [":negotiated_library"],
+    deps = [":negotiated_library"],
+)
+
+ament_index(
+    name = "ament_index",
+    libraries = [":negotiated"],
+    package_xml = "package.xml",
+)
+
+TEST_DEPENDENCIES = {
+    "@std_msgs//:cc_shared": "@std_msgs//:cc",
+}
+
+collect_transitive_dynamic_deps(
+    name = "test_dynamic_deps",
+    dynamic_deps = [":negotiated"] + TEST_DEPENDENCIES.keys(),
+    visibility = ["//visibility:private"],
+)
+
+[
+    cc_test(
+        name = name,
+        srcs = ["test/%s.cpp" % name],
+        copts = COPTS,
+        cxxopts = CXXOPTS,
+        data = ["@@//bazel/config:cyclonedds.xml"],
+        dynamic_deps = [":test_dynamic_deps"],
+        local_defines = ros_local_defines(),
+        deps = [
+            ":negotiated_library",
+            "@rosdistro//cc:googletest",
+        ] + TEST_DEPENDENCIES.values(),
+    )
+    for name in [
+        "test_combinations",
+        "test_negotiated_subscription",
+        "test_negotiated_publisher",
+    ]
+]

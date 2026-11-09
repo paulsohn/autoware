@@ -1216,3 +1216,12 @@ Issues (symptom → cause → fix):
 **Host dependency:** `libnvinfer*.so` NEED `libstdc++.so.6` and `libgcc_s.so.1`, which come from the host (Ubuntu
 always has them), not from Bazel. So "only the GPU driver comes from the host" does not hold for TensorRT; pin a
 libstdc++ for the runtime image (P4).
+
+## negotiated, negotiated_examples
+
+Plain ROS packages (no CUDA) under `src/core/cuda/negotiated`, needed by cuda_blackboard. They are not
+`autoware_package()`s, so the BUILD files use their own `-Wall -Wextra -Wpedantic` (no `-Werror`), C++17.
+negotiated_examples has 8 component libraries registered with `rclcpp_components_register_node`, plus the plain
+executable `negotiated_lifecycle_pub`. Ported by a parallel session; committed here after review.
+`bazel test @negotiated//... @negotiated_examples//...` → 3 test binaries (12 + 32 + 32 cases) pass. Parity 0 open,
+0 recorded on both. No source changes needed.
