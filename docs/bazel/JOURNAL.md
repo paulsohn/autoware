@@ -1053,3 +1053,25 @@ through the runfiles ament index: the log shows "The scene plugin
 
 Parity checker: `pluginlib_export_plugin_description_file(<category> <xml>)` must appear as an `ament_index`
 rule with that `plugin_category` and the xml in `plugins` (key `plugin-export:<category>:<xml>`).
+
+## motion_velocity_obstacle_stop_module, motion_velocity_planner
+
+- obstacle_stop_module is a pluginlib plugin (`plugin_category = "autoware_motion_velocity_planner"`), with one
+  gtest over 7 files.
+- motion_velocity_planner: component `..._lib` (DIRECTORY src) registered with the agnocast wrapper
+  (`CallbackIsolatedAgnocastExecutor` / SingleThreadedExecutor). `INSTALL_TO_SHARE` also covers
+  `test_config`, `test_data` and `test_map`.
+
+`bazel test` → obstacle_stop_module 1 pass, motion_velocity_planner 2 pass (`request_load_plugin` /
+`request_unload_plugin` load ObstacleStopModule through pluginlib). Parity 0 open on both; 1 record each.
+
+Issues (symptom → cause → fix):
+1. `module grid_map_core@0.0.0 not found in registries` → grid_map is not in the RCR, and neither package includes
+   it; package.xml declares it, but the only matches are `occupancy_grid_map` identifiers → left out, recorded as
+   `cmake-diff dep:grid_map_core` in both packages.
+2. motion_velocity_planner's `test_node` loads the ObstacleStopModule plugin, but package.xml does not declare
+   obstacle_stop_module; colcon finds it in the shared install tree. In Bazel it is an explicit test-only
+   dependency: `bazel_dep` plus its `:ament_index` in the test's `data`. There is no cycle, because the module
+   depends only on motion_velocity_planner_common.
+3. The test's member callbacks bound with `std::bind` take non-const `SharedPtr` (deprecated in rclcpp 32) →
+   `ConstSharedPtr`.

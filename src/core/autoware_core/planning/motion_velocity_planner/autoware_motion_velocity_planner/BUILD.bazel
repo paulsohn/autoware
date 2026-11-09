@@ -1,0 +1,152 @@
+load("@autoware_agnocast_wrapper//:defs.bzl", "autoware_agnocast_wrapper_register_node")
+load("@autoware_cmake//:defs.bzl", "AUTOWARE_CXXOPTS", "AUTOWARE_DEFINES", "autoware_copts")
+load("@rosdistro//ament:defs.bzl", "ament_index")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps", "ros_local_defines")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+# Deliberate differences from CMakeLists.txt (checked by bazel/tools/cmake_parity):
+# cmake-diff dep:grid_map_core: declared in package.xml, but no source of this package includes grid_map; it is not in the RCR either.
+
+DEPENDENCIES = {
+    "@autoware_agnocast_wrapper//:autoware_agnocast_wrapper": "@autoware_agnocast_wrapper//:autoware_agnocast_wrapper_library",
+    "@autoware_internal_debug_msgs//:cc_shared": "@autoware_internal_debug_msgs//:cc",
+    "@autoware_internal_planning_msgs//:cc_shared": "@autoware_internal_planning_msgs//:cc",
+    "@autoware_map_msgs//:cc_shared": "@autoware_map_msgs//:cc",
+    "@autoware_motion_utils//:autoware_motion_utils": "@autoware_motion_utils//:autoware_motion_utils_library",
+    "@autoware_motion_velocity_planner_common//:autoware_motion_velocity_planner_common_lib": "@autoware_motion_velocity_planner_common//:autoware_motion_velocity_planner_common_lib_library",
+    "@autoware_perception_msgs//:cc_shared": "@autoware_perception_msgs//:cc",
+    "@autoware_planning_factor_interface//:autoware_planning_factor_interface": "@autoware_planning_factor_interface//:autoware_planning_factor_interface_library",
+    "@autoware_planning_msgs//:cc_shared": "@autoware_planning_msgs//:cc",
+    "@autoware_utils_debug//:autoware_utils_debug": "@autoware_utils_debug//:autoware_utils_debug_library",
+    "@autoware_utils_geometry//:autoware_utils_geometry": "@autoware_utils_geometry//:autoware_utils_geometry_library",
+    "@autoware_utils_logging//:autoware_utils_logging": "@autoware_utils_logging//:autoware_utils_logging_library",
+    "@autoware_utils_pcl//:autoware_utils_pcl": "@autoware_utils_pcl//:autoware_utils_pcl_library",
+    "@autoware_utils_rclcpp//:autoware_utils_rclcpp": "@autoware_utils_rclcpp//:autoware_utils_rclcpp_library",
+    "@autoware_utils_system//:autoware_utils_system": "@autoware_utils_system//:autoware_utils_system_library",
+    "@autoware_velocity_smoother//:smoother": "@autoware_velocity_smoother//:smoother_library",
+    "@geometry_msgs//:cc_shared": "@geometry_msgs//:cc",
+    "@lanelet2_core//:lanelet2_core": "@lanelet2_core//:lanelet2_core_library",
+    "@lanelet2_routing//:lanelet2_routing": "@lanelet2_routing//:lanelet2_routing_library",
+    "@lanelet2_traffic_rules//:lanelet2_traffic_rules": "@lanelet2_traffic_rules//:lanelet2_traffic_rules_library",
+    "@nav_msgs//:cc_shared": "@nav_msgs//:cc",
+    "@pcl_conversions//:pcl_conversions": "@pcl_conversions//:pcl_conversions_library",
+    "@pluginlib//:pluginlib": "@pluginlib//:pluginlib_library",
+    "@rcl_interfaces//:cc_shared": "@rcl_interfaces//:cc",
+    "@rclcpp//:rclcpp": "@rclcpp//:rclcpp_library",
+    "@rclcpp_components//:rclcpp_components": "@rclcpp_components//:rclcpp_components_library",
+    "@rosdistro//cc:pcl": "@rosdistro//cc:pcl_library",
+    "@sensor_msgs//:cc_shared": "@sensor_msgs//:cc",
+    "@tf2//:tf2": "@tf2//:tf2_library",
+    "@tf2_eigen//:tf2_eigen": "@tf2_eigen//:tf2_eigen_library",
+    "@tf2_geometry_msgs//:tf2_geometry_msgs": "@tf2_geometry_msgs//:tf2_geometry_msgs_library",
+    "@tf2_ros//:tf2_ros": "@tf2_ros//:tf2_ros_library",
+    "@visualization_msgs//:cc_shared": "@visualization_msgs//:cc",
+}
+
+# autoware_test_utils' PUBLIC -Wno-deprecated-declarations reaches these targets in CMake through
+# autoware_velocity_smoother -> autoware_planning_test_manager (as in path_generator).
+COPTS = autoware_copts() + ["-Wno-deprecated-declarations"]
+
+THIRD_PARTY = [
+    "@rosdistro//cc:boost.geometry",
+    "@rosdistro//cc:eigen",
+]
+
+# Component library (ament_auto_add_library(... DIRECTORY src)).
+cc_library(
+    name = "autoware_motion_velocity_planner_lib_library",
+    srcs = glob([
+        "src/**/*.cpp",
+        "src/**/*.hpp",
+    ]),
+    copts = COPTS,
+    cxxopts = AUTOWARE_CXXOPTS,
+    local_defines = ros_local_defines() + AUTOWARE_DEFINES,
+    deps = DEPENDENCIES.values() + THIRD_PARTY,
+)
+
+cc_shared_library(
+    name = "autoware_motion_velocity_planner_lib",
+    dynamic_deps = DEPENDENCIES.keys(),
+    exports_filter = [":autoware_motion_velocity_planner_lib_library"],
+    deps = [":autoware_motion_velocity_planner_lib_library"],
+)
+
+autoware_agnocast_wrapper_register_node(
+    agnocast_executor = "CallbackIsolatedAgnocastExecutor",
+    component = ":autoware_motion_velocity_planner_lib",
+    data = ["@@//bazel/config:cyclonedds.xml"],
+    executable = "autoware_motion_velocity_planner_node",
+    plugin = "autoware::motion_velocity_planner::MotionVelocityPlannerNode",
+    ros2_executor = "SingleThreadedExecutor",
+)
+
+# share/autoware_motion_velocity_planner/{launch,config,test_config,test_data,test_map} (INSTALL_TO_SHARE).
+ament_index(
+    name = "ament_index",
+    components = [":autoware_motion_velocity_planner_node_component_record"],
+    data = glob([
+        "config/**",
+        "launch/**",
+        "test_config/**",
+        "test_data/**",
+        "test_map/**",
+    ]),
+    executables = [":autoware_motion_velocity_planner_node"],
+    libraries = [":autoware_motion_velocity_planner_lib"],
+    package_xml = "package.xml",
+    deps = [":autoware_motion_velocity_planner_node_autoware_node_plugin"],
+)
+
+# The tests include "../src/....hpp".
+cc_library(
+    name = "src_headers",
+    testonly = True,
+    hdrs = glob(["src/*.hpp"]),
+    visibility = ["//visibility:private"],
+)
+
+TEST_DEPENDENCIES = {
+    "@ament_index_cpp//:ament_index_cpp": "@ament_index_cpp//:ament_index_cpp_library",
+    "@autoware_test_utils//:autoware_test_utils": "@autoware_test_utils//:autoware_test_utils_library",
+    "@builtin_interfaces//:cc_shared": "@builtin_interfaces//:cc",
+    "@rosdistro//cc:yaml-cpp": "@rosdistro//cc:yaml-cpp_library",
+    "@tf2_msgs//:cc_shared": "@tf2_msgs//:cc",
+}
+
+collect_transitive_dynamic_deps(
+    name = "test_dynamic_deps",
+    dynamic_deps = [":autoware_motion_velocity_planner_lib"] + TEST_DEPENDENCIES.keys(),
+    visibility = ["//visibility:private"],
+)
+
+[
+    cc_test(
+        name = name,
+        srcs = [src],
+        copts = COPTS,
+        cxxopts = AUTOWARE_CXXOPTS,
+        data = [
+            ":ament_index",
+            "@@//bazel/config:cyclonedds.xml",
+            "@autoware_test_utils//:ament_index",
+            # test_node loads the ObstacleStopModule plugin; not in package.xml (colcon finds it in the install tree).
+            "@autoware_motion_velocity_obstacle_stop_module//:ament_index",
+        ],
+        dynamic_deps = [":test_dynamic_deps"],
+        # Written for the ROS 2 backend (PLAN.md).
+        env = {"ENABLE_AGNOCAST": "0"},
+        local_defines = ros_local_defines() + AUTOWARE_DEFINES,
+        deps = [
+            ":autoware_motion_velocity_planner_lib_library",
+            ":src_headers",
+            "@rosdistro//cc:googletest",
+        ] + TEST_DEPENDENCIES.values() + THIRD_PARTY,
+    )
+    for name, src in [
+        ("test_node", "test/test_node.cpp"),
+        ("test_node_utils", "test/test_node_utils.cpp"),
+    ]
+]

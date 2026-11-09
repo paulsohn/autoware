@@ -343,3 +343,9 @@ local_path_override(module_name = "autoware_behavior_velocity_planner", path = "
 
 bazel_dep(name = "autoware_behavior_velocity_stop_line_module")
 local_path_override(module_name = "autoware_behavior_velocity_stop_line_module", path = "src/core/autoware_core/planning/behavior_velocity_planner/autoware_behavior_velocity_stop_line_module")
+
+bazel_dep(name = "autoware_motion_velocity_obstacle_stop_module")
+local_path_override(module_name = "autoware_motion_velocity_obstacle_stop_module", path = "src/core/autoware_core/planning/motion_velocity_planner/autoware_motion_velocity_obstacle_stop_module")
+
+bazel_dep(name = "autoware_motion_velocity_planner")
+local_path_override(module_name = "autoware_motion_velocity_planner", path = "src/core/autoware_core/planning/motion_velocity_planner/autoware_motion_velocity_planner")
