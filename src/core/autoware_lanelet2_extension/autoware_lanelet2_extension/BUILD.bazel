@@ -1,0 +1,102 @@
+load("@autoware_cmake//:defs.bzl", "AUTOWARE_CXXOPTS", "AUTOWARE_DEFINES", "autoware_copts")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps", "ros_local_defines")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+# Based on the RCR overlay for 0.7.2; target names kept identical so RCR modules that depend on this one still work.
+
+DEPENDENCIES = {
+    "@autoware_map_msgs//:cc_shared": "@autoware_map_msgs//:cc",
+    "@autoware_planning_msgs//:cc_shared": "@autoware_planning_msgs//:cc",
+    "@geometry_msgs//:cc_shared": "@geometry_msgs//:cc",
+    "@lanelet2_core//:lanelet2_core": "@lanelet2_core//:lanelet2_core_library",
+    "@lanelet2_io//:lanelet2_io": "@lanelet2_io//:lanelet2_io_library",
+    "@lanelet2_projection//:lanelet2_projection": "@lanelet2_projection//:lanelet2_projection_library",
+    "@lanelet2_routing//:lanelet2_routing": "@lanelet2_routing//:lanelet2_routing_library",
+    "@lanelet2_traffic_rules//:lanelet2_traffic_rules": "@lanelet2_traffic_rules//:lanelet2_traffic_rules_library",
+    "@lanelet2_validation//:lanelet2_validation": "@lanelet2_validation//:lanelet2_validation_library",
+    "@rclcpp//:rclcpp": "@rclcpp//:rclcpp_library",
+    "@rosdistro//cc:boost.serialization_shared": "@rosdistro//cc:boost.serialization_library",
+    "@rosdistro//cc:geographiclib": "@rosdistro//cc:geographiclib_library",
+    "@rosdistro//cc:pugixml": "@rosdistro//cc:pugixml_library",
+    "@tf2//:tf2": "@tf2//:tf2_library",
+    "@tf2_geometry_msgs//:tf2_geometry_msgs": "@tf2_geometry_msgs//:tf2_geometry_msgs_library",
+    "@visualization_msgs//:cc_shared": "@visualization_msgs//:cc",
+}
+
+# ament_auto_add_library(autoware_lanelet2_extension_lib SHARED ...). CMake also passes
+# -Wno-error=maybe-uninitialized, a GCC-only warning (clang would reject the unknown flag).
+cc_library(
+    name = "autoware_lanelet2_extension_lib_library",
+    srcs = [
+        "lib/autoware_osm_parser.cpp",
+        "lib/autoware_traffic_light.cpp",
+        "lib/autoware_traffic_rules.cpp",
+        "lib/bus_stop_area.cpp",
+        "lib/crosswalk.cpp",
+        "lib/deprecated.cpp",
+        "lib/deprecated.hpp",
+        "lib/detection_area.cpp",
+        "lib/landmark.cpp",
+        "lib/message_conversion.cpp",
+        "lib/mgrs_projector.cpp",
+        "lib/no_parking_area.cpp",
+        "lib/no_stopping_area.cpp",
+        "lib/query.cpp",
+        "lib/road_marking.cpp",
+        "lib/roundabout.cpp",
+        "lib/route_checker.cpp",
+        "lib/speed_bump.cpp",
+        "lib/transverse_mercator_projector.cpp",
+        "lib/utilities.cpp",
+        "lib/virtual_traffic_light.cpp",
+        "lib/visualization.cpp",
+    ],
+    hdrs = glob(["include/**/*.hpp"]),
+    copts = autoware_copts(),
+    cxxopts = AUTOWARE_CXXOPTS,
+    local_defines = ros_local_defines() + AUTOWARE_DEFINES,
+    includes = ["include"],
+    deps = DEPENDENCIES.values() + [
+        "@rosdistro//cc:boost.optional",
+        "@rosdistro//cc:boost.variant",
+        "@rosdistro//cc:eigen",
+    ],
+    # Regulatory elements and traffic rules register themselves through static initializers.
+    alwayslink = True,
+)
+
+cc_shared_library(
+    name = "autoware_lanelet2_extension_lib",
+    dynamic_deps = DEPENDENCIES.keys(),
+    exports_filter = [":autoware_lanelet2_extension_lib_library"],
+    deps = [":autoware_lanelet2_extension_lib_library"],
+)
+
+collect_transitive_dynamic_deps(
+    name = "test_dynamic_deps",
+    dynamic_deps = [":autoware_lanelet2_extension_lib"],
+    visibility = ["//visibility:private"],
+)
+
+[cc_test(
+    name = name,
+    srcs = ["test/src/{}.cpp".format(src)] + (["lib/deprecated.hpp"] if src == "test_normalize_radian" else []),
+    copts = autoware_copts(),
+    cxxopts = AUTOWARE_CXXOPTS,
+    local_defines = ros_local_defines() + AUTOWARE_DEFINES,
+    data = ["@@//bazel/config:cyclonedds.xml"],
+    dynamic_deps = [":test_dynamic_deps"],
+    deps = [
+        ":autoware_lanelet2_extension_lib_library",
+        "@rosdistro//cc:googletest",
+    ],
+) for name, src in {
+    "normalize-radian": "test_normalize_radian",
+    "projector-test": "test_projector",
+    "query-test": "test_query",
+    "regulatory_elements-test": "test_regulatory_elements",
+    "route-test": "test_route_checker",
+    "utilities-test": "test_utilities",
+}.items()]

@@ -1,0 +1,9 @@
+module(name = "autoware_pyplot")
+
+bazel_dep(name = "autoware_cmake", version = "0.0.0")
+bazel_dep(name = "rosdistro", version = "0.0.0")
+bazel_dep(name = "rules_cc", version = "0.2.26.rcr.0")
+bazel_dep(name = "rules_python", version = "2.4.1")
+
+pip_ros = use_extension("@rosdistro//python:defs.bzl", "pip_ros")
+use_repo(pip_ros, "pip_ros")

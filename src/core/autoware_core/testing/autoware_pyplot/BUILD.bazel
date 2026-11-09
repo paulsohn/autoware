@@ -1,0 +1,39 @@
+load("@autoware_cmake//:defs.bzl", "AUTOWARE_CXXOPTS", "AUTOWARE_DEFINES", "autoware_copts")
+load("@rosdistro//cc:defs.bzl", "ros_local_defines")
+load("@rules_cc//cc:defs.bzl", "cc_library")
+load(":defs.bzl", "pyplot_test")
+
+package(default_visibility = ["//visibility:public"])
+
+exports_files([
+    "bazel/sitecustomize.py",
+    "defs.bzl",
+])
+
+# CMake: STATIC library (-fPIC), linked against libpython and pybind11::embed. Only tests and examples use it.
+cc_library(
+    name = "autoware_pyplot",
+    srcs = glob(["src/*.cpp"]),
+    hdrs = glob(["include/**/*.hpp"]),
+    copts = autoware_copts(),
+    cxxopts = AUTOWARE_CXXOPTS,
+    local_defines = ros_local_defines() + AUTOWARE_DEFINES,
+    includes = ["include"],
+    deps = [
+        "@rosdistro//cc:pybind11",
+        "@rules_python//python/cc:current_py_cc_libs",
+    ],
+)
+
+# Runs with the hermetic Python and matplotlib (@pip_ros), see defs.bzl.
+pyplot_test(
+    name = "test_autoware_pyplot",
+    srcs = ["test/test_pyplot.cpp"],
+    copts = autoware_copts(),
+    cxxopts = AUTOWARE_CXXOPTS,
+    local_defines = ros_local_defines() + AUTOWARE_DEFINES,
+    deps = [
+        ":autoware_pyplot",
+        "@rosdistro//cc:googletest",
+    ],
+)
