@@ -1,0 +1,54 @@
+load("@autoware_cmake//:defs.bzl", "AUTOWARE_CXXOPTS", "AUTOWARE_DEFINES", "autoware_copts")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps", "ros_local_defines")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+DEPENDENCIES = {
+    "@autoware_lanelet2_extension//:autoware_lanelet2_extension_lib": "@autoware_lanelet2_extension//:autoware_lanelet2_extension_lib_library",
+    "@autoware_map_msgs//:cc_shared": "@autoware_map_msgs//:cc",
+    "@geographic_msgs//:cc_shared": "@geographic_msgs//:cc",
+    "@geometry_msgs//:cc_shared": "@geometry_msgs//:cc",
+    "@lanelet2_io//:lanelet2_io": "@lanelet2_io//:lanelet2_io_library",
+    "@lanelet2_projection//:lanelet2_projection": "@lanelet2_projection//:lanelet2_projection_library",
+    "@rosdistro//cc:geographiclib": "@rosdistro//cc:geographiclib_library",
+}
+
+cc_library(
+    name = "autoware_geography_utils_library",
+    srcs = glob(["src/*.cpp"]),
+    hdrs = glob(["include/**/*.hpp"]),
+    copts = autoware_copts(),
+    cxxopts = AUTOWARE_CXXOPTS,
+    local_defines = ros_local_defines() + AUTOWARE_DEFINES,
+    includes = ["include"],
+    deps = DEPENDENCIES.values() + [
+        "@rosdistro//cc:eigen",
+    ],
+)
+
+cc_shared_library(
+    name = "autoware_geography_utils",
+    dynamic_deps = DEPENDENCIES.keys(),
+    exports_filter = [":autoware_geography_utils_library"],
+    deps = [":autoware_geography_utils_library"],
+)
+
+collect_transitive_dynamic_deps(
+    name = "test_dynamic_deps",
+    dynamic_deps = [":autoware_geography_utils"],
+    visibility = ["//visibility:private"],
+)
+
+cc_test(
+    name = "test_autoware_geography_utils",
+    srcs = glob(["test/*.cpp"]),
+    copts = autoware_copts(),
+    cxxopts = AUTOWARE_CXXOPTS,
+    local_defines = ros_local_defines() + AUTOWARE_DEFINES,
+    data = ["@@//bazel/config:cyclonedds.xml"],
+    dynamic_deps = [":test_dynamic_deps"],
+    deps = [":autoware_geography_utils_library"] + [
+        "@googletest//:gtest",
+    ],
+)

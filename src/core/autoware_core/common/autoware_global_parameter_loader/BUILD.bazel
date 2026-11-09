@@ -1,0 +1,12 @@
+load("@rosdistro//ament:defs.bzl", "ament_index")
+
+package(default_visibility = ["//visibility:public"])
+
+# No code: share/autoware_global_parameter_loader/launch (INSTALL_TO_SHARE). Its launch files use
+# autoware_vehicle_info_utils at run time.
+ament_index(
+    name = "ament_index",
+    data = glob(["launch/**"]),
+    package_xml = "package.xml",
+    deps = ["@autoware_vehicle_info_utils//:ament_index"],
+)

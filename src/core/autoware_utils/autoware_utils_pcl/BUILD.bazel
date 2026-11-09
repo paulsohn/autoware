@@ -5,6 +5,7 @@ load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
 package(default_visibility = ["//visibility:public"])
 
 DEPENDENCIES = {
+    "@rosdistro//cc:pcl": "@rosdistro//cc:pcl_library",
     "@autoware_utils_tf//:autoware_utils_tf": "@autoware_utils_tf//:autoware_utils_tf_library",
     "@pcl_conversions//:pcl_conversions": "@pcl_conversions//:pcl_conversions_library",
     "@rclcpp//:rclcpp": "@rclcpp//:rclcpp_library",
@@ -20,10 +21,9 @@ cc_library(
     copts = autoware_copts(),
     cxxopts = AUTOWARE_CXXOPTS,
     local_defines = ros_local_defines() + AUTOWARE_DEFINES,
-    # Headers use only pcl_conversions and PCL common; pcl_ros (in package.xml) is not needed here.
+    # Headers use only pcl_conversions and PCL (shared, as the RCR links it); pcl_ros (in package.xml) is not needed.
     deps = DEPENDENCIES.values() + [
         "@rosdistro//cc:eigen",
-        "@rosdistro//cc:pcl_common",
     ],
 )
 

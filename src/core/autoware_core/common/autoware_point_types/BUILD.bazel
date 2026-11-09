@@ -5,6 +5,7 @@ load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
 package(default_visibility = ["//visibility:public"])
 
 DEPENDENCIES = {
+    "@rosdistro//cc:pcl": "@rosdistro//cc:pcl_library",
     "@sensor_msgs//:cc_shared": "@sensor_msgs//:cc",
 }
 
@@ -17,7 +18,6 @@ cc_library(
     includes = ["include"],
     deps = DEPENDENCIES.values() + [
         "@point_cloud_msg_wrapper",
-        "@rosdistro//cc:pcl_common",
     ],
 )
 

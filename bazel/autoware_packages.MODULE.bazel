@@ -175,3 +175,21 @@ local_path_override(module_name = "autoware_testing", path = "src/core/autoware_
 
 bazel_dep(name = "autoware_interface_spec_lint")
 local_path_override(module_name = "autoware_interface_spec_lint", path = "src/core/autoware_core/common/autoware_interface_spec_lint")
+
+bazel_dep(name = "autoware_motion_utils")
+local_path_override(module_name = "autoware_motion_utils", path = "src/core/autoware_core/common/autoware_motion_utils")
+
+bazel_dep(name = "autoware_geography_utils")
+local_path_override(module_name = "autoware_geography_utils", path = "src/core/autoware_core/common/autoware_geography_utils")
+
+bazel_dep(name = "autoware_marker_utils")
+local_path_override(module_name = "autoware_marker_utils", path = "src/core/autoware_core/common/autoware_marker_utils")
+
+bazel_dep(name = "autoware_object_recognition_utils")
+local_path_override(module_name = "autoware_object_recognition_utils", path = "src/core/autoware_core/common/autoware_object_recognition_utils")
+
+bazel_dep(name = "autoware_component_interface_utils")
+local_path_override(module_name = "autoware_component_interface_utils", path = "src/core/autoware_core/common/autoware_component_interface_utils")
+
+bazel_dep(name = "autoware_global_parameter_loader")
+local_path_override(module_name = "autoware_global_parameter_loader", path = "src/core/autoware_core/common/autoware_global_parameter_loader")
