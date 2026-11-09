@@ -251,7 +251,8 @@ class CMake:
                         break
                     names.append(x)
                 self.installed_targets |= set(names)
-            elif a[0] == "DIRECTORY" and dest in ("include", "include/${PROJECT_NAME}") and items == ["include/"]:
+            elif a[0] == "DIRECTORY" and dest in ("include", "include/" + self.vars.get("PROJECT_NAME", "")) \
+                    and items in (["include/"], ["include"]):
                 pass  # headers: exported by the cc_library (install tree: P4)
             elif a[0] == "DIRECTORY" and (dest == share or all(dest == f"{share}/{x.rstrip('/')}" for x in items)):
                 self.share |= {x.rstrip("/") for x in items}
