@@ -1,0 +1,118 @@
+load("@rosdistro//ament:defs.bzl", "ament_index")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps", "ros_local_defines")
+load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library", "cc_shared_library", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+DEPENDENCIES = {
+    "@agnocast_cie_config_msgs//:cc_shared": "@agnocast_cie_config_msgs//:cc",
+    "@rclcpp//:rclcpp": "@rclcpp//:rclcpp_library",
+    "@rosdistro//cc:yaml-cpp": "@rosdistro//cc:yaml-cpp_library",
+}
+
+# Agnocast's own flags (not autoware_package()). CMake sets no C++ standard; GCC's default is C++17.
+COPTS = [
+    "-Wall",
+    "-Wextra",
+    "-Wpedantic",
+    "-Werror=switch",
+]
+
+CXXOPTS = ["-std=c++17"]
+
+# STATIC in CMake.
+cc_library(
+    name = "agnocast_thread_configurator_core",
+    srcs = [
+        "src/sched_policy.cpp",
+        "src/startup_checks.cpp",
+        "src/system_scan.cpp",
+        "src/thread_config.cpp",
+    ],
+    hdrs = glob(["include/**/*.hpp"]),
+    copts = COPTS,
+    cxxopts = CXXOPTS,
+    local_defines = ros_local_defines(),
+    includes = ["include"],
+    deps = ["@rosdistro//cc:yaml-cpp_library"],
+)
+
+cc_library(
+    name = "agnocast_thread_configurator_library",
+    srcs = [
+        "src/announcement_sources.cpp",
+        "src/non_ros_thread_ipc.cpp",
+        "src/util.cpp",
+    ],
+    hdrs = glob(["include/**/*.hpp"]),
+    copts = COPTS,
+    cxxopts = CXXOPTS,
+    local_defines = ros_local_defines(),
+    includes = ["include"],
+    deps = DEPENDENCIES.values(),
+)
+
+cc_shared_library(
+    name = "agnocast_thread_configurator",
+    dynamic_deps = DEPENDENCIES.keys(),
+    exports_filter = [":agnocast_thread_configurator_library"],
+    deps = [":agnocast_thread_configurator_library"],
+)
+
+collect_transitive_dynamic_deps(
+    name = "dynamic_deps",
+    dynamic_deps = [":agnocast_thread_configurator"],
+    visibility = ["//visibility:private"],
+)
+
+[cc_binary(
+    name = name,
+    srcs = srcs,
+    copts = COPTS,
+    cxxopts = CXXOPTS,
+    data = ["@@//bazel/config:cyclonedds.xml"],
+    dynamic_deps = [":dynamic_deps"],
+    local_defines = ros_local_defines(),
+    deps = [
+        ":agnocast_thread_configurator_core",
+        ":agnocast_thread_configurator_library",
+    ],
+) for name, srcs in {
+    "prerun_node": [
+        "src/prerun_node.cpp",
+        "src/prerun_node_main.cpp",
+    ],
+    "thread_configurator_node": [
+        "src/main.cpp",
+        "src/prerun_node.cpp",
+        "src/thread_configurator_node.cpp",
+    ],
+}.items()]
+
+# install(DIRECTORY launch/ DESTINATION share/${PROJECT_NAME}/launch)
+ament_index(
+    name = "ament_index",
+    data = glob(["launch/**"]),
+    executables = [
+        ":prerun_node",
+        ":thread_configurator_node",
+    ],
+    libraries = [":agnocast_thread_configurator"],
+    package_xml = "package.xml",
+)
+
+[cc_test(
+    name = name,
+    srcs = ["test/{}.cpp".format(name)],
+    copts = COPTS,
+    cxxopts = CXXOPTS,
+    dynamic_deps = [":dynamic_deps"],
+    local_defines = ros_local_defines(),
+    deps = [lib, "@rosdistro//cc:googletest"],
+) for name, lib in {
+    "test_non_ros_thread_ipc": ":agnocast_thread_configurator_library",
+    "test_sched_policy": ":agnocast_thread_configurator_core",
+    "test_startup_checks": ":agnocast_thread_configurator_core",
+    "test_system_scan": ":agnocast_thread_configurator_core",
+    "test_thread_config": ":agnocast_thread_configurator_core",
+}.items()]

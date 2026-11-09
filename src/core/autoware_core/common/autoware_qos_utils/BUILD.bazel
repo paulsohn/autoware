@@ -4,9 +4,6 @@ load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library")
 
 package(default_visibility = ["//visibility:public"])
 
-# Deliberate differences from CMakeLists.txt (checked by bazel/tools/cmake_parity):
-# cmake-diff install:DIRECTORY:include->include: headers are exported by the cc_library; installing them is part of the install tree (P4).
-
 DEPENDENCIES = {
     "@rclcpp//:rclcpp": "@rclcpp//:rclcpp_library",
 }

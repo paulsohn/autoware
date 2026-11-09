@@ -253,3 +253,9 @@ local_path_override(module_name = "autoware_mission_planner", path = "src/core/a
 
 bazel_dep(name = "autoware_path_generator")
 local_path_override(module_name = "autoware_path_generator", path = "src/core/autoware_core/planning/autoware_path_generator")
+
+bazel_dep(name = "agnocast_ioctl_wrapper")
+local_path_override(module_name = "agnocast_ioctl_wrapper", path = "src/core/agnocast/src/agnocast_ioctl_wrapper")
+
+bazel_dep(name = "agnocast_cie_thread_configurator")
+local_path_override(module_name = "agnocast_cie_thread_configurator", path = "src/core/agnocast/src/agnocast_cie_thread_configurator")

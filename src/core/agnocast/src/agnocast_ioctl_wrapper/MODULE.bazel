@@ -1,0 +1,5 @@
+module(name = "agnocast_ioctl_wrapper")
+
+bazel_dep(name = "rclcpp", version = "0.0.0")
+bazel_dep(name = "rosdistro", version = "0.0.0")
+bazel_dep(name = "rules_cc", version = "0.2.26.rcr.0")

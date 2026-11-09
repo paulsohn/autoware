@@ -73,7 +73,8 @@ src/
   - Differences that apply to every package are not recorded per package: the `autoware_package()` flags come from
     `@autoware_cmake//:defs.bzl`; every test runs isolated (the RCR test wrapper), so
     `ament_add_ros_isolated_gtest` vs `ament_auto_add_gtest` does not matter; include directories and link lines
-    follow from `deps`; `ament_export_*`, `USE_SCOPED_HEADER_INSTALL_DIR` and `CONFIG_EXTRAS` concern the install
+    follow from `deps`; header installs (`install(DIRECTORY include/ ...)`), `ament_export_*`,
+    `USE_SCOPED_HEADER_INSTALL_DIR` and `CONFIG_EXTRAS` concern the install
     tree / CMake consumers (P4).
   - `if()` branches: keep both branches where possible (`select()` on a flag). Checks of the compiler or C++ standard
     are taken as true and not recorded: the RCR toolchain is a recent clang with C++23 available.

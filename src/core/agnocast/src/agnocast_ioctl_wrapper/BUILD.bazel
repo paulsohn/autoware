@@ -1,0 +1,28 @@
+load("@rosdistro//cc:defs.bzl", "ros_local_defines")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library")
+
+package(default_visibility = ["//visibility:public"])
+
+DEPENDENCIES = {
+    "@rclcpp//:rclcpp": "@rclcpp//:rclcpp_library",
+}
+
+# Agnocast is not an Autoware package (no autoware_package()): no extra warning flags. CMake sets no C++ standard;
+# GCC's default is C++17.
+cc_library(
+    name = "agnocast_ioctl_wrapper_library",
+    srcs = glob([
+        "src/*.cpp",
+        "src/*.hpp",
+    ]),
+    cxxopts = ["-std=c++17"],
+    local_defines = ros_local_defines(),
+    deps = DEPENDENCIES.values(),
+)
+
+cc_shared_library(
+    name = "agnocast_ioctl_wrapper",
+    dynamic_deps = DEPENDENCIES.keys(),
+    exports_filter = [":agnocast_ioctl_wrapper_library"],
+    deps = [":agnocast_ioctl_wrapper_library"],
+)

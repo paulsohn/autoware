@@ -68,7 +68,7 @@ class CMake:
         self.sources, self.copts, self.defines, self.features = set(), set(), set(), set()
         self.share, self.programs, self.installs, self.python, self.hooks = set(), set(), set(), set(), set()
         self.ifs, self.unhandled, self.timeouts, self.dynamic = set(), set(), {}, set()
-        self.param_libs = set()
+        self.param_libs, self.installed_targets = set(), set()
 
     def expand(self, s):
         for _ in range(5):
@@ -203,9 +203,20 @@ class CMake:
         elif name == "install":
             dest = a[a.index("DESTINATION") + 1] if "DESTINATION" in a else ""
             items = a[1:a.index("DESTINATION")] if "DESTINATION" in a else a[1:]
+            share = "share/" + self.vars.get("PROJECT_NAME", "")
             if a[0] == "PROGRAMS":
                 self.programs |= {self.rel(x) for x in items}
-            elif a[0] == "DIRECTORY" and dest == "share/" + self.vars.get("PROJECT_NAME", ""):
+            elif a[0] == "TARGETS":
+                keywords = {"EXPORT", "LIBRARY", "ARCHIVE", "RUNTIME", "INCLUDES", "DESTINATION"}
+                names = []
+                for x in a[1:]:
+                    if x in keywords:
+                        break
+                    names.append(x)
+                self.installed_targets |= set(names)
+            elif a[0] == "DIRECTORY" and dest in ("include", "include/${PROJECT_NAME}") and items == ["include/"]:
+                pass  # headers: exported by the cc_library (install tree: P4)
+            elif a[0] == "DIRECTORY" and (dest == share or all(dest == f"{share}/{x.rstrip('/')}" for x in items)):
                 self.share |= {x.rstrip("/") for x in items}
             else:
                 self.installs.add(f"{a[0]}:{','.join(self.rel(x) for x in items)}->{dest}")
@@ -281,6 +292,7 @@ def findings(pkg_dir):
             found.add(f"library:{lib}")
     found |= {f"executable:{e}" for e in cm.executables if e not in rules}
     found |= {f"parameter-library:{p}" for p in cm.param_libs if p not in rules}
+    found |= {f"install-target:{t}" for t in cm.installed_targets if t not in rules}
     plugins = {r.get("plugin") for r in rules.values()} | strings("plugins")
     found |= {f"component:{p}" for p in cm.components if p not in plugins}
     found |= {f"test:{t}" for t in cm.tests if not (t in rules and rules[t]["kind"].endswith("test"))}
