@@ -1,0 +1,164 @@
+load("@rclcpp_components//:defs.bzl", "rclcpp_components_register_node")
+load("@rosdistro//ament:defs.bzl", "ament_index")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps", "ros_local_defines")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+# Deliberate differences from CMakeLists.txt (checked by bazel/tools/cmake_parity):
+# cmake-diff if:NOT ${CUDA_FOUND}: CUDA is always present (bazel/cuda.MODULE.bazel).
+# cmake-diff if:autoware_agnocast_wrapper_FOUND: Agnocast is always compiled in (PLAN.md): the wrapper (with USE_AGNOCAST_ENABLED) is linked and test_start_worker_thread is built.
+# cmake-diff if:${ROS_DISTRO} STREQUAL rolling: ROS_DISTRO macros only exist for rolling/foxy/galactic/humble (if/elseif); none applies to Lyrical, so none is defined, as in CMake on Lyrical.
+# cmake-diff define:ROS_DISTRO_*: see above.
+
+# Not an autoware_package(): add_compile_options(-Wall -Wextra -Wpedantic -Wunused-function), C++17, no -Werror.
+COPTS = [
+    "-Wall",
+    "-Wextra",
+    "-Wpedantic",
+    "-Wunused-function",
+]
+
+CXXOPTS = ["-std=c++17"]
+
+DEPENDENCIES = {
+    "@agnocast_cie_thread_configurator//:agnocast_thread_configurator": "@agnocast_cie_thread_configurator//:agnocast_thread_configurator_library",
+    "@autoware_agnocast_wrapper//:autoware_agnocast_wrapper": "@autoware_agnocast_wrapper//:autoware_agnocast_wrapper_library",
+    "@cv_bridge//:cv_bridge": "@cv_bridge//:cv_bridge_library",
+    "@negotiated//:negotiated": "@negotiated//:negotiated_library",
+    "@negotiated_interfaces//:cc_shared": "@negotiated_interfaces//:cc",
+    "@rclcpp//:rclcpp": "@rclcpp//:rclcpp_library",
+    "@rclcpp_components//:rclcpp_components": "@rclcpp_components//:rclcpp_components_library",
+    "@rosdistro//cc:opencv": "@rosdistro//cc:opencv_library",
+    "@sensor_msgs//:cc_shared": "@sensor_msgs//:cc",
+}
+
+cc_library(
+    name = "cuda_blackboard_library",
+    srcs = [
+        "src/cuda_blackboard.cpp",
+        "src/cuda_blackboard_async_publisher.cpp",
+        "src/cuda_blackboard_publisher.cpp",
+        "src/cuda_blackboard_subscriber.cpp",
+        "src/cuda_image.cpp",
+        "src/cuda_mem_pool_context.cpp",
+        "src/cuda_message_impl_detail.cpp",
+        "src/cuda_message_impl_detail.hpp",
+        "src/cuda_pointcloud2.cpp",
+    ],
+    hdrs = glob(["include/cuda_blackboard/*.hpp"]),
+    copts = COPTS,
+    cxxopts = CXXOPTS,
+    includes = ["include"],
+    local_defines = ros_local_defines(),
+    deps = DEPENDENCIES.values() + ["@cuda//:cuda_runtime"],
+)
+
+cc_shared_library(
+    name = "cuda_blackboard",
+    dynamic_deps = DEPENDENCIES.keys(),
+    exports_filter = [":cuda_blackboard_library"],
+    deps = [":cuda_blackboard_library"],
+)
+
+# Example nodes: ament_auto_add_library + rclcpp_components_register_node.
+[
+    (
+        cc_library(
+            name = lib + "_library",
+            srcs = [src],
+            copts = COPTS,
+            cxxopts = CXXOPTS,
+            local_defines = ros_local_defines(),
+            deps = [":cuda_blackboard_library"] + DEPENDENCIES.values(),
+        ),
+        cc_shared_library(
+            name = lib,
+            dynamic_deps = [":cuda_blackboard"] + DEPENDENCIES.keys(),
+            exports_filter = [":%s_library" % lib],
+            deps = [":%s_library" % lib],
+        ),
+        rclcpp_components_register_node(
+            name = exe,
+            component = ":" + lib,
+            data = ["@@//bazel/config:cyclonedds.xml"],
+            node_name = exe,
+            plugin = plugin,
+        ),
+    )
+    for lib, src, exe, plugin in [
+        ("cuda_blackboard_publisher_example", "src/cuda_blackboard_publisher_node.cpp", "cuda_blackboard_publisher_node", "cuda_blackboard::CudaBlackboardPublisherNode"),
+        ("cuda_blackboard_subscriber_example", "src/cuda_blackboard_subscriber_node.cpp", "cuda_blackboard_subscriber_node", "cuda_blackboard::CudaBlackboardSubscriberNode"),
+    ]
+]
+
+# share/cuda_blackboard/launch (install(DIRECTORY launch)).
+ament_index(
+    name = "ament_index",
+    components = [
+        ":cuda_blackboard_publisher_node_record",
+        ":cuda_blackboard_subscriber_node_record",
+    ],
+    data = glob(["launch/**"]),
+    executables = [
+        ":cuda_blackboard_publisher_node",
+        ":cuda_blackboard_subscriber_node",
+    ],
+    libraries = [
+        ":cuda_blackboard",
+        ":cuda_blackboard_publisher_example",
+        ":cuda_blackboard_subscriber_example",
+    ],
+    package_xml = "package.xml",
+)
+
+# Header-only and CUDA-free (target_include_directories(test_publish_mailbox PRIVATE include)).
+cc_test(
+    name = "test_publish_mailbox",
+    srcs = ["test/test_publish_mailbox.cpp"],
+    copts = COPTS,
+    cxxopts = CXXOPTS,
+    deps = [
+        ":cuda_blackboard_library",
+        "@rosdistro//cc:googletest",
+    ],
+)
+
+TEST_DEPENDENCIES = {
+    "@std_msgs//:cc_shared": "@std_msgs//:cc",
+}
+
+collect_transitive_dynamic_deps(
+    name = "test_dynamic_deps",
+    dynamic_deps = [":cuda_blackboard"] + TEST_DEPENDENCIES.keys(),
+    visibility = ["//visibility:private"],
+)
+
+# Need a CUDA device (skipped without one).
+[
+    cc_test(
+        name = name,
+        srcs = [
+            "test/%s.cpp" % name,
+            "test/cuda_blackboard_node_fixture.hpp",
+            "test/cuda_test_utils.hpp",
+        ],
+        copts = COPTS,
+        cxxopts = CXXOPTS,
+        data = ["@@//bazel/config:cyclonedds.xml"],
+        dynamic_deps = [":test_dynamic_deps"],
+        env = env,
+        local_defines = ros_local_defines(),
+        deps = [
+            ":cuda_blackboard_library",
+            "@rosdistro//cc:googletest",
+        ] + TEST_DEPENDENCIES.values(),
+    )
+    for name, env in [
+        # Written for the ROS 2 backend (PLAN.md).
+        ("test_cuda_blackboard_publisher", {"ENABLE_AGNOCAST": "0"}),
+        ("test_cuda_blackboard_async_publisher", {"ENABLE_AGNOCAST": "0"}),
+        # ament_add_gtest(... ENV ENABLE_AGNOCAST=1): the Agnocast thread announcement; needs no kernel module.
+        ("test_start_worker_thread", {"ENABLE_AGNOCAST": "1"}),
+    ]
+]

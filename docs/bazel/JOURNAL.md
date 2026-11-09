@@ -1254,3 +1254,21 @@ in that branch's `docs/bazel/LLVM23.md`. Both routes need one NVIDIA-header patc
 C++-side cost of LLVM 23 (RCR/ROS module patches, source fixes, an ordering change). → Route B. `bazel` was
 fast-forwarded to `bazel-llvm21` (`git merge --ff-only`). `bazel-llvm23` is kept unsquashed (2 commits) for when the
 RCR moves to LLVM ≥ 23. PLAN.md updated.
+
+## cuda_blackboard
+
+Plain C++ against the CUDA runtime (no `.cu` files), with Agnocast support behind `USE_AGNOCAST_ENABLED`. In CMake,
+`autoware_agnocast_wrapper_setup()` defines that macro when built with Agnocast. Here the wrapper library propagates
+it, so Agnocast is compiled in as everywhere (PLAN.md), linking `agnocast_cie_thread_configurator` too. Not an
+`autoware_package()`: its own `-Wall -Wextra -Wpedantic -Wunused-function`, no `-Werror`. Two example component
+nodes (publisher, subscriber with cv_bridge/OpenCV) and `launch/`.
+
+Tests:
+- `test_publish_mailbox` (CUDA-free) 4 cases;
+- `test_cuda_blackboard_publisher` 2 and `test_cuda_blackboard_async_publisher` 1 on the GPU, ROS 2 backend
+  (`ENABLE_AGNOCAST=0`);
+- `test_start_worker_thread` 1 with `ENABLE_AGNOCAST=1`, as in CMake. It announces a non-ROS thread over the CIE
+  configurator's IPC; that needs no kernel module or heap hook, and the test sandbox isolates the IPC endpoint.
+
+`bazel test @cuda_blackboard//...` → 4 pass. Parity 0 open, 7 recorded. The `ROS_DISTRO_*` macros (rolling, foxy,
+galactic, humble) do not apply to Lyrical; a glob record covers them. No source changes needed.

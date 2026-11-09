@@ -373,3 +373,6 @@ local_path_override(module_name = "negotiated_examples", path = "src/core/cuda/n
 
 bazel_dep(name = "autoware_tensorrt_plugins")
 local_path_override(module_name = "autoware_tensorrt_plugins", path = "src/universe/autoware_universe/perception/autoware_tensorrt_plugins")
+
+bazel_dep(name = "cuda_blackboard")
+local_path_override(module_name = "cuda_blackboard", path = "src/core/cuda/cuda_blackboard")
