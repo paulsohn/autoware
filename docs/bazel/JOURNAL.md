@@ -894,3 +894,27 @@ because the test reads `test/data/test_map.osm` from that package's share.
 
 Issue: `rclcpp::spin_some(node)` is deprecated → `rclcpp::executors::SingleThreadedExecutor().spin_node_some(node)`
 (same as planning_factor_interface).
+
+## velocity_smoother; OSQP 0.6 as a shared library
+
+velocity_smoother has two libraries: `smoother` and the component `autoware_velocity_smoother_node`, which links
+it. Both come from `ament_auto_add_library`, so both get every build dependency. It also needs
+`-Wno-deprecated-declarations`, which reaches it in CMake from autoware_test_utils through
+autoware_planning_test_manager (as in path_generator). `test/test_stop_velocity_calculation.cpp` is not in
+CMakeLists.txt and is not built here either.
+
+Issues (symptom → cause → fix):
+1. `Two shared libraries in dependencies link the same library statically. Both
+   @@autoware_osqp_interface+//:autoware_osqp_interface and @@autoware_qp_interface+//:autoware_qp_interface link
+   statically @@osqp+0.6.3.bcr.3//:osqp` (analysing `smoother`, which uses both) → OSQP 0.6.3 from the BCR is a
+   cc_library, and each interface linked its own copy. (CMake's osqp_vendor installs a shared libosqp.) → a new
+   in-repo module `bazel/third_party/osqp_0_6` (`bazel_dep` + `local_path_override` in the root MODULE.bazel) gives
+   `:osqp` (cc_shared_library, exports `@osqp`) and `:osqp_library`, with the forwarding headers that both packages
+   had copied. Both interfaces list it in DEPENDENCIES. PLAN.md updated.
+2. `'tf2/LinearMath/Quaternion.h' file not found` (two tests) → `.hpp`.
+
+```
+bazel test @autoware_osqp_interface//... @autoware_qp_interface//... @autoware_velocity_smoother//...   # 7 pass
+```
+Lesson: a third-party library that two shared libraries link statically has to become one shared library. Give
+it its own small module providing the RCR-style shared/static pair; do not copy it into each consumer.

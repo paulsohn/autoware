@@ -1,0 +1,40 @@
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library")
+
+package(default_visibility = ["//visibility:public"])
+
+# OSQP 0.6.3 (multiple_version_override in the root MODULE.bazel) for autoware_osqp_interface and
+# autoware_qp_interface. It is a shared library, as with osqp_vendor in CMake: a static copy in each of those two
+# libraries would break any library linking both ("Two shared libraries ... link the same library statically").
+
+# The BCR module exposes osqp.h at the top level, while CMake installs include/osqp/*.h; forwarding headers provide
+# the osqp/ paths that Autoware includes.
+OSQP_HEADERS = [
+    "glob_opts.h",
+    "osqp.h",
+]
+
+genrule(
+    name = "forwarding_headers",
+    outs = ["include/osqp/" + h for h in OSQP_HEADERS],
+    cmd = " && ".join([
+        "echo '#include <{0}>' > $(RULEDIR)/include/osqp/{0}".format(h)
+        for h in OSQP_HEADERS
+    ]),
+    visibility = ["//visibility:private"],
+)
+
+cc_library(
+    name = "osqp_library",
+    hdrs = [":forwarding_headers"],
+    includes = ["include"],
+    deps = ["@osqp"],
+)
+
+cc_shared_library(
+    name = "osqp",
+    exports_filter = [
+        ":osqp_library",
+        "@osqp",
+    ],
+    deps = [":osqp_library"],
+)
