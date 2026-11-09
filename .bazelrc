@@ -32,6 +32,12 @@ common --test_env=CYCLONEDDS_URI=file://bazel/config/cyclonedds.xml
 common --run_env=LD_LIBRARY_PATH=lib
 common --run_env=TMPDIR=/tmp
 common --run_env=QT_QPA_PLATFORM=xcb
+# Agnocast is always compiled in; ENABLE_AGNOCAST switches it at run time (default on, needs the agnocast kernel module).
+# --config=no-agnocast runs nodes and tests on the plain ROS 2 executor, e.g. on machines without the module.
+common --run_env=ENABLE_AGNOCAST=1
+common --test_env=ENABLE_AGNOCAST=1
+common:no-agnocast --run_env=ENABLE_AGNOCAST=0
+common:no-agnocast --test_env=ENABLE_AGNOCAST=0
 common --test_env=DISPLAY
 common --test_env=XAUTHORITY
 common --test_env=WAYLAND_DISPLAY

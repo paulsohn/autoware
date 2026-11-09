@@ -421,3 +421,8 @@ Issues (symptom → cause → fix):
 
 Lesson: `multiple_version_override` lets your packages keep an older major version of a library the distribution has
 moved past, as long as no single process loads both.
+
+Follow-up (Agnocast default): `ENABLE_AGNOCAST=1` is the default for `bazel run` and `bazel test`
+(`common --run_env/--test_env=ENABLE_AGNOCAST=1` in `.bazelrc`); `--config=no-agnocast` sets it to `0` for machines
+without the agnocast kernel module (e.g. CI containers). The variable only changes test/run environments, so switching
+re-runs tests but rebuilds nothing. Upstream code still treats an unset variable as disabled.
