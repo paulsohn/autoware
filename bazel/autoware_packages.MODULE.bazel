@@ -301,3 +301,6 @@ local_path_override(module_name = "autoware_map_height_fitter", path = "src/core
 
 bazel_dep(name = "autoware_map_loader")
 local_path_override(module_name = "autoware_map_loader", path = "src/core/autoware_core/map/autoware_map_loader")
+
+bazel_dep(name = "autoware_lanelet2_map_visualizer")
+local_path_override(module_name = "autoware_lanelet2_map_visualizer", path = "src/core/autoware_core/map/autoware_lanelet2_map_visualizer")

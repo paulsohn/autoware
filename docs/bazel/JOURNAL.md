@@ -884,3 +884,13 @@ Issues (symptom → cause → fix):
    `<ament_index_cpp/get_package_share_path.hpp>` (the old header does not declare it).
 3. `install(PROGRAMS script/map_hash_generator)` imports `tier4_external_api_msgs`, which package.xml does not declare
    and which exists only under `src/universe` → not built yet (recorded); revisit with universe.
+
+## lanelet2_map_visualizer
+
+Standard node package. Its launch test also starts `autoware_lanelet2_map_loader` from `@autoware_map_loader` (a
+test_depend). The executable goes in the launch test's `deps`, and the package's `:ament_index` goes in `data`,
+because the test reads `test/data/test_map.osm` from that package's share.
+`bazel test @autoware_lanelet2_map_visualizer//...` → 4 pass; parity 0 open, 2 recorded.
+
+Issue: `rclcpp::spin_some(node)` is deprecated → `rclcpp::executors::SingleThreadedExecutor().spin_node_some(node)`
+(same as planning_factor_interface).

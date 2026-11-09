@@ -1,0 +1,130 @@
+load("@autoware_agnocast_wrapper//:defs.bzl", "autoware_agnocast_wrapper_register_node")
+load("@autoware_cmake//:defs.bzl", "AUTOWARE_CXXOPTS", "AUTOWARE_DEFINES", "autoware_copts")
+load("@launch_testing_ros//:defs.bzl", "launch_ros_test")
+load("@rosdistro//ament:defs.bzl", "ament_index")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps", "ros_local_defines")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+# Deliberate differences from CMakeLists.txt (checked by bazel/tools/cmake_parity):
+# cmake-diff if:NOT $ENV{ENABLE_AGNOCAST} STREQUAL 1: the node tests and the launch test, which CMake builds only without Agnocast, are built and run on the ROS 2 backend (ENABLE_AGNOCAST=0); PLAN.md.
+# cmake-diff timeout:test_lanelet2_map_visualizer_launch.test.py: CMake TIMEOUT 30; Bazel has fixed tiers, "short" (60 s) is the smallest.
+
+DEPENDENCIES = {
+    "@autoware_agnocast_wrapper//:autoware_agnocast_wrapper": "@autoware_agnocast_wrapper//:autoware_agnocast_wrapper_library",
+    "@autoware_lanelet2_extension//:autoware_lanelet2_extension_lib": "@autoware_lanelet2_extension//:autoware_lanelet2_extension_lib_library",
+    "@autoware_lanelet2_utils//:autoware_lanelet2_utils": "@autoware_lanelet2_utils//:autoware_lanelet2_utils_library",
+    "@autoware_map_msgs//:cc_shared": "@autoware_map_msgs//:cc",
+    "@autoware_utils_visualization//:autoware_utils_visualization": "@autoware_utils_visualization//:autoware_utils_visualization_library",
+    "@lanelet2_core//:lanelet2_core": "@lanelet2_core//:lanelet2_core_library",
+    "@lanelet2_projection//:lanelet2_projection": "@lanelet2_projection//:lanelet2_projection_library",
+    "@rclcpp//:rclcpp": "@rclcpp//:rclcpp_library",
+    "@rclcpp_components//:rclcpp_components": "@rclcpp_components//:rclcpp_components_library",
+    "@std_msgs//:cc_shared": "@std_msgs//:cc",
+    "@visualization_msgs//:cc_shared": "@visualization_msgs//:cc",
+}
+
+# Component library.
+cc_library(
+    name = "lanelet2_map_visualization_node_library",
+    srcs = [
+        "src/lanelet2_map_visualization.cpp",
+        "src/lanelet2_map_visualization.hpp",
+        "src/lanelet2_map_visualization_node.cpp",
+        "src/lanelet2_map_visualization_node.hpp",
+    ],
+    copts = autoware_copts(),
+    cxxopts = AUTOWARE_CXXOPTS,
+    local_defines = ros_local_defines() + AUTOWARE_DEFINES,
+    deps = DEPENDENCIES.values(),
+)
+
+cc_shared_library(
+    name = "lanelet2_map_visualization_node",
+    dynamic_deps = DEPENDENCIES.keys(),
+    exports_filter = [":lanelet2_map_visualization_node_library"],
+    deps = [":lanelet2_map_visualization_node_library"],
+)
+
+autoware_agnocast_wrapper_register_node(
+    agnocast_executor = "AgnocastOnlyCallbackIsolatedExecutor",
+    component = ":lanelet2_map_visualization_node",
+    data = ["@@//bazel/config:cyclonedds.xml"],
+    executable = "autoware_lanelet2_map_visualizer",
+    plugin = "autoware::lanelet2_map_visualizer::Lanelet2MapVisualizationNode",
+    ros2_executor = "SingleThreadedExecutor",
+)
+
+# share/autoware_lanelet2_map_visualizer/launch (INSTALL_TO_SHARE).
+ament_index(
+    name = "ament_index",
+    components = [":autoware_lanelet2_map_visualizer_component_record"],
+    data = glob(["launch/**"]),
+    executables = [":autoware_lanelet2_map_visualizer"],
+    libraries = [":lanelet2_map_visualization_node"],
+    package_xml = "package.xml",
+    deps = [":autoware_lanelet2_map_visualizer_autoware_node_plugin"],
+)
+
+# The tests include "../src/<...>.hpp".
+cc_library(
+    name = "src_headers",
+    testonly = True,
+    hdrs = glob(["src/*.hpp"]),
+    visibility = ["//visibility:private"],
+)
+
+TEST_DEPENDENCIES = {
+    "@lanelet2_io//:lanelet2_io": "@lanelet2_io//:lanelet2_io_library",
+}
+
+collect_transitive_dynamic_deps(
+    name = "test_dynamic_deps",
+    dynamic_deps = [":lanelet2_map_visualization_node"] + TEST_DEPENDENCIES.keys(),
+    visibility = ["//visibility:private"],
+)
+
+[
+    cc_test(
+        name = name,
+        srcs = ["test/%s.cpp" % name],
+        copts = autoware_copts(),
+        cxxopts = AUTOWARE_CXXOPTS,
+        data = ["@@//bazel/config:cyclonedds.xml"],
+        dynamic_deps = [":test_dynamic_deps"],
+        # Written for the ROS 2 backend (PLAN.md).
+        env = {"ENABLE_AGNOCAST": "0"},
+        local_defines = ros_local_defines() + AUTOWARE_DEFINES,
+        deps = [
+            ":lanelet2_map_visualization_node_library",
+            ":src_headers",
+            "@rosdistro//cc:googletest",
+        ] + TEST_DEPENDENCIES.values(),
+    )
+    for name in [
+        "test_node_initialization",
+        "test_lanelet2_map_visualization_node",
+        "test_lanelet2_map_visualization",
+    ]
+]
+
+# add_launch_test() names the test after its path ("/" -> "_").
+launch_ros_test(
+    name = "test_lanelet2_map_visualizer_launch.test.py",
+    src = "test/lanelet2_map_visualizer_launch.test.py",
+    data = [
+        ":ament_index",
+        "@@//bazel/config:cyclonedds.xml",
+        "@autoware_agnocast_wrapper//:ament_index",
+        "@autoware_map_loader//:ament_index",
+    ],
+    # Written for the ROS 2 backend (PLAN.md).
+    env = {"ENABLE_AGNOCAST": "0"},
+    timeout = "short",
+    deps = [
+        ":autoware_lanelet2_map_visualizer",
+        "@ament_index_python",
+        "@autoware_map_loader//:autoware_lanelet2_map_loader",
+    ],
+)
