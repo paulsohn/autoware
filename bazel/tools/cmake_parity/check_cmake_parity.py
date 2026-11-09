@@ -35,6 +35,7 @@ IGNORED = {
     "target_include_directories", "target_link_libraries", "ament_target_dependencies", "ament_package",
     "message", "get_target_property", "else", "elseif", "endif", "mark_as_advanced", "option", "string",
     "find_path", "find_library", "pkg_check_modules", "set_property", "add_dependencies", "link_directories",
+    "include", "ament_find_gtest", "return",  # return(): only under a reported if()
     "autoware_agnocast_wrapper_setup",  # Agnocast test env (LD_PRELOAD); tests here run on ROS 2 (PLAN.md)
 }
 TOOLING_DEP = re.compile(r"^(ament_.*|launch_testing_ament_cmake|autoware_cmake|autoware_lint_common|ros_environment|rosidl_default_.*)$")
@@ -193,13 +194,16 @@ class CMake:
             cond = re.sub(r"^BUILD_TESTING\s+AND\s+", "", cond)  # keep what else the condition tests
             if not TRIVIAL_IF.search(cond):
                 self.ifs.add(" ".join(cond.split()))
-        elif name in ("ament_auto_add_library", "add_library") and "IMPORTED" not in a:
-            kind = "STATIC" if "STATIC" in a else "SHARED"
+        elif name in ("ament_auto_add_library", "add_library", "cuda_add_library") and "IMPORTED" not in a:
+            kind = "STATIC" if ("STATIC" in a or "INTERFACE" in a) else "SHARED"  # INTERFACE: header-only cc_library
             self.libraries[a[0]] = kind
-            self.add_sources([x for x in a[1:] if x not in ("SHARED", "STATIC", "MODULE")])
-        elif name in ("ament_auto_add_executable", "add_executable"):
+            self.add_sources([x for x in a[1:] if x not in ("SHARED", "STATIC", "MODULE", "INTERFACE")])
+        elif name in ("ament_auto_add_executable", "add_executable", "cuda_add_executable"):
             self.executables.add(a[0])
             self.add_sources(a[1:])
+        elif name == "ament_add_gtest_test":  # registers an existing executable as a gtest
+            self.executables.discard(a[0])
+            self.tests[a[0]] = "cc"
         elif name in ("ament_add_ros_isolated_gtest", "ament_auto_add_gtest", "ament_add_gtest", "ament_add_gmock",
                       "ament_add_ros_isolated_gmock"):
             rest = self.add_sources(a[1:])

@@ -1120,3 +1120,53 @@ Lessons:
 - A compiler/standard-library upgrade is not only a build change. One libc++ upgrade reordered results of a planning
   utility. Run the full test suite before accepting one, and treat order changes as findings.
 - Check what the target platform ships (JetPack) before pinning versions from older provisioning scripts.
+
+## P3 route B (branch `bazel-llvm21`): hermetic CUDA 13.2 with nvcc and host clang 21
+
+Toolkit (`bazel/cuda.MODULE.bazel`, included from the root module):
+- `cuda.redist_json(version = "13.2.2", sha256 = <sha256 of redistrib_13.2.2.json>)`. The manifest pins every
+  component archive, for linux-x86_64 and linux-sbsa. Components: cccl, crt, cudart, culibos (needed by the static
+  cudart in 13.x), nvcc, nvvm, plus the libraries the apt role installs (cublas, curand, cusparse, npp, nvjpeg,
+  nvml, nvrtc). 13.2.2 is what JetPack 7.2.1 ships for Thor.
+- `.bazelrc`: `--@rules_cuda//cuda:compiler=nvcc`, archs `sm_75/86/87/89/110/120 + compute_120` (Autoware's CMake
+  list for CUDA >= 12.8), `-D_ALLOW_UNSUPPORTED_LIBCPP` (NVIDIA's policy check against libc++ on x86).
+- Package modules see the toolkit through `cuda = use_extension("@rules_cuda//cuda:extensions.bzl", "toolchain")`
+  and `use_repo(cuda, "cuda")`; only the root module configures it.
+
+Patches (root `single_version_override` of rules_cuda 0.3.0.rcr.0, and `cuda.component_patch`):
+1. `rules_cuda_sm110.patch`: `sm_110` (Thor) is missing from the arch list.
+2. `rules_cuda_component_patches_{repositories,extension}.patch`: a new `cuda.component_patch(component, patches)`
+   tag; the component repository rule applies the patches after extraction, on every redist platform. Two files,
+   because Bazel's patch parser misreads a multi-file diff that GNU `patch` applies (`CONTENT_DOES_NOT_MATCH_TARGET`
+   for the second file).
+3. `cuda_crt_libcxx_math_functions_{h,hpp}.patch`: CUDA's math headers support libc++ only in branches enabled for
+   Android/HORIZON. Defines `__NV_LIBCPP_LINUX` (libc++ on Linux, not Android) and enables three of those branches:
+   - the libc++ >= 21 `pow(_A1, _A2)` declaration (`std::__promote_t`; the Linux branch used the removed `std::__promote`);
+   - `isnan(long double) noexcept`;
+   - the libc++ classification-function block (`signbit/isfinite/isnan/isinf`). Without it they collide with libc++'s
+     `using` declarations.
+   The branches that concern Android's C library (bionic) are not touched. The SBSA headers are byte-identical, and
+   both patches dry-run cleanly on them.
+
+Packages: `autoware_cuda_dependency_meta` (no code, see BUILD comment) and `autoware_cuda_utils` (header-only
+CCCL/cudart wrapper, `.cu` tests through `cuda_library`).
+```
+bazel test @autoware_cuda_utils//...   # 17 tests run on the GPU (RTX 5070, sm_120), all pass
+```
+The whole suite is unchanged (193 others pass): swapping the auto-detected `/usr/local/cuda` for the hermetic
+toolkit rebuilt nothing already ported.
+
+Issues (symptom → cause → fix):
+1. `no such target '@cuda//:culibos_a'` → CUDA 13's static cudart needs the separate culibos component → add it.
+2. `unknown repo 'cuda' requested from @@autoware_cuda_utils+` → each module must `use_repo` the extension's `cuda`.
+3. `'thrust/count.h' file not found` (plain C++ compile) → CUDA 13 moved CCCL to `include/cccl/`; depend on
+   `@cuda//:thrust`, `:cub`, `:libcudacxx` (they carry that include path), not `:cccl_headers`.
+4. `compute_110 is not a supported cuda arch` → patch 1.
+5. `This test program does NOT link in any test case` (test "passed" with 0 tests) → gtest cases in a static
+   `cuda_library` are dropped by the linker → `alwayslink = True`. Check the test count, not only the status.
+6. nvcc 13.0 failures (clang >= 21 refused; EDG cannot parse libc++ 21), see "P3: CUDA toolchain routes": gone with
+   13.2, whose nvcc accepts host clang < 22 and parses libc++ 21.
+
+Parity checker: `cuda_add_executable`/`cuda_add_library` count sources; `ament_add_gtest_test(target)` turns that
+executable into a test; `INTERFACE` libraries map to `cc_library`; `include`, `ament_find_gtest` and `return` are
+ignored (`return()` only appears under a reported `if()`).
