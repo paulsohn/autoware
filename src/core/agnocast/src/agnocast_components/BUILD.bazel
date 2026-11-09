@@ -1,0 +1,62 @@
+load("@rosdistro//ament:defs.bzl", "ament_index")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps", "ros_local_defines")
+load("@rules_cc//cc:defs.bzl", "cc_binary")
+
+package(default_visibility = ["//visibility:public"])
+
+# Deliberate differences from CMakeLists.txt (checked by bazel/tools/cmake_parity):
+# cmake-diff install:FILES:src/node_main.cpp.in,src/node_main_agnocast_only.cpp.in->share/agnocast_components/src:
+#   installed through :ament_index (share/agnocast_components/src/...), as CMake does; only Agnocast's samples use
+#   agnocast_components_register_node(), which has no Bazel counterpart yet.
+
+# CMake sets no C++ standard; GCC's default is C++17. No extra warning flags.
+[cc_binary(
+    name = name,
+    srcs = ["src/{}.cpp".format(name)],
+    cxxopts = ["-std=c++17"],
+    data = ["@@//bazel/config:cyclonedds.xml"],
+    dynamic_deps = [":dynamic_deps"],
+    local_defines = ros_local_defines(),
+    deps = [
+        "@agnocast_cie_config_msgs//:cc",
+        "@agnocast_cie_thread_configurator//:agnocast_thread_configurator_library",
+        "@agnocastlib//:agnocast_library",
+        "@rclcpp//:rclcpp_library",
+        "@rclcpp_components//:component_manager_library",
+        "@rclcpp_components//:rclcpp_components_library",
+        "@rosdistro//cc:glog_library",
+    ],
+) for name in [
+    "agnocast_component_container",
+    "agnocast_component_container_cie",
+    "agnocast_component_container_mt",
+]]
+
+collect_transitive_dynamic_deps(
+    name = "dynamic_deps",
+    dynamic_deps = [
+        "@agnocast_cie_config_msgs//:cc_shared",
+        "@agnocast_cie_thread_configurator//:agnocast_thread_configurator",
+        "@agnocastlib//:agnocast",
+        "@rclcpp//:rclcpp",
+        "@rclcpp_components//:component_manager",
+        "@rclcpp_components//:rclcpp_components",
+        "@rosdistro//cc:glog",
+    ],
+    visibility = ["//visibility:private"],
+)
+
+# share/agnocast_components/{cmake,src/*.cpp.in}
+ament_index(
+    name = "ament_index",
+    data = glob(["cmake/**"]) + [
+        "src/node_main.cpp.in",
+        "src/node_main_agnocast_only.cpp.in",
+    ],
+    executables = [
+        ":agnocast_component_container",
+        ":agnocast_component_container_cie",
+        ":agnocast_component_container_mt",
+    ],
+    package_xml = "package.xml",
+)

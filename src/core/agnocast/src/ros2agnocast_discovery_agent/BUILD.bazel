@@ -1,0 +1,62 @@
+load("@pip_ros//:requirements.bzl", "requirement")
+load("@rosdistro//ament:defs.bzl", "ament_index")
+load("@rosdistro//python:defs.bzl", "py_pytest")
+load("@rules_python//python:defs.bzl", "py_binary", "py_library")
+
+package(default_visibility = ["//visibility:public"])
+
+# ament_python package (setup.py). The agent loads libagnocast_ioctl_wrapper.so with ctypes.CDLL by bare name, so at
+# run time the library must be on the loader path; the install tree (P4) provides that, Bazel runfiles do not.
+py_library(
+    name = "ros2agnocast_discovery_agent",
+    srcs = glob(["ros2agnocast_discovery_agent/*.py"]),
+    data = ["@agnocast_ioctl_wrapper"],
+    imports = ["."],
+    deps = [
+        "@rclpy",
+        "@ros2agnocast_discovery_msgs//:py",
+        requirement("pyyaml"),
+    ],
+)
+
+# setup.py installs scripts/<name> (thin wrappers for `ros2 run`) to lib/ros2agnocast_discovery_agent/. py_binary
+# needs a .py main, hence the copies.
+SCRIPTS = [
+    "agnocast_discovery_agent",
+    "discovery_agent",
+    "register_domain_bridge",
+]
+
+[genrule(
+    name = name + "_py",
+    srcs = ["scripts/" + name],
+    outs = ["bin/{}.py".format(name)],
+    cmd = "cp $< $@",
+    visibility = ["//visibility:private"],
+) for name in SCRIPTS]
+
+[py_binary(
+    name = name,
+    srcs = [":{}_py".format(name)],
+    main = "bin/{}.py".format(name),
+    deps = [":ros2agnocast_discovery_agent"],
+) for name in SCRIPTS]
+
+# share/ros2agnocast_discovery_agent/{launch,systemd}
+ament_index(
+    name = "ament_index",
+    data = [
+        "launch/discovery_agent.launch.xml",
+        "systemd/README.md",
+        "systemd/agnocast-domain-bridge.service.example",
+    ],
+    executables = [":" + name for name in SCRIPTS],
+    package_xml = "package.xml",
+)
+
+py_pytest(
+    name = "test_ros2agnocast_discovery_agent",
+    srcs = glob(["test/test_*.py"]),
+    data = ["test/__init__.py"],
+    deps = [":ros2agnocast_discovery_agent"],
+)

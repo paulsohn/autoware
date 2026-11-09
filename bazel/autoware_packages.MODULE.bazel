@@ -265,3 +265,9 @@ local_path_override(module_name = "agnocastlib", path = "src/core/agnocast/src/a
 
 bazel_dep(name = "agnocast_heaphook")
 local_path_override(module_name = "agnocast_heaphook", path = "src/core/agnocast/agnocast_heaphook")
+
+bazel_dep(name = "agnocast_components")
+local_path_override(module_name = "agnocast_components", path = "src/core/agnocast/src/agnocast_components")
+
+bazel_dep(name = "ros2agnocast_discovery_agent")
+local_path_override(module_name = "ros2agnocast_discovery_agent", path = "src/core/agnocast/src/ros2agnocast_discovery_agent")
