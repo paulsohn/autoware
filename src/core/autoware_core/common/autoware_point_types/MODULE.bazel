@@ -1,6 +1,6 @@
 module(name = "autoware_point_types")
 
-bazel_dep(name = "autoware_cmake")
+bazel_dep(name = "autoware_cmake", version = "0.0.0")
 bazel_dep(name = "point_cloud_msg_wrapper", version = "0.0.0")
 bazel_dep(name = "rosdistro", version = "0.0.0")
 bazel_dep(name = "sensor_msgs", version = "0.0.0")

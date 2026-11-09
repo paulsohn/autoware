@@ -1,9 +1,9 @@
 module(name = "autoware_interpolation")
 
-bazel_dep(name = "autoware_cmake")
-bazel_dep(name = "autoware_internal_planning_msgs")
-bazel_dep(name = "autoware_planning_msgs")
-bazel_dep(name = "autoware_utils_geometry")
+bazel_dep(name = "autoware_cmake", version = "0.0.0")
+bazel_dep(name = "autoware_internal_planning_msgs", version = "0.0.0")
+bazel_dep(name = "autoware_planning_msgs", version = "0.0.0")
+bazel_dep(name = "autoware_utils_geometry", version = "0.0.0")
 bazel_dep(name = "geometry_msgs", version = "0.0.0")
 bazel_dep(name = "googletest", version = "1.18.0.bcr.1")
 bazel_dep(name = "rosdistro", version = "0.0.0")

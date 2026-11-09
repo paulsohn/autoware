@@ -1,6 +1,6 @@
 module(name = "autoware_signal_processing")
 
-bazel_dep(name = "autoware_cmake")
+bazel_dep(name = "autoware_cmake", version = "0.0.0")
 bazel_dep(name = "geometry_msgs", version = "0.0.0")
 bazel_dep(name = "rclcpp", version = "0.0.0")
 bazel_dep(name = "rosdistro", version = "0.0.0")

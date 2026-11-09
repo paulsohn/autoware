@@ -1,9 +1,9 @@
 module(name = "autoware_utils_debug")
 
-bazel_dep(name = "autoware_cmake")
-bazel_dep(name = "autoware_internal_debug_msgs")
-bazel_dep(name = "autoware_internal_msgs")
-bazel_dep(name = "autoware_utils_system")
+bazel_dep(name = "autoware_cmake", version = "0.0.0")
+bazel_dep(name = "autoware_internal_debug_msgs", version = "0.0.0")
+bazel_dep(name = "autoware_internal_msgs", version = "0.0.0")
+bazel_dep(name = "autoware_utils_system", version = "0.0.0")
 bazel_dep(name = "diagnostic_msgs", version = "0.0.0")
 bazel_dep(name = "rclcpp", version = "0.0.0")
 bazel_dep(name = "rosdistro", version = "0.0.0")

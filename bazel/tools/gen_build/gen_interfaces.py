@@ -132,8 +132,8 @@ def generate(ws, roots):
         module = f'module(name = "{name}")\n\n'
         bazel_deps = sorted(pkg_deps | {"rosidl_default_generators"})
         for dep in bazel_deps:
-            version = "" if dep in in_repo else ', version = "0.0.0"'
-            module += f'bazel_dep(name = "{dep}"{version})\n'
+            # "0.0.0" for in-repo deps too, so the root can switch any of them to the RCR.
+            module += f'bazel_dep(name = "{dep}", version = "0.0.0")\n'
         (pkg_dir / "MODULE.bazel").write_text(module)
 
         all_labels = [f"//{sub}:{iname}" for sub, items in sorted(by_dir.items()) for _, iname, _, _ in items]

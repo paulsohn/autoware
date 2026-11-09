@@ -18,6 +18,7 @@
 | Runtime image built by Bazel (`rules_oci`), not by `docker build` | git SHA leads straight to the image digest; no Docker daemon needed |
 | Deferred: remote cache server, signing, SBOM, vendoring, multi-arch CI | Personal PoC. These are hardening work for later |
 | `autoware_cmake` becomes a small Bazel module (`src/core/autoware_cmake/autoware_cmake/defs.bzl`) holding the `autoware_package()` settings: `autoware_copts()` (`-Wall -Wextra -Wpedantic -Werror`, Clang PCL exceptions), `AUTOWARE_CXXOPTS` (`-std=c++17`), `AUTOWARE_DEFINES` (`BOOST_ALLOW_DEPRECATED_HEADERS`, `EIGEN_DONT_PARALLELIZE`). Every Autoware C++ target uses them | Every package.xml already depends on `autoware_cmake`, so the module mirrors it; one place to change flags. `ROS_DISTRO_*` defines are only checked for GALACTIC/HUMBLE, so Lyrical takes the default branch with no define. `-Werror` stays on: if a warning cannot be fixed with a small source patch, comment it out in `defs.bzl` and record why |
+| Every `bazel_dep` on a ROS package uses `version = "0.0.0"`, including in-repo ones; the root picks local source (`local_path_override`) or the RCR per package | Lets any package switch between local source and the RCR by editing only the root. See "Local source vs RCR" |
 | Agnocast is always compiled in (`USE_AGNOCAST_ENABLED`, agnocastlib linked); `ENABLE_AGNOCAST` is only a run-time switch. Upstream reads `ENABLE_AGNOCAST` at CMake time; Bazel does not. Enabled by default: `.bazelrc` sets `ENABLE_AGNOCAST=1` for `bazel run`/`bazel test`, `--config=no-agnocast` sets `0`; the runtime image (P4) sets `ENABLE_AGNOCAST=1`. Upstream code (`runtime.cpp`, launch defaults) is unchanged | Binaries built with Agnocast fall back to the ROS 2 executor when `ENABLE_AGNOCAST=0` (`runtime.cpp`, generated `main`), so one set of binaries serves dev, CI and the vehicle. Bazel hides environment variables from build actions and does not key the cache on them. Fallback if agnocastlib cannot be built or the disabled mode needs the kernel module: a `bool_flag` + `select()` |
 | OSQP 0.6.3 for Autoware next to the RCR's OSQP 1.0: `multiple_version_override(module_name = "osqp", versions = ["0.6.3.bcr.3", "1.0.0.bcr.3"])` in the root `MODULE.bazel`; Autoware packages `bazel_dep(name = "osqp", version = "0.6.3.bcr.3")` plus generated forwarding headers for the `osqp/*.h` include paths | Autoware's `osqp_interface` / `qp_interface` use the 0.6 API (~170 references); porting to 1.0 also changes solver defaults. Revisit when upstream ports. Risk: both versions export the same C symbols, so one process must never load both; and OSQP 0.6 is a static library, so a binary linking both `autoware_osqp_interface` and `autoware_qp_interface` is rejected by Bazel (then give it a shared library) |
 | `autoware_system_designer` (and its only consumer `autoware_sample_designs`) removed. Leftovers are dropped, not ported: any `autoware_system_designer_*` CMake call (none in the 2026-11-09 snapshot; the BUILD generator must skip them if they appear), `design/*.{node,module,system,parameter_set}.yaml` files (318, inert data, not built), and the `lint-system-design-format` pre-commit hooks / CI workflows inside subtrees | Orthogonal to the Bazel integration |
@@ -36,7 +37,8 @@ src/
 
 ## Package conventions
 - One Bazel module per ROS package: `MODULE.bazel` with `module(name = "<ros package name>")` and a `bazel_dep` for every
-  module the package's BUILD file references (mirrors `package.xml`).
+  module the package's BUILD file references (mirrors `package.xml`). Every `bazel_dep` on a ROS package, in-repo or
+  not, uses `version = "0.0.0"` (see "Local source vs RCR").
 - One `BUILD.bazel` at the package root. Exception: interface packages put each interface kind in its own Bazel
   package, `msg/BUILD.bazel`, `srv/BUILD.bazel`, `action/BUILD.bazel`, so labels mirror ROS type names
   (`pkg/msg/Name` -> `@pkg//msg:Name`), exactly like RCR packages (`@std_msgs//msg:Header`). Autoware keeps interface
@@ -67,6 +69,56 @@ src/
   `BUILD.bazel`, and if it uses a new package, add that to `dependencies` there and a `bazel_dep` in `MODULE.bazel`.
 - Adding a package: `MODULE.bazel` + `BUILD.bazel` (copy a similar package), plus one entry each in
   `bazel/autoware_packages.MODULE.bazel` and `bazel/autoware_packages.txt`.
+
+## Local source vs RCR
+Every Autoware module can come from two places: our source tree (`local_path_override` in
+`bazel/autoware_packages.MODULE.bazel`) or the RCR (a released version, selected by the `ros` release snapshot). The
+root module decides, per package; only the root's overrides count, and an override replaces the whole module (its
+`MODULE.bazel` and BUILD files), whatever version other modules ask for. Day-to-day steps: [DEVELOPING.md](DEVELOPING.md).
+
+Rules that keep both sources interchangeable:
+- `bazel_dep(name = "<ros pkg>", version = "0.0.0")` everywhere outside the root. The RCR publishes a `0.0.0` entry
+  for every module, so this means "whatever the root override or the release snapshot selects". A versionless
+  `bazel_dep` only works while the root overrides that module (verified 2026-11-09: removing the override then fails
+  with `bad bazel_dep on module 'autoware_common_msgs' with no version`). A real minimum such as `1.11.0` does not work
+  either: Bazel orders the RCR's `1.11.0-3.rcr.2` below `1.11.0` (the `-` suffix is a pre-release).
+- Same target names as the RCR overlays: `:cc`, `:cc_shared`, `:py`, `//msg:<Name>` for interface packages,
+  `<pkg>` / `<pkg>_library` for C++. RCR modules that depend on an overridden module reference these names. Still
+  missing in ours: `:ament_package` and `:license` (needed once the install tree is built, P4).
+- The root keeps a `bazel_dep` for every Autoware module it builds, even when the module comes from the RCR;
+  otherwise `@<pkg>//...` is not visible from the root.
+
+### Hypothetical: AWF upstream adopts this layout
+Each package directory upstream carries its `MODULE.bazel` (with `module(name = ..., version = "<package.xml
+version>")`) and `BUILD.bazel`, maintained by hand next to `CMakeLists.txt`.
+
+Release flow, one package:
+1. AWF tags `autoware_msgs` 1.12.0. bloom releases each package to `ros2-gbp/autoware_msgs-release`
+   (tag `release/lyrical/autoware_common_msgs/1.12.0-1`). The tarball now contains the BUILD and MODULE files.
+2. The RCR adds `modules/autoware_common_msgs/1.12.0-1.rcr.0/` with upstream's `MODULE.bazel` (version stamped) and a
+   `source.json` with no overlay, or only `LICENSE`:
+   ```json
+   {
+       "url": "https://github.com/ros2-gbp/autoware_msgs-release/archive/refs/tags/release/lyrical/autoware_common_msgs/1.12.0-1.tar.gz",
+       "strip_prefix": "autoware_msgs-release-release-lyrical-autoware_common_msgs-1.12.0-1",
+       "integrity": "sha256-..."
+   }
+   ```
+   If upstream's BUILD file does not suit the RCR, an overlay `BUILD.bazel` still replaces it (overlay files are
+   written over the extracted source), so the RCR can patch without waiting for upstream.
+3. The next `ros@lyrical.<date>.rcr.N` snapshot requires the new version.
+4. Before publishing, an RCR maintainer tests the entry from a registry checkout listed first:
+   `bazel build --registry=file:///path/to/ros-central-registry --registry=https://bazel.ros.org --registry=https://bcr.bazel.build @autoware_common_msgs//...`.
+
+Who uses what:
+| Workspace | Autoware packages from |
+|---|---|
+| Downstream product | The RCR only: `bazel_dep(name = "ros", version = ...)` plus `bazel_dep(name = "<pkg>", version = "0.0.0")` per package used |
+| AWF developer | A workspace like this repository: `local_path_override` for the packages being worked on, the RCR for the rest (the colcon overlay/underlay model) |
+| RCR maintainer | A registry checkout via `--registry=file://...` |
+
+Typical cycle for a fix: override the package locally, fix it, send it upstream, and once the release reaches the RCR
+snapshot, drop the override.
 
 ## Rules needed (colcon/CMake feature -> Bazel)
 - `autoware_package()` / `ament_auto_*`: macro producing `cc_library` + `cc_shared_library` + `ament_index` + `ament_package` (RCR rules).

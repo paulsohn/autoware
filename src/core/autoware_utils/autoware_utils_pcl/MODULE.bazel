@@ -1,7 +1,7 @@
 module(name = "autoware_utils_pcl")
 
-bazel_dep(name = "autoware_cmake")
-bazel_dep(name = "autoware_utils_tf")
+bazel_dep(name = "autoware_cmake", version = "0.0.0")
+bazel_dep(name = "autoware_utils_tf", version = "0.0.0")
 bazel_dep(name = "pcl_conversions", version = "0.0.0")
 bazel_dep(name = "rclcpp", version = "0.0.0")
 bazel_dep(name = "rosdistro", version = "0.0.0")

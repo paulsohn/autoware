@@ -1,6 +1,6 @@
 module(name = "autoware_utils_system")
 
-bazel_dep(name = "autoware_cmake")
+bazel_dep(name = "autoware_cmake", version = "0.0.0")
 bazel_dep(name = "rclcpp", version = "0.0.0")
 bazel_dep(name = "rosdistro", version = "0.0.0")
 bazel_dep(name = "googletest", version = "1.18.0.bcr.1")

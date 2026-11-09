@@ -426,3 +426,48 @@ Follow-up (Agnocast default): `ENABLE_AGNOCAST=1` is the default for `bazel run`
 (`common --run_env/--test_env=ENABLE_AGNOCAST=1` in `.bazelrc`); `--config=no-agnocast` sets it to `0` for machines
 without the agnocast kernel module (e.g. CI containers). The variable only changes test/run environments, so switching
 re-runs tests but rebuilds nothing. Upstream code still treats an unset variable as disabled.
+
+## 2026-11-09: Local source vs RCR switching; plain `bazel` from a sourced shell
+
+Goal: any Autoware package can come from `src/` or from the RCR, switched in the root only (manual:
+docs/bazel/DEVELOPING.md; model and a hypothetical upstream flow: PLAN.md "Local source vs RCR").
+
+Steps:
+1. Tried switching `autoware_common_msgs` to the RCR: replaced its `bazel_dep` + `local_path_override` in
+   `bazel/autoware_packages.MODULE.bazel` with `bazel_dep(name = "autoware_common_msgs", version = "1.11.0-3.rcr.2")`.
+2. Changed every versionless in-repo `bazel_dep` in package `MODULE.bazel` files (28 files) to `version = "0.0.0"`,
+   and `gen_interfaces` to emit that.
+3. Re-tried with `version = "0.0.0"` at the root: `bazel mod explain autoware_common_msgs` → all five local dependents
+   use `autoware_common_msgs@1.11.0-3.rcr.2`; `bazel build @autoware_localization_msgs//:cc` → 1 action (the RCR's
+   generated code had identical inputs, so everything came from the action cache).
+4. Back to local without editing tracked files: `common --override_module=autoware_common_msgs=%workspace%/src/...`
+   in `user.bazelrc` → `autoware_common_msgs@_`. `MODULE.bazel.lock` unchanged. A permanent switch to the RCR adds
+   the RCR file hashes to the lockfile (commit them with the switch).
+5. Full suite (`bazel/autoware_packages.txt` + `//bazel/...`): 26 tests pass.
+
+Issues (symptom → cause → fix):
+1. `bad bazel_dep on module 'autoware_common_msgs' with no version` once the root override is gone → non-root modules
+   may omit the version only while the root overrides the module → `version = "0.0.0"` on every ROS `bazel_dep`
+   (the RCR has a `0.0.0` entry for every module). A real minimum like `1.11.0` fails: `1.11.0-3.rcr.2` sorts below
+   `1.11.0` (pre-release).
+2. With no root `bazel_dep` at all, dependents still resolve via the `ros` snapshot, but `@autoware_common_msgs` is not
+   visible from the root (`No repository visible as '@autoware_common_msgs' from main repository`) → keep a root
+   `bazel_dep(..., version = "0.0.0")`.
+
+Plain `bazel` instead of `env -i ... bazel` (the old rule was a P0 precaution). Tested from a shell that sourced
+`/opt/ros/jazzy/setup.bash`:
+- `bazel build`: 12,148 action cache hits, nothing recompiled (`--incompatible_strict_action_env`).
+- `bazel test`: passes (tests get only `--test_env`).
+- `bazel run` of `test_autoware_vehicle_info_utils`: `package 'autoware_vehicle_info_utils' not found, searching:
+  [/opt/ros/jazzy]` → `bazel run` passes the shell environment through → `.bazelrc`:
+  `--run_env==AMENT_PREFIX_PATH` (removes it, for binaries; checked in the `--script_path` script: `env -u ...`), but
+  tests started with `bazel run` use test-env handling and ignore `--run_env` and `--test_env==NAME` removals →
+  `--test_env=AMENT_PREFIX_PATH=` (empty; ament_index_cpp and CPython treat empty as unset). Same for `PYTHONPATH`.
+- After the fix, from the sourced shell: 26 tests pass; `bazel run` of the test passes.
+
+Lessons:
+- Use `version = "0.0.0"` for every ROS `bazel_dep` in package modules, so the workspace root alone chooses
+  between local source and the registry.
+- `--override_module` in `user.bazelrc` is the per-developer way to work on a registry package from source.
+- `--incompatible_strict_action_env` isolates builds, not `bazel run`: strip ROS variables with `--run_env==NAME`, and
+  with empty `--test_env` values for tests launched through `bazel run`.
