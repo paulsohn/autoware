@@ -137,20 +137,20 @@ protected:
 
     twist_raw_sub_ = driver_node_->create_subscription<TwistStamped>(
       "twist_raw", rclcpp::QoS{10},
-      [this](const TwistStamped::SharedPtr msg) { twist_raw_ = *msg; });
+      [this](const TwistStamped::ConstSharedPtr msg) { twist_raw_ = *msg; });
     twist_with_covariance_raw_sub_ = driver_node_->create_subscription<TwistWithCovarianceStamped>(
       "twist_with_covariance_raw", rclcpp::QoS{10},
-      [this](const TwistWithCovarianceStamped::SharedPtr msg) {
+      [this](const TwistWithCovarianceStamped::ConstSharedPtr msg) {
         twist_with_covariance_raw_ = *msg;
       });
     twist_sub_ = driver_node_->create_subscription<TwistStamped>(
-      "twist", rclcpp::QoS{10}, [this](const TwistStamped::SharedPtr msg) { twist_ = *msg; });
+      "twist", rclcpp::QoS{10}, [this](const TwistStamped::ConstSharedPtr msg) { twist_ = *msg; });
     twist_with_covariance_sub_ = driver_node_->create_subscription<TwistWithCovarianceStamped>(
       "twist_with_covariance", rclcpp::QoS{10},
-      [this](const TwistWithCovarianceStamped::SharedPtr msg) { twist_with_covariance_ = *msg; });
+      [this](const TwistWithCovarianceStamped::ConstSharedPtr msg) { twist_with_covariance_ = *msg; });
 
     diagnostics_sub_ = driver_node_->create_subscription<DiagnosticArray>(
-      "/diagnostics", rclcpp::QoS{10}, [this](const DiagnosticArray::SharedPtr msg) {
+      "/diagnostics", rclcpp::QoS{10}, [this](const DiagnosticArray::ConstSharedPtr msg) {
         for (const auto & status : msg->status) {
           if (status.name.find("gyro_odometer_status") == std::string::npos) {
             continue;

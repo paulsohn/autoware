@@ -48,7 +48,7 @@ protected:
 
     sub_ = helper_->create_subscription<AccelWithCovarianceStamped>(
       "output/accel", 10,
-      [this](const AccelWithCovarianceStamped::SharedPtr) { ++received_count_; });
+      [this](const AccelWithCovarianceStamped::ConstSharedPtr) { ++received_count_; });
     odom_pub_ = helper_->create_publisher<Odometry>("input/odom", 10);
     twist_pub_ = helper_->create_publisher<TwistWithCovarianceStamped>("input/twist", 10);
 

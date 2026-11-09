@@ -55,7 +55,7 @@ protected:
     twist_subscription_ =
       test_control_node_->create_subscription<geometry_msgs::msg::TwistWithCovarianceStamped>(
         "twist_with_covariance", 10,
-        [this](const geometry_msgs::msg::TwistWithCovarianceStamped::SharedPtr message) {
+        [this](const geometry_msgs::msg::TwistWithCovarianceStamped::ConstSharedPtr message) {
           std::lock_guard<std::mutex> lock(message_mutex_);
           received_twist_ = message;
         });
@@ -100,7 +100,7 @@ protected:
   }
 
   // Publish a report and return the converted twist, or nullptr if none arrives within the timeout.
-  geometry_msgs::msg::TwistWithCovarianceStamped::SharedPtr publish_and_wait(
+  geometry_msgs::msg::TwistWithCovarianceStamped::ConstSharedPtr publish_and_wait(
     const autoware_vehicle_msgs::msg::VelocityReport & report)
   {
     report_publisher_->publish(report);
@@ -130,7 +130,7 @@ protected:
     converter_node_;
 
   std::mutex message_mutex_;
-  geometry_msgs::msg::TwistWithCovarianceStamped::SharedPtr received_twist_;
+  geometry_msgs::msg::TwistWithCovarianceStamped::ConstSharedPtr received_twist_;
 };
 
 TEST_F(VehicleVelocityConverterNodeTest, ConvertsVelocityReportToTwist)

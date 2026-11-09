@@ -24,8 +24,8 @@ namespace
 {
 struct PublishedMessages
 {
-  nav_msgs::msg::Odometry::SharedPtr filtered_odom;
-  autoware_internal_debug_msgs::msg::BoolStamped::SharedPtr stop_flag;
+  nav_msgs::msg::Odometry::ConstSharedPtr filtered_odom;
+  autoware_internal_debug_msgs::msg::BoolStamped::ConstSharedPtr stop_flag;
 };
 
 nav_msgs::msg::Odometry create_odometry_message(const double linear_x, const double angular_z)
@@ -56,13 +56,13 @@ protected:
 
     test_node_ = std::make_shared<rclcpp::Node>("test_stop_filter_node");
     odom_subscription_ = test_node_->create_subscription<nav_msgs::msg::Odometry>(
-      "output/odom", 10, [this](const nav_msgs::msg::Odometry::SharedPtr msg) {
+      "output/odom", 10, [this](const nav_msgs::msg::Odometry::ConstSharedPtr msg) {
         received_messages_.filtered_odom = msg;
       });
     stop_flag_subscription_ =
       test_node_->create_subscription<autoware_internal_debug_msgs::msg::BoolStamped>(
         "debug/stop_flag", 10,
-        [this](const autoware_internal_debug_msgs::msg::BoolStamped::SharedPtr msg) {
+        [this](const autoware_internal_debug_msgs::msg::BoolStamped::ConstSharedPtr msg) {
           received_messages_.stop_flag = msg;
         });
     odom_publisher_ = test_node_->create_publisher<nav_msgs::msg::Odometry>("input/odom", 10);
