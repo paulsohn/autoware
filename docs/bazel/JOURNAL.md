@@ -867,3 +867,20 @@ Standard node package (ROS2_EXECUTOR MultiThreadedExecutor; PCL as the shared pa
 only without Agnocast and runs here on the ROS 2 backend. `autoware_agnocast_wrapper_setup()` on the library is
 ignored: it only adds the Agnocast test environment. `bazel test @autoware_map_height_fitter//...` → 2 pass; parity
 0 open, 1 recorded.
+
+## map_loader
+
+There are two component libraries (`pointcloud_map_loader_node`, `lanelet2_map_loader_node`), each with its own
+registered executable. They come from one list comprehension, because `ament_auto_add_library` gives both
+`include/` and every build dependency. The 12 gmock tests link both libraries, as `${PROJECT_NAME}_LIBRARIES` does.
+`test/data` goes into `ament_index(data)`. There are two launch tests.
+`bazel test @autoware_map_loader//...` → 14 pass; parity 0 open, 7 recorded.
+
+Issues (symptom → cause → fix):
+1. The tests include `"../src/pointcloud_map_loader/....hpp"`, which resolves through the `include/` directory
+   (`include/../src/...`) → a testonly `src_headers` library (hdrs only, no `includes`) makes the private headers
+   inputs of the test compile.
+2. `get_package_share_directory` is deprecated (-Werror) → `get_package_share_path(...).string()` with
+   `<ament_index_cpp/get_package_share_path.hpp>` (the old header does not declare it).
+3. `install(PROGRAMS script/map_hash_generator)` imports `tier4_external_api_msgs`, which package.xml does not declare
+   and which exists only under `src/universe` → not built yet (recorded); revisit with universe.

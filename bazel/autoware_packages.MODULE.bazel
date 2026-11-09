@@ -298,3 +298,6 @@ local_path_override(module_name = "autoware_map_projection_loader", path = "src/
 
 bazel_dep(name = "autoware_map_height_fitter")
 local_path_override(module_name = "autoware_map_height_fitter", path = "src/core/autoware_core/map/autoware_map_height_fitter")
+
+bazel_dep(name = "autoware_map_loader")
+local_path_override(module_name = "autoware_map_loader", path = "src/core/autoware_core/map/autoware_map_loader")
