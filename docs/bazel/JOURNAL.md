@@ -1245,3 +1245,12 @@ Issues: `cublas_v2.h` not found (the deformable-attention kernel uses cuBLAS hea
 
 Parity checker: record keys may be globs (`fnmatch`, e.g. `source:src/*plugin*.cpp` for a library that is not
 built); `add_definitions(-DX)` counts as a define; `unset` is ignored.
+
+## Decision: LLVM 21 (route B); `bazel` follows `bazel-llvm21`
+
+Same decider on `bazel-llvm23` (clang 23 as CUDA compiler, CUDA 13.2.2): after one CCCL patch (four host-only
+`cuda::std::basic_string_view` deduction guides, which clang 23 rejects), the same 17 + 18 GPU tests pass. Details are
+in that branch's `docs/bazel/LLVM23.md`. Both routes need one NVIDIA-header patch for CUDA; route A also carries the
+C++-side cost of LLVM 23 (RCR/ROS module patches, source fixes, an ordering change). → Route B. `bazel` was
+fast-forwarded to `bazel-llvm21` (`git merge --ff-only`). `bazel-llvm23` is kept unsquashed (2 commits) for when the
+RCR moves to LLVM ≥ 23. PLAN.md updated.
