@@ -106,14 +106,14 @@ protected:
     client_trigger_ = test_node_->create_client<std_srvs::srv::SetBool>("/trigger_node_srv");
 
     sub_odom_ = test_node_->create_subscription<nav_msgs::msg::Odometry>(
-      "/ekf_odom", 10, [this](const nav_msgs::msg::Odometry::SharedPtr msg) {
+      "/ekf_odom", 10, [this](const nav_msgs::msg::Odometry::ConstSharedPtr msg) {
         latest_odom_ = msg;
         odom_count_++;
       });
 
     sub_diag_ = test_node_->create_subscription<diagnostic_msgs::msg::DiagnosticArray>(
       "/diagnostics", 10,
-      [this](const diagnostic_msgs::msg::DiagnosticArray::SharedPtr msg) { latest_diag_ = msg; });
+      [this](const diagnostic_msgs::msg::DiagnosticArray::ConstSharedPtr msg) { latest_diag_ = msg; });
 
     // Identity TF
     tf_broadcaster_ = std::make_shared<tf2_ros::StaticTransformBroadcaster>(test_node_);
@@ -252,8 +252,8 @@ protected:
   rclcpp::Subscription<diagnostic_msgs::msg::DiagnosticArray>::SharedPtr sub_diag_;
 
   rclcpp::Time current_time_;
-  nav_msgs::msg::Odometry::SharedPtr latest_odom_ = nullptr;
-  diagnostic_msgs::msg::DiagnosticArray::SharedPtr latest_diag_ = nullptr;
+  nav_msgs::msg::Odometry::ConstSharedPtr latest_odom_ = nullptr;
+  diagnostic_msgs::msg::DiagnosticArray::ConstSharedPtr latest_diag_ = nullptr;
   size_t odom_count_ = 0;
 };
 
