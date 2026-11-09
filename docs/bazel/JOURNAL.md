@@ -1225,3 +1225,23 @@ negotiated_examples has 8 component libraries registered with `rclcpp_components
 executable `negotiated_lifecycle_pub`. Ported by a parallel session; committed here after review.
 `bazel test @negotiated//... @negotiated_examples//...` → 3 test binaries (12 + 32 + 32 cases) pass. Parity 0 open,
 0 recorded on both. No source changes needed.
+
+## LLVM 21 vs 23 decider, route B side: autoware_tensorrt_plugins (CUDA kernels)
+
+Chosen as the decider among universe perception packages with CUDA kernels whose dependencies are all ported: it has
+7 kernels (argsort via CUB, BEV pooling, segment CSR, unique, multi-scale deformable attention with `__half`,
+rotation, select-and-pad) and a GPU-vs-CPU reference test, with no ML models needed. Only the CUDA part is built: the
+TensorRT plugin library needs spconv/cumm (prebuilt, ansible/roles/spconv), which is not pinned in Bazel yet
+(recorded).
+
+Route B (this branch: nvcc 13.2, host clang 21 + libc++): all 7 `.cu` files compile **with the existing CUDA header
+patches, no new ones**. nvcc also parses TensorRT's headers here (`plugin_utils.hpp` includes `NvInferRuntime.h`).
+`bazel test @autoware_tensorrt_plugins//...` → `reference_kernels_test` 18 cases pass on the GPU (RTX 5070).
+
+Issues: `cublas_v2.h` not found (the deformable-attention kernel uses cuBLAS headers) → `@cuda//:cublas`; and
+`argsort.hpp` uses `std::size_t` without `<cstddef>` (libc++) → include. The CMake's
+`CUDA_NVCC_FLAGS --expt-relaxed-constexpr -diag-suppress 1675 --extended-lambda` are nvcc spellings; they go on the
+`cuda_library` (the checker does not track `CUDA_NVCC_FLAGS`).
+
+Parity checker: record keys may be globs (`fnmatch`, e.g. `source:src/*plugin*.cpp` for a library that is not
+built); `add_definitions(-DX)` counts as a define; `unset` is ignored.

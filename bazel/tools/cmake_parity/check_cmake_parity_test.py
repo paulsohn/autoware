@@ -67,6 +67,8 @@ pluginlib_export_plugin_description_file(base_pkg plugins.xml)
 add_library(hdr INTERFACE)
 cuda_add_executable(cu_test test/k.cu)
 ament_add_gtest_test(cu_test)
+add_definitions("-DTV_CUDA")
+unset(X CACHE)
 """
             cm = CMake(d)
             cm.run(commands(text))
@@ -77,6 +79,7 @@ ament_add_gtest_test(cu_test)
             self.assertEqual(cm.sources, {"test/utils/test_a.cpp", "test/k.cu"})
             self.assertEqual(cm.unhandled, set())
             self.assertEqual(cm.plugin_exports, {("base_pkg", "plugins.xml")})
+            self.assertEqual(cm.defines, {"TV_CUDA"})
 
 
 class LiteralTest(unittest.TestCase):

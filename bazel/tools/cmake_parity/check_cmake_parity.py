@@ -35,7 +35,7 @@ IGNORED = {
     "target_include_directories", "target_link_libraries", "ament_target_dependencies", "ament_package",
     "message", "get_target_property", "else", "elseif", "endif", "mark_as_advanced", "option", "string",
     "find_path", "find_library", "pkg_check_modules", "set_property", "add_dependencies", "link_directories",
-    "include", "ament_find_gtest", "return",  # return(): only under a reported if()
+    "include", "ament_find_gtest", "return", "unset",  # return(): only under a reported if()
     "autoware_agnocast_wrapper_setup",  # Agnocast test env (LD_PRELOAD); tests here run on ROS 2 (PLAN.md)
 }
 TOOLING_DEP = re.compile(r"^(ament_.*|launch_testing_ament_cmake|autoware_cmake|autoware_lint_common|ros_environment|rosidl_default_.*)$")
@@ -222,6 +222,8 @@ class CMake:
         elif name in ("target_compile_options", "add_compile_options"):
             flags = a[1:] if name == "target_compile_options" else a
             self.copts |= {f for f in flags if f.startswith("-") and f not in AUTOWARE_FLAGS}
+        elif name == "add_definitions":  # old-style: -DNAME[=value] flags
+            self.defines |= {d[2:].split("=")[0] for d in a if d.startswith("-D")}
         elif name in ("target_compile_definitions", "add_compile_definitions"):
             defs = a[1:] if name == "target_compile_definitions" else a
             self.defines |= {d.split("=")[0] for d in defs if d not in ("PRIVATE", "PUBLIC", "INTERFACE")}
@@ -397,11 +399,13 @@ def main(argv):
             print(f"{module}: interface package, not checked")
             continue
         rec = recorded(Path(d))
-        open_ = sorted(found - set(rec))
-        stale = sorted(set(rec) - found)
+        # A record key may be a glob (fnmatch), e.g. "source:src/*plugin*.cpp" for a library that is not built.
+        covered = {f for f in found if any(fnmatch.fnmatchcase(f, k) for k in rec)}
+        open_ = sorted(found - covered)
+        stale = sorted(k for k in rec if not any(fnmatch.fnmatchcase(f, k) for f in found))
         if open_ or stale:
             status = 1
-        print(f"{module}: {len(open_)} open, {len(found & set(rec))} recorded, {len(stale)} stale")
+        print(f"{module}: {len(open_)} open, {len(covered)} recorded, {len(stale)} stale")
         for k in open_:
             print(f"  OPEN   {k}")
         for k in stale:
