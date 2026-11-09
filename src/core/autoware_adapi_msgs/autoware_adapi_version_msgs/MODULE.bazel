@@ -1,3 +1,5 @@
 module(name = "autoware_adapi_version_msgs")
 
 bazel_dep(name = "rosidl_default_generators", version = "0.0.0")
+bazel_dep(name = "rosidl_default_runtime", version = "0.0.0")
+bazel_dep(name = "rosdistro", version = "0.0.0")

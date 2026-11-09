@@ -1,3 +1,4 @@
+load("@rosdistro//ament:defs.bzl", "ament_package")
 load("@crates_agnocast_heaphook//:defs.bzl", "all_crate_deps")
 load("@rules_cc//cc:defs.bzl", "cc_import")
 load("@rules_rust//rust:defs.bzl", "rust_shared_library", "rust_test")
@@ -32,4 +33,15 @@ rust_shared_library(
 rust_test(
     name = "agnocast_heaphook_test",
     crate = ":agnocast_heaphook",
+)
+
+# Installable package (P4): the shared libraries and the package.xml dependencies.
+ament_package(
+    name = "ament_package",
+    libraries = [
+        ":agnocast_heaphook",
+    ],
+    deps = [
+        "@rosdistro//:ament_package",
+    ],
 )

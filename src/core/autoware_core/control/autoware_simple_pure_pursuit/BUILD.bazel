@@ -1,6 +1,6 @@
 load("@autoware_cmake//:defs.bzl", "AUTOWARE_CXXOPTS", "AUTOWARE_DEFINES", "autoware_copts")
 load("@rclcpp_components//:defs.bzl", "rclcpp_components_register_node")
-load("@rosdistro//ament:defs.bzl", "ament_index")
+load("@rosdistro//ament:defs.bzl", "ament_package")
 load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps", "ros_local_defines")
 load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
 
@@ -50,8 +50,8 @@ rclcpp_components_register_node(
 )
 
 # share/autoware_simple_pure_pursuit/{launch,config} (INSTALL_TO_SHARE).
-ament_index(
-    name = "ament_index",
+ament_package(
+    name = "ament_package",
     components = [":autoware_simple_pure_pursuit_exe_record"],
     data = glob([
         "config/**",
@@ -60,6 +60,25 @@ ament_index(
     executables = [":autoware_simple_pure_pursuit_exe"],
     libraries = [":autoware_simple_pure_pursuit_lib"],
     package_xml = "package.xml",
+    deps = [
+        "@autoware_control_msgs//:ament_package",
+        "@autoware_motion_utils//:ament_package",
+        "@autoware_planning_msgs//:ament_package",
+        "@autoware_test_utils//:ament_package",
+        "@autoware_utils_rclcpp//:ament_package",
+        "@autoware_vehicle_info_utils//:ament_package",
+        "@nav_msgs//:ament_package",
+        "@rclcpp//:ament_package",
+        "@rclcpp_components//:ament_package",
+        "@rosdistro//:ament_package",
+        "@tf2//:ament_package",
+    ],
+)
+
+# The installed package doubles as the runtime ament index of this package in tests (data = [":ament_index"]).
+alias(
+    name = "ament_index",
+    actual = ":ament_package",
 )
 
 # target_include_directories(<test> PRIVATE src)

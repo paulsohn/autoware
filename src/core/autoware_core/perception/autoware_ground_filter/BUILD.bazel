@@ -1,6 +1,6 @@
 load("@autoware_cmake//:defs.bzl", "AUTOWARE_CXXOPTS", "AUTOWARE_DEFINES", "autoware_copts")
 load("@rclcpp_components//:defs.bzl", "rclcpp_components_register_node")
-load("@rosdistro//ament:defs.bzl", "ament_index")
+load("@rosdistro//ament:defs.bzl", "ament_package")
 load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps", "ros_local_defines")
 load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
 
@@ -62,8 +62,8 @@ rclcpp_components_register_node(
 )
 
 # share/autoware_ground_filter/{launch,config} (INSTALL_TO_SHARE).
-ament_index(
-    name = "ament_index",
+ament_package(
+    name = "ament_package",
     components = [":ground_filter_node_record"],
     data = glob([
         "config/**",
@@ -72,6 +72,38 @@ ament_index(
     executables = [":ground_filter_node"],
     libraries = [":autoware_ground_filter"],
     package_xml = "package.xml",
+    deps = [
+        "@ament_index_cpp//:ament_package",
+        "@autoware_internal_debug_msgs//:ament_package",
+        "@autoware_point_types//:ament_package",
+        "@autoware_utils_debug//:ament_package",
+        "@autoware_utils_geometry//:ament_package",
+        "@autoware_utils_math//:ament_package",
+        "@autoware_utils_system//:ament_package",
+        "@autoware_utils_tf//:ament_package",
+        "@autoware_vehicle_info_utils//:ament_package",
+        "@message_filters//:ament_package",
+        "@pcl_conversions//:ament_package",
+        "@pcl_msgs//:ament_package",
+        "@pcl_ros//:ament_package",
+        "@rcl_interfaces//:ament_package",
+        "@rclcpp//:ament_package",
+        "@rclcpp_components//:ament_package",
+        "@rcpputils//:ament_package",
+        "@rosdistro//:ament_package",
+        "@sensor_msgs//:ament_package",
+        "@std_msgs//:ament_package",
+        "@tf2//:ament_package",
+        "@tf2_eigen//:ament_package",
+        "@tf2_ros//:ament_package",
+        "@tf2_sensor_msgs//:ament_package",
+    ],
+)
+
+# The installed package doubles as the runtime ament index of this package in tests (data = [":ament_index"]).
+alias(
+    name = "ament_index",
+    actual = ":ament_package",
 )
 
 # target_include_directories(<test> PRIVATE src)

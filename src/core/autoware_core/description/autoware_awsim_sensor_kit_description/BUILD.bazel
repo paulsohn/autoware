@@ -1,18 +1,26 @@
-load("@rosdistro//ament:defs.bzl", "ament_index")
+load("@rosdistro//ament:defs.bzl", "ament_package")
 
 package(default_visibility = ["//visibility:public"])
 
 # No code: share/autoware_awsim_sensor_kit_description/{urdf,config} (INSTALL_TO_SHARE). Its xacro files use the
 # sample sensor kit and velodyne_description at run time (xacro itself is not wired up yet).
-ament_index(
-    name = "ament_index",
+ament_package(
+    name = "ament_package",
     data = glob([
         "config/**",
         "urdf/**",
     ]),
     package_xml = "package.xml",
     deps = [
-        "@autoware_sample_sensor_kit_description//:ament_index",
-        "@velodyne_description//:ament_index",
+        "@autoware_sample_sensor_kit_description//:ament_package",
+        "@rosdistro//:ament_package",
+        "@velodyne_description//:ament_package",
+        "@xacro//:ament_package",
     ],
+)
+
+# The installed package doubles as the runtime ament index of this package in tests (data = [":ament_index"]).
+alias(
+    name = "ament_index",
+    actual = ":ament_package",
 )

@@ -1,3 +1,5 @@
 module(name = "negotiated_interfaces")
 
 bazel_dep(name = "rosidl_default_generators", version = "0.0.0")
+bazel_dep(name = "rosidl_default_runtime", version = "0.0.0")
+bazel_dep(name = "rosdistro", version = "0.0.0")

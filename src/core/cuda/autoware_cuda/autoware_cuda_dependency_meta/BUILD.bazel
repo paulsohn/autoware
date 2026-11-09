@@ -1,10 +1,19 @@
-load("@rosdistro//ament:defs.bzl", "ament_index")
+load("@rosdistro//ament:defs.bzl", "ament_package")
 
 package(default_visibility = ["//visibility:public"])
 
 # No code. Its CMake CONFIG_EXTRAS add -fno-lto for dependents ("symbol `fatbinData' is already defined" with LTO);
 # the Bazel build does not use LTO, so there is nothing to propagate.
-ament_index(
-    name = "ament_index",
+ament_package(
+    name = "ament_package",
     package_xml = "package.xml",
+    deps = [
+        "@rosdistro//:ament_package",
+    ],
+)
+
+# The installed package doubles as the runtime ament index of this package in tests (data = [":ament_index"]).
+alias(
+    name = "ament_index",
+    actual = ":ament_package",
 )

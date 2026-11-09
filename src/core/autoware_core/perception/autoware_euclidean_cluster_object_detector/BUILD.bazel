@@ -1,6 +1,6 @@
 load("@autoware_cmake//:defs.bzl", "AUTOWARE_CXXOPTS", "AUTOWARE_DEFINES", "autoware_copts")
 load("@rclcpp_components//:defs.bzl", "rclcpp_components_register_node")
-load("@rosdistro//ament:defs.bzl", "ament_index")
+load("@rosdistro//ament:defs.bzl", "ament_package")
 load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps", "ros_local_defines")
 load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
 
@@ -87,8 +87,8 @@ COMPONENTS = {
 ) for lib, (_, exe, plugin) in COMPONENTS.items()]
 
 # share/autoware_euclidean_cluster_object_detector/{launch,config,test} (INSTALL_TO_SHARE).
-ament_index(
-    name = "ament_index",
+ament_package(
+    name = "ament_package",
     components = [":{}_record".format(exe) for _, exe, _ in COMPONENTS.values()],
     data = glob([
         "config/**",
@@ -98,6 +98,29 @@ ament_index(
     executables = [":" + exe for _, exe, _ in COMPONENTS.values()],
     libraries = [":autoware_euclidean_cluster_object_detector_lib"] + [":" + lib for lib in COMPONENTS],
     package_xml = "package.xml",
+    deps = [
+        "@autoware_crop_box_filter//:ament_package",
+        "@autoware_internal_debug_msgs//:ament_package",
+        "@autoware_perception_msgs//:ament_package",
+        "@autoware_point_types//:ament_package",
+        "@autoware_utils_debug//:ament_package",
+        "@autoware_utils_diagnostics//:ament_package",
+        "@autoware_utils_system//:ament_package",
+        "@diagnostic_msgs//:ament_package",
+        "@geometry_msgs//:ament_package",
+        "@pcl_conversions//:ament_package",
+        "@rclcpp//:ament_package",
+        "@rclcpp_components//:ament_package",
+        "@rosdistro//:ament_package",
+        "@sensor_msgs//:ament_package",
+        "@std_msgs//:ament_package",
+    ],
+)
+
+# The installed package doubles as the runtime ament index of this package in tests (data = [":ament_index"]).
+alias(
+    name = "ament_index",
+    actual = ":ament_package",
 )
 
 # CMake: include_directories(src) for the whole directory; the tests include "parameters.hpp" etc. by bare name.

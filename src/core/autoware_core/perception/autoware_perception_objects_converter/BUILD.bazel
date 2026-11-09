@@ -1,6 +1,6 @@
 load("@autoware_cmake//:defs.bzl", "AUTOWARE_CXXOPTS", "AUTOWARE_DEFINES", "autoware_copts")
 load("@rclcpp_components//:defs.bzl", "rclcpp_components_register_node")
-load("@rosdistro//ament:defs.bzl", "ament_index")
+load("@rosdistro//ament:defs.bzl", "ament_package")
 load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps", "ros_local_defines")
 load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
 
@@ -44,13 +44,28 @@ rclcpp_components_register_node(
     plugin = "autoware::perception_objects_converter::DetectedToPredictedObjectsConverter",
 )
 
-ament_index(
-    name = "ament_index",
+ament_package(
+    name = "ament_package",
     components = [":detected_to_predicted_objects_converter_node_record"],
     data = glob(["launch/**"]),
     executables = [":detected_to_predicted_objects_converter_node"],
     libraries = [":detected_to_predicted_objects_converter"],
     package_xml = "package.xml",
+    deps = [
+        "@autoware_perception_msgs//:ament_package",
+        "@autoware_utils_uuid//:ament_package",
+        "@geometry_msgs//:ament_package",
+        "@rclcpp//:ament_package",
+        "@rclcpp_components//:ament_package",
+        "@rosdistro//:ament_package",
+        "@unique_identifier_msgs//:ament_package",
+    ],
+)
+
+# The installed package doubles as the runtime ament index of this package in tests (data = [":ament_index"]).
+alias(
+    name = "ament_index",
+    actual = ":ament_package",
 )
 
 collect_transitive_dynamic_deps(

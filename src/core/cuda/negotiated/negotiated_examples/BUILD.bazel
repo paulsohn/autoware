@@ -1,5 +1,5 @@
 load("@rclcpp_components//:defs.bzl", "rclcpp_components_register_node")
-load("@rosdistro//ament:defs.bzl", "ament_index")
+load("@rosdistro//ament:defs.bzl", "ament_package")
 load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps", "ros_local_defines")
 load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library", "cc_shared_library")
 
@@ -85,11 +85,27 @@ cc_binary(
 )
 
 # share/negotiated_examples/launch (install(DIRECTORY launch)).
-ament_index(
-    name = "ament_index",
+ament_package(
+    name = "ament_package",
     components = [":%s_record" % exe for _, exe, _ in NODES],
     data = glob(["launch/**"]),
     executables = [":" + exe for _, exe, _ in NODES] + [":negotiated_lifecycle_pub"],
     libraries = [":" + lib for lib, _, _ in NODES],
     package_xml = "package.xml",
+    deps = [
+        "@launch//:ament_package",
+        "@launch_ros//:ament_package",
+        "@negotiated//:ament_package",
+        "@rclcpp//:ament_package",
+        "@rclcpp_components//:ament_package",
+        "@rclcpp_lifecycle//:ament_package",
+        "@rosdistro//:ament_package",
+        "@std_msgs//:ament_package",
+    ],
+)
+
+# The installed package doubles as the runtime ament index of this package in tests (data = [":ament_index"]).
+alias(
+    name = "ament_index",
+    actual = ":ament_package",
 )

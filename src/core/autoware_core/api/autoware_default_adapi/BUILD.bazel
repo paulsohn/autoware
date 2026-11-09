@@ -1,7 +1,7 @@
 load("@autoware_agnocast_wrapper//:defs.bzl", "autoware_agnocast_wrapper_register_node")
 load("@autoware_cmake//:defs.bzl", "AUTOWARE_CXXOPTS", "AUTOWARE_DEFINES", "autoware_copts")
 load("@launch_testing_ros//:defs.bzl", "launch_ros_test")
-load("@rosdistro//ament:defs.bzl", "ament_index")
+load("@rosdistro//ament:defs.bzl", "ament_package")
 load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps", "ros_local_defines")
 load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
 
@@ -80,8 +80,8 @@ API_NODES = [
 ]
 
 # share/autoware_default_adapi/{config,launch,test} (INSTALL_TO_SHARE).
-ament_index(
-    name = "ament_index",
+ament_package(
+    name = "ament_package",
     components = [":%s_component_record" % e for e, _ in API_NODES],
     data = glob([
         "config/**",
@@ -91,7 +91,39 @@ ament_index(
     executables = [":" + e for e, _ in API_NODES],
     libraries = [":autoware_default_adapi"],
     package_xml = "package.xml",
-    deps = [":%s_autoware_node_plugin" % e for e, _ in API_NODES],
+    deps = [":%s_autoware_node_plugin" % e for e, _ in API_NODES] + [
+        "@autoware_adapi_specs//:ament_package",
+        "@autoware_adapi_v1_msgs//:ament_package",
+        "@autoware_adapi_version_msgs//:ament_package",
+        "@autoware_agnocast_wrapper//:ament_package",
+        "@autoware_common_msgs//:ament_package",
+        "@autoware_component_interface_specs//:ament_package",
+        "@autoware_component_interface_utils//:ament_package",
+        "@autoware_geography_utils//:ament_package",
+        "@autoware_global_parameter_loader//:ament_package",
+        "@autoware_localization_msgs//:ament_package",
+        "@autoware_motion_utils//:ament_package",
+        "@autoware_planning_msgs//:ament_package",
+        "@autoware_system_msgs//:ament_package",
+        "@autoware_utils_rclcpp//:ament_package",
+        "@autoware_vehicle_info_utils//:ament_package",
+        "@autoware_vehicle_msgs//:ament_package",
+        "@diagnostic_msgs//:ament_package",
+        "@diagnostic_updater//:ament_package",
+        "@geographic_msgs//:ament_package",
+        "@nav_msgs//:ament_package",
+        "@rclcpp//:ament_package",
+        "@rclcpp_components//:ament_package",
+        "@rosdistro//:ament_package",
+        "@shape_msgs//:ament_package",
+        "@std_srvs//:ament_package",
+    ],
+)
+
+# The installed package doubles as the runtime ament index of this package in tests (data = [":ament_index"]).
+alias(
+    name = "ament_index",
+    actual = ":ament_package",
 )
 
 # target_include_directories(<test> PRIVATE src)

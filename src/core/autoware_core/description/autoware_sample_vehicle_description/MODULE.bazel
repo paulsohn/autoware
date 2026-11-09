@@ -1,3 +1,4 @@
 module(name = "autoware_sample_vehicle_description")
 
 bazel_dep(name = "rosdistro", version = "0.0.0")
+bazel_dep(name = "xacro", version = "0.0.0")

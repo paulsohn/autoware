@@ -2,3 +2,5 @@ module(name = "autoware_internal_metric_msgs")
 
 bazel_dep(name = "builtin_interfaces", version = "0.0.0")
 bazel_dep(name = "rosidl_default_generators", version = "0.0.0")
+bazel_dep(name = "rosidl_default_runtime", version = "0.0.0")
+bazel_dep(name = "rosdistro", version = "0.0.0")

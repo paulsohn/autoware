@@ -1,5 +1,5 @@
 load("@autoware_cmake//:defs.bzl", "AUTOWARE_CXXOPTS", "AUTOWARE_DEFINES", "autoware_copts")
-load("@rosdistro//ament:defs.bzl", "ament_index")
+load("@rosdistro//ament:defs.bzl", "ament_package")
 load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps", "ros_local_defines")
 load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
 
@@ -55,13 +55,38 @@ cc_shared_library(
 
 # share/autoware_behavior_velocity_stop_line_module/config (INSTALL_TO_SHARE); pluginlib_export_plugin_description_file(autoware_behavior_velocity_planner
 # plugins.xml).
-ament_index(
-    name = "ament_index",
+ament_package(
+    name = "ament_package",
     data = glob(["config/**"]),
     libraries = [":autoware_behavior_velocity_stop_line_module"],
     package_xml = "package.xml",
     plugin_category = "autoware_behavior_velocity_planner",
     plugins = ["plugins.xml"],
+    deps = [
+        "@autoware_behavior_velocity_planner//:ament_package",
+        "@autoware_behavior_velocity_planner_common//:ament_package",
+        "@autoware_internal_planning_msgs//:ament_package",
+        "@autoware_motion_utils//:ament_package",
+        "@autoware_planning_factor_interface//:ament_package",
+        "@autoware_route_handler//:ament_package",
+        "@autoware_trajectory//:ament_package",
+        "@autoware_utils_debug//:ament_package",
+        "@autoware_utils_geometry//:ament_package",
+        "@autoware_utils_rclcpp//:ament_package",
+        "@geometry_msgs//:ament_package",
+        "@lanelet2_core//:ament_package",
+        "@pluginlib//:ament_package",
+        "@rclcpp//:ament_package",
+        "@rosdistro//:ament_package",
+        "@tf2_geometry_msgs//:ament_package",
+        "@visualization_msgs//:ament_package",
+    ],
+)
+
+# The installed package doubles as the runtime ament index of this package in tests (data = [":ament_index"]).
+alias(
+    name = "ament_index",
+    actual = ":ament_package",
 )
 
 # target_include_directories(<test> PRIVATE src); the tests include "../src/....hpp".

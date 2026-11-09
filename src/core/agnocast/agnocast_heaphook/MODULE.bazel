@@ -19,3 +19,4 @@ crate.from_cargo(
     ],
 )
 use_repo(crate, "crates_agnocast_heaphook")
+bazel_dep(name = "rosdistro", version = "0.0.0")

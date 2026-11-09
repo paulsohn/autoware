@@ -1,6 +1,6 @@
 load("@autoware_agnocast_wrapper//:defs.bzl", "autoware_agnocast_wrapper_register_node")
 load("@autoware_cmake//:defs.bzl", "AUTOWARE_CXXOPTS", "AUTOWARE_DEFINES", "autoware_copts")
-load("@rosdistro//ament:defs.bzl", "ament_index")
+load("@rosdistro//ament:defs.bzl", "ament_package")
 load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps", "ros_local_defines")
 load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
 
@@ -84,8 +84,8 @@ autoware_agnocast_wrapper_register_node(
 )
 
 # share/autoware_motion_velocity_planner/{launch,config,test_config,test_data,test_map} (INSTALL_TO_SHARE).
-ament_index(
-    name = "ament_index",
+ament_package(
+    name = "ament_package",
     components = [":autoware_motion_velocity_planner_node_component_record"],
     data = glob([
         "config/**",
@@ -97,7 +97,49 @@ ament_index(
     executables = [":autoware_motion_velocity_planner_node"],
     libraries = [":autoware_motion_velocity_planner_lib"],
     package_xml = "package.xml",
-    deps = [":autoware_motion_velocity_planner_node_autoware_node_plugin"],
+    deps = [
+        ":autoware_motion_velocity_planner_node_autoware_node_plugin",
+        "@autoware_agnocast_wrapper//:ament_package",
+        "@autoware_internal_debug_msgs//:ament_package",
+        "@autoware_internal_planning_msgs//:ament_package",
+        "@autoware_map_msgs//:ament_package",
+        "@autoware_motion_utils//:ament_package",
+        "@autoware_motion_velocity_planner_common//:ament_package",
+        "@autoware_perception_msgs//:ament_package",
+        "@autoware_planning_factor_interface//:ament_package",
+        "@autoware_planning_msgs//:ament_package",
+        "@autoware_utils_debug//:ament_package",
+        "@autoware_utils_geometry//:ament_package",
+        "@autoware_utils_logging//:ament_package",
+        "@autoware_utils_pcl//:ament_package",
+        "@autoware_utils_rclcpp//:ament_package",
+        "@autoware_utils_system//:ament_package",
+        "@autoware_velocity_smoother//:ament_package",
+        "@geometry_msgs//:ament_package",
+        "@lanelet2_core//:ament_package",
+        "@lanelet2_routing//:ament_package",
+        "@lanelet2_traffic_rules//:ament_package",
+        "@nav_msgs//:ament_package",
+        "@pcl_conversions//:ament_package",
+        "@pluginlib//:ament_package",
+        "@rcl_interfaces//:ament_package",
+        "@rclcpp//:ament_package",
+        "@rclcpp_components//:ament_package",
+        "@rosdistro//:ament_package",
+        "@rosidl_default_runtime//:ament_package",
+        "@sensor_msgs//:ament_package",
+        "@tf2//:ament_package",
+        "@tf2_eigen//:ament_package",
+        "@tf2_geometry_msgs//:ament_package",
+        "@tf2_ros//:ament_package",
+        "@visualization_msgs//:ament_package",
+    ],
+)
+
+# The installed package doubles as the runtime ament index of this package in tests (data = [":ament_index"]).
+alias(
+    name = "ament_index",
+    actual = ":ament_package",
 )
 
 # The tests include "../src/....hpp".

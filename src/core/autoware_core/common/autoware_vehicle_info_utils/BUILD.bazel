@@ -2,7 +2,7 @@ load("@autoware_cmake//:defs.bzl", "AUTOWARE_CXXOPTS", "AUTOWARE_DEFINES", "auto
 load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps", "ros_local_defines")
 load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
 load("@pip_ros//:requirements.bzl", "requirement")
-load("@rosdistro//ament:defs.bzl", "ament_index")
+load("@rosdistro//ament:defs.bzl", "ament_index", "ament_package")
 load("@rules_python//python:defs.bzl", "py_binary")
 
 package(default_visibility = ["//visibility:public"])
@@ -61,12 +61,25 @@ ament_index(
     package_xml = "package.xml",
 )
 
-ament_index(
-    name = "ament_index",
+ament_package(
+    name = "ament_package",
     executables = [":min_turning_radius_calculator"],
     libraries = [":autoware_vehicle_info_utils"],
     package_xml = "package.xml",
-    deps = [":share"],
+    deps = [
+        ":share",
+        "@autoware_utils_geometry//:ament_package",
+        "@autoware_utils_rclcpp//:ament_package",
+        "@geometry_msgs//:ament_package",
+        "@rclcpp//:ament_package",
+        "@rosdistro//:ament_package",
+    ],
+)
+
+# The installed package doubles as the runtime ament index of this package in tests (data = [":ament_index"]).
+alias(
+    name = "ament_index",
+    actual = ":ament_package",
 )
 
 collect_transitive_dynamic_deps(

@@ -1,19 +1,26 @@
-load("@rosdistro//ament:defs.bzl", "ament_index")
+load("@rosdistro//ament:defs.bzl", "ament_package")
 
 package(default_visibility = ["//visibility:public"])
 
 # No code: share/autoware_core_map/{config,launch} (INSTALL_TO_SHARE). Its launch file starts the nodes of its
 # exec_depends.
-ament_index(
-    name = "ament_index",
+ament_package(
+    name = "ament_package",
     data = glob([
         "config/**",
         "launch/**",
     ]),
     package_xml = "package.xml",
     deps = [
-        "@autoware_lanelet2_map_visualizer//:ament_index",
-        "@autoware_map_loader//:ament_index",
-        "@autoware_map_projection_loader//:ament_index",
+        "@autoware_lanelet2_map_visualizer//:ament_package",
+        "@autoware_map_loader//:ament_package",
+        "@autoware_map_projection_loader//:ament_package",
+        "@rosdistro//:ament_package",
     ],
+)
+
+# The installed package doubles as the runtime ament index of this package in tests (data = [":ament_index"]).
+alias(
+    name = "ament_index",
+    actual = ":ament_package",
 )

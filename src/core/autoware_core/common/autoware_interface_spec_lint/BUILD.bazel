@@ -1,5 +1,5 @@
 load("@pip_ros//:requirements.bzl", "requirement")
-load("@rosdistro//ament:defs.bzl", "ament_index")
+load("@rosdistro//ament:defs.bzl", "ament_package")
 load("@rosdistro//python:defs.bzl", "py_pytest")
 load("@rules_python//python:defs.bzl", "py_binary", "py_library")
 
@@ -20,10 +20,19 @@ py_binary(
     deps = [":autoware_interface_spec_lint"],
 )
 
-ament_index(
-    name = "ament_index",
+ament_package(
+    name = "ament_package",
     data = ["config/interface_gates.yaml"],
     package_xml = "package.xml",
+    deps = [
+        "@rosdistro//:ament_package",
+    ],
+)
+
+# The installed package doubles as the runtime ament index of this package in tests (data = [":ament_index"]).
+alias(
+    name = "ament_index",
+    actual = ":ament_package",
 )
 
 # test_copyright.py (ament_copyright) is left out: linters run outside the build.

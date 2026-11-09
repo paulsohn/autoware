@@ -1,4 +1,4 @@
-load("@rosidl_default_generators//:defs.bzl", "default_generators")
+load("@rosidl_default_generators//:defs.bzl", "default_generators", "rosidl_ament_package")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -12,5 +12,22 @@ default_generators(
         "//msg:MissionRemainingDistanceTime",
         "//msg:PublishedTime",
         "//msg:ResourceUsageReport",
+    ],
+)
+
+# Installable package (P4): the generated message libraries and the package.xml dependencies.
+rosidl_ament_package(
+    name = "ament_package",
+    package_xml = "package.xml",
+    deps = [
+        "@autoware_internal_debug_msgs//:ament_package",
+        "@autoware_internal_localization_msgs//:ament_package",
+        "@autoware_internal_metric_msgs//:ament_package",
+        "@autoware_internal_perception_msgs//:ament_package",
+        "@autoware_internal_planning_msgs//:ament_package",
+        "@builtin_interfaces//:ament_package",
+        "@rosdistro//:ament_package",
+        "@rosidl_default_runtime//:ament_package",
+        "@std_msgs//:ament_package",
     ],
 )

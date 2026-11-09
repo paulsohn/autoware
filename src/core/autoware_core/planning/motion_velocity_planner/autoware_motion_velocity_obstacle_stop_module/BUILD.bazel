@@ -1,5 +1,5 @@
 load("@autoware_cmake//:defs.bzl", "AUTOWARE_CXXOPTS", "AUTOWARE_DEFINES", "autoware_copts")
-load("@rosdistro//ament:defs.bzl", "ament_index")
+load("@rosdistro//ament:defs.bzl", "ament_package")
 load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps", "ros_local_defines")
 load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
 
@@ -71,13 +71,50 @@ cc_shared_library(
 
 # share/autoware_motion_velocity_obstacle_stop_module/config (INSTALL_TO_SHARE); pluginlib_export_plugin_description_file(autoware_motion_velocity_planner
 # plugins.xml).
-ament_index(
-    name = "ament_index",
+ament_package(
+    name = "ament_package",
     data = glob(["config/**"]),
     libraries = [":autoware_motion_velocity_obstacle_stop_module"],
     package_xml = "package.xml",
     plugin_category = "autoware_motion_velocity_planner",
     plugins = ["plugins.xml"],
+    deps = [
+        "@autoware_internal_debug_msgs//:ament_package",
+        "@autoware_internal_planning_msgs//:ament_package",
+        "@autoware_motion_utils//:ament_package",
+        "@autoware_motion_velocity_planner_common//:ament_package",
+        "@autoware_object_recognition_utils//:ament_package",
+        "@autoware_objects_of_interest_marker_interface//:ament_package",
+        "@autoware_perception_msgs//:ament_package",
+        "@autoware_planning_factor_interface//:ament_package",
+        "@autoware_planning_msgs//:ament_package",
+        "@autoware_signal_processing//:ament_package",
+        "@autoware_utils_debug//:ament_package",
+        "@autoware_utils_geometry//:ament_package",
+        "@autoware_utils_rclcpp//:ament_package",
+        "@autoware_utils_system//:ament_package",
+        "@autoware_utils_uuid//:ament_package",
+        "@autoware_utils_visualization//:ament_package",
+        "@autoware_vehicle_info_utils//:ament_package",
+        "@geometry_msgs//:ament_package",
+        "@nav_msgs//:ament_package",
+        "@pcl_conversions//:ament_package",
+        "@pluginlib//:ament_package",
+        "@rclcpp//:ament_package",
+        "@rosdistro//:ament_package",
+        "@sensor_msgs//:ament_package",
+        "@tf2//:ament_package",
+        "@tf2_eigen//:ament_package",
+        "@tf2_ros//:ament_package",
+        "@unique_identifier_msgs//:ament_package",
+        "@visualization_msgs//:ament_package",
+    ],
+)
+
+# The installed package doubles as the runtime ament index of this package in tests (data = [":ament_index"]).
+alias(
+    name = "ament_index",
+    actual = ":ament_package",
 )
 
 # target_include_directories(<test> PRIVATE src), plus test/test_utils.hpp.

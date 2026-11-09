@@ -1,10 +1,20 @@
-load("@rosdistro//ament:defs.bzl", "ament_index")
+load("@rosdistro//ament:defs.bzl", "ament_package")
 
 package(default_visibility = ["//visibility:public"])
 
 # No code: share/autoware_sample_vehicle_description/{config,mesh,urdf} (INSTALL_TO_SHARE).
-ament_index(
-    name = "ament_index",
+ament_package(
+    name = "ament_package",
     data = glob(["config/**", "mesh/**", "urdf/**"]),
     package_xml = "package.xml",
+    deps = [
+        "@rosdistro//:ament_package",
+        "@xacro//:ament_package",
+    ],
+)
+
+# The installed package doubles as the runtime ament index of this package in tests (data = [":ament_index"]).
+alias(
+    name = "ament_index",
+    actual = ":ament_package",
 )

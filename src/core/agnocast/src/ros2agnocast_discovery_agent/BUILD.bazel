@@ -1,5 +1,5 @@
 load("@pip_ros//:requirements.bzl", "requirement")
-load("@rosdistro//ament:defs.bzl", "ament_index")
+load("@rosdistro//ament:defs.bzl", "ament_package")
 load("@rosdistro//python:defs.bzl", "py_pytest")
 load("@rules_python//python:defs.bzl", "py_binary", "py_library")
 
@@ -43,8 +43,8 @@ SCRIPTS = [
 ) for name in SCRIPTS]
 
 # share/ros2agnocast_discovery_agent/{launch,systemd}
-ament_index(
-    name = "ament_index",
+ament_package(
+    name = "ament_package",
     data = [
         "launch/discovery_agent.launch.xml",
         "systemd/README.md",
@@ -52,6 +52,18 @@ ament_index(
     ],
     executables = [":" + name for name in SCRIPTS],
     package_xml = "package.xml",
+    deps = [
+        "@agnocast_ioctl_wrapper//:ament_package",
+        "@rclpy//:ament_package",
+        "@ros2agnocast_discovery_msgs//:ament_package",
+        "@rosdistro//:ament_package",
+    ],
+)
+
+# The installed package doubles as the runtime ament index of this package in tests (data = [":ament_index"]).
+alias(
+    name = "ament_index",
+    actual = ":ament_package",
 )
 
 py_pytest(

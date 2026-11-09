@@ -1,3 +1,4 @@
+load("@rosdistro//ament:defs.bzl", "ament_package")
 load("@autoware_cmake//:defs.bzl", "AUTOWARE_CXXOPTS", "AUTOWARE_DEFINES", "autoware_copts", "cc_headers_only")
 load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps", "ros_local_defines")
 load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
@@ -82,3 +83,29 @@ collect_transitive_dynamic_deps(
     ("test_autoware_planning_test_manager", "test_planning_test_manager"),
     ("test_autoware_planning_test_manager_utils", "test_planning_test_manager_utils"),
 ]]
+
+# Installable package (P4): the shared libraries and the package.xml dependencies.
+ament_package(
+    name = "ament_package",
+    libraries = [
+        ":autoware_planning_test_manager",
+    ],
+    package_xml = "package.xml",
+    deps = [
+        "@autoware_component_interface_specs//:ament_package",
+        "@autoware_internal_planning_msgs//:ament_package",
+        "@autoware_motion_utils//:ament_package",
+        "@autoware_planning_msgs//:ament_package",
+        "@autoware_route_handler//:ament_package",
+        "@autoware_test_utils//:ament_package",
+        "@autoware_utils_geometry//:ament_package",
+        "@geometry_msgs//:ament_package",
+        "@lanelet2_core//:ament_package",
+        "@nav_msgs//:ament_package",
+        "@rclcpp//:ament_package",
+        "@rosdistro//:ament_package",
+        "@tf2_msgs//:ament_package",
+        "@tf2_ros//:ament_package",
+        "@unique_identifier_msgs//:ament_package",
+    ],
+)

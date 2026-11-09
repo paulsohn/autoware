@@ -1,3 +1,4 @@
+load("@rosdistro//ament:defs.bzl", "ament_package")
 load("@autoware_cmake//:defs.bzl", "AUTOWARE_CXXOPTS", "AUTOWARE_DEFINES", "autoware_copts")
 load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps", "ros_local_defines")
 load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
@@ -55,5 +56,25 @@ cc_test(
     deps = [
         ":autoware_objects_of_interest_marker_interface_library",
         "@rosdistro//cc:googletest",
+    ],
+)
+
+# Installable package (P4): the shared libraries and the package.xml dependencies.
+ament_package(
+    name = "ament_package",
+    libraries = [
+        ":autoware_objects_of_interest_marker_interface",
+    ],
+    package_xml = "package.xml",
+    deps = [
+        "@autoware_perception_msgs//:ament_package",
+        "@autoware_utils_geometry//:ament_package",
+        "@autoware_utils_math//:ament_package",
+        "@autoware_utils_visualization//:ament_package",
+        "@geometry_msgs//:ament_package",
+        "@rclcpp//:ament_package",
+        "@rosdistro//:ament_package",
+        "@std_msgs//:ament_package",
+        "@visualization_msgs//:ament_package",
     ],
 )

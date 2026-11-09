@@ -1,6 +1,6 @@
 load("@agnocast_heaphook//:defs.bzl", "AGNOCAST_TEST_TAGS", "heaphook_test")
 load("@autoware_cmake//:defs.bzl", "AUTOWARE_CXXOPTS", "AUTOWARE_DEFINES", "autoware_copts")
-load("@rosdistro//ament:defs.bzl", "ament_index")
+load("@rosdistro//ament:defs.bzl", "ament_package")
 load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps", "ros_local_defines")
 load("@rosdistro//python:defs.bzl", "py_pytest")
 load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
@@ -75,8 +75,8 @@ py_library(
 )
 
 # share/autoware_agnocast_wrapper/{cmake,templates,launch}
-ament_index(
-    name = "ament_index",
+ament_package(
+    name = "ament_package",
     data = glob([
         "cmake/**",
         "launch/**",
@@ -84,6 +84,31 @@ ament_index(
     ]),
     libraries = [":autoware_agnocast_wrapper"],
     package_xml = "package.xml",
+    deps = [
+        "@agnocast_components//:ament_package",
+        "@agnocastlib//:ament_package",
+        "@ament_index_python//:ament_package",
+        "@autoware_utils_rclcpp//:ament_package",
+        "@class_loader//:ament_package",
+        "@diagnostic_updater//:ament_package",
+        "@geometry_msgs//:ament_package",
+        "@launch//:ament_package",
+        "@launch_ros//:ament_package",
+        "@message_filters//:ament_package",
+        "@rcl//:ament_package",
+        "@rcl_interfaces//:ament_package",
+        "@rclcpp//:ament_package",
+        "@rclcpp_components//:ament_package",
+        "@rosdistro//:ament_package",
+        "@tf2//:ament_package",
+        "@tf2_ros//:ament_package",
+    ],
+)
+
+# The installed package doubles as the runtime ament index of this package in tests (data = [":ament_index"]).
+alias(
+    name = "ament_index",
+    actual = ":ament_package",
 )
 
 py_pytest(

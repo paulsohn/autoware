@@ -1,4 +1,4 @@
-load("@rosidl_default_generators//:defs.bzl", "default_generators")
+load("@rosidl_default_generators//:defs.bzl", "default_generators", "rosidl_ament_package")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -10,5 +10,15 @@ default_generators(
         "//msg:NegotiatedTopicsInfo",
         "//msg:SupportedType",
         "//msg:SupportedTypes",
+    ],
+)
+
+# Installable package (P4): the generated message libraries and the package.xml dependencies.
+rosidl_ament_package(
+    name = "ament_package",
+    package_xml = "package.xml",
+    deps = [
+        "@rosdistro//:ament_package",
+        "@rosidl_default_runtime//:ament_package",
     ],
 )

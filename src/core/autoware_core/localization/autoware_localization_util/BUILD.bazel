@@ -1,3 +1,4 @@
+load("@rosdistro//ament:defs.bzl", "ament_package")
 load("@autoware_cmake//:defs.bzl", "AUTOWARE_CXXOPTS", "AUTOWARE_DEFINES", "autoware_copts")
 load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps", "ros_local_defines")
 load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
@@ -68,3 +69,25 @@ collect_transitive_dynamic_deps(
     ("test_tpe", "test/test_tpe.cpp", "@rosdistro//cc:googletest"),
     ("test_util_func", "test/test_util_func.cpp", "@rosdistro//cc:googletest"),
 ]]
+
+# Installable package (P4): the shared libraries and the package.xml dependencies.
+ament_package(
+    name = "ament_package",
+    libraries = [
+        ":autoware_localization_util",
+    ],
+    package_xml = "package.xml",
+    deps = [
+        "@autoware_utils_geometry//:ament_package",
+        "@autoware_utils_math//:ament_package",
+        "@diagnostic_msgs//:ament_package",
+        "@geometry_msgs//:ament_package",
+        "@rclcpp//:ament_package",
+        "@rosdistro//:ament_package",
+        "@std_msgs//:ament_package",
+        "@tf2//:ament_package",
+        "@tf2_eigen//:ament_package",
+        "@tf2_geometry_msgs//:ament_package",
+        "@visualization_msgs//:ament_package",
+    ],
+)

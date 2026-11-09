@@ -1,26 +1,33 @@
-load("@rosdistro//ament:defs.bzl", "ament_index")
+load("@rosdistro//ament:defs.bzl", "ament_package")
 
 package(default_visibility = ["//visibility:public"])
 
 # No code: share/autoware_core/{launch,rviz} (INSTALL_TO_SHARE). The top of autoware_core: its ament index pulls
 # in every core component (and rviz2, which its launch file starts).
-ament_index(
-    name = "ament_index",
+ament_package(
+    name = "ament_package",
     data = glob([
         "launch/**",
         "rviz/**",
     ]),
     package_xml = "package.xml",
     deps = [
-        "@autoware_core_api//:ament_index",
-        "@autoware_core_control//:ament_index",
-        "@autoware_core_localization//:ament_index",
-        "@autoware_core_map//:ament_index",
-        "@autoware_core_perception//:ament_index",
-        "@autoware_core_planning//:ament_index",
-        "@autoware_core_sensing//:ament_index",
-        "@autoware_core_vehicle//:ament_index",
-        "@autoware_global_parameter_loader//:ament_index",
-        "@rviz2//:ament_index",
+        "@autoware_core_api//:ament_package",
+        "@autoware_core_control//:ament_package",
+        "@autoware_core_localization//:ament_package",
+        "@autoware_core_map//:ament_package",
+        "@autoware_core_perception//:ament_package",
+        "@autoware_core_planning//:ament_package",
+        "@autoware_core_sensing//:ament_package",
+        "@autoware_core_vehicle//:ament_package",
+        "@autoware_global_parameter_loader//:ament_package",
+        "@rosdistro//:ament_package",
+        "@rviz2//:ament_package",
     ],
+)
+
+# The installed package doubles as the runtime ament index of this package in tests (data = [":ament_index"]).
+alias(
+    name = "ament_index",
+    actual = ":ament_package",
 )

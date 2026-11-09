@@ -2,7 +2,7 @@ load("@autoware_agnocast_wrapper//:defs.bzl", "autoware_agnocast_wrapper_registe
 load("@autoware_cmake//:defs.bzl", "AUTOWARE_CXXOPTS", "AUTOWARE_DEFINES", "autoware_copts")
 load("@launch_testing_ros//:defs.bzl", "launch_ros_test")
 load("@openmp//:defs.bzl", "OPENMP_COPTS")
-load("@rosdistro//ament:defs.bzl", "ament_index")
+load("@rosdistro//ament:defs.bzl", "ament_package")
 load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps", "ros_local_defines")
 load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
 
@@ -129,8 +129,8 @@ autoware_agnocast_wrapper_register_node(
 )
 
 # share/autoware_ndt_scan_matcher/{launch,config} (INSTALL_TO_SHARE).
-ament_index(
-    name = "ament_index",
+ament_package(
+    name = "ament_package",
     components = [":autoware_ndt_scan_matcher_node_component_record"],
     data = glob([
         "config/**",
@@ -142,7 +142,43 @@ ament_index(
         ":multigrid_ndt_omp",
     ],
     package_xml = "package.xml",
-    deps = [":autoware_ndt_scan_matcher_node_autoware_node_plugin"],
+    deps = [
+        ":autoware_ndt_scan_matcher_node_autoware_node_plugin",
+        "@autoware_agnocast_wrapper//:ament_package",
+        "@autoware_internal_debug_msgs//:ament_package",
+        "@autoware_internal_localization_msgs//:ament_package",
+        "@autoware_localization_util//:ament_package",
+        "@autoware_map_msgs//:ament_package",
+        "@autoware_qos_utils//:ament_package",
+        "@autoware_utils_diagnostics//:ament_package",
+        "@autoware_utils_geometry//:ament_package",
+        "@autoware_utils_logging//:ament_package",
+        "@autoware_utils_pcl//:ament_package",
+        "@autoware_utils_visualization//:ament_package",
+        "@builtin_interfaces//:ament_package",
+        "@diagnostic_msgs//:ament_package",
+        "@geometry_msgs//:ament_package",
+        "@nav_msgs//:ament_package",
+        "@pcl_conversions//:ament_package",
+        "@rclcpp//:ament_package",
+        "@rclcpp_components//:ament_package",
+        "@rosdistro//:ament_package",
+        "@sensor_msgs//:ament_package",
+        "@std_msgs//:ament_package",
+        "@std_srvs//:ament_package",
+        "@tf2//:ament_package",
+        "@tf2_eigen//:ament_package",
+        "@tf2_geometry_msgs//:ament_package",
+        "@tf2_ros//:ament_package",
+        "@tf2_sensor_msgs//:ament_package",
+        "@visualization_msgs//:ament_package",
+    ],
+)
+
+# The installed package doubles as the runtime ament index of this package in tests (data = [":ament_index"]).
+alias(
+    name = "ament_index",
+    actual = ":ament_package",
 )
 
 # Test headers (fixtures, stubs, harness) and src/ndt_scan_matcher_helper.hpp, included relative to the tests.

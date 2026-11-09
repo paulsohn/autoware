@@ -1,4 +1,4 @@
-load("@rosdistro//ament:defs.bzl", "ament_index")
+load("@rosdistro//ament:defs.bzl", "ament_package")
 load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps", "ros_local_defines")
 load("@rules_cc//cc:defs.bzl", "cc_binary")
 
@@ -47,8 +47,8 @@ collect_transitive_dynamic_deps(
 )
 
 # share/agnocast_components/{cmake,src/*.cpp.in}
-ament_index(
-    name = "ament_index",
+ament_package(
+    name = "ament_package",
     data = glob(["cmake/**"]) + [
         "src/node_main.cpp.in",
         "src/node_main_agnocast_only.cpp.in",
@@ -59,4 +59,19 @@ ament_index(
         ":agnocast_component_container_mt",
     ],
     package_xml = "package.xml",
+    deps = [
+        "@agnocast_cie_config_msgs//:ament_package",
+        "@agnocast_cie_thread_configurator//:ament_package",
+        "@agnocastlib//:ament_package",
+        "@class_loader//:ament_package",
+        "@rclcpp//:ament_package",
+        "@rclcpp_components//:ament_package",
+        "@rosdistro//:ament_package",
+    ],
+)
+
+# The installed package doubles as the runtime ament index of this package in tests (data = [":ament_index"]).
+alias(
+    name = "ament_index",
+    actual = ":ament_package",
 )

@@ -1,4 +1,4 @@
-load("@rosdistro//ament:defs.bzl", "ament_index")
+load("@rosdistro//ament:defs.bzl", "ament_package")
 load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps", "ros_local_defines")
 load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library", "cc_shared_library", "cc_test")
 
@@ -90,8 +90,8 @@ collect_transitive_dynamic_deps(
 }.items()]
 
 # install(DIRECTORY launch/ DESTINATION share/${PROJECT_NAME}/launch)
-ament_index(
-    name = "ament_index",
+ament_package(
+    name = "ament_package",
     data = glob(["launch/**"]),
     executables = [
         ":prerun_node",
@@ -99,6 +99,17 @@ ament_index(
     ],
     libraries = [":agnocast_thread_configurator"],
     package_xml = "package.xml",
+    deps = [
+        "@agnocast_cie_config_msgs//:ament_package",
+        "@rclcpp//:ament_package",
+        "@rosdistro//:ament_package",
+    ],
+)
+
+# The installed package doubles as the runtime ament index of this package in tests (data = [":ament_index"]).
+alias(
+    name = "ament_index",
+    actual = ":ament_package",
 )
 
 [cc_test(

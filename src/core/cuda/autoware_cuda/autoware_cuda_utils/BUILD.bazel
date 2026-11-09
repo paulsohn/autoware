@@ -1,5 +1,5 @@
 load("@autoware_cmake//:defs.bzl", "AUTOWARE_CXXOPTS", "autoware_copts")
-load("@rosdistro//ament:defs.bzl", "ament_index")
+load("@rosdistro//ament:defs.bzl", "ament_package")
 load("@rules_cc//cc:defs.bzl", "cc_library", "cc_test")
 load("@rules_cuda//cuda:defs.bzl", "cuda_library")
 
@@ -21,10 +21,19 @@ cc_library(
     ],
 )
 
-ament_index(
-    name = "ament_index",
+ament_package(
+    name = "ament_package",
     package_xml = "package.xml",
-    deps = ["@autoware_cuda_dependency_meta//:ament_index"],
+    deps = [
+        "@autoware_cuda_dependency_meta//:ament_package",
+        "@rosdistro//:ament_package",
+    ],
+)
+
+# The installed package doubles as the runtime ament index of this package in tests (data = [":ament_index"]).
+alias(
+    name = "ament_index",
+    actual = ":ament_package",
 )
 
 # cuda_add_executable(test_autoware_cuda_utils <.cu files> test/test_main.cpp): the .cu files go through nvcc.

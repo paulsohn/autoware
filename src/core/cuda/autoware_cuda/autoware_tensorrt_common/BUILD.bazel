@@ -1,5 +1,5 @@
 load("@autoware_cmake//:defs.bzl", "autoware_copts")
-load("@rosdistro//ament:defs.bzl", "ament_index")
+load("@rosdistro//ament:defs.bzl", "ament_package")
 load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps", "ros_local_defines")
 load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
 load("@tensorrt//:defs.bzl", "TENSORRT_VERSION_MAJOR", "tensorrt_test_env")
@@ -43,11 +43,22 @@ cc_shared_library(
     deps = [":autoware_tensorrt_common_library"],
 )
 
-ament_index(
-    name = "ament_index",
+ament_package(
+    name = "ament_package",
     libraries = [":autoware_tensorrt_common"],
     package_xml = "package.xml",
-    deps = ["@autoware_cuda_dependency_meta//:ament_index"],
+    deps = [
+        "@autoware_cuda_dependency_meta//:ament_package",
+        "@rclcpp//:ament_package",
+        "@rosdistro//:ament_package",
+        "@tensorrt//:runtime_libs",
+    ],
+)
+
+# The installed package doubles as the runtime ament index of this package in tests (data = [":ament_index"]).
+alias(
+    name = "ament_index",
+    actual = ":ament_package",
 )
 
 collect_transitive_dynamic_deps(

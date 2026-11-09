@@ -1,20 +1,27 @@
-load("@rosdistro//ament:defs.bzl", "ament_index")
+load("@rosdistro//ament:defs.bzl", "ament_package")
 
 package(default_visibility = ["//visibility:public"])
 
 # No code: share/autoware_core_localization/launch (INSTALL_TO_SHARE). Its launch file starts the nodes of its
 # exec_depends.
-ament_index(
-    name = "ament_index",
+ament_package(
+    name = "ament_package",
     data = glob(["launch/**"]),
     package_xml = "package.xml",
     deps = [
-        "@autoware_downsample_filters//:ament_index",
-        "@autoware_ekf_localizer//:ament_index",
-        "@autoware_ndt_scan_matcher//:ament_index",
-        "@autoware_pose_initializer//:ament_index",
-        "@autoware_stop_filter//:ament_index",
-        "@autoware_twist2accel//:ament_index",
-        "@topic_tools//:ament_index",
+        "@autoware_downsample_filters//:ament_package",
+        "@autoware_ekf_localizer//:ament_package",
+        "@autoware_ndt_scan_matcher//:ament_package",
+        "@autoware_pose_initializer//:ament_package",
+        "@autoware_stop_filter//:ament_package",
+        "@autoware_twist2accel//:ament_package",
+        "@rosdistro//:ament_package",
+        "@topic_tools//:ament_package",
     ],
+)
+
+# The installed package doubles as the runtime ament index of this package in tests (data = [":ament_index"]).
+alias(
+    name = "ament_index",
+    actual = ":ament_package",
 )

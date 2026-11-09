@@ -1,7 +1,7 @@
 load("@autoware_agnocast_wrapper//:defs.bzl", "autoware_agnocast_wrapper_register_node")
 load("@autoware_cmake//:defs.bzl", "AUTOWARE_CXXOPTS", "AUTOWARE_DEFINES", "autoware_copts")
 load("@launch_testing_ros//:defs.bzl", "launch_ros_test")
-load("@rosdistro//ament:defs.bzl", "ament_index")
+load("@rosdistro//ament:defs.bzl", "ament_package")
 load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps", "ros_local_defines")
 load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
 
@@ -57,14 +57,34 @@ autoware_agnocast_wrapper_register_node(
 )
 
 # share/autoware_lanelet2_map_visualizer/launch (INSTALL_TO_SHARE).
-ament_index(
-    name = "ament_index",
+ament_package(
+    name = "ament_package",
     components = [":autoware_lanelet2_map_visualizer_component_record"],
     data = glob(["launch/**"]),
     executables = [":autoware_lanelet2_map_visualizer"],
     libraries = [":lanelet2_map_visualization_node"],
     package_xml = "package.xml",
-    deps = [":autoware_lanelet2_map_visualizer_autoware_node_plugin"],
+    deps = [
+        ":autoware_lanelet2_map_visualizer_autoware_node_plugin",
+        "@autoware_agnocast_wrapper//:ament_package",
+        "@autoware_lanelet2_extension//:ament_package",
+        "@autoware_lanelet2_utils//:ament_package",
+        "@autoware_map_msgs//:ament_package",
+        "@autoware_utils_visualization//:ament_package",
+        "@lanelet2_core//:ament_package",
+        "@lanelet2_projection//:ament_package",
+        "@rclcpp//:ament_package",
+        "@rclcpp_components//:ament_package",
+        "@rosdistro//:ament_package",
+        "@std_msgs//:ament_package",
+        "@visualization_msgs//:ament_package",
+    ],
+)
+
+# The installed package doubles as the runtime ament index of this package in tests (data = [":ament_index"]).
+alias(
+    name = "ament_index",
+    actual = ":ament_package",
 )
 
 # The tests include "../src/<...>.hpp".

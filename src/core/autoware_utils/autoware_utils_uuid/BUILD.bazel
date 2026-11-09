@@ -1,3 +1,4 @@
+load("@rosdistro//ament:defs.bzl", "ament_package")
 load("@autoware_cmake//:defs.bzl", "AUTOWARE_CXXOPTS", "AUTOWARE_DEFINES", "autoware_copts")
 load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps", "ros_local_defines")
 load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
@@ -52,5 +53,18 @@ cc_test(
     dynamic_deps = [":test_dynamic_deps"],
     deps = [":autoware_utils_uuid_library"] + DEPENDENCIES.values() + TEST_DEPENDENCIES.values() + [
         "@googletest//:gtest",
+    ],
+)
+
+# Installable package (P4): the shared libraries and the package.xml dependencies.
+ament_package(
+    name = "ament_package",
+    libraries = [
+        ":autoware_utils_uuid",
+    ],
+    package_xml = "package.xml",
+    deps = [
+        "@rosdistro//:ament_package",
+        "@unique_identifier_msgs//:ament_package",
     ],
 )

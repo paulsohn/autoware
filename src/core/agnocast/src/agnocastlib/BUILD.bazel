@@ -1,5 +1,5 @@
 load("@agnocast_heaphook//:defs.bzl", "heaphook_test")
-load("@rosdistro//ament:defs.bzl", "ament_index")
+load("@rosdistro//ament:defs.bzl", "ament_package")
 load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps", "ros_local_defines")
 load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library", "cc_shared_library", "cc_test")
 
@@ -176,8 +176,8 @@ collect_transitive_dynamic_deps(
     "agnocast_component_container_mt",
 ]]
 
-ament_index(
-    name = "ament_index",
+ament_package(
+    name = "ament_package",
     executables = [
         ":agnocast_component_container",
         ":agnocast_component_container_cie",
@@ -185,6 +185,35 @@ ament_index(
     ],
     libraries = [":agnocast"],
     package_xml = "package.xml",
+    deps = [
+        "@agnocast_cie_config_msgs//:ament_package",
+        "@agnocast_cie_thread_configurator//:ament_package",
+        "@ament_index_cpp//:ament_package",
+        "@diagnostic_msgs//:ament_package",
+        "@diagnostic_updater//:ament_package",
+        "@geometry_msgs//:ament_package",
+        "@message_filters//:ament_package",
+        "@rcl_yaml_param_parser//:ament_package",
+        "@rclcpp//:ament_package",
+        "@rclcpp_components//:ament_package",
+        "@rcpputils//:ament_package",
+        "@rmw//:ament_package",
+        "@ros2agnocast_discovery_agent//:ament_package",
+        "@rosdistro//:ament_package",
+        "@rosgraph_msgs//:ament_package",
+        "@rosidl_typesupport_introspection_cpp//:ament_package",
+        "@service_msgs//:ament_package",
+        "@tf2//:ament_package",
+        "@tf2_msgs//:ament_package",
+        "@tf2_ros//:ament_package",
+        "@tracetools//:ament_package",
+    ],
+)
+
+# The installed package doubles as the runtime ament index of this package in tests (data = [":ament_index"]).
+alias(
+    name = "ament_index",
+    actual = ":ament_package",
 )
 
 # Test-only shared library preloaded by test_integration_agnocast_heaphook.
