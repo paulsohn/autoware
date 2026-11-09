@@ -20,8 +20,8 @@
 #include <sensor_msgs/point_cloud2_iterator.hpp>
 
 #include <gtest/gtest.h>
-#include <tf2_ros/static_transform_broadcaster.h>
-#include <tf2_ros/transform_broadcaster.h>
+#include <tf2_ros/static_transform_broadcaster.hpp>
+#include <tf2_ros/transform_broadcaster.hpp>
 
 #include <chrono>
 #include <memory>
@@ -203,7 +203,7 @@ protected:
     pointcloud_subscriber_ =
       pointcloud_subscriber_node_->create_subscription<sensor_msgs::msg::PointCloud2>(
         "output", rclcpp::SensorDataQoS(),
-        [this](const sensor_msgs::msg::PointCloud2::SharedPtr msg) {
+        [this](const sensor_msgs::msg::PointCloud2::ConstSharedPtr msg) {
           received_pointcloud_ = msg;
           pointcloud_received_ = true;
         });
@@ -257,7 +257,7 @@ protected:
 
   // Test data
   bool pointcloud_received_ = false;
-  sensor_msgs::msg::PointCloud2::SharedPtr received_pointcloud_;
+  sensor_msgs::msg::PointCloud2::ConstSharedPtr received_pointcloud_;
 };
 
 /**

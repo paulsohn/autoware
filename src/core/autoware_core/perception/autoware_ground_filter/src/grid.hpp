@@ -25,6 +25,17 @@
 #include <utility>
 #include <vector>
 
+// M_PIf, M_PI_2f and M_PI_4f are GNU extensions added in glibc 2.35.
+#ifndef M_PIf
+#define M_PIf static_cast<float>(M_PI)
+#endif
+#ifndef M_PI_2f
+#define M_PI_2f static_cast<float>(M_PI_2)
+#endif
+#ifndef M_PI_4f
+#define M_PI_4f static_cast<float>(M_PI_4)
+#endif
+
 namespace
 {
 

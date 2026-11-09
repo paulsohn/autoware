@@ -122,7 +122,7 @@ public:
     output_sub_node_ = rclcpp::Node::make_shared("voxel_grid_test_output_subscriber");
     output_sub_ = output_sub_node_->create_subscription<sensor_msgs::msg::PointCloud2>(
       "output", rclcpp::SensorDataQoS(),
-      [this](const sensor_msgs::msg::PointCloud2::SharedPtr msg) {
+      [this](const sensor_msgs::msg::PointCloud2::ConstSharedPtr msg) {
         received_cloud_ = msg;
         is_received_.store(true);
       });
@@ -169,7 +169,7 @@ public:
     return true;
   }
 
-  const sensor_msgs::msg::PointCloud2::SharedPtr & received_cloud() const
+  const sensor_msgs::msg::PointCloud2::ConstSharedPtr & received_cloud() const
   {
     return received_cloud_;
   }
@@ -199,7 +199,7 @@ private:
   rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr output_sub_;
 
   std::atomic_bool is_received_{false};
-  sensor_msgs::msg::PointCloud2::SharedPtr received_cloud_;
+  sensor_msgs::msg::PointCloud2::ConstSharedPtr received_cloud_;
 };
 
 TEST(VoxelGridDownsampleFilterIntegrationTest, CollapsesPointsInSameVoxelToSingleCentroid)
