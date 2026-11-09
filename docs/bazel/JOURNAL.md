@@ -1089,3 +1089,34 @@ bazel test --keep_going $(cat bazel/autoware_packages.txt)   # Executed 0 out of
 ```
 All results came from the cache: every test had already run after its inputs last changed, including the
 osqp_0_6 rename, which rebuilt and re-ran its dependents.
+
+## P3: CUDA toolchain routes (LLVM 23 parked on `bazel-llvm23`)
+
+Goal: CUDA declared and versioned in Bazel, replacing ansible/roles/cuda and tensorrt; only the GPU driver stays on
+the host. Hermetic toolkit: rules_cuda `cuda.redist_json(version, sha256)` in `bazel/cuda.MODULE.bazel`. The
+manifest pins every component archive for linux-x86_64 and linux-sbsa. Problem: compiling `.cu` with the build's
+clang 21 + libc++ 21.
+
+What was found:
+1. RCR rules_cuda 0.3.0.rcr.0 rejects `sm_110` (Thor) → `bazel/patches/rules_cuda_sm110.patch` (upstream has it).
+2. nvcc 13.0 + host clang 21: CUDA 13.0 accepts clang < 21 and refuses libc++ on x86 (both overridable). Then nvcc's
+   EDG front end fails on libc++ 21 (`__builtin_common_type is not a template`, `std::__promote`).
+3. clang 21 as CUDA compiler: CUDA ≤ 12.8 (`texture_fetch_functions.h` not found with CUDA 13), no `sm_110`.
+4. **Route A, LLVM 23.1.2 for everything** (clang compiles CUDA; clang 23 supports CUDA ≤ 13.2 and `sm_110`).
+   Measured in a separate worktree: the first build took 2 h 22 min cold, then 6 pass / 188 fail to build. After
+   wave-1 fixes (5 third-party patches, 1 flag, 2 source fixes), 146 pass, 35 fail to build, 1 fails. libc++ 23 dropped
+   transitive includes (rosidl_runtime_cpp, Fast DDS, libzmq, bison, PCL), clang 23 errors on C pointer mismatches
+   (OSQP) and reports more `[[nodiscard]]`/deprecation warnings. **lanelet2_utils returns succeeding lanelet sequences
+   in another order** (a behaviour change, not a build break). Parked as one commit on branch `bazel-llvm23`; its
+   `docs/bazel/LLVM23.md` lists everything done and still needed.
+5. JetPack 7.2.1 (current, Thor) ships **CUDA 13.2.2 + TensorRT 10.16.2** (JetPack 7.0: 13.0.0 + 10.13.2.6).
+   CUDA 13.2 accepts **clang < 22** as nvcc host compiler, and nvcc 13.2's front end parses libc++ 21 (item 2's errors are
+   gone). Left: CUDA's `crt/math_functions.h` uses libc++'s pre-21 `std::__promote` on Linux (its libc++ ≥ 21 branch is
+   enabled only for Android/HORIZON); a force-included shim cannot fix it, because nvcc parses its runtime headers first.
+   → **Route B**: keep LLVM 21, nvcc 13.2 with host clang 21, patch that CUDA header (needs component patching in
+   rules_cuda).
+
+Lessons:
+- A compiler/standard-library upgrade is not only a build change. One libc++ upgrade reordered results of a planning
+  utility. Run the full test suite before accepting one, and treat order changes as findings.
+- Check what the target platform ships (JetPack) before pinning versions from older provisioning scripts.
