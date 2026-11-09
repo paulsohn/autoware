@@ -709,6 +709,7 @@
     "https://bazel.ros.org/modules/chomp_motion_planner/2.15.2-1.rcr.0/MODULE.bazel": "5a8d468b7855b8d173e1e5a284bd770993e8d7f18f58a376d64b49bd0a624de0",
     "https://bazel.ros.org/modules/chomp_motion_planner/2.15.2-1.rcr.0/source.json": "387ea9f9b9ae369e262f8218fc4dae16a8ca8f08f63038c5040b4eb7b231ef29",
     "https://bazel.ros.org/modules/civetweb/1.16/MODULE.bazel": "not found",
+    "https://bazel.ros.org/modules/class_loader/0.0.0/MODULE.bazel": "fa36b296e31462374859873c7f8a1d07011c38b9f6a3c1428661d623ed2c7a57",
     "https://bazel.ros.org/modules/class_loader/2.9.4-3.rcr.2/MODULE.bazel": "6b44aa704e04c836b3dbc8826d42e9017fceef67a6b3d37c0a6581544be0009b",
     "https://bazel.ros.org/modules/class_loader/2.9.4-3.rcr.2/source.json": "452307a7aa83138aa93608101056a8e5d77776511205310c72850c7d31690bb4",
     "https://bazel.ros.org/modules/classic_bags/0.4.0-3.rcr.2/MODULE.bazel": "4a24e7cc4bde4fc13c6256937a16f8db023a4d1a9617e7ebc92cfa3792de6be1",

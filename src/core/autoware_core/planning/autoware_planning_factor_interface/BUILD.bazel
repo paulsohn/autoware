@@ -1,0 +1,38 @@
+load("@autoware_cmake//:defs.bzl", "AUTOWARE_CXXOPTS", "AUTOWARE_DEFINES", "autoware_copts")
+load("@rosdistro//cc:defs.bzl", "ros_local_defines")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library")
+
+package(default_visibility = ["//visibility:public"])
+
+# Deliberate differences from CMakeLists.txt (checked by bazel/tools/cmake_parity):
+# cmake-diff test:test_autoware_planning_factor_interface: needs autoware_agnocast_wrapper, which is ported later
+#   (Agnocast-free packages first); add the test then.
+# cmake-diff dep:autoware_agnocast_wrapper: test_depend of that test.
+# cmake-diff source:test/test_planning_factor_interface.cpp: that test's source.
+
+DEPENDENCIES = {
+    "@autoware_internal_planning_msgs//:cc_shared": "@autoware_internal_planning_msgs//:cc",
+    "@autoware_motion_utils//:autoware_motion_utils": "@autoware_motion_utils//:autoware_motion_utils_library",
+    "@autoware_planning_msgs//:cc_shared": "@autoware_planning_msgs//:cc",
+    "@autoware_utils_geometry//:autoware_utils_geometry": "@autoware_utils_geometry//:autoware_utils_geometry_library",
+    "@geometry_msgs//:cc_shared": "@geometry_msgs//:cc",
+    "@rclcpp//:rclcpp": "@rclcpp//:rclcpp_library",
+}
+
+cc_library(
+    name = "autoware_planning_factor_interface_library",
+    srcs = glob(["src/*.cpp"]),
+    hdrs = glob(["include/**/*.hpp"]),
+    copts = autoware_copts(),
+    cxxopts = AUTOWARE_CXXOPTS,
+    local_defines = ros_local_defines() + AUTOWARE_DEFINES,
+    includes = ["include"],
+    deps = DEPENDENCIES.values(),
+)
+
+cc_shared_library(
+    name = "autoware_planning_factor_interface",
+    dynamic_deps = DEPENDENCIES.keys(),
+    exports_filter = [":autoware_planning_factor_interface_library"],
+    deps = [":autoware_planning_factor_interface_library"],
+)

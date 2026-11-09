@@ -1,0 +1,137 @@
+load("@autoware_cmake//:defs.bzl", "AUTOWARE_CXXOPTS", "AUTOWARE_DEFINES", "autoware_copts")
+load("@rclcpp_components//:defs.bzl", "rclcpp_components_register_node")
+load("@rosdistro//ament:defs.bzl", "ament_index")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps", "ros_local_defines")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+DEPENDENCIES = {
+    "@autoware_internal_debug_msgs//:cc_shared": "@autoware_internal_debug_msgs//:cc",
+    "@autoware_perception_msgs//:cc_shared": "@autoware_perception_msgs//:cc",
+    "@autoware_point_types//:autoware_point_types": "@autoware_point_types//:autoware_point_types_library",
+    "@autoware_utils_debug//:autoware_utils_debug": "@autoware_utils_debug//:autoware_utils_debug_library",
+    "@autoware_utils_diagnostics//:autoware_utils_diagnostics": "@autoware_utils_diagnostics//:autoware_utils_diagnostics_library",
+    "@autoware_utils_system//:autoware_utils_system": "@autoware_utils_system//:autoware_utils_system_library",
+    "@diagnostic_msgs//:cc_shared": "@diagnostic_msgs//:cc",
+    "@geometry_msgs//:cc_shared": "@geometry_msgs//:cc",
+    "@pcl_conversions//:pcl_conversions": "@pcl_conversions//:pcl_conversions_library",
+    "@rclcpp//:rclcpp": "@rclcpp//:rclcpp_library",
+    "@rclcpp_components//:rclcpp_components": "@rclcpp_components//:rclcpp_components_library",
+    "@rosdistro//cc:pcl": "@rosdistro//cc:pcl_library",
+    "@sensor_msgs//:cc_shared": "@sensor_msgs//:cc",
+    "@std_msgs//:cc_shared": "@std_msgs//:cc",
+}
+
+
+# The sources include each other relatively ("../lib/...", "../src/..."), so all headers ride along here.
+cc_library(
+    name = "autoware_euclidean_cluster_object_detector_lib_library",
+    srcs = [
+        "lib/ros_conversions.cpp",
+        "src/euclidean_cluster_object_detector.cpp",
+    ],
+    hdrs = glob([
+        "lib/*.hpp",
+        "src/*.hpp",
+    ]),
+    deps = DEPENDENCIES.values(),
+    copts = autoware_copts(),
+    cxxopts = AUTOWARE_CXXOPTS,
+    local_defines = ros_local_defines() + AUTOWARE_DEFINES,
+)
+
+cc_shared_library(
+    name = "autoware_euclidean_cluster_object_detector_lib",
+    dynamic_deps = DEPENDENCIES.keys(),
+    exports_filter = [":autoware_euclidean_cluster_object_detector_lib_library"],
+    deps = [":autoware_euclidean_cluster_object_detector_lib_library"],
+)
+
+# Component libraries (CMake names), each linking the shared _lib.
+COMPONENTS = {
+    "autoware_euclidean_cluster_object_detector_node_core": (
+        "src/euclidean_cluster_node.cpp",
+        "euclidean_cluster_node",
+        "autoware::euclidean_cluster::EuclideanClusterNode",
+    ),
+    "autoware_euclidean_cluster_object_detector_voxel_grid_node_core": (
+        "src/voxel_grid_based_euclidean_cluster_node.cpp",
+        "voxel_grid_based_euclidean_cluster_node",
+        "autoware::euclidean_cluster::VoxelGridBasedEuclideanClusterNode",
+    ),
+}
+
+[cc_library(
+    name = lib + "_library",
+    srcs = [src],
+    deps = [":autoware_euclidean_cluster_object_detector_lib_library"] + DEPENDENCIES.values(),
+    copts = autoware_copts(),
+    cxxopts = AUTOWARE_CXXOPTS,
+    local_defines = ros_local_defines() + AUTOWARE_DEFINES,
+) for lib, (src, _, _) in COMPONENTS.items()]
+
+[cc_shared_library(
+    name = lib,
+    dynamic_deps = [":autoware_euclidean_cluster_object_detector_lib"] + DEPENDENCIES.keys(),
+    exports_filter = [":{}_library".format(lib)],
+    deps = [":{}_library".format(lib)],
+) for lib in COMPONENTS]
+
+[rclcpp_components_register_node(
+    name = exe,
+    component = ":" + lib,
+    data = ["@@//bazel/config:cyclonedds.xml"],
+    node_name = exe,
+    plugin = plugin,
+) for lib, (_, exe, plugin) in COMPONENTS.items()]
+
+# share/autoware_euclidean_cluster_object_detector/{launch,config,test} (INSTALL_TO_SHARE).
+ament_index(
+    name = "ament_index",
+    components = [":{}_record".format(exe) for _, exe, _ in COMPONENTS.values()],
+    data = glob([
+        "config/**",
+        "launch/**",
+        "test/**",
+    ]),
+    executables = [":" + exe for _, exe, _ in COMPONENTS.values()],
+    libraries = [":autoware_euclidean_cluster_object_detector_lib"] + [":" + lib for lib in COMPONENTS],
+    package_xml = "package.xml",
+)
+
+# CMake: include_directories(src) for the whole directory; the tests include "parameters.hpp" etc. by bare name.
+cc_library(
+    name = "src_headers",
+    testonly = True,
+    hdrs = glob(["src/*.hpp"]),
+    includes = ["src"],
+    visibility = ["//visibility:private"],
+)
+
+collect_transitive_dynamic_deps(
+    name = "test_dynamic_deps",
+    dynamic_deps = [":" + lib for lib in COMPONENTS],
+    visibility = ["//visibility:private"],
+)
+
+# ament_auto_add_gtest links every library of the package.
+[cc_test(
+    name = name,
+    srcs = ["test/{}.cpp".format(src)],
+    data = [
+        ":ament_index",
+        "@@//bazel/config:cyclonedds.xml",
+    ],
+    dynamic_deps = [":test_dynamic_deps"],
+    deps = [":{}_library".format(lib) for lib in COMPONENTS] + [":src_headers", gtest],
+    copts = autoware_copts(),
+    cxxopts = AUTOWARE_CXXOPTS,
+    local_defines = ros_local_defines() + AUTOWARE_DEFINES,
+) for name, src, gtest in [
+    ("test_euclidean_cluster", "test_euclidean_cluster", "@googletest//:gtest"),
+    ("test_euclidean_cluster_object_detector_integration", "test_euclidean_cluster_object_detector_integration", "@rosdistro//cc:googletest"),
+    ("test_nodes", "test_nodes", "@googletest//:gtest"),
+    ("test_ros_conversions", "test_ros_conversions", "@googletest//:gtest"),
+    ("test_voxel_grid_based_euclidean_cluster_fusion", "test_voxel_grid_based_euclidean_cluster", "@googletest//:gtest"),
+]]

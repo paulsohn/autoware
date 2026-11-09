@@ -214,3 +214,18 @@ local_path_override(module_name = "autoware_test_node", path = "src/core/autowar
 
 bazel_dep(name = "autoware_sample_sensor_kit_description")
 local_path_override(module_name = "autoware_sample_sensor_kit_description", path = "src/core/autoware_core/description/autoware_sample_sensor_kit_description")
+
+bazel_dep(name = "autoware_command_gate")
+local_path_override(module_name = "autoware_command_gate", path = "src/core/autoware_core/control/autoware_command_gate")
+
+bazel_dep(name = "autoware_euclidean_cluster_object_detector")
+local_path_override(module_name = "autoware_euclidean_cluster_object_detector", path = "src/core/autoware_core/perception/autoware_euclidean_cluster_object_detector")
+
+bazel_dep(name = "autoware_planning_topic_converter")
+local_path_override(module_name = "autoware_planning_topic_converter", path = "src/core/autoware_core/planning/autoware_planning_topic_converter")
+
+bazel_dep(name = "autoware_simple_pure_pursuit")
+local_path_override(module_name = "autoware_simple_pure_pursuit", path = "src/core/autoware_core/control/autoware_simple_pure_pursuit")
+
+bazel_dep(name = "autoware_planning_factor_interface")
+local_path_override(module_name = "autoware_planning_factor_interface", path = "src/core/autoware_core/planning/autoware_planning_factor_interface")

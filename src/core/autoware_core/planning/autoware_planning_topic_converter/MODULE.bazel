@@ -1,0 +1,10 @@
+module(name = "autoware_planning_topic_converter")
+
+bazel_dep(name = "autoware_cmake", version = "0.0.0")
+bazel_dep(name = "autoware_motion_utils", version = "0.0.0")
+bazel_dep(name = "autoware_planning_msgs", version = "0.0.0")
+bazel_dep(name = "autoware_utils_geometry", version = "0.0.0")
+bazel_dep(name = "rclcpp", version = "0.0.0")
+bazel_dep(name = "rclcpp_components", version = "0.0.0")
+bazel_dep(name = "rosdistro", version = "0.0.0")
+bazel_dep(name = "rules_cc", version = "0.2.26.rcr.0")

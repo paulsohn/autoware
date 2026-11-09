@@ -1,0 +1,91 @@
+load("@autoware_cmake//:defs.bzl", "AUTOWARE_CXXOPTS", "AUTOWARE_DEFINES", "autoware_copts")
+load("@rclcpp_components//:defs.bzl", "rclcpp_components_register_node")
+load("@rosdistro//ament:defs.bzl", "ament_index")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps", "ros_local_defines")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+DEPENDENCIES = {
+    "@autoware_motion_utils//:autoware_motion_utils": "@autoware_motion_utils//:autoware_motion_utils_library",
+    "@autoware_planning_msgs//:cc_shared": "@autoware_planning_msgs//:cc",
+    "@autoware_utils_geometry//:autoware_utils_geometry": "@autoware_utils_geometry//:autoware_utils_geometry_library",
+    "@rclcpp//:rclcpp": "@rclcpp//:rclcpp_library",
+    "@rclcpp_components//:rclcpp_components": "@rclcpp_components//:rclcpp_components_library",
+}
+
+# CMake sets the autoware_package() flags by hand here.
+
+cc_library(
+    name = "planning_topic_converter_library",
+    srcs = ["src/path_to_trajectory.cpp"],
+    hdrs = ["src/path_to_trajectory.hpp"],
+    deps = DEPENDENCIES.values(),
+    copts = autoware_copts(),
+    cxxopts = AUTOWARE_CXXOPTS,
+    local_defines = ros_local_defines() + AUTOWARE_DEFINES,
+)
+
+cc_shared_library(
+    name = "planning_topic_converter",
+    dynamic_deps = DEPENDENCIES.keys(),
+    exports_filter = [":planning_topic_converter_library"],
+    deps = [":planning_topic_converter_library"],
+)
+
+# Component library.
+cc_library(
+    name = "planning_topic_converter_ros_library",
+    srcs = ["src/path_to_trajectory_node.cpp"],
+    hdrs = ["src/path_to_trajectory_node.hpp"],
+    deps = [":planning_topic_converter_library"] + DEPENDENCIES.values(),
+    copts = autoware_copts(),
+    cxxopts = AUTOWARE_CXXOPTS,
+    local_defines = ros_local_defines() + AUTOWARE_DEFINES,
+)
+
+cc_shared_library(
+    name = "planning_topic_converter_ros",
+    dynamic_deps = [":planning_topic_converter"] + DEPENDENCIES.keys(),
+    exports_filter = [":planning_topic_converter_ros_library"],
+    deps = [":planning_topic_converter_ros_library"],
+)
+
+rclcpp_components_register_node(
+    name = "path_to_trajectory_converter",
+    component = ":planning_topic_converter_ros",
+    data = ["@@//bazel/config:cyclonedds.xml"],
+    node_name = "path_to_trajectory_converter",
+    plugin = "autoware::planning_topic_converter::PathToTrajectoryNode",
+)
+
+ament_index(
+    name = "ament_index",
+    components = [":path_to_trajectory_converter_record"],
+    executables = [":path_to_trajectory_converter"],
+    libraries = [
+        ":planning_topic_converter",
+        ":planning_topic_converter_ros",
+    ],
+    package_xml = "package.xml",
+)
+
+collect_transitive_dynamic_deps(
+    name = "test_dynamic_deps",
+    dynamic_deps = [":planning_topic_converter_ros"],
+    visibility = ["//visibility:private"],
+)
+
+[cc_test(
+    name = name,
+    srcs = [src],
+    data = ["@@//bazel/config:cyclonedds.xml"],
+    dynamic_deps = [":test_dynamic_deps"],
+    deps = [lib, "@rosdistro//cc:googletest"],
+    copts = autoware_copts(),
+    cxxopts = AUTOWARE_CXXOPTS,
+    local_defines = ros_local_defines() + AUTOWARE_DEFINES,
+) for name, src, lib in [
+    ("test_path_to_trajectory", "test/test_path_to_trajectory.cpp", ":planning_topic_converter_library"),
+    ("test_path_to_trajectory_node", "test/test_path_to_trajectory_node.cpp", ":planning_topic_converter_ros_library"),
+]]
