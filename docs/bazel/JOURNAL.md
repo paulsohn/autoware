@@ -1082,3 +1082,10 @@ Both contain no code (`ament_index` with exec_depend indexes). `autoware_core//:
 it pulls in every `autoware_core_*` component index, autoware_global_parameter_loader and the RCR's
 `@rviz2//:ament_index`. Parity 0 open, 0 recorded on both. With these, every package in the autoware_core closure
 has a Bazel module.
+
+Full suite after the last layer:
+```
+bazel test --keep_going $(cat bazel/autoware_packages.txt)   # Executed 0 out of 193 tests: 193 tests pass.
+```
+All results came from the cache: every test had already run after its inputs last changed, including the
+osqp_0_6 rename, which rebuilt and re-ran its dependents.
