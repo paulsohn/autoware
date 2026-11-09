@@ -1,0 +1,15 @@
+Allow Thor's sm_110 (CUDA 13 renamed SM101 to SM110). Upstream rules_cuda already lists it
+(bazel-contrib/rules_cuda main, cuda/private/providers.bzl); the RCR's 0.3.0.rcr.0 predates it.
+
+--- a/cuda/private/providers.bzl
++++ b/cuda/private/providers.bzl
+@@ -29,6 +29,9 @@
+     "103",
+     "103a",
+     "103f",
++    "110",
++    "110a",
++    "110f",
+     "120",
+     "120a",
+     "120f",

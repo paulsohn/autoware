@@ -1,0 +1,38 @@
+CUDA 13.2 crt headers with libc++ on Linux (unsupported by NVIDIA on x86; see bazel/cuda.MODULE.bazel).
+NVIDIA's libc++ support in these headers lives in branches enabled only for Android/HORIZON. This patch
+defines __NV_LIBCPP_LINUX for libc++ on Linux and enables those branches where they concern libc++
+(declarations matching libc++'s own <cmath>), not where they concern Android's C library (bionic).
+Applies to the crt component on x86_64 and SBSA.
+
+--- a/crt/include/crt/math_functions.h
++++ b/crt/include/crt/math_functions.h
+@@ -59,6 +59,11 @@
+ 
+ #if !defined(__MATH_FUNCTIONS_H__)
+ #define __MATH_FUNCTIONS_H__
++
++/* Autoware Bazel build: libc++ on Linux takes the libc++ branches written for Android/HORIZON. */
++#if defined(_LIBCPP_VERSION) && defined(__linux__) && !defined(__ANDROID__)
++#define __NV_LIBCPP_LINUX 1
++#endif
+ 
+ #if (defined(__HORIZON__) || defined(_LIBCPP_VERSION)) && (_LIBCPP_VERSION >= 180000)
+ #define NV_MATH_BEGIN_NAMESPACE_STD    _LIBCPP_BEGIN_NAMESPACE_STD namespace __math {
+@@ -4796,7 +4801,7 @@
+ #else /* !(__ANDROID__ || __HORIZON__) */
+ __forceinline__ __DEVICE_FUNCTIONS_DECL__ __cudart_builtin__ int isnan(double x) throw();
+ #endif /* __ANDROID__ */
+-#if (defined(__ANDROID__) || defined(__HORIZON__)) && _LIBCPP_VERSION >= 8000
++#if (defined(__ANDROID__) || defined(__HORIZON__) || defined(__NV_LIBCPP_LINUX)) && _LIBCPP_VERSION >= 8000
+ inline _LIBCPP_INLINE_VISIBILITY  __DEVICE_FUNCTIONS_DECL__ __cudart_builtin__ bool isnan(long double x) _NOEXCEPT;
+ #else /* !( (defined(__ANDROID__) || defined(__HORIZON__)) && _LIBCPP_VERSION >= 8000) */
+ __forceinline__ __DEVICE_FUNCTIONS_DECL__ __cudart_builtin__  NV_INT_OR_BOOL isnan(long double x);
+@@ -5395,7 +5400,7 @@
+ extern __DEVICE_FUNCTIONS_DECL__ __cudart_builtin__ float    __cdecl sqrt(float) NV_MATH_NOEXCEPT_OR_THROW;
+ extern __DEVICE_FUNCTIONS_DECL__ __cudart_builtin__ float    __cdecl pow(float, float) NV_MATH_NOEXCEPT_OR_THROW;
+ #if defined(_LIBCPP_VERSION)
+-#if (defined (__ANDROID__) || defined(__HORIZON__)) && (_LIBCPP_VERSION >= 9000)
++#if (defined (__ANDROID__) || defined(__HORIZON__) || defined(__NV_LIBCPP_LINUX)) && (_LIBCPP_VERSION >= 9000)
+ #if _LIBCPP_VERSION >= 210000
+ template <class _A1, class _A2,
+ 	  std::__enable_if_t<std::is_arithmetic<_A1>::value && std::is_arithmetic<_A2>::value, int>>

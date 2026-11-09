@@ -102,3 +102,13 @@ test --run_under=@rosdistro//python:run_test_isolated
 
 # Personal overrides (not committed).
 try-import %workspace%/user.bazelrc
+
+# CUDA (toolkit versions: bazel/cuda.MODULE.bazel; PLAN.md "CUDA").
+# GPU code for Autoware's CMake list for CUDA >= 12.8: Turing, Ampere, Orin, Ada, Thor (sm_110), Blackwell
+# (sm_120), plus compute_120 PTX for newer GPUs.
+common --@rules_cuda//cuda:archs=compute_75:sm_75;compute_86:sm_86;compute_87:sm_87;compute_89:sm_89;compute_110:sm_110;compute_120:compute_120,sm_120
+# nvcc compiles CUDA, with the hermetic clang 21 + libc++ (like all other C++ here) as host compiler; CUDA 13.2
+# supports host clang < 22. NVIDIA refuses libc++ on x86 by policy (crt/host_defines.h); the define overrides it, and
+# bazel/patches/cuda_crt_libcxx_math_functions_*.patch fixes the one libc++ 21 gap found in CUDA's headers (PLAN.md "CUDA").
+common --@rules_cuda//cuda:compiler=nvcc
+common --@rules_cuda//cuda:copts=-D_ALLOW_UNSUPPORTED_LIBCPP

@@ -1,0 +1,17 @@
+CUDA 13.2 crt headers with libc++ on Linux (unsupported by NVIDIA on x86; see bazel/cuda.MODULE.bazel).
+NVIDIA's libc++ support in these headers lives in branches enabled only for Android/HORIZON. This patch
+defines __NV_LIBCPP_LINUX for libc++ on Linux and enables those branches where they concern libc++
+(declarations matching libc++'s own <cmath>), not where they concern Android's C library (bionic).
+Applies to the crt component on x86_64 and SBSA.
+
+--- a/crt/include/crt/math_functions.hpp
++++ b/crt/include/crt/math_functions.hpp
+@@ -305,7 +305,7 @@
+ #endif /* defined(__CUDA_ARCH__) */
+ }
+ 
+-#elif ( (defined(__ANDROID__) || defined(__HORIZON__)) && defined(_LIBCPP_VERSION))
++#elif ( (defined(__ANDROID__) || defined(__HORIZON__) || defined(__NV_LIBCPP_LINUX)) && defined(_LIBCPP_VERSION))
+ #if defined(__CUDA_ARCH__)
+ __forceinline__ __host__ __device__ __cudart_builtin__ int signbit(const float x) NV_MATH_NOEXCEPT { return __signbitf(x); }
+ __forceinline__ __host__ __device__ __cudart_builtin__ int signbit(const double x) NV_MATH_NOEXCEPT { return __signbit(x); }
