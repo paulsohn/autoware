@@ -136,3 +136,21 @@ local_path_override(module_name = "autoware_osqp_interface", path = "src/core/au
 
 bazel_dep(name = "autoware_qp_interface")
 local_path_override(module_name = "autoware_qp_interface", path = "src/core/autoware_core/common/autoware_qp_interface")
+
+bazel_dep(name = "autoware_node")
+local_path_override(module_name = "autoware_node", path = "src/core/autoware_core/common/autoware_node")
+
+bazel_dep(name = "autoware_objects_of_interest_marker_interface")
+local_path_override(module_name = "autoware_objects_of_interest_marker_interface", path = "src/core/autoware_core/planning/autoware_objects_of_interest_marker_interface")
+
+bazel_dep(name = "autoware_adapi_specs")
+local_path_override(module_name = "autoware_adapi_specs", path = "src/core/autoware_core/api/autoware_adapi_specs")
+
+bazel_dep(name = "autoware_component_interface_admission")
+local_path_override(module_name = "autoware_component_interface_admission", path = "src/core/autoware_core/common/autoware_component_interface_admission")
+
+bazel_dep(name = "autoware_perception_objects_converter")
+local_path_override(module_name = "autoware_perception_objects_converter", path = "src/core/autoware_core/perception/autoware_perception_objects_converter")
+
+bazel_dep(name = "autoware_component_interface_specs")
+local_path_override(module_name = "autoware_component_interface_specs", path = "src/core/autoware_core/common/autoware_component_interface_specs")

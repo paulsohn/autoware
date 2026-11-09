@@ -75,6 +75,7 @@ cc_test(
     copts = autoware_copts(),
     cxxopts = AUTOWARE_CXXOPTS,
     local_defines = ros_local_defines() + AUTOWARE_DEFINES,
+    data = ["@@//bazel/config:cyclonedds.xml"],
     dynamic_deps = [":test_dynamic_deps"],
     deps = [
         ":autoware_vehicle_info_utils_library",

@@ -1,0 +1,58 @@
+load("@autoware_cmake//:defs.bzl", "AUTOWARE_CXXOPTS", "AUTOWARE_DEFINES", "autoware_copts")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps", "ros_local_defines")
+load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library", "cc_shared_library", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "autoware_component_interface_admission_library",
+    srcs = [
+        "src/manifest_admit_cli.cpp",
+        "src/manifest_json.cpp",
+    ],
+    hdrs = glob(["include/**/*.hpp"]),
+    copts = autoware_copts(),
+    cxxopts = AUTOWARE_CXXOPTS,
+    local_defines = ros_local_defines() + AUTOWARE_DEFINES,
+    includes = ["include"],
+    deps = ["@rosdistro//cc:nlohmann_json"],
+)
+
+cc_shared_library(
+    name = "autoware_component_interface_admission",
+    exports_filter = [":autoware_component_interface_admission_library"],
+    deps = [":autoware_component_interface_admission_library"],
+)
+
+collect_transitive_dynamic_deps(
+    name = "dynamic_deps",
+    dynamic_deps = [":autoware_component_interface_admission"],
+    visibility = ["//visibility:private"],
+)
+
+cc_binary(
+    name = "manifest_admit",
+    srcs = ["src/manifest_admit.cpp"],
+    copts = autoware_copts(),
+    cxxopts = AUTOWARE_CXXOPTS,
+    local_defines = ros_local_defines() + AUTOWARE_DEFINES,
+    dynamic_deps = [":dynamic_deps"],
+    deps = [":autoware_component_interface_admission_library"],
+)
+
+[cc_test(
+    name = name,
+    srcs = ["test/{}.cpp".format(name)],
+    copts = autoware_copts(),
+    cxxopts = AUTOWARE_CXXOPTS,
+    local_defines = ros_local_defines() + AUTOWARE_DEFINES,
+    dynamic_deps = [":dynamic_deps"],
+    deps = [
+        ":autoware_component_interface_admission_library",
+        "@rosdistro//cc:googletest",
+    ],
+) for name in [
+    "test_admission_rule",
+    "test_manifest_admit",
+    "test_manifest_json",
+]]

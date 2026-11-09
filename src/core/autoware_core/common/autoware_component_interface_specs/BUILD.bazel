@@ -1,0 +1,124 @@
+load("@autoware_cmake//:defs.bzl", "AUTOWARE_CXXOPTS", "AUTOWARE_DEFINES", "autoware_copts")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps", "ros_local_defines")
+load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library", "cc_shared_library", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+DEPENDENCIES = {
+    "@autoware_adapi_v1_msgs//:cc_shared": "@autoware_adapi_v1_msgs//:cc",
+    "@autoware_control_msgs//:cc_shared": "@autoware_control_msgs//:cc",
+    "@autoware_localization_msgs//:cc_shared": "@autoware_localization_msgs//:cc",
+    "@autoware_map_msgs//:cc_shared": "@autoware_map_msgs//:cc",
+    "@autoware_perception_msgs//:cc_shared": "@autoware_perception_msgs//:cc",
+    "@autoware_planning_msgs//:cc_shared": "@autoware_planning_msgs//:cc",
+    "@autoware_system_msgs//:cc_shared": "@autoware_system_msgs//:cc",
+    "@autoware_vehicle_msgs//:cc_shared": "@autoware_vehicle_msgs//:cc",
+    "@geometry_msgs//:cc_shared": "@geometry_msgs//:cc",
+    "@nav_msgs//:cc_shared": "@nav_msgs//:cc",
+    "@rclcpp//:rclcpp": "@rclcpp//:rclcpp_library",
+    "@rcutils//:rcutils": "@rcutils//:rcutils_library",
+    "@rmw//:rmw": "@rmw//:rmw_library",
+    "@rosidl_runtime_c//:rosidl_runtime_c": "@rosidl_runtime_c//:rosidl_runtime_c_library",
+    "@rosidl_runtime_cpp//:rosidl_runtime_cpp": "@rosidl_runtime_cpp//:rosidl_runtime_cpp_library",
+    "@rosidl_typesupport_cpp//:rosidl_typesupport_cpp": "@rosidl_typesupport_cpp//:rosidl_typesupport_cpp_library",
+    "@sensor_msgs//:cc_shared": "@sensor_msgs//:cc",
+}
+
+cc_library(
+    name = "autoware_component_interface_specs_library",
+    hdrs = glob(["include/**/*.hpp"]),
+    copts = autoware_copts(),
+    cxxopts = AUTOWARE_CXXOPTS,
+    local_defines = ros_local_defines() + AUTOWARE_DEFINES,
+    includes = ["include"],
+    deps = DEPENDENCIES.values(),
+)
+
+cc_shared_library(
+    name = "autoware_component_interface_specs",
+    dynamic_deps = DEPENDENCIES.keys(),
+    exports_filter = [":autoware_component_interface_specs_library"],
+    deps = [":autoware_component_interface_specs_library"],
+)
+
+collect_transitive_dynamic_deps(
+    name = "dynamic_deps",
+    dynamic_deps = [":autoware_component_interface_specs"],
+    visibility = ["//visibility:private"],
+)
+
+# CMake builds the generators and the main test suite only with C++20 (the concepts in concepts.hpp).
+CXX20 = AUTOWARE_CXXOPTS + ["-std=c++20"]
+
+[cc_binary(
+    name = name,
+    srcs = ["src/{}.cpp".format(name)],
+    copts = autoware_copts(),
+    cxxopts = CXX20,
+    local_defines = ros_local_defines() + AUTOWARE_DEFINES,
+    dynamic_deps = [":dynamic_deps"],
+    deps = [":autoware_component_interface_specs_library"],
+) for name in [
+    "generate_interface_manifest",
+    "generate_type_hashes",
+]]
+
+# test/gtest_main.cpp defines main().
+cc_test(
+    name = "gtest_autoware_component_interface_specs",
+    srcs = [
+        "test/gtest_main.cpp",
+        "test/spec_test_utils.hpp",
+        "test/test_concepts.cpp",
+        "test/test_control.cpp",
+        "test/test_localization.cpp",
+        "test/test_manifest.cpp",
+        "test/test_map.cpp",
+        "test/test_perception.cpp",
+        "test/test_planning.cpp",
+        "test/test_sensing.cpp",
+        "test/test_service_qos.cpp",
+        "test/test_system.cpp",
+        "test/test_type_hashes.cpp",
+        "test/test_vehicle.cpp",
+        "test/test_version.cpp",
+    ],
+    copts = autoware_copts(),
+    cxxopts = CXX20,
+    data = [
+        "@@//bazel/config:cyclonedds.xml",
+        "interface_manifest.json",
+        "interface_type_hashes.jazzy.lock",
+        ":generate_interface_manifest",
+        ":generate_type_hashes",
+    ],
+    dynamic_deps = [":dynamic_deps"],
+    # CMake passes absolute paths; runfiles paths relative to the test's working directory work the same.
+    local_defines = ros_local_defines() + AUTOWARE_DEFINES + [
+        "GENERATE_TOOL=\\\"$(rootpath :generate_interface_manifest)\\\"",
+        "COMMITTED_MANIFEST=\\\"$(rootpath interface_manifest.json)\\\"",
+        "GENERATE_HASHES_TOOL=\\\"$(rootpath :generate_type_hashes)\\\"",
+        "COMMITTED_HASHES=\\\"$(rootpath interface_type_hashes.jazzy.lock)\\\"",
+    ],
+    deps = [
+        ":autoware_component_interface_specs_library",
+        "@googletest//:gtest",
+    ],
+)
+
+cc_test(
+    name = "gtest_autoware_component_interface_specs_cxx17",
+    srcs = [
+        "test/gtest_main.cpp",
+        "test/test_cxx17_compat.cpp",
+    ],
+    copts = autoware_copts(),
+    cxxopts = AUTOWARE_CXXOPTS,
+    local_defines = ros_local_defines() + AUTOWARE_DEFINES,
+    data = ["@@//bazel/config:cyclonedds.xml"],
+    dynamic_deps = [":dynamic_deps"],
+    deps = [
+        ":autoware_component_interface_specs_library",
+        "@googletest//:gtest",
+    ],
+)

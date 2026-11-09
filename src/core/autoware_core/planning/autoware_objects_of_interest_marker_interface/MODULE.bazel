@@ -1,0 +1,13 @@
+module(name = "autoware_objects_of_interest_marker_interface")
+
+bazel_dep(name = "autoware_cmake", version = "0.0.0")
+bazel_dep(name = "autoware_perception_msgs", version = "0.0.0")
+bazel_dep(name = "autoware_utils_geometry", version = "0.0.0")
+bazel_dep(name = "autoware_utils_math", version = "0.0.0")
+bazel_dep(name = "autoware_utils_visualization", version = "0.0.0")
+bazel_dep(name = "geometry_msgs", version = "0.0.0")
+bazel_dep(name = "rclcpp", version = "0.0.0")
+bazel_dep(name = "rosdistro", version = "0.0.0")
+bazel_dep(name = "std_msgs", version = "0.0.0")
+bazel_dep(name = "visualization_msgs", version = "0.0.0")
+bazel_dep(name = "rules_cc", version = "0.2.26.rcr.0")

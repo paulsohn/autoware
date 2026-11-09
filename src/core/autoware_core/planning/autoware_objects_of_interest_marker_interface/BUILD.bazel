@@ -1,0 +1,59 @@
+load("@autoware_cmake//:defs.bzl", "AUTOWARE_CXXOPTS", "AUTOWARE_DEFINES", "autoware_copts")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps", "ros_local_defines")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+DEPENDENCIES = {
+    "@autoware_perception_msgs//:cc_shared": "@autoware_perception_msgs//:cc",
+    "@autoware_utils_geometry//:autoware_utils_geometry": "@autoware_utils_geometry//:autoware_utils_geometry_library",
+    "@autoware_utils_math//:autoware_utils_math": "@autoware_utils_math//:autoware_utils_math_library",
+    "@autoware_utils_visualization//:autoware_utils_visualization": "@autoware_utils_visualization//:autoware_utils_visualization_library",
+    "@geometry_msgs//:cc_shared": "@geometry_msgs//:cc",
+    "@rclcpp//:rclcpp": "@rclcpp//:rclcpp_library",
+    "@std_msgs//:cc_shared": "@std_msgs//:cc",
+    "@visualization_msgs//:cc_shared": "@visualization_msgs//:cc",
+}
+
+# CMake sets the same flags as autoware_package() by hand here.
+cc_library(
+    name = "autoware_objects_of_interest_marker_interface_library",
+    srcs = [
+        "src/coloring.cpp",
+        "src/marker_utils.cpp",
+        "src/objects_of_interest_marker_interface.cpp",
+    ],
+    hdrs = glob(["include/**/*.hpp"]),
+    copts = autoware_copts(),
+    cxxopts = AUTOWARE_CXXOPTS,
+    local_defines = ros_local_defines() + AUTOWARE_DEFINES,
+    includes = ["include"],
+    deps = DEPENDENCIES.values(),
+)
+
+cc_shared_library(
+    name = "autoware_objects_of_interest_marker_interface",
+    dynamic_deps = DEPENDENCIES.keys(),
+    exports_filter = [":autoware_objects_of_interest_marker_interface_library"],
+    deps = [":autoware_objects_of_interest_marker_interface_library"],
+)
+
+collect_transitive_dynamic_deps(
+    name = "test_dynamic_deps",
+    dynamic_deps = [":autoware_objects_of_interest_marker_interface"],
+    visibility = ["//visibility:private"],
+)
+
+cc_test(
+    name = "test_objects_of_interest_marker_interface",
+    srcs = ["test/test_objects_of_interest_marker_interface.cpp"],
+    copts = autoware_copts(),
+    cxxopts = AUTOWARE_CXXOPTS,
+    local_defines = ros_local_defines() + AUTOWARE_DEFINES,
+    data = ["@@//bazel/config:cyclonedds.xml"],
+    dynamic_deps = [":test_dynamic_deps"],
+    deps = [
+        ":autoware_objects_of_interest_marker_interface_library",
+        "@rosdistro//cc:googletest",
+    ],
+)
