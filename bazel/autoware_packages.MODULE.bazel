@@ -328,3 +328,12 @@ local_path_override(module_name = "autoware_pose_initializer", path = "src/core/
 
 bazel_dep(name = "autoware_behavior_velocity_planner_common")
 local_path_override(module_name = "autoware_behavior_velocity_planner_common", path = "src/core/autoware_core/planning/behavior_velocity_planner/autoware_behavior_velocity_planner_common")
+
+bazel_dep(name = "autoware_core_api")
+local_path_override(module_name = "autoware_core_api", path = "src/core/autoware_core/api/autoware_core_api")
+
+bazel_dep(name = "autoware_core_localization")
+local_path_override(module_name = "autoware_core_localization", path = "src/core/autoware_core/localization/autoware_core_localization")
+
+bazel_dep(name = "autoware_motion_velocity_planner_common")
+local_path_override(module_name = "autoware_motion_velocity_planner_common", path = "src/core/autoware_core/planning/motion_velocity_planner/autoware_motion_velocity_planner_common")

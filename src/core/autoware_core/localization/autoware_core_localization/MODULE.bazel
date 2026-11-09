@@ -1,0 +1,10 @@
+module(name = "autoware_core_localization")
+
+bazel_dep(name = "autoware_downsample_filters", version = "0.0.0")
+bazel_dep(name = "autoware_ekf_localizer", version = "0.0.0")
+bazel_dep(name = "autoware_ndt_scan_matcher", version = "0.0.0")
+bazel_dep(name = "autoware_pose_initializer", version = "0.0.0")
+bazel_dep(name = "autoware_stop_filter", version = "0.0.0")
+bazel_dep(name = "autoware_twist2accel", version = "0.0.0")
+bazel_dep(name = "topic_tools", version = "0.0.0")
+bazel_dep(name = "rosdistro", version = "0.0.0")

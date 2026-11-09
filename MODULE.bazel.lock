@@ -4521,6 +4521,7 @@
     "https://bazel.ros.org/modules/topic_monitor/0.37.9-1.rcr.0/source.json": "660c68941950276b74a2f5e6f7d9add113fd26ef005b366cadba7ecca97f9bb1",
     "https://bazel.ros.org/modules/topic_statistics_demo/0.37.9-1.rcr.0/MODULE.bazel": "a51e1ae648f72c525f3d69d7658f160cbd0a6d11eeb1bbcc3118ac81900fee94",
     "https://bazel.ros.org/modules/topic_statistics_demo/0.37.9-1.rcr.0/source.json": "b7456ee9cf919c51c490277a9bd1ebde0816d6bec4754d4dbfc4265b26c6c97f",
+    "https://bazel.ros.org/modules/topic_tools/0.0.0/MODULE.bazel": "aa7dd946f9bcc97ced511a7bfee8bc4b328e0b1e5e7049c25ec4a3bebdb94ae7",
     "https://bazel.ros.org/modules/topic_tools/1.5.0-1.rcr.2/MODULE.bazel": "0c88c054c4204ec932460485a3c10e9cce441f7bf999f7febc52e7871d02adfc",
     "https://bazel.ros.org/modules/topic_tools/1.5.0-1.rcr.2/source.json": "45621bfeff7e3e7a8b0f3e274e63581c63e9629e04a42ed8a2132dbcdc09095d",
     "https://bazel.ros.org/modules/topic_tools_interfaces/1.5.0-1.rcr.2/MODULE.bazel": "536044f032ced4fc1c0de60f6aa0346f181892967f82e21305f697a8a29e9e79",

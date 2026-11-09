@@ -1002,3 +1002,30 @@ a testonly `test_headers` library with `includes = ["src"]`.
 
 `-Wno-deprecated-declarations` comes from autoware_test_utils through velocity_smoother → planning_test_manager (as
 in path_generator). `bazel test @autoware_behavior_velocity_planner_common//...` → pass; parity 0 open, 0 recorded.
+
+## Layer 7: core_api, core_localization, motion_velocity_planner_common; libosqp_0_6.so
+
+core_api and core_localization contain no code (`ament_index` with exec_depend indexes). core_localization's
+exec_depend `topic_tools` is the RCR's `@topic_tools//:ament_index`.
+
+motion_velocity_planner_common: `ament_auto_add_library(... DIRECTORY src)` (glob), `INSTALL_TO_SHARE include`
+(→ `ament_index(data = glob(["include/**"]))`), one gtest. `bazel test` → pass; parity 0 open.
+
+Issues (symptom → cause → fix):
+1. `format specifies type 'long' but the argument has type 'rep' (aka 'long long')` → libc++'s
+   `std::chrono::nanoseconds::rep` is `long long` (libstdc++: `long`) → print with `%lld` and
+   `static_cast<long long>` (correct on both).
+2. `unknown warning group '-Wmaybe-uninitialized'` (a GCC-only warning in `#pragma GCC diagnostic ignored`, in
+   src/planner_data.cpp and the test) → guard with `#if defined(__GNUC__) && !defined(__clang__)`, as
+   autoware_utils_geometry already does.
+3. `symbol lookup error: libautoware_qp_interface.so: undefined symbol: csc_matrix` (test failed at load time) →
+   `LD_DEBUG=libs` shows the test binary's RUNPATH (`$ORIGIN/../../_solib_k8/_Uexternal_Srosdistro+_Scc`, before
+   the `osqp_0_6` entry) resolving `libosqp.so` to the RCR's OSQP **1.0** `@rosdistro//cc:osqp`. That copy was a
+   leftover output from building another target, not a dependency of this test (`bazel cquery somepath` finds
+   none). `$ORIGIN` is the real `bazel-out` directory, so RUNPATH entries reach every library built so far,
+   inside or outside the sandbox. → the 0.6 library is now `shared_lib_name = "libosqp_0_6.so"`.
+4. `rmw_create_node: failed to create domain` → the test lacked `data = ["@@//bazel/config:cyclonedds.xml"]`.
+
+Lesson: in Bazel's solib layout, two different shared libraries with the same file name are not isolated, even if
+no target depends on both. A RUNPATH directory shared with other outputs can supply the wrong one, depending on
+what was built before. Give vendored or duplicate versions their own file names.

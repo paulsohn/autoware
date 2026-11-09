@@ -30,8 +30,11 @@ cc_library(
     deps = ["@osqp"],
 )
 
+# Named libosqp_0_6.so, not libosqp.so: the RCR's @rosdistro//cc:osqp (OSQP 1.0) is also libosqp.so, and a
+# binary's RUNPATH may reach that one first (the dynamic loader resolves by file name).
 cc_shared_library(
     name = "osqp",
+    shared_lib_name = "libosqp_0_6.so",
     exports_filter = [
         ":osqp_library",
         "@osqp",
