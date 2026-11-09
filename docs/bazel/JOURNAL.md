@@ -471,3 +471,59 @@ Lessons:
 - `--override_module` in `user.bazelrc` is the per-developer way to work on a registry package from source.
 - `--incompatible_strict_action_env` isolates builds, not `bazel run`: strip ROS variables with `--run_env==NAME`, and
   with empty `--test_env` values for tests launched through `bazel run`.
+
+## 2026-11-09: P2 layer 0 (rest, except agnocast)
+
+Ported: `autoware_node`, `autoware_objects_of_interest_marker_interface`, `autoware_adapi_specs`,
+`autoware_component_interface_admission`, `autoware_component_interface_specs`, `autoware_perception_objects_converter`,
+`autoware_lanelet2_extension`, `autoware_pyplot`, `autoware_interface_spec_lint`, and the data-only
+`autoware_core_vehicle`, `autoware_sample_vehicle_description`, `velodyne_description`, `autoware_testing`.
+Each batch: `bazel test --keep_going --config=no-agnocast @<pkg>//...` → all pass (lanelet2_extension 6,
+interface_spec_lint 64 pytest cases, pyplot 1, the rest 10). Left in layer 0: `agnocast_ioctl_wrapper`,
+`agnocast_cie_thread_configurator` (ported together with agnocastlib).
+
+Patterns:
+- Component (`rclcpp_components_register_node` in CMake) → RCR `rclcpp_components_register_node(name, component,
+  plugin, node_name, data)` from `@rclcpp_components//:defs.bzl`; it generates the `<node>` executable and a
+  `<node>_record`; `ament_index(components = [":<node>_record"], executables = [...], libraries = [...])`. The
+  component library keeps its CMake name (the record stores the `.so` file name).
+- Data-only packages: `ament_index(data = glob([<INSTALL_TO_SHARE dirs>]), package_xml = "package.xml")`.
+- Paths CMake passes as compile definitions (`$<TARGET_FILE:tool>`, `${CMAKE_CURRENT_SOURCE_DIR}/file`) →
+  `local_defines` with `$(rootpath ...)` plus the targets in `data`; the test's working directory is the runfiles
+  root of the main repo, so `../<repo>+/...` paths resolve.
+- Python packages (ament_python): `py_library(imports = ["."])`, a `py_binary` per console script, RCR `py_pytest`
+  from `@rosdistro//python:defs.bzl`, pip packages via `requirement()` from `@pip_ros//:requirements.bzl` (needs
+  `use_repo(use_extension("@rosdistro//python:defs.bzl", "pip_ros"), "pip_ros")` in the package's MODULE.bazel).
+- Package with an RCR overlay (`autoware_lanelet2_extension`): start from the overlay, keep its target names.
+
+Issues (symptom → cause → fix):
+1. Lyrical deprecations under `-Werror`: non-const `SharedPtr` subscription callbacks → `ConstSharedPtr`;
+   `rclcpp::spin_some(node)` → `rclcpp::executors::SingleThreadedExecutor().spin_node_some(node)` (what the free
+   function does internally). Source commits per package.
+2. `rmw_create_node: failed to create domain` (marker interface test) and `can't open configuration file
+   file://bazel/config/cyclonedds.xml` (component executable) → the target lacks the `cyclonedds.xml` data dependency
+   while `CYCLONEDDS_URI` points at it → add `data = ["@@//bazel/config:cyclonedds.xml"]` to every test/binary that
+   creates a node, including `rclcpp_components_register_node(data = ...)`. Missing it fails loudly, which is good,
+   but it is the most common slip so far (supports the deferred wrapper idea in PLAN.md).
+3. CMake `-Wno-error=maybe-uninitialized` (lanelet2_extension) is GCC-only; clang rejects unknown warning flags under
+   `-Werror` → dropped, with a comment.
+4. Embedded Python (`autoware_pyplot`, pybind11::embed):
+   - `Could not find platform dependent libraries <exec_prefix>` → the hermetic libpython cannot locate its
+     standard library from a C++ binary → `pyplot_test` (`autoware_pyplot/defs.bzl`): a test rule that takes the
+     interpreter from the Python toolchain and the pip packages' `PyInfo.imports`, and generates a launcher that sets
+     `PYTHONHOME`/`PYTHONPATH` to their runfiles paths before exec'ing the C++ test.
+   - Then `libc++abi: terminating due to uncaught exception of type std::runtime_error: Can not load face` → the
+     host binary loads LLVM's `libc++abi.so.1`/`libunwind.so.1` globally; matplotlib's wheel extensions (built
+     against libstdc++) bind `__cxa_throw` and the unwinder to them, so their own exceptions are not caught. Plain
+     Python with the same paths works. → `sitecustomize.py` on the launcher's PYTHONPATH sets
+     `sys.setdlopenflags(RTLD_NOW | RTLD_DEEPBIND)`, so each extension binds to its own libstdc++ first.
+   - Looking at the wrong runfiles: a custom test rule whose executable is `<name>.sh` gets `<name>.sh.runfiles`;
+     the old `<name>.runfiles` was stale from the previous `cc_test`.
+5. `test_type_hashes` compares against `interface_type_hashes.jazzy.lock` → passes unchanged on Lyrical: the RCR
+   message definitions hash the same.
+
+Lessons:
+- Embedding Python into binaries built with the hermetic LLVM (libc++) needs RTLD_DEEPBIND for pip wheels that use
+  libstdc++. Any ROS project that embeds Python under the RCR toolchain hits this.
+- Tests that locate files with `Path(__file__).resolve()` escape runfiles into the source tree; declare those files
+  as `data` anyway so changes re-run the tests.
