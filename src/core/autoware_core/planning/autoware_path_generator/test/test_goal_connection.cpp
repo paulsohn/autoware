@@ -124,7 +124,16 @@ TEST_F(UtilsTest, connectPathToGoal)
       path, route_manager_->preferred_lanelets(), *route_manager_, route_->goal_pose, s_goal, 100.0,
       1.0);
 
-    ASSERT_EQ(result.compute(0.0), path_.points.front());
+    // The orientation is recomputed by interpolation and may differ in the last bits between compilers (clang vs
+    // GCC); compare it with a tolerance and everything else exactly.
+    auto start = result.compute(0.0);
+    const auto & expected_start = path_.points.front();
+    ASSERT_NEAR(start.point.pose.orientation.x, expected_start.point.pose.orientation.x, rad_epsilon);
+    ASSERT_NEAR(start.point.pose.orientation.y, expected_start.point.pose.orientation.y, rad_epsilon);
+    ASSERT_NEAR(start.point.pose.orientation.z, expected_start.point.pose.orientation.z, rad_epsilon);
+    ASSERT_NEAR(start.point.pose.orientation.w, expected_start.point.pose.orientation.w, rad_epsilon);
+    start.point.pose.orientation = expected_start.point.pose.orientation;
+    ASSERT_EQ(start, expected_start);
 
     const auto new_goal = result.compute(result.length());
     ASSERT_NEAR(new_goal.point.pose.position.x, route_->goal_pose.position.x, m_epsilon);
