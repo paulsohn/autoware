@@ -233,7 +233,7 @@ class CMake:
                         break
                     self.share.add(d)
         elif name == "install":
-            dest = a[a.index("DESTINATION") + 1] if "DESTINATION" in a else ""
+            dest = a[a.index("DESTINATION") + 1].rstrip("/") if "DESTINATION" in a else ""
             items = a[1:a.index("DESTINATION")] if "DESTINATION" in a else a[1:]
             share = "share/" + self.vars.get("PROJECT_NAME", "")
             if a[0] == "PROGRAMS":

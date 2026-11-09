@@ -292,3 +292,6 @@ local_path_override(module_name = "autoware_ekf_localizer", path = "src/core/aut
 
 bazel_dep(name = "autoware_gnss_poser")
 local_path_override(module_name = "autoware_gnss_poser", path = "src/core/autoware_core/sensing/autoware_gnss_poser")
+
+bazel_dep(name = "autoware_map_projection_loader")
+local_path_override(module_name = "autoware_map_projection_loader", path = "src/core/autoware_core/map/autoware_map_projection_loader")

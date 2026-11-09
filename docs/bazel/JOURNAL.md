@@ -850,3 +850,13 @@ Issues (symptom → cause → fix):
 3. Parity checker: `if(BUILD_TESTING AND NOT (... ENABLE_AGNOCAST ...))` counted as trivial because it contains
    BUILD_TESTING, which hid the Agnocast condition → only a leading `BUILD_TESTING AND` is stripped, and the rest is
    the key. Re-ran on all ported packages: nothing new.
+
+## map_projection_loader
+
+It has four launch tests (one list comprehension of `launch_ros_test`, named after their paths as CMake names them)
+and two gmock tests from `add_testcase()`. `install(DIRECTORY test/data/ DESTINATION share/<pkg>/test/data/)` goes
+into `ament_index(data)`, because the launch tests read it via `get_package_share_directory`. They import `yaml`,
+which is `requirement("pyyaml")` from `@pip_ros` (MODULE.bazel: the `pip_ros` extension and `rules_python`).
+`bazel test @autoware_map_projection_loader//...` → 6 pass.
+
+Parity checker: install destinations drop a trailing `/` (`share/<pkg>/test/data/` is the same as without it).
