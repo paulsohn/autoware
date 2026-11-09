@@ -21,8 +21,8 @@
 #include <autoware_perception_msgs/msg/tracked_objects.hpp>
 #include <autoware_simulation_msgs/msg/simulated_object.hpp>
 
-#include <tf2_ros/buffer.h>
-#include <tf2_ros/transform_listener.h>
+#include <tf2_ros/buffer.hpp>
+#include <tf2_ros/transform_listener.hpp>
 namespace autoware::dummy_perception_publisher
 {
 using autoware_perception_msgs::msg::PredictedObject;
