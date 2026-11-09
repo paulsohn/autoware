@@ -6636,7 +6636,7 @@
     "@@rules_cuda+//cuda:extensions.bzl%toolchain": {
       "general": {
         "bzlTransitiveDigest": "CacIqMUU2g01KN0Y+W5whLTr9OZzya21lbu8ddhVNd4=",
-        "usagesDigest": "Bv6Lt81wyMWD2iUeKSwwRtsqcRm7t/napkyJCAUo+DI=",
+        "usagesDigest": "jrSxbNc0zzluDUjJavv1+b6GsYvXkv32lJGFLoXf+gQ=",
         "recordedInputs": [
           "REPO_MAPPING:bazel_features+,bazel_features_globals bazel_features++version_extension+bazel_features_globals",
           "REPO_MAPPING:bazel_features+,bazel_features_version bazel_features++version_extension+bazel_features_version",

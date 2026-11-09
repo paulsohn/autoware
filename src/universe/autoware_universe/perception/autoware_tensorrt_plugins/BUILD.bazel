@@ -35,14 +35,17 @@ cuda_library(
         "include/autoware/tensorrt_plugins/kernel_utils.hpp",
         "include/autoware/tensorrt_plugins/plugin_utils.hpp",
     ]) + glob(["src/*_ops/*.cuh"]),
-    # list(APPEND CUDA_NVCC_FLAGS "--expt-relaxed-constexpr -diag-suppress 1675 --extended-lambda")
-    copts = [
-        "-std=c++17",
-        "--expt-relaxed-constexpr",
-        "-diag-suppress",
-        "1675",
-        "--extended-lambda",
-    ],
+    # list(APPEND CUDA_NVCC_FLAGS "--expt-relaxed-constexpr -diag-suppress 1675 --extended-lambda"): nvcc spellings;
+    # clang allows device lambdas and constexpr host calls from device code without flags.
+    copts = ["-std=c++17"] + select({
+        "@rules_cuda//cuda:compiler_is_nvcc": [
+            "--expt-relaxed-constexpr",
+            "-diag-suppress",
+            "1675",
+            "--extended-lambda",
+        ],
+        "//conditions:default": [],
+    }),
     includes = ["include"],
     deps = [
         "@cuda//:cub",
