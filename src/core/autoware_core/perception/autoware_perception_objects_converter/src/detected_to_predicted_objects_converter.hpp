@@ -34,7 +34,7 @@ public:
 
 private:
   void detected_objects_callback(
-    const autoware_perception_msgs::msg::DetectedObjects::SharedPtr detected_objects_msg);
+    const autoware_perception_msgs::msg::DetectedObjects::ConstSharedPtr detected_objects_msg);
 
   rclcpp::Subscription<autoware_perception_msgs::msg::DetectedObjects>::SharedPtr
     detected_objects_sub_;

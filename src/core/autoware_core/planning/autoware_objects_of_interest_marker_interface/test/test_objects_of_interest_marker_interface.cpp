@@ -83,7 +83,7 @@ TEST_F(ObjectsOfInterestMarkerInterfaceTest, PublishMarkerArrayPublishesMarkersT
   // Wait briefly for intra-process publisher-subscriber discovery
   rclcpp::WallRate discovery_rate(100);
   for (int i = 0; i < 20 && sub->get_publisher_count() == 0; ++i) {
-    rclcpp::spin_some(node);
+    rclcpp::executors::SingleThreadedExecutor().spin_node_some(node);
     discovery_rate.sleep();
   }
 
@@ -93,7 +93,7 @@ TEST_F(ObjectsOfInterestMarkerInterfaceTest, PublishMarkerArrayPublishesMarkersT
   // Spin to receive the published message
   rclcpp::WallRate spin_rate(100);
   for (int i = 0; i < 50 && !message_received; ++i) {
-    rclcpp::spin_some(node);
+    rclcpp::executors::SingleThreadedExecutor().spin_node_some(node);
     spin_rate.sleep();
   }
 
@@ -174,7 +174,7 @@ TEST_F(
   // Wait briefly for discovery
   rclcpp::WallRate discovery_rate(100);
   for (int i = 0; i < 20 && sub->get_publisher_count() == 0; ++i) {
-    rclcpp::spin_some(node);
+    rclcpp::executors::SingleThreadedExecutor().spin_node_some(node);
     discovery_rate.sleep();
   }
 
@@ -184,7 +184,7 @@ TEST_F(
   // Spin to receive
   rclcpp::WallRate spin_rate(100);
   for (int i = 0; i < 50 && !message_received; ++i) {
-    rclcpp::spin_some(node);
+    rclcpp::executors::SingleThreadedExecutor().spin_node_some(node);
     spin_rate.sleep();
   }
 

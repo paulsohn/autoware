@@ -38,7 +38,7 @@ DetectedToPredictedObjectsConverter::DetectedToPredictedObjectsConverter(
 }
 
 void DetectedToPredictedObjectsConverter::detected_objects_callback(
-  const autoware_perception_msgs::msg::DetectedObjects::SharedPtr detected_objects_msg)
+  const autoware_perception_msgs::msg::DetectedObjects::ConstSharedPtr detected_objects_msg)
 {
   auto predicted_objects_msg = std::make_unique<autoware_perception_msgs::msg::PredictedObjects>(
     convert(*detected_objects_msg));
