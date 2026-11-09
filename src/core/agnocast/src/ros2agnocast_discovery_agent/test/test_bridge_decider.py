@@ -219,7 +219,7 @@ def test_domain_rule_ignores_a_rule_belonging_to_another_domain():
     assert reqs[0].domain_id == 1
     # The 2->1 tuple is the domain-2 agent's to force: no line, and no entry left behind.
     logger.info.assert_not_called()
-    logger.warn.assert_not_called()
+    logger.warning.assert_not_called()
     assert reported == {}
 
 
@@ -239,7 +239,7 @@ def test_domain_rule_reports_each_reason_it_forced_nothing():
     assert 'type is not known' in reasons
     assert 'no local publisher' in reasons
     # A fresh dict each time, so nothing has persisted: the startup gap stays at info.
-    logger.warn.assert_not_called()
+    logger.warning.assert_not_called()
 
 
 def test_domain_rule_reports_one_reason_once_across_ticks():
@@ -251,7 +251,7 @@ def test_domain_rule_reports_one_reason_once_across_ticks():
         decide_domain_rule_bridges(
             local, [('/x', '/x', 1, 2)], domain_id=1, logger=logger, reported=reported)
     assert logger.info.call_count == 1
-    logger.warn.assert_not_called()
+    logger.warning.assert_not_called()
 
 
 def test_domain_rule_warns_once_after_the_reason_persists():
@@ -262,15 +262,15 @@ def test_domain_rule_warns_once_after_the_reason_persists():
     rules = [('/x', '/x', 1, 2)]
     for _ in range(UNFORCED_WARN_AFTER_TICKS - 1):
         decide_domain_rule_bridges(local, rules, domain_id=1, logger=logger, reported=reported)
-    logger.warn.assert_not_called()
+    logger.warning.assert_not_called()
 
     decide_domain_rule_bridges(local, rules, domain_id=1, logger=logger, reported=reported)
-    assert logger.warn.call_count == 1
-    assert f'unforced for {UNFORCED_WARN_AFTER_TICKS} ticks' in str(logger.warn.call_args)
+    assert logger.warning.call_count == 1
+    assert f'unforced for {UNFORCED_WARN_AFTER_TICKS} ticks' in str(logger.warning.call_args)
 
     for _ in range(5):
         decide_domain_rule_bridges(local, rules, domain_id=1, logger=logger, reported=reported)
-    assert logger.warn.call_count == 1
+    assert logger.warning.call_count == 1
     assert logger.info.call_count == 1
 
 
@@ -283,7 +283,7 @@ def test_domain_rule_counts_one_tick_when_two_rules_name_one_cell():
     for _ in range(UNFORCED_WARN_AFTER_TICKS - 1):
         decide_domain_rule_bridges(local, rules, domain_id=1, logger=logger, reported=reported)
 
-    logger.warn.assert_not_called()
+    logger.warning.assert_not_called()
     assert reported[('/x', 1)][1] == UNFORCED_WARN_AFTER_TICKS - 1
     assert logger.info.call_count == 1
 
@@ -301,7 +301,7 @@ def test_domain_rule_keeps_counting_when_the_reason_changes():
         decide_domain_rule_bridges(state, rules, domain_id=1, logger=logger, reported=reported)
 
     assert reported[('/x', 1)][1] == UNFORCED_WARN_AFTER_TICKS
-    assert logger.warn.call_count == 1
+    assert logger.warning.call_count == 1
 
 
 def test_domain_rule_stays_quiet_when_a_rule_forces_from_the_start():
@@ -315,7 +315,7 @@ def test_domain_rule_stays_quiet_when_a_rule_forces_from_the_start():
             local, [('/x', '/x', 1, 2)], domain_id=1, logger=logger, reported=reported)
 
     logger.info.assert_not_called()
-    logger.warn.assert_not_called()
+    logger.warning.assert_not_called()
 
 
 def test_domain_rule_says_when_forcing_starts_and_can_report_again():

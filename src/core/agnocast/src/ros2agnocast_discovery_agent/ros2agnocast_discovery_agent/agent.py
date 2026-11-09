@@ -279,7 +279,7 @@ def _report_unloaded_config(logger, path, error, from_env) -> None:
     """Report a config that contributed no rules, at the level its cause deserves."""
     if isinstance(error, FileNotFoundError):
         if from_env:
-            logger.warn(
+            logger.warning(
                 f'{domain_bridge_config.CONFIG_ENV} lists {path}, which does not '
                 'exist; no cross-domain bridge will be forced for the topics it names')
         else:
@@ -306,7 +306,7 @@ def _load_domain_rules(logger=None) -> list:
     if from_env and logger is not None:
         shadowed = domain_bridge_config.shadowed_drop_ins()
         if shadowed:
-            logger.warn(
+            logger.warning(
                 f'{domain_bridge_config.SHADOWED_DROP_INS_NOTICE}: {", ".join(shadowed)}')
 
     rules = []
@@ -319,7 +319,7 @@ def _load_domain_rules(logger=None) -> list:
         if logger is not None:
             logger.info(f'{result.path}: {len(result.rules)} domain bridge rule(s) loaded')
             if result.skipped:
-                logger.warn(
+                logger.warning(
                     f'{result.path}: no from_domain/to_domain for {", ".join(result.skipped)}')
     return rules
 

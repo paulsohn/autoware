@@ -277,7 +277,7 @@ def _note_unforced(logger, reported, cell, reason, seen) -> None:
     reported[cell] = (reason, ticks)
     if ticks == UNFORCED_WARN_AFTER_TICKS:
         # The warn carries the current reason, so a change on this tick loses nothing.
-        logger.warn(f'{text} (unforced for {ticks} ticks)')
+        logger.warning(f'{text} (unforced for {ticks} ticks)')
     elif seen_reason != reason:
         logger.info(text)
 
@@ -402,7 +402,7 @@ def dispatch_service_requests(
         err = send_request(
             _bridge_uds_addr(ipc_ns_inode, req.domain_id), serialize_service_request(req))
         if err is not None and logger is not None:
-            logger.warn(f'daemon service bridge dispatch failed: {err}')
+            logger.warning(f'daemon service bridge dispatch failed: {err}')
 
 
 def dispatch_requests(
@@ -419,4 +419,4 @@ def dispatch_requests(
         err = send_request(
             _bridge_uds_addr(ipc_ns_inode, req.domain_id), serialize_request(req))
         if err is not None and logger is not None:
-            logger.warn(f'daemon bridge dispatch failed: {err}')
+            logger.warning(f'daemon bridge dispatch failed: {err}')
