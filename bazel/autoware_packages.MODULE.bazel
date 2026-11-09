@@ -307,3 +307,6 @@ local_path_override(module_name = "autoware_lanelet2_map_visualizer", path = "sr
 
 bazel_dep(name = "autoware_velocity_smoother")
 local_path_override(module_name = "autoware_velocity_smoother", path = "src/core/autoware_core/planning/autoware_velocity_smoother")
+
+bazel_dep(name = "autoware_default_adapi")
+local_path_override(module_name = "autoware_default_adapi", path = "src/core/autoware_core/api/autoware_default_adapi")

@@ -918,3 +918,22 @@ bazel test @autoware_osqp_interface//... @autoware_qp_interface//... @autoware_v
 ```
 Lesson: a third-party library that two shared libraries link statically has to become one shared library. Give
 it its own small module providing the RCR-style shared/static pair; do not copy it into each consumer.
+
+## default_adapi
+
+A single component library with three plugins, each registered as its own executable (one list comprehension of
+`autoware_agnocast_wrapper_register_node`; MultiThreadedExecutor). `INSTALL_TO_SHARE ... test` puts `test/**` in
+`ament_index(data)`. The launch test needs that, because it runs `share/.../test/node/interface_version.py`.
+
+The launch test composes the nodes into `component_container_mt` (from `@rclcpp_components`: the executable in
+`deps`, its `:ament_index` in `data`). The container finds the plugins through this package's
+`rclcpp_components` records. The test then runs `python3 interface_version.py` as a child process. This works
+because the RCR's `launch_test_main.py` puts the test interpreter's directory on PATH and exports its `sys.path` as
+PYTHONPATH, so that `python3` sees `rclpy` and `@autoware_adapi_version_msgs//:py` from the test's `deps`.
+The log shows "Loaded node '/adapi/node/{interface,localization,routing}' in container '/adapi/container'" and
+"[python3-2]: process has finished cleanly".
+`bazel test @autoware_default_adapi//...` → 2 pass; parity 0 open, 1 recorded.
+
+Note: the parity checker compares only depend/build_depend/build_export_depend/test_depend. An exec_depend such
+as `autoware_global_parameter_loader` (used only by `launch/test_default_adapi.launch.xml`) belongs to the runtime
+install tree (P4).
