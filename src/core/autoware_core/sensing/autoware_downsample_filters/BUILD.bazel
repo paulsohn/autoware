@@ -1,0 +1,125 @@
+load("@autoware_cmake//:defs.bzl", "AUTOWARE_CXXOPTS", "AUTOWARE_DEFINES", "autoware_copts")
+load("@rclcpp_components//:defs.bzl", "rclcpp_components_register_node")
+load("@rosdistro//ament:defs.bzl", "ament_index")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps", "ros_local_defines")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+DEPENDENCIES = {
+    "@autoware_point_types//:autoware_point_types": "@autoware_point_types//:autoware_point_types_library",
+    "@autoware_utils_debug//:autoware_utils_debug": "@autoware_utils_debug//:autoware_utils_debug_library",
+    "@autoware_utils_system//:autoware_utils_system": "@autoware_utils_system//:autoware_utils_system_library",
+    "@autoware_utils_tf//:autoware_utils_tf": "@autoware_utils_tf//:autoware_utils_tf_library",
+    "@pcl_conversions//:pcl_conversions": "@pcl_conversions//:pcl_conversions_library",
+    "@pcl_ros//:pcl_ros_tf": "@pcl_ros//:pcl_ros_tf_library",
+    "@rclcpp//:rclcpp": "@rclcpp//:rclcpp_library",
+    "@rclcpp_components//:rclcpp_components": "@rclcpp_components//:rclcpp_components_library",
+    "@rosdistro//cc:pcl": "@rosdistro//cc:pcl_library",
+    "@sensor_msgs//:cc_shared": "@sensor_msgs//:cc",
+    "@tf2_eigen//:tf2_eigen": "@tf2_eigen//:tf2_eigen_library",
+}
+
+# The ROS tl_expected package installs tl::expected as tl_expected/expected.hpp; the RCR has only a stub module
+# for it, but ships the upstream library (tl/expected.hpp). Forward one to the other.
+genrule(
+    name = "tl_expected_forwarding_header",
+    outs = ["tl_expected_compat/tl_expected/expected.hpp"],
+    cmd = "echo '#include <tl/expected.hpp>' > $@",
+    visibility = ["//visibility:private"],
+)
+
+cc_library(
+    name = "tl_expected",
+    hdrs = [":tl_expected_forwarding_header"],
+    includes = ["tl_expected_compat"],
+    visibility = ["//visibility:private"],
+    deps = ["@rosdistro//cc:tl_expected"],
+)
+
+cc_library(
+    name = "autoware_downsample_filters_library",
+    srcs = glob([
+        "src/**/*.cpp",
+        "src/**/*.hpp",
+    ]),
+    copts = autoware_copts(),
+    cxxopts = AUTOWARE_CXXOPTS,
+    local_defines = ros_local_defines() + AUTOWARE_DEFINES,
+    deps = DEPENDENCIES.values() + [
+        ":tl_expected",
+        "@rosdistro//cc:eigen",
+    ],
+)
+
+cc_shared_library(
+    name = "autoware_downsample_filters",
+    dynamic_deps = DEPENDENCIES.keys(),
+    exports_filter = [":autoware_downsample_filters_library"],
+    deps = [":autoware_downsample_filters_library"],
+)
+
+COMPONENTS = {
+    "random_downsample_filter_node": "autoware::downsample_filters::RandomDownsampleFilter",
+    "voxel_grid_downsample_filter_node": "autoware::downsample_filters::VoxelGridDownsampleFilterNode",
+}
+
+[rclcpp_components_register_node(
+    name = name,
+    component = ":autoware_downsample_filters",
+    data = ["@@//bazel/config:cyclonedds.xml"],
+    node_name = name,
+    plugin = plugin,
+) for name, plugin in COMPONENTS.items()]
+
+# share/autoware_downsample_filters/{launch,config,test} (INSTALL_TO_SHARE).
+ament_index(
+    name = "ament_index",
+    components = [":{}_record".format(n) for n in COMPONENTS],
+    data = glob([
+        "config/**",
+        "launch/**",
+        "test/**",
+    ]),
+    executables = [":" + n for n in COMPONENTS],
+    libraries = [":autoware_downsample_filters"],
+    package_xml = "package.xml",
+)
+
+# target_include_directories(<test> PRIVATE src)
+cc_library(
+    name = "src_headers",
+    testonly = True,
+    hdrs = glob(["src/**/*.hpp"]),
+    includes = ["src"],
+    visibility = ["//visibility:private"],
+)
+
+TEST_DEPENDENCIES = {
+    "@geometry_msgs//:cc_shared": "@geometry_msgs//:cc",
+    "@tf2_ros//:tf2_ros": "@tf2_ros//:tf2_ros_library",
+}
+
+collect_transitive_dynamic_deps(
+    name = "test_dynamic_deps",
+    dynamic_deps = [":autoware_downsample_filters"] + TEST_DEPENDENCIES.keys(),
+    visibility = ["//visibility:private"],
+)
+
+[cc_test(
+    name = name,
+    srcs = ["test/{}.cpp".format(name)],
+    copts = autoware_copts(),
+    cxxopts = AUTOWARE_CXXOPTS,
+    local_defines = ros_local_defines() + AUTOWARE_DEFINES,
+    data = ["@@//bazel/config:cyclonedds.xml"],
+    dynamic_deps = [":test_dynamic_deps"],
+    deps = [
+        ":autoware_downsample_filters_library",
+        ":src_headers",
+        gtest,
+    ] + TEST_DEPENDENCIES.values(),
+) for name, gtest in {
+    "test_voxel_grid_downsample_filter": "@rosdistro//cc:googletest",
+    "test_voxel_grid_downsample_filter_integration": "@googletest//:gtest",
+}.items()]

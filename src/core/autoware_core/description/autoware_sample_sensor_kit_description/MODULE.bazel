@@ -1,0 +1,4 @@
+module(name = "autoware_sample_sensor_kit_description")
+
+bazel_dep(name = "rosdistro", version = "0.0.0")
+bazel_dep(name = "velodyne_description", version = "0.0.0")

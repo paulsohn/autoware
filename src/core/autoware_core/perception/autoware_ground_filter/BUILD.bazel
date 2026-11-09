@@ -1,0 +1,118 @@
+load("@autoware_cmake//:defs.bzl", "AUTOWARE_CXXOPTS", "AUTOWARE_DEFINES", "autoware_copts")
+load("@rclcpp_components//:defs.bzl", "rclcpp_components_register_node")
+load("@rosdistro//ament:defs.bzl", "ament_index")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps", "ros_local_defines")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+DEPENDENCIES = {
+    "@ament_index_cpp//:ament_index_cpp": "@ament_index_cpp//:ament_index_cpp_library",
+    "@autoware_internal_debug_msgs//:cc_shared": "@autoware_internal_debug_msgs//:cc",
+    "@autoware_point_types//:autoware_point_types": "@autoware_point_types//:autoware_point_types_library",
+    "@autoware_utils_debug//:autoware_utils_debug": "@autoware_utils_debug//:autoware_utils_debug_library",
+    "@autoware_utils_geometry//:autoware_utils_geometry": "@autoware_utils_geometry//:autoware_utils_geometry_library",
+    "@autoware_utils_math//:autoware_utils_math": "@autoware_utils_math//:autoware_utils_math_library",
+    "@autoware_utils_system//:autoware_utils_system": "@autoware_utils_system//:autoware_utils_system_library",
+    "@autoware_utils_tf//:autoware_utils_tf": "@autoware_utils_tf//:autoware_utils_tf_library",
+    "@autoware_vehicle_info_utils//:autoware_vehicle_info_utils": "@autoware_vehicle_info_utils//:autoware_vehicle_info_utils_library",
+    "@message_filters//:message_filters": "@message_filters//:message_filters_library",
+    "@pcl_conversions//:pcl_conversions": "@pcl_conversions//:pcl_conversions_library",
+    "@pcl_msgs//:cc_shared": "@pcl_msgs//:cc",
+    "@pcl_ros//:pcl_ros_tf": "@pcl_ros//:pcl_ros_tf_library",
+    "@rcl_interfaces//:cc_shared": "@rcl_interfaces//:cc",
+    "@rclcpp//:rclcpp": "@rclcpp//:rclcpp_library",
+    "@rclcpp_components//:rclcpp_components": "@rclcpp_components//:rclcpp_components_library",
+    "@rcpputils//:rcpputils": "@rcpputils//:rcpputils_library",
+    "@rosdistro//cc:boost.thread_shared": "@rosdistro//cc:boost.thread",
+    "@rosdistro//cc:pcl": "@rosdistro//cc:pcl_library",
+    "@sensor_msgs//:cc_shared": "@sensor_msgs//:cc",
+    "@std_msgs//:cc_shared": "@std_msgs//:cc",
+    "@tf2//:tf2": "@tf2//:tf2_library",
+    "@tf2_eigen//:tf2_eigen": "@tf2_eigen//:tf2_eigen_library",
+    "@tf2_ros//:tf2_ros": "@tf2_ros//:tf2_ros_library",
+    "@tf2_sensor_msgs//:tf2_sensor_msgs": "@tf2_sensor_msgs//:tf2_sensor_msgs_library",
+}
+
+cc_library(
+    name = "autoware_ground_filter_library",
+    srcs = glob([
+        "src/*.cpp",
+        "src/*.hpp",
+    ]),
+    copts = autoware_copts(),
+    cxxopts = AUTOWARE_CXXOPTS,
+    local_defines = ros_local_defines() + AUTOWARE_DEFINES,
+    deps = DEPENDENCIES.values() + ["@rosdistro//cc:eigen"],
+)
+
+cc_shared_library(
+    name = "autoware_ground_filter",
+    dynamic_deps = DEPENDENCIES.keys(),
+    exports_filter = [":autoware_ground_filter_library"],
+    deps = [":autoware_ground_filter_library"],
+)
+
+rclcpp_components_register_node(
+    name = "ground_filter_node",
+    component = ":autoware_ground_filter",
+    data = ["@@//bazel/config:cyclonedds.xml"],
+    node_name = "ground_filter_node",
+    plugin = "autoware::ground_filter::GroundFilterComponent",
+)
+
+# share/autoware_ground_filter/{launch,config} (INSTALL_TO_SHARE).
+ament_index(
+    name = "ament_index",
+    components = [":ground_filter_node_record"],
+    data = glob([
+        "config/**",
+        "launch/**",
+    ]),
+    executables = [":ground_filter_node"],
+    libraries = [":autoware_ground_filter"],
+    package_xml = "package.xml",
+)
+
+# target_include_directories(<test> PRIVATE src)
+cc_library(
+    name = "src_headers",
+    testonly = True,
+    hdrs = glob(["src/*.hpp"]),
+    includes = ["src"],
+    visibility = ["//visibility:private"],
+)
+
+TEST_DEPENDENCIES = {
+    "@autoware_test_utils//:autoware_test_utils": "@autoware_test_utils//:autoware_test_utils_library",
+}
+
+collect_transitive_dynamic_deps(
+    name = "test_dynamic_deps",
+    dynamic_deps = [":autoware_ground_filter"] + TEST_DEPENDENCIES.keys(),
+    visibility = ["//visibility:private"],
+)
+
+# The tests link autoware_test_utils, whose CMake target adds -Wno-deprecated-declarations PUBLIC.
+[cc_test(
+    name = name,
+    srcs = ["test/{}.cpp".format(name)],
+    copts = autoware_copts() + ["-Wno-deprecated-declarations"],
+    cxxopts = AUTOWARE_CXXOPTS,
+    data = [
+        ":ament_index",
+        "@@//bazel/config:cyclonedds.xml",
+        "@autoware_test_utils//:ament_index",
+    ],
+    dynamic_deps = [":test_dynamic_deps"],
+    local_defines = ros_local_defines() + AUTOWARE_DEFINES,
+    deps = [
+        ":autoware_ground_filter_library",
+        ":src_headers",
+        gtest,
+    ] + TEST_DEPENDENCIES.values(),
+) for name, gtest in {
+    "test_ground_filter": "@googletest//:gtest",
+    "test_ground_filter_integration": "@rosdistro//cc:googletest",
+    "test_sanity_check": "@googletest//:gtest",
+}.items()]

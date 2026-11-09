@@ -1,0 +1,50 @@
+load("@autoware_cmake//:defs.bzl", "AUTOWARE_CXXOPTS", "AUTOWARE_DEFINES", "autoware_copts")
+load("@rclcpp_components//:defs.bzl", "rclcpp_components_register_node")
+load("@rosdistro//ament:defs.bzl", "ament_index")
+load("@rosdistro//cc:defs.bzl", "ros_local_defines")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library")
+
+package(default_visibility = ["//visibility:public"])
+
+DEPENDENCIES = {
+    "@autoware_node//:autoware_node": "@autoware_node//:autoware_node_library",
+    "@rclcpp//:rclcpp": "@rclcpp//:rclcpp_library",
+    "@rclcpp_components//:rclcpp_components": "@rclcpp_components//:rclcpp_components_library",
+}
+
+cc_library(
+    name = "autoware_test_node_library",
+    srcs = [
+        "src/include/test_node.hpp",
+        "src/test_node.cpp",
+    ],
+    copts = autoware_copts(),
+    cxxopts = AUTOWARE_CXXOPTS,
+    local_defines = ros_local_defines() + AUTOWARE_DEFINES,
+    deps = DEPENDENCIES.values(),
+)
+
+cc_shared_library(
+    name = "autoware_test_node",
+    dynamic_deps = DEPENDENCIES.keys(),
+    exports_filter = [":autoware_test_node_library"],
+    deps = [":autoware_test_node_library"],
+)
+
+rclcpp_components_register_node(
+    name = "autoware_test_node_node",
+    component = ":autoware_test_node",
+    data = ["@@//bazel/config:cyclonedds.xml"],
+    node_name = "autoware_test_node_node",
+    plugin = "autoware::test_node::TestNode",
+)
+
+# share/autoware_test_node/launch (INSTALL_TO_SHARE).
+ament_index(
+    name = "ament_index",
+    components = [":autoware_test_node_node_record"],
+    data = glob(["launch/**"]),
+    executables = [":autoware_test_node_node"],
+    libraries = [":autoware_test_node"],
+    package_xml = "package.xml",
+)

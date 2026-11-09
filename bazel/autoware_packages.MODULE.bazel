@@ -199,3 +199,18 @@ local_path_override(module_name = "autoware_test_utils", path = "src/core/autowa
 
 bazel_dep(name = "autoware_lanelet2_utils")
 local_path_override(module_name = "autoware_lanelet2_utils", path = "src/core/autoware_core/common/autoware_lanelet2_utils")
+
+bazel_dep(name = "autoware_crop_box_filter")
+local_path_override(module_name = "autoware_crop_box_filter", path = "src/core/autoware_core/sensing/autoware_crop_box_filter")
+
+bazel_dep(name = "autoware_downsample_filters")
+local_path_override(module_name = "autoware_downsample_filters", path = "src/core/autoware_core/sensing/autoware_downsample_filters")
+
+bazel_dep(name = "autoware_ground_filter")
+local_path_override(module_name = "autoware_ground_filter", path = "src/core/autoware_core/perception/autoware_ground_filter")
+
+bazel_dep(name = "autoware_test_node")
+local_path_override(module_name = "autoware_test_node", path = "src/core/autoware_core/testing/autoware_test_node")
+
+bazel_dep(name = "autoware_sample_sensor_kit_description")
+local_path_override(module_name = "autoware_sample_sensor_kit_description", path = "src/core/autoware_core/description/autoware_sample_sensor_kit_description")

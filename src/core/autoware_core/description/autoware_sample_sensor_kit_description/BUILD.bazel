@@ -1,0 +1,16 @@
+load("@rosdistro//ament:defs.bzl", "ament_index")
+
+package(default_visibility = ["//visibility:public"])
+
+# No code: share/autoware_sample_sensor_kit_description/{urdf,config,sensor} (INSTALL_TO_SHARE). Its xacro files
+# use velodyne_description at run time (xacro itself is not wired up yet).
+ament_index(
+    name = "ament_index",
+    data = glob([
+        "config/**",
+        "sensor/**",
+        "urdf/**",
+    ]),
+    package_xml = "package.xml",
+    deps = ["@velodyne_description//:ament_index"],
+)
