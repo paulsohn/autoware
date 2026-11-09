@@ -1,0 +1,137 @@
+load("@autoware_cmake//:defs.bzl", "AUTOWARE_CXXOPTS", "AUTOWARE_DEFINES", "autoware_copts")
+load("@rosdistro//ament:defs.bzl", "ament_package")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps", "ros_local_defines")
+load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library", "cc_shared_library", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+# Deliberate differences from CMakeLists.txt (checked by bazel/tools/cmake_parity):
+# cmake-diff define:${PCL_DEFINITIONS}: @rosdistro//cc:pcl carries the defines PCL needs.
+
+DEPENDENCIES = {
+    "@autoware_perception_msgs//:cc_shared": "@autoware_perception_msgs//:cc",
+    "@autoware_point_types//:autoware_point_types": "@autoware_point_types//:autoware_point_types_library",
+    "@autoware_simulation_msgs//:cc_shared": "@autoware_simulation_msgs//:cc",
+    "@autoware_trajectory//:autoware_trajectory": "@autoware_trajectory//:autoware_trajectory_library",
+    "@autoware_utils_geometry//:autoware_utils_geometry": "@autoware_utils_geometry//:autoware_utils_geometry_library",
+    "@autoware_utils_rclcpp//:autoware_utils_rclcpp": "@autoware_utils_rclcpp//:autoware_utils_rclcpp_library",
+    "@autoware_utils_uuid//:autoware_utils_uuid": "@autoware_utils_uuid//:autoware_utils_uuid_library",
+    "@pcl_conversions//:pcl_conversions": "@pcl_conversions//:pcl_conversions_library",
+    "@rclcpp//:rclcpp": "@rclcpp//:rclcpp_library",
+    "@rosdistro//cc:pcl": "@rosdistro//cc:pcl_library",
+    "@sensor_msgs//:cc_shared": "@sensor_msgs//:cc",
+    "@std_msgs//:cc_shared": "@std_msgs//:cc",
+    "@tf2//:tf2": "@tf2//:tf2_library",
+    "@tf2_geometry_msgs//:tf2_geometry_msgs": "@tf2_geometry_msgs//:tf2_geometry_msgs_library",
+    "@tf2_ros//:tf2_ros": "@tf2_ros//:tf2_ros_library",
+    "@unique_identifier_msgs//:cc_shared": "@unique_identifier_msgs//:cc",
+}
+
+cc_library(
+    name = "signed_distance_function_library",
+    srcs = ["src/signed_distance_function.cpp"],
+    hdrs = glob(["include/**/*.hpp"]),
+    includes = ["include"],
+    deps = DEPENDENCIES.values() + ["@rosdistro//cc:eigen"],
+    copts = autoware_copts(),
+    cxxopts = AUTOWARE_CXXOPTS,
+    local_defines = ros_local_defines() + AUTOWARE_DEFINES,
+)
+
+cc_shared_library(
+    name = "signed_distance_function",
+    dynamic_deps = DEPENDENCIES.keys(),
+    exports_filter = [":signed_distance_function_library"],
+    deps = [":signed_distance_function_library"],
+)
+
+collect_transitive_dynamic_deps(
+    name = "node_dynamic_deps",
+    dynamic_deps = [":signed_distance_function"] + DEPENDENCIES.keys(),
+    visibility = ["//visibility:private"],
+)
+
+# ament_auto_add_executable: installed to lib/autoware_dummy_perception_publisher/.
+cc_binary(
+    name = "autoware_dummy_perception_publisher_node",
+    srcs = [
+        "src/main.cpp",
+        "src/movement_utils.cpp",
+        "src/node.cpp",
+        "src/object_info.cpp",
+        "src/pointcloud_creator.cpp",
+        "src/predicted_object_movement_plugin.cpp",
+        "src/straight_line_object_movement_plugin.cpp",
+    ],
+    data = ["@@//bazel/config:cyclonedds.xml"],
+    dynamic_deps = [":node_dynamic_deps"],
+    deps = [":signed_distance_function_library"] + DEPENDENCIES.values(),
+    copts = autoware_copts(),
+    cxxopts = AUTOWARE_CXXOPTS,
+    local_defines = ros_local_defines() + AUTOWARE_DEFINES,
+)
+
+cc_binary(
+    name = "empty_objects_publisher",
+    srcs = ["src/empty_objects_publisher.cpp"],
+    data = ["@@//bazel/config:cyclonedds.xml"],
+    dynamic_deps = [":node_dynamic_deps"],
+    deps = [":signed_distance_function_library"] + DEPENDENCIES.values(),
+    copts = autoware_copts(),
+    cxxopts = AUTOWARE_CXXOPTS,
+    local_defines = ros_local_defines() + AUTOWARE_DEFINES,
+)
+
+# share/autoware_dummy_perception_publisher/{config,launch,schema} (INSTALL_TO_SHARE).
+ament_package(
+    name = "ament_package",
+    data = glob([
+        "config/**",
+        "launch/**",
+        "schema/**",
+    ]),
+    executables = [
+        ":autoware_dummy_perception_publisher_node",
+        ":empty_objects_publisher",
+    ],
+    libraries = [":signed_distance_function"],
+    package_xml = "package.xml",
+    deps = [
+        "@autoware_perception_msgs//:ament_package",
+        "@autoware_point_types//:ament_package",
+        "@autoware_simulation_msgs//:ament_package",
+        "@autoware_trajectory//:ament_package",
+        "@autoware_utils_geometry//:ament_package",
+        "@autoware_utils_rclcpp//:ament_package",
+        "@autoware_utils_uuid//:ament_package",
+        "@pcl_conversions//:ament_package",
+        "@rclcpp//:ament_package",
+        "@rosdistro//:ament_package",
+        "@rosidl_default_runtime//:ament_package",
+        "@sensor_msgs//:ament_package",
+        "@std_msgs//:ament_package",
+        "@tf2//:ament_package",
+        "@tf2_geometry_msgs//:ament_package",
+        "@tf2_ros//:ament_package",
+        "@unique_identifier_msgs//:ament_package",
+    ],
+)
+
+# The installed package doubles as the runtime ament index of this package in tests.
+alias(
+    name = "ament_index",
+    actual = ":ament_package",
+)
+
+cc_test(
+    name = "signed_distance_function-test",
+    srcs = ["test/src/test_signed_distance_function.cpp"],
+    dynamic_deps = [":node_dynamic_deps"],
+    deps = [
+        ":signed_distance_function_library",
+        "@rosdistro//cc:googletest",
+    ],
+    copts = autoware_copts(),
+    cxxopts = AUTOWARE_CXXOPTS,
+    local_defines = ros_local_defines() + AUTOWARE_DEFINES,
+)

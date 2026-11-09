@@ -34,7 +34,7 @@ IGNORED = {
     "ament_auto_find_test_dependencies", "ament_lint_auto_find_test_dependencies", "include_directories",
     "target_include_directories", "target_link_libraries", "ament_target_dependencies", "ament_package",
     "message", "get_target_property", "else", "elseif", "endif", "mark_as_advanced", "option", "string",
-    "find_path", "find_library", "pkg_check_modules", "set_property", "add_dependencies", "link_directories",
+    "find_path", "find_library", "pkg_check_modules", "set_property", "add_dependencies", "link_directories", "target_link_directories",
     "include", "ament_find_gtest", "return", "unset",  # return(): only under a reported if()
     "autoware_agnocast_wrapper_setup",  # Agnocast test env (LD_PRELOAD); tests here run on ROS 2 (PLAN.md)
 }
