@@ -1,0 +1,97 @@
+load("@rules_oci//oci:defs.bzl", "oci_image", "oci_load")
+load("@rules_pkg//pkg:mappings.bzl", "pkg_attributes", "pkg_files", "pkg_mklink")
+load("@rules_pkg//pkg:tar.bzl", "pkg_tar")
+load("@rules_python//python:defs.bzl", "py_binary")
+load(":underlay.bzl", "autoware_underlay", "python_runtime_files")
+
+package(default_visibility = ["//visibility:public"])
+
+exports_files(["dev.Dockerfile"])
+
+py_binary(
+    name = "dedup_tar",
+    srcs = ["dedup_tar.py"],
+)
+
+# The install tree (colcon "isolated" layout, with setup.sh) for everything the runtime image runs: autoware_core
+# (all core components), the CUDA packages, and their whole ROS and third-party dependency closure, at the RCR's
+# install prefix /opt/ros/lyrical.
+autoware_underlay(
+    name = "autoware_underlay",
+    package_dir = "opt/ros/lyrical",
+    deps = [
+        "@agnocast_heaphook//:ament_package",
+        "@autoware_core//:ament_package",
+        "@autoware_tensorrt_common//:ament_package",
+        "@autoware_tensorrt_plugins//:ament_package",
+        "@cuda_blackboard//:ament_package",
+        # ros2 launch, ros2 topic, ros2 node, ...: the command-line tools.
+        "@ros2cli_common_extensions//:ament_package",
+    ],
+)
+
+# The interpreter the install tree's Python (rclpy, launch, the message bindings) was built against.
+python_runtime_files(name = "python_runtime_files")
+
+pkg_tar(
+    name = "python_layer",
+    srcs = [":python_runtime_files"],
+)
+
+# Runtime configuration: the entrypoint, the DDS configuration, and the heap hook where agnocast_env.launch looks for
+# it (/opt/ros/$ROS_DISTRO/lib/; the isolated layout installs it under agnocast_heaphook/lib/).
+pkg_files(
+    name = "entrypoint_file",
+    srcs = ["entrypoint.sh"],
+    attributes = pkg_attributes(mode = "0755"),
+    prefix = "usr/local/bin",
+    renames = {"entrypoint.sh": "autoware-entrypoint"},
+)
+
+pkg_files(
+    name = "dds_config",
+    srcs = ["//bazel/config:cyclonedds.xml"],
+    prefix = "etc/autoware",
+)
+
+pkg_mklink(
+    name = "heaphook_link",
+    link_name = "opt/ros/lyrical/lib/libagnocast_heaphook.so",
+    target = "../agnocast_heaphook/lib/libagnocast_heaphook.so",
+)
+
+pkg_tar(
+    name = "config_layer",
+    srcs = [
+        ":dds_config",
+        ":entrypoint_file",
+        ":heaphook_link",
+    ],
+)
+
+# The runtime image (docs/bazel/PLAN.md, "Environments"): integration tests and the vehicle run this, identical by
+# digest. The GPU driver, kernel modules (agnocast) and devices come from the machine.
+oci_image(
+    name = "runtime",
+    base = "@ubuntu",
+    entrypoint = ["/usr/local/bin/autoware-entrypoint"],
+    cmd = ["/bin/bash"],
+    env = {
+        "CYCLONEDDS_URI": "file:///etc/autoware/cyclonedds.xml",
+        "ENABLE_AGNOCAST": "1",
+        "RMW_IMPLEMENTATION": "rmw_cyclonedds_cpp",
+        "ROS_DISTRO": "lyrical",
+    },
+    tars = [
+        ":python_layer",
+        ":autoware_underlay",
+        ":config_layer",
+    ],
+)
+
+# bazel run //images:runtime_load  ->  docker image autoware-bazel-runtime:latest
+oci_load(
+    name = "runtime_load",
+    image = ":runtime",
+    repo_tags = ["autoware-bazel-runtime:latest"],
+)

@@ -1272,3 +1272,70 @@ Tests:
 
 `bazel test @cuda_blackboard//...` → 4 pass. Parity 0 open, 7 recorded. The `ROS_DISTRO_*` macros (rolling, foxy,
 galactic, humble) do not apply to Lyrical; a glob record covers them. No source changes needed.
+
+## P4 part 1: install tree and runtime image
+
+### Install tree
+The RCR's `ament_underlay` aggregates `ament_package` targets (walking their `deps`) into one colcon-style install
+tarball, with `setup.sh`/`setup.bash` and a configurable prefix (`@rosdistro//:install_prefix`, default
+`/opt/ros/lyrical`). Probe first: the P0 talker as an `ament_package`, an underlay around it, extracted, then
+`COLCON_CURRENT_PREFIX=<dir> . <dir>/setup.sh` and run. It works. Libraries resolve through the per-package
+`LD_LIBRARY_PATH` hooks; the build-time `_solib` RUNPATHs are harmless leftovers.
+
+Every Autoware package now has an installable `ament_package` (one-off script in the session, then reviewed):
+- packages that had `ament_index`: the call becomes `ament_package(name = "ament_package", ...)`, with
+  `alias(name = "ament_index", actual = ":ament_package")` so that tests' `data = [":ament_index"]` keep working;
+- message packages: `rosidl_ament_package(name = "ament_package", ...)` next to `default_generators`;
+- library-only packages: `ament_package(libraries = [<cc_shared_library>...])`;
+- `deps`: the package.xml `depend`/`exec_depend`/`build_export_depend` that are modules (`@x//:ament_package`),
+  plus `@rosdistro//:ament_package` (all third-party shared libraries). Runtime-only dependencies that were not
+  `bazel_dep`s yet were added: xacro, urdf, robot_state_publisher, launch(_ros), rosidl_default_runtime, pcl_ros,
+  lanelet2_maps and missing message packages. System keys (eigen, boost, pcl, ...) are covered by
+  `@rosdistro//:ament_package`.
+- In-repo third-party libraries (OSQP 0.6, OpenMP, CUDA runtime, TensorRT core) need no packages of their own:
+  ament_package installs every library a listed shared library links next to it. TensorRT's builder resources are
+  not linked, so autoware_tensorrt_common lists `@tensorrt//:runtime_libs`.
+
+`//images:autoware_underlay` = `autoware_core` + the CUDA packages + agnocast_heaphook + `ros2cli_common_extensions`.
+- Size: 4.2 GB at first. ament_package copies each library's dependencies into every package's `lib/` (libpcl.so
+  19 times, librclcpp.so 93, libc++.so.1 156).
+  - `images/underlay.bzl`: repeats of the same Bazel file become relative symlinks (analysis time);
+  - `images/dedup_tar.py`: the same *content* under different paths does too (cuBLAS's libX.so/.so.13/.so.13.4,
+    one library through two repositories).
+  - Result: 2.37 GB. What remains is inherent (libnvinfer 0.7 GB, cuBLAS 0.56 GB, VTK+PCL 0.26 GB,
+    autoware_test_utils' installed test maps 0.13 GB).
+- Completeness: `ldd` on every installed ELF with `setup.sh` sourced. Only 5 RViz GUI libraries are missing (Qt
+  platform plugins, libOgrePaging), an RCR packaging gap that does not matter headless.
+
+### Runtime image (`//images:runtime`, `bazel run //images:runtime_load` → `autoware-bazel-runtime:latest`)
+`rules_oci` 2.3.0, base `ubuntu:24.04` at the same index digest as `images/dev.Dockerfile` (amd64 + arm64).
+Layers:
+1. the hermetic Python 3.12 that Bazel builds against (rules_python toolchain → `/opt/python3.12`,
+   `/usr/local/bin/python3`). The install tree's scripts use `#!/usr/bin/env python3`, and its extension modules
+   were built against this interpreter.
+2. the install tree at `/opt/ros/lyrical`;
+3. config: `/usr/local/bin/autoware-entrypoint` (sources `setup.sh`), `/etc/autoware/cyclonedds.xml`, and
+   `/opt/ros/lyrical/lib/libagnocast_heaphook.so` → `../agnocast_heaphook/lib/...` (where `agnocast_env.launch`
+   looks for it).
+
+Env: `ENABLE_AGNOCAST=1`, `RMW_IMPLEMENTATION=rmw_cyclonedds_cpp`, `CYCLONEDDS_URI`, `ROS_DISTRO=lyrical`.
+`docker run --rm autoware-bazel-runtime:latest ros2 pkg list` → 344 packages (94 Autoware); `ros2 launch` works.
+
+Issues (symptom → cause → fix):
+1. `No module named 'numpy._core._multiarray_umath'` in the image → the RCR's `ament_package` installs only the
+   `files` of `python` targets; a wheel's compiled modules are in its runfiles → `rosdistro_python_extensions.patch`
+   also installs the target's *own-repository* runfiles under `site-packages/`. The first version took all runfiles:
+   every package then got every pip package (PyQt6, ...) and Python's metadata lookup broke.
+2. `ros2: error: ... invalid choice: 'pkg' (choose from )` → the ros2cli extensions keep their entry points in a
+   hand-written `<pkg>.egg-info/entry_points.txt` inside the `py_library` (for `bazel run`). ament_package generates
+   its own egg-info without them → `ament_package` passes such files to `install_gen.py`, which merges them
+   (`rosdistro_entry_points.patch`). Neither bug shows in `bazel test`; only in an install tree.
+3. `ros2pkg` etc. missing at all → the core closure has the `ros2cli` framework but none of its extensions →
+   `@ros2cli_common_extensions//:ament_package` in the image.
+4. A patch edited by hand failed to apply (`Wrong chunk detected`, hunk counts) → always regenerate patches with a
+   diff tool from the pristine file (re-fetch without the patch, or `patch -R` a copy).
+5. Script-merged `deps` lost a list comprehension (`[":%s_..." % e for ...]` became a literal) and produced duplicates
+   after the rename (`Label ... is duplicated`) → fixed by hand / deduplicated; full suite rerun (203 pass).
+
+The host's Docker has no NVIDIA runtime (`Runtimes: runc`); GPU in the container needs the NVIDIA container toolkit
+(host setup, outside Bazel). The planning-simulator demo does not need it.

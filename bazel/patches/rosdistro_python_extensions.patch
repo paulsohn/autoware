@@ -1,0 +1,46 @@
+ament_package installs only the files of `python` targets, which loses what py_libraries carry in their runfiles:
+- compiled extension modules of pip packages (`import numpy` failed: No module named 'numpy._core._multiarray_umath');
+- hand-written <pkg>.egg-info/entry_points.txt, through which ros2cli extensions register commands (`ros2 launch`,
+  `ros2 pkg` ... were missing from install trees: "invalid choice").
+Install the former; pass the latter to install_gen.py (rosdistro_entry_points.patch), which merges them.
+
+--- a/ament/ament_package.bzl
++++ b/ament/ament_package.bzl
+@@ -185,12 +185,25 @@
+ 
+     # lib/pythonX.Y/site-packages/...: python modules.
+     site_packages = "lib/" + pyver + "/site-packages/"
++    entry_points_files = []
+     for target in ctx.attr.python:
+         for f in target.files.to_list():
+             if f.basename.endswith(".pyc"):
+                 continue
+             rel = _strip(_package_relative(ctx, f), ctx.attr.python_strip_prefix)
+             files[site_packages + rel] = f
++
++        # Compiled extension modules (.so) of pip packages are in the py_library's runfiles (its data), not in its
++        # files: install the runfiles under a site-packages/ directory of the target's own repository too (not those
++        # of its dependencies, which are packages of their own). Hand-written <pkg>.egg-info/entry_points.txt (how
++        # ros2cli extensions register their commands) are merged into the generated egg-info below.
++        for f in target[DefaultInfo].default_runfiles.files.to_list():
++            if not f.owner or f.owner.workspace_name != target.label.workspace_name or f.basename.endswith(".pyc"):
++                continue
++            if "/site-packages/" in f.path:
++                files.setdefault(site_packages + f.path.split("/site-packages/", 1)[1], f)
++            elif f.path.endswith(".egg-info/entry_points.txt"):
++                entry_points_files.append(f)
+ 
+     # Exported libraries (lib<name>.so / lib<name>.a in lib/).
+     libraries = []
+@@ -353,9 +366,10 @@
+         # the generator produces it as a tree rooted at the site-packages dir.
+         egg_info = ctx.actions.declare_directory(ctx.label.name + "_install/site-packages")
+         args.add("--egg-info-out", egg_info.path)
++        args.add_all(entry_points_files, before_each = "--entry-points-file")
+         outputs.append(egg_info)
+         files[site_packages.rstrip("/")] = egg_info
+-    inputs = [spec_file]
++    inputs = [spec_file] + entry_points_files
+     if ctx.file.package_xml:
+         args.add("--package-xml", ctx.file.package_xml)
+         inputs.append(ctx.file.package_xml)

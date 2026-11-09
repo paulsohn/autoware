@@ -6,6 +6,8 @@ bazel_dep(name = "llvm", version = "0.8.25.rcr.0")
 bazel_dep(name = "platforms", version = "1.1.0")
 bazel_dep(name = "protobuf", version = "36.2")
 bazel_dep(name = "rules_cc", version = "0.2.26.rcr.0")
+bazel_dep(name = "rules_pkg", version = "1.3.0")
+bazel_dep(name = "rules_oci", version = "2.3.0")
 bazel_dep(name = "rules_python", version = "2.4.1")
 bazel_dep(name = "rules_rs", version = "0.1.0")
 
@@ -15,7 +17,18 @@ bazel_dep(name = "rules_rs", version = "0.1.0")
 bazel_dep(name = "ros", version = "lyrical.2026-10-05.rcr.0")
 bazel_dep(name = "rclcpp", version = "0.0.0")
 bazel_dep(name = "rosdistro", version = "0.0.0")
+single_version_override(
+    module_name = "rosdistro",
+    patch_strip = 1,
+    patches = [
+        "//bazel/patches:rosdistro_python_extensions.patch",
+        "//bazel/patches:rosdistro_entry_points.patch",
+    ],
+    version = "lyrical.2026-10-05.rcr.0",
+)
 bazel_dep(name = "std_msgs", version = "0.0.0")
+# The ros2 command-line tools for the runtime image (ros2 launch/topic/node/...); //images:autoware_underlay.
+bazel_dep(name = "ros2cli_common_extensions", version = "0.0.0")
 
 register_toolchains("@llvm//toolchain:all")
 
@@ -71,3 +84,16 @@ multiple_version_override(
         "1.0.0.bcr.3",
     ],
 )
+
+# Runtime image base (docs/bazel/PLAN.md, "Environments"): the same ubuntu:24.04 index digest as images/dev.Dockerfile.
+oci = use_extension("@rules_oci//oci:extensions.bzl", "oci")
+oci.pull(
+    name = "ubuntu",
+    digest = "sha256:fe81560990fae86dc4743202b2cb4d3df98d0bcf949173cecef15ce1127ef852",
+    image = "index.docker.io/library/ubuntu",
+    platforms = [
+        "linux/amd64",
+        "linux/arm64/v8",
+    ],
+)
+use_repo(oci, "ubuntu", "ubuntu_linux_amd64", "ubuntu_linux_arm64_v8")

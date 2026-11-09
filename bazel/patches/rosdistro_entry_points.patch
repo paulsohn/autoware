@@ -1,0 +1,48 @@
+Merge hand-written entry_points.txt files (--entry-points-file, from ament_package; see
+rosdistro_python_extensions.patch) into the generated egg-info.
+
+--- a/ament/install_gen.py
++++ b/ament/install_gen.py
+@@ -314,7 +314,7 @@
+                _render("cmake/Export-noconfig.cmake.in", dict(base, TARGET_IMPORTS="\n".join(imports))))
+ 
+ 
+-def generate_egg_info(spec, pkg, out, setup_cfg=None):
++def generate_egg_info(spec, pkg, out, setup_cfg=None, entry_points_files=()):
+     """Write <pkg>-<version>-py<X.Y>.egg-info/ under `out` (the site-packages dir)."""
+     name = spec.get("name") or pkg["name"]
+     pyver = spec.get("pyver", "python3").replace("python", "")
+@@ -344,6 +344,16 @@
+                 lines = [ln.strip() for ln in raw_val.splitlines() if ln.strip()]
+                 if lines:
+                     entry_groups[group] = lines
++    for path in entry_points_files:
++        cfg = configparser.ConfigParser(delimiters=("=",))
++        cfg.optionxform = str
++        cfg.read(path)
++        for group in cfg.sections():
++            lines = entry_groups.setdefault(group, [])
++            for name, value in cfg.items(group):
++                line = "%s = %s" % (name, value)
++                if line not in lines:
++                    lines.append(line)
+     scripts = spec.get("console_scripts", {})
+     if scripts:
+         entry_groups.setdefault("console_scripts", [])
+@@ -367,6 +377,7 @@
+     parser.add_argument("--setup-cfg", required=False)
+     parser.add_argument("--out", required=True)
+     parser.add_argument("--egg-info-out", required=False)
++    parser.add_argument("--entry-points-file", action="append", default=[])
+     args = parser.parse_args()
+     with open(args.spec) as f:
+         spec = json.load(f)
+@@ -385,7 +396,7 @@
+     generate(spec, pkg, args.out)
+     if args.egg_info_out:
+         os.makedirs(args.egg_info_out, exist_ok=True)
+-        generate_egg_info(spec, pkg, args.egg_info_out, args.setup_cfg)
++        generate_egg_info(spec, pkg, args.egg_info_out, args.setup_cfg, args.entry_points_file)
+ 
+ 
+ if __name__ == "__main__":
