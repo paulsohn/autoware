@@ -220,6 +220,11 @@ class CMake:
                 self.share |= {x.rstrip("/") for x in items}
             else:
                 self.installs.add(f"{a[0]}:{','.join(self.rel(x) for x in items)}->{dest}")
+        elif name == "set_tests_properties" and "PROPERTIES" in a:
+            props = a[a.index("PROPERTIES") + 1:]
+            if "TIMEOUT" in props:
+                for t in a[:a.index("PROPERTIES")]:
+                    self.timeouts[t] = props[props.index("TIMEOUT") + 1]
         elif name == "generate_parameter_library":
             self.param_libs.add(a[0])
         elif name == "ament_python_install_package":

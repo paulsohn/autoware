@@ -259,3 +259,6 @@ local_path_override(module_name = "agnocast_ioctl_wrapper", path = "src/core/agn
 
 bazel_dep(name = "agnocast_cie_thread_configurator")
 local_path_override(module_name = "agnocast_cie_thread_configurator", path = "src/core/agnocast/src/agnocast_cie_thread_configurator")
+
+bazel_dep(name = "agnocastlib")
+local_path_override(module_name = "agnocastlib", path = "src/core/agnocast/src/agnocastlib")
