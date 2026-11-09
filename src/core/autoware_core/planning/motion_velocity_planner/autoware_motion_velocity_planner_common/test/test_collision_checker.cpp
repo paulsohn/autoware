@@ -93,8 +93,8 @@ TEST(TestCollisionChecker, DISABLED_Benchmark)
   const auto cc_constr_ns =
     std::chrono::duration_cast<std::chrono::nanoseconds>(cc_constr_end - cc_constr_start).count();
   std::printf(
-    "Collision checker construction (with %d footprints): %ld ns\n", nb_ego_footprints,
-    cc_constr_ns);
+    "Collision checker construction (with %d footprints): %lld ns\n", nb_ego_footprints,
+    static_cast<long long>(cc_constr_ns));
   MultiPolygon2d poly_obstacles;
   MultiPoint2d point_obstacles;
   MultiLineString2d line_obstacles;
@@ -133,8 +133,10 @@ TEST(TestCollisionChecker, DISABLED_Benchmark)
         std::chrono::duration_cast<std::chrono::nanoseconds>(cc_end - cc_start);
       naive_ns += std::chrono::duration_cast<std::chrono::nanoseconds>(naive_end - naive_start);
     }
-    std::printf("%20s%10ld ns\n", "collision checker : ", collision_checker_ns.count());
-    std::printf("%20s%10ld ns\n", "naive : ", naive_ns.count());
+    std::printf(
+      "%20s%10lld ns\n", "collision checker : ",
+      static_cast<long long>(collision_checker_ns.count()));
+    std::printf("%20s%10lld ns\n", "naive : ", static_cast<long long>(naive_ns.count()));
   };
   const auto check_obstacles = [&](const auto & obstacles) {
     std::chrono::nanoseconds collision_checker_ns{};
@@ -150,7 +152,9 @@ TEST(TestCollisionChecker, DISABLED_Benchmark)
     MultiPoint2d naive_collision_points;
 
 #pragma GCC diagnostic push
+#if defined(__GNUC__) && !defined(__clang__)
 #pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+#endif
     // on NVIDIA DRIVE AGX Thor, boost::geometry triggers a false positive warning
     boost::geometry::intersection(ego_footprints, obstacles, naive_collision_points);
 #pragma GCC diagnostic pop
@@ -165,8 +169,10 @@ TEST(TestCollisionChecker, DISABLED_Benchmark)
     }
     collision_checker_ns += std::chrono::duration_cast<std::chrono::nanoseconds>(cc_end - cc_start);
     naive_ns += std::chrono::duration_cast<std::chrono::nanoseconds>(naive_end - naive_start);
-    std::printf("%20s%10ld ns\n", "collision checker : ", collision_checker_ns.count());
-    std::printf("%20s%10ld ns\n", "naive : ", naive_ns.count());
+    std::printf(
+      "%20s%10lld ns\n", "collision checker : ",
+      static_cast<long long>(collision_checker_ns.count()));
+    std::printf("%20s%10lld ns\n", "naive : ", static_cast<long long>(naive_ns.count()));
   };
 
   std::cout << "* check one by one\n";
