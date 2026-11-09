@@ -4194,6 +4194,7 @@
     "https://bazel.ros.org/modules/rules_swift/2.1.1/MODULE.bazel": "not found",
     "https://bazel.ros.org/modules/rules_swift/2.4.0/MODULE.bazel": "not found",
     "https://bazel.ros.org/modules/rules_swift/3.1.2/MODULE.bazel": "not found",
+    "https://bazel.ros.org/modules/rviz2/0.0.0/MODULE.bazel": "115abdb6e0c7d6f244e2c6e4b86b571771aa054f2636770a56e34e5c81c84b3e",
     "https://bazel.ros.org/modules/rviz2/15.2.6-1.rcr.0/MODULE.bazel": "24d79c3752df5f19ec9afbd4c8079ae721ab138f839c4542c8223c1a2d6b8881",
     "https://bazel.ros.org/modules/rviz2/15.2.6-1.rcr.0/source.json": "d8215c5f90ddce04372b9259fe90f9cb32824fab0fb666998b19179e9a8db0cb",
     "https://bazel.ros.org/modules/rviz_2d_overlay_msgs/1.4.2-1.rcr.0/MODULE.bazel": "3975cef206f7364d42a940b340d9ea1629ec0fe11abb4bc730520c1d04a7ea5f",

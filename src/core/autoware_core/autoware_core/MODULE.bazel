@@ -1,0 +1,13 @@
+module(name = "autoware_core")
+
+bazel_dep(name = "autoware_core_api", version = "0.0.0")
+bazel_dep(name = "autoware_core_control", version = "0.0.0")
+bazel_dep(name = "autoware_core_localization", version = "0.0.0")
+bazel_dep(name = "autoware_core_map", version = "0.0.0")
+bazel_dep(name = "autoware_core_perception", version = "0.0.0")
+bazel_dep(name = "autoware_core_planning", version = "0.0.0")
+bazel_dep(name = "autoware_core_sensing", version = "0.0.0")
+bazel_dep(name = "autoware_core_vehicle", version = "0.0.0")
+bazel_dep(name = "autoware_global_parameter_loader", version = "0.0.0")
+bazel_dep(name = "rviz2", version = "0.0.0")
+bazel_dep(name = "rosdistro", version = "0.0.0")

@@ -1075,3 +1075,10 @@ Issues (symptom → cause → fix):
    depends only on motion_velocity_planner_common.
 3. The test's member callbacks bound with `std::bind` take non-const `SharedPtr` (deprecated in rclcpp 32) →
    `ConstSharedPtr`.
+
+## core_planning and autoware_core: autoware_core complete
+
+Both contain no code (`ament_index` with exec_depend indexes). `autoware_core//:ament_index` is the top of the tree:
+it pulls in every `autoware_core_*` component index, autoware_global_parameter_loader and the RCR's
+`@rviz2//:ament_index`. Parity 0 open, 0 recorded on both. With these, every package in the autoware_core closure
+has a Bazel module.

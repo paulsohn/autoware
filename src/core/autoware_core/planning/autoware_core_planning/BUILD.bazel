@@ -1,0 +1,24 @@
+load("@rosdistro//ament:defs.bzl", "ament_index")
+
+package(default_visibility = ["//visibility:public"])
+
+# No code: share/autoware_core_planning/{config,launch} (INSTALL_TO_SHARE). Its launch file starts the nodes and
+# plugins of its exec_depends.
+ament_index(
+    name = "ament_index",
+    data = glob([
+        "config/**",
+        "launch/**",
+    ]),
+    package_xml = "package.xml",
+    deps = [
+        "@autoware_behavior_velocity_planner//:ament_index",
+        "@autoware_behavior_velocity_stop_line_module//:ament_index",
+        "@autoware_mission_planner//:ament_index",
+        "@autoware_motion_velocity_obstacle_stop_module//:ament_index",
+        "@autoware_motion_velocity_planner//:ament_index",
+        "@autoware_path_generator//:ament_index",
+        "@autoware_planning_topic_converter//:ament_index",
+        "@autoware_velocity_smoother//:ament_index",
+    ],
+)
