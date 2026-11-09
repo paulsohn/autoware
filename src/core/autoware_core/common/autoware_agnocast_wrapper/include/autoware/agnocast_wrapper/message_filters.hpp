@@ -17,10 +17,10 @@
 #include "autoware/agnocast_wrapper/autoware_agnocast_wrapper.hpp"
 #include "autoware/agnocast_wrapper/node.hpp"
 
-#include <message_filters/subscriber.h>
-#include <message_filters/sync_policies/approximate_time.h>
-#include <message_filters/sync_policies/exact_time.h>
-#include <message_filters/synchronizer.h>
+#include <message_filters/subscriber.hpp>
+#include <message_filters/sync_policies/approximate_time.hpp>
+#include <message_filters/sync_policies/exact_time.hpp>
+#include <message_filters/synchronizer.hpp>
 
 #include <algorithm>
 #include <functional>
@@ -56,7 +56,13 @@ template <class M>
 class Subscriber
 {
 public:
+#if RCLCPP_VERSION_MAJOR >= 32
+  // Lyrical's message_filters::Subscriber is templated on the message only (it takes node interfaces) and
+  // subscribes with an rclcpp::QoS.
+  using RclcppSubscriber = ::message_filters::Subscriber<M>;
+#else
   using RclcppSubscriber = ::message_filters::Subscriber<M, rclcpp::Node>;
+#endif
   using AgnocastSubscriber = agnocast::message_filters::Subscriber<M, agnocast::Node>;
 
   Subscriber()
@@ -83,7 +89,13 @@ public:
         if constexpr (std::is_same_v<std::decay_t<decltype(sub)>, AgnocastSubscriber>) {
           sub.subscribe(node->get_agnocast_node().get(), topic, qos);
         } else {
+#if RCLCPP_VERSION_MAJOR >= 32
+          sub.subscribe(
+            node->get_rclcpp_node().get(), topic,
+            rclcpp::QoS(rclcpp::QoSInitialization::from_rmw(qos), qos));
+#else
           sub.subscribe(node->get_rclcpp_node().get(), topic, qos);
+#endif
         }
       },
       sub_);

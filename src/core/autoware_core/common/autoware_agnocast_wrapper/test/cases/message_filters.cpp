@@ -97,7 +97,10 @@ struct LvalueRefQualifiedCallable
     [](const PoseStamped::ConstSharedPtr &, const PointStamped::ConstSharedPtr &) {};
   auto counting_callable = [count = 0](
                              const PoseStamped::ConstSharedPtr &,
-                             const PointStamped::ConstSharedPtr &) mutable { ++count; };
+                             const PointStamped::ConstSharedPtr &) mutable {
+    ++count;
+    static_cast<void>(count);  // only incremented; clang warns "set but not used"
+  };
   auto message_ptr_method = &Receiver::on_message_ptr;
   NonConstCallable non_const_callable;
   LvalueRefQualifiedCallable lvalue_ref_qualified_callable;

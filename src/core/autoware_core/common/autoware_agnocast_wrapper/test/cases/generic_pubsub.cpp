@@ -188,7 +188,7 @@ TEST_F(GenericPubSubMethod1Test, MacroPublisherRejectsQosOverridingOptions)
   auto node = std::make_shared<GenericPubSubMethod1Node>("generic_method1_publisher_qos_reject");
 
   AUTOWARE_PUBLISHER_OPTIONS options;
-  options.qos_overriding_options = rclcpp::QosOverridingOptions{{rclcpp::QosPolicyKind::Depth}};
+  options.qos_overriding_options = rclcpp::QosOverridingOptions{rclcpp::QosPolicyKind::Depth};
 
   EXPECT_THROW(
     node->create_string_publisher_with_options("/test/generic_method1_qos_override", options),
@@ -200,7 +200,7 @@ TEST_F(GenericPubSubMethod1Test, MacroSubscriptionRejectsQosOverridingOptions)
   auto node = std::make_shared<GenericPubSubMethod1Node>("generic_method1_subscription_qos_reject");
 
   AUTOWARE_SUBSCRIPTION_OPTIONS options;
-  options.qos_overriding_options = rclcpp::QosOverridingOptions{{rclcpp::QosPolicyKind::Depth}};
+  options.qos_overriding_options = rclcpp::QosOverridingOptions{rclcpp::QosPolicyKind::Depth};
 
   EXPECT_THROW(
     node->create_string_subscription_with_options(
@@ -259,7 +259,7 @@ TEST_F(GenericPubSubMethod1Test, MacroOnNodePublisherRejectsQosOverridingOptions
   auto node = std::make_shared<rclcpp::Node>("generic_method1_on_node_publisher_qos_reject");
 
   AUTOWARE_PUBLISHER_OPTIONS options;
-  options.qos_overriding_options = rclcpp::QosOverridingOptions{{rclcpp::QosPolicyKind::Depth}};
+  options.qos_overriding_options = rclcpp::QosOverridingOptions{rclcpp::QosPolicyKind::Depth};
 
   EXPECT_THROW(
     (AUTOWARE_CREATE_GENERIC_PUBLISHER4_ON_NODE(
@@ -273,7 +273,7 @@ TEST_F(GenericPubSubMethod1Test, MacroOnNodeSubscriptionRejectsQosOverridingOpti
   auto node = std::make_shared<rclcpp::Node>("generic_method1_on_node_subscription_qos_reject");
 
   AUTOWARE_SUBSCRIPTION_OPTIONS options;
-  options.qos_overriding_options = rclcpp::QosOverridingOptions{{rclcpp::QosPolicyKind::Depth}};
+  options.qos_overriding_options = rclcpp::QosOverridingOptions{rclcpp::QosPolicyKind::Depth};
 
   EXPECT_THROW(
     (AUTOWARE_CREATE_GENERIC_SUBSCRIPTION_ON_NODE(
@@ -403,7 +403,7 @@ TEST_F(GenericPubSubMethod2Test, NodeMemberPublisherRejectsQosOverridingOptions)
   auto node = std::make_shared<Node>("generic_method2_publisher_qos_reject");
 
   AUTOWARE_PUBLISHER_OPTIONS options;
-  options.qos_overriding_options = rclcpp::QosOverridingOptions{{rclcpp::QosPolicyKind::Depth}};
+  options.qos_overriding_options = rclcpp::QosOverridingOptions{rclcpp::QosPolicyKind::Depth};
 
   EXPECT_THROW(
     node->create_generic_publisher(
@@ -418,7 +418,7 @@ TEST_F(GenericPubSubMethod2Test, NodeMemberSubscriptionRejectsQosOverridingOptio
   auto node = std::make_shared<Node>("generic_method2_subscription_qos_reject");
 
   AUTOWARE_SUBSCRIPTION_OPTIONS options;
-  options.qos_overriding_options = rclcpp::QosOverridingOptions{{rclcpp::QosPolicyKind::Depth}};
+  options.qos_overriding_options = rclcpp::QosOverridingOptions{rclcpp::QosPolicyKind::Depth};
 
   EXPECT_THROW(
     node->create_generic_subscription(
@@ -441,7 +441,7 @@ TEST_F(GenericPubSubMethod2Test, NodeMemberSubscriptionDepthOverloadRejectsQosOv
   auto node = std::make_shared<Node>("generic_method2_subscription_depth_qos_reject");
 
   AUTOWARE_SUBSCRIPTION_OPTIONS options;
-  options.qos_overriding_options = rclcpp::QosOverridingOptions{{rclcpp::QosPolicyKind::Depth}};
+  options.qos_overriding_options = rclcpp::QosOverridingOptions{rclcpp::QosPolicyKind::Depth};
 
   EXPECT_THROW(
     node->create_generic_subscription(
@@ -461,7 +461,7 @@ TEST_F(GenericPublisherOptionsTest, RejectsQosOverridingOptions)
   auto node = std::make_shared<rclcpp::Node>("generic_publisher_options_reject");
 
   agnocast::PublisherOptions options;
-  options.qos_overriding_options = rclcpp::QosOverridingOptions{{rclcpp::QosPolicyKind::Depth}};
+  options.qos_overriding_options = rclcpp::QosOverridingOptions{rclcpp::QosPolicyKind::Depth};
 
   EXPECT_THROW(
     autoware::agnocast_wrapper::create_generic_publisher(
@@ -483,7 +483,7 @@ TEST_F(GenericSubscriptionOptionsTest, RejectsQosOverridingOptions)
   auto node = std::make_shared<rclcpp::Node>("generic_subscription_options_reject");
 
   agnocast::SubscriptionOptions options;
-  options.qos_overriding_options = rclcpp::QosOverridingOptions{{rclcpp::QosPolicyKind::Depth}};
+  options.qos_overriding_options = rclcpp::QosOverridingOptions{rclcpp::QosPolicyKind::Depth};
 
   EXPECT_THROW(
     autoware::agnocast_wrapper::create_generic_subscription(
