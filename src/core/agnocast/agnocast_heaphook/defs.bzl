@@ -21,8 +21,10 @@ def _heaphook_test_impl(ctx):
             "#!/bin/bash",
             "set -euo pipefail",
             'R="${RUNFILES_DIR:-$0.runfiles}"',
+            # Same form as CMake's "LD_PRELOAD=<hook>:$ENV{LD_PRELOAD}"; agnocastlib warns when LD_PRELOAD has a
+            # single entry ("Pre-existing shared libraries ... may have been overwritten").
             'export LD_PRELOAD="' + ":".join(['$R/' + _runfiles_path(f) for f in preloads]) +
-            '${LD_PRELOAD:+:$LD_PRELOAD}"',
+            ':${LD_PRELOAD:-}"',
             'exec "$R/' + _runfiles_path(ctx.executable.binary) + '" "$@"',
             "",
         ]),
@@ -45,7 +47,7 @@ _heaphook_test = rule(
     },
 )
 
-def heaphook_test(name, preload = [], env = {}, tags = [], size = None, timeout = None, **kwargs):
+def heaphook_test(name, preload = [], env = {}, args = [], tags = [], size = None, timeout = None, **kwargs):
     """A cc test (kwargs as for cc_binary) run with LD_PRELOAD=libagnocast_heaphook.so (+ `preload`, before it)."""
     cc_binary(
         name = name + "_bin",
@@ -58,6 +60,7 @@ def heaphook_test(name, preload = [], env = {}, tags = [], size = None, timeout 
         binary = ":" + name + "_bin",
         preload = preload + [Label("//:agnocast_heaphook")],
         env = env,
+        args = args,
         tags = tags,
         size = size,
         timeout = timeout,

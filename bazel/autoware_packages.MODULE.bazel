@@ -271,3 +271,6 @@ local_path_override(module_name = "agnocast_components", path = "src/core/agnoca
 
 bazel_dep(name = "ros2agnocast_discovery_agent")
 local_path_override(module_name = "ros2agnocast_discovery_agent", path = "src/core/agnocast/src/ros2agnocast_discovery_agent")
+
+bazel_dep(name = "autoware_agnocast_wrapper")
+local_path_override(module_name = "autoware_agnocast_wrapper", path = "src/core/autoware_core/common/autoware_agnocast_wrapper")

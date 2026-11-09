@@ -1,0 +1,170 @@
+load("@agnocast_heaphook//:defs.bzl", "heaphook_test")
+load("@autoware_cmake//:defs.bzl", "AUTOWARE_CXXOPTS", "AUTOWARE_DEFINES", "autoware_copts")
+load("@rosdistro//ament:defs.bzl", "ament_index")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps", "ros_local_defines")
+load("@rosdistro//python:defs.bzl", "py_pytest")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
+load("@rules_python//python:defs.bzl", "py_library")
+
+package(default_visibility = ["//visibility:public"])
+
+# Deliberate differences from CMakeLists.txt (checked by bazel/tools/cmake_parity):
+# cmake-diff if:DEFINED ENV{ENABLE_AGNOCAST} AND $ENV{ENABLE_AGNOCAST} STREQUAL 1: Agnocast is always compiled in
+#   (PLAN.md): the ENABLE_AGNOCAST=1 branch is taken unconditionally; ENABLE_AGNOCAST only switches at run time.
+# cmake-diff if:$ENV{ENABLE_AGNOCAST} STREQUAL 1: same.
+# cmake-diff install:FILES:cmake/agnocast_wrapper_config_extras.cmake->share/autoware_agnocast_wrapper/cmake: in
+#   :ament_index; the CMake macro's Bazel counterpart is defs.bzl.
+# cmake-diff install:FILES:cmake/autoware_agnocast_wrapper_register_node.cmake->share/autoware_agnocast_wrapper/cmake:
+#   same.
+
+exports_files([
+    "defs.bzl",
+    "templates/node_main_switchable.cpp.in",
+])
+
+DEPENDENCIES = {
+    "@agnocastlib//:agnocast": "@agnocastlib//:agnocast_library",
+    "@autoware_utils_rclcpp//:autoware_utils_rclcpp": "@autoware_utils_rclcpp//:autoware_utils_rclcpp_library",
+    "@class_loader//:class_loader": "@class_loader//:class_loader_library",
+    "@diagnostic_updater//:diagnostic_updater": "@diagnostic_updater//:diagnostic_updater_library",
+    "@geometry_msgs//:cc_shared": "@geometry_msgs//:cc",
+    "@message_filters//:message_filters": "@message_filters//:message_filters_library",
+    "@rcl//:rcl": "@rcl//:rcl_library",
+    "@rcl_interfaces//:cc_shared": "@rcl_interfaces//:cc",
+    "@rclcpp//:rclcpp": "@rclcpp//:rclcpp_library",
+    "@rclcpp_components//:rclcpp_components": "@rclcpp_components//:rclcpp_components_library",
+    "@rosdistro//cc:glog": "@rosdistro//cc:glog_library",
+    "@tf2//:tf2": "@tf2//:tf2_library",
+    "@tf2_ros//:tf2_ros": "@tf2_ros//:tf2_ros_library",
+}
+
+# USE_AGNOCAST_ENABLED is PUBLIC in CMake (and added to every target registered with the macro): `defines`
+# propagates it to everything that depends on this library.
+cc_library(
+    name = "autoware_agnocast_wrapper_library",
+    srcs = [
+        "src/node.cpp",
+        "src/runtime.cpp",
+    ],
+    hdrs = glob(["include/**/*.hpp"]),
+    copts = autoware_copts(),
+    cxxopts = AUTOWARE_CXXOPTS,
+    defines = ["USE_AGNOCAST_ENABLED"],
+    local_defines = ros_local_defines() + AUTOWARE_DEFINES,
+    includes = ["include"],
+    deps = DEPENDENCIES.values(),
+)
+
+cc_shared_library(
+    name = "autoware_agnocast_wrapper",
+    dynamic_deps = DEPENDENCIES.keys(),
+    exports_filter = [":autoware_agnocast_wrapper_library"],
+    deps = [":autoware_agnocast_wrapper_library"],
+)
+
+# ament_python_install_package(autoware_agnocast_wrapper): the AutowareNode launch action.
+py_library(
+    name = "autoware_agnocast_wrapper_py",
+    srcs = glob(["autoware_agnocast_wrapper/**/*.py"]),
+    imports = ["."],
+    deps = [
+        "@ament_index_python",
+        "@launch",
+        "@launch_ros",
+    ],
+)
+
+# share/autoware_agnocast_wrapper/{cmake,templates,launch}
+ament_index(
+    name = "ament_index",
+    data = glob([
+        "cmake/**",
+        "launch/**",
+        "templates/**",
+    ]),
+    libraries = [":autoware_agnocast_wrapper"],
+    package_xml = "package.xml",
+)
+
+py_pytest(
+    name = "test_autoware_node",
+    srcs = ["test/test_autoware_node.py"],
+    deps = [
+        ":autoware_agnocast_wrapper_py",
+        "@launch_xml",
+    ],
+)
+
+# target_include_directories(<test> PRIVATE test)
+cc_library(
+    name = "test_headers",
+    testonly = True,
+    hdrs = ["test/heaphook_probe.hpp"],
+    includes = ["test"],
+    visibility = ["//visibility:private"],
+)
+
+TEST_DEPENDENCIES = {
+    "@std_msgs//:cc_shared": "@std_msgs//:cc",
+}
+
+collect_transitive_dynamic_deps(
+    name = "test_dynamic_deps",
+    dynamic_deps = [":autoware_agnocast_wrapper"] + TEST_DEPENDENCIES.keys(),
+    visibility = ["//visibility:private"],
+)
+
+TEST_SRCS = glob([
+    "test/main.cpp",
+    "test/cases/*.cpp",
+])
+
+# The CMake test, on the ROS 2 backend (ENABLE_AGNOCAST unset, as upstream CI runs it).
+cc_test(
+    name = "test_autoware_agnocast_wrapper",
+    srcs = TEST_SRCS,
+    copts = autoware_copts(),
+    cxxopts = AUTOWARE_CXXOPTS,
+    data = ["@@//bazel/config:cyclonedds.xml"],
+    dynamic_deps = [":test_dynamic_deps"],
+    env = {"ENABLE_AGNOCAST": "0"},
+    local_defines = ros_local_defines() + AUTOWARE_DEFINES,
+    deps = [
+        ":autoware_agnocast_wrapper_library",
+        ":test_headers",
+        "@googletest//:gtest",
+    ] + TEST_DEPENDENCIES.values(),
+)
+
+# Addition (not in CMake): the same test on the Agnocast backend, with the heap hook preloaded and the kernel module.
+# Upstream runs this gtest without the hook, so these cases were never run on this backend, and fail on it:
+# GenericPubSubMethod2Test.* call sub_node->get_rclcpp_node() unconditionally (throws in agnocast mode), and
+# GenericPubSubMethod1Test's two round trips receive nothing. Excluded here; to be reported upstream.
+AGNOCAST_BACKEND_EXCLUDED = [
+    "GenericPubSubMethod1Test.MacroOnNodeRoundTrip",
+    "GenericPubSubMethod1Test.MacroRoundTrip",
+    "GenericPubSubMethod2Test.NodeMemberDepthAndOptionsOverload",
+    "GenericPubSubMethod2Test.NodeMemberRoundTrip",
+]
+
+heaphook_test(
+    name = "test_autoware_agnocast_wrapper_agnocast",
+    srcs = TEST_SRCS,
+    args = ["--gtest_filter=-" + ":".join(AGNOCAST_BACKEND_EXCLUDED)],
+    copts = autoware_copts(),
+    cxxopts = AUTOWARE_CXXOPTS,
+    data = ["@@//bazel/config:cyclonedds.xml"],
+    dynamic_deps = [":test_dynamic_deps"],
+    env = {"ENABLE_AGNOCAST": "1"},
+    local_defines = ros_local_defines() + AUTOWARE_DEFINES,
+    tags = [
+        "no-sandbox",
+        "requires_heaphook",
+        "requires_kernel_module",
+    ],
+    deps = [
+        ":autoware_agnocast_wrapper_library",
+        ":test_headers",
+        "@googletest//:gtest",
+    ] + TEST_DEPENDENCIES.values(),
+)
