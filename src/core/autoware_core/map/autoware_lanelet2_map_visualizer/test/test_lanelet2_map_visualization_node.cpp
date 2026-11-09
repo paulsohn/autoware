@@ -113,8 +113,9 @@ TEST_F(TestLanelet2MapVisualizationNode, VisualizeLaneletMap)
   // Wait for marker array to be received
   auto start_time = node_->now();
   while (!marker_received_ && (node_->now() - start_time).seconds() < 5.0) {
-    rclcpp::spin_some(node_);
-    rclcpp::spin_some(visualization_node_->get_node_base_interface());
+    rclcpp::executors::SingleThreadedExecutor().spin_node_some(node_);
+    rclcpp::executors::SingleThreadedExecutor().spin_node_some(
+      visualization_node_->get_node_base_interface());
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
   }
 
