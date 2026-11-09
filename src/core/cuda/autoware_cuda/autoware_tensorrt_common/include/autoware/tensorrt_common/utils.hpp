@@ -18,7 +18,9 @@
 #include <NvInfer.h>
 #include <sys/types.h>
 
-#if (defined(_MSC_VER) or (defined(__GNUC__) and (7 <= __GNUC_MAJOR__)))
+// __GNUC_MAJOR__ does not exist (GCC defines __GNUC__), so the old check always chose <experimental/filesystem>,
+// which libc++ does not provide.
+#if __has_include(<filesystem>)
 #include <filesystem>
 namespace fs = ::std::filesystem;
 #else
