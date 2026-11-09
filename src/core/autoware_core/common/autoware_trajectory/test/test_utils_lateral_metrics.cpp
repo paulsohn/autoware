@@ -120,7 +120,7 @@ TEST(LateralMetrics, ParabolicTrajectoryNotNearest)
   auto result =
     autoware::experimental::trajectory::compute_lateral_distance(traj, target_point, target_s);
 
-  EXPECT_EQ(result, check_distance);
+  EXPECT_DOUBLE_EQ(result, check_distance);  // computed along different paths; exact equality is compiler-dependent
 
   auto on_left = autoware::experimental::trajectory::is_left_side(traj, target_point, nearest_s);
   ASSERT_FALSE(on_left);
