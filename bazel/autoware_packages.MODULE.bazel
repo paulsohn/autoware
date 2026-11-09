@@ -274,3 +274,15 @@ local_path_override(module_name = "ros2agnocast_discovery_agent", path = "src/co
 
 bazel_dep(name = "autoware_agnocast_wrapper")
 local_path_override(module_name = "autoware_agnocast_wrapper", path = "src/core/autoware_core/common/autoware_agnocast_wrapper")
+
+bazel_dep(name = "autoware_stop_filter")
+local_path_override(module_name = "autoware_stop_filter", path = "src/core/autoware_core/localization/autoware_stop_filter")
+
+bazel_dep(name = "autoware_twist2accel")
+local_path_override(module_name = "autoware_twist2accel", path = "src/core/autoware_core/localization/autoware_twist2accel")
+
+bazel_dep(name = "autoware_vehicle_velocity_converter")
+local_path_override(module_name = "autoware_vehicle_velocity_converter", path = "src/core/autoware_core/sensing/autoware_vehicle_velocity_converter")
+
+bazel_dep(name = "autoware_gyro_odometer")
+local_path_override(module_name = "autoware_gyro_odometer", path = "src/core/autoware_core/localization/autoware_gyro_odometer")

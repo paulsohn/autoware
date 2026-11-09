@@ -1,0 +1,177 @@
+load("@autoware_agnocast_wrapper//:defs.bzl", "autoware_agnocast_wrapper_register_node")
+load("@autoware_cmake//:defs.bzl", "AUTOWARE_CXXOPTS", "AUTOWARE_DEFINES", "autoware_copts")
+load("@rosdistro//ament:defs.bzl", "ament_index")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps", "ros_local_defines")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+# Deliberate differences from CMakeLists.txt (checked by bazel/tools/cmake_parity):
+# cmake-diff if:NOT $ENV{ENABLE_AGNOCAST} STREQUAL 1: the node test, which CMake builds only without Agnocast, is built and runs on the ROS 2 backend (ENABLE_AGNOCAST=0); PLAN.md.
+
+DEPENDENCIES = {
+    "@autoware_agnocast_wrapper//:autoware_agnocast_wrapper": "@autoware_agnocast_wrapper//:autoware_agnocast_wrapper_library",
+    "@autoware_localization_util//:autoware_localization_util": "@autoware_localization_util//:autoware_localization_util_library",
+    "@autoware_utils_diagnostics//:autoware_utils_diagnostics": "@autoware_utils_diagnostics//:autoware_utils_diagnostics_library",
+    "@autoware_utils_geometry//:autoware_utils_geometry": "@autoware_utils_geometry//:autoware_utils_geometry_library",
+    "@autoware_utils_logging//:autoware_utils_logging": "@autoware_utils_logging//:autoware_utils_logging_library",
+    "@autoware_utils_tf//:autoware_utils_tf": "@autoware_utils_tf//:autoware_utils_tf_library",
+    "@diagnostic_msgs//:cc_shared": "@diagnostic_msgs//:cc",
+    "@geometry_msgs//:cc_shared": "@geometry_msgs//:cc",
+    "@rclcpp//:rclcpp": "@rclcpp//:rclcpp_library",
+    "@rclcpp_components//:rclcpp_components": "@rclcpp_components//:rclcpp_components_library",
+    "@sensor_msgs//:cc_shared": "@sensor_msgs//:cc",
+    "@tf2//:tf2": "@tf2//:tf2_library",
+    "@tf2_geometry_msgs//:tf2_geometry_msgs": "@tf2_geometry_msgs//:tf2_geometry_msgs_library",
+}
+
+cc_library(
+    name = "autoware_gyro_odometer_library",
+    srcs = [
+        "src/gyro_odometer.cpp",
+        "src/gyro_odometer_diagnostics.cpp",
+    ],
+    hdrs = [
+        "src/gyro_odometer.hpp",
+        "src/gyro_odometer_diagnostics.hpp",
+    ],
+    copts = autoware_copts(),
+    cxxopts = AUTOWARE_CXXOPTS,
+    local_defines = ros_local_defines() + AUTOWARE_DEFINES,
+    deps = DEPENDENCIES.values() + [
+        "@rosdistro//cc:fmt",
+    ],
+)
+
+cc_shared_library(
+    name = "autoware_gyro_odometer",
+    dynamic_deps = DEPENDENCIES.keys(),
+    exports_filter = [":autoware_gyro_odometer_library"],
+    deps = [":autoware_gyro_odometer_library"],
+)
+
+# Component library.
+cc_library(
+    name = "autoware_gyro_odometer_ros_library",
+    srcs = [
+        "src/gyro_odometer_node.cpp",
+    ],
+    hdrs = [
+        "src/gyro_odometer_node.hpp",
+    ],
+    copts = autoware_copts(),
+    cxxopts = AUTOWARE_CXXOPTS,
+    local_defines = ros_local_defines() + AUTOWARE_DEFINES,
+    deps = [
+        ":autoware_gyro_odometer_library",
+    ] + DEPENDENCIES.values() + [
+        "@rosdistro//cc:fmt",
+    ],
+)
+
+cc_shared_library(
+    name = "autoware_gyro_odometer_ros",
+    dynamic_deps = [
+        ":autoware_gyro_odometer",
+    ] + DEPENDENCIES.keys(),
+    exports_filter = [":autoware_gyro_odometer_ros_library"],
+    deps = [":autoware_gyro_odometer_ros_library"],
+)
+
+autoware_agnocast_wrapper_register_node(
+    agnocast_executor = "AgnocastOnlyCallbackIsolatedExecutor",
+    component = ":autoware_gyro_odometer_ros",
+    data = ["@@//bazel/config:cyclonedds.xml"],
+    executable = "autoware_gyro_odometer_node",
+    plugin = "autoware::gyro_odometer::GyroOdometerNode",
+    ros2_executor = "SingleThreadedExecutor",
+)
+
+# share/autoware_gyro_odometer/{config,launch} (INSTALL_TO_SHARE).
+ament_index(
+    name = "ament_index",
+    components = [":autoware_gyro_odometer_node_component_record"],
+    data = glob([
+        "config/**",
+        "launch/**",
+    ]),
+    executables = [":autoware_gyro_odometer_node"],
+    libraries = [
+        ":autoware_gyro_odometer",
+        ":autoware_gyro_odometer_ros",
+    ],
+    package_xml = "package.xml",
+    deps = [":autoware_gyro_odometer_node_autoware_node_plugin"],
+)
+
+# target_include_directories(<test> PRIVATE src)
+cc_library(
+    name = "src_headers",
+    testonly = True,
+    hdrs = glob(["src/*.hpp"]),
+    includes = ["src"],
+    visibility = ["//visibility:private"],
+)
+
+TEST_DEPENDENCIES = {
+    "@builtin_interfaces//:cc_shared": "@builtin_interfaces//:cc",
+    "@rosgraph_msgs//:cc_shared": "@rosgraph_msgs//:cc",
+    "@tf2_ros//:tf2_ros": "@tf2_ros//:tf2_ros_library",
+}
+
+collect_transitive_dynamic_deps(
+    name = "test_dynamic_deps",
+    dynamic_deps = [":autoware_gyro_odometer_ros"] + TEST_DEPENDENCIES.keys(),
+    visibility = ["//visibility:private"],
+)
+
+cc_test(
+    name = "test_gyro_odometer",
+    srcs = ["test/test_gyro_odometer.cpp"],
+    copts = autoware_copts(),
+    cxxopts = AUTOWARE_CXXOPTS,
+    data = ["@@//bazel/config:cyclonedds.xml"],
+    dynamic_deps = [":test_dynamic_deps"],
+    # Written for the ROS 2 backend (PLAN.md).
+    env = {"ENABLE_AGNOCAST": "0"},
+    local_defines = ros_local_defines() + AUTOWARE_DEFINES,
+    deps = [
+        ":autoware_gyro_odometer_library",
+        ":src_headers",
+        "@rosdistro//cc:googletest",
+    ] + TEST_DEPENDENCIES.values(),
+)
+
+cc_test(
+    name = "test_gyro_odometer_diagnostics",
+    srcs = ["test/test_gyro_odometer_diagnostics.cpp"],
+    copts = autoware_copts(),
+    cxxopts = AUTOWARE_CXXOPTS,
+    data = ["@@//bazel/config:cyclonedds.xml"],
+    dynamic_deps = [":test_dynamic_deps"],
+    # Written for the ROS 2 backend (PLAN.md).
+    env = {"ENABLE_AGNOCAST": "0"},
+    local_defines = ros_local_defines() + AUTOWARE_DEFINES,
+    deps = [
+        ":autoware_gyro_odometer_library",
+        ":src_headers",
+        "@rosdistro//cc:googletest",
+    ] + TEST_DEPENDENCIES.values(),
+)
+
+cc_test(
+    name = "test_gyro_odometer_node",
+    srcs = ["test/test_gyro_odometer_node.cpp"],
+    copts = autoware_copts(),
+    cxxopts = AUTOWARE_CXXOPTS,
+    data = ["@@//bazel/config:cyclonedds.xml"],
+    dynamic_deps = [":test_dynamic_deps"],
+    # Written for the ROS 2 backend (PLAN.md).
+    env = {"ENABLE_AGNOCAST": "0"},
+    local_defines = ros_local_defines() + AUTOWARE_DEFINES,
+    deps = [
+        ":autoware_gyro_odometer_ros_library",
+        ":src_headers",
+        "@rosdistro//cc:googletest",
+    ] + TEST_DEPENDENCIES.values(),
+)

@@ -157,7 +157,7 @@ class CMake:
             self.vars[out] = {"NAME": path.name, "NAME_WE": path.name.split(".")[0],
                               "DIRECTORY": str(path.parent)}.get(mode, a[1])
         elif name == "if":
-            cond = " ".join(raw)
+            cond = " ".join(raw).replace('"', "")  # keys without quotes, however CMake quoted the operands
             if not TRIVIAL_IF.search(cond):
                 self.ifs.add(" ".join(cond.split()))
         elif name in ("ament_auto_add_library", "add_library") and "IMPORTED" not in a:

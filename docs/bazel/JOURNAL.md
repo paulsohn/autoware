@@ -772,3 +772,28 @@ Lessons:
 - When a build compiles an optional backend in but switches it at run time, run each test on the backend it was
   written for, and test the other backend with targets made for it.
 - A test target's `env` overrides `--test_env`: the place for per-test run-time modes.
+
+## Layer 5 nodes: stop_filter, twist2accel, vehicle_velocity_converter, gyro_odometer
+
+Every one of these has the same shape: a core library, sometimes a separate `_ros` component library, and
+`autoware_agnocast_wrapper_register_node(... AGNOCAST_EXECUTOR AgnocastOnlyCallbackIsolatedExecutor)`. Each BUILD
+file follows the stop_filter one:
+- `autoware_agnocast_wrapper_register_node` gives the executable, the `_component_record` (in
+  `ament_index(components)`) and the `_autoware_node_plugin` resource (in `ament_index(deps)`).
+- The node tests, which CMake builds only without Agnocast, are `cc_test` with `env = {"ENABLE_AGNOCAST": "0"}`.
+  Each one carries a `cmake-diff if:...` record.
+- gyro_odometer links `fmt` (`@rosdistro//cc:fmt`), and its tests also need tf2_ros, rosgraph_msgs and
+  builtin_interfaces.
+
+```
+bazel test @autoware_stop_filter//... @autoware_twist2accel//... \
+  @autoware_vehicle_velocity_converter//... @autoware_gyro_odometer//...   # 9 tests pass
+python3 -m bazel.tools.cmake_parity.check_cmake_parity src/core/autoware_core/<category>/<pkg>     # 0 open, 1 recorded each
+```
+
+Issues (symptom → cause → fix):
+1. `'set_deprecated<...>' is deprecated: use 'void(std::shared_ptr<const MessageT>...'` in the node tests →
+   rclcpp 32 deprecates callbacks that take a non-const `SharedPtr` (and -Werror) → `ConstSharedPtr` in the test
+   lambdas, plus the members and return types that store the message (same fix as in earlier packages).
+2. Parity checker reported the `if(NOT "$ENV{ENABLE_AGNOCAST}" STREQUAL "1")` key differently from the record →
+   if-keys now drop all quotes, so a record does not depend on how CMakeLists.txt quotes the condition.
