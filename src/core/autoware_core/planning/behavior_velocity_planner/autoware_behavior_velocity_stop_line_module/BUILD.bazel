@@ -1,0 +1,112 @@
+load("@autoware_cmake//:defs.bzl", "AUTOWARE_CXXOPTS", "AUTOWARE_DEFINES", "autoware_copts")
+load("@rosdistro//ament:defs.bzl", "ament_index")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps", "ros_local_defines")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+DEPENDENCIES = {
+    "@autoware_behavior_velocity_planner//:autoware_behavior_velocity_planner_lib": "@autoware_behavior_velocity_planner//:autoware_behavior_velocity_planner_lib_library",
+    "@autoware_behavior_velocity_planner_common//:autoware_behavior_velocity_planner_common": "@autoware_behavior_velocity_planner_common//:autoware_behavior_velocity_planner_common_library",
+    "@autoware_internal_planning_msgs//:cc_shared": "@autoware_internal_planning_msgs//:cc",
+    "@autoware_motion_utils//:autoware_motion_utils": "@autoware_motion_utils//:autoware_motion_utils_library",
+    "@autoware_planning_factor_interface//:autoware_planning_factor_interface": "@autoware_planning_factor_interface//:autoware_planning_factor_interface_library",
+    "@autoware_route_handler//:autoware_route_handler": "@autoware_route_handler//:autoware_route_handler_library",
+    "@autoware_trajectory//:autoware_trajectory": "@autoware_trajectory//:autoware_trajectory_library",
+    "@autoware_utils_debug//:autoware_utils_debug": "@autoware_utils_debug//:autoware_utils_debug_library",
+    "@autoware_utils_geometry//:autoware_utils_geometry": "@autoware_utils_geometry//:autoware_utils_geometry_library",
+    "@autoware_utils_rclcpp//:autoware_utils_rclcpp": "@autoware_utils_rclcpp//:autoware_utils_rclcpp_library",
+    "@geometry_msgs//:cc_shared": "@geometry_msgs//:cc",
+    "@lanelet2_core//:lanelet2_core": "@lanelet2_core//:lanelet2_core_library",
+    "@pluginlib//:pluginlib": "@pluginlib//:pluginlib_library",
+    "@rclcpp//:rclcpp": "@rclcpp//:rclcpp_library",
+    "@tf2_geometry_msgs//:tf2_geometry_msgs": "@tf2_geometry_msgs//:tf2_geometry_msgs_library",
+    "@visualization_msgs//:cc_shared": "@visualization_msgs//:cc",
+}
+
+# autoware_test_utils' PUBLIC -Wno-deprecated-declarations reaches these targets in CMake through
+# autoware_behavior_velocity_planner (a regular dependency).
+COPTS = autoware_copts() + ["-Wno-deprecated-declarations"]
+
+THIRD_PARTY = [
+    "@rosdistro//cc:boost.geometry",
+    "@rosdistro//cc:eigen",
+]
+
+# The pluginlib plugin library (plugins.xml: <library path="autoware_behavior_velocity_stop_line_module">).
+cc_library(
+    name = "autoware_behavior_velocity_stop_line_module_library",
+    srcs = glob([
+        "src/**/*.cpp",
+        "src/**/*.hpp",
+    ]),
+    copts = COPTS,
+    cxxopts = AUTOWARE_CXXOPTS,
+    local_defines = ros_local_defines() + AUTOWARE_DEFINES,
+    deps = DEPENDENCIES.values() + THIRD_PARTY,
+)
+
+cc_shared_library(
+    name = "autoware_behavior_velocity_stop_line_module",
+    dynamic_deps = DEPENDENCIES.keys(),
+    exports_filter = [":autoware_behavior_velocity_stop_line_module_library"],
+    deps = [":autoware_behavior_velocity_stop_line_module_library"],
+)
+
+# share/autoware_behavior_velocity_stop_line_module/config (INSTALL_TO_SHARE); pluginlib_export_plugin_description_file(autoware_behavior_velocity_planner
+# plugins.xml).
+ament_index(
+    name = "ament_index",
+    data = glob(["config/**"]),
+    libraries = [":autoware_behavior_velocity_stop_line_module"],
+    package_xml = "package.xml",
+    plugin_category = "autoware_behavior_velocity_planner",
+    plugins = ["plugins.xml"],
+)
+
+# target_include_directories(<test> PRIVATE src); the tests include "../src/....hpp".
+cc_library(
+    name = "src_headers",
+    testonly = True,
+    hdrs = glob(["src/**/*.hpp"]),
+    includes = ["src"],
+    visibility = ["//visibility:private"],
+)
+
+TEST_DEPENDENCIES = {
+    "@ament_index_cpp//:ament_index_cpp": "@ament_index_cpp//:ament_index_cpp_library",
+    "@autoware_test_utils//:autoware_test_utils": "@autoware_test_utils//:autoware_test_utils_library",
+}
+
+collect_transitive_dynamic_deps(
+    name = "test_dynamic_deps",
+    dynamic_deps = [":autoware_behavior_velocity_stop_line_module"] + TEST_DEPENDENCIES.keys(),
+    visibility = ["//visibility:private"],
+)
+
+# Linked with gtest_main. test_node_interface loads this plugin into the planner node through pluginlib.
+cc_test(
+    name = "test_autoware_behavior_velocity_stop_line_module",
+    srcs = [
+        "test/test_node_interface.cpp",
+        "test/test_scene.cpp",
+        "test/test_stop_line_util.cpp",
+    ],
+    copts = COPTS,
+    cxxopts = AUTOWARE_CXXOPTS,
+    data = [
+        ":ament_index",
+        "@@//bazel/config:cyclonedds.xml",
+        "@autoware_behavior_velocity_planner//:ament_index",
+        "@autoware_behavior_velocity_planner_common//:ament_index",
+        "@autoware_test_utils//:ament_index",
+        "@autoware_velocity_smoother//:ament_index",
+    ],
+    dynamic_deps = [":test_dynamic_deps"],
+    local_defines = ros_local_defines() + AUTOWARE_DEFINES,
+    deps = [
+        ":autoware_behavior_velocity_stop_line_module_library",
+        ":src_headers",
+        "@rosdistro//cc:googletest",
+    ] + TEST_DEPENDENCIES.values() + THIRD_PARTY,
+)

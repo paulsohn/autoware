@@ -1041,3 +1041,15 @@ configs read by `src/test_utils.cpp`). autoware_test_utils is a regular dependen
 
 For layer 8: the RCR's `ament_index` has `plugins = ["plugins.xml"]` and `plugin_category = "<base package>"`
 (the `<category>__pluginlib__plugin/<pkg>` resource). That is `pluginlib_export_plugin_description_file()`.
+
+## behavior_velocity_stop_line_module: the first pluginlib plugin
+
+`pluginlib_export_plugin_description_file(autoware_behavior_velocity_planner plugins.xml)` becomes
+`ament_index(plugins = ["plugins.xml"], plugin_category = "autoware_behavior_velocity_planner", libraries =
+[":<pkg>"])`. The test's `data` includes this `:ament_index` and the planner's. pluginlib then resolves the class
+through the runfiles ament index: the log shows "The scene plugin
+'autoware::behavior_velocity_planner::StopLineModulePlugin' is loaded." in the node interface test.
+`bazel test @autoware_behavior_velocity_stop_line_module//...` → pass; parity 0 open, 0 recorded.
+
+Parity checker: `pluginlib_export_plugin_description_file(<category> <xml>)` must appear as an `ament_index`
+rule with that `plugin_category` and the xml in `plugins` (key `plugin-export:<category>:<xml>`).

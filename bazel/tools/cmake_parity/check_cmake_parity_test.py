@@ -63,6 +63,7 @@ endfunction()
 add_testcase(test/utils/test_a.cpp)
 add_launch_test(test/utils/test_launch.py TIMEOUT "30")
 add_launch_test(test/other.py TARGET named)
+pluginlib_export_plugin_description_file(base_pkg plugins.xml)
 """
             cm = CMake(d)
             cm.run(commands(text))
@@ -70,6 +71,7 @@ add_launch_test(test/other.py TARGET named)
             self.assertEqual(cm.timeouts, {"test_utils_test_launch.py": "30"})
             self.assertEqual(cm.sources, {"test/utils/test_a.cpp"})
             self.assertEqual(cm.unhandled, set())
+            self.assertEqual(cm.plugin_exports, {("base_pkg", "plugins.xml")})
 
 
 class LiteralTest(unittest.TestCase):

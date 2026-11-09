@@ -71,6 +71,7 @@ class CMake:
         self.ifs, self.unhandled, self.timeouts, self.dynamic = set(), set(), {}, set()
         self.param_libs, self.installed_targets = set(), set()
         self.functions = {}
+        self.plugin_exports = set()
 
     def expand(self, s):
         for _ in range(5):
@@ -257,6 +258,8 @@ class CMake:
             if "TIMEOUT" in props:
                 for t in a[:a.index("PROPERTIES")]:
                     self.timeouts[t] = props[props.index("TIMEOUT") + 1]
+        elif name == "pluginlib_export_plugin_description_file":
+            self.plugin_exports.add((a[0], self.rel(a[1])))
         elif name == "generate_parameter_library":
             self.param_libs.add(a[0])
         elif name == "ament_python_install_package":
@@ -370,6 +373,10 @@ def findings(pkg_dir):
     found |= {f"install:{i}" for i in cm.installs}
     found |= {f"python-package:{p}" for p in cm.python if not any(r["kind"] == "py_library" for r in rules.values())}
     found |= {f"env-hook:{h}" for h in cm.hooks}
+    index_rules = [r for r in rules.values() if r["kind"].startswith("ament_index")]
+    found |= {f"plugin-export:{cat}:{xml}" for cat, xml in cm.plugin_exports
+              if not any(r.get("plugin_category") == cat and xml in {label_path(x) for x in r.get("plugins") or []}
+                         for r in index_rules)}
     found |= {f"if:{c}" for c in cm.ifs}
     found |= {f"unhandled:{c}" for c in cm.unhandled}
     module_text = (pkg_dir / "MODULE.bazel").read_text()
