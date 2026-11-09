@@ -295,3 +295,6 @@ local_path_override(module_name = "autoware_gnss_poser", path = "src/core/autowa
 
 bazel_dep(name = "autoware_map_projection_loader")
 local_path_override(module_name = "autoware_map_projection_loader", path = "src/core/autoware_core/map/autoware_map_projection_loader")
+
+bazel_dep(name = "autoware_map_height_fitter")
+local_path_override(module_name = "autoware_map_height_fitter", path = "src/core/autoware_core/map/autoware_map_height_fitter")

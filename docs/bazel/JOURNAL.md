@@ -860,3 +860,10 @@ which is `requirement("pyyaml")` from `@pip_ros` (MODULE.bazel: the `pip_ros` ex
 `bazel test @autoware_map_projection_loader//...` → 6 pass.
 
 Parity checker: install destinations drop a trailing `/` (`share/<pkg>/test/data/` is the same as without it).
+
+## map_height_fitter
+
+Standard node package (ROS2_EXECUTOR MultiThreadedExecutor; PCL as the shared pair). The fit test is built by CMake
+only without Agnocast and runs here on the ROS 2 backend. `autoware_agnocast_wrapper_setup()` on the library is
+ignored: it only adds the Agnocast test environment. `bazel test @autoware_map_height_fitter//...` → 2 pass; parity
+0 open, 1 recorded.
