@@ -28,6 +28,24 @@ To rule out the shell entirely, e.g. when debugging an environment problem:
 `//...` only covers the root module (`bazel/`), not the packages: each ROS package is its own module, so address it
 as `@<pkg>//...`. Machine-specific flags (`--jobs`, memory) go in the gitignored `user.bazelrc`.
 
+## Host requirements (CUDA, TensorRT)
+Bazel fetches the CUDA toolkit (13.2.2) and TensorRT (10.16.1) itself, pinned by sha256: no `/usr/local/cuda`, no
+TensorRT packages and no `ansible/roles/cuda` or `ansible/roles/tensorrt` are needed to build or test. The host only
+provides:
+- the NVIDIA GPU driver (kernel module and `libcuda.so`), new enough for CUDA 13.x (`ansible/playbooks/install_nvidia.yaml`);
+- `libstdc++.so.6` and `libgcc_s.so.1`, which TensorRT's prebuilt libraries need (always present on Ubuntu).
+
+Without a GPU, CUDA code still builds and the GPU tests skip themselves.
+
+To change versions:
+- CUDA: `CUDA_VERSION` and `CUDA_REDIST_SHA256` in `bazel/cuda.MODULE.bazel`. Re-check the CUDA header patches
+  (`bazel/patches/cuda_crt_libcxx_*`), since NVIDIA does not support libc++ on x86.
+- TensorRT: `python3 bazel/third_party/tensorrt/update_pins.py <apt version, e.g. 10.16.1.11-1+cuda13.2>`.
+
+Tests that load TensorRT need `data = ["@tensorrt//:runtime_libs"]` and `env = tensorrt_test_env()` (from
+`@tensorrt//:defs.bzl`): libnvinfer loads its builder resources by bare name. `bazel run` of a node that builds
+TensorRT engines does not set this up yet (runtime image, P4).
+
 ## Where a package comes from
 Each Autoware package resolves to one of:
 - **Local source**: `src/...`, selected by a `local_path_override` in `bazel/autoware_packages.MODULE.bazel`.

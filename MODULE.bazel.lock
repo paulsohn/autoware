@@ -828,6 +828,7 @@
     "https://bazel.ros.org/modules/curl/8.8.0/MODULE.bazel": "not found",
     "https://bazel.ros.org/modules/cutlass/4.6.1.rcr.0/MODULE.bazel": "bde4a40bfcc8b64181bce246480f9ab8c6e8d83ad57d02049157692e6785c18b",
     "https://bazel.ros.org/modules/cutlass/4.6.1.rcr.0/source.json": "93977478ec8123be26557c0860076b80522770a8c4a1419f64dc78086a3dd580",
+    "https://bazel.ros.org/modules/cv_bridge/0.0.0/MODULE.bazel": "e07a210f1efae55dcb26cb57f4f4722a74864dc75d5092d1c52678c6085176b1",
     "https://bazel.ros.org/modules/cv_bridge/4.1.0-3.rcr.2/MODULE.bazel": "8df9a268c522bf7c7495564c2819edf297e740b27d84b29ceb02ded8c09f7587",
     "https://bazel.ros.org/modules/cv_bridge/4.1.0-3.rcr.2/source.json": "b1dee3b2ddb258e12a44b6d048e65a768010bde37eb94e82a40319c5d590292e",
     "https://bazel.ros.org/modules/cwiid/0.6.00.rcr.0/MODULE.bazel": "fcf1bc7404c40489a580b60f51d5529ee0f70e75264a29a3b8fed8c2e0deb76b",
@@ -6636,7 +6637,7 @@
     "@@rules_cuda+//cuda:extensions.bzl%toolchain": {
       "general": {
         "bzlTransitiveDigest": "CacIqMUU2g01KN0Y+W5whLTr9OZzya21lbu8ddhVNd4=",
-        "usagesDigest": "jrSxbNc0zzluDUjJavv1+b6GsYvXkv32lJGFLoXf+gQ=",
+        "usagesDigest": "3nmxPXJ9u6pUC2KfFJ/8gH6a+Pzqm/bNE+w3jHy8JRQ=",
         "recordedInputs": [
           "REPO_MAPPING:bazel_features+,bazel_features_globals bazel_features++version_extension+bazel_features_globals",
           "REPO_MAPPING:bazel_features+,bazel_features_version bazel_features++version_extension+bazel_features_version",
