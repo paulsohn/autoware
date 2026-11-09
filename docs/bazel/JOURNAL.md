@@ -987,3 +987,18 @@ library with the archive linked whole (alwayslink). Otherwise every consumer get
 
 `bazel test @autoware_adapi_adaptors//... @autoware_pose_initializer//...` → 4 pass. Parity 0 open on all four
 packages; pose_initializer has 1 record. No source changes were needed.
+
+## behavior_velocity_planner_common
+
+One library plus one gtest from `file(GLOB test/src/*.cpp)` (43 cases pass). The deps come from package.xml, using
+labels already used elsewhere in src/core. From velocity_smoother only the `smoother` library is needed (its
+headers); in CMake it gets both libraries.
+
+`target_include_directories(${PROJECT_NAME} PRIVATE src)` (sources include `"utilization/util_internal.hpp"`): a
+cc_library `includes` would also reach dependents. The private equivalent is a copt
+`-I` + `("external/%s/src" % repo_name() if repo_name() else "src")`. `Label()` is not available in BUILD files;
+`repo_name()` is. The private header is also in `srcs`, so it is an input of the compile. The test sees it through
+a testonly `test_headers` library with `includes = ["src"]`.
+
+`-Wno-deprecated-declarations` comes from autoware_test_utils through velocity_smoother → planning_test_manager (as
+in path_generator). `bazel test @autoware_behavior_velocity_planner_common//...` → pass; parity 0 open, 0 recorded.
