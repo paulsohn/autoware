@@ -1029,3 +1029,15 @@ Issues (symptom → cause → fix):
 Lesson: in Bazel's solib layout, two different shared libraries with the same file name are not isolated, even if
 no target depends on both. A RUNPATH directory shared with other outputs can supply the wrong one, depending on
 what was built before. Give vendored or duplicate versions their own file names.
+
+## behavior_velocity_planner
+
+One library (`..._lib`) with two nodes, registered with `rclcpp_components_register_node` (not the agnocast
+wrapper). It loads scene modules through `pluginlib::ClassLoader`, but its tests load none. Both tests need the
+`:ament_index` of autoware_test_utils, behavior_velocity_planner_common, velocity_smoother and this package (for
+configs read by `src/test_utils.cpp`). autoware_test_utils is a regular dependency here, so
+`-Wno-deprecated-declarations` comes from it directly.
+`bazel test @autoware_behavior_velocity_planner//...` → 2 pass; parity 0 open, 0 recorded.
+
+For layer 8: the RCR's `ament_index` has `plugins = ["plugins.xml"]` and `plugin_category = "<base package>"`
+(the `<category>__pluginlib__plugin/<pkg>` resource). That is `pluginlib_export_plugin_description_file()`.

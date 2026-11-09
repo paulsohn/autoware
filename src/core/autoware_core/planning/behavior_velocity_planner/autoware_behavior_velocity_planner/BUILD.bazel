@@ -1,0 +1,157 @@
+load("@autoware_cmake//:defs.bzl", "AUTOWARE_CXXOPTS", "AUTOWARE_DEFINES", "autoware_copts")
+load("@rclcpp_components//:defs.bzl", "rclcpp_components_register_node")
+load("@rosdistro//ament:defs.bzl", "ament_index")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps", "ros_local_defines")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+DEPENDENCIES = {
+    "@ament_index_cpp//:ament_index_cpp": "@ament_index_cpp//:ament_index_cpp_library",
+    "@autoware_behavior_velocity_planner_common//:autoware_behavior_velocity_planner_common": "@autoware_behavior_velocity_planner_common//:autoware_behavior_velocity_planner_common_library",
+    "@autoware_internal_debug_msgs//:cc_shared": "@autoware_internal_debug_msgs//:cc",
+    "@autoware_internal_planning_msgs//:cc_shared": "@autoware_internal_planning_msgs//:cc",
+    "@autoware_map_msgs//:cc_shared": "@autoware_map_msgs//:cc",
+    "@autoware_motion_utils//:autoware_motion_utils": "@autoware_motion_utils//:autoware_motion_utils_library",
+    "@autoware_perception_msgs//:cc_shared": "@autoware_perception_msgs//:cc",
+    "@autoware_planning_msgs//:cc_shared": "@autoware_planning_msgs//:cc",
+    "@autoware_planning_test_manager//:autoware_planning_test_manager": "@autoware_planning_test_manager//:autoware_planning_test_manager_library",
+    "@autoware_route_handler//:autoware_route_handler": "@autoware_route_handler//:autoware_route_handler_library",
+    "@autoware_test_utils//:autoware_test_utils": "@autoware_test_utils//:autoware_test_utils_library",
+    "@autoware_trajectory//:autoware_trajectory": "@autoware_trajectory//:autoware_trajectory_library",
+    "@autoware_utils_debug//:autoware_utils_debug": "@autoware_utils_debug//:autoware_utils_debug_library",
+    "@autoware_utils_logging//:autoware_utils_logging": "@autoware_utils_logging//:autoware_utils_logging_library",
+    "@autoware_utils_math//:autoware_utils_math": "@autoware_utils_math//:autoware_utils_math_library",
+    "@autoware_utils_pcl//:autoware_utils_pcl": "@autoware_utils_pcl//:autoware_utils_pcl_library",
+    "@autoware_utils_rclcpp//:autoware_utils_rclcpp": "@autoware_utils_rclcpp//:autoware_utils_rclcpp_library",
+    "@autoware_utils_system//:autoware_utils_system": "@autoware_utils_system//:autoware_utils_system_library",
+    "@autoware_velocity_smoother//:smoother": "@autoware_velocity_smoother//:smoother_library",
+    "@diagnostic_msgs//:cc_shared": "@diagnostic_msgs//:cc",
+    "@geometry_msgs//:cc_shared": "@geometry_msgs//:cc",
+    "@lanelet2_core//:lanelet2_core": "@lanelet2_core//:lanelet2_core_library",
+    "@lanelet2_routing//:lanelet2_routing": "@lanelet2_routing//:lanelet2_routing_library",
+    "@lanelet2_traffic_rules//:lanelet2_traffic_rules": "@lanelet2_traffic_rules//:lanelet2_traffic_rules_library",
+    "@nav_msgs//:cc_shared": "@nav_msgs//:cc",
+    "@pcl_conversions//:pcl_conversions": "@pcl_conversions//:pcl_conversions_library",
+    "@pluginlib//:pluginlib": "@pluginlib//:pluginlib_library",
+    "@rclcpp//:rclcpp": "@rclcpp//:rclcpp_library",
+    "@rclcpp_components//:rclcpp_components": "@rclcpp_components//:rclcpp_components_library",
+    "@rosdistro//cc:pcl": "@rosdistro//cc:pcl_library",
+    "@sensor_msgs//:cc_shared": "@sensor_msgs//:cc",
+    "@std_msgs//:cc_shared": "@std_msgs//:cc",
+    "@tf2//:tf2": "@tf2//:tf2_library",
+    "@tf2_eigen//:tf2_eigen": "@tf2_eigen//:tf2_eigen_library",
+    "@tf2_geometry_msgs//:tf2_geometry_msgs": "@tf2_geometry_msgs//:tf2_geometry_msgs_library",
+    "@tf2_ros//:tf2_ros": "@tf2_ros//:tf2_ros_library",
+    "@visualization_msgs//:cc_shared": "@visualization_msgs//:cc",
+}
+
+# autoware_test_utils (a regular dependency here) adds -Wno-deprecated-declarations PUBLIC in CMake.
+COPTS = autoware_copts() + ["-Wno-deprecated-declarations"]
+
+THIRD_PARTY = [
+    "@rosdistro//cc:boost.geometry",
+    "@rosdistro//cc:eigen",
+]
+
+cc_library(
+    name = "autoware_behavior_velocity_planner_lib_library",
+    srcs = [
+        "src/data_processing.cpp",
+        "src/data_processing.hpp",
+        "src/experimental/node.cpp",
+        "src/experimental/planner_manager.cpp",
+        "src/node.cpp",
+        "src/planner_manager.cpp",
+        "src/test_utils.cpp",
+    ],
+    hdrs = glob(["include/**/*.hpp"]),
+    copts = COPTS,
+    cxxopts = AUTOWARE_CXXOPTS,
+    includes = ["include"],
+    local_defines = ros_local_defines() + AUTOWARE_DEFINES,
+    deps = DEPENDENCIES.values() + THIRD_PARTY,
+)
+
+cc_shared_library(
+    name = "autoware_behavior_velocity_planner_lib",
+    dynamic_deps = DEPENDENCIES.keys(),
+    exports_filter = [":autoware_behavior_velocity_planner_lib_library"],
+    deps = [":autoware_behavior_velocity_planner_lib_library"],
+)
+
+[
+    rclcpp_components_register_node(
+        name = executable,
+        component = ":autoware_behavior_velocity_planner_lib",
+        data = ["@@//bazel/config:cyclonedds.xml"],
+        node_name = executable,
+        plugin = plugin,
+    )
+    for executable, plugin in [
+        ("autoware_behavior_velocity_planner_node", "autoware::behavior_velocity_planner::BehaviorVelocityPlannerNode"),
+        ("experimental_autoware_behavior_velocity_planner_node", "autoware::behavior_velocity_planner::experimental::BehaviorVelocityPlannerNode"),
+    ]
+]
+
+# share/autoware_behavior_velocity_planner/{launch,config} (INSTALL_TO_SHARE).
+ament_index(
+    name = "ament_index",
+    components = [
+        ":autoware_behavior_velocity_planner_node_record",
+        ":experimental_autoware_behavior_velocity_planner_node_record",
+    ],
+    data = glob([
+        "config/**",
+        "launch/**",
+    ]),
+    executables = [
+        ":autoware_behavior_velocity_planner_node",
+        ":experimental_autoware_behavior_velocity_planner_node",
+    ],
+    libraries = [":autoware_behavior_velocity_planner_lib"],
+    package_xml = "package.xml",
+)
+
+# target_include_directories(<test> PRIVATE src)
+cc_library(
+    name = "src_headers",
+    testonly = True,
+    hdrs = glob(["src/*.hpp"]),
+    includes = ["src"],
+    visibility = ["//visibility:private"],
+)
+
+collect_transitive_dynamic_deps(
+    name = "test_dynamic_deps",
+    dynamic_deps = [":autoware_behavior_velocity_planner_lib"],
+    visibility = ["//visibility:private"],
+)
+
+[
+    cc_test(
+        name = name,
+        srcs = [src],
+        copts = COPTS,
+        cxxopts = AUTOWARE_CXXOPTS,
+        data = [
+            ":ament_index",
+            "@@//bazel/config:cyclonedds.xml",
+            "@autoware_behavior_velocity_planner_common//:ament_index",
+            "@autoware_test_utils//:ament_index",
+            "@autoware_velocity_smoother//:ament_index",
+        ],
+        dynamic_deps = [":test_dynamic_deps"],
+        local_defines = ros_local_defines() + AUTOWARE_DEFINES,
+        deps = [
+            ":autoware_behavior_velocity_planner_lib_library",
+            ":src_headers",
+            "@builtin_interfaces//:cc",
+            "@rosdistro//cc:googletest",
+        ] + THIRD_PARTY,
+    )
+    for name, src in [
+        ("test_autoware_behavior_velocity_planner", "test/test_node_interface.cpp"),
+        ("test_autoware_behavior_velocity_planner_data_processing", "test/test_data_processing.cpp"),
+    ]
+]
