@@ -1,0 +1,110 @@
+load("@autoware_cmake//:defs.bzl", "AUTOWARE_CXXOPTS", "AUTOWARE_DEFINES", "autoware_copts")
+load("@rosdistro//ament:defs.bzl", "ament_index")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps", "ros_local_defines")
+load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library", "cc_shared_library", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+DEPENDENCIES = {
+    "@ament_index_cpp//:ament_index_cpp": "@ament_index_cpp//:ament_index_cpp_library",
+    "@autoware_adapi_v1_msgs//:cc_shared": "@autoware_adapi_v1_msgs//:cc",
+    "@autoware_internal_planning_msgs//:cc_shared": "@autoware_internal_planning_msgs//:cc",
+    "@autoware_lanelet2_extension//:autoware_lanelet2_extension_lib": "@autoware_lanelet2_extension//:autoware_lanelet2_extension_lib_library",
+    "@autoware_map_msgs//:cc_shared": "@autoware_map_msgs//:cc",
+    "@autoware_perception_msgs//:cc_shared": "@autoware_perception_msgs//:cc",
+    "@autoware_planning_msgs//:cc_shared": "@autoware_planning_msgs//:cc",
+    "@autoware_utils_geometry//:autoware_utils_geometry": "@autoware_utils_geometry//:autoware_utils_geometry_library",
+    "@builtin_interfaces//:cc_shared": "@builtin_interfaces//:cc",
+    "@geometry_msgs//:cc_shared": "@geometry_msgs//:cc",
+    "@lanelet2_core//:lanelet2_core": "@lanelet2_core//:lanelet2_core_library",
+    "@lanelet2_io//:lanelet2_io": "@lanelet2_io//:lanelet2_io_library",
+    "@nav_msgs//:cc_shared": "@nav_msgs//:cc",
+    "@rclcpp//:rclcpp": "@rclcpp//:rclcpp_library",
+    "@rosdistro//cc:boost.serialization_shared": "@rosdistro//cc:boost.serialization_library",
+    "@rosdistro//cc:yaml-cpp": "@rosdistro//cc:yaml-cpp_library",
+    "@rosgraph_msgs//:cc_shared": "@rosgraph_msgs//:cc",
+    "@std_msgs//:cc_shared": "@std_msgs//:cc",
+    "@std_srvs//:cc_shared": "@std_srvs//:cc",
+    "@tf2//:tf2": "@tf2//:tf2_library",
+    "@tf2_msgs//:cc_shared": "@tf2_msgs//:cc",
+    "@tf2_ros//:tf2_ros": "@tf2_ros//:tf2_ros_library",
+    "@unique_identifier_msgs//:cc_shared": "@unique_identifier_msgs//:cc",
+}
+
+# CMake adds this PUBLIC (it also reaches everything that links autoware_test_utils; consumers repeat it).
+COPTS = autoware_copts() + ["-Wno-deprecated-declarations"]
+
+# include/autoware_test_utils/visualization.hpp needs autoware_pyplot, a test-only dependency here; targets that
+# include it depend on @autoware_pyplot themselves (as in CMake).
+cc_library(
+    name = "autoware_test_utils_library",
+    srcs = [
+        "src/autoware_test_utils.cpp",
+        "src/mock_data_parser.cpp",
+    ],
+    hdrs = glob(["include/**/*.hpp"]),
+    copts = COPTS,
+    cxxopts = AUTOWARE_CXXOPTS,
+    local_defines = ros_local_defines() + AUTOWARE_DEFINES,
+    includes = ["include"],
+    deps = DEPENDENCIES.values(),
+)
+
+cc_shared_library(
+    name = "autoware_test_utils",
+    dynamic_deps = DEPENDENCIES.keys(),
+    exports_filter = [":autoware_test_utils_library"],
+    deps = [":autoware_test_utils_library"],
+)
+
+collect_transitive_dynamic_deps(
+    name = "dynamic_deps",
+    dynamic_deps = [":autoware_test_utils"],
+    visibility = ["//visibility:private"],
+)
+
+cc_binary(
+    name = "topic_snapshot_saver",
+    srcs = ["src/topic_snapshot_saver.cpp"],
+    copts = COPTS,
+    cxxopts = AUTOWARE_CXXOPTS,
+    data = ["@@//bazel/config:cyclonedds.xml"],
+    dynamic_deps = [":dynamic_deps"],
+    local_defines = ros_local_defines() + AUTOWARE_DEFINES,
+    deps = [":autoware_test_utils_library"],
+)
+
+# share/autoware_test_utils/{config,test_map,test_data,rviz} (INSTALL_TO_SHARE).
+ament_index(
+    name = "ament_index",
+    data = glob([
+        "config/**",
+        "rviz/**",
+        "test_data/**",
+        "test_map/**",
+    ]),
+    executables = [":topic_snapshot_saver"],
+    libraries = [":autoware_test_utils"],
+    package_xml = "package.xml",
+)
+
+cc_test(
+    name = "test_autoware_test_utils",
+    srcs = [
+        "test/test_autoware_test_manager.cpp",
+        "test/test_autoware_test_utils.cpp",
+        "test/test_mock_data_parser.cpp",
+    ],
+    copts = COPTS,
+    cxxopts = AUTOWARE_CXXOPTS,
+    data = [
+        ":ament_index",
+        "@@//bazel/config:cyclonedds.xml",
+    ],
+    dynamic_deps = [":dynamic_deps"],
+    local_defines = ros_local_defines() + AUTOWARE_DEFINES,
+    deps = [
+        ":autoware_test_utils_library",
+        "@rosdistro//cc:googletest",
+    ],
+)

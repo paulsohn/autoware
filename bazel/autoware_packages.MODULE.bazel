@@ -193,3 +193,9 @@ local_path_override(module_name = "autoware_component_interface_utils", path = "
 
 bazel_dep(name = "autoware_global_parameter_loader")
 local_path_override(module_name = "autoware_global_parameter_loader", path = "src/core/autoware_core/common/autoware_global_parameter_loader")
+
+bazel_dep(name = "autoware_test_utils")
+local_path_override(module_name = "autoware_test_utils", path = "src/core/autoware_core/testing/autoware_test_utils")
+
+bazel_dep(name = "autoware_lanelet2_utils")
+local_path_override(module_name = "autoware_lanelet2_utils", path = "src/core/autoware_core/common/autoware_lanelet2_utils")
