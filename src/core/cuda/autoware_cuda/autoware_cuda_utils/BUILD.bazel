@@ -1,0 +1,52 @@
+load("@autoware_cmake//:defs.bzl", "AUTOWARE_CXXOPTS", "autoware_copts")
+load("@rosdistro//ament:defs.bzl", "ament_index")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_test")
+load("@rules_cuda//cuda:defs.bzl", "cuda_library")
+
+package(default_visibility = ["//visibility:public"])
+
+# Deliberate differences from CMakeLists.txt (checked by bazel/tools/cmake_parity):
+# cmake-diff if:NOT ${CUDA_FOUND}: CUDA is always present (hermetic toolkit, bazel/cuda.MODULE.bazel).
+
+# Header-only (INTERFACE): CCCL::CCCL (thrust, cub, libcudacxx; include/cccl in CUDA 13) and CUDA::cudart.
+cc_library(
+    name = "autoware_cuda_utils",
+    hdrs = glob(["include/**/*.hpp"]),
+    includes = ["include"],
+    deps = [
+        "@cuda//:cub",
+        "@cuda//:cuda_runtime",
+        "@cuda//:libcudacxx",
+        "@cuda//:thrust",
+    ],
+)
+
+ament_index(
+    name = "ament_index",
+    package_xml = "package.xml",
+    deps = ["@autoware_cuda_dependency_meta//:ament_index"],
+)
+
+# cuda_add_executable(test_autoware_cuda_utils <.cu files> test/test_main.cpp): the .cu files go through nvcc.
+cuda_library(
+    name = "test_kernels",
+    testonly = True,
+    srcs = glob(["test/*.cu"]),
+    copts = ["-std=c++17"],
+    deps = [
+        ":autoware_cuda_utils",
+        "@rosdistro//cc:googletest",
+    ],
+)
+
+cc_test(
+    name = "test_autoware_cuda_utils",
+    srcs = ["test/test_main.cpp"],
+    copts = autoware_copts(),
+    cxxopts = AUTOWARE_CXXOPTS,
+    deps = [
+        ":autoware_cuda_utils",
+        ":test_kernels",
+        "@rosdistro//cc:googletest",
+    ],
+)

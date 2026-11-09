@@ -1,5 +1,6 @@
 #include "agnocast_ioctl.hpp"
 
+#include <errno.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>
 #include <unistd.h>

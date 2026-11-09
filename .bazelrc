@@ -102,3 +102,18 @@ test --run_under=@rosdistro//python:run_test_isolated
 
 # Personal overrides (not committed).
 try-import %workspace%/user.bazelrc
+
+# CUDA (toolkit versions: bazel/cuda.MODULE.bazel; PLAN.md "CUDA").
+# GPU code for Autoware's CMake list for CUDA >= 12.8: Turing, Ampere, Orin, Ada, Thor (sm_110), Blackwell
+# (sm_120), plus compute_120 PTX for newer GPUs.
+common --@rules_cuda//cuda:archs=compute_75:sm_75;compute_86:sm_86;compute_87:sm_87;compute_89:sm_89;compute_110:sm_110;compute_120:compute_120,sm_120
+# nvcc's host compiler is the hermetic clang 21 with libc++, like all other C++ here. CUDA 13.0 accepts clang < 21
+# and refuses libc++ on x86 (allowed on SBSA); both checks have documented overrides.
+common --@rules_cuda//cuda:compiler=clang
+common --repo_env=CUDA_COMPILER_USE_CC_TOOLCHAIN=true
+# CUDA 13's headers refuse libc++ on x86 (a policy check; with clang there is no nvcc/EDG front end).
+common --@rules_cuda//cuda:copts=-D_ALLOW_UNSUPPORTED_LIBCPP
+# clang 23 makes C's -Wincompatible-pointer-types an error; OSQP passes long long* (c_int) as int64_t* (long*),
+# the same 64-bit type on LP64.
+build --per_file_copt=external/osqp.*@-Wno-error=incompatible-pointer-types
+build --host_per_file_copt=external/osqp.*@-Wno-error=incompatible-pointer-types

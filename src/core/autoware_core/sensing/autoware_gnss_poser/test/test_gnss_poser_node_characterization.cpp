@@ -645,7 +645,7 @@ TEST_F(GnssPoserCharacterization, Construct_MissingAnyRequiredParameter_FailsToS
   const NodeParams params;
   for (const auto & missing : NodeParams::names()) {
     EXPECT_THROW(
-      std::make_shared<autoware::gnss_poser::GNSSPoser>(params.to_options(missing)), std::exception)
+      (void)std::make_shared<autoware::gnss_poser::GNSSPoser>(params.to_options(missing)), std::exception)
       << "missing parameter: " << missing;
   }
 }
@@ -666,7 +666,7 @@ TEST_F(GnssPoserCharacterization, Construct_WrongParameterType_FailsToStart)
   for (const auto & [name, value] : wrong_typed) {
     rclcpp::NodeOptions options = NodeParams{}.to_options(name);
     options.append_parameter_override(name, value);
-    EXPECT_THROW(std::make_shared<autoware::gnss_poser::GNSSPoser>(options), std::exception)
+    EXPECT_THROW((void)std::make_shared<autoware::gnss_poser::GNSSPoser>(options), std::exception)
       << "parameter: " << name;
   }
 }
@@ -681,7 +681,7 @@ TEST_F(GnssPoserCharacterization, Construct_UnknownPubMethod_FailsToStart)
     params.gnss_pose_pub_method = method;
     params.buff_epoch = 3;
     EXPECT_THROW(
-      std::make_shared<autoware::gnss_poser::GNSSPoser>(params.to_options()), std::exception)
+      (void)std::make_shared<autoware::gnss_poser::GNSSPoser>(params.to_options()), std::exception)
       << "gnss_pose_pub_method=" << method;
   }
 }
@@ -697,7 +697,7 @@ TEST_F(GnssPoserCharacterization, Construct_BuffEpochBelowOne_FailsToStart)
       params.gnss_pose_pub_method = method;
       params.buff_epoch = buff_epoch;
       EXPECT_THROW(
-        std::make_shared<autoware::gnss_poser::GNSSPoser>(params.to_options()), std::exception)
+        (void)std::make_shared<autoware::gnss_poser::GNSSPoser>(params.to_options()), std::exception)
         << "gnss_pose_pub_method=" << method << " buff_epoch=" << buff_epoch;
     }
   }

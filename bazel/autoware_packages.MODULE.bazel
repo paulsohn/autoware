@@ -355,3 +355,9 @@ local_path_override(module_name = "autoware_core_planning", path = "src/core/aut
 
 bazel_dep(name = "autoware_core")
 local_path_override(module_name = "autoware_core", path = "src/core/autoware_core/autoware_core")
+
+bazel_dep(name = "autoware_cuda_dependency_meta")
+local_path_override(module_name = "autoware_cuda_dependency_meta", path = "src/core/cuda/autoware_cuda/autoware_cuda_dependency_meta")
+
+bazel_dep(name = "autoware_cuda_utils")
+local_path_override(module_name = "autoware_cuda_utils", path = "src/core/cuda/autoware_cuda/autoware_cuda_utils")

@@ -1,0 +1,11 @@
+module(name = "autoware_cuda_utils")
+
+bazel_dep(name = "autoware_cmake", version = "0.0.0")
+bazel_dep(name = "autoware_cuda_dependency_meta", version = "0.0.0")
+bazel_dep(name = "rosdistro", version = "0.0.0")
+bazel_dep(name = "rules_cc", version = "0.2.26.rcr.0")
+bazel_dep(name = "rules_cuda", version = "0.3.0.rcr.0")
+
+# The toolkit is configured by the root module (bazel/cuda.MODULE.bazel); this only makes @cuda visible.
+cuda = use_extension("@rules_cuda//cuda:extensions.bzl", "toolchain")
+use_repo(cuda, "cuda")

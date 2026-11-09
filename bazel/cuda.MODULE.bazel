@@ -1,0 +1,40 @@
+# CUDA toolkit for the whole build: NVIDIA's redistributable archives, pinned here and fetched by Bazel.
+# This replaces ansible/roles/cuda (apt cuda-*-13-0) for building and testing. Only the GPU driver (libcuda.so,
+# kernel module) still comes from the host. See docs/bazel/PLAN.md, "CUDA".
+#
+# To change the CUDA version: set CUDA_VERSION and CUDA_REDIST_SHA256 (sha256 of
+# https://developer.download.nvidia.com/compute/cuda/redist/redistrib_<version>.json). The manifest holds the
+# sha256 of every component archive, so these two values pin the whole toolkit, for linux-x86_64 and linux-sbsa.
+
+# 13.0 matches JetPack 7 (Jetson Thor) and the TensorRT build below (TensorRT 10.13.3 for CUDA 13.0).
+CUDA_VERSION = "13.0.3"
+
+CUDA_REDIST_SHA256 = "d73344990be5d826cf6eedc5495c858eb5923e5ffe7ede7fd6ebdd7be928ffc9"
+
+cuda = use_extension("@rules_cuda//cuda:extensions.bzl", "toolchain")
+cuda.redist_json(
+    name = "cuda_redist",
+    # Short component names (rules_cuda registry). cccl/cudart/nvcc/crt/nvvm make up the compiler and runtime;
+    # the rest are the libraries the apt role installs (cuda-minimal-build + lib*-dev).
+    components = [
+        "cccl",
+        "crt",
+        "cublas",
+        "cudart",
+        "culibos",
+        "curand",
+        "cusparse",
+        "npp",
+        "nvcc",
+        "nvjpeg",
+        "nvml",
+        "nvrtc",
+        "nvvm",
+    ],
+    sha256 = CUDA_REDIST_SHA256,
+    version = CUDA_VERSION,
+)
+
+# Populated from redist_json: @cuda is the hermetic toolkit (aliases to the per-platform component repos).
+cuda.toolkit(name = "cuda")
+use_repo(cuda, "cuda")

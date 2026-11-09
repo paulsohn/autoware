@@ -1,0 +1,12 @@
+libc++ 23 dropped transitive includes: std::nothrow needs <new>.
+
+--- a/src/polling_util.hpp
++++ b/src/polling_util.hpp
+@@ -3,6 +3,7 @@
+ #ifndef __ZMQ_SOCKET_POLLING_UTIL_HPP_INCLUDED__
+ #define __ZMQ_SOCKET_POLLING_UTIL_HPP_INCLUDED__
+ 
++#include <new>
+ #include <stdlib.h>
+ #include <vector>
+ 

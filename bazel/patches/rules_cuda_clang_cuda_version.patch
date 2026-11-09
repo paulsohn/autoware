@@ -1,0 +1,19 @@
+clang + hermetic CUDA: give clang the toolkit version (rules_cuda passes the nvvm component as --cuda-path, whose
+version.json has no "cuda" key). Without it clang 23 assumes CUDA newer than 13.2 and emits PTX 9.2, which
+CUDA 13.0's ptxas rejects ("Unsupported .version 9.2; current version is '9.0'").
+
+--- a/cuda/private/repositories.bzl
++++ b/cuda/private/repositories.bzl
+@@ -376,6 +376,12 @@
+     repository_ctx.file("nvvm/bin/__PATCHED_FOR_CLANG__", notice)
+     repository_ctx.file("nvvm/include/__PATCHED_FOR_CLANG__", notice)
+ 
++    # clang reads the CUDA version from <cuda-path>/version.json's "cuda" key; the nvvm component's file only has
++    # "nvvm", so clang assumes the newest CUDA it knows and emits a PTX version this toolkit's ptxas rejects. The
++    # nvvm version shares the toolkit's major.minor, which is all clang uses.
++    if repository_ctx.attr.version:
++        repository_ctx.file("nvvm/version.json", json.encode({"cuda": {"name": "CUDA SDK", "version": repository_ctx.attr.version}}))
++
+ def _cuda_component_impl(repository_ctx):
+     component_name = None
+     if repository_ctx.attr.component_name:

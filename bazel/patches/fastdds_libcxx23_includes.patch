@@ -1,0 +1,42 @@
+libc++ 23 dropped transitive includes: std::sort/unique/lower_bound need <algorithm>, std::wstring_convert needs <locale>.
+
+--- a/src/cpp/fastdds/xtypes/dynamic_types/MemberDescriptorImpl.cpp
++++ b/src/cpp/fastdds/xtypes/dynamic_types/MemberDescriptorImpl.cpp
+@@ -14,6 +14,7 @@
+ 
+ #include "MemberDescriptorImpl.hpp"
+ 
++#include <algorithm>
+ #include <fastdds/dds/log/Log.hpp>
+ #include <fastdds/dds/xtypes/dynamic_types/Types.hpp>
+ 
+--- a/src/cpp/rtps/resources/ResourceEvent.cpp
++++ b/src/cpp/rtps/resources/ResourceEvent.cpp
+@@ -16,6 +16,7 @@
+  * @file ResourceEvent.cpp
+  */
+ 
++#include <algorithm>
+ #include <rtps/resources/ResourceEvent.h>
+ 
+ #include <cassert>
+--- a/src/cpp/fastdds/xtypes/serializers/json/dynamic_data_json.cpp
++++ b/src/cpp/fastdds/xtypes/serializers/json/dynamic_data_json.cpp
+@@ -12,6 +12,7 @@
+ // See the License for the specific language governing permissions and
+ // limitations under the License.
+ 
++#include <locale>
+ #include <bitset>
+ #ifndef MINGW_COMPILER
+     #include <codecvt>
+--- a/src/cpp/fastdds/xtypes/serializers/json/json_dynamic_data.cpp
++++ b/src/cpp/fastdds/xtypes/serializers/json/json_dynamic_data.cpp
+@@ -12,6 +12,7 @@
+ // See the License for the specific language governing permissions and
+ // limitations under the License.
+ 
++#include <locale>
+ #include <bitset>
+ #ifndef MINGW_COMPILER
+     #include <codecvt>

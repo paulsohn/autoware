@@ -1,0 +1,16 @@
+libc++ 23 dropped transitive includes: the runfiles helper that rules_bison adds to bison calls getenv, which
+needs <cstdlib>. This patches rules_bison's own patch file.
+
+--- a/bison/internal/bazel_runfiles.patch
++++ b/bison/internal/bazel_runfiles.patch
+@@ -1,8 +1,9 @@
+ --- /dev/null
+ +++ src/bazel_runfiles.cc
+-@@ -0,0 +1,75 @@
++@@ -0,0 +1,76 @@
+ +#include "tools/cpp/runfiles/runfiles.h"
+ +
+++#include <cstdlib>
+ +#include <cstring>
+ +#include <string>
+ +

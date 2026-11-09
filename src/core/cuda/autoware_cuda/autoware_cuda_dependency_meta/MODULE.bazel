@@ -1,0 +1,3 @@
+module(name = "autoware_cuda_dependency_meta")
+
+bazel_dep(name = "rosdistro", version = "0.0.0")
