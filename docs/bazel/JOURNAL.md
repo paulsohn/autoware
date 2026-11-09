@@ -658,3 +658,66 @@ Lessons:
 - Header-only use of a library by a shared library needs a headers-only dependency in Bazel; CMake hides this
   because shared libraries may leave symbols undefined.
 - Tests comparing floating-point results exactly are toolchain-specific; expect a few when switching compilers.
+
+## 2026-11-09: Agnocast — ioctl wrapper, CIE configurator, agnocastlib (ported to Lyrical), heap hook
+
+Ported: `agnocast_ioctl_wrapper`, `agnocast_cie_thread_configurator` (C++ part; its Rust client crate is not built by
+CMake either), `agnocastlib`, `agnocast_heaphook`. Host: Agnocast kernel module 2.4.1 loaded (DKMS, `/dev/agnocast`),
+same version as agnocastlib. Agnocast packages keep Agnocast's own CMake flags, not `autoware_package()`.
+
+agnocastlib vs Lyrical (rclcpp 32.0.3; Agnocast 2.4.1 supports Humble/Jazzy, upstream main as of 2026-11-08 too).
+33 compile errors in the library, fixed in source with `RCLCPP_VERSION_MAJOR >= 32` guards next to Agnocast's own
+`>= 28` ones (commit b87a5a8):
+- Executor, ClientBase, ServiceBase, NodeLoggingInterface virtuals take `const std::shared_ptr<...> &` instead of by
+  value → overrides didn't match ("non-virtual member function marked 'override' hides virtual member function") →
+  `AGNOCAST_RCLCPP_SHARED_PTR_PARAM(T)` in a new `agnocast_rclcpp_compat.hpp`.
+- New pure virtuals (`NodeGraphInterface::get_{clients,servers}_info_by_service`,
+  `NodeParametersInterface::enable_parameter_modification`) made Agnocast's classes abstract; the errors appear
+  inside libc++'s `make_shared` (filter logs for `note: unimplemented pure virtual method`). Implemented as "not
+  supported" like the neighbouring graph queries / exactly like rclcpp's NodeParameters.
+- `NodeBaseInterface::get_notify_guard_condition()` removed. Behavioural, not just a compile error: Lyrical's
+  `ExecutorEntitiesCollector` calls `get_shared_notify_guard_condition()` for every added node, which Agnocast
+  stubbed to throw, so adding an `agnocast::Node` to any rclcpp executor would throw. The guard condition is now a
+  `shared_ptr` returned by that getter.
+- tracetools dropped `TRACEPOINT()` (→ `TRACETOOLS_TRACEPOINT()`); message_filters dropped `mp_count` (replaced by a
+  local helper with Jazzy's exact semantics: it counts non-`NullType` entries, despite the name); tf2/tf2_ros/
+  message_filters `.h` headers → `.hpp`.
+Unrelated upstream bug (commit 3eccfb5): the ApproximateTime unit test built messages as publisher-side
+`ipc_shared_ptr`s, so releasing one exited the process ("publish() called exceeds borrow_loaned_message()"); the
+test is the same on upstream main.
+
+Build specifics:
+- Version header: `execute_process` + `configure_file` → genrule reading `<version>` from package.xml. In a genrule
+  `cmd`, match a literal `${...}` with `[$$]{...}`; inside double quotes bash expands `$${X}` ("unbound variable").
+- LTTng only with `--@rosdistro//:enable_tracing` (select on `@rosdistro//:tracing_enabled_linux`); default off, and
+  tracetools then defines `TRACETOOLS_DISABLED`.
+- Test environment/labels/timeouts from `set_tests_properties` → `env`, `tags`, `timeout`; the parity check now reads
+  `set_tests_properties(... TIMEOUT n)`, `install(TARGETS ...)` and `install(DIRECTORY x/ DESTINATION
+  share/<pkg>/x)`, and header installs count as handled globally (PLAN.md).
+
+Heap hook (Rust cdylib, not a ROS package; upstream ships it as a Debian package):
+1. No Cargo.lock upstream (.gitignored), and `.cargo/config` redirects crates.io to a Debian `vendor/` dir → ran
+   `cargo generate-lockfile` on a copy of Cargo.toml in a scratch dir, force-added the lock (commit dd516c9).
+2. `MODULE.bazel`: `use_extension("@rules_rs//rs:rules_rust.bzl", "rules_rust")` + `crate.from_cargo(...)` as the
+   RCR's zenoh-c module does; `rust_shared_library` + `rust_test` (pass).
+3. `build.rs` is not run: it links a stub `libagnocast.so` (we link the real one via `cc_import`; same `NEEDED
+   libagnocast.so`, and agnocastlib's SONAME is `libagnocast.so`, so one copy is loaded) and detects the *build*
+   machine's glibc (we fix the >= 2.35 path: the targets run 2.39).
+4. `Agnocast Heaphook and Agnocastlib versions must match exactly ... agnocast-heaphook(0.0.0)` → rules_rust sets
+   `CARGO_PKG_VERSION` from the target's `version` attribute → `version = "2.4.1"`.
+
+Tests needing the hook / kernel module:
+1. `heaphook_test` (`@agnocast_heaphook//:defs.bzl`): a launcher sets `LD_PRELOAD` just before exec'ing the C++ test,
+   because the RCR's `--run_under=@rosdistro//python:run_test_isolated` wrapper (a Python process) would otherwise
+   be hooked too.
+2. `shm_open failed: File exists` in every kernel-module test → Agnocast names shared memory after `getpid()` and the
+   module tracks host PIDs; linux-sandbox gives each test a PID namespace, so concurrent tests collide → tag
+   `no-sandbox` (they then pass in parallel, twice in a row).
+3. `--config=no-agnocast` now adds `--test_tag_filters=-requires_kernel_module`.
+Result with the module: 21/21 tests (agnocastlib 20 + heaphook 1); with `--config=no-agnocast`: 8/8.
+
+Lessons:
+- When a distribution changes a framework's virtual interfaces (rclcpp executors, node interfaces), a library that
+  implements them needs a real port; check the callers (here the executor collector), not only the compiler errors.
+- Software that keys shared state on PIDs breaks under PID namespaces: run its tests unsandboxed.
+- Build scripts that probe the build machine (glibc version, stubs) must be replaced by explicit decisions.
