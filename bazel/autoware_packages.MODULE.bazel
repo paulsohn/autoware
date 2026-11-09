@@ -229,3 +229,9 @@ local_path_override(module_name = "autoware_simple_pure_pursuit", path = "src/co
 
 bazel_dep(name = "autoware_planning_factor_interface")
 local_path_override(module_name = "autoware_planning_factor_interface", path = "src/core/autoware_core/planning/autoware_planning_factor_interface")
+
+bazel_dep(name = "autoware_trajectory")
+local_path_override(module_name = "autoware_trajectory", path = "src/core/autoware_core/common/autoware_trajectory")
+
+bazel_dep(name = "autoware_awsim_sensor_kit_description")
+local_path_override(module_name = "autoware_awsim_sensor_kit_description", path = "src/core/autoware_core/description/autoware_awsim_sensor_kit_description")

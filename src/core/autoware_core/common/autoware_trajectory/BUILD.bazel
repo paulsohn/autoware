@@ -1,0 +1,160 @@
+load("@autoware_cmake//:defs.bzl", "AUTOWARE_CXXOPTS", "AUTOWARE_DEFINES", "autoware_copts")
+load("@autoware_pyplot//:defs.bzl", "pyplot_test")
+load("@rosdistro//ament:defs.bzl", "ament_index")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps", "ros_local_defines")
+load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library", "cc_shared_library")
+
+package(default_visibility = ["//visibility:public"])
+
+# Deliberate differences from CMakeLists.txt (checked by bazel/tools/cmake_parity):
+# cmake-diff unhandled:set_source_files_properties: GCC >= 13 only (-Wno-array-bounds -Wno-stringop-overflow on one
+#   file); not applicable to clang.
+# cmake-diff dep:tl_expected: the RCR has only a stub module for tl_expected; a forwarding header maps
+#   tl_expected/expected.hpp to @rosdistro//cc:tl_expected.
+# cmake-diff dep:pybind11_vendor: pybind11 comes from @rosdistro//cc:pybind11 through autoware_pyplot.
+
+DEPENDENCIES = {
+    "@autoware_internal_planning_msgs//:cc_shared": "@autoware_internal_planning_msgs//:cc",
+    "@autoware_lanelet2_utils//:autoware_lanelet2_utils": "@autoware_lanelet2_utils//:autoware_lanelet2_utils_library",
+    "@autoware_planning_msgs//:cc_shared": "@autoware_planning_msgs//:cc",
+    "@autoware_utils_geometry//:autoware_utils_geometry": "@autoware_utils_geometry//:autoware_utils_geometry_library",
+    "@autoware_utils_math//:autoware_utils_math": "@autoware_utils_math//:autoware_utils_math_library",
+    "@builtin_interfaces//:cc_shared": "@builtin_interfaces//:cc",
+    "@geometry_msgs//:cc_shared": "@geometry_msgs//:cc",
+    "@lanelet2_core//:lanelet2_core": "@lanelet2_core//:lanelet2_core_library",
+    "@lanelet2_routing//:lanelet2_routing": "@lanelet2_routing//:lanelet2_routing_library",
+    "@lanelet2_traffic_rules//:lanelet2_traffic_rules": "@lanelet2_traffic_rules//:lanelet2_traffic_rules_library",
+    "@rclcpp//:rclcpp": "@rclcpp//:rclcpp_library",
+    "@tf2//:tf2": "@tf2//:tf2_library",
+    "@tf2_geometry_msgs//:tf2_geometry_msgs": "@tf2_geometry_msgs//:tf2_geometry_msgs_library",
+}
+
+# The ROS tl_expected package installs tl::expected as tl_expected/expected.hpp; the RCR ships only the upstream
+# library (tl/expected.hpp).
+genrule(
+    name = "tl_expected_forwarding_header",
+    outs = ["tl_expected_compat/tl_expected/expected.hpp"],
+    cmd = "echo '#include <tl/expected.hpp>' > $@",
+    visibility = ["//visibility:private"],
+)
+
+cc_library(
+    name = "tl_expected",
+    hdrs = [":tl_expected_forwarding_header"],
+    includes = ["tl_expected_compat"],
+    visibility = ["//visibility:private"],
+    deps = ["@rosdistro//cc:tl_expected"],
+)
+
+cc_library(
+    name = "autoware_trajectory_library",
+    srcs = glob(["src/**/*.cpp"]),
+    hdrs = glob(["include/**/*.hpp"]),
+    copts = autoware_copts(),
+    cxxopts = AUTOWARE_CXXOPTS,
+    local_defines = ros_local_defines() + AUTOWARE_DEFINES,
+    includes = ["include"],
+    deps = DEPENDENCIES.values() + [
+        ":tl_expected",
+        "@rosdistro//cc:boost.geometry",
+        "@rosdistro//cc:boost.scope_exit",
+        "@rosdistro//cc:eigen",
+        "@rosdistro//cc:fmt",
+        "@rosdistro//cc:range-v3",
+    ],
+)
+
+cc_shared_library(
+    name = "autoware_trajectory",
+    dynamic_deps = DEPENDENCIES.keys(),
+    exports_filter = [":autoware_trajectory_library"],
+    deps = [":autoware_trajectory_library"],
+)
+
+# share/autoware_trajectory/test_data (INSTALL_TO_SHARE).
+ament_index(
+    name = "ament_index",
+    data = glob(["test_data/**"]),
+    libraries = [":autoware_trajectory"],
+    package_xml = "package.xml",
+)
+
+TEST_DEPENDENCIES = {
+    "@ament_index_cpp//:ament_index_cpp": "@ament_index_cpp//:ament_index_cpp_library",
+    "@autoware_motion_utils//:autoware_motion_utils": "@autoware_motion_utils//:autoware_motion_utils_library",
+    "@autoware_test_utils//:autoware_test_utils": "@autoware_test_utils//:autoware_test_utils_library",
+    "@lanelet2_io//:lanelet2_io": "@lanelet2_io//:lanelet2_io_library",
+    "@rosdistro//cc:yaml-cpp": "@rosdistro//cc:yaml-cpp_library",
+}
+
+collect_transitive_dynamic_deps(
+    name = "test_dynamic_deps",
+    testonly = True,
+    dynamic_deps = [":autoware_trajectory"] + TEST_DEPENDENCIES.keys(),
+    visibility = ["//visibility:private"],
+)
+
+# The test and the examples link the test dependencies, including autoware_test_utils, whose CMake target adds
+# -Wno-deprecated-declarations PUBLIC.
+TEST_COPTS = autoware_copts() + ["-Wno-deprecated-declarations"]
+
+TEST_DATA = [
+    ":ament_index",
+    "@@//bazel/config:cyclonedds.xml",
+    "@autoware_lanelet2_utils//:ament_index",
+    "@autoware_test_utils//:ament_index",
+]
+
+TEST_DEPS = [":autoware_trajectory_library"] + TEST_DEPENDENCIES.values() + [
+    "@autoware_pyplot",
+    "@rosdistro//cc:range-v3",
+]
+
+# One gtest binary built with PLOT; it embeds Python (autoware_pyplot), hence pyplot_test.
+pyplot_test(
+    name = "test_autoware_trajectory",
+    srcs = glob([
+        "test/*.cpp",
+        "test/*.hpp",
+    ]),
+    copts = TEST_COPTS,
+    cxxopts = AUTOWARE_CXXOPTS,
+    data = TEST_DATA,
+    dynamic_deps = [":test_dynamic_deps"],
+    local_defines = ros_local_defines() + AUTOWARE_DEFINES + ["PLOT"],
+    deps = TEST_DEPS + ["@googletest//:gtest"],
+)
+
+# Examples (built with BUILD_TESTING in CMake); they plot with matplotlib, so running them needs the same
+# environment as pyplot_test.
+[cc_binary(
+    name = name,
+    testonly = True,
+    srcs = ["examples/{}.cpp".format(name)],
+    copts = TEST_COPTS,
+    cxxopts = AUTOWARE_CXXOPTS,
+    data = TEST_DATA,
+    dynamic_deps = [":test_dynamic_deps"],
+    local_defines = ros_local_defines() + AUTOWARE_DEFINES,
+    deps = TEST_DEPS,
+) for name in [
+    "example_add_offset",
+    "example_crossed",
+    "example_find_if",
+    "example_find_intervals",
+    "example_footprint",
+    "example_interpolator",
+    "example_lateral_metrics",
+    "example_path_point",
+    "example_pchip_vs_cubic_spline",
+    "example_point",
+    "example_pose",
+    "example_pretty_build",
+    "example_readme",
+    "example_reference_path",
+    "example_self_intersecting",
+    "example_shift",
+    "example_temporal_crop",
+    "example_temporal_curvature",
+    "example_temporal_trajectory",
+]]
