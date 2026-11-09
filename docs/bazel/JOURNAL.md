@@ -401,3 +401,23 @@ Issues (symptom → cause → fix):
 Lessons:
 - Check the major versions of the vendored third-party libraries (OSQP 0.6 → 1.0) before porting packages that use them.
 - Don't decide "has its own main" by grepping `int main`; check its scope.
+
+## 2026-11-09: P2 decisions — Agnocast always compiled in; OSQP 0.6.3 next to 1.0
+
+Decisions (rows in PLAN.md): build Agnocast in unconditionally and switch it with `ENABLE_AGNOCAST` at run time only;
+keep OSQP 0.6.3 for Autoware.
+
+OSQP steps:
+1. Root `MODULE.bazel`: `multiple_version_override(module_name = "osqp", versions = ["0.6.3.bcr.3", "1.0.0.bcr.3"])`.
+2. `autoware_osqp_interface` / `autoware_qp_interface`: `bazel_dep(name = "osqp", version = "0.6.3.bcr.3")` instead of
+   `osqp_vendor`; a private `:osqp` `cc_library` with generated forwarding headers.
+3. `bazel mod explain osqp` → both Autoware packages get `osqp@0.6.3.bcr.3`; `rosdistro` and `osqp-eigen` keep
+   `osqp@1.0.0.bcr.3`. Both `test_osqp_interface` targets pass.
+
+Issues (symptom → cause → fix):
+1. `include_prefix = "osqp"` over `@osqp//:include/*.h` → `Visibility error` → the BCR's osqp module exports only
+   `osqp.h` and `ctrlc.h` as files → generate forwarding headers `osqp_compat/osqp/{osqp,glob_opts}.h` containing
+   `#include <osqp.h>` etc. (the only two `osqp/` includes in `src/core`).
+
+Lesson: `multiple_version_override` lets your packages keep an older major version of a library the distribution has
+moved past, as long as no single process loads both.

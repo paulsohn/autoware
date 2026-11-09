@@ -130,3 +130,9 @@ local_path_override(module_name = "autoware_qos_utils", path = "src/core/autowar
 
 bazel_dep(name = "autoware_localization_util")
 local_path_override(module_name = "autoware_localization_util", path = "src/core/autoware_core/localization/autoware_localization_util")
+
+bazel_dep(name = "autoware_osqp_interface")
+local_path_override(module_name = "autoware_osqp_interface", path = "src/core/autoware_core/common/autoware_osqp_interface")
+
+bazel_dep(name = "autoware_qp_interface")
+local_path_override(module_name = "autoware_qp_interface", path = "src/core/autoware_core/common/autoware_qp_interface")

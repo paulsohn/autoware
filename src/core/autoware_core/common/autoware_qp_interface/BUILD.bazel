@@ -5,10 +5,34 @@ load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
 package(default_visibility = ["//visibility:public"])
 
 DEPENDENCIES = {
-    "@osqp_vendor//:osqp": "@osqp_vendor//:osqp_library",
     "@rclcpp//:rclcpp": "@rclcpp//:rclcpp_library",
     "@rclcpp_components//:rclcpp_components": "@rclcpp_components//:rclcpp_components_library",
 }
+
+# OSQP 0.6.3 (see the root MODULE.bazel). Its module exposes osqp.h at the top level, while CMake installs
+# include/osqp/*.h; forwarding headers provide the osqp/ paths this package includes.
+OSQP_HEADERS = [
+    "glob_opts.h",
+    "osqp.h",
+]
+
+genrule(
+    name = "osqp_forwarding_headers",
+    outs = ["osqp_compat/osqp/" + h for h in OSQP_HEADERS],
+    cmd = " && ".join([
+        "echo '#include <{0}>' > $(RULEDIR)/osqp_compat/osqp/{0}".format(h)
+        for h in OSQP_HEADERS
+    ]),
+    visibility = ["//visibility:private"],
+)
+
+cc_library(
+    name = "osqp",
+    hdrs = [":osqp_forwarding_headers"],
+    includes = ["osqp_compat"],
+    visibility = ["//visibility:private"],
+    deps = ["@osqp"],
+)
 
 cc_library(
     name = "autoware_qp_interface_library",
@@ -24,6 +48,7 @@ cc_library(
     local_defines = ros_local_defines() + AUTOWARE_DEFINES,
     includes = ["include"],
     deps = DEPENDENCIES.values() + [
+        ":osqp",
         "@proxsuite",
         "@rosdistro//cc:eigen",
     ],
