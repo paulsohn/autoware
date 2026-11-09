@@ -109,7 +109,7 @@ TEST_F(TestEuclideanClusterNode, MessageProcessing)
 
   auto sub = test_node->create_subscription<autoware_perception_msgs::msg::DetectedObjects>(
     "output", rclcpp::QoS{1},
-    [&message_received](const autoware_perception_msgs::msg::DetectedObjects::SharedPtr) {
+    [&message_received](const autoware_perception_msgs::msg::DetectedObjects::ConstSharedPtr) {
       message_received = true;
     });
 
@@ -176,7 +176,7 @@ TEST_F(TestVoxelGridBasedEuclideanClusterNode, MessageProcessing)
 
   auto sub = test_node->create_subscription<autoware_perception_msgs::msg::DetectedObjects>(
     "output", rclcpp::QoS{1},
-    [&message_received](const autoware_perception_msgs::msg::DetectedObjects::SharedPtr) {
+    [&message_received](const autoware_perception_msgs::msg::DetectedObjects::ConstSharedPtr) {
       message_received = true;
     });
 
@@ -243,7 +243,7 @@ TEST_F(TestVoxelGridBasedEuclideanClusterNode, EmptyMessageProcessing)
 
   auto sub = test_node->create_subscription<autoware_perception_msgs::msg::DetectedObjects>(
     "output", rclcpp::QoS{1},
-    [&message_received](const autoware_perception_msgs::msg::DetectedObjects::SharedPtr) {
+    [&message_received](const autoware_perception_msgs::msg::DetectedObjects::ConstSharedPtr) {
       message_received = true;
     });
 

@@ -112,10 +112,10 @@ TEST_F(CommandGateRosIntegrationTest, ChangeToStopPublishesStateAndGear)
 
   auto state_sub = test_node_->create_subscription<OperationModeState>(
     "/api/operation_mode/state", state_qos,
-    [&state_msg](const OperationModeState::SharedPtr msg) { state_msg = *msg; });
+    [&state_msg](const OperationModeState::ConstSharedPtr msg) { state_msg = *msg; });
   auto gear_sub = test_node_->create_subscription<GearCommand>(
     "/control/command/gear_cmd", rclcpp::QoS{1},
-    [&gear_msg](const GearCommand::SharedPtr msg) { gear_msg = *msg; });
+    [&gear_msg](const GearCommand::ConstSharedPtr msg) { gear_msg = *msg; });
 
   auto client = test_node_->create_client<SystemChangeOperationMode>(
     "/system/operation_mode/change_operation_mode");
@@ -162,10 +162,10 @@ TEST_F(CommandGateRosIntegrationTest, ChangeToAutonomousPublishesStateAndGear)
 
   auto state_sub = test_node_->create_subscription<OperationModeState>(
     "/api/operation_mode/state", state_qos,
-    [&state_msg](const OperationModeState::SharedPtr msg) { state_msg = *msg; });
+    [&state_msg](const OperationModeState::ConstSharedPtr msg) { state_msg = *msg; });
   auto gear_sub = test_node_->create_subscription<GearCommand>(
     "/control/command/gear_cmd", rclcpp::QoS{1},
-    [&gear_msg](const GearCommand::SharedPtr msg) { gear_msg = *msg; });
+    [&gear_msg](const GearCommand::ConstSharedPtr msg) { gear_msg = *msg; });
 
   auto client = test_node_->create_client<SystemChangeOperationMode>(
     "/system/operation_mode/change_operation_mode");
@@ -212,10 +212,10 @@ TEST_F(CommandGateRosIntegrationTest, SystemChangeToLocalPublishesStateAndGear)
 
   auto state_sub = test_node_->create_subscription<OperationModeState>(
     "/system/operation_mode/state", state_qos,
-    [&state_msg](const OperationModeState::SharedPtr msg) { state_msg = *msg; });
+    [&state_msg](const OperationModeState::ConstSharedPtr msg) { state_msg = *msg; });
   auto gear_sub = test_node_->create_subscription<GearCommand>(
     "/control/command/gear_cmd", rclcpp::QoS{1},
-    [&gear_msg](const GearCommand::SharedPtr msg) { gear_msg = *msg; });
+    [&gear_msg](const GearCommand::ConstSharedPtr msg) { gear_msg = *msg; });
 
   auto client = test_node_->create_client<SystemChangeOperationMode>(
     "/system/operation_mode/change_operation_mode");
@@ -262,10 +262,10 @@ TEST_F(CommandGateRosIntegrationTest, SystemChangeToRemotePublishesStateAndGear)
 
   auto state_sub = test_node_->create_subscription<OperationModeState>(
     "/system/operation_mode/state", state_qos,
-    [&state_msg](const OperationModeState::SharedPtr msg) { state_msg = *msg; });
+    [&state_msg](const OperationModeState::ConstSharedPtr msg) { state_msg = *msg; });
   auto gear_sub = test_node_->create_subscription<GearCommand>(
     "/control/command/gear_cmd", rclcpp::QoS{1},
-    [&gear_msg](const GearCommand::SharedPtr msg) { gear_msg = *msg; });
+    [&gear_msg](const GearCommand::ConstSharedPtr msg) { gear_msg = *msg; });
 
   auto client = test_node_->create_client<SystemChangeOperationMode>(
     "/system/operation_mode/change_operation_mode");

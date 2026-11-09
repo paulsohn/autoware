@@ -64,7 +64,7 @@ protected:
     trajectory_subscription_ =
       test_control_node_->create_subscription<autoware_planning_msgs::msg::Trajectory>(
         "output/trajectory", 10,
-        [this](const autoware_planning_msgs::msg::Trajectory::SharedPtr message) {
+        [this](const autoware_planning_msgs::msg::Trajectory::ConstSharedPtr message) {
           std::lock_guard<std::mutex> lock(message_mutex_);
           received_trajectory_ = message;
         });
@@ -110,7 +110,7 @@ protected:
 
   // Publish a path and return the converted trajectory, or nullptr if none arrives within the
   // timeout.
-  autoware_planning_msgs::msg::Trajectory::SharedPtr publish_and_wait(
+  autoware_planning_msgs::msg::Trajectory::ConstSharedPtr publish_and_wait(
     const autoware_planning_msgs::msg::Path & path)
   {
     path_publisher_->publish(path);
@@ -138,7 +138,7 @@ protected:
   std::shared_ptr<autoware::planning_topic_converter::PathToTrajectoryNode> converter_node_;
 
   std::mutex message_mutex_;
-  autoware_planning_msgs::msg::Trajectory::SharedPtr received_trajectory_;
+  autoware_planning_msgs::msg::Trajectory::ConstSharedPtr received_trajectory_;
 };
 
 TEST_F(PathToTrajectoryNodeTest, ConvertsPathPointsToTrajectoryPoints)

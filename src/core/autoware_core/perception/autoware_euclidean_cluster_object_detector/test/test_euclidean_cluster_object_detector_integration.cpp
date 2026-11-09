@@ -46,7 +46,7 @@ protected:
   rclcpp::Subscription<autoware_perception_msgs::msg::DetectedObjects>::SharedPtr sub_output_;
 
   bool message_received_{false};
-  autoware_perception_msgs::msg::DetectedObjects::SharedPtr last_output_{nullptr};
+  autoware_perception_msgs::msg::DetectedObjects::ConstSharedPtr last_output_{nullptr};
 
   // Test env setup
   void SetUp() override
@@ -73,7 +73,7 @@ protected:
     sub_output_ =
       interceptor_node_->create_subscription<autoware_perception_msgs::msg::DetectedObjects>(
         "output", rclcpp::QoS{1},
-        [this](const autoware_perception_msgs::msg::DetectedObjects::SharedPtr msg) {
+        [this](const autoware_perception_msgs::msg::DetectedObjects::ConstSharedPtr msg) {
           last_output_ = msg;
           message_received_ = true;
         });
