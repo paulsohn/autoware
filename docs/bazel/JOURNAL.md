@@ -1397,8 +1397,8 @@ Issues (symptom → cause → fix):
    config stays; on such hosts append an inline override to `CYCLONEDDS_URI` (Cyclone merges comma-separated sources,
    later wins) that relaxes only the minimum. A native Docker engine with the usual host DDS tuning needs none.
 3. Exit code 127, `libGL.so.1: cannot open shared object file` in map loaders, planners, API adaptors → the RCR's PCL
-   links VTK, which links PyPI Qt, which links the system OpenGL loader (glvnd: libGL, libGLX, libOpenGL, libEGL), a
-   manylinux "system library" the RCR does not ship. Tests passed on the host only because the host has it → pinned
+   links VTK, which links the system OpenGL loader (glvnd: libGL, libGLX, libOpenGL, libEGL); the RCR builds only
+   link stubs for it. (Qt is built from source by the RCR, not taken from PyPI; corrected below.) Tests passed on the host only because the host has it → pinned
    Ubuntu packages in the image: `rules_distroless` 0.9.4 `apt` (`bazel/runtime_apt.MODULE.bazel`, snapshot.ubuntu.com
    of the base digest's day; resolved versions/sha256 in `MODULE.bazel.lock` as extension facts), packages
    libglvnd0 libgl1 libglx0 libopengl0 libegl1 + libx11-6 libx11-data libxcb1 libxau6 libxdmcp6 libbsd0.
@@ -1435,7 +1435,92 @@ engine with `/dev/agnocast`), the NVIDIA runtime, RViz in the container.
 Lessons:
 - An install tree finds what `bazel test` cannot: missing entry points, system libraries supplied by the developer
   host. Check every new runtime environment with `ldd` over all ELFs, and with the actual commands.
-- "Hermetic" RCR still assumes the manylinux system libraries (GL, X11 for Qt). They belong to the image's pinned
-  system layer, not to the machine; only vendor GL/driver libraries come from the machine.
+- "Hermetic" RCR still assumes a system OpenGL loader (it links against glvnd stubs). It belongs to the image, not
+  to the machine; only vendor GL/driver libraries come from the machine.
 - autoware_core is not universe: AD API features (operation mode availability, change_to_autonomous) and controller
   features (slope compensation) differ, so a core-only demo needs core-specific glue.
+
+## Plan: P2 digest check (A1, A2), P5 split; apt minimization notes
+
+PLAN.md: P0 marked done (journal 2026-11-09 already had the talker digest match); P2's remaining work is the digest
+check, A1 then A2; P5 split into P5a (cross-build base without hardware) and P5b (on a Thor). Probes behind P5a:
+- `bazel build --nobuild --keep_going --platforms=@llvm//platforms:linux_aarch64_gnu.2.34` over all Autoware
+  packages + `//images:runtime`: 1480 targets analyzed; the only error is the amd64-only apt layer.
+- `docker run --platform linux/arm64 ubuntu@<base digest> uname -m` → `aarch64` (Docker Desktop's qemu).
+
+Not done: pinning the dev image's apt to the runtime layer's snapshot date. The edge (runtime image) is canonical
+and developer machines derive from it; a date picked from one developer's machine must not become the definition
+(PLAN.md, "Direction of canonical inputs").
+
+### Where the apt dependency comes from
+- Runtime image: base `ubuntu:24.04` (glibc; libstdc++/libgcc_s for TensorRT; bash, coreutils) + the apt layer
+  (glvnd + X11 client libraries).
+- The apt layer exists for one link: `cquery somepath(@autoware_map_loader//:all, @@qtbase+//:gui)` =
+  `lanelet2_map_loader_node → @rosdistro//cc:pcl → @rosdistro//cc:vtk → qtbase widgets → gui`.
+  `@rosdistro//cc:vtk` is one `cc_shared_library` for all of VTK, rendering included, with Qt GUI/OpenGL/widgets as
+  dynamic deps and `@libglvnd//:glvnd_stubs` as link inputs. `@rosdistro//cc:pcl` depends on all of it because
+  `@pcl//:io` depends on `@vtk` (the umbrella), although pcl's io sources include only data-model, IO and imaging
+  headers (`vtkPolyData`, `vtkPLYReader`, `vtkPNGWriter`, `vtkImageData`, ...), no rendering.
+- The RCR's `libglvnd` module builds only stubs (`glvnd_stubs`, `gl_stub_gen`), but carries the full glvnd source;
+  libx11, libxcb and libxau exist as RCR modules (Qt links them into its `x11_shared`).
+- (`bazel query` cannot answer this: it ignores `select()` and fetches every platform's dependencies, here a
+  SourceForge mirror that does not resolve. Use `cquery`.)
+
+Options, smallest first:
+1. Headless needs no GL: split `@rosdistro//cc:vtk` into a non-rendering library and a rendering one, and make
+   `@pcl//:io` (and `:surface`, which also only uses VTK's non-rendering modules) depend on the former. Then headless
+   nodes need neither GL nor X11, and the apt layer is only needed by GUI code (RViz, pcl visualization). A
+   patch on two RCR modules, worth sending upstream.
+2. GUI too, without apt: build the real glvnd libraries (GLdispatch, GLX, GL, OpenGL, EGL) from the source the RCR
+   already has. Limit: vendor libraries injected at run time (NVIDIA container toolkit: `libGLX_nvidia.so.0`, Mesa)
+   need `libX11.so.6`, `libXext.so.6` etc. under their standard sonames, which Qt's `x11_shared` does not provide; so
+   GPU rendering in a container still needs those, from Bazel builds or packages.
+3. Keep the apt layer as is (pinned, defined by the runtime image).
+
+Dev image apt packages, for the record: `ca-certificates` (TLS for Bazel downloads), `curl` (fetches bazelisk at
+image build), `git`, `unzip`/`zip` (P0 bootstrap set), `iproute2` (`bazel/config/dds_setup.sh` uses `ip`), and now the
+GL loader (only needed by tests that load VTK, which option 1 would remove).
+
+## VTK split: headless runtime image without apt packages
+
+Decision (PLAN.md, "Headless runtime image"): option 1 of the apt notes above. Visualization runs outside the
+container; option 2 (glvnd from source) is only worth it for rendering in containers, which would also need
+standard-soname X11 for NVIDIA's `libGLX_nvidia.so.0` (`NEEDED libX11.so.6 libXext.so.6`, checked on driver 620.70.06)
+or all of Mesa for other GPUs. RCR's X11 is only inside Qt's `libx11_shared.so` (soname `libx11_shared.so`, exporting
+Xlib/xcb symbols globally), so a GUI container would also have two Xlib copies in one process.
+
+Steps:
+1. Which VTK modules PCL's non-GUI code includes: `grep -rhoE "#include <vtk[A-Za-z0-9_]+\.h>"` over pcl's io and
+   surface, each header mapped to its module directory → CommonCore, CommonDataModel, FiltersCore, FiltersGeneral,
+   FiltersModeling, IOGeometry, IOImage, IOLegacy, IOPLY, ImagingCore. Their closure reaches no Qt or glvnd:
+   `bazel cquery 'somepath(<those modules>, @@qtbase+//:gui + @@libglvnd+//:all)'` → empty.
+2. Two patches (generated with difflib from the pristine files, in a worktree so the main checkout stayed unchanged):
+   - `bazel/patches/pcl_io_surface_vtk_modules.patch`: `@pcl//:io` and `:surface` depend on those modules, not `@vtk`.
+   - `bazel/patches/rosdistro_vtk_core.patch` (`cc/BUILD.bazel`): new `vtk_core` shared library (those modules),
+     which `:pcl` links instead of `:vtk`; `:vtk` (rendering, Qt) links `:vtk_core`; `pcl_library` loses
+     visualization/people/outofcore, which move to `pcl_visualization_library` / `pcl_visualization_shared`.
+   - `single_version_override(module_name = "pcl", patches = [...])` (no version) + the rosdistro patch list.
+3. Check: every ELF in the image whose `ldd` mentions libGL/libGLX/libEGL/libOpenGL. Before: 3876 references across
+   Autoware packages. After: 557 files, all in `rosdistro` (the RCR's third-party bundle: Qt, VTK rendering, OpenCV
+   GUI; installed but not loaded by headless nodes) and RViz. No Autoware binary.
+4. Removed: the apt layer (`bazel/runtime_apt.MODULE.bazel`, `rules_distroless`, `//images:system_layer`), the dev
+   image's GL packages, and the demo's optional RViz (`rviz2` dependency and `rviz` launch argument).
+
+Results: `bazel test --target_pattern_file=bazel/autoware_packages.txt` → 205 pass. Image: no libGL/libX11 under
+`/usr/lib/x86_64-linux-gnu`; the demo: `OK: drove 10.1 m toward the goal (speed 3.1 m/s)`.
+
+Issues:
+1. `cc_shared_library rule 'pcl_visualization' conflicts with existing alias rule` → the RCR already has `pcl_<x>`
+   aliases per component → `pcl_visualization_shared` (its `_shared` convention).
+2. After the split, `cquery somepath(@autoware_map_loader//:all, @@qtbase+//:gui + @@libglvnd+//:all)` still found
+   a path, through `@rosidl_typesupport_fastrtps_c//:transitive_dynamic_deps` (a `collect_transitive_dynamic_deps`
+   helper) to `@@qtbase+//:glvnd_stubs`. Not a link dependency of the node: the installed binaries need no GL
+   (step 3). `somepath` over configured targets also follows non-link edges; check the artifact.
+3. The session crashed while a background cold build (A1) and the worktree's analysis ran at the same time: two
+   Bazel servers and their actions exhausted the 30 GB host. Heavy jobs run one at a time from now on; the
+   unfinished A1 output base is discarded.
+
+Lessons:
+- A dependency on an umbrella target (`@vtk`) silently pulls in everything behind it; depend on the modules a
+  component includes. Check by the artifact (`ldd`/`NEEDED` over the image), not only by query.
+- Never run two Bazel builds at once on a memory-limited machine, even in different output bases.

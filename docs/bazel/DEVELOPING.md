@@ -60,8 +60,9 @@ docker exec awdemo /usr/local/bin/autoware-entrypoint ros2 run autoware_bazel_de
   `-e CYCLONEDDS_URI='file:///etc/autoware/cyclonedds.xml,<CycloneDDS><Domain><Internal><SocketReceiveBufferSize min="default"/></Internal></Domain></CycloneDDS>'`.
 - `ENABLE_AGNOCAST=1` (the image default) needs the agnocast kernel module and `--device /dev/agnocast`.
 - `ros2 topic list/echo` inside the container: use `--no-daemon` (the daemon hangs there).
-- System libraries for the image (OpenGL loader etc.) are listed in `bazel/runtime_apt.MODULE.bazel`; build once
-  after editing and commit `MODULE.bazel.lock`.
+- The image is headless (no GL). Visualize from outside: `bazel run @rviz2//:rviz2` on the host, with the container
+  started with `--network host` on a native Docker engine (Docker Desktop's host network is its VM's), or RViz on
+  another machine with a network-facing DDS config.
 
 ## Where a package comes from
 Each Autoware package resolves to one of:
