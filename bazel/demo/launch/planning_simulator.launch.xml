@@ -8,7 +8,6 @@
   <arg name="map_path" default="/opt/autoware/maps/sample-map-planning" description="lanelet2 + pointcloud map directory"/>
   <arg name="vehicle_model" default="autoware_sample_vehicle" description="vehicle model name"/>
   <arg name="sensor_model" default="autoware_sample_sensor_kit" description="sensor model name"/>
-  <arg name="rviz" default="false" description="launch rviz2 (needs a display)"/>
 
   <group scoped="false">
     <include file="$(find-pkg-share autoware_global_parameter_loader)/launch/global_params.launch.py">
@@ -54,5 +53,4 @@
     <remap from="~/output/objects" to="/perception/object_recognition/objects"/>
   </node>
 
-  <node pkg="rviz2" exec="rviz2" name="rviz2" args="-d $(find-pkg-share autoware_core)/rviz/autoware_core.rviz" if="$(var rviz)"/>
 </launch>

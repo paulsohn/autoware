@@ -11,11 +11,8 @@ FROM ubuntu:24.04@sha256:fe81560990fae86dc4743202b2cb4d3df98d0bcf949173cecef15ce
 ARG BAZELISK_VERSION=v1.30.0
 ARG TARGETARCH
 
-# libegl1 libgl1 libopengl0: the OpenGL loader (glvnd) that RCR binaries linking PCL -> VTK -> Qt need, as in the runtime
-# image (bazel/runtime_apt.MODULE.bazel).
 RUN apt-get update \
   && apt-get install -y --no-install-recommends ca-certificates curl git iproute2 unzip zip \
-    libegl1 libgl1 libopengl0 \
   && rm -rf /var/lib/apt/lists/*
 
 RUN curl -fsSL -o /usr/local/bin/bazel \

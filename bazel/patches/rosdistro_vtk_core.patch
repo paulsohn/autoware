@@ -1,0 +1,134 @@
+Split VTK and PCL so that headless code needs neither Qt nor the system OpenGL loader: libvtk_core.so (the
+non-rendering modules PCL uses) under libpcl.so; libvtk.so (rendering, Qt) and libpcl_visualization_shared.so
+(visualization, people, outofcore) on top. Pairs with pcl_io_surface_vtk_modules.patch.
+--- a/cc/BUILD.bazel
++++ b/cc/BUILD.bazel
+@@ -200,19 +200,22 @@
+         "@pcl//:segmentation",
+         "@pcl//:surface",
+         "@pcl//:tracking",
+-    ] + select({
+-        # pcl::visualization (and people/outofcore, which build on it) need
+-        # VTK's OpenGL rendering stack, which the staged VTK only provides on
+-        # Linux. Leaving them out elsewhere keeps the rest of PCL -- and every
+-        # package depending on @rosdistro//cc:pcl, e.g. pcl_ros,
+-        # pcl_conversions -- buildable and testable on macOS.
+-        "@platforms//os:linux": [
+-            "@pcl//:outofcore",
+-            "@pcl//:people",
+-            "@pcl//:visualization",
+-        ],
+-        "//conditions:default": [],
+-    }),
++    ],
++)
++
++# pcl::visualization (and people/outofcore, which build on it) need VTK's
++# OpenGL rendering stack (Qt, the system OpenGL loader), which the staged VTK
++# only provides on Linux. They are a separate library so that libpcl.so, and
++# every headless node linking it, needs neither.
++cc_library(
++    name = "pcl_visualization_library",
++    target_compatible_with = ["@platforms//os:linux"],
++    deps = [
++        ":pcl_library",
++        "@pcl//:outofcore",
++        "@pcl//:people",
++        "@pcl//:visualization",
++    ],
+ )
+ 
+ cc_shared_library(
+@@ -227,7 +230,7 @@
+         ":lz4",
+         ":lz4_hc",
+         ":qhull_r_shared",
+-        ":vtk",
++        ":vtk_core",
+         ":zlib",
+     ],
+     exports_filter = [
+@@ -236,6 +239,17 @@
+         "@pcl//:__subpackages__",
+     ],
+     deps = [":pcl_library"],
++)
++
++cc_shared_library(
++    name = "pcl_visualization_shared",
++    dynamic_deps = [
++        ":pcl",
++        ":vtk",
++    ],
++    exports_filter = ["@pcl//:__subpackages__"],
++    target_compatible_with = ["@platforms//os:linux"],
++    deps = [":pcl_visualization_library"],
+ )
+ 
+ # boost
+@@ -3589,12 +3603,25 @@
+     actual = "@vtk//:vtk",
+ )
+ 
+-cc_shared_library(
+-    name = "vtk",
+-    additional_linker_inputs = select({
+-        "@platforms//os:linux": ["@libglvnd//:glvnd_stubs"],
+-        "//conditions:default": [],
+-    }),
++# The VTK modules PCL's io and surface use, and their closure: no OpenGL, no Qt.
++cc_library(
++    name = "vtk_core_library",
++    deps = [
++        "@vtk//:CommonCore",
++        "@vtk//:CommonDataModel",
++        "@vtk//:FiltersCore",
++        "@vtk//:FiltersGeneral",
++        "@vtk//:FiltersModeling",
++        "@vtk//:IOGeometry",
++        "@vtk//:IOImage",
++        "@vtk//:IOLegacy",
++        "@vtk//:IOPLY",
++        "@vtk//:ImagingCore",
++    ],
++)
++
++cc_shared_library(
++    name = "vtk_core",
+     dynamic_deps = [
+         ":libjpeg",
+         ":libpng",
+@@ -3602,6 +3629,33 @@
+         ":lz4",
+         ":lz4_hc",
+         ":pugixml",
++        ":zlib",
++    ] + select({
++        "@platforms//os:linux": [],
++        # Off Linux, share expat with :cairo (see :vtk).
++        "//conditions:default": [":libexpat"],
++    }),
++    exports_filter = [
++        "@libexpat//:__subpackages__",
++        "@vtk//:__subpackages__",
++    ],
++    deps = [":vtk_core_library"],
++)
++
++cc_shared_library(
++    name = "vtk",
++    additional_linker_inputs = select({
++        "@platforms//os:linux": ["@libglvnd//:glvnd_stubs"],
++        "//conditions:default": [],
++    }),
++    dynamic_deps = [
++        ":libjpeg",
++        ":libpng",
++        ":libtiff",
++        ":lz4",
++        ":lz4_hc",
++        ":pugixml",
++        ":vtk_core",
+         ":zlib",
+         "@qtbase//:core_shared",
+         "@qtbase//:gui_shared",

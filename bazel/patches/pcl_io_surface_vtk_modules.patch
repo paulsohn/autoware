@@ -1,0 +1,40 @@
+pcl's io and surface include only VTK's data-model, IO, imaging and filter modules: depend on those instead of
+the @vtk umbrella, whose rendering modules pull in Qt and OpenGL. Pairs with rosdistro_vtk_core.patch.
+--- a/BUILD.bazel
++++ b/BUILD.bazel
+@@ -445,7 +445,16 @@
+         "@boost.tokenizer",
+         "@boost.utility",
+         "@libpng",
+-        "@vtk",
++        "@vtk//:CommonCore",
++        "@vtk//:CommonDataModel",
++        "@vtk//:FiltersCore",
++        "@vtk//:FiltersGeneral",
++        "@vtk//:FiltersModeling",
++        "@vtk//:IOGeometry",
++        "@vtk//:IOImage",
++        "@vtk//:IOLegacy",
++        "@vtk//:IOPLY",
++        "@vtk//:ImagingCore",
+         "@zlib",
+     ],
+ )
+@@ -707,7 +716,16 @@
+         "@boost.dynamic_bitset",
+         "@eigen",
+         "@qhull//:libqhull_r",
+-        "@vtk",
++        "@vtk//:CommonCore",
++        "@vtk//:CommonDataModel",
++        "@vtk//:FiltersCore",
++        "@vtk//:FiltersGeneral",
++        "@vtk//:FiltersModeling",
++        "@vtk//:IOGeometry",
++        "@vtk//:IOImage",
++        "@vtk//:IOLegacy",
++        "@vtk//:IOPLY",
++        "@vtk//:ImagingCore",
+     ],
+ )
+ 

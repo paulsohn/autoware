@@ -28,7 +28,6 @@ ament_package(
         "@geometry_msgs//:ament_package",
         "@nav_msgs//:ament_package",
         "@rclpy//:ament_package",
-        "@rviz2//:ament_package",
         "@rosdistro//:ament_package",
     ],
 )
