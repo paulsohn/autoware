@@ -1516,11 +1516,102 @@ Issues:
    a path, through `@rosidl_typesupport_fastrtps_c//:transitive_dynamic_deps` (a `collect_transitive_dynamic_deps`
    helper) to `@@qtbase+//:glvnd_stubs`. Not a link dependency of the node: the installed binaries need no GL
    (step 3). `somepath` over configured targets also follows non-link edges; check the artifact.
-3. The session crashed while a background cold build (A1) and the worktree's analysis ran at the same time: two
-   Bazel servers and their actions exhausted the 30 GB host. Heavy jobs run one at a time from now on; the
-   unfinished A1 output base is discarded.
+3. The session crashed while a background cold build (A1) and the worktree's analysis ran at the same time. First
+   blamed on memory; wrong (see "Host crashes during cold builds" below). Heavy jobs run one at a time from now on;
+   the unfinished A1 output base is discarded.
 
 Lessons:
 - A dependency on an umbrella target (`@vtk`) silently pulls in everything behind it; depend on the modules a
   component includes. Check by the artifact (`ldd`/`NEEDED` over the image), not only by query.
-- Never run two Bazel builds at once on a memory-limited machine, even in different output bases.
+- Never run two Bazel builds at once on this machine, even in different output bases.
+
+## Host crashes during cold builds (A1)
+
+Symptom: the machine powered off twice during cold builds at `--jobs=12` (boot ends 12:16:10 and 13:58:55).
+`journalctl --list-boots`; `journalctl -k -b -1`: the log just stops in the middle of `linux-sandbox` actions. No
+OOM kill (`journalctl -k | grep -i oom`), no panic, no shutdown sequence. After reboot, nearly idle: k10temp Tctl
+96 °C, Tccd1 94 °C, fans 3700/4000 rpm, platform profile `balanced`, on AC.
+Cause: most likely a thermal (or power) emergency power-off under sustained all-core load; not memory. Unproven.
+A1 run 1 had completed (image `sha256:311fdde74f0b0bb45b8dd0461cf234e3f1dd896fb9101eb23dd5edd5c68c5334`, built in two
+invocations in one fresh output base, no disk/remote cache); run 2 was interrupted. Its output base can be resumed:
+it started empty, so finishing it is still a cold build.
+
+Lesson: on a laptop, a "cold build" is a thermal load test. Check temperatures before heavy work and run long cold
+builds with fewer jobs.
+
+## A1 result: host builds are deterministic
+
+Run 2 resumed with `bazel/tools/repro/cold_build.sh ~/.cache/bazel-cold/a1 ~/.cache/bazel-cold/results/a1-run2
+--jobs=6 --local_resources=cpu=6` (no crash at 6 jobs; 3466 s for the remaining 30,629 sandboxed actions).
+`bazel/tools/repro/compare_digests.sh ~/.cache/bazel-cold/results/a1-run1 ~/.cache/bazel-cold/results/a1-run2`:
+
+```
+image: sha256:311fdde74f0b0bb45b8dd0461cf234e3f1dd896fb9101eb23dd5edd5c68c5334 vs (same)
+differing outputs: 0 of 116465
+only in one run: 0
+```
+
+Commit bf5d3e2b. Every output file of all Autoware packages and the runtime image is identical across two cold builds
+at the same output base path. (Both runs were split over two invocations in their own fresh output base; no disk
+or remote cache.)
+
+## A2: host vs `dev` container
+
+Command (one job at a time; output base on a Docker volume, see issue 3):
+
+```sh
+docker volume create a2-cache
+docker run --rm --name a2-cold -v a2-cache:/home/ubuntu/.cache -v "$PWD":/workspace \
+  -v ~/.cache/bazel-repo:/home/ubuntu/.cache/bazel-repo -v ~/.cache/bazelisk:/home/ubuntu/.cache/bazelisk \
+  -v ~/.cache/bazel-cold/results:/home/ubuntu/results autoware-bazel-dev \
+  bazel/tools/repro/cold_build.sh /home/ubuntu/.cache/a2-ob /home/ubuntu/results/a2 --jobs=4 --local_resources=cpu=4 --keep_going
+```
+
+Host reference: the same script on the host with `--disk_cache=$HOME/.cache/bazel-disk` (warm is enough: A1 showed
+host builds are deterministic). Cold container build: 8684 s, 39,839 processwrapper-sandbox actions.
+
+Issues (symptom → cause → fix):
+1. `/usr/bin/env: 'python3': No such file or directory` (exit 127) in rules_python's wheel RECORD rewriter → every
+   `py_binary` used as a build tool starts through the host's `python3` (rules_python's default
+   `bootstrap_impl=system_python`) → `.bazelrc`: `--@rules_python//python/config_settings:bootstrap_impl=script`.
+   Host image digest changes (launchers), behaviour does not.
+2. `python3: command not found` in `@proxsuite//:jrl_headers` → rosdistro's `ros_jrl_headers` and
+   `ros_version_header` genrules run `python3 -c` from PATH → `bazel/patches/rosdistro_hermetic_python_genrules.patch`:
+   `tools = ["@rules_python//python/bin:python"]`, `$(execpath ...)` (exec configuration, so also right for aarch64
+   cross builds). Output headers byte-identical to before. With `--keep_going` this was the only host-tool failure in
+   the whole build.
+3. `Too many open files` (EMFILE), first in the server log, then at client start → not the container's limit
+   (1048576) nor the VM's (773286): Docker Desktop shares host directories through `virtiofsd` (`fakeowner` mounts),
+   which keeps one fd per looked-up file. An output base on a host mount (~100k outputs + sandboxes) exhausted it:
+   `ls /proc/<virtiofsd pid>/fd | wc -l` = 1048571, and it stayed there after the containers exited → restart Docker
+   Desktop (`systemctl --user restart docker-desktop`), output base on a Docker volume; only sources, repository
+   cache, bazelisk and results on host mounts (peak 136k fds). Not a hermeticity issue; native Docker has no
+   virtiofsd.
+4. `docker run` stays in `Created` for ~2 min on Docker Desktop before starting; watchers must wait for `running`.
+
+Result after 1 + 2 (container build resumed in the same volume, so still built entirely in the container without
+caches): images differ, `sha256:9ef5ac31…` (host) vs `sha256:78967a2e…` (container).
+`compare_digests.sh`: 325 of 97,366 files differ; 19,103 exist in one run only (19,099 `.d` files the host's output
+base lacks, plus the two image blobs). The differing files:
+- 302 `*.runfiles_manifest` (absolute paths; not shipped).
+- CUDA: 12 `.pic.o` of `autoware_cuda_utils` test kernels and `autoware_tensorrt_plugins` `cuda_ops`, hence
+  `libcuda_ops.so` (in the image) and two test binaries. Same size; the anonymous-namespace names nvcc generates
+  differ: `_GLOBAL__N__675670bf_9_unique_cu_…` vs `_GLOBAL__N__4a905558_…`. rules_cuda already passes
+  `--frandom-seed=<output file>` (its `nvcc_fixed_random_seed` feature, nvcc ≥ 12.9). Experiments, rebuilding only
+  `unique.pic.o`:
+  - host, processwrapper-sandbox (no PID namespace) → `675670bf`: not the PID (cudafe++ prints `pid` in its
+    `make_module_id` debug string, but it does not change the id);
+  - container, `--hostname paulsohn-tuf` → `4a905558`: not the hostname;
+  - container with the workspace mounted at the host's path `/home/paulsohn/workspace/autoware` (and a different
+    output base) → `675670bf`: **the absolute source path**. nvcc resolves the source with `realpath` and passes it
+    as `--orig_src_path_name` to cudafe++, which hashes it into the module id; Bazel's sandboxes symlink inputs, so
+    a `local_path_override` source resolves into the checkout.
+- `qtbase` `_qsh…/QtGui/QRgbaFloat16`, `QRgbaFloat32`: `#include "qcolortransform.h"` (host) vs `"qrgbafloat.h"`
+  (container). Qt's `syncqt` (run by the RCR's `qt+/qt_tools.bzl`) picks the header for a class declared in two
+  headers by directory order, which differs between filesystems. The objects compiled with it were identical.
+
+Lessons:
+- A sandbox can hide nondeterminism: linux-sandbox's fresh PID namespace and the fixed checkout path made two host
+  builds identical; a second environment is what finds such inputs.
+- "Hermetic toolchain" still leaves build *tools* that call host interpreters (`/usr/bin/env python3`, `python3 -c`
+  in genrules). A builder image without them is the test.

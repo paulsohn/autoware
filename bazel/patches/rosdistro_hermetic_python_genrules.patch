@@ -1,0 +1,25 @@
+ros_version_header and ros_jrl_headers ran `python3` from the host's PATH. Use the hermetic interpreter as an
+exec tool instead (a host without python3, e.g. the dev image, failed with exit 127).
+
+--- a/cc/macros.bzl
++++ b/cc/macros.bzl
+@@ -123,7 +123,8 @@
+         name = name,
+         srcs = [package_xml],
+         outs = [out],
+-        cmd = """python3 -c '
++        tools = ["@rules_python//python/bin:python"],
++        cmd = """$(execpath @rules_python//python/bin:python) -c '
+ import sys, xml.etree.ElementTree as ET
+ root = ET.parse(sys.argv[1]).getroot()
+ pkg = root.find("name").text.strip().upper()
+@@ -187,7 +188,8 @@
+         name = name,
+         srcs = [package_xml],
+         outs = outs,
+-        cmd = """python3 -c '
++        tools = ["@rules_python//python/bin:python"],
++        cmd = """$(execpath @rules_python//python/bin:python) -c '
+ import os, sys, xml.etree.ElementTree as ET
+ root = ET.parse(sys.argv[1]).getroot()
+ pkg = root.find("name").text.strip()

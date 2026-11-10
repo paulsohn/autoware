@@ -24,6 +24,7 @@ single_version_override(
         "//bazel/patches:rosdistro_python_extensions.patch",
         "//bazel/patches:rosdistro_entry_points.patch",
         "//bazel/patches:rosdistro_vtk_core.patch",
+        "//bazel/patches:rosdistro_hermetic_python_genrules.patch",
     ],
     version = "lyrical.2026-10-05.rcr.0",
 )

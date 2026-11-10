@@ -86,6 +86,9 @@ common --action_env=LC_CTYPE=C.UTF-8
 common --host_action_env=LC_CTYPE=C.UTF-8
 common --action_env=PATH=/bin:/usr/bin:/usr/local/bin
 common --host_action_env=PATH=/bin:/usr/bin:/usr/local/bin
+# py_binary launchers start the hermetic interpreter from a shell script. The default (system_python)
+# starts through `/usr/bin/env python3`, so every Python build tool needed a host python3 (A2 found it).
+common --@rules_python//python/config_settings:bootstrap_impl=script
 # Link CycloneDDS directly instead of the dynamic RMW loader. The loader's ament_index
 # pulls @rosdistro//:ament_package, which bundles every third-party library of the distro
 # (Ogre, OpenCV, Qt, all pip packages): 89k vs 19k targets for a talker.
