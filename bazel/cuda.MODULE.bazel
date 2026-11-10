@@ -37,6 +37,14 @@ cuda.redist_json(
 
 # CUDA headers on libc++ 21 (unsupported by NVIDIA on x86): see the patch header. Applied on x86_64 and SBSA.
 cuda.component_patch(
+    component = "nvcc",
+    patches = [
+        "//bazel/patches:cuda_nvcc_cudafe_wrapper.patch",
+        "//bazel/patches:cuda_nvcc_profile_wrap.patch",
+    ],
+)
+
+cuda.component_patch(
     component = "crt",
     patches = [
         "//bazel/patches:cuda_crt_libcxx_math_functions_h.patch",

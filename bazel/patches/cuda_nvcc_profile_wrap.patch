@@ -1,0 +1,14 @@
+Run the cudafe++ wrapper (cuda_nvcc_cudafe_wrapper.patch) instead of cudafe++: nvcc looks its tools up in this PATH.
+Applies to the nvcc.profile that rules_cuda generates (component patches run after that).
+
+--- a/nvcc/bin/nvcc.profile
++++ b/nvcc/bin/nvcc.profile
+@@ -5,7 +5,7 @@
+ NVVMIR_LIBRARY_DIR ?= NVVMIR_LIBRARY_DIR/in/nvcc.profile/replaced/by/rules_cuda/but/not/set/at/runtime
+ 
+ LD_LIBRARY_PATH += $(TOP)/lib:
+-PATH            += $(CICC_PATH):$(_HERE_):
++PATH            += $(_HERE_)/wrap:$(CICC_PATH):$(_HERE_):
+ 
+ INCLUDES        +=  "-I$(TOP)/$(_TARGET_DIR_)/include" $(_SPACE_)
+ SYSTEM_INCLUDES +=  "-isystem" "$(TOP)/$(_TARGET_DIR_)/include/cccl" $(_SPACE_)

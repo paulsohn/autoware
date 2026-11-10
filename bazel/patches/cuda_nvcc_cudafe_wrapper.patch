@@ -1,0 +1,22 @@
+A cudafe++ wrapper that makes CUDA objects independent of the checkout path (see the comment in the script).
+
+diff --git a/nvcc/bin/wrap/cudafe++ b/nvcc/bin/wrap/cudafe++
+new file mode 100755
+--- /dev/null
++++ b/nvcc/bin/wrap/cudafe++
+@@ -0,0 +1,15 @@
++#!/bin/bash
++# nvcc passes cudafe++ the realpath of the source as --orig_src_path_name, and cudafe++ hashes it into the module id
++# (the names of anonymous namespaces): CUDA objects then depend on where the checkout lives. Pass the path nvcc was
++# given instead (--orig_src_file_name, relative to the execroot). See docs/bazel/JOURNAL.md, "A2".
++args=("$@")
++rel=
++for ((i = 0; i + 1 < ${#args[@]}; i++)); do
++  [ "${args[i]}" = --orig_src_file_name ] && rel=${args[i + 1]}
++done
++if [ -n "$rel" ]; then
++  for ((i = 0; i + 1 < ${#args[@]}; i++)); do
++    [ "${args[i]}" = --orig_src_path_name ] && args[i + 1]=$rel
++  done
++fi
++exec "$(dirname "$0")/../cudafe++" "${args[@]}"

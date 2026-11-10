@@ -1,0 +1,59 @@
+Make nvcc's intermediate file names, which end up in objects, independent of the process id: --keep with a
+declared per-action keep directory, emptied after the compile (docs/bazel/JOURNAL.md, "A2").
+
+--- a/cuda/private/actions/compile.bzl
++++ b/cuda/private/actions/compile.bzl
+@@ -72,6 +72,13 @@
+         obj_file = actions.declare_file("{}/{}/{}".format(_prefix, ctx.attr.name, filename))
+         ret.append(obj_file)
+ 
++        # nvcc names its intermediate files tmpxft_<pid>_..., and those names end up in the object (FILE symbol, debug
++        # strings), so objects depended on the process id. With --keep they are named after the source; the directory is
++        # a declared output, so Bazel creates it for each action wherever the action runs.
++        keep_dir = None
++        if cuda_toolchain.toolchain_identifier == "nvcc":
++            keep_dir = actions.declare_directory(obj_file.basename + ".nvcc_keep", sibling = obj_file)
++
+         var = cuda_helper.create_compile_variables(
+             cuda_toolchain,
+             cuda_feature_config,
+@@ -101,14 +108,30 @@
+ 
+         args = actions.args()
+         args.add_all(cmd)
++        if keep_dir:
++            args.add("--keep")
++            args.add(keep_dir.path, format = "--keep-dir=%s")
+ 
+-        actions.run(
+-            executable = cuda_compiler,
+-            arguments = [args],
+-            outputs = [obj_file],
+-            inputs = depset([src], transitive = [common.headers, cc_toolchain.all_files, cuda_toolchain.all_files]),
+-            env = env,
+-            mnemonic = "CudaCompile",
+-            progress_message = "Compiling %s" % src.path,
+-        )
++        inputs = depset([src], transitive = [common.headers, cc_toolchain.all_files, cuda_toolchain.all_files])
++        if keep_dir:
++            # Empty the keep directory after a successful compile: its 100+ MB of intermediates are not wanted as outputs.
++            actions.run_shell(
++                command = 'keep="$1"; shift; "$@" && find "$keep" -mindepth 1 -delete',
++                arguments = [keep_dir.path, cuda_compiler, args],
++                outputs = [obj_file, keep_dir],
++                inputs = inputs,
++                env = env,
++                mnemonic = "CudaCompile",
++                progress_message = "Compiling %s" % src.path,
++            )
++        else:
++            actions.run(
++                executable = cuda_compiler,
++                arguments = [args],
++                outputs = [obj_file],
++                inputs = inputs,
++                env = env,
++                mnemonic = "CudaCompile",
++                progress_message = "Compiling %s" % src.path,
++            )
+     return ret

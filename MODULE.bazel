@@ -142,6 +142,7 @@ single_version_override(
         "//bazel/patches:rules_cuda_component_patches_repositories.patch",
         "//bazel/patches:rules_cuda_component_patches_extension.patch",
         "//bazel/patches:rules_cuda_culibos_linkable.patch",
+        "//bazel/patches:rules_cuda_nvcc_keep_dir.patch",
     ],
     version = "0.3.0.rcr.0",
 )

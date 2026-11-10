@@ -1615,3 +1615,66 @@ Lessons:
   builds identical; a second environment is what finds such inputs.
 - "Hermetic toolchain" still leaves build *tools* that call host interpreters (`/usr/bin/env python3`, `python3 -c`
   in genrules). A builder image without them is the test.
+
+## Upstreaming review (RCR, AWF)
+
+What can go upstream, written up in [UPSTREAM_RCR.md](UPSTREAM_RCR.md) and [UPSTREAM_AWF.md](UPSTREAM_AWF.md). Checks
+behind them (2026-11-10):
+- Newer RCR releases: only `rosdistro` has them (`lyrical.2026-10-05.rcr.1`–`rcr.3`); `ros`, `pcl`, `vtk`, `rules_cuda`
+  and the ros2cli extensions are unchanged. Overlay diff rcr.0 → rcr.3 (`gh api repos/openrobotics/ros-central-registry/
+  contents/modules/rosdistro/<ver>/...`): `cc/BUILD.bazel` (curl alias), `cc/rules.bzl` (`dynamic_deps` off under
+  `--dynamic_mode=off`), MODULE bumps (openssl 4.0.1, curl 8.22.0, gz, libxcb, libtorch). The files our patches touch
+  (`ament_package.bzl`, `install_gen.py`, `macros.bzl`) are unchanged; `rosdistro_vtk_core.patch` applies to rcr.3 with
+  offset 2. No RCR issue/PR covers our patches.
+- rules_cuda: `sm_110` is in v0.4.0-beta1 (not v0.3.0); no component patching, no culibos tag. Issue #372 found the
+  nvcc anonymous-namespace hash and closed it with `--frandom-seed`; A2 shows the realpath case it does not cover.
+- AWF main still has the `__GNUC_MAJOR__` check (autoware_cuda), the commented `$(var vehicle_model_pkg)` in the simulator
+  param file, the missing autoware_utils_debug depends and `<sstream>` in tensorrt_common; agnocast has no rclcpp 32 port.
+
+Lesson: before filing upstream, diff the overlay of the latest registry release against the one in use; for the RCR a
+newer `rosdistro` can be taken with the root `single_version_override` alone.
+
+## A2 continued: path- and PID-independent CUDA objects; P2 done
+
+1. Checkout path in the module id → a cudafe++ wrapper that passes `--orig_src_file_name` (execroot-relative, what
+   nvcc was given) as `--orig_src_path_name`:
+   - `bazel/patches/cuda_nvcc_cudafe_wrapper.patch` adds `nvcc/bin/wrap/cudafe++`;
+   - `bazel/patches/cuda_nvcc_profile_wrap.patch` puts `$(_HERE_)/wrap` first in nvcc.profile's `PATH`. rules_cuda
+     generates nvcc.profile before component patches run, so the patch is against the generated file.
+   - Seen with a debug wrapper that printed cudafe++'s argv: `--orig_src_file_name
+     external/autoware_tensorrt_plugins+/src/bev_ops/bev_pool_cuda.cu`, `--orig_src_path_name
+     /home/paulsohn/workspace/autoware/src/.../bev_pool_cuda.cu`.
+   - Issue: renaming the `cudafe++` binary with a git-style rename patch broke it (`Exec format error`): Bazel's patch
+     tool does not move binary files intact. Keep binaries in place; add text files only.
+   Result: `unique.pic.o` gets `_GLOBAL__N__55c5f568…` on the host and in the container (/workspace).
+2. Then 8 bytes still differed: nvcc's temporary names `tmpxft_<pid>_…` in the `FILE` symbol and `.debug_str` /
+   `.debug_line_str`. The host had `tmpxft_00000002_…` because linux-sandbox gives every action a fresh PID namespace
+   (so A1 was deterministic by accident); processwrapper-sandbox in Docker does not.
+   - Rejected: running the container with linux-sandbox (`--security-opt seccomp=unconfined ...`). It makes the
+     callers identical instead of the build independent of the caller, and weakens container isolation.
+   - nvcc `--keep --keep-dir=<dir>` names intermediates after the source (`unique.compute_120.cudafe1.cpp`), so no PID
+     reaches the object. nvcc does not create the directory (`unable to open output file 'x/argsort.cpp4.ii'`), and
+     the intermediates are 120–135 MB per object.
+   - `bazel/patches/rules_cuda_nvcc_keep_dir.patch` (rules_cuda `compile.bzl`): for the nvcc toolchain, declare
+     `<object>.nvcc_keep` as an output directory (Bazel creates it, per action, in any execution mode; the `.o` and
+     `.pic.o` compiles of one source would otherwise share names), pass `--keep --keep-dir=`, and run through
+     `run_shell` that empties it after a successful compile (cached as an empty directory).
+   Result: `unique.pic.o` sha256 `d430501938b1bd7f…` on the host (linux-sandbox) and in the container
+   (processwrapper-sandbox). CUDA tests 7/7 pass.
+3. Full comparison (host warm vs container in the A2 volume, commit after this entry):
+
+   ```
+   image: sha256:4ff6b5937726b12a7cdab36b4675bc8ba2286b87b263667f0be83dcfc44b023c vs (same)
+   differing outputs: 304 of 97366     # 302 *.runfiles_manifest (absolute paths, by design), 2 Qt syncqt headers
+   only in one run: 19099              # .d files
+   ```
+
+   The demo passes on this image (`OK: drove 10.0 m toward the goal (speed 3.1 m/s)`).
+
+Open: Qt's `syncqt` writes `QRgbaFloat16`/`QRgbaFloat32` forwarding headers that depend on directory order (no effect
+on objects or the image); fix in the RCR's Qt rule.
+
+Lessons:
+- Make the tool's output a function of its inputs and the output path; do not make every caller identical. A sandbox
+  feature (PID namespace) that happens to hide a dependency is not a guarantee.
+- nvcc leaks the absolute source path (module id) and the PID (temp names) into objects even with `-frandom-seed`.

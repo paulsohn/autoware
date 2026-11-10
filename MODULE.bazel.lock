@@ -6659,7 +6659,7 @@
     "@@rules_cuda+//cuda:extensions.bzl%toolchain": {
       "general": {
         "bzlTransitiveDigest": "CacIqMUU2g01KN0Y+W5whLTr9OZzya21lbu8ddhVNd4=",
-        "usagesDigest": "3nmxPXJ9u6pUC2KfFJ/8gH6a+Pzqm/bNE+w3jHy8JRQ=",
+        "usagesDigest": "VfKY3zyPd7E2Yusk+oo85nGkQwMLWDofZ+TxBVs441g=",
         "recordedInputs": [
           "REPO_MAPPING:bazel_features+,bazel_features_globals bazel_features++version_extension+bazel_features_globals",
           "REPO_MAPPING:bazel_features+,bazel_features_version bazel_features++version_extension+bazel_features_version",
@@ -6794,7 +6794,12 @@
               ],
               "sha256": "b04e5ca5b41f8b5629ce5f16930920e6af437f32c9777fcb67e0361f732b6f43",
               "strip_prefix": "cuda_nvcc-linux-x86_64-13.2.86-archive",
-              "version": "13.2.86"
+              "version": "13.2.86",
+              "patches": [
+                "@@//bazel/patches:cuda_nvcc_cudafe_wrapper.patch",
+                "@@//bazel/patches:cuda_nvcc_profile_wrap.patch"
+              ],
+              "patch_strip": 1
             }
           },
           "cuda_nvjpeg_linux_x86_64_v13.1.0.59": {
@@ -6968,7 +6973,12 @@
               ],
               "sha256": "0ae0716074fb8ca9a2eaebb0acd1425d8a41904ace1320793bbad270c3ce043f",
               "strip_prefix": "cuda_nvcc-linux-sbsa-13.2.86-archive",
-              "version": "13.2.86"
+              "version": "13.2.86",
+              "patches": [
+                "@@//bazel/patches:cuda_nvcc_cudafe_wrapper.patch",
+                "@@//bazel/patches:cuda_nvcc_profile_wrap.patch"
+              ],
+              "patch_strip": 1
             }
           },
           "cuda_nvjpeg_linux_sbsa_v13.1.0.59": {
@@ -7129,7 +7139,12 @@
               ],
               "sha256": "3e9b024c9a3199689721b4a02bf7337aaea7bedc5ddd42a08ed34d9c81fe1e3e",
               "strip_prefix": "cuda_nvcc-windows-x86_64-13.2.86-archive",
-              "version": "13.2.86"
+              "version": "13.2.86",
+              "patches": [
+                "@@//bazel/patches:cuda_nvcc_cudafe_wrapper.patch",
+                "@@//bazel/patches:cuda_nvcc_profile_wrap.patch"
+              ],
+              "patch_strip": 1
             }
           },
           "cuda_nvjpeg_windows_x86_64_v13.1.0.59": {
