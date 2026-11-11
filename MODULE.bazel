@@ -26,7 +26,7 @@ single_version_override(
         "//bazel/patches:rosdistro_vtk_core.patch",
         "//bazel/patches:rosdistro_hermetic_python_genrules.patch",
     ],
-    version = "lyrical.2026-10-05.rcr.0",
+    version = "lyrical.2026-10-05.rcr.3",
 )
 
 # Headless PCL: io/surface depend on VTK's non-rendering modules only (with rosdistro_vtk_core.patch), so nodes that link

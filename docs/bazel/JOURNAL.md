@@ -1678,3 +1678,20 @@ Lessons:
 - Make the tool's output a function of its inputs and the output path; do not make every caller identical. A sandbox
   feature (PID namespace) that happens to hide a dependency is not a guarantee.
 - nvcc leaks the absolute source path (module id) and the PID (temp names) into objects even with `-frandom-seed`.
+
+## rosdistro rcr.0 → rcr.3
+
+Step 1 of UPSTREAM_RCR.md's order of work. Only `rosdistro` has newer releases (rcr.1–rcr.3); `ros`, `pcl`,
+`rules_cuda` and the ros2cli extensions we patch are at their latest RCR versions.
+
+1. Obsolete patches? Download the rcr.3 overlay files our rosdistro patches touch
+   (`https://bazel.ros.org/modules/rosdistro/lyrical.2026-10-05.rcr.3/overlay/<path>`) and
+   `patch -p1 --dry-run` each: all four apply, and the problems are still there (`cc/macros.bzl` still runs
+   `python3 -c`, no `vtk_core`). None removed.
+2. `single_version_override(module_name = "rosdistro", version = "lyrical.2026-10-05.rcr.3", ...)`, re-lock.
+3. `bazel test --jobs=6 --keep_going` over all packages + `//images:runtime`: 204 of 205 pass (654 s; openssl 4 and
+   curl mostly from the RCR remote cache, 1844 hits). The failure, `@autoware_default_adapi//:test_main.test.py`,
+   timed out after 15.6 s while its Python process was still importing `autoware_adapi_version_msgs`, under the
+   load of the parallel suite; alone, `--runs_per_test=3` passes all three (~6 s). A timing flake, not rcr.3.
+4. Demo on the new image (`sha256:f699d0cb27db9955cc5367752c108b6a744df38708c04790086fc35c5d27901a`): passes.
+5. A2 again: the container (A2 volume, no shared caches, 2205 actions, 955 s) builds the same image digest.
