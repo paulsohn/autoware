@@ -1,0 +1,14 @@
+load("@rosidl_default_generators//:defs.bzl", "default_generators")
+
+package(default_visibility = ["//visibility:public"])
+
+default_generators(
+    package_xml = "package.xml",
+    dependencies = ["@builtin_interfaces"],
+    deps = [
+        "//msg:VirtualGateAreaCommand",
+        "//msg:VirtualGateAreaStatus",
+        "//msg:VirtualGateCommand",
+        "//msg:VirtualGateStatus",
+    ],
+)

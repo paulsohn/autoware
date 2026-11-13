@@ -80,3 +80,20 @@ cc_binary(
     dynamic_deps = [":autoware_localization_runtime_dynamic_deps"],
     deps = AUTOWARE_LOCALIZATION_RUNTIME.values(),
 )
+
+AUTOWARE_INTERFACE_LAYER = {
+    "@autoware_control_msgs//:cc_shared": "@autoware_control_msgs//:cc",
+    "@autoware_v2x_msgs//:cc_shared": "@autoware_v2x_msgs//:cc",
+}
+
+collect_transitive_dynamic_deps(
+    name = "autoware_interface_layer_dynamic_deps",
+    dynamic_deps = AUTOWARE_INTERFACE_LAYER.keys(),
+)
+
+cc_test(
+    name = "autoware_interface_layer_test",
+    srcs = ["autoware_interface_layer_test.cc"],
+    dynamic_deps = [":autoware_interface_layer_dynamic_deps"],
+    deps = AUTOWARE_INTERFACE_LAYER.values(),
+)

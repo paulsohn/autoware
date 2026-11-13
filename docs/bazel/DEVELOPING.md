@@ -149,6 +149,21 @@ The generated-message behavior pair is
 the listener exits after validating five `KinematicState` payloads. Add
 `--config=fastdds` to both commands for the compatibility gate.
 
+Build the first Phase 2 interface layer and run its consumer:
+
+```bash
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel build @autoware_control_msgs//...
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel build @autoware_v2x_msgs//...
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test //bazel/smoke:autoware_interface_layer_test
+```
+
+Add `--config=fastdds` to the build and test commands at the bounded-group
+compatibility gate. The consumer verifies same-package nested message targets
+and a bounded sequence generated from `builtin_interfaces/Time`.
+
 ## Task workflow
 
 1. State the target and its observable success condition in JOURNAL.md.

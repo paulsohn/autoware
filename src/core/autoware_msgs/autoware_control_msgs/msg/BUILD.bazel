@@ -1,0 +1,34 @@
+load("@rosidl_default_generators//:defs.bzl", "ros_message")
+
+package(default_visibility = ["//visibility:public"])
+
+ros_message(
+    name = "Control",
+    src = "Control.msg",
+    deps = [
+        ":Lateral",
+        ":Longitudinal",
+        "@builtin_interfaces//msg:Time",
+    ],
+)
+
+ros_message(
+    name = "ControlHorizon",
+    src = "ControlHorizon.msg",
+    deps = [
+        ":Control",
+        "@builtin_interfaces//msg:Time",
+    ],
+)
+
+ros_message(
+    name = "Lateral",
+    src = "Lateral.msg",
+    deps = ["@builtin_interfaces//msg:Time"],
+)
+
+ros_message(
+    name = "Longitudinal",
+    src = "Longitudinal.msg",
+    deps = ["@builtin_interfaces//msg:Time"],
+)

@@ -464,6 +464,7 @@
     "https://bazel.ros.org/modules/buildifier_prebuilt/8.2.1.1/MODULE.bazel": "not found",
     "https://bazel.ros.org/modules/buildifier_prebuilt/8.2.1/MODULE.bazel": "not found",
     "https://bazel.ros.org/modules/buildozer/8.5.1/MODULE.bazel": "not found",
+    "https://bazel.ros.org/modules/builtin_interfaces/0.0.0/MODULE.bazel": "e046139cf169e5f6575adfc3f5c233414b64a42925bc3fa022371334260ceb1c",
     "https://bazel.ros.org/modules/builtin_interfaces/2.4.5-1.rcr.2/MODULE.bazel": "188bccb96e39c2b32a0e8345934f1b12b59b3a1651066f1307540a07761b53e2",
     "https://bazel.ros.org/modules/builtin_interfaces/2.4.5-1.rcr.2/source.json": "35c20ea099b0196757060eaded28b40ac6dc6e0b4db282fff9f222e4ccfe7c51",
     "https://bazel.ros.org/modules/bullet/3.26.0-rc0.bcr.1/MODULE.bazel": "not found",

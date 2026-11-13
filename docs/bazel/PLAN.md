@@ -50,11 +50,12 @@ For every slice:
   root `local_path_override`. The root pins the package's published RCR version
   so removing only the override selects the registry source without changing
   consumer BUILD files.
-- An interface package lists its direct package modules in its `MODULE.bazel`,
-  declares referenced interface targets on each `ros_message` or `ros_service`,
-  and passes the same package modules to `default_generators.dependencies`.
-  The `autoware_localization_msgs` service validates this convention across an
-  Autoware package boundary.
+- An interface package retains its manifest-level package dependencies in its
+  `MODULE.bazel`. Each `ros_message` or `ros_service` declares only referenced
+  interface targets, and `default_generators.dependencies` contains only
+  packages referenced by generated types. The localization service validates
+  this convention across an Autoware package boundary; the v2x package
+  validates an unused manifest dependency.
 - Source snapshots under `src/` remain ordinary tracked files.
 - Bazel work must not depend on a sourced host ROS installation.
 - Developer-specific resource limits live in ignored `user.bazelrc`.
@@ -176,7 +177,7 @@ Answers from Phase 1:
   `local_path_override`, and its own package-local `MODULE.bazel`. No central
   target list was needed.
 
-## Phase 2: complete the Autoware interface package set (next)
+## Phase 2: complete the Autoware interface package set (in progress)
 
 Purpose: apply the demonstrated package convention to the remaining Autoware
 interface packages in dependency order.
@@ -186,6 +187,23 @@ the two modules already integrated. Add packages in bounded groups, build every
 generated target for each group, and add consumer tests for new dependency
 shapes. Do not add a generator until repeated package work demonstrates what it
 must automate.
+
+Completed initial slice:
+
+- added `autoware_control_msgs` and `autoware_v2x_msgs`, each with four message
+  definitions and no dependency on another unported Autoware package;
+- built all 15 generated targets exposed by each module and passed a root C++
+  consumer under the Cyclone DDS and Fast DDS configurations;
+- validated same-package message dependencies and bounded sequences;
+- retained the v2x manifest's `geometry_msgs` module dependency without adding
+  it to generator inputs because no v2x interface references it.
+
+The read-only development-image check for this slice is pending because no
+Docker daemon socket was available during validation.
+
+Next slice: add `autoware_system_msgs`. It is the smallest remaining interface
+package and its only Autoware dependency is the integrated
+`autoware_common_msgs` module.
 
 Exit criteria:
 

@@ -404,3 +404,100 @@ and a generated Autoware message passes Cyclone DDS and Fast DDS behavior.
 Next: begin Phase 2 with the smallest dependency layer among the remaining
 Autoware interface packages. Port a bounded group manually before deciding
 whether repeated declarations justify a generator.
+
+## 2026-11-14: Start the interface package set
+
+Goal: begin Phase 2 with a bounded dependency layer and validate two additional
+message shapes without introducing another unported Autoware dependency.
+
+The remaining package inventory identified `autoware_control_msgs` and
+`autoware_v2x_msgs` as the smallest independent pair. Each contains four
+messages. Control depends only on `builtin_interfaces`; v2x declares
+`builtin_interfaces` and `geometry_msgs`, although its current message files
+reference only `builtin_interfaces`. The slice will retain manifest-level
+module dependencies while limiting individual message rules and
+`default_generators.dependencies` to interfaces actually referenced by the
+generated types.
+
+Success conditions:
+
+- both complete generated module surfaces build with Cyclone DDS selected;
+- one root C++ consumer verifies nested control messages and bounded v2x time
+  sequences;
+- the consumer and complete module surfaces pass the Fast DDS compatibility
+  gate;
+- the read-only development image builds and runs the consumer.
+
+Changes:
+
+- registered both packages in the root module at their published
+  `1.11.0-3.rcr.2` versions and selected their source snapshots with local
+  overrides;
+- added package-local modules, package generator targets, and eight individual
+  `ros_message` targets;
+- added one root C++ consumer for nested `ControlHorizon` values and a
+  `VirtualGateCommand` whose area contains a bounded arrival-time sequence.
+
+The v2x package retains its manifest-level `geometry_msgs` dependency in
+`MODULE.bazel`. Its message rules and `default_generators.dependencies` omit
+`geometry_msgs` because no current v2x message references one of its types.
+
+Primary validation used the clean caller environment:
+
+```bash
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test //bazel/smoke:autoware_interface_layer_test
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel build @autoware_control_msgs//...
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel build @autoware_v2x_msgs//...
+```
+
+The consumer passed. Its graph loaded 325 packages and configured 69,225
+targets with 346 aspect applications. Each module exposed and built 15 targets,
+including the C, C++, Python, Rust, and protobuf surfaces. The control module's
+build graph configured 2,476 targets with 311 aspect applications and 3,472
+declared actions. Existing C++23 deprecation warnings remained non-fatal.
+
+The Fast DDS bounded-group gate passed:
+
+```bash
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel build --config=fastdds \
+  @autoware_control_msgs//... @autoware_v2x_msgs//...
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=fastdds --nocache_test_results \
+  //bazel/smoke:autoware_interface_layer_test
+```
+
+All 30 module targets built, and forcing test execution confirmed that the
+consumer passed rather than only reusing its earlier test result.
+
+The read-only development-image command could not start:
+
+```bash
+docker run --rm \
+  -v autoware-bazel-bootstrap-cache:/home/ubuntu/.cache \
+  -v "$PWD:/workspace:ro" \
+  autoware-bazel-dev:bootstrap \
+  bazel test --experimental_convenience_symlinks=ignore \
+  --nocache_test_results //bazel/smoke:autoware_interface_layer_test
+```
+
+Symptom: Docker failed before starting a container because the selected
+`desktop-linux` socket did not exist. Cause: neither the Docker Desktop socket
+nor `/var/run/docker.sock` was available. No package or Bazel action ran, so
+container validation remains pending until a Docker daemon is available.
+
+Result: the first Phase 2 host slice passed its Cyclone DDS and Fast DDS gates
+without a source compatibility fix. The repeated package structure is still
+small enough to keep manual; no generator was added.
+
+Targeted static validation passed for the changed files: `git diff --check`,
+lockfile JSON parsing, clang-format, cpplint, markdownlint, and Prettier. Bazel
+parsed every new module and BUILD file in the host builds. Pre-commit was not
+run.
+
+Next: add `autoware_system_msgs`, the smallest remaining interface package and
+the next package whose only Autoware dependency is already integrated. Repeat
+the read-only development-image test when the Docker daemon is available.
