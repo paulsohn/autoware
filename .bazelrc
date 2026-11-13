@@ -1,0 +1,48 @@
+# Module registries: ROS packages first, then the Bazel Central Registry.
+common --registry=https://bazel.ros.org --registry=https://bcr.bazel.build
+
+# RCR release modules select real versions for direct 0.0.0 package deps.
+common --check_direct_dependencies=off
+
+# Read-only cache populated by the RCR's public CI.
+common --remote_cache=https://storage.googleapis.com/intrinsic-opensource-buildcache
+common --remote_upload_local_results=false
+common --remote_cache_compression=true
+
+# Keep build actions independent of the caller's shell environment.
+common --incompatible_strict_action_env
+common --action_env=LC_CTYPE=C.UTF-8
+common --host_action_env=LC_CTYPE=C.UTF-8
+common --action_env=PATH=/bin:/usr/bin:/usr/local/bin
+common --host_action_env=PATH=/bin:/usr/bin:/usr/local/bin
+build --repo_env=BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN=1
+build --repo_env=PIP_CONFIG_FILE=/dev/null
+build --@llvm//config:experimental_stub_libgcc_s=True
+build --@llvm//config:fastbuild_optimization_mode=O1
+
+# The RCR builds C++ uniformly as C++23. Fast DDS still uses standard-library
+# APIs removed after C++17, so its translation units retain the RCR exception.
+build --cxxopt=-std=c++23
+build --host_cxxopt=-std=c++23
+build --per_file_copt=external/.*fastdds.*@-std=c++17
+build --host_per_file_copt=external/.*fastdds.*@-std=c++17
+
+# Download shared-library outputs required by runtime dlopen calls.
+build --remote_download_outputs=all
+
+# Pin the Linux ABI floor while retaining the detected host architecture.
+build --platforms=//bazel/platforms:linux
+build --extra_execution_platforms=//bazel/platforms:linux
+
+# The dynamic RMW loader configured more than 76,000 targets for this two-node
+# smoke graph. Select Fast DDS at build time while retaining shared libraries.
+build --@rosdistro//:rmw=rmw_fastrtps_cpp
+
+# Runtime environment for ROS nodes using the RCR shared-library layout.
+common --run_env=ROS_DISTRO=lyrical
+common --run_env=ROS_HOME=/tmp/autoware-bazel-ros-home
+common --run_env=LD_LIBRARY_PATH=lib
+common --run_env=TMPDIR=/tmp
+
+# Machine-local resource limits belong here.
+try-import %workspace%/user.bazelrc

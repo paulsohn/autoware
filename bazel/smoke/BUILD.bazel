@@ -1,0 +1,25 @@
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_binary")
+
+RCLCPP = {
+    "@rclcpp//:rclcpp": "@rclcpp//:rclcpp_library",
+}
+
+collect_transitive_dynamic_deps(
+    name = "rclcpp_dynamic_deps",
+    dynamic_deps = RCLCPP.keys(),
+)
+
+cc_binary(
+    name = "talker",
+    srcs = ["talker.cc"],
+    dynamic_deps = [":rclcpp_dynamic_deps"],
+    deps = RCLCPP.values() + ["@std_msgs//:cc"],
+)
+
+cc_binary(
+    name = "listener",
+    srcs = ["listener.cc"],
+    dynamic_deps = [":rclcpp_dynamic_deps"],
+    deps = RCLCPP.values() + ["@std_msgs//:cc"],
+)

@@ -25,7 +25,16 @@ For every slice:
 ## Current decisions
 
 - The first platform is x86_64 Ubuntu 24.04.
-- Bazel inputs accepted by an experiment are pinned in the repository.
+- Bazel 9.3.2 is selected by `.bazelversion`.
+- The bootstrap uses the RCR's `lyrical.2026-10-05.rcr.0` `ros_core`
+  release and the matching `lyrical.2026-10-05.rcr.3` `rosdistro` patch.
+- LLVM 21.1.8 supplies the C/C++ toolchain, with glibc 2.34 as the Linux ABI
+  floor.
+- Fast DDS is selected for the bootstrap. Leaving RMW selection dynamic loaded
+  1,188 packages during analysis; selecting `rmw_fastrtps_cpp` completed with
+  371 packages while preserving the RCR shared-library layout.
+- Committed Bazel inputs include the module lockfile. Registry ordering and the
+  read-only RCR CI cache are repository configuration.
 - ROS packages should come from the RCR until a local source package is needed
   for the current target.
 - Source snapshots under `src/` remain ordinary tracked files.
@@ -35,12 +44,12 @@ For every slice:
 - The journal is the reproducible experiment record; upstream notes contain only
   demonstrated, generally useful findings.
 
-## Phase 0: bootstrap ROS with Bazel
+## Phase 0: bootstrap ROS with Bazel (complete)
 
 Purpose: establish whether a minimal Lyrical C++ publisher and subscriber can be
 built reproducibly on the development host without using the host ROS install.
 
-Planned work:
+Completed work:
 
 1. Inspect the current RCR examples and release metadata for the supported Bazel
    version, toolchain registration, registry configuration, and Lyrical release
@@ -61,14 +70,20 @@ Exit criteria:
 - Host and development-image output comparison has a recorded result, including
   any known limitation in what was compared.
 
-Open questions for Phase 0:
+Answers from Phase 0:
 
-- Which RCR release module provides the smallest complete dependency set for the
-  smoke targets?
-- Which RMW should the first smoke test use, and what is the cost of that choice?
-- Which environment variables must be cleared or set for isolation?
-- Does the RCR's documented Bazel configuration work unchanged on Ubuntu 24.04?
-- Which container packages are genuinely required to run Bazel?
+- `ros_core` provides the release selection for `rclcpp`, `std_msgs`, and their
+  transitive dependencies; the matching `rosdistro` module supplies the RMW
+  configuration and shared-library collection.
+- Fast DDS avoids loading every available RMW implementation. The smoke graph
+  remains broad: 76,915 configured targets and 7,352 declared actions.
+- A clean caller environment needs only `HOME` and a path containing Bazelisk
+  and system tools. Actions receive pinned locale and path values; ROS runtime
+  variables are set by `.bazelrc`.
+- The RCR configuration works on Ubuntu 24.04 after declaring direct root
+  dependencies needed by root labels and selecting a platform ABI constraint.
+- The development image needs CA certificates, curl, git, Python 3, unzip, and
+  zip in addition to Bazelisk. It contains no ROS installation.
 
 ## Later phases
 

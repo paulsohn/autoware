@@ -9,7 +9,7 @@ what the repository has actually demonstrated.
 ## Local configuration
 
 Use Ubuntu 24.04 x86_64 for the first phase. Install Bazelisk as `bazel`; the
-repository's `.bazelversion` will select Bazel after bootstrap files are added.
+repository's `.bazelversion` selects the tested Bazel release.
 
 Put machine-specific limits in `user.bazelrc`, which is ignored. For example:
 
@@ -23,14 +23,56 @@ time.
 
 ## Clean environment
 
-Until the workspace proves that it removes inherited ROS variables itself, run
-Bazel without a sourced ROS environment:
+Run Bazel without a sourced ROS environment when validating integration work:
 
 ```bash
 env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" bazel <command>
 ```
 
 Do not run `vcs import` or `vcs pull` into `src/`.
+
+## Bootstrap smoke test
+
+Build the publisher and subscriber:
+
+```bash
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel build //bazel/smoke:talker //bazel/smoke:listener
+```
+
+Run the listener in one terminal and the talker in another:
+
+```bash
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel run //bazel/smoke:listener
+```
+
+```bash
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel run //bazel/smoke:talker
+```
+
+The listener exits successfully after receiving five messages.
+
+## Development image
+
+Build the pinned Ubuntu 24.04 development image:
+
+```bash
+docker build -f images/dev.Dockerfile -t autoware-bazel-dev:bootstrap .
+```
+
+Use a named volume for Bazel's cache and mount the source read-only:
+
+```bash
+docker volume create autoware-bazel-bootstrap-cache
+docker run --rm \
+  -v autoware-bazel-bootstrap-cache:/home/ubuntu/.cache \
+  -v "$PWD:/workspace:ro" \
+  autoware-bazel-dev:bootstrap \
+  bazel build --experimental_convenience_symlinks=ignore \
+  //bazel/smoke:talker //bazel/smoke:listener
+```
 
 ## Task workflow
 

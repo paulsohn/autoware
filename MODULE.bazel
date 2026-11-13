@@ -1,0 +1,22 @@
+module(name = "autoware_bazel")
+
+# Bazel rule and toolchain modules used directly by this workspace.
+bazel_dep(name = "llvm", version = "0.8.25.rcr.0")
+bazel_dep(name = "platforms", version = "1.1.0")
+bazel_dep(name = "rules_cc", version = "0.2.26.rcr.0")
+
+# The core Lyrical release supplies rclcpp, std_msgs and their transitive ROS
+# dependencies. Direct 0.0.0 deps expose the versions selected by ros_core.
+bazel_dep(name = "ros_core", version = "lyrical.2026-10-05.rcr.0")
+bazel_dep(name = "rclcpp", version = "0.0.0")
+bazel_dep(name = "std_msgs", version = "0.0.0")
+
+# Use the latest published patch of the matching rosdistro snapshot.
+bazel_dep(name = "rosdistro", version = "lyrical.2026-10-05.rcr.3")
+
+register_toolchains("@llvm//toolchain:all")
+
+llvm = use_extension("@llvm//extensions:llvm.bzl", "llvm")
+llvm.version(llvm_version = "21.1.8")
+llvm.configure(targets = ["X86"])
+use_repo(llvm, "llvm-project")
