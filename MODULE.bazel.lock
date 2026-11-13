@@ -1258,6 +1258,7 @@
     "https://bazel.ros.org/modules/rosidl_core_generators/0.4.3-3.rcr.4/source.json": "8a8303a950e5b943b883a89229fa728eee8d836edd40dfd6c01270a584d55f68",
     "https://bazel.ros.org/modules/rosidl_core_runtime/0.4.3-3.rcr.2/MODULE.bazel": "658d2605c2e14c03efd1b84ef3ecdb911dae70f40231685d36d7e35a941a1422",
     "https://bazel.ros.org/modules/rosidl_core_runtime/0.4.3-3.rcr.2/source.json": "85a7b6f97e79b3c871b28ce1d57f547376da7ffe0ed767cd16ad7f3c3d73d47b",
+    "https://bazel.ros.org/modules/rosidl_default_generators/0.0.0/MODULE.bazel": "30c45f189a5e673b0821820c446870d55487dd9fcebad59ee6d5ef20a72cf9af",
     "https://bazel.ros.org/modules/rosidl_default_generators/1.8.1-3.rcr.4/MODULE.bazel": "ddab081c91028187e588a655573aa6508ba08d8fa3e944c26f0f6fa79512a73a",
     "https://bazel.ros.org/modules/rosidl_default_generators/1.8.1-3.rcr.4/source.json": "a686de5761327d1af73861c471c50a2667dd2445fc2df442adf53b34572617d2",
     "https://bazel.ros.org/modules/rosidl_default_runtime/1.8.1-3.rcr.2/MODULE.bazel": "dcee4022447b3d2903a2610e3a8e8b0de36e12b0ecbce5e4f02e2354319c940e",

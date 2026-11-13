@@ -100,6 +100,30 @@ docker run --rm \
 Add `--config=fastdds` to the container's Bazel command for the compatibility
 build.
 
+## Local Autoware package modules
+
+The first package-local module is `autoware_common_msgs`. Build every generated
+target exposed by it with:
+
+```bash
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel build @autoware_common_msgs//...
+```
+
+Run its C++ consumer through the primary and compatibility configurations:
+
+```bash
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test //bazel/smoke:autoware_common_msgs_test
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=fastdds //bazel/smoke:autoware_common_msgs_test
+```
+
+The package owns its `MODULE.bazel` and BUILD files. The root module makes it
+visible with a direct `bazel_dep` and selects the source tree with
+`local_path_override`. Dependencies on ROS package modules use version `0.0.0`
+so the root release selection supplies their concrete versions.
+
 ## Task workflow
 
 1. State the target and its observable success condition in JOURNAL.md.

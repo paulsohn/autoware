@@ -237,3 +237,72 @@ updated BUILD and rc files during host and container builds.
 
 Next: prototype `autoware_common_msgs` manually as the first local Autoware
 package module.
+
+## 2026-11-14: Build the first local Autoware package module
+
+Goal: determine the minimum package-local Bazel layout for an Autoware
+interface package by generating and consuming `autoware_common_msgs/msg/ResponseStatus`.
+
+Inputs inspected:
+
+- the package's `package.xml`, `CMakeLists.txt`, and `ResponseStatus.msg`;
+- the current RCR `default_generators` and `ros_message` definitions;
+- the RCR's published `autoware_common_msgs` metadata and generated target
+  convention.
+
+Changes:
+
+- added a package-local `MODULE.bazel` with a direct
+  `rosidl_default_generators@0.0.0` dependency;
+- added root and `msg/` BUILD files using `default_generators` and
+  `ros_message`;
+- registered the package in the root module with a direct `bazel_dep` and
+  `local_path_override`;
+- added a C++ test that constructs `ResponseStatus` and verifies its generated
+  `SERVICE_TIMEOUT` constant and fields through the paired `:cc`/`:cc_shared`
+  targets.
+
+No source message, CMake, or package manifest change was required.
+
+Host validation:
+
+```bash
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test //bazel/smoke:autoware_common_msgs_test
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=fastdds //bazel/smoke:autoware_common_msgs_test
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel build @autoware_common_msgs//...
+```
+
+The consumer passed with both middleware configurations. Building
+`@autoware_common_msgs//...` built all 12 targets exposed by the module,
+including its C, C++, Python, Rust, and protobuf generator outputs. Existing
+C++23 deprecation warnings from `rosidl_runtime_cpp` remained non-fatal.
+
+Development-image validation mounted the source read-only:
+
+```bash
+docker run --rm \
+  -v autoware-bazel-bootstrap-cache:/home/ubuntu/.cache \
+  -v "$PWD:/workspace:ro" \
+  autoware-bazel-dev:bootstrap \
+  bazel test --experimental_convenience_symlinks=ignore \
+  //bazel/smoke:autoware_common_msgs_test
+```
+
+The test passed. Its host and container executable SHA-256 digests matched:
+`6b1eaf06cfb2e8a01ab9cbcd91106d315687f0074c46e0f6805dbefe4099506f`.
+
+Result: one package-local module can expose the same generated C++ target shape
+as an RCR interface package and can be consumed from the root without a sourced
+ROS installation. This establishes the primitive-only package shape, not yet
+the cross-package convention.
+
+Static validation: `git diff --check`, lockfile JSON parsing, `clang-format`,
+`cpplint`, `markdownlint`, Prettier, end-of-file, trailing-whitespace, and
+private-key checks passed. Bazel parsed all new module and BUILD files during
+the host and development-image builds.
+
+Next: test local-versus-RCR source selection without changing the consumer,
+then add a second interface package with an Autoware package dependency.

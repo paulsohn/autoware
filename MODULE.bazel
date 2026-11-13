@@ -11,6 +11,13 @@ bazel_dep(name = "ros_core", version = "lyrical.2026-10-05.rcr.0")
 bazel_dep(name = "rclcpp", version = "0.0.0")
 bazel_dep(name = "std_msgs", version = "0.0.0")
 
+# First local Autoware package-module experiment.
+bazel_dep(name = "autoware_common_msgs", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_common_msgs",
+    path = "src/core/autoware_msgs/autoware_common_msgs",
+)
+
 # Use the latest published patch of the matching rosdistro snapshot.
 bazel_dep(name = "rosdistro", version = "lyrical.2026-10-05.rcr.3")
 
