@@ -1,0 +1,10 @@
+module(name = "autoware_system_msgs")
+
+bazel_dep(name = "autoware_common_msgs", version = "0.0.0")
+bazel_dep(name = "builtin_interfaces", version = "0.0.0")
+bazel_dep(name = "diagnostic_msgs", version = "0.0.0")
+bazel_dep(name = "geometry_msgs", version = "0.0.0")
+bazel_dep(name = "nav_msgs", version = "0.0.0")
+bazel_dep(name = "rosidl_default_generators", version = "0.0.0")
+bazel_dep(name = "std_msgs", version = "0.0.0")
+bazel_dep(name = "unique_identifier_msgs", version = "0.0.0")

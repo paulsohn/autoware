@@ -164,6 +164,26 @@ Add `--config=fastdds` to the build and test commands at the bounded-group
 compatibility gate. The consumer verifies same-package nested message targets
 and a bounded sequence generated from `builtin_interfaces/Time`.
 
+Build the expanded base layer sequentially:
+
+```bash
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel build @autoware_system_msgs//...
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel build @autoware_sensing_msgs//...
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel build @autoware_map_msgs//...
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel build @autoware_planning_msgs//...
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel build @autoware_perception_msgs//...
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test //bazel/smoke:autoware_interface_base_test
+```
+
+`geographic_msgs` is outside the `ros_core` release selection, so the root
+module pins its concrete published version for `autoware_map_msgs`.
+
 ## Task workflow
 
 1. State the target and its observable success condition in JOURNAL.md.

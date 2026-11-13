@@ -201,9 +201,20 @@ Completed initial slice:
 The read-only development-image check for this slice is pending because no
 Docker daemon socket was available during validation.
 
-Next slice: add `autoware_system_msgs`. It is the smallest remaining interface
-package and its only Autoware dependency is the integrated
-`autoware_common_msgs` module.
+Completed base layer:
+
+- added `autoware_system_msgs`, `autoware_sensing_msgs`,
+  `autoware_map_msgs`, `autoware_planning_msgs`, and
+  `autoware_perception_msgs`;
+- built all 114 generated module targets and passed one representative C++
+  consumer under the Cyclone DDS and Fast DDS configurations;
+- selected `geographic_msgs@1.0.6-3.rcr.2` directly at the root because the
+  `ros_core` release does not select packages outside its package set.
+
+Next layer: add `autoware_vehicle_msgs`, which depends on planning, and
+`autoware_simulation_msgs`, which depends on perception. The simulation module
+has no published Lyrical RCR counterpart, so its local-only version convention
+must be validated in that layer.
 
 Exit criteria:
 

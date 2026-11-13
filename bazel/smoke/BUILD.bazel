@@ -97,3 +97,23 @@ cc_test(
     dynamic_deps = [":autoware_interface_layer_dynamic_deps"],
     deps = AUTOWARE_INTERFACE_LAYER.values(),
 )
+
+AUTOWARE_INTERFACE_BASE = {
+    "@autoware_map_msgs//:cc_shared": "@autoware_map_msgs//:cc",
+    "@autoware_perception_msgs//:cc_shared": "@autoware_perception_msgs//:cc",
+    "@autoware_planning_msgs//:cc_shared": "@autoware_planning_msgs//:cc",
+    "@autoware_sensing_msgs//:cc_shared": "@autoware_sensing_msgs//:cc",
+    "@autoware_system_msgs//:cc_shared": "@autoware_system_msgs//:cc",
+}
+
+collect_transitive_dynamic_deps(
+    name = "autoware_interface_base_dynamic_deps",
+    dynamic_deps = AUTOWARE_INTERFACE_BASE.keys(),
+)
+
+cc_test(
+    name = "autoware_interface_base_test",
+    srcs = ["autoware_interface_base_test.cc"],
+    dynamic_deps = [":autoware_interface_base_dynamic_deps"],
+    deps = AUTOWARE_INTERFACE_BASE.values(),
+)

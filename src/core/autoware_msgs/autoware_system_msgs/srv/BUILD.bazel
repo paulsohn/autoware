@@ -1,0 +1,24 @@
+load("@rosidl_default_generators//:defs.bzl", "ros_service")
+
+package(default_visibility = ["//visibility:public"])
+
+exports_files([
+    "ChangeAutowareControl.srv",
+    "ChangeOperationMode.srv",
+])
+
+ros_service(
+    name = "ChangeAutowareControl",
+    src = "ChangeAutowareControl.srv",
+    deps = [
+        "@autoware_common_msgs//msg:ResponseStatus",
+    ],
+)
+
+ros_service(
+    name = "ChangeOperationMode",
+    src = "ChangeOperationMode.srv",
+    deps = [
+        "@autoware_common_msgs//msg:ResponseStatus",
+    ],
+)

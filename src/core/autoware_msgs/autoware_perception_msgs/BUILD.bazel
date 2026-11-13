@@ -1,0 +1,34 @@
+load("@rosidl_default_generators//:defs.bzl", "default_generators")
+
+package(default_visibility = ["//visibility:public"])
+
+default_generators(
+    package_xml = "package.xml",
+    dependencies = [
+        "@builtin_interfaces",
+        "@geometry_msgs",
+        "@std_msgs",
+        "@unique_identifier_msgs",
+    ],
+    deps = [
+        "//msg:DetectedObject",
+        "//msg:DetectedObjectKinematics",
+        "//msg:DetectedObjects",
+        "//msg:ObjectClassification",
+        "//msg:PredictedObject",
+        "//msg:PredictedObjectKinematics",
+        "//msg:PredictedObjects",
+        "//msg:PredictedPath",
+        "//msg:PredictedTrafficLightState",
+        "//msg:Shape",
+        "//msg:TrackedObject",
+        "//msg:TrackedObjectKinematics",
+        "//msg:TrackedObjects",
+        "//msg:TrafficLightElement",
+        "//msg:TrafficLightGroup",
+        "//msg:TrafficLightGroupArray",
+        "//msg:TrafficSignal",
+        "//msg:TrafficSignalArray",
+        "//msg:TrafficSignalElement",
+    ],
+)

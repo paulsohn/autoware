@@ -1,0 +1,48 @@
+load("@rosidl_default_generators//:defs.bzl", "ros_service")
+
+package(default_visibility = ["//visibility:public"])
+
+exports_files([
+    "GetDifferentialPointCloudMap.srv",
+    "GetPartialPointCloudMap.srv",
+    "GetSelectedLanelet2Map.srv",
+    "GetSelectedPointCloudMap.srv",
+])
+
+ros_service(
+    name = "GetDifferentialPointCloudMap",
+    src = "GetDifferentialPointCloudMap.srv",
+    deps = [
+        "//msg:AreaInfo",
+        "//msg:PointCloudMapCellWithID",
+        "@std_msgs//msg:Header",
+    ],
+)
+
+ros_service(
+    name = "GetPartialPointCloudMap",
+    src = "GetPartialPointCloudMap.srv",
+    deps = [
+        "//msg:AreaInfo",
+        "//msg:PointCloudMapCellWithID",
+        "@std_msgs//msg:Header",
+    ],
+)
+
+ros_service(
+    name = "GetSelectedLanelet2Map",
+    src = "GetSelectedLanelet2Map.srv",
+    deps = [
+        "//msg:LaneletMapBin",
+        "@std_msgs//msg:Header",
+    ],
+)
+
+ros_service(
+    name = "GetSelectedPointCloudMap",
+    src = "GetSelectedPointCloudMap.srv",
+    deps = [
+        "//msg:PointCloudMapCellWithID",
+        "@std_msgs//msg:Header",
+    ],
+)

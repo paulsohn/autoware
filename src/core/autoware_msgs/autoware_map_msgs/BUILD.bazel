@@ -1,0 +1,27 @@
+load("@rosidl_default_generators//:defs.bzl", "default_generators")
+
+package(default_visibility = ["//visibility:public"])
+
+default_generators(
+    package_xml = "package.xml",
+    dependencies = [
+        "@geographic_msgs",
+        "@sensor_msgs",
+        "@std_msgs",
+    ],
+    deps = [
+        "//msg:AreaInfo",
+        "//msg:LaneletMapBin",
+        "//msg:LaneletMapCellMetaData",
+        "//msg:LaneletMapMetaData",
+        "//msg:MapProjectorInfo",
+        "//msg:PointCloudMapCellMetaData",
+        "//msg:PointCloudMapCellMetaDataWithID",
+        "//msg:PointCloudMapCellWithID",
+        "//msg:PointCloudMapMetaData",
+        "//srv:GetDifferentialPointCloudMap",
+        "//srv:GetPartialPointCloudMap",
+        "//srv:GetSelectedLanelet2Map",
+        "//srv:GetSelectedPointCloudMap",
+    ],
+)

@@ -501,3 +501,91 @@ run.
 Next: add `autoware_system_msgs`, the smallest remaining interface package and
 the next package whose only Autoware dependency is already integrated. Repeat
 the read-only development-image test when the Docker daemon is available.
+
+## 2026-11-14: Build the expanded interface base layer
+
+Goal: integrate the five remaining packages whose Autoware dependencies were
+already available, validate every generated target, and exercise representative
+types through one root consumer.
+
+Added package-local modules and interface targets for:
+
+- `autoware_system_msgs`: 5 interfaces and 16 package targets;
+- `autoware_sensing_msgs`: 9 interfaces and 20 package targets;
+- `autoware_map_msgs`: 13 interfaces and 24 package targets;
+- `autoware_planning_msgs`: 13 interfaces and 24 package targets;
+- `autoware_perception_msgs`: 19 interfaces and 30 package targets.
+
+Each module retains dependencies from its package manifest. Individual
+interface rules and `default_generators.dependencies` contain only referenced
+types. The published RCR target relationships matched the current source
+filenames and served as the initial dependency hypothesis.
+
+The primary builds ran sequentially:
+
+```bash
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel build @autoware_system_msgs//...
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel build @autoware_sensing_msgs//...
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel build @autoware_map_msgs//...
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel build @autoware_planning_msgs//...
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel build @autoware_perception_msgs//...
+```
+
+System, sensing, planning, and perception built without adjustment. The map
+build initially failed during analysis because `@geographic_msgs//` resolved to
+the `0.0.0` stub, which has no root BUILD package. The cause was that
+`geographic_msgs` belongs to the full ROS release but not `ros_core`, so no
+dependency selected its concrete version. Pinning
+`geographic_msgs@1.0.6-3.rcr.2` in the root module selected the generated
+package, after which all 24 map targets built.
+
+The completed map graph configured 71,908 targets across 380 packages with
+2,521 aspect applications and 11,985 declared actions. The other successful
+module builds exposed their expected target counts; existing C++23 deprecation
+warnings remained non-fatal.
+
+The combined consumer constructs a system service request, nested sensing
+radar data, a geographic map origin, a planning trajectory point, and a
+predicted perception object:
+
+```bash
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test //bazel/smoke:autoware_interface_base_test
+```
+
+The test compiled and executed successfully.
+
+The bounded-group compatibility gate built all 114 package targets and forced
+the consumer to execute:
+
+```bash
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel build --config=fastdds \
+  @autoware_system_msgs//... @autoware_sensing_msgs//... \
+  @autoware_map_msgs//... @autoware_planning_msgs//... \
+  @autoware_perception_msgs//...
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=fastdds --nocache_test_results \
+  //bazel/smoke:autoware_interface_base_test
+```
+
+Both commands passed. The combined Fast DDS analysis configured 59,689 targets
+with 3,416 aspect applications; all 15,780 actions were available from the
+action cache.
+
+Targeted static validation passed: `git diff --check`, lockfile JSON parsing,
+clang-format, cpplint, markdownlint, and Prettier. Bazel parsed every new module
+and BUILD file. Pre-commit was not run.
+
+Result: all five base-layer packages build from the current source snapshots,
+and representative generated types pass C++ consumer execution under both
+middleware configurations. No source compatibility fix was required.
+
+Next: add the dependent vehicle and simulation packages, then run the combined
+message-set compatibility gate. The Docker validation remains pending until a
+daemon is available.

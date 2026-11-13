@@ -1,0 +1,34 @@
+load("@rosidl_default_generators//:defs.bzl", "ros_message")
+
+package(default_visibility = ["//visibility:public"])
+
+exports_files([
+    "AutowareState.msg",
+    "HazardStatus.msg",
+    "HazardStatusStamped.msg",
+])
+
+ros_message(
+    name = "AutowareState",
+    src = "AutowareState.msg",
+    deps = [
+        "@builtin_interfaces//msg:Time",
+    ],
+)
+
+ros_message(
+    name = "HazardStatus",
+    src = "HazardStatus.msg",
+    deps = [
+        "@diagnostic_msgs//msg:DiagnosticStatus",
+    ],
+)
+
+ros_message(
+    name = "HazardStatusStamped",
+    src = "HazardStatusStamped.msg",
+    deps = [
+        ":HazardStatus",
+        "@builtin_interfaces//msg:Time",
+    ],
+)
