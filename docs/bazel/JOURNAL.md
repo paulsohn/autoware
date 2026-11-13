@@ -132,3 +132,27 @@ parsed the root module and BUILD files during both host and container builds.
 
 Next: define the first Autoware interface-package slice and its local-package
 layout before adding package BUILD files.
+
+## 2026-11-13: Set middleware support tiers
+
+Goal: align middleware priorities with Autoware before selecting the first
+interface-package slice.
+
+Decision: Cyclone DDS is the primary middleware target for Autoware integration.
+Fast DDS remains a Tier 2 compatibility target and will be checked after the
+primary Cyclone DDS path meets each phase's exit criteria. Phase 0 remains a
+valid Fast DDS bootstrap result; it does not establish the default for later
+phases.
+
+Plan: use the existing talker/listener as a middleware gate before Phase 1.
+First select Cyclone DDS without adding a custom XML file or host tuning, then
+run the identical build and behavior checks through an explicit Fast DDS
+compatibility configuration. Repeat both builds in the development image and
+compare artifacts before starting an Autoware interface package.
+
+Validation: documentation-only change. `git diff --check`, `markdownlint`, and
+Prettier passed. No build or runtime behavior changed.
+
+Next: execute the Cyclone DDS primary and Fast DDS compatibility smoke gates.
+Do not add middleware configuration until a current behavior check demonstrates
+that it is required.

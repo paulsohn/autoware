@@ -33,6 +33,10 @@ For every slice:
 - Fast DDS is selected for the bootstrap. Leaving RMW selection dynamic loaded
   1,188 packages during analysis; selecting `rmw_fastrtps_cpp` completed with
   371 packages while preserving the RCR shared-library layout.
+- Starting with Autoware package integration, Cyclone DDS is the primary
+  middleware target. Fast DDS is a Tier 2 compatibility target: keep it
+  buildable and test it at explicit compatibility gates, but do not let it
+  determine the primary package path.
 - Committed Bazel inputs include the module lockfile. Registry ordering and the
   read-only RCR CI cache are repository configuration.
 - ROS packages should come from the RCR until a local source package is needed
@@ -85,6 +89,33 @@ Answers from Phase 0:
 - The development image needs CA certificates, curl, git, Python 3, unzip, and
   zip in addition to Bazelisk. It contains no ROS installation.
 
+## Middleware gate before Phase 1
+
+Purpose: validate the middleware support policy on the existing smoke pair
+before an Autoware package makes the graph larger.
+
+Planned work:
+
+1. Select `rmw_cyclonedds_cpp` as the default fixed RMW and retain Fast DDS
+   behind an explicit compatibility configuration.
+2. Build and run the talker/listener with Cyclone DDS in a clean caller
+   environment. Begin with no custom Cyclone DDS XML or host tuning.
+3. Build and run the same targets through the Fast DDS compatibility
+   configuration.
+4. Repeat both builds in the development image and compare the host and
+   container executables for each configuration.
+5. Record configured-target, package, action, and behavior results. Introduce
+   middleware configuration or host setup only if a current test demonstrates
+   that it is required.
+
+Exit criteria:
+
+- Cyclone DDS is the default and delivers five smoke messages.
+- Fast DDS remains selectable and passes the same behavior check.
+- Both configurations build without a sourced ROS installation.
+- Host and development-image artifact comparisons have recorded results.
+- Day-to-day commands for both tiers are documented.
+
 ## Later phases
 
 These are scope markers, not implementation decisions. Refine each phase only
@@ -96,6 +127,9 @@ when the preceding phase meets its exit criteria.
 4. CUDA and TensorRT packages on x86 hardware.
 5. Install tree, headless OCI image, and planning simulator behavior test.
 6. Cross-build and non-GPU tests for Jetson Thor, followed by hardware tests.
+
+From phase 1 onward, runnable slices use Cyclone DDS by default. Fast DDS
+compatibility is checked after each phase reaches its Cyclone DDS exit criteria.
 
 Potential topics such as Agnocast, OSQP compatibility, OpenMP, CMake parity,
 runtime-image deduplication, and remote caching will be evaluated when a current
