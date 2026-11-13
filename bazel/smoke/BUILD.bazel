@@ -40,3 +40,43 @@ cc_test(
     dynamic_deps = [":autoware_common_msgs_dynamic_deps"],
     deps = AUTOWARE_COMMON_MSGS.values(),
 )
+
+AUTOWARE_LOCALIZATION_MSGS = {
+    "@autoware_localization_msgs//:cc_shared": "@autoware_localization_msgs//:cc",
+}
+
+collect_transitive_dynamic_deps(
+    name = "autoware_localization_msgs_dynamic_deps",
+    dynamic_deps = AUTOWARE_LOCALIZATION_MSGS.keys(),
+)
+
+cc_test(
+    name = "autoware_localization_msgs_test",
+    srcs = ["autoware_localization_msgs_test.cc"],
+    dynamic_deps = [":autoware_localization_msgs_dynamic_deps"],
+    deps = AUTOWARE_LOCALIZATION_MSGS.values(),
+)
+
+AUTOWARE_LOCALIZATION_RUNTIME = {
+    "@autoware_localization_msgs//:cc_shared": "@autoware_localization_msgs//:cc",
+    "@rclcpp//:rclcpp": "@rclcpp//:rclcpp_library",
+}
+
+collect_transitive_dynamic_deps(
+    name = "autoware_localization_runtime_dynamic_deps",
+    dynamic_deps = AUTOWARE_LOCALIZATION_RUNTIME.keys(),
+)
+
+cc_binary(
+    name = "localization_talker",
+    srcs = ["localization_talker.cc"],
+    dynamic_deps = [":autoware_localization_runtime_dynamic_deps"],
+    deps = AUTOWARE_LOCALIZATION_RUNTIME.values(),
+)
+
+cc_binary(
+    name = "localization_listener",
+    srcs = ["localization_listener.cc"],
+    dynamic_deps = [":autoware_localization_runtime_dynamic_deps"],
+    deps = AUTOWARE_LOCALIZATION_RUNTIME.values(),
+)

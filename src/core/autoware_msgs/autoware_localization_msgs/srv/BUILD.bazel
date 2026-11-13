@@ -1,0 +1,12 @@
+load("@rosidl_default_generators//:defs.bzl", "ros_service")
+
+package(default_visibility = ["//visibility:public"])
+
+ros_service(
+    name = "InitializeLocalization",
+    src = "InitializeLocalization.srv",
+    deps = [
+        "@autoware_common_msgs//msg:ResponseStatus",
+        "@geometry_msgs//msg:PoseWithCovarianceStamped",
+    ],
+)

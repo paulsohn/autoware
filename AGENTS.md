@@ -34,6 +34,8 @@ configuration.
   `user.bazelrc`. Do not commit convenience symlinks or Bazel output trees.
 - Run build, test, and behavior checks appropriate to each commit. State
   explicitly when a documentation-only commit has no runtime validation.
+- Do not run pre-commit for this experiment. Run only targeted format and
+  static checks against files changed by the current task.
 - Run heavy builds sequentially and respect the resource limits in
   `user.bazelrc`.
 - Add a finding to `UPSTREAM_RCR.md` or `UPSTREAM_AWF.md` only after the

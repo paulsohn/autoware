@@ -306,3 +306,101 @@ the host and development-image builds.
 
 Next: test local-versus-RCR source selection without changing the consumer,
 then add a second interface package with an Autoware package dependency.
+
+## 2026-11-14: Validate the interface package convention
+
+Goal: complete the interface-layout experiment by switching the existing
+consumer to a published source, adding a second module with an Autoware
+interface dependency, and exercising a generated message over both supported
+middleware paths.
+
+The source-selection trial replaced the local `autoware_common_msgs` override
+with the concrete published version `1.11.0-3.rcr.2` and left
+`//bazel/smoke:autoware_common_msgs_test` unchanged:
+
+```bash
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --lockfile_mode=off \
+  //bazel/smoke:autoware_common_msgs_test
+```
+
+The test passed. The published module analysis loaded 199 packages and
+configured 59,214 targets with 258 aspect applications. Restoring the local
+override while retaining the concrete dependency version made source selection
+a root-module concern; the consumer label and generated C++ target shape are
+identical.
+
+`autoware_localization_msgs` was selected as the second module because it has
+only `KinematicState.msg` and `InitializeLocalization.srv`, while the service
+directly references `autoware_common_msgs/ResponseStatus`. The package-local
+module declares `autoware_common_msgs`, `geometry_msgs`, `std_msgs`, and
+`rosidl_default_generators`. Its individual interface rules name the exact
+referenced message targets, and `default_generators.dependencies` registers the
+three dependent interface packages.
+
+The local C++ consumers passed:
+
+```bash
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test \
+  //bazel/smoke:autoware_common_msgs_test \
+  //bazel/smoke:autoware_localization_msgs_test
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=fastdds \
+  //bazel/smoke:autoware_common_msgs_test \
+  //bazel/smoke:autoware_localization_msgs_test
+```
+
+The localization consumer constructs both generated interfaces and verifies
+the nested `ResponseStatus` fields and service constant. The primary test graph
+configured 69,351 targets across 331 packages with 994 aspect applications.
+The Fast DDS tests also passed.
+
+The complete localization module surface built 13 targets, including C, C++,
+Python, Rust, and protobuf outputs:
+
+```bash
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel build @autoware_localization_msgs//...
+```
+
+That graph configured 61,273 targets with 1,590 aspect applications and 7,851
+declared actions. Existing C++23 deprecation warnings from
+`rosidl_runtime_cpp` remained non-fatal.
+
+For runtime behavior, `localization_talker` published `KinematicState` values
+with a `map` parent, a numbered `base_link_*` child, and a matching x position.
+The listener validated the frame fields and received five messages before
+exiting successfully. The behavior passed first with Cyclone DDS and then with
+the same targets under `--config=fastdds`. In both runs the publisher continued
+until stopped after the listener completed.
+
+The read-only development-image check passed both consumers:
+
+```bash
+docker run --rm \
+  -v autoware-bazel-bootstrap-cache:/home/ubuntu/.cache \
+  -v "$PWD:/workspace:ro" \
+  autoware-bazel-dev:bootstrap \
+  bazel test --experimental_convenience_symlinks=ignore \
+  //bazel/smoke:autoware_common_msgs_test \
+  //bazel/smoke:autoware_localization_msgs_test
+```
+
+The container configured 69,312 targets across 331 packages with 994 aspect
+applications. Both tests passed; the uncached localization portion completed
+with the source mount read-only.
+
+Targeted static validation passed for the changed files: `git diff --check`,
+lockfile JSON parsing, clang-format, cpplint, markdownlint, and Prettier. The
+final payload-consistency check was followed by fresh Cyclone DDS and Fast DDS
+consumer tests, builds, and five-message behavior runs.
+
+Result: the phase exit criteria passed. Two local interface modules build,
+their cross-package dependency follows the generated RCR target convention,
+the root consumer can select local or registry source without a BUILD change,
+and a generated Autoware message passes Cyclone DDS and Fast DDS behavior.
+
+Next: begin Phase 2 with the smallest dependency layer among the remaining
+Autoware interface packages. Port a bounded group manually before deciding
+whether repeated declarations justify a generator.

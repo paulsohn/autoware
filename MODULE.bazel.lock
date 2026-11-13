@@ -597,6 +597,7 @@
     "https://bazel.ros.org/modules/gazelle/0.51.3/MODULE.bazel": "not found",
     "https://bazel.ros.org/modules/generate_export_header/0.1.0/MODULE.bazel": "not found",
     "https://bazel.ros.org/modules/geographiclib/2.4.0.bcr.2/MODULE.bazel": "not found",
+    "https://bazel.ros.org/modules/geometry_msgs/0.0.0/MODULE.bazel": "7e192ecb352be729e9fa823cc6cfa73fb171a24a4ebb702c78f350d4250cb6d5",
     "https://bazel.ros.org/modules/geometry_msgs/5.9.3-1.rcr.0/MODULE.bazel": "9363b8895d8094020affe9c454f3292456cdaf5aaeb622154eca39741a11668c",
     "https://bazel.ros.org/modules/geometry_msgs/5.9.3-1.rcr.0/source.json": "d083ea76e04aea872014da1cb911b11067cdc2319d7521220fe8412195fb5cc5",
     "https://bazel.ros.org/modules/geos/3.15.0.rcr.0/MODULE.bazel": "8a6b05ac1effd58e5a2f490c9b8c9a4f2e4de356fc92d19b7ec3b59b0d27579d",
@@ -3197,7 +3198,7 @@
     "@@rosdistro+//python:defs.bzl%pip_ros": {
       "general": {
         "bzlTransitiveDigest": "Wf1bYPS+v1MXSxPm/3sa2yWsKIiJG8ikAIrD+e7Djmk=",
-        "usagesDigest": "s/pVX7p1+FO+h69EAEptSzmtUMnejiNnlkWcFX8KyaA=",
+        "usagesDigest": "5nOUNqLEwpF2HuTVcgOi+oW1lwbe7fqlSSlYaY/d3fs=",
         "recordedInputs": [
           "REPO_MAPPING:bazel_features+,bazel_features_globals bazel_features++version_extension+bazel_features_globals",
           "REPO_MAPPING:bazel_features+,bazel_features_version bazel_features++version_extension+bazel_features_version",

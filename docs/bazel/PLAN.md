@@ -47,10 +47,14 @@ For every slice:
 - ROS packages should come from the RCR until a local source package is needed
   for the current target.
 - A local Autoware ROS package is a package-local Bazel module selected by a
-  root `local_path_override`. The `autoware_common_msgs` experiment validates
-  this shape for a primitive-only interface package; a package with an
-  Autoware-to-Autoware interface dependency must validate the cross-module
-  convention before it is generalized.
+  root `local_path_override`. The root pins the package's published RCR version
+  so removing only the override selects the registry source without changing
+  consumer BUILD files.
+- An interface package lists its direct package modules in its `MODULE.bazel`,
+  declares referenced interface targets on each `ros_message` or `ros_service`,
+  and passes the same package modules to `default_generators.dependencies`.
+  The `autoware_localization_msgs` service validates this convention across an
+  Autoware package boundary.
 - Source snapshots under `src/` remain ordinary tracked files.
 - Bazel work must not depend on a sourced host ROS installation.
 - Developer-specific resource limits live in ignored `user.bazelrc`.
@@ -126,12 +130,12 @@ Exit criteria:
 - Host and development-image artifact comparisons have recorded results.
 - Day-to-day commands for both tiers are documented.
 
-## Phase 1: interface package layout (in progress)
+## Phase 1: interface package layout (complete)
 
 Purpose: establish a maintainable package-local module layout for Autoware
 interfaces while preserving the RCR's generated target conventions.
 
-Completed first slice:
+Completed work:
 
 1. Added `autoware_common_msgs` as a package-local module with one direct
    `rosidl_default_generators@0.0.0` dependency.
@@ -141,15 +145,13 @@ Completed first slice:
    its paired `:cc`/`:cc_shared` targets from a C++ test.
 4. Built the complete module surface and ran the consumer under Cyclone DDS,
    Fast DDS, and the read-only-source development image.
-
-Next questions:
-
-- Can the same root consumer switch between local source and the published RCR
-  module without a BUILD-file change?
-- Does a second package with an Autoware interface dependency preserve the same
-  target and module conventions?
-- Which package registration files and target lists become necessary once more
-  than one local module exists?
+5. Selected the published `autoware_common_msgs@1.11.0-3.rcr.2` source by
+   removing its local override and ran the unchanged root consumer.
+6. Added `autoware_localization_msgs` with message and service targets. Its
+   `InitializeLocalization` service directly depends on
+   `autoware_common_msgs/ResponseStatus`.
+7. Published and received generated `KinematicState` messages with Cyclone DDS,
+   then repeated the behavior with Fast DDS.
 
 Exit criteria:
 
@@ -161,18 +163,49 @@ Exit criteria:
 - A generated Autoware message passes Cyclone DDS behavior and the Fast DDS
   compatibility gate.
 
+Answers from Phase 1:
+
+- Package source selection belongs in the root module. A concrete RCR version
+  plus `local_path_override` selects local development by default; removing the
+  override selects the published source without changing a consumer label.
+- Cross-package interfaces retain the RCR target convention. The consuming
+  package needs a direct module dependency, the referenced message target on
+  the individual interface rule, and the package repository in
+  `default_generators.dependencies`.
+- Each additional local module needs one root `bazel_dep`, one root
+  `local_path_override`, and its own package-local `MODULE.bazel`. No central
+  target list was needed.
+
+## Phase 2: complete the Autoware interface package set (next)
+
+Purpose: apply the demonstrated package convention to the remaining Autoware
+interface packages in dependency order.
+
+Begin with the smallest package layer that depends only on ROS interfaces or
+the two modules already integrated. Add packages in bounded groups, build every
+generated target for each group, and add consumer tests for new dependency
+shapes. Do not add a generator until repeated package work demonstrates what it
+must automate.
+
+Exit criteria:
+
+- Every interface package required by the first runnable Autoware core slice is
+  available as a local module.
+- Each added package's complete generated target surface builds with Cyclone
+  DDS, and each bounded group passes the Fast DDS compatibility gate.
+- Repeated registration or BUILD patterns are documented with enough evidence
+  to decide whether automation is warranted.
+
 ## Later phases
 
 These are scope markers, not implementation decisions. Refine each phase only
 when the preceding phase meets its exit criteria.
 
-1. Complete the Autoware interface package set after Phase 1 establishes its
-   layout.
-2. Autoware utility packages and shared build conventions.
-3. Autoware core packages in dependency-driven runnable slices.
-4. CUDA and TensorRT packages on x86 hardware.
-5. Install tree, headless OCI image, and planning simulator behavior test.
-6. Cross-build and non-GPU tests for Jetson Thor, followed by hardware tests.
+1. Autoware utility packages and shared build conventions.
+2. Autoware core packages in dependency-driven runnable slices.
+3. CUDA and TensorRT packages on x86 hardware.
+4. Install tree, headless OCI image, and planning simulator behavior test.
+5. Cross-build and non-GPU tests for Jetson Thor, followed by hardware tests.
 
 From phase 1 onward, runnable slices use Cyclone DDS by default. Fast DDS
 compatibility is checked after each phase reaches its Cyclone DDS exit criteria.

@@ -100,7 +100,7 @@ docker run --rm \
 Add `--config=fastdds` to the container's Bazel command for the compatibility
 build.
 
-## Local Autoware package modules
+## Local Autoware interface modules
 
 The first package-local module is `autoware_common_msgs`. Build every generated
 target exposed by it with:
@@ -120,9 +120,34 @@ env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
 ```
 
 The package owns its `MODULE.bazel` and BUILD files. The root module makes it
-visible with a direct `bazel_dep` and selects the source tree with
-`local_path_override`. Dependencies on ROS package modules use version `0.0.0`
-so the root release selection supplies their concrete versions.
+visible with a direct `bazel_dep` at the published RCR version and selects the
+source tree with `local_path_override`. Removing that override selects the RCR
+source without changing consumer BUILD labels; use `--lockfile_mode=off` for a
+temporary source-selection check. Package-local dependencies use version
+`0.0.0` so the root release selection supplies their concrete versions.
+
+An interface package with dependencies has three matching declarations:
+
+1. direct package dependencies in its package-local `MODULE.bazel`;
+2. referenced interface labels in each `ros_message` or `ros_service` rule;
+3. package repositories in `default_generators.dependencies`.
+
+Build all generated localization targets and run both C++ consumers:
+
+```bash
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel build @autoware_localization_msgs//...
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test \
+  //bazel/smoke:autoware_common_msgs_test \
+  //bazel/smoke:autoware_localization_msgs_test
+```
+
+The generated-message behavior pair is
+`//bazel/smoke:localization_talker` and
+`//bazel/smoke:localization_listener`. Run the listener first, then the talker;
+the listener exits after validating five `KinematicState` payloads. Add
+`--config=fastdds` to both commands for the compatibility gate.
 
 ## Task workflow
 
