@@ -33,7 +33,7 @@ Do not run `vcs import` or `vcs pull` into `src/`.
 
 ## Bootstrap smoke test
 
-Build the publisher and subscriber:
+Cyclone DDS is the default. Build the publisher and subscriber:
 
 ```bash
 env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
@@ -54,6 +54,29 @@ env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
 
 The listener exits successfully after receiving five messages.
 
+No Cyclone DDS XML or host network tuning is required for this loopback smoke
+test. Add a network configuration only when the topology under test requires
+one.
+
+Run the Tier 2 Fast DDS compatibility gate by adding `--config=fastdds` to
+every command:
+
+```bash
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel build --config=fastdds \
+  //bazel/smoke:talker //bazel/smoke:listener
+```
+
+```bash
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel run --config=fastdds //bazel/smoke:listener
+```
+
+```bash
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel run --config=fastdds //bazel/smoke:talker
+```
+
 ## Development image
 
 Build the pinned Ubuntu 24.04 development image:
@@ -73,6 +96,9 @@ docker run --rm \
   bazel build --experimental_convenience_symlinks=ignore \
   //bazel/smoke:talker //bazel/smoke:listener
 ```
+
+Add `--config=fastdds` to the container's Bazel command for the compatibility
+build.
 
 ## Task workflow
 

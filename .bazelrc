@@ -34,15 +34,18 @@ build --remote_download_outputs=all
 build --platforms=//bazel/platforms:linux
 build --extra_execution_platforms=//bazel/platforms:linux
 
-# The dynamic RMW loader configured more than 76,000 targets for this two-node
-# smoke graph. Select Fast DDS at build time while retaining shared libraries.
-build --@rosdistro//:rmw=rmw_fastrtps_cpp
+# Keep the primary and compatibility paths fixed to one RMW implementation.
+# The dynamic loader configured more than 76,000 targets for this smoke graph.
+build --@rosdistro//:rmw=rmw_cyclonedds_cpp
+build:fastdds --@rosdistro//:rmw=rmw_fastrtps_cpp
 
 # Runtime environment for ROS nodes using the RCR shared-library layout.
 common --run_env=ROS_DISTRO=lyrical
 common --run_env=ROS_HOME=/tmp/autoware-bazel-ros-home
+common --run_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
 common --run_env=LD_LIBRARY_PATH=lib
 common --run_env=TMPDIR=/tmp
+common:fastdds --run_env=RMW_IMPLEMENTATION=rmw_fastrtps_cpp
 
 # Machine-local resource limits belong here.
 try-import %workspace%/user.bazelrc

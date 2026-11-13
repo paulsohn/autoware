@@ -156,3 +156,84 @@ Prettier passed. No build or runtime behavior changed.
 Next: execute the Cyclone DDS primary and Fast DDS compatibility smoke gates.
 Do not add middleware configuration until a current behavior check demonstrates
 that it is required.
+
+## 2026-11-13: Validate middleware support tiers
+
+Goal: make Cyclone DDS the default for the existing smoke pair and retain Fast
+DDS as an explicit compatibility path before adding Autoware packages.
+
+Changes:
+
+- selected `rmw_cyclonedds_cpp` for normal builds and run commands;
+- added `--config=fastdds` to select `rmw_fastrtps_cpp` at build and run time;
+- added `@std_msgs//:cc_shared` to the smoke target's dynamic dependency map,
+  matching the current RCR convention for message libraries.
+
+The `std_msgs` shared-library trial did not reduce the configured-target count,
+but it changed the link structure from a statically linked message library to
+the RCR's paired `:cc`/`:cc_shared` layout. It was retained for consistency with
+future Autoware message packages.
+
+Host builds used a caller environment without ROS variables:
+
+```bash
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel build //bazel/smoke:talker //bazel/smoke:listener
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel build --config=fastdds \
+  //bazel/smoke:talker //bazel/smoke:listener
+```
+
+For each configuration, `bazel run --script_path` generated listener and talker
+scripts. The listener started first under a 20-second timeout and the talker ran
+under a 10-second timeout. Both listeners received messages 0 through 4,
+printed `Received 5 messages; smoke test passed`, and exited 0. Each talker
+continued publishing until its expected timeout exit 124.
+
+The development-image builds mounted the source read-only and reused the named
+Bazel cache volume:
+
+```bash
+docker run --rm \
+  -v autoware-bazel-bootstrap-cache:/home/ubuntu/.cache \
+  -v "$PWD:/workspace:ro" \
+  autoware-bazel-dev:bootstrap \
+  bazel build --experimental_convenience_symlinks=ignore \
+  //bazel/smoke:talker //bazel/smoke:listener
+docker run --rm \
+  -v autoware-bazel-bootstrap-cache:/home/ubuntu/.cache \
+  -v "$PWD:/workspace:ro" \
+  autoware-bazel-dev:bootstrap \
+  bazel build --config=fastdds --experimental_convenience_symlinks=ignore \
+  //bazel/smoke:talker //bazel/smoke:listener
+```
+
+Measured graphs:
+
+- Cyclone DDS: 352 packages, 70,383 configured targets, 1,197 aspect
+  applications, and 5,785 actions in the graph;
+- Fast DDS: 371 packages, 76,915 configured targets, 1,224 aspect applications,
+  and 7,352 actions in the graph.
+
+Host and container executable SHA-256 digests matched within each
+configuration:
+
+- Cyclone DDS talker:
+  `853ef5a9e7c5731d2557a790b74cd01543ed583b97a84d777eb114640f0dcafd`;
+- Cyclone DDS listener:
+  `f5c02dc5cde9a36007278fdf9051d43b8fe6c40672bccbe585981699ad7ac4b4`;
+- Fast DDS talker:
+  `3e84cd9c709377213efae6cbf23c55776e0fcdb6dfaae69c35171c62395b9cda`;
+- Fast DDS listener:
+  `921ec9f55a1c6ec2bfbdeb2ed24dd6ce64168a89aec86a5f4e10ccb42d917d23`.
+
+Result: the middleware gate passed. Cyclone DDS needs no custom XML or host
+network tuning for the loopback smoke behavior. Fast DDS remains independently
+selectable and passes the same behavior check. No upstream defect was isolated.
+
+Static validation: `git diff --check`, `markdownlint`, Prettier, end-of-file,
+and trailing-whitespace hooks passed. Both Bazel configurations parsed the
+updated BUILD and rc files during host and container builds.
+
+Next: prototype `autoware_common_msgs` manually as the first local Autoware
+package module.

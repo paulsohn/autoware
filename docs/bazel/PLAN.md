@@ -37,6 +37,11 @@ For every slice:
   middleware target. Fast DDS is a Tier 2 compatibility target: keep it
   buildable and test it at explicit compatibility gates, but do not let it
   determine the primary package path.
+- The fixed Cyclone DDS smoke graph loads 352 packages and configures 70,383
+  targets. Fast DDS remains available through `--config=fastdds`; its smoke
+  graph loads 371 packages and configures 76,915 targets.
+- The loopback smoke behavior needs no custom Cyclone DDS XML or host network
+  tuning. Add either only when a later network topology demonstrates the need.
 - Committed Bazel inputs include the module lockfile. Registry ordering and the
   read-only RCR CI cache are repository configuration.
 - ROS packages should come from the RCR until a local source package is needed
@@ -89,12 +94,12 @@ Answers from Phase 0:
 - The development image needs CA certificates, curl, git, Python 3, unzip, and
   zip in addition to Bazelisk. It contains no ROS installation.
 
-## Middleware gate before Phase 1
+## Middleware gate before Phase 1 (complete)
 
 Purpose: validate the middleware support policy on the existing smoke pair
 before an Autoware package makes the graph larger.
 
-Planned work:
+Completed work:
 
 1. Select `rmw_cyclonedds_cpp` as the default fixed RMW and retain Fast DDS
    behind an explicit compatibility configuration.
