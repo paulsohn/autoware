@@ -3232,7 +3232,7 @@
     "@@rosdistro+//python:defs.bzl%pip_ros": {
       "general": {
         "bzlTransitiveDigest": "Wf1bYPS+v1MXSxPm/3sa2yWsKIiJG8ikAIrD+e7Djmk=",
-        "usagesDigest": "nfO+LP0t6lpoewSAXtAMMda+miMIHFDOmRe2Hlh3C1c=",
+        "usagesDigest": "gJqeilrM4VRQDuwAoRtKUDgfgT6Wpxtp3tExnhQtqTY=",
         "recordedInputs": [
           "REPO_MAPPING:bazel_features+,bazel_features_globals bazel_features++version_extension+bazel_features_globals",
           "REPO_MAPPING:bazel_features+,bazel_features_version bazel_features++version_extension+bazel_features_version",

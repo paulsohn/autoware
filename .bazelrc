@@ -47,5 +47,12 @@ common --run_env=LD_LIBRARY_PATH=lib
 common --run_env=TMPDIR=/tmp
 common:fastdds --run_env=RMW_IMPLEMENTATION=rmw_fastrtps_cpp
 
+# Agnocast support is compiled into Bazel targets unconditionally. Runtime
+# selection defaults to Agnocast; use --config=no-agnocast for the ROS 2 path.
+common --run_env=ENABLE_AGNOCAST=1
+common --test_env=ENABLE_AGNOCAST=1
+common:no-agnocast --run_env=ENABLE_AGNOCAST=0
+common:no-agnocast --test_env=ENABLE_AGNOCAST=0
+
 # Machine-local resource limits belong here.
 try-import %workspace%/user.bazelrc

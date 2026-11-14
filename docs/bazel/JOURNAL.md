@@ -1473,3 +1473,113 @@ separately selectable native backend and only the Agnocast library, component,
 allocator, kernel, or runtime prerequisites that its current targets expose.
 Subsequent dependency-driven core work may proceed alongside that lane without
 using fallback-only expansion to postpone the native backend.
+
+## 2026-11-14: Define the Agnocast runtime policy and interface universe
+
+Goal: replace two environment-dependent Agnocast workflows before integrating
+the wrapper: compile one artifact that selects its backend at runtime, and make
+the bridgeable ROS interface universe available during Bazel analysis instead
+of discovering installed interfaces and generating a package after the build.
+
+The inspected inputs were the wrapper's CMake build switch, runtime backend
+selection and heap-hook checks; the bridge plugin generator and its CMake
+template; every currently integrated interface module; and the pinned RCR's
+`rosidl_adapter` and `rosidl_default_generators` Starlark APIs. The RCR declares
+each `.msg`, `.srv`, or `.action` with `RosInterfaceInfo`, whose fields are the
+source file and ROS package name. Package-level generated C++ targets reach
+those rules through Bazel dependency edges.
+
+The runtime policy is one Agnocast-enabled build. Future wrapper targets define
+`USE_AGNOCAST_ENABLED` and link Agnocast unconditionally. `.bazelrc` now passes
+`ENABLE_AGNOCAST=1` to run and test actions by default and
+`--config=no-agnocast` passes `0` to the same artifacts. The Fast DDS selection
+is an independent configuration, so combining `--config=fastdds` and
+`--config=no-agnocast` remains valid. The environment wiring is committed before
+the wrapper target so its first behavior checks exercise the intended policy;
+heap-hook and kernel-module behavior remain unvalidated until that enabled
+target exists.
+
+`bazel/agnocast/interfaces.bzl` adds `ros_interface_set`. Its aspect walks
+rule-level `deps`, records each `RosInterfaceInfo` as
+`package/kind/Interface`, carries the source files for the later generator, and
+deduplicates both with depsets. The set rule sorts the descriptors, fails during
+analysis when a required descriptor or expected count is absent, and writes a
+deterministic `.interfaces` manifest. Both the small proof and the product set
+are ordinary targets, so a future bridge rule can consume their provider in the
+same analysis rather than reading a prior action's directory.
+
+The first analysis failed before loading the rule:
+
+```text
+unknown repo 'rosidl_default_generators' requested from the main repository
+```
+
+Generated interface modules already use that module transitively, but Bzlmod
+repository visibility does not allow the root to load its Starlark API through
+another module. Adding a direct root `rosidl_default_generators@0.0.0`
+dependency exposed the release selected by `ros_core` without changing the ROS
+runtime graph.
+
+The next analysis expected the 39 targets returned by a broad `bazel query`
+closure but collected 32. The seven extra query targets came from entire
+service/action dependency packages supplied to `default_generators`; they were
+not individual type dependencies of either root. Treating those package-wide
+edges as bridge inputs would silently enlarge the product whenever generator
+implementation dependencies change. The accepted rule follows only interface
+and compiled-target `deps`: the proof therefore contains the interfaces owned
+by `std_msgs` and `autoware_common_msgs`, plus individually referenced types
+such as `builtin_interfaces/msg/Time`. Its frozen count is 32.
+
+The current product set explicitly roots the 11 Phase 2 interface modules plus
+`autoware_internal_planning_msgs`. It contains 136 unique descriptors, including
+referenced standard ROS types, and analysis checks representative Autoware
+message, service, internal-planning, perception, and Geometry types. A package
+must be added as a root when all of its interfaces should become bridgeable;
+textual BUILD references, package-name patterns, and registry-wide enumeration
+are not sources of truth.
+
+Verification commands were:
+
+```bash
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel build //bazel/agnocast:interface_provider_proof
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel build --config=no-agnocast \
+  //bazel/agnocast:interface_provider_proof
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel build --config=fastdds --config=no-agnocast \
+  //bazel/agnocast:interface_provider_proof
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel build //bazel/agnocast:autoware_interface_universe
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=no-agnocast --nocache_test_results \
+  @autoware_node//...
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=fastdds --config=no-agnocast \
+  --nocache_test_results @autoware_node//...
+```
+
+All commands passed. The proof manifest contained 32 sorted entries and had
+SHA-256 `dcd9c64612dddac0a557033ede10d0f8ac80716f91ec5962f42b2c5ef6c3c9e1`
+under all three configuration combinations. The product target applied 2,911
+aspects, emitted 136 entries, and had SHA-256
+`913cea99406eddd9465a1cc4b73853b8521926d6e65b76229427002d131eeeb2`.
+The existing `autoware_node` initialization, executor, and reliable loopback
+test also passed with `no-agnocast` under Cyclone DDS and Fast DDS. Existing
+rules_python implicit-package and ROS C++ deprecation warnings remained
+non-fatal. No Agnocast or bridge runtime behavior was exercised. Pre-commit was
+not run.
+
+Reproduction notes: analysis cannot enumerate every target in every external
+module, so define “all interfaces” as explicit product roots plus their
+rule-level type dependencies. Load the ROS interface provider from a direct
+root module dependency. Carry both descriptors and source `File` objects in the
+provider so later rules can declare hermetic generation actions. Freeze counts
+and representative types at the product boundary; do not discover packages by
+regex-scanning BUILD text or by reading `AMENT_PREFIX_PATH`.
+
+Next: make the interface set consumable by an `agnocast_bridge_plugins` rule.
+Start with one standard message, one Autoware message, and one service; render
+their bridge translation units as declared outputs, compile and link them in
+the same Bazel invocation, then run an end-to-end bridge before expanding the
+generated plugin library to all 136 descriptors.

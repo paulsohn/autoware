@@ -75,6 +75,13 @@ For every slice:
 - Source compatibility changes and Bazel build definitions use separate commits.
 - The journal is the reproducible experiment record; upstream notes contain only
   demonstrated, generally useful findings.
+- Agnocast is compiled into Bazel targets unconditionally. `ENABLE_AGNOCAST` is
+  a runtime choice: Bazel run and test actions select Agnocast by default, while
+  `--config=no-agnocast` selects the RCLCPP backend from the same binaries.
+- Agnocast bridge plugins are generated and linked inside the Bazel graph. A
+  product-owned interface-set target supplies explicit package roots; an aspect
+  follows their `RosInterfaceInfo` providers. No build step discovers types
+  through `AMENT_PREFIX_PATH` or generates a package for a later build.
 
 ## Phase 0: bootstrap ROS with Bazel (complete)
 
@@ -344,25 +351,51 @@ test define the core baseline. The baseline must pass with Cyclone DDS and at
 the Fast DDS compatibility gate before another Agnocast-free core package is
 selected.
 
-The Agnocast lane starts after that baseline, with
-`autoware_agnocast_wrapper` built in its ROS fallback mode. Reuse the same
-observable communication behaviors where the wrapper API permits it. This
-separates wrapper/API integration failures from native Agnocast runtime and
-kernel prerequisites. Enable the Agnocast backend only after the fallback
-surface passes; at that point inspect and introduce only the `agnocastlib`,
-component, allocator, kernel, and runtime inputs exercised by the enabled
-targets.
+The Agnocast lane starts after that baseline by integrating `agnocastlib` and
+building `autoware_agnocast_wrapper` with `USE_AGNOCAST_ENABLED`
+unconditionally. First run the compiled artifact with `--config=no-agnocast`
+to isolate wrapper/API integration, then supply the heap hook and kernel/runtime
+prerequisites required to run the same behavior with the default Agnocast
+backend. The Fast DDS compatibility configurations remain composable with
+both runtime selections.
+
+Bridge support is part of this lane rather than a post-build packaging step.
+Define a product-owned set of package-level interface roots, collect their
+transitive `RosInterfaceInfo` providers during analysis, and generate each
+bridge translation unit as a declared Bazel output. Link the resulting plugin
+library in the same invocation. The initial proof must combine one RCR package
+and one local Autoware package; expand the root set only after a message and a
+service cross an end-to-end bridge.
+
+Completed analysis-time interface slice:
+
+- added `ros_interface_set`, whose aspect follows rule-level `deps`, collects
+  interface source providers, validates required descriptors and an expected
+  count, and writes a sorted deterministic manifest;
+- proved the provider contract with `std_msgs` plus
+  `autoware_common_msgs`, collecting 32 interfaces without scanning BUILD
+  text or an installed prefix;
+- defined the current product universe from the 12 integrated Autoware
+  interface modules; their direct interface edges produce 136 bridgeable
+  message and service descriptors;
+- deliberately excluded generator-wide dependency-package surfaces: a package
+  becomes wholly bridgeable only when it is an explicit product root, while
+  individual types referenced by a rooted interface remain transitive inputs.
 
 Exit criteria:
 
 - `autoware_node` builds from local source and its initialization, executor,
   and reliable loopback communication behavior pass with Cyclone DDS and Fast
   DDS.
-- The wrapper's ROS fallback mode builds and passes its applicable communication
-  behavior suite.
-- The native Agnocast backend has a separately selectable configuration and
-  runs the same applicable behavior checks, with environmental prerequisites
-  and unsupported cases recorded explicitly.
+- One Agnocast-enabled wrapper artifact passes its applicable communication
+  behavior suite with the default Agnocast backend and with
+  `--config=no-agnocast`; Fast DDS passes at the explicit compatibility gate.
+- Heap-hook, kernel-module, allocator, component, and runtime prerequisites are
+  introduced only when a current enabled target exposes them and are recorded
+  explicitly.
+- A product-owned interface set exposes standard and Autoware interfaces during
+  analysis, and a Bazel-built plugin library bridges a representative message
+  and service without an installed ROS environment or a second build.
 - Further core selection is dependency-driven and may proceed alongside the
   Agnocast lane only when it does not expand the fallback baseline merely to
   avoid an Agnocast dependency.
@@ -380,7 +413,7 @@ when the preceding phase meets its exit criteria.
 From phase 1 onward, runnable slices use Cyclone DDS by default. Fast DDS
 compatibility is checked after each phase reaches its Cyclone DDS exit criteria.
 
-Potential topics such as Agnocast, OSQP compatibility, OpenMP, CMake parity,
+Potential topics such as OSQP compatibility, OpenMP, CMake parity,
 runtime-image deduplication, and remote caching will be evaluated when a current
 target requires them.
 

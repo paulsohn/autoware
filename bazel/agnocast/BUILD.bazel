@@ -1,0 +1,46 @@
+load(":interfaces.bzl", "ros_interface_set")
+
+package(default_visibility = ["//visibility:public"])
+
+# The first proof deliberately combines an upstream package and a local
+# Autoware package. The aspect collects types owned by those roots and types
+# referenced by their individual interface rules; generator-wide dependency
+# packages do not silently enlarge the bridgeable universe.
+ros_interface_set(
+    name = "interface_provider_proof",
+    expected_count = 32,
+    package_roots = [
+        "@autoware_common_msgs//:cc",
+        "@std_msgs//:cc",
+    ],
+    required_interfaces = [
+        "autoware_common_msgs/msg/ResponseStatus",
+        "std_msgs/msg/String",
+    ],
+)
+
+ros_interface_set(
+    name = "autoware_interface_universe",
+    expected_count = 136,
+    package_roots = [
+        "@autoware_common_msgs//:cc",
+        "@autoware_control_msgs//:cc",
+        "@autoware_internal_planning_msgs//:cc",
+        "@autoware_localization_msgs//:cc",
+        "@autoware_map_msgs//:cc",
+        "@autoware_perception_msgs//:cc",
+        "@autoware_planning_msgs//:cc",
+        "@autoware_sensing_msgs//:cc",
+        "@autoware_simulation_msgs//:cc",
+        "@autoware_system_msgs//:cc",
+        "@autoware_v2x_msgs//:cc",
+        "@autoware_vehicle_msgs//:cc",
+    ],
+    required_interfaces = [
+        "autoware_common_msgs/msg/ResponseStatus",
+        "autoware_internal_planning_msgs/msg/PathWithLaneId",
+        "autoware_localization_msgs/srv/InitializeLocalization",
+        "autoware_perception_msgs/msg/DetectedObjects",
+        "geometry_msgs/msg/PoseWithCovarianceStamped",
+    ],
+)
