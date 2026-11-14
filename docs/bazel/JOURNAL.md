@@ -1214,3 +1214,79 @@ convention established by the preceding slice.
 Next: integrate the logging and diagnostics leaves, whose tests add generated
 service and diagnostic-updater behavior, before entering the geometry and TF
 dependency chain.
+
+## 2026-11-14: Add logging and diagnostics utility leaves
+
+Goal: integrate the remaining independent ROS utility leaves before entering
+the geometry and TF chain, and validate generated-service, direct C-library,
+diagnostic-updater, and diagnostics publisher dependency shapes.
+
+Prerequisites and inspected inputs were both packages' manifests, CMake files,
+public headers, compiled sources, and complete test source sets; the RCR
+metadata and module manifests; and the targets exported by the selected RCR
+repositories. The selected releases are `logging_demo@0.37.9-1.rcr.0`,
+`diagnostic_updater@4.4.7-1.rcr.2`, and
+`diagnostic_msgs@5.9.3-1.rcr.0`. Target queries confirmed the compile/shared
+pairs `@logging_demo//:cc` and `:cc_shared`, `@rcutils//:rcutils_library` and
+`:rcutils`, and `@diagnostic_updater//:diagnostic_updater_library` and
+`:diagnostic_updater`.
+
+`autoware_utils_logging` is header-only. Its public template creates a
+`logging_demo::srv::ConfigLogger` service through RCLCPP and directly calls the
+RCUtils logging API, so its library declares all three compile providers. The
+test executable collects their shared-library counterparts. RCUtils is exposed
+as a direct root `0.0.0` dependency selected by the pinned `ros_core` release;
+the two packages outside `ros_core` use concrete root versions. The package
+module uses `0.0.0` for ROS dependencies so the root retains version control.
+
+`autoware_utils_diagnostics` compiles `timeout_diagnostics.cpp` and exports both
+diagnostics headers. Its library depends directly on RCLCPP, generated
+`diagnostic_msgs`, and the compiled `diagnostic_updater` provider. The test
+executable collects the corresponding shared libraries. This is the minimum
+pattern required by the public headers and compiled source; no geometry or TF
+dependency is introduced by this slice.
+
+Verification forced both complete package suites from a clean caller under the
+primary and compatibility middleware configurations:
+
+```bash
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --nocache_test_results \
+  @autoware_utils_logging//... @autoware_utils_diagnostics//...
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=fastdds --nocache_test_results \
+  @autoware_utils_logging//... @autoware_utils_diagnostics//...
+```
+
+The Cyclone DDS run analyzed six targets, completed 37 actions with 6,099
+action-cache hits, and both tests passed. The Fast DDS run analyzed the same
+surface, completed 158 actions with 7,549 action-cache hits, and both tests
+passed. Existing rules_python and ROS C++ deprecation warnings remained
+non-fatal. `git diff --check` passed. Pre-commit was not run.
+
+The diagnostics suite publishes and receives `DiagnosticArray` messages across
+multiple clear cycles, and verifies level, message, key replacement, and value
+behavior. This supplies middleware behavior evidence under both RMWs. The
+logging test currently verifies only that a node can construct the generated
+service, and the timeout test only constructs its diagnostic task; neither
+invokes the service callback nor exercises timeout-level transitions. Those
+are test-coverage limitations, not Bazel build failures.
+
+Reproduction notes: inspect every public header as well as compiled sources;
+manifest dependencies alone do not distinguish compile-only, generated, and
+shared runtime labels. Query each RCR package's exported targets, declare the
+compile provider directly on the library, and collect the paired shared target
+at every final executable. Generated services use the same `:cc`/`:cc_shared`
+pair as messages. A public call into a C package such as RCUtils warrants a
+direct dependency even when RCLCPP also reaches it transitively. Pin packages
+outside `ros_core` concretely at the root and keep package-local ROS versions
+at `0.0.0`.
+
+Result: seven utility packages now build from local source and their complete
+existing test suites pass. The integration adds no source compatibility patch,
+and the lockfile records only the selected RCR releases, their `0.0.0` lookup
+modules, and the updated rosdistro extension digest.
+
+Next: inspect the geometry and TF utility dependency chain from its first
+unavailable leaf, adding only prerequisites exposed by the first current
+target.

@@ -292,6 +292,17 @@ Completed generated-message and Boost leaf slice:
   dependencies at `0.0.0`, preserving root-controlled release selection;
 - executed both test suites with Cyclone DDS and Fast DDS.
 
+Completed service and diagnostics utility slice:
+
+- added header-only `autoware_utils_logging` against RCLCPP, RCUtils, and the
+  generated `logging_demo` service;
+- added compiled `autoware_utils_diagnostics` against RCLCPP,
+  `diagnostic_msgs`, and `diagnostic_updater`;
+- validated the existing diagnostics publisher/subscriber characterization
+  test with Cyclone DDS and Fast DDS;
+- kept service-callback and timeout-transition behavior as explicit remaining
+  test gaps because the existing package tests only construct those objects.
+
 Exit criteria:
 
 - The utility packages required by the first runnable core target build from

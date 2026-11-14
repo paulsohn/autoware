@@ -1,0 +1,11 @@
+module(
+    name = "autoware_utils_logging",
+    version = "1.11.0-3.rcr.2",
+)
+
+bazel_dep(name = "googletest", version = "1.18.0.bcr.1")
+bazel_dep(name = "logging_demo", version = "0.0.0")
+bazel_dep(name = "rclcpp", version = "0.0.0")
+bazel_dep(name = "rcutils", version = "0.0.0")
+bazel_dep(name = "rosdistro", version = "0.0.0")
+bazel_dep(name = "rules_cc", version = "0.2.26.rcr.0")

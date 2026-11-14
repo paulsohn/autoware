@@ -1,0 +1,34 @@
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "autoware_utils_logging",
+    hdrs = glob(["include/**/*.hpp"]),
+    strip_include_prefix = "include",
+    deps = [
+        "@logging_demo//:cc",
+        "@rclcpp//:rclcpp_library",
+        "@rcutils//:rcutils_library",
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "test_dynamic_deps",
+    dynamic_deps = [
+        "@logging_demo//:cc_shared",
+        "@rclcpp//:rclcpp",
+        "@rcutils//:rcutils",
+    ],
+)
+
+cc_test(
+    name = "test_autoware_utils_logging",
+    srcs = glob(["test/**/*.cpp"]),
+    dynamic_deps = [":test_dynamic_deps"],
+    deps = [
+        ":autoware_utils_logging",
+        "@googletest//:gtest",
+    ],
+)

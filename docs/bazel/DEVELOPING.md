@@ -157,6 +157,13 @@ target, such as `@rclcpp//:rclcpp`, in the `collect_transitive_dynamic_deps`
 closure of each final `cc_binary` or `cc_test`. The library rule itself does not
 accept `dynamic_deps`.
 
+Apply the same pairing to generated services and directly used C libraries.
+For example, compile logging utilities with `@logging_demo//:cc` and
+`@rcutils//:rcutils_library`, then include `:cc_shared` and `:rcutils` in the
+final executable's dynamic dependency closure. Declare dependencies referenced
+by a public header directly even when another library also brings them into the
+transitive graph.
+
 For Boost headers already mapped by the pinned rosdistro, use its narrow target
 rather than adding the BCR umbrella module. For example, UUID consumers use
 `@rosdistro//cc:boost.uuid`.

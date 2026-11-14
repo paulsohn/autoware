@@ -1,0 +1,35 @@
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "autoware_utils_diagnostics",
+    srcs = ["src/timeout_diagnostics.cpp"],
+    hdrs = glob(["include/**/*.hpp"]),
+    strip_include_prefix = "include",
+    deps = [
+        "@diagnostic_msgs//:cc",
+        "@diagnostic_updater//:diagnostic_updater_library",
+        "@rclcpp//:rclcpp_library",
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "test_dynamic_deps",
+    dynamic_deps = [
+        "@diagnostic_msgs//:cc_shared",
+        "@diagnostic_updater//:diagnostic_updater",
+        "@rclcpp//:rclcpp",
+    ],
+)
+
+cc_test(
+    name = "test_autoware_utils_diagnostics",
+    srcs = glob(["test/**/*.cpp"]),
+    dynamic_deps = [":test_dynamic_deps"],
+    deps = [
+        ":autoware_utils_diagnostics",
+        "@googletest//:gtest",
+    ],
+)
