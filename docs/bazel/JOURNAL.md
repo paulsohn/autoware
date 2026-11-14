@@ -1290,3 +1290,108 @@ modules, and the updated rosdistro extension digest.
 Next: inspect the geometry and TF utility dependency chain from its first
 unavailable leaf, adding only prerequisites exposed by the first current
 target.
+
+## 2026-11-14: Add the geometry and TF utility chain
+
+Goal: integrate geometry and TF through explicit prerequisite gates so each
+new dependency shape is validated before the next layer is introduced. The
+sequence was the local planning interfaces, compiled geometry, then the
+header-only TF helpers.
+
+The inspected inputs were the current interface definitions, package
+manifests, CMake source lists, public and private includes, and complete test
+sources for all three packages; the RCR metadata for the corresponding
+Autoware and Geometry2 releases; and the actual targets exported by resolved
+repositories. The interface release is
+`autoware_internal_planning_msgs@1.16.0-1.rcr.0`. The TF2 packages use the
+matching `0.45.10-1.rcr.0` release.
+
+The first gate added all 21 messages and five services from
+`autoware_internal_planning_msgs`, not only `PathWithLaneId` needed by
+geometry. Each `ros_message` and `ros_service` lists its direct referenced
+types, while `default_generators` lists every external package used anywhere
+in the generated graph. The root selects the published interface version and
+overrides it with the local source snapshot. Building `//...` therefore checks
+the complete generator surface instead of one C++ consumer.
+
+The second gate added `autoware_utils_geometry` as one compiled library over
+all ten current sources and public headers. Direct dependencies come from the
+actual includes: the local internal-planning, perception, and planning message
+targets; math; Geometry messages; TF2 and TF2 Geometry Messages; and the
+rosdistro's narrow Eigen, Boost.Config, and Boost.Geometry targets. The test
+adds the system utility and collects every paired ROS shared target at its
+executable boundary. Although the manifest lists `tf2_eigen`, no current
+header or source includes it, so it was not introduced.
+
+The third gate added header-only `autoware_utils_tf` over geometry, Geometry
+messages, RCLCPP, and TF2 ROS. Its test executable collects both its direct
+shared dependencies and the shared ROS closure of the compiled geometry
+library. This preserves the current executable-boundary convention without
+prematurely creating installable package shared libraries.
+
+The first geometry analysis failed with:
+
+```text
+no such package '@@tf2_geometry_msgs+//': BUILD file not found
+```
+
+The root initially selected `tf2` and `tf2_geometry_msgs` at `0.0.0`. In this
+graph no other root dependency upgraded those compatibility modules, so Bazel
+resolved raw source archives without RCR BUILD overlays. Pinning `tf2`,
+`tf2_geometry_msgs`, and later `tf2_ros` at `0.45.10-1.rcr.0` supplied their
+real compile/shared targets. The interrupted Boost download reported alongside
+the aborted analysis was incidental and disappeared on the corrected build.
+
+No package shared library is required by the current targets. Consequently,
+compiled Boost shared pairs were not added preemptively: the geometry library
+and its tests link successfully as currently structured. If a later
+`cc_shared_library` consumer reports duplicate static Boost ownership, that
+consumer will provide the evidence and scope for the shared-pair change.
+
+Verification commands were:
+
+```bash
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel build @autoware_internal_planning_msgs//...
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel build --config=fastdds @autoware_internal_planning_msgs//...
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --nocache_test_results \
+  @autoware_utils_geometry//... @autoware_utils_tf//...
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=fastdds --nocache_test_results \
+  @autoware_utils_geometry//... @autoware_utils_tf//...
+```
+
+The initial Cyclone interface build analyzed 37 targets and completed 469
+actions with 12,471 action-cache hits. The Fast DDS interface build analyzed
+the same surface successfully. The final combined Cyclone utility run
+completed 198 actions with 11,967 action-cache hits; both tests passed. The
+combined Fast DDS run completed 198 actions with 13,538 action-cache hits; both
+tests passed. Geometry tests exercise algorithms, message conversions, path
+geometry, random polygons, and pose deviation. TF tests currently exercise
+listener construction and lookup behavior without publishing live transforms.
+
+Existing ROS C++ and Boost deprecation warnings remained non-fatal. The build
+also exposed a Clang warning from a GCC-only diagnostic pragma in
+`boost_geometry.hpp`; that source finding and the package's undeclared public
+message dependencies are recorded in `UPSTREAM_AWF.md`. `git diff --check`
+passed. Pre-commit was not run.
+
+Reproduction notes: integrate the complete prerequisite interface package
+before its C++ consumer; derive direct dependencies from public headers and
+sources rather than relying on the manifest alone; query the resolved RCR
+repository before choosing labels; and verify that each `0.0.0` dependency is
+actually upgraded by a concrete root selection. Keep generated-message compile
+targets on libraries and their shared counterparts on final executables. Add a
+package shared library or compiled Boost shared pairs only after a current
+consumer demonstrates that boundary.
+
+Result: the local planning interface surface, geometry library, and TF helper
+library build in dependency order and pass their complete existing tests under
+both middleware configurations. The lockfile retains only the concrete TF2
+family and transitive message-filter releases required by target resolution.
+
+Next: run the complete currently integrated utility set inside the read-only
+development image, then use its result to decide whether Phase 3 can close and
+the minimal Agnocast-free core slice can begin.

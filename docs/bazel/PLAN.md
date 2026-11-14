@@ -303,6 +303,21 @@ Completed service and diagnostics utility slice:
 - kept service-callback and timeout-transition behavior as explicit remaining
   test gaps because the existing package tests only construct those objects.
 
+Completed geometry and TF utility slice:
+
+- added the complete local `autoware_internal_planning_msgs` interface package
+  as the first geometry prerequisite;
+- integrated compiled `autoware_utils_geometry` from its current public
+  message, TF2, Eigen, and Boost includes without adding unused `tf2_eigen`;
+- integrated header-only `autoware_utils_tf` on the validated geometry target;
+- pinned concrete TF2 RCR releases because their `0.0.0` modules are source
+  stubs without Bazel overlays unless another root dependency selects a real
+  release;
+- passed the interface generator surface and both utility suites with Cyclone
+  DDS and Fast DDS;
+- deferred package shared libraries and compiled Boost shared pairs until a
+  current downstream shared consumer reproduces that link requirement.
+
 Exit criteria:
 
 - The utility packages required by the first runnable core target build from

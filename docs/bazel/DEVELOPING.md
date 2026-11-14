@@ -164,6 +164,18 @@ final executable's dynamic dependency closure. Declare dependencies referenced
 by a public header directly even when another library also brings them into the
 transitive graph.
 
+Use a ROS dependency version of `0.0.0` in a package-local module only when the
+root graph also selects a concrete release. A standalone `0.0.0` RCR module can
+be a source-only compatibility stub with no BUILD overlay. If analysis reports
+that the external repository has no BUILD package, inspect the resolved module
+and pin the matching concrete RCR release at the root rather than inventing
+labels for the stub.
+
+When a header-only library sits above a local compiled library, its final
+executables must still collect the shared ROS closure needed by that compiled
+library. Static `cc_library` propagation supplies compile and link inputs, but
+does not replace the RCR `cc_shared_library` runtime providers.
+
 For Boost headers already mapped by the pinned rosdistro, use its narrow target
 rather than adding the BCR umbrella module. For example, UUID consumers use
 `@rosdistro//cc:boost.uuid`.
