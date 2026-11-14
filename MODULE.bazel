@@ -16,6 +16,12 @@ bazel_dep(name = "geographic_msgs", version = "1.0.6-3.rcr.2")
 
 # Local Autoware package modules. The concrete versions identify their RCR
 # counterparts; local_path_override selects the source snapshots by default.
+bazel_dep(name = "autoware_utils_math", version = "1.11.0-3.rcr.2")
+local_path_override(
+    module_name = "autoware_utils_math",
+    path = "src/core/autoware_utils/autoware_utils_math",
+)
+
 bazel_dep(name = "autoware_common_msgs", version = "1.11.0-3.rcr.2")
 local_path_override(
     module_name = "autoware_common_msgs",

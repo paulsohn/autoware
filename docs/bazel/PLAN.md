@@ -249,20 +249,53 @@ Exit criteria:
 - Repeated registration or BUILD patterns are documented with enough evidence
   to decide whether automation is warranted.
 
-All Phase 2 exit criteria are met. The next phase starts with the smallest
-Autoware utility dependency needed by a runnable core target and introduces
-shared Bazel conventions only when that target demonstrates the requirement.
+All Phase 2 exit criteria are met.
+
+## Phase 3: Autoware utilities and C++ package conventions (in progress)
+
+Purpose: establish the package-local Bazel conventions needed by Autoware C++
+libraries and tests before selecting the first runnable core slice.
+
+Begin with `autoware_utils_math`. It is a compiled library with an existing
+GoogleTest suite but no runtime ROS dependency, so it isolates C++ packaging
+and test behavior from middleware and core-package concerns. Add subsequent
+utility packages in dependency order and introduce ROS-specific conventions
+only when their source requires them.
+
+Completed initial slice:
+
+- added `autoware_utils_math` as a package-local module selected by the root;
+- exposed its public headers and two compiled sources as one `cc_library`;
+- built and executed the complete existing nine-file test suite as one
+  `cc_test`;
+- demonstrated that a test dependency in an overridden package module cannot
+  be marked `dev_dependency`, because development dependencies are ignored for
+  non-root modules.
+
+Exit criteria:
+
+- The utility packages required by the first runnable core target build from
+  their local source with public include paths matching their CMake consumers.
+- Existing unit tests for every integrated utility package execute with Bazel.
+- Repeated C++ library, test, ROS dependency, and runtime-data patterns are
+  documented only after examples demonstrate them.
+- The complete bounded utility set passes in the read-only development image.
+
+The following core phase will keep its Agnocast-free portion limited to the
+smallest publisher/subscriber slice needed to establish node and communication
+test infrastructure. Agnocast becomes a dedicated core subphase when a current
+target requires its wrapper or backend.
 
 ## Later phases
 
 These are scope markers, not implementation decisions. Refine each phase only
 when the preceding phase meets its exit criteria.
 
-1. Autoware utility packages and shared build conventions.
-2. Autoware core packages in dependency-driven runnable slices.
-3. CUDA and TensorRT packages on x86 hardware.
-4. Install tree, headless OCI image, and planning simulator behavior test.
-5. Cross-build and non-GPU tests for Jetson Thor, followed by hardware tests.
+1. Autoware core packages in dependency-driven runnable slices, with a minimal
+   Agnocast-free publisher/subscriber slice before the Agnocast subphase.
+2. CUDA and TensorRT packages on x86 hardware.
+3. Install tree, headless OCI image, and planning simulator behavior test.
+4. Cross-build and non-GPU tests for Jetson Thor, followed by hardware tests.
 
 From phase 1 onward, runnable slices use Cyclone DDS by default. Fast DDS
 compatibility is checked after each phase reaches its Cyclone DDS exit criteria.

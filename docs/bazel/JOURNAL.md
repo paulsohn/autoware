@@ -1008,3 +1008,66 @@ following the experiment history.
 
 Next: select a small runnable Autoware core target and record its adoption work
 here; add only the resulting stable developer workflow to DEVELOPING.md.
+
+## 2026-11-14: Start utility integration with autoware_utils_math
+
+Goal: establish the minimum package-local Bazel pattern for an Autoware C++
+library and its existing unit tests without introducing ROS runtime or core
+node dependencies.
+
+Inventorying the 12 packages under `src/core/autoware_utils` identified
+`autoware_utils_math` as a leaf: its manifest has no runtime dependencies, its
+CMake target compiles `src/sin_table.cpp` and `src/trigonometry.cpp`, and its
+test target collects `test/*.cpp`. The root now selects the local package at
+the published `1.11.0-3.rcr.2` version. Its package module directly declares
+`rules_cc` and GoogleTest, and its BUILD file exposes the `include/` tree with
+that prefix stripped so existing `#include "autoware_utils_math/..."` lines
+remain unchanged.
+
+The first analysis attempt loaded `cc_test` from `cc_binary.bzl`. Bazel reported
+that the file does not export that symbol. The workspace's existing smoke BUILD
+demonstrated the supported public entry point, so both `cc_library` and
+`cc_test` now load from `@rules_cc//cc:defs.bzl`.
+
+The next attempt declared GoogleTest with `dev_dependency = True`. Analysis
+reported that `@googletest` was not visible from `@autoware_utils_math`.
+Bzlmod ignores development dependencies of a non-root module; a local override
+does not make that package the root. Removing the development-only marker made
+the package-owned test dependency visible without adding it to the root
+module.
+
+Verification ran the full package surface and forced the test to execute:
+
+```bash
+bazel mod tidy
+bazel test --nocache_test_results @autoware_utils_math//...
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --nocache_test_results @autoware_utils_math//...
+```
+
+Bazel analyzed the library and test targets, completed 28 actions with a warm
+cache, and executed `test_autoware_utils_math`; the single Bazel test target
+passed. The final clean-caller run analyzed both targets and forced the test to
+execute again; it passed with 15 action-cache hits. GoogleTest emitted two
+non-fatal warnings during compilation for the source package's use of deprecated
+`INSTANTIATE_TEST_CASE_P`. No middleware compatibility run was needed because
+this package has no ROS or RMW dependency. `git diff --check` passed;
+markdownlint and Prettier were unavailable in the caller environment.
+Pre-commit was not run.
+
+Reproduction notes: create a package-local module with normal direct
+dependencies on `rules_cc` and GoogleTest, add a root dependency and
+`local_path_override` at the published package version, and expose the public
+headers with `strip_include_prefix = "include"`. Do not mark GoogleTest as a
+development dependency when tests are invoked from the consuming root. Load
+the C++ rules from `@rules_cc//cc:defs.bzl`, then build and execute the whole
+package with the command above.
+
+Result: the first utility library builds from local source and its complete
+upstream unit-test source set executes under Bazel. The slice establishes only
+the C++ library and test conventions; ROS dependencies, shared-library needs,
+and runtime data remain intentionally untested.
+
+Next: add the next leaf utility packages in dependency order, using each
+package's current sources and tests to determine which ROS and linking
+conventions are actually required.

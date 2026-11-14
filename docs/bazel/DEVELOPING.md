@@ -136,6 +136,21 @@ env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
 Then run a consumer that constructs or transports the changed type. Repeat the
 bounded build and consumer test with `--config=fastdds`.
 
+## Editing C++ utility packages
+
+Build and test a locally selected package through its external-repository
+label, which exercises the same module boundary used by its consumers:
+
+```bash
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --nocache_test_results @autoware_utils_math//...
+```
+
+Package-owned tests must declare their test framework as a normal direct module
+dependency. Bzlmod ignores `dev_dependency` declarations in a module when that
+module is consumed from the root workspace, including through a
+`local_path_override`.
+
 ## Development image
 
 Build the pinned development image when its definition changes:

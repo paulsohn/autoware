@@ -1,0 +1,22 @@
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "autoware_utils_math",
+    srcs = [
+        "src/sin_table.cpp",
+        "src/trigonometry.cpp",
+    ],
+    hdrs = glob(["include/**/*.hpp"]),
+    strip_include_prefix = "include",
+)
+
+cc_test(
+    name = "test_autoware_utils_math",
+    srcs = glob(["test/**/*.cpp"]),
+    deps = [
+        ":autoware_utils_math",
+        "@googletest//:gtest",
+    ],
+)
