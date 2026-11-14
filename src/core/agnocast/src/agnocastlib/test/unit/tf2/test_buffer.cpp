@@ -5,9 +5,9 @@
 #include "rclcpp/duration.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp/time.hpp"
-#include "tf2/exceptions.h"
-#include "tf2/time.h"
-#include "tf2_ros/buffer_interface.h"
+#include "tf2/exceptions.hpp"
+#include "tf2/time.hpp"
+#include "tf2_ros/buffer_interface.hpp"
 
 #include "geometry_msgs/msg/transform_stamped.hpp"
 

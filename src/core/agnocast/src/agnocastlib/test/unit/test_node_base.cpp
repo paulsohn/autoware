@@ -498,11 +498,12 @@ TEST_F(TestNodeBase, executor_association_flag_is_mutable)
 // Category 6: Notify guard condition
 //
 // Specification:
-//   - get_notify_guard_condition() returns a GuardCondition when the node was
-//     constructed with a valid context (e.g., after rclcpp::init()); it
-//     throws std::runtime_error otherwise.
-//   - get_shared_notify_guard_condition() and trigger_notify_guard_condition()
-//     (rclcpp 28+) are stubs that always throw std::runtime_error.
+//   - The notify guard-condition getter returns a GuardCondition when the node
+//     was constructed with a valid context (e.g., after rclcpp::init()); it
+//     throws std::runtime_error otherwise. rclcpp 32 exposes only the shared
+//     getter through NodeBaseInterface.
+//   - Before rclcpp 32, get_shared_notify_guard_condition() and
+//     trigger_notify_guard_condition() are compatibility stubs.
 // =============================================================================
 
 TEST_F(TestNodeBase, get_notify_guard_condition_throws_when_context_is_invalid)
@@ -512,7 +513,11 @@ TEST_F(TestNodeBase, get_notify_guard_condition_throws_when_context_is_invalid)
   auto node_base = create_node_base("my_node", "/my_ns");
 
   // Act / Assert
+#if RCLCPP_VERSION_MAJOR >= 32
+  EXPECT_THROW(node_base->get_shared_notify_guard_condition(), std::runtime_error);
+#else
   EXPECT_THROW(node_base->get_notify_guard_condition(), std::runtime_error);
+#endif
 }
 
 TEST_F(TestNodeBase, get_notify_guard_condition_returns_guard_when_context_is_valid)
@@ -527,10 +532,17 @@ TEST_F(TestNodeBase, get_notify_guard_condition_returns_guard_when_context_is_va
     auto node_base = local_node->get_node_base_interface();
 
     // Act / Assert
+#if RCLCPP_VERSION_MAJOR >= 32
+    EXPECT_NO_THROW({
+      auto guard = node_base->get_shared_notify_guard_condition();
+      (void)guard;
+    });
+#else
     EXPECT_NO_THROW({
       auto & guard = node_base->get_notify_guard_condition();
       (void)guard;
     });
+#endif
   }
   context->shutdown("test cleanup");
 }
