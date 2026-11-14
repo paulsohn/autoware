@@ -1,0 +1,6 @@
+module(name = "autoware_vehicle_msgs")
+
+bazel_dep(name = "autoware_planning_msgs", version = "0.0.0")
+bazel_dep(name = "builtin_interfaces", version = "0.0.0")
+bazel_dep(name = "rosidl_default_generators", version = "0.0.0")
+bazel_dep(name = "std_msgs", version = "0.0.0")

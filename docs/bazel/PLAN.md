@@ -177,7 +177,7 @@ Answers from Phase 1:
   `local_path_override`, and its own package-local `MODULE.bazel`. No central
   target list was needed.
 
-## Phase 2: complete the Autoware interface package set (in progress)
+## Phase 2: complete the Autoware interface package set (complete)
 
 Purpose: apply the demonstrated package convention to the remaining Autoware
 interface packages in dependency order.
@@ -211,10 +211,20 @@ Completed base layer:
 - selected `geographic_msgs@1.0.6-3.rcr.2` directly at the root because the
   `ros_core` release does not select packages outside its package set.
 
-Next layer: add `autoware_vehicle_msgs`, which depends on planning, and
-`autoware_simulation_msgs`, which depends on perception. The simulation module
-has no published Lyrical RCR counterpart, so its local-only version convention
-must be validated in that layer.
+Completed dependent layer:
+
+- added `autoware_vehicle_msgs` and `autoware_simulation_msgs` and built their
+  complete 26-target and 13-target surfaces;
+- selected the published vehicle version at the root while assigning the
+  unpublished simulation module the local-only `0.0.0` dependency version;
+- demonstrated that each referenced external interface, including
+  `autoware_perception_msgs/Shape`, must be an explicit message-rule edge;
+- built all 208 targets from the 11 interface packages together and executed
+  all five C++ consumers under both middleware configurations.
+
+`autoware_msgs` remains an ament metapackage rather than a Bazel module. It
+contains no interfaces or generated outputs; its package manifest only groups
+the same 11 modules that the combined build gate validates directly.
 
 Exit criteria:
 
@@ -224,6 +234,10 @@ Exit criteria:
   DDS, and each bounded group passes the Fast DDS compatibility gate.
 - Repeated registration or BUILD patterns are documented with enough evidence
   to decide whether automation is warranted.
+
+All Phase 2 exit criteria are met. The next phase starts with the smallest
+Autoware utility dependency needed by a runnable core target and introduces
+shared Bazel conventions only when that target demonstrates the requirement.
 
 ## Later phases
 

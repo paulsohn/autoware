@@ -1,0 +1,108 @@
+load("@rosidl_default_generators//:defs.bzl", "ros_message")
+
+package(default_visibility = ["//visibility:public"])
+
+exports_files([
+    "ActuationCommand.msg",
+    "ActuationCommandStamped.msg",
+    "ActuationReport.msg",
+    "ActuationReportStamped.msg",
+    "ControlModeReport.msg",
+    "Engage.msg",
+    "GearCommand.msg",
+    "GearReport.msg",
+    "HazardLightsCommand.msg",
+    "HazardLightsReport.msg",
+    "SteeringReport.msg",
+    "TurnIndicatorsCommand.msg",
+    "TurnIndicatorsReport.msg",
+    "VelocityReport.msg",
+])
+
+ros_message(
+    name = "ActuationCommand",
+    src = "ActuationCommand.msg",
+)
+
+ros_message(
+    name = "ActuationCommandStamped",
+    src = "ActuationCommandStamped.msg",
+    deps = [
+        ":ActuationCommand",
+        "@std_msgs//msg:Header",
+    ],
+)
+
+ros_message(
+    name = "ActuationReport",
+    src = "ActuationReport.msg",
+)
+
+ros_message(
+    name = "ActuationReportStamped",
+    src = "ActuationReportStamped.msg",
+    deps = [
+        ":ActuationReport",
+        "@std_msgs//msg:Header",
+    ],
+)
+
+ros_message(
+    name = "ControlModeReport",
+    src = "ControlModeReport.msg",
+    deps = ["@builtin_interfaces//msg:Time"],
+)
+
+ros_message(
+    name = "Engage",
+    src = "Engage.msg",
+    deps = ["@builtin_interfaces//msg:Time"],
+)
+
+ros_message(
+    name = "GearCommand",
+    src = "GearCommand.msg",
+    deps = ["@builtin_interfaces//msg:Time"],
+)
+
+ros_message(
+    name = "GearReport",
+    src = "GearReport.msg",
+    deps = ["@builtin_interfaces//msg:Time"],
+)
+
+ros_message(
+    name = "HazardLightsCommand",
+    src = "HazardLightsCommand.msg",
+    deps = ["@builtin_interfaces//msg:Time"],
+)
+
+ros_message(
+    name = "HazardLightsReport",
+    src = "HazardLightsReport.msg",
+    deps = ["@builtin_interfaces//msg:Time"],
+)
+
+ros_message(
+    name = "SteeringReport",
+    src = "SteeringReport.msg",
+    deps = ["@builtin_interfaces//msg:Time"],
+)
+
+ros_message(
+    name = "TurnIndicatorsCommand",
+    src = "TurnIndicatorsCommand.msg",
+    deps = ["@builtin_interfaces//msg:Time"],
+)
+
+ros_message(
+    name = "TurnIndicatorsReport",
+    src = "TurnIndicatorsReport.msg",
+    deps = ["@builtin_interfaces//msg:Time"],
+)
+
+ros_message(
+    name = "VelocityReport",
+    src = "VelocityReport.msg",
+    deps = ["@std_msgs//msg:Header"],
+)

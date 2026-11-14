@@ -589,3 +589,121 @@ middleware configurations. No source compatibility fix was required.
 Next: add the dependent vehicle and simulation packages, then run the combined
 message-set compatibility gate. The Docker validation remains pending until a
 daemon is available.
+
+## 2026-11-14: Complete the Autoware interface package set
+
+Goal: add the two interface packages that depend on the completed base layer,
+exercise their generated C++ types, and validate every integrated message
+target as one graph.
+
+Added package-local modules and complete interface rules for:
+
+- `autoware_vehicle_msgs`: 14 messages, one service, and 26 package targets;
+- `autoware_simulation_msgs`: two messages and 13 package targets.
+
+The root selects the published vehicle module version and redirects it to the
+current source snapshot. No Lyrical RCR module exists for simulation, so its
+root dependency uses `0.0.0` with a mandatory local override. Both package
+modules retain their manifest-level dependencies; generator inputs contain
+only interfaces referenced by their current definitions.
+
+The primary package builds ran sequentially:
+
+```bash
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel build @autoware_vehicle_msgs//...
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel build @autoware_simulation_msgs//...
+```
+
+Vehicle built all 26 targets. The first simulation build failed while
+generating the `SimulatedObject` type description: `Shape.json` was missing.
+The `SimulatedObject.msg` source referenced both `ObjectClassification` and
+`Shape`, but the Bazel rule declared only the former. Temporarily removing the
+perception package from the root generator dependencies reproduced the same
+failure, ruling out an over-broad package edge. Adding the explicit
+`@autoware_perception_msgs//msg:Shape` rule dependency and restoring the package
+generator input fixed the cause; all 13 simulation targets then built.
+
+The dependent-layer consumer constructs a stamped actuation command and a
+simulated object containing perception classification and shape fields:
+
+```bash
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --nocache_test_results \
+  //bazel/smoke:autoware_interface_dependent_test
+```
+
+Its first execution failed on the expected numeric value for
+`Shape::BOUNDING_BOX`. The message source defines that constant as zero, not
+one. Correcting the assertion to the source-defined value made the test pass.
+
+The dependent-layer Fast DDS gate passed all 39 package targets and forced the
+consumer to execute:
+
+```bash
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel build --config=fastdds \
+  @autoware_vehicle_msgs//... @autoware_simulation_msgs//...
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=fastdds --nocache_test_results \
+  //bazel/smoke:autoware_interface_dependent_test
+```
+
+The complete interface build then passed for all 208 targets from
+`autoware_common_msgs`, `autoware_control_msgs`,
+`autoware_localization_msgs`, `autoware_map_msgs`,
+`autoware_perception_msgs`, `autoware_planning_msgs`,
+`autoware_sensing_msgs`, `autoware_simulation_msgs`,
+`autoware_system_msgs`, `autoware_v2x_msgs`, and
+`autoware_vehicle_msgs`:
+
+```bash
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel build \
+  @autoware_common_msgs//... @autoware_control_msgs//... \
+  @autoware_localization_msgs//... @autoware_map_msgs//... \
+  @autoware_perception_msgs//... @autoware_planning_msgs//... \
+  @autoware_sensing_msgs//... @autoware_simulation_msgs//... \
+  @autoware_system_msgs//... @autoware_v2x_msgs//... \
+  @autoware_vehicle_msgs//...
+```
+
+The command passed once with the default Cyclone DDS configuration and once
+with `--config=fastdds`. Each analysis found 208 targets, with the final Fast
+DDS gate configuring 59,776 targets and applying 3,876 aspects; all 17,789
+actions were available from the action cache.
+
+Finally, one command forced all five interface consumers to execute together:
+
+```bash
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --nocache_test_results \
+  //bazel/smoke:autoware_common_msgs_test \
+  //bazel/smoke:autoware_localization_msgs_test \
+  //bazel/smoke:autoware_interface_layer_test \
+  //bazel/smoke:autoware_interface_base_test \
+  //bazel/smoke:autoware_interface_dependent_test
+```
+
+All five passed under Cyclone DDS. Repeating the command with
+`--config=fastdds` also passed all five. Existing C++23 deprecation and
+rules_python implicit-`__init__.py` warnings remained non-fatal.
+
+The `autoware_msgs` package itself is an ament metapackage: it contains no
+interface definition or generated output and lists these same 11 packages as
+runtime dependencies. The combined module gate therefore covers its interface
+set directly without adding an output-free Bazel module.
+
+Targeted static validation passed: `git diff --check`, lockfile JSON parsing,
+clang-format, cpplint, markdownlint, and Prettier. Bazel parsed every new module
+and BUILD file in the package and combined builds. Pre-commit was not run.
+
+Result: the complete current Autoware interface package set builds and its
+representative generated C++ types execute under both middleware
+configurations. No source compatibility change was required. Docker validation
+remains pending until a daemon is available.
+
+Next: select a small runnable Autoware core target, trace its utility-package
+dependencies, and establish only the shared Bazel conventions that target
+requires.

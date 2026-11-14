@@ -1,0 +1,30 @@
+load("@rosidl_default_generators//:defs.bzl", "ros_message")
+
+package(default_visibility = ["//visibility:public"])
+
+exports_files([
+    "SimulatedObject.msg",
+    "SimulatedObjectInitialState.msg",
+])
+
+ros_message(
+    name = "SimulatedObject",
+    src = "SimulatedObject.msg",
+    deps = [
+        ":SimulatedObjectInitialState",
+        "@autoware_perception_msgs//msg:ObjectClassification",
+        "@autoware_perception_msgs//msg:Shape",
+        "@std_msgs//msg:Header",
+        "@unique_identifier_msgs//msg:UUID",
+    ],
+)
+
+ros_message(
+    name = "SimulatedObjectInitialState",
+    src = "SimulatedObjectInitialState.msg",
+    deps = [
+        "@geometry_msgs//msg:AccelWithCovariance",
+        "@geometry_msgs//msg:PoseWithCovariance",
+        "@geometry_msgs//msg:TwistWithCovariance",
+    ],
+)

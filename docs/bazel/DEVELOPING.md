@@ -184,6 +184,27 @@ env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
 `geographic_msgs` is outside the `ros_core` release selection, so the root
 module pins its concrete published version for `autoware_map_msgs`.
 
+Build the dependent interface layer and run its consumer:
+
+```bash
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel build @autoware_vehicle_msgs//...
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel build @autoware_simulation_msgs//...
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --nocache_test_results \
+  //bazel/smoke:autoware_interface_dependent_test
+```
+
+`autoware_simulation_msgs` has no published Lyrical RCR module. The root uses
+version `0.0.0` with a local override, so removing that override is not a
+supported source-selection check. The `autoware_msgs` ament metapackage has no
+generated interface surface and is not a Bazel module.
+
+For the complete interface gate, build all 11 module repositories together,
+then force execution of the five interface consumers. Repeat both commands
+with `--config=fastdds` for the compatibility gate.
+
 ## Task workflow
 
 1. State the target and its observable success condition in JOURNAL.md.

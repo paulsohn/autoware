@@ -117,3 +117,20 @@ cc_test(
     dynamic_deps = [":autoware_interface_base_dynamic_deps"],
     deps = AUTOWARE_INTERFACE_BASE.values(),
 )
+
+AUTOWARE_INTERFACE_DEPENDENT = {
+    "@autoware_simulation_msgs//:cc_shared": "@autoware_simulation_msgs//:cc",
+    "@autoware_vehicle_msgs//:cc_shared": "@autoware_vehicle_msgs//:cc",
+}
+
+collect_transitive_dynamic_deps(
+    name = "autoware_interface_dependent_dynamic_deps",
+    dynamic_deps = AUTOWARE_INTERFACE_DEPENDENT.keys(),
+)
+
+cc_test(
+    name = "autoware_interface_dependent_test",
+    srcs = ["autoware_interface_dependent_test.cc"],
+    dynamic_deps = [":autoware_interface_dependent_dynamic_deps"],
+    deps = AUTOWARE_INTERFACE_DEPENDENT.values(),
+)

@@ -70,6 +70,20 @@ local_path_override(
     path = "src/core/autoware_msgs/autoware_v2x_msgs",
 )
 
+bazel_dep(name = "autoware_vehicle_msgs", version = "1.11.0-3.rcr.2")
+local_path_override(
+    module_name = "autoware_vehicle_msgs",
+    path = "src/core/autoware_msgs/autoware_vehicle_msgs",
+)
+
+# No Lyrical RCR release exists for this package yet. The local module is the
+# only selected source, so its dependency version remains intentionally local.
+bazel_dep(name = "autoware_simulation_msgs", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_simulation_msgs",
+    path = "src/core/autoware_msgs/autoware_simulation_msgs",
+)
+
 # Use the latest published patch of the matching rosdistro snapshot.
 bazel_dep(name = "rosdistro", version = "lyrical.2026-10-05.rcr.3")
 

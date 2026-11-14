@@ -1,0 +1,17 @@
+load("@rosidl_default_generators//:defs.bzl", "default_generators")
+
+package(default_visibility = ["//visibility:public"])
+
+default_generators(
+    package_xml = "package.xml",
+    dependencies = [
+        "@autoware_perception_msgs",
+        "@geometry_msgs",
+        "@std_msgs",
+        "@unique_identifier_msgs",
+    ],
+    deps = [
+        "//msg:SimulatedObject",
+        "//msg:SimulatedObjectInitialState",
+    ],
+)
