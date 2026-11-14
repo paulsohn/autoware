@@ -11,6 +11,10 @@ milestones and experiments in JOURNAL.md.
 Use Ubuntu 24.04 x86_64 and install Bazelisk as `bazel`. The repository's
 `.bazelversion` selects the tested Bazel release. Bazel supplies the ROS and C++
 build dependencies; do not source a host ROS installation for Bazel commands.
+Do not satisfy target dependencies with apt, pip, rosdep, or the repository's
+Ansible roles. Declare them in the Bazel graph. Platform kernel drivers and the
+minimal host tools needed to launch Bazel are host prerequisites, not target
+dependencies.
 
 Put machine-specific limits in the ignored `user.bazelrc`, for example:
 
@@ -126,6 +130,23 @@ consistent:
 Do not add a manifest-only dependency to generator inputs when no current
 interface references it.
 
+Every interface package provides a Bazel test tagged `validation`. It compares
+the `.msg`, `.srv`, and `.action` files and their directly referenced interface
+types with the interface rules and dependency labels declared in BUILD files.
+Run that package's validation tests whenever an interface file or declaration
+changes:
+
+```bash
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --nocache_test_results --test_tag_filters=validation \
+  @autoware_package_name//...
+```
+
+The validation test is a repository-local development requirement even when no
+external CI service runs it. A generated target compiling successfully is not
+a substitute: an unused source interface or a stale declaration can otherwise
+remain outside the requested build graph.
+
 Build the complete generator surface, not only a C++ consumer:
 
 ```bash
@@ -208,6 +229,8 @@ Add `--config=fastdds` to the Bazel command for the compatibility gate.
 Validate in proportion to the change:
 
 - BUILD or module change: build every affected target surface;
+- interface definition or declaration change: run the package's
+  `validation`-tagged consistency test;
 - library change: build and run focused tests;
 - executable or communication change: run a behavior check;
 - container change: build the image and run a representative target with the

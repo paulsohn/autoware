@@ -1757,3 +1757,38 @@ contains them transitively; pair compile and shared providers only at the final
 link boundary; and enable optional tracing during validation so its otherwise
 hidden native link requirements are exercised. Treat compiler diagnostics as
 the boundary for compatibility work and record every deferred runtime surface.
+
+## 2026-11-14: Clarify scope and dependency ownership
+
+Goal: make three experiment boundaries explicit before additional core and GPU
+work makes them implicit policy. The selected Autoware runtime subset does not
+require the system-design workflow, Bazel targets must not inherit dependencies
+from host provisioning, and interface declarations need a locally runnable
+consistency gate even though this experiment has no external CI workflow.
+
+`autoware_system_designer` and its related packages remain in the source
+snapshot but are outside the Bazel experiment. Ignoring them is sufficient;
+removing or modifying those packages would be unrelated repository churn and
+would not answer a build or runtime question for the selected subset.
+
+Apt, pip, rosdep, and the existing Ansible roles remain reference inputs only.
+When a current target reaches a dependency that those mechanisms previously
+installed, the target must select a pinned Bazel module or repository instead.
+This applies to CUDA user-space libraries and tools in the later GPU phase.
+Host kernel drivers and the minimal bootstrap tools needed to start Bazel are
+platform prerequisites because they cannot be built as ordinary target
+dependencies.
+
+For interface packages, a successful generated target does not prove that the
+source inventory and BUILD declarations are complete: an unreferenced source
+file can be absent from the graph, and a stale dependency label can survive.
+Each Bazel-supported interface package must therefore expose a test tagged
+`validation` that compares `.msg`, `.srv`, and `.action` sources and their
+directly referenced types with the BUILD declarations. The test is invoked
+locally through `bazel test --test_tag_filters=validation`; it is not a script
+whose execution depends on an external CI service.
+
+This was a documentation-only policy clarification. `git diff --check` was the
+applicable validation; no build or runtime behavior changed. The validation
+test rule itself will be introduced when interface-package work next resumes,
+before accepting another interface definition or declaration change.

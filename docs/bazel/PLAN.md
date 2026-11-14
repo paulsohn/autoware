@@ -71,6 +71,17 @@ For every slice:
   validates an unused manifest dependency.
 - Source snapshots under `src/` remain ordinary tracked files.
 - Bazel work must not depend on a sourced host ROS installation.
+- Target build dependencies must be resolved and built by Bazel. Apt, pip,
+  rosdep, and the existing Ansible roles are not dependency providers for
+  Bazel targets; dependencies currently provisioned that way, including CUDA
+  user-space libraries and tools, enter the experiment through pinned Bazel
+  repositories or modules when a current target needs them. Host kernel
+  drivers and the minimal tools needed to start Bazel remain platform
+  prerequisites rather than target dependencies.
+- `autoware_system_designer` and its related packages are outside this
+  experiment. Their system-design workflow is orthogonal to building and
+  running the selected Autoware subset, so their source snapshots remain
+  untouched and no Bazel targets or removal work are planned for them.
 - Developer-specific resource limits live in ignored `user.bazelrc`.
 - Source compatibility changes and Bazel build definitions use separate commits.
 - The journal is the reproducible experiment record; upstream notes contain only
@@ -82,6 +93,11 @@ For every slice:
   product-owned interface-set target supplies explicit package roots; an aspect
   follows their `RosInterfaceInfo` providers. No build step discovers types
   through `AMENT_PREFIX_PATH` or generates a package for a later build.
+- Every Bazel-supported interface package must expose a test tagged
+  `validation` that compares its declared interface files and direct interface
+  dependencies with the definitions in the source tree. These tests are the
+  local consistency gate for this experiment; they must be runnable directly
+  with Bazel and may not rely on an external CI workflow.
 
 ## Phase 0: bootstrap ROS with Bazel (complete)
 
