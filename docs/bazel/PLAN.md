@@ -422,8 +422,22 @@ Completed Agnocast shared-library slice:
 - added only the Lyrical compatibility required by observed rclcpp 32,
   message_filters, TF2, and tracetools build failures;
 - built the library with Cyclone DDS, Fast DDS, and tracing enabled, while
-  deferring its unit tests and all kernel, heap-hook, discovery, component, and
+  deferring all kernel, heap-hook, discovery, component, and
   configurator-daemon runtime targets to their own behavior gates.
+
+Completed kernel-independent Agnocast test slice:
+
+- preserved the five existing CMake unit-test groups: the main mocked library
+  suite, TF2 broadcasters, TF2 buffer, TF2 transform listener, and message
+  filters;
+- supplied compile-time headers from `agnocast_library` while linking tests
+  across the local `libagnocast.so` boundary, allowing each test's existing
+  mocks to interpose production symbols without duplicate static definitions;
+- updated only test compatibility exposed by Lyrical rclcpp and TF2 APIs and
+  corrected the message-filter fixture to construct the subscriber-side smart
+  pointer it intends to exercise;
+- passed all five groups with Cyclone DDS and Fast DDS without `/dev/agnocast`,
+  the heap hook, or an installed ROS environment.
 
 Exit criteria:
 

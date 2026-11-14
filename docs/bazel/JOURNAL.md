@@ -1792,3 +1792,84 @@ This was a documentation-only policy clarification. `git diff --check` was the
 applicable validation; no build or runtime behavior changed. The validation
 test rule itself will be introduced when interface-package work next resumes,
 before accepting another interface definition or declaration change.
+
+## 2026-11-15: Add the kernel-independent Agnocast unit gate
+
+Goal: exercise the complete unit-test surface that can run without the
+Agnocast kernel module or heap hook before allowing an Autoware wrapper to
+consume `libagnocast.so`. This gate checks behavior hidden by the preceding
+compile-only milestone and keeps privileged runtime integration separate.
+
+Prerequisites were the Bazel-built `agnocast_library` compile target and
+`libagnocast.so`, the two local CIE modules, and the pinned Lyrical dependency
+graph. The inspected test topology was the package's CMake test section and
+all sources in its five unit groups: the main mocked library suite, TF2
+broadcasters, TF2 buffer, TF2 transform listener, and message filters. Kernel,
+heap-hook, discovery-agent, component, and message-filter integration tests
+were not selected because their behavior requires runtime facilities outside
+this milestone.
+
+The minimum integration pattern keeps those five groups as five Bazel tests.
+Each test compiles against `agnocast_library` for headers and C++ providers but
+links through the local `cc_shared_library`. A collected dynamic-dependency
+closure supplies the direct ROS shared libraries. This boundary is important:
+the tests intentionally define mocks for production functions, so embedding
+the production archive in the executable produces duplicate definitions,
+whereas shared-library linking preserves normal symbol interposition. GTest
+and test-only RCL, interface, typesupport, and standard-interface dependencies
+are declared directly in the package module and BUILD file.
+
+Observed failures and fixes were:
+
+- The main group did not compile because rclcpp 32 removed
+  `get_notify_guard_condition()` from `NodeBaseInterface`. The tests now select
+  `get_shared_notify_guard_condition()` for rclcpp 32 and retain the older
+  assertion for earlier versions.
+- Static linkage reported duplicate publisher, subscription, and bridge
+  symbols supplied by the existing mocks. Keeping the compile provider while
+  putting the local Agnocast shared library in the test dynamic closure
+  restored the same interposition boundary as the CMake shared link.
+- The TF2 groups included legacy `.h` spellings that Lyrical installs as
+  `.hpp`; only the compiler-reported test includes were updated.
+- The message-filter process exited in its first approximate-time case with
+  “publish() called exceeds ... borrow_loaned_message()”. Its helper used entry
+  ID `-1`, which is now the publisher-side `ENTRY_ID_NOT_ASSIGNED` sentinel,
+  despite constructing received messages. Entry ID `0` selects the intended
+  subscriber-side release path, which the existing test `ioctl` mock handles.
+
+Verification used an empty caller environment so no sourced ROS installation
+could satisfy an undeclared dependency:
+
+```bash
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --nocache_test_results @agnocastlib//...
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=fastdds --nocache_test_results @agnocastlib//...
+git diff --check
+```
+
+Both Bazel invocations executed all five tests successfully. The final
+Cyclone DDS run completed six actions in 12.376 seconds; the main group ran in
+11.9 seconds. The Fast DDS compatibility run completed 282 actions with 9,552
+action-cache hits in 62.517 seconds; the main group ran in 5.0 seconds. The
+message-filter group contains 57 cases and passed in 0.1 seconds in both
+configurations. Existing rules_python implicit-package, ROS codecvt,
+missing-`override`, and C-linkage return-type warnings remained non-fatal.
+Targeted clang-format was applied to changed tests, `git diff --check` passed,
+and pre-commit was not run.
+
+Reproduction notes: copy the upstream test grouping rather than coalescing
+tests with different dependency surfaces; distinguish compile providers from
+the shared-library link boundary when mocks interpose production symbols; and
+use source-version guards only where the selected distribution changes the
+tested public API. A mocked kernel call does not make every test
+kernel-independent: admit only groups whose behavior and fixtures can run
+without device, allocator-preload, or daemon state.
+
+Remaining limitation: this milestone validates library behavior under mocks,
+not an enabled Agnocast transport. Next, integrate
+`autoware_agnocast_wrapper` with `USE_AGNOCAST_ENABLED` unconditionally and
+first run its applicable communication behavior under `--config=no-agnocast`.
+Introduce the heap hook and kernel/runtime prerequisites only when the default
+Agnocast behavior gate reaches them; bridge-plugin generation remains the
+parallel analysis-time lane.

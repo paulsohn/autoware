@@ -1,5 +1,5 @@
-load("@rosdistro//cc:defs.bzl", "ros_local_defines")
-load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps", "ros_local_defines")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -135,4 +135,131 @@ cc_shared_library(
     dynamic_deps = _DYNAMIC_DEPS,
     exports_filter = [":agnocast_library"],
     deps = [":agnocast_library"],
+)
+
+collect_transitive_dynamic_deps(
+    name = "unit_test_dynamic_deps",
+    dynamic_deps = [
+        ":agnocast",
+        "@rcl//:rcl",
+        "@rcl_interfaces//:cc_shared",
+        "@rcutils//:rcutils",
+        "@rosidl_typesupport_cpp//:rosidl_typesupport_cpp",
+        "@std_msgs//:cc_shared",
+        "@std_srvs//:cc_shared",
+    ] + _DYNAMIC_DEPS,
+)
+
+# Kernel-facing calls in this existing unit-test group are replaced by the
+# mocks in test_mocked_agnocast.cpp. Tests that require /dev/agnocast or the
+# heap hook remain separate integration gates.
+cc_test(
+    name = "unit_tests",
+    srcs = [
+        "test/unit/test_agnocast_bridge_uds.cpp",
+        "test/unit/test_agnocast_context.cpp",
+        "test/unit/test_agnocast_epoll_event.cpp",
+        "test/unit/test_agnocast_epoll_manager.cpp",
+        "test/unit/test_agnocast_epoll_update.cpp",
+        "test/unit/test_agnocast_executors.cpp",
+        "test/unit/test_agnocast_generic_publisher.cpp",
+        "test/unit/test_agnocast_publisher.cpp",
+        "test/unit/test_agnocast_service_event_publisher.cpp",
+        "test/unit/test_agnocast_signal_handler.cpp",
+        "test/unit/test_agnocast_subscription.cpp",
+        "test/unit/test_agnocast_timer.cpp",
+        "test/unit/test_agnocast_timer_api.cpp",
+        "test/unit/test_agnocast_utils.cpp",
+        "test/unit/test_bridge_node_name.cpp",
+        "test/unit/test_bridge_ros2_client_discovery.cpp",
+        "test/unit/test_cie_client_utils.cpp",
+        "test/unit/test_daemon_bridge_uds.cpp",
+        "test/unit/test_diagnostic_updater.cpp",
+        "test/unit/test_discovery_agent_auto_fork.cpp",
+        "test/unit/test_mocked_agnocast.cpp",
+        "test/unit/test_node_base.cpp",
+        "test/unit/test_node_topics.cpp",
+        "test/unit/test_type_registry_writer.cpp",
+    ],
+    dynamic_deps = [":unit_test_dynamic_deps"],
+    env = {"GTEST_DEATH_TEST_STYLE": "threadsafe"},
+    includes = ["src"],
+    deps = [
+        ":agnocast_library",
+        "@diagnostic_msgs//:cc",
+        "@diagnostic_updater//:diagnostic_updater_library",
+        "@googletest//:gtest_main",
+        "@rcl//:rcl_library",
+        "@rcl_interfaces//:cc",
+        "@rclcpp//:rclcpp_library",
+        "@rcutils//:rcutils_library",
+        "@rosidl_typesupport_cpp//:rosidl_typesupport_cpp_library",
+        "@std_msgs//:cc",
+    ],
+)
+
+cc_test(
+    name = "tf2_broadcasters_unit_tests",
+    srcs = ["test/unit/tf2/test_broadcasters.cpp"],
+    dynamic_deps = [":unit_test_dynamic_deps"],
+    env = {"GTEST_DEATH_TEST_STYLE": "threadsafe"},
+    deps = [
+        ":agnocast_library",
+        "@geometry_msgs//:cc",
+        "@googletest//:gtest_main",
+        "@tf2//:tf2_library",
+        "@tf2_msgs//:cc",
+        "@tf2_ros//:tf2_ros_library",
+    ],
+)
+
+cc_test(
+    name = "tf2_buffer_unit_tests",
+    srcs = ["test/unit/tf2/test_buffer.cpp"],
+    dynamic_deps = [":unit_test_dynamic_deps"],
+    env = {"GTEST_DEATH_TEST_STYLE": "threadsafe"},
+    deps = [
+        ":agnocast_library",
+        "@geometry_msgs//:cc",
+        "@googletest//:gtest_main",
+        "@rclcpp//:rclcpp_library",
+        "@tf2//:tf2_library",
+        "@tf2_ros//:tf2_ros_library",
+    ],
+)
+
+cc_test(
+    name = "tf2_transform_listener_unit_tests",
+    srcs = ["test/unit/tf2/test_transform_listener.cpp"],
+    dynamic_deps = [":unit_test_dynamic_deps"],
+    env = {"GTEST_DEATH_TEST_STYLE": "threadsafe"},
+    includes = ["src"],
+    deps = [
+        ":agnocast_library",
+        "@geometry_msgs//:cc",
+        "@googletest//:gtest_main",
+        "@rclcpp//:rclcpp_library",
+        "@tf2//:tf2_library",
+        "@tf2_msgs//:cc",
+        "@tf2_ros//:tf2_ros_library",
+    ],
+)
+
+cc_test(
+    name = "message_filters_unit_tests",
+    srcs = [
+        "test/unit/message_filters/ioctl_mock_for_mf.cpp",
+        "test/unit/message_filters/test_approximate_time.cpp",
+        "test/unit/message_filters/test_exact_time.cpp",
+        "test/unit/message_filters/test_pass_through.cpp",
+        "test/unit/message_filters/test_simple.cpp",
+        "test/unit/message_filters/test_synchronizer.cpp",
+    ],
+    dynamic_deps = [":unit_test_dynamic_deps"],
+    env = {"GTEST_DEATH_TEST_STYLE": "threadsafe"},
+    deps = [
+        ":agnocast_library",
+        "@googletest//:gtest_main",
+        "@message_filters//:message_filters_library",
+    ],
 )
