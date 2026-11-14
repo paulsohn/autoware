@@ -707,3 +707,69 @@ remains pending until a daemon is available.
 Next: select a small runnable Autoware core target, trace its utility-package
 dependencies, and establish only the shared Bazel conventions that target
 requires.
+
+## 2026-11-14: Validate the complete interface set in the development image
+
+Goal: close the pending development-image check by building and testing the
+complete Phase 2 interface graph with the repository mounted read-only.
+
+Docker Desktop 29.8.2 was available. The existing pinned
+`autoware-bazel-dev:bootstrap` image and
+`autoware-bazel-bootstrap-cache` volume were reused. The primary container
+build ran:
+
+```bash
+docker run --rm \
+  -v autoware-bazel-bootstrap-cache:/home/ubuntu/.cache \
+  -v "$PWD:/workspace:ro" \
+  autoware-bazel-dev:bootstrap \
+  bazel build --experimental_convenience_symlinks=ignore \
+  @autoware_common_msgs//... @autoware_control_msgs//... \
+  @autoware_localization_msgs//... @autoware_map_msgs//... \
+  @autoware_perception_msgs//... @autoware_planning_msgs//... \
+  @autoware_sensing_msgs//... @autoware_simulation_msgs//... \
+  @autoware_system_msgs//... @autoware_v2x_msgs//... \
+  @autoware_vehicle_msgs//...
+```
+
+The Cyclone DDS build passed all 208 targets from the read-only mount. It
+loaded 407 packages, configured 72,152 targets, applied 3,876 aspects, and
+completed 11,917 actions in 420.762 seconds. The container cache was mostly
+cold for the expanded package set: 4,921 action-cache hits and 1,858 remote
+cache hits were reported.
+
+All five C++ consumers were then forced to execute:
+
+```bash
+docker run --rm \
+  -v autoware-bazel-bootstrap-cache:/home/ubuntu/.cache \
+  -v "$PWD:/workspace:ro" \
+  autoware-bazel-dev:bootstrap \
+  bazel test --experimental_convenience_symlinks=ignore \
+  --nocache_test_results \
+  //bazel/smoke:autoware_common_msgs_test \
+  //bazel/smoke:autoware_localization_msgs_test \
+  //bazel/smoke:autoware_interface_layer_test \
+  //bazel/smoke:autoware_interface_base_test \
+  //bazel/smoke:autoware_interface_dependent_test
+```
+
+All five tests passed. The command configured 69,631 targets and applied 2,625
+aspects.
+
+Repeating the 208-target build with `--config=fastdds` passed with 17,789
+action-cache hits. Repeating the five-test command with `--config=fastdds`
+forced all five consumers to execute, and all passed. Existing rules_python,
+C++23, protobuf, and generic-service deprecation warnings remained non-fatal.
+
+Result: the complete Autoware interface set builds and its generated C++
+consumers execute in the minimal development image under both middleware
+configurations. The read-only mount confirms that Bazel writes its working
+state outside the source workspace when convenience symlinks are disabled.
+
+Targeted documentation validation passed: `git diff --check`, markdownlint,
+and Prettier. Pre-commit was not run.
+
+Next: select a small runnable Autoware core target, trace its utility-package
+dependencies, and establish only the shared Bazel conventions that target
+requires.

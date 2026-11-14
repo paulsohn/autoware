@@ -205,6 +205,26 @@ For the complete interface gate, build all 11 module repositories together,
 then force execution of the five interface consumers. Repeat both commands
 with `--config=fastdds` for the compatibility gate.
 
+Run the same gate in the development image with a read-only source mount and a
+named cache volume. Add `--experimental_convenience_symlinks=ignore` because
+Bazel must not create output symlinks in the mounted workspace:
+
+```bash
+docker run --rm \
+  -v autoware-bazel-bootstrap-cache:/home/ubuntu/.cache \
+  -v "$PWD:/workspace:ro" \
+  autoware-bazel-dev:bootstrap \
+  bazel test --experimental_convenience_symlinks=ignore \
+  --nocache_test_results \
+  //bazel/smoke:autoware_common_msgs_test \
+  //bazel/smoke:autoware_localization_msgs_test \
+  //bazel/smoke:autoware_interface_layer_test \
+  //bazel/smoke:autoware_interface_base_test \
+  //bazel/smoke:autoware_interface_dependent_test
+```
+
+Add `--config=fastdds` after `bazel test` for the Tier 2 container gate.
+
 ## Task workflow
 
 1. State the target and its observable success condition in JOURNAL.md.

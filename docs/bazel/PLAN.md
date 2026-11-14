@@ -198,8 +198,9 @@ Completed initial slice:
 - retained the v2x manifest's `geometry_msgs` module dependency without adding
   it to generator inputs because no v2x interface references it.
 
-The read-only development-image check for this slice is pending because no
-Docker daemon socket was available during validation.
+The read-only development-image gate now covers the complete Phase 2 package
+set. All 208 targets build and all five C++ consumers execute under both the
+Cyclone DDS and Fast DDS configurations with the repository mounted read-only.
 
 Completed base layer:
 
