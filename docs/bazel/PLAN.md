@@ -272,6 +272,16 @@ Completed initial slice:
   be marked `dev_dependency`, because development dependencies are ignored for
   non-root modules.
 
+Completed ROS leaf slice:
+
+- added `autoware_utils_system` as a compiled library and
+  `autoware_utils_rclcpp` as a header-only library;
+- kept RCR shared-library closure on final `cc_test` targets because
+  `cc_library` has no `dynamic_deps` attribute;
+- executed both packages' existing tests with Cyclone DDS and Fast DDS;
+- used `autoware_utils_rclcpp`'s polling-subscriber tests as the first utility
+  publisher/subscriber behavior gate.
+
 Exit criteria:
 
 - The utility packages required by the first runnable core target build from

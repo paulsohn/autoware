@@ -151,6 +151,12 @@ dependency. Bzlmod ignores `dev_dependency` declarations in a module when that
 module is consumed from the root workspace, including through a
 `local_path_override`.
 
+A `cc_library` declares the RCR compile target, such as
+`@rclcpp//:rclcpp_library`, in `deps`. Put the corresponding shared-library
+target, such as `@rclcpp//:rclcpp`, in the `collect_transitive_dynamic_deps`
+closure of each final `cc_binary` or `cc_test`. The library rule itself does not
+accept `dynamic_deps`.
+
 ## Development image
 
 Build the pinned development image when its definition changes:

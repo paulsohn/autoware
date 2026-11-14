@@ -1071,3 +1071,64 @@ and runtime data remain intentionally untested.
 Next: add the next leaf utility packages in dependency order, using each
 package's current sources and tests to determine which ROS and linking
 conventions are actually required.
+
+## 2026-11-14: Add system and rclcpp utility leaves
+
+Goal: extend the utility layer to the smallest ROS-dependent packages and
+validate the publisher/subscriber test behavior needed before the later
+Agnocast phase.
+
+`autoware_utils_system` is a compiled library: `backtrace.cpp` uses the RCLCPP
+logger, while its other public utilities are header-only. Its Bazel target
+therefore compiles the source against `@rclcpp//:rclcpp_library` and exposes all
+three headers. Its four-file GoogleTest source set covers backtraces, the LRU
+cache, and the stopwatch.
+
+`autoware_utils_rclcpp` has no compiled source. Its library exposes the
+parameter and polling-subscriber headers against the same RCLCPP compile
+target. The three-file test source set additionally depends on the paired
+`@std_msgs//:cc` and `:cc_shared` targets. The existing polling-subscriber tests
+create publishers, subscribers, and an executor, then verify message and
+timestamp behavior for the Latest, Newest, and All policies.
+
+The first BUILD attempt put `dynamic_deps` on both `cc_library` rules. Analysis
+failed because `cc_library` has no such attribute. The compile-only dependency
+remains on each library; `collect_transitive_dynamic_deps` now supplies RCLCPP
+and generated-message shared libraries to the final test executables. This
+keeps runtime closure at the executable boundary while allowing downstream
+libraries to propagate headers and compile providers.
+
+Verification forced both suites to execute in a clean caller environment with
+Cyclone DDS, then repeated the same gate with Fast DDS:
+
+```bash
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --nocache_test_results \
+  @autoware_utils_system//... @autoware_utils_rclcpp//...
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=fastdds --nocache_test_results \
+  @autoware_utils_system//... @autoware_utils_rclcpp//...
+```
+
+The clean Cyclone run analyzed six targets and both tests passed in 1.098
+seconds with 19 action-cache hits. The Fast DDS compatibility run analyzed the
+same six targets, completed 163 actions with 7,227 action-cache hits, and both
+tests passed. Existing rules_python and ROS C++ deprecation warnings remained
+non-fatal. `git diff --check` passed. Pre-commit was not run.
+
+Reproduction notes: represent a header-only package with a `cc_library` whose
+`hdrs` use `strip_include_prefix = "include"`; omit `srcs` rather than creating
+a placeholder. For ROS libraries, place the compile provider in the library's
+`deps`, then collect the matching shared-library target on every final binary
+or test. Generated messages require their paired compile and shared targets as
+well. Force the package tests under the primary RMW and repeat the exact target
+set with the compatibility configuration whenever the tests communicate.
+
+Result: three utility packages are now available locally. The new RCLCPP
+utility test proves publisher/subscriber behavior under both supported
+middleware configurations, so the communication-test mechanism needed for a
+minimal core slice is established without adding any core or Agnocast target.
+
+Next: continue the utility dependency graph with the remaining independent
+leaves, then add geometry and TF only after their direct prerequisites are
+available.
