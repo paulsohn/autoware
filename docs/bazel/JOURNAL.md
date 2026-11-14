@@ -1132,3 +1132,85 @@ minimal core slice is established without adding any core or Agnocast target.
 Next: continue the utility dependency graph with the remaining independent
 leaves, then add geometry and TF only after their direct prerequisites are
 available.
+
+## 2026-11-14: Add UUID and visualization utility leaves
+
+Goal: integrate the next independent utility sublayer and validate two new
+dependency shapes: a narrow rosdistro Boost header target paired with a
+generated ROS message, and a compiled library using RCLCPP plus generated
+visualization messages.
+
+The inspected inputs were both source packages' manifests, CMake files,
+headers, sources, and tests; the RCR metadata and module manifests for
+`unique_identifier_msgs@2.8.1-3.rcr.2` and
+`visualization_msgs@5.9.3-1.rcr.0`; and the Boost targets exported by the pinned
+rosdistro. That rosdistro exports the required header surface as
+`@rosdistro//cc:boost.uuid`.
+
+`autoware_utils_uuid` is header-only. Its library exposes `uuid_helper.hpp` and
+depends on the rosdistro's Boost.UUID target plus
+`@unique_identifier_msgs//:cc`; its test supplies the paired `:cc_shared`
+runtime closure. `autoware_utils_visualization` compiles
+`marker_helper.cpp`, exports `marker_helper.hpp`, and uses the compile targets
+from RCLCPP and `visualization_msgs`. Its final test collects both corresponding
+shared-library targets.
+
+The root selects both external ROS package versions explicitly because the
+local BUILD files expose their labels and they are not existing direct root
+dependencies. The local package modules retain `0.0.0` ROS dependencies so the
+root remains responsible for the concrete release. Both local Autoware modules
+are selected at their published `1.11.0-3.rcr.2` versions.
+
+An initial dependency hypothesis used the BCR
+`boost.uuid@1.90.0.bcr.1` module. The code built and tested, but that module
+also selected BCR's umbrella `boost` module. Querying the pinned rosdistro's C++
+targets demonstrated that the ROS release already provides `boost.uuid`.
+Replacing the BCR dependency with that target removed the Boost umbrella from
+the resolved module graph while retaining a package-specific dependency.
+
+Running `bazel mod tidy` during that trial also evaluated module extensions
+already reachable elsewhere in the workspace and recorded 992 unrelated lines
+of extension state. This was command-induced lockfile noise rather than a
+requirement of either utility. Restoring the lockfile and resolving through the
+actual test targets produced only the new `visualization_msgs@0.0.0` lookup and
+an updated rosdistro extension usage digest. Those two minimal changes are the
+accepted lockfile result.
+
+Verification first resolved the modules and exercised the complete local
+package surfaces, then repeated the forced tests from a clean caller under both
+middleware configurations:
+
+```bash
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --nocache_test_results \
+  @autoware_utils_uuid//... @autoware_utils_visualization//...
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=fastdds --nocache_test_results \
+  @autoware_utils_uuid//... @autoware_utils_visualization//...
+```
+
+The accepted clean Cyclone run analyzed six targets, completed 149 actions with
+9,210 action-cache hits, and both tests passed. The Fast DDS run completed 149
+actions with 10,781 action-cache hits and both tests passed. The tests exercise
+UUID conversion/generation and marker construction; they do not perform
+middleware communication. Existing rules_python and ROS C++ deprecation
+warnings remained non-fatal. `git diff --check` passed. Pre-commit was not run.
+
+Reproduction notes: inspect the exact Boost headers used, then query the pinned
+rosdistro's C++ targets before adding a BCR module. Prefer its package-specific
+target when available. Inspect lockfile changes after module-management
+commands and retain only state reproducibly required by target resolution. For
+a header-only utility, put generated message compile targets on the library and
+their shared counterparts on each final test or binary. For a
+compiled utility, do the same for every RCR library referenced by its public
+headers or source. Select concrete external ROS releases at the root while
+using `0.0.0` in package-local modules.
+
+Result: five utility packages now build from local source and their complete
+existing test suites pass. UUID and visualization introduce no new source
+compatibility changes and preserve the executable-boundary dynamic-link
+convention established by the preceding slice.
+
+Next: integrate the logging and diagnostics leaves, whose tests add generated
+service and diagnostic-updater behavior, before entering the geometry and TF
+dependency chain.

@@ -157,6 +157,10 @@ target, such as `@rclcpp//:rclcpp`, in the `collect_transitive_dynamic_deps`
 closure of each final `cc_binary` or `cc_test`. The library rule itself does not
 accept `dynamic_deps`.
 
+For Boost headers already mapped by the pinned rosdistro, use its narrow target
+rather than adding the BCR umbrella module. For example, UUID consumers use
+`@rosdistro//cc:boost.uuid`.
+
 ## Development image
 
 Build the pinned development image when its definition changes:

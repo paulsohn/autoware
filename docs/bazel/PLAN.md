@@ -282,6 +282,16 @@ Completed ROS leaf slice:
 - used `autoware_utils_rclcpp`'s polling-subscriber tests as the first utility
   publisher/subscriber behavior gate.
 
+Completed generated-message and Boost leaf slice:
+
+- added the header-only `autoware_utils_uuid` against the rosdistro's existing
+  Boost.UUID target and `unique_identifier_msgs`;
+- added compiled `autoware_utils_visualization` against RCLCPP and
+  `visualization_msgs`;
+- pinned external ROS packages at the root and kept package-local ROS
+  dependencies at `0.0.0`, preserving root-controlled release selection;
+- executed both test suites with Cyclone DDS and Fast DDS.
+
 Exit criteria:
 
 - The utility packages required by the first runnable core target build from
