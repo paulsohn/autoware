@@ -238,6 +238,24 @@ Add `--config=fastdds` after `bazel test` for the Tier 2 container gate.
    this branch.
 8. Run `git diff --check`, review the staged diff, and commit with sign-off.
 
+## Journal standard
+
+Treat the journal as a cumulative implementation guide for someone who does
+not have this branch. Every dated entry must make these points recoverable:
+
+1. purpose and observable success condition;
+2. prerequisites, source snapshot, and inputs inspected;
+3. minimum files, labels, dependencies, flags, or patches introduced, including
+   why they are needed;
+4. transferable decisions and failure diagnoses, not only a list of edits;
+5. exact build, test, and behavior commands with the result each command proves;
+6. limitations, deferred checks, and the next dependency boundary.
+
+Entries are chronological and may use an earlier entry as an explicit
+prerequisite. They must not require the reader to inspect a commit diff to
+understand the integration pattern. Avoid copying whole BUILD files when a
+rule shape and its required dependency edges describe the method completely.
+
 ## Commit boundaries
 
 - Bazel rules, BUILD files, workspace configuration, and integration docs use

@@ -1,5 +1,21 @@
 # Autoware + Bazel integration journal
 
+## How to reproduce from this journal
+
+This is a cumulative implementation guide, not only a change log. Dated entries
+assume the successful state of preceding entries unless they name a different
+starting point. A reader applying the same method to another Autoware snapshot
+should preserve the dependency and validation patterns, while re-deriving
+message inventories and compatibility fixes from that snapshot rather than
+assuming identical source contents.
+
+Every entry records or links its purpose, prerequisites and inspected inputs,
+minimum integration pattern, decision or transferable lesson, exact
+verification method and observed result, and remaining limitation or next
+boundary. Repository paths and Bazel labels are part of the method; complete
+source listings are intentionally omitted when the required rule shape is
+sufficient to recreate them.
+
 ## 2026-11-13: Define scope and validation gates
 
 Goal: define the experiment's initial scope on Ubuntu 24.04 x86_64, with a
@@ -11,6 +27,15 @@ Conventional Commits.
 
 Validation: `git diff --check` passed. This change contains documentation only;
 no build or runtime experiments have been performed.
+
+Result: the initial scope and evidence gates were recorded. No technical build
+hypothesis was validated by this entry.
+
+Reproduction notes: this entry establishes the experiment contract rather than
+a build state. Start from an Autoware source snapshot on a dedicated branch,
+keep the existing build system untouched, define an x86 Ubuntu 24.04 milestone,
+and require host, minimal-container, build, and runtime behavior evidence before
+calling a phase complete.
 
 Next: scope cleanup, pinned Bazel workspace and talker/listener smoke checks.
 
@@ -35,6 +60,17 @@ Validation: documentation and ignore-rule change only. `git diff --check`, the
 repository's `markdownlint` and `prettier` hooks, and ignore checks for
 `bazel-bin` and `user.bazelrc` passed. No build or runtime experiment was
 performed.
+
+Result: repository boundaries, experiment records, and validation language
+were established before implementation. This entry validates the workflow, not
+the Bazel or ROS configuration.
+
+Reproduction notes: create the operating documents before BUILD files so later
+experiments have stable boundaries. Keep local resource limits in an ignored
+`user.bazelrc`; ignore Bazel convenience symlinks; reserve `bazel/`, `images/`,
+and `docs/bazel/` for integration artifacts; and separate source compatibility
+commits from Bazel definitions. The upstream notebooks remain empty until a
+finding is reproducible and useful outside the experiment.
 
 Next: inspect current RCR bootstrap guidance and release metadata, then add only
 the workspace configuration needed by the talker/listener experiment.
@@ -130,6 +166,20 @@ Static validation: `git diff --check`, JSON parsing of `MODULE.bazel.lock`,
 `markdownlint`, Prettier, `clang-format`, `cpplint`, and `hadolint` passed. Bazel
 parsed the root module and BUILD files during both host and container builds.
 
+Reproduction notes: the minimum bootstrap consists of `.bazelversion`,
+`.bazelrc`, root `MODULE.bazel`, a Linux platform target, one BUILD package for
+the two nodes, their C++ sources, and the development Dockerfile. Select
+`ros_core@lyrical.2026-10-05.rcr.0`,
+`rosdistro@lyrical.2026-10-05.rcr.3`, direct `rclcpp@0.0.0` and
+`std_msgs@0.0.0`, `llvm@0.8.25.rcr.0`, `rules_cc@0.2.26.rcr.0`, and
+`platforms@1.1.0`; register LLVM 21.1.8 and pin the glibc 2.34 platform. Put the
+RCR registry before BCR, disable direct-dependency checking for release-selected
+`0.0.0` packages, use strict action environments and the public read-only RCR
+cache, download shared outputs, and set `LD_LIBRARY_PATH=lib` for runs. Pair
+`@rclcpp//:rclcpp` with `@rclcpp//:rclcpp_library` and message `:cc_shared`
+dynamic dependencies with `:cc` compile dependencies. Those details are what
+turn the version pins and validation commands above into a reproducible graph.
+
 Next: define the first Autoware interface-package slice and its local-package
 layout before adding package BUILD files.
 
@@ -152,6 +202,14 @@ compare artifacts before starting an Autoware interface package.
 
 Validation: documentation-only change. `git diff --check`, `markdownlint`, and
 Prettier passed. No build or runtime behavior changed.
+
+Result: the middleware support policy and its required follow-up gate were
+defined. Middleware selection remained unvalidated until the next entry.
+
+Reproduction notes: this is a policy checkpoint, not a configuration result.
+Record middleware support tiers before package integration so later experiments
+have one primary path and a bounded compatibility gate. Do not add DDS tuning
+until the same loopback behavior test demonstrates a need.
 
 Next: execute the Cyclone DDS primary and Fast DDS compatibility smoke gates.
 Do not add middleware configuration until a current behavior check demonstrates
@@ -235,6 +293,15 @@ Static validation: `git diff --check`, `markdownlint`, Prettier, end-of-file,
 and trailing-whitespace hooks passed. Both Bazel configurations parsed the
 updated BUILD and rc files during host and container builds.
 
+Reproduction notes: select middleware at both build and run time. Use
+`--@rosdistro//:rmw=rmw_cyclonedds_cpp` plus
+`RMW_IMPLEMENTATION=rmw_cyclonedds_cpp` by default, and put the equivalent
+`rmw_fastrtps_cpp` settings behind `--config=fastdds`. Consumers of generated
+messages need the paired `:cc` compile target and `:cc_shared` entry passed to
+`collect_transitive_dynamic_deps`; a successful link alone does not prove the
+runtime shared-library closure. Validate each configuration by receiving five
+messages, not merely by building it.
+
 Next: prototype `autoware_common_msgs` manually as the first local Autoware
 package module.
 
@@ -303,6 +370,17 @@ Static validation: `git diff --check`, lockfile JSON parsing, `clang-format`,
 `cpplint`, `markdownlint`, Prettier, end-of-file, trailing-whitespace, and
 private-key checks passed. Bazel parsed all new module and BUILD files during
 the host and development-image builds.
+
+Reproduction notes: a primitive-only interface package needs four integration
+points. Add a package-local `MODULE.bazel` with
+`rosidl_default_generators@0.0.0`; declare each `.msg` with `ros_message` in
+`msg/BUILD.bazel`; aggregate those rules with `default_generators` in the
+package root; and select the package from the workspace root with its concrete
+published version plus `local_path_override`. A root C++ consumer should depend
+on the package `:cc` target and collect its `:cc_shared` target dynamically.
+Build `@package//...`, not only the consumer, to expose failures in non-C++
+generators. The concrete version used here was
+`autoware_common_msgs@1.11.0-3.rcr.2`.
 
 Next: test local-versus-RCR source selection without changing the consumer,
 then add a second interface package with an Autoware package dependency.
@@ -401,6 +479,17 @@ their cross-package dependency follows the generated RCR target convention,
 the root consumer can select local or registry source without a BUILD change,
 and a generated Autoware message passes Cyclone DDS and Fast DDS behavior.
 
+Reproduction notes: every referenced external interface creates three matching
+edges: a direct package dependency in the package-local module, the exact
+message label on the `ros_message` or `ros_service` rule, and the package
+repository in `default_generators.dependencies`. Keep manifest-only
+dependencies in `MODULE.bazel` even when no current interface references them;
+do not add them to generator inputs. To test source interchangeability, remove
+only the local override, use `--lockfile_mode=off` for the temporary trial, and
+run the unchanged consumer against the published version. A cross-package
+service plus a five-message publisher/listener run proves more than a header
+compilation test alone.
+
 Next: begin Phase 2 with the smallest dependency layer among the remaining
 Autoware interface packages. Port a bounded group manually before deciding
 whether repeated declarations justify a generator.
@@ -498,6 +587,15 @@ lockfile JSON parsing, clang-format, cpplint, markdownlint, and Prettier. Bazel
 parsed every new module and BUILD file in the host builds. Pre-commit was not
 run.
 
+Reproduction notes: derive each bounded layer from `package.xml` and the actual
+type references in `.msg` and `.srv` files. Keep the package manifest dependency
+set in its module, but let rule-level and generator dependency sets follow
+actual references. Register each local package at its published RCR version and
+override it to the source snapshot. Use a combined consumer to exercise new
+shapes, then build each entire module surface and force the compatibility test
+with `--nocache_test_results`. A missing Docker daemon blocks only the container
+gate; it does not invalidate the recorded host build and test results.
+
 Next: add `autoware_system_msgs`, the smallest remaining interface package and
 the next package whose only Autoware dependency is already integrated. Repeat
 the read-only development-image test when the Docker daemon is available.
@@ -585,6 +683,16 @@ and BUILD file. Pre-commit was not run.
 Result: all five base-layer packages build from the current source snapshots,
 and representative generated types pass C++ consumer execution under both
 middleware configurations. No source compatibility fix was required.
+
+Reproduction notes: add packages in dependency order so every Autoware label is
+already selectable when its consumer is introduced. Published RCR-generated
+rules are useful dependency hypotheses, but confirm every rule name and edge
+against the current source inventory. A package outside the selected release
+set needs a concrete root selection: `geographic_msgs` was not selected by
+`ros_core`, so `geographic_msgs@1.0.6-3.rcr.2` was required even though the map
+package's local module used a `0.0.0` dependency. Build modules sequentially to
+respect local resource limits, then use one consumer covering at least one
+representative type from every package in the layer.
 
 Next: add the dependent vehicle and simulation packages, then run the combined
 message-set compatibility gate. The Docker validation remains pending until a
@@ -704,6 +812,16 @@ representative generated C++ types execute under both middleware
 configurations. No source compatibility change was required. Docker validation
 remains pending until a daemon is available.
 
+Reproduction notes: use a concrete published version plus local override when
+an RCR counterpart exists. When it does not, as for
+`autoware_simulation_msgs`, select `0.0.0` at the root and treat the local
+override as mandatory. Type-description failures naming a missing JSON file
+usually identify an omitted rule-level interface edge; compare every source
+field with the `ros_message.deps` list before changing package-wide generator
+inputs. Verify enum values from the source definition rather than assuming ROS
+conventions. An output-free ament metapackage needs no Bazel module when a
+combined gate directly covers all of its member modules.
+
 Next: select a small runnable Autoware core target, trace its utility-package
 dependencies, and establish only the shared Bazel conventions that target
 requires.
@@ -770,6 +888,72 @@ state outside the source workspace when convenience symlinks are disabled.
 Targeted documentation validation passed: `git diff --check`, markdownlint,
 and Prettier. Pre-commit was not run.
 
+Reproduction notes: build the pinned image first if it is not already present,
+create the named cache volume, and mount the source at `/workspace:ro`. Pass
+`--experimental_convenience_symlinks=ignore` so Bazel does not try to create
+workspace output symlinks. Run the complete module build before the consumer
+tests to validate every language generator, and use `--nocache_test_results` to
+prove test execution. Repeat both commands with `--config=fastdds`; a warm
+action cache is acceptable because analysis, target discovery, and forced test
+execution still validate the source graph and runtime closure.
+
 Next: select a small runnable Autoware core target, trace its utility-package
 dependencies, and establish only the shared Bazel conventions that target
 requires.
+
+## 2026-11-14: Make the experiment journal independently reproducible
+
+Goal: verify that every existing entry explains enough purpose, integration
+method, transferable knowledge, decisions, and validation for a reader to apply
+the experiment without inspecting this branch's diffs.
+
+The audit found that build and behavior evidence was already detailed, but
+several entries relied on the changed files to reveal the minimum configuration
+or package rule pattern. Added a cumulative-use guide and a reproduction note
+to every dated entry. The notes now identify the essential bootstrap pins and
+runtime layout, middleware selection flags, package-local module structure,
+three required cross-package interface edges, dependency-layer inventory
+method, concrete versus local-only version selection, missing-interface
+diagnosis, and read-only container method. Planning-only entries now state
+explicitly that their result is a policy or workflow rather than runtime
+evidence.
+
+The requirement is now durable in both `AGENTS.md` and DEVELOPING.md: future
+entries must be understandable without a commit diff and must include purpose,
+prerequisites, the minimum integration pattern and rationale, decisions and
+failure diagnoses, exact verification with observable results, and remaining
+limitations.
+
+Coverage was checked mechanically by splitting JOURNAL.md at every dated
+heading and confirming that each section contains `Goal:`, `Reproduction
+notes:`, a validation command or statement, `Result:`, and `Next:`. All 12
+entries passed that structural audit. Content was then reviewed against the
+five requested categories; the structural check is only a guard against
+omission, not a substitute for that review.
+
+Targeted documentation validation passed:
+
+```bash
+markdownlint -c .markdownlint.yaml \
+  AGENTS.md docs/bazel/DEVELOPING.md docs/bazel/JOURNAL.md
+prettier --check \
+  AGENTS.md docs/bazel/DEVELOPING.md docs/bazel/JOURNAL.md
+git diff --check
+```
+
+No build or runtime validation was run because this task changes only
+experiment documentation. Pre-commit was not run.
+
+Reproduction notes: use the journal standard as a content rubric, then use the
+five-marker structural audit only to catch missing sections. Do not make every
+entry self-contained by copying earlier setup; name the preceding entry as a
+cumulative prerequisite and restate only the new pattern, decision, evidence,
+or limitation introduced by the current task.
+
+Result: the journal now provides a chronological implementation method rather
+than requiring access to this branch's diffs. Future work has an explicit rule
+and workflow checklist to preserve that property.
+
+Next: select a small runnable Autoware core target, trace its utility-package
+dependencies, and apply the reproducible-entry standard while establishing
+only the shared Bazel conventions that target requires.

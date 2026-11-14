@@ -28,8 +28,12 @@ configuration.
   fixes.
 - Treat versions, flags, and patches as hypotheses until a command in this
   branch validates them. Pin accepted inputs in git and record why in PLAN.md.
-- Append exact commands and results to JOURNAL.md after each task. Record issues
-  as symptom, cause, and fix once the cause is demonstrated.
+- Write each JOURNAL.md entry so a reader without this branch can repeat the
+  experiment in their own repository. Record the purpose, prerequisites and
+  inspected inputs, minimum integration pattern and rationale, transferable
+  know-how and decisions, exact verification commands and observable results,
+  diagnosed failures as symptom/cause/fix, and remaining limitations or next
+  step. Do not rely on the diff alone to explain how the integration works.
 - Keep developer-specific resource limits and paths in ignored
   `user.bazelrc`. Do not commit convenience symlinks or Bazel output trees.
 - Run build, test, and behavior checks appropriate to each commit. State
