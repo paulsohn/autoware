@@ -332,13 +332,47 @@ smallest publisher/subscriber slice needed to establish node and communication
 test infrastructure. Agnocast becomes a dedicated core subphase when a current
 target requires its wrapper or backend.
 
+## Phase 4: Minimal core and Agnocast communication lanes (started)
+
+Purpose: establish one runnable core node and a reusable communication behavior
+gate without allowing an Agnocast-free package expansion to delay evaluation of
+the Agnocast API and runtime.
+
+The first lane is deliberately limited to `autoware_node`. Its existing node
+initialization and executor test plus a Bazel-owned reliable publisher/subscriber
+test define the core baseline. The baseline must pass with Cyclone DDS and at
+the Fast DDS compatibility gate before another Agnocast-free core package is
+selected.
+
+The Agnocast lane starts after that baseline, with
+`autoware_agnocast_wrapper` built in its ROS fallback mode. Reuse the same
+observable communication behaviors where the wrapper API permits it. This
+separates wrapper/API integration failures from native Agnocast runtime and
+kernel prerequisites. Enable the Agnocast backend only after the fallback
+surface passes; at that point inspect and introduce only the `agnocastlib`,
+component, allocator, kernel, and runtime inputs exercised by the enabled
+targets.
+
+Exit criteria:
+
+- `autoware_node` builds from local source and its initialization, executor,
+  and reliable loopback communication behavior pass with Cyclone DDS and Fast
+  DDS.
+- The wrapper's ROS fallback mode builds and passes its applicable communication
+  behavior suite.
+- The native Agnocast backend has a separately selectable configuration and
+  runs the same applicable behavior checks, with environmental prerequisites
+  and unsupported cases recorded explicitly.
+- Further core selection is dependency-driven and may proceed alongside the
+  Agnocast lane only when it does not expand the fallback baseline merely to
+  avoid an Agnocast dependency.
+
 ## Later phases
 
 These are scope markers, not implementation decisions. Refine each phase only
 when the preceding phase meets its exit criteria.
 
-1. Autoware core packages in dependency-driven runnable slices, with a minimal
-   Agnocast-free publisher/subscriber slice before the Agnocast subphase.
+1. Subsequent Autoware core packages in dependency-driven runnable slices.
 2. CUDA and TensorRT packages on x86 hardware.
 3. Install tree, headless OCI image, and planning simulator behavior test.
 4. Cross-build and non-GPU tests for Jetson Thor, followed by hardware tests.

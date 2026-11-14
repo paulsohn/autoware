@@ -1395,3 +1395,81 @@ family and transitive message-filter releases required by target resolution.
 Next: run the complete currently integrated utility set inside the read-only
 development image, then use its result to decide whether Phase 3 can close and
 the minimal Agnocast-free core slice can begin.
+
+## 2026-11-14: Establish the minimal Agnocast-free core baseline
+
+Goal: start core integration with the smallest runnable package that establishes
+node construction, executor, and publish/subscribe behavior without introducing
+an Agnocast dependency. Use that behavior gate to define when the independent
+Agnocast lane can begin.
+
+The inspected inputs were `autoware_node`'s manifest, CMake file, public
+headers, single compiled source, and existing initialization/executor test; the
+root module's selected ROS releases; and the Lyrical RCR module metadata. No
+`autoware_node` module is published by the selected registry, so the local
+package uses version `0.0.0` and is selected explicitly by a root
+`local_path_override`. This is different from a ROS dependency declared as
+`0.0.0`: the package is intentionally local-only rather than waiting for
+another dependency to upgrade it to a registry release.
+
+The minimum library has `src/node.cpp` and the package's public headers. Its
+direct compile providers are RCLCPP and RCUtils: the implementation derives
+from `rclcpp::Node`, while the public visibility header directly includes
+RCUtils macros. The existing test verifies the node's namespace and name while
+an executor spins. A Bazel-owned test adds two `autoware::node::Node` instances,
+a reliable `std_msgs/String` publisher and subscriber, a single-threaded
+executor, and a five-second delivery deadline. Keeping this test under the
+package's `bazel/` directory avoids changing the CMake test glob or the
+upstream package dependency surface solely for this experiment.
+
+The final test executable depends on the RCLCPP and RCUtils shared providers
+plus generated `std_msgs`; its compile target uses the matching generated
+message provider. This follows the established executable-boundary convention
+and makes the communication behavior sensitive to the selected RMW. Both the
+existing and new sources are compiled into one `cc_test` because they share
+one GoogleTest main and each test manages its own RCLCPP lifecycle.
+
+Verification forced the complete package surface from a clean caller under
+both middleware configurations:
+
+```bash
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --nocache_test_results @autoware_node//...
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=fastdds --nocache_test_results \
+  @autoware_node//...
+```
+
+The final Cyclone DDS run analyzed three targets, completed 148 actions with
+5,657 action-cache hits, and passed the test in 0.1 seconds. The Fast DDS
+compatibility run analyzed the same three targets, completed 148 actions with
+7,228 action-cache hits, and passed the forced test in 0.2 seconds. The
+behavior assertion observed the exact `autoware-node` payload;
+success therefore covers discovery, publisher/subscriber matching, executor
+progress, and message delivery rather than construction alone. Existing ROS
+C++ deprecation warnings remained non-fatal. `git diff --check` passed.
+Pre-commit was not run.
+
+The integration also demonstrated that `autoware_node`'s public visibility
+header uses RCUtils while its manifest declares only RCLCPP. The Bazel target
+declares RCUtils directly instead of relying on RCLCPP's transitive closure.
+The reproducible source-metadata finding is recorded in `UPSTREAM_AWF.md`; the
+source manifest remains unchanged until the normal Autoware build and
+dependency lints can validate an upstream-facing fix.
+
+Reproduction notes: choose a core baseline by observable behavior rather than
+package count; inspect public headers for direct C-library dependencies; keep
+local-only modules explicitly versioned and overridden at the root; and add
+generated compile plus shared providers only at the test boundary when the
+message exists solely to exercise behavior. Run the same test under each RMW
+instead of treating a successful compile as middleware evidence.
+
+Result: `autoware_node` is the complete Agnocast-free core baseline. Do not add
+another package merely to enlarge that lane. The appropriate next step is to
+start `autoware_agnocast_wrapper` in ROS fallback mode, whose current tests
+cover generic pub/sub, message filters, parameter clients, polling subscribers,
+and service introspection. After applicable fallback tests pass, introduce a
+separately selectable native backend and only the Agnocast library, component,
+allocator, kernel, or runtime prerequisites that its current targets expose.
+Subsequent dependency-driven core work may proceed alongside that lane without
+using fallback-only expansion to postpone the native backend.

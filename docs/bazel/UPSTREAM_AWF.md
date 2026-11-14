@@ -15,6 +15,23 @@ For each finding, record:
 
 ## Findings
 
+### `autoware_node` omits its public RCUtils dependency
+
+- Repository/package/revision: `autoware_core`, `autoware_node`, source at
+  repository revision `a1dd4c5d`.
+- Environment: Lyrical RCR, hermetic Clang 21.1.8, x86-64 Linux.
+- Reproducer: compare `package.xml` with
+  `include/autoware/node/visibility_control.hpp`, then compile the library with
+  direct dependencies as exercised by `bazel test @autoware_node//...`.
+- Symptom: the public visibility header directly includes
+  `rcutils/visibility_control_macros.h`, but the manifest declares only
+  `rclcpp`. The Bazel library needs the RCUtils compile provider directly;
+  RCLCPP's transitive dependency can otherwise hide the omission.
+- Suggested fix: add `rcutils` as a `<depend>` entry in `package.xml`. This
+  corrects metadata for a type already present in the public header. Validate
+  with the normal colcon package build and dependency lints before proposing
+  the change upstream.
+
 ### `autoware_utils_geometry` omits public message dependencies
 
 - Repository/package/revision: `autoware_utils`,
