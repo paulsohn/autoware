@@ -873,4 +873,12 @@ void NodeParameters::remove_post_set_parameters_callback(
 }
 #endif
 
+#if RCLCPP_VERSION_MAJOR >= 32
+void NodeParameters::enable_parameter_modification()
+{
+  std::lock_guard<std::recursive_mutex> lock(parameters_mutex_);
+  parameter_modification_enabled_ = true;
+}
+#endif
+
 }  // namespace agnocast::node_interfaces

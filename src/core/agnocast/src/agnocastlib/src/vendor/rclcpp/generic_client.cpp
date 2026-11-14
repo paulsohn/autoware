@@ -84,7 +84,8 @@ std::shared_ptr<rmw_request_id_t> GenericClient::create_request_header()
 }
 
 void GenericClient::handle_response(
-  std::shared_ptr<rmw_request_id_t> request_header, std::shared_ptr<void> response)
+  AGNOCAST_RCLCPP_SHARED_PTR_PARAM(std::shared_ptr<rmw_request_id_t>) request_header,
+  AGNOCAST_RCLCPP_SHARED_PTR_PARAM(std::shared_ptr<void>) response)
 {
   auto optional_pending_request =
     this->get_and_erase_pending_request(request_header->sequence_number);
