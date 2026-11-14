@@ -1583,3 +1583,78 @@ Start with one standard message, one Autoware message, and one service; render
 their bridge translation units as declared outputs, compile and link them in
 the same Bazel invocation, then run an end-to-end bridge before expanding the
 generated plugin library to all 136 descriptors.
+
+## 2026-11-14: Add the first Agnocast library prerequisites
+
+Goal: establish the smallest independently testable local dependency layer
+required to compile `agnocastlib`, without introducing its kernel module, heap
+hook, discovery agent, component executables, or configurator daemon before a
+current target exercises them.
+
+The inspected inputs were the manifests, CMake targets, public headers,
+compiled sources, and tests for `agnocast_cie_config_msgs` and
+`agnocast_cie_thread_configurator`; the direct includes from `agnocastlib`; and
+the generated targets selected by the pinned Lyrical release. `agnocastlib`'s
+`cie_client_utils.cpp` directly includes the thread configurator client API.
+That exported library consists of `util.cpp`, `non_ros_thread_ipc.cpp`, and
+`announcement_sources.cpp`. Its headers and sources use RCLCPP and
+`CallbackGroupInfo`, but not YAML or the daemon scheduling implementation.
+
+`agnocast_cie_config_msgs` is a local-only `0.0.0` module. It declares
+`CallbackGroupInfo` and `ReapplyConfig` with the standard ROS interface rules
+and builds the complete 13-target generator surface. Both interfaces contain
+only primitive fields, so their rules have no explicit type dependencies. As
+with every service, `ros_service` adds the selected release's implicit service
+event information.
+
+`agnocast_cie_thread_configurator` is also a local-only `0.0.0` module. Its
+current Bazel library contains only the three exported client/announcement
+sources and their three public headers. The compile edge uses RCLCPP and the
+generated CIE interface target; the final test collects the matching shared
+providers. The existing `test_non_ros_thread_ipc` exercises abstract Unix
+domain socket addressing, listener/client exchange, malformed and oversized
+messages, shutdown, and error behavior without `/dev/agnocast` or
+`LD_PRELOAD`.
+
+The package's daemon scheduling core, YAML parsing, `thread_configurator_node`,
+`prerun_node`, and their four additional unit suites are not part of this
+target. They are not link dependencies of the client library used by
+`agnocastlib`. Keeping them behind a later runtime gate avoids selecting
+`yaml-cpp` and privileged scheduling behavior before the discovery/component
+runtime demonstrates that it needs the daemon.
+
+Verification commands were:
+
+```bash
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel build @agnocast_cie_config_msgs//...
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --nocache_test_results \
+  @agnocast_cie_thread_configurator//...
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=fastdds --nocache_test_results \
+  @agnocast_cie_thread_configurator//...
+```
+
+The interface build analyzed all 13 targets and completed 37 actions with
+3,293 action-cache hits. The Cyclone DDS client-library run analyzed three
+targets, completed 155 processes with 2,453 action-cache hits, and passed the
+socket behavior test in 0.3 seconds. The Fast DDS run completed 149 processes
+with 5,885 action-cache hits and passed in 0.4 seconds. Existing rules_python
+implicit-package and ROS C++ deprecation warnings remained non-fatal. Neither
+test uses the Agnocast kernel module or heap hook. Pre-commit was not run.
+
+Reproduction notes: inspect the actual source list of an exported library
+rather than treating every target in a CMake package as one dependency gate.
+Split only at an existing source/target boundary: here CMake already separates
+the exported client library from daemon-internal scheduling logic. Generate a
+local interface package completely, pair its compile/shared targets at the
+executable boundary, and run a behavior test that demonstrates the selected
+subset. Record every deferred package target explicitly.
+
+Result: the generated CIE configuration API and the kernel-independent client
+transport are available to the next `agnocastlib` target. Next, derive the
+library's direct RCR compile/shared pairs, generate its version header as a
+declared output, and first compile the complete shared-library source surface.
+Add unit-test groups only after the library exposes which Lyrical compatibility
+or link boundaries require source changes.

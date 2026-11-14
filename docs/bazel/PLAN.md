@@ -382,6 +382,18 @@ Completed analysis-time interface slice:
   becomes wholly bridgeable only when it is an explicit product root, while
   individual types referenced by a rooted interface remain transitive inputs.
 
+Completed first Agnocast prerequisite slice:
+
+- added the complete `agnocast_cie_config_msgs` message/service generator
+  surface as a local-only module;
+- exposed the CIE thread configurator's exported client and announcement
+  transport library, which is the surface directly required by `agnocastlib`;
+- passed its abstract Unix-domain-socket transport test with Cyclone DDS and
+  Fast DDS without a kernel module or heap hook;
+- deferred the configurator daemon's scheduling core, YAML dependency,
+  executables, and remaining tests until a current runtime target requires the
+  daemon rather than its client API.
+
 Exit criteria:
 
 - `autoware_node` builds from local source and its initialization, executor,

@@ -26,8 +26,20 @@ bazel_dep(name = "tf2_ros", version = "0.45.10-1.rcr.0")
 bazel_dep(name = "unique_identifier_msgs", version = "2.8.1-3.rcr.2")
 bazel_dep(name = "visualization_msgs", version = "5.9.3-1.rcr.0")
 
-# Local Autoware package modules. The concrete versions identify their RCR
-# counterparts; local_path_override selects the source snapshots by default.
+# Local source package modules. Concrete versions identify RCR counterparts
+# where available; local-only packages use 0.0.0.
+bazel_dep(name = "agnocast_cie_config_msgs", version = "0.0.0")
+local_path_override(
+    module_name = "agnocast_cie_config_msgs",
+    path = "src/core/agnocast/src/agnocast_cie_config_msgs",
+)
+
+bazel_dep(name = "agnocast_cie_thread_configurator", version = "0.0.0")
+local_path_override(
+    module_name = "agnocast_cie_thread_configurator",
+    path = "src/core/agnocast/src/agnocast_cie_thread_configurator",
+)
+
 bazel_dep(name = "autoware_utils_math", version = "1.11.0-3.rcr.2")
 local_path_override(
     module_name = "autoware_utils_math",
