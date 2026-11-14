@@ -5,8 +5,9 @@ of the ROS Central Registry (RCR). It does not track the upstream Autoware build
 system and must not change `main`.
 
 Before working, read `docs/bazel/PLAN.md`, then the latest entries in
-`docs/bazel/JOURNAL.md`. Use `docs/bazel/DEVELOPING.md` for commands and local
-configuration.
+`docs/bazel/JOURNAL.md`. Use `docs/bazel/DEVELOPING.md` only for steady-state
+development of targets that already have Bazel support. Adoption sequencing,
+experiments, and milestones belong in PLAN.md and JOURNAL.md.
 
 ## Repository layout
 

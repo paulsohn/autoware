@@ -22,6 +22,19 @@ For every slice:
 4. Run a behavior check when the target is executable.
 5. Journal commands, results, and diagnosed failures before committing.
 
+## Documentation roles
+
+- PLAN.md defines the Bazel adoption strategy, phase boundaries, and durable
+  decisions supported by experiment evidence.
+- JOURNAL.md is the adoption guide for a non-Bazel Autoware tree: it records
+  chronological to-dos, milestones, experiments, failures, decisions, and
+  verification needed to introduce Bazel successfully.
+- DEVELOPING.md describes the steady-state developer workflow after Bazel has
+  already been adopted for a package or target. It must not carry migration
+  sequencing or experiment history.
+- UPSTREAM_RCR.md and UPSTREAM_AWF.md contain only demonstrated findings useful
+  outside this repository.
+
 ## Current decisions
 
 - The first platform is x86_64 Ubuntu 24.04.

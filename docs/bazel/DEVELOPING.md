@@ -1,91 +1,151 @@
-# Developing the Bazel integration
+# Developing Autoware with Bazel
 
-## Read first
+This guide describes day-to-day development after Bazel has been adopted across
+the project. During staged adoption, it applies only to packages and targets
+that already have Bazel support. It is not an adoption or migration guide. To
+add Bazel to an unsupported Autoware area, follow PLAN.md and the chronological
+milestones and experiments in JOURNAL.md.
 
-Read `AGENTS.md`, `PLAN.md`, and the latest `JOURNAL.md` entry before changing
-the integration. The plan defines the current experiment; the journal records
-what the repository has actually demonstrated.
+## Prerequisites
 
-## Local configuration
+Use Ubuntu 24.04 x86_64 and install Bazelisk as `bazel`. The repository's
+`.bazelversion` selects the tested Bazel release. Bazel supplies the ROS and C++
+build dependencies; do not source a host ROS installation for Bazel commands.
 
-Use Ubuntu 24.04 x86_64 for the first phase. Install Bazelisk as `bazel`; the
-repository's `.bazelversion` selects the tested Bazel release.
-
-Put machine-specific limits in `user.bazelrc`, which is ignored. For example:
+Put machine-specific limits in the ignored `user.bazelrc`, for example:
 
 ```text
 build --jobs=6
 build --local_resources=cpu=6
 ```
 
-Choose limits appropriate to the machine. Run only one heavy Bazel build at a
-time.
+Choose limits appropriate to the machine and run heavy builds sequentially.
 
-## Clean environment
+## Daily build, test, and run loop
 
-Run Bazel without a sourced ROS environment when validating integration work:
-
-```bash
-env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" bazel <command>
-```
-
-Do not run `vcs import` or `vcs pull` into `src/`.
-
-## Bootstrap smoke test
-
-Cyclone DDS is the default. Build the publisher and subscriber:
+Run Bazel from the repository root in a clean caller environment:
 
 ```bash
 env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
-  bazel build //bazel/smoke:talker //bazel/smoke:listener
+  bazel build //path/to/package:target
 ```
 
-Run the listener in one terminal and the talker in another:
+Build the narrowest useful target while iterating. Before committing, build the
+package or runnable slice affected by the change.
+
+Run its tests with:
 
 ```bash
 env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
-  bazel run //bazel/smoke:listener
+  bazel test //path/to/package:target_test
 ```
+
+Use `--nocache_test_results` when the validation requires proof that a test
+executed during the current task:
 
 ```bash
 env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
-  bazel run //bazel/smoke:talker
+  bazel test --nocache_test_results //path/to/package:target_test
 ```
 
-The listener exits successfully after receiving five messages.
-
-No Cyclone DDS XML or host network tuning is required for this loopback smoke
-test. Add a network configuration only when the topology under test requires
-one.
-
-Run the Tier 2 Fast DDS compatibility gate by adding `--config=fastdds` to
-every command:
+Run an executable and pass application arguments after `--`:
 
 ```bash
 env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
-  bazel build --config=fastdds \
-  //bazel/smoke:talker //bazel/smoke:listener
+  bazel run //path/to/package:node -- --ros-args
 ```
+
+A successful build proves compilation and linking only. Use `bazel test` for
+test behavior and `bazel run` for an end-to-end node or system check.
+
+## Middleware configurations
+
+Cyclone DDS is the default development middleware. No custom Cyclone DDS XML is
+needed for local loopback communication. Add network configuration only for a
+topology that demonstrates the need.
+
+Fast DDS is the Tier 2 compatibility configuration. Add `--config=fastdds` to
+the same build, test, or run command at the compatibility gate:
 
 ```bash
 env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
-  bazel run --config=fastdds //bazel/smoke:listener
+  bazel test --config=fastdds //path/to/package:target_test
 ```
+
+Do not let a Fast DDS-only workaround determine the primary Cyclone DDS path.
+
+## Source and package layout
+
+Source snapshots under `src/` are ordinary tracked files imported as squashed
+git subtrees. Edit them in place. Do not run `vcs import` or `vcs pull` into
+`src/`.
+
+Keep:
+
+- workspace-wide Bazel support under `bazel/`;
+- package-owned `MODULE.bazel` and BUILD files beside package source;
+- development and runtime container definitions under `images/`;
+- integration strategy and evidence under `docs/bazel/`.
+
+Do not extend `repositories/`, `docker/`, or `ansible/` for Bazel work; they are
+reference implementations for the existing build and deployment.
+
+## Dependency conventions
+
+Use ROS packages from the ROS Central Registry until a package must build from
+the repository source. A local Autoware package owns a package-local Bazel
+module. The root module selects it with a concrete published version and a
+`local_path_override` when an RCR counterpart exists. Package-local dependency
+versions remain `0.0.0` so the root release selection supplies concrete ROS
+versions.
+
+Removing a local override is a deliberate source-selection check, not part of
+the normal developer loop. It is unsupported for a package that has no
+published RCR counterpart.
+
+For a C++ consumer using generated ROS libraries, pair compile and runtime
+dependencies:
+
+- depend on the generated package's `:cc` target;
+- add its `:cc_shared` target to `collect_transitive_dynamic_deps`.
+
+This preserves the RCR shared-library layout required at runtime.
+
+## Editing interface packages
+
+When changing a `.msg` or `.srv` file, keep three dependency declarations
+consistent:
+
+1. retain manifest-level package dependencies in the package-local
+   `MODULE.bazel`;
+2. list every directly referenced interface target in the individual
+   `ros_message` or `ros_service` rule;
+3. list every package referenced by generated types in
+   `default_generators.dependencies`.
+
+Do not add a manifest-only dependency to generator inputs when no current
+interface references it.
+
+Build the complete generator surface, not only a C++ consumer:
 
 ```bash
 env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
-  bazel run --config=fastdds //bazel/smoke:talker
+  bazel build @autoware_package_name//...
 ```
+
+Then run a consumer that constructs or transports the changed type. Repeat the
+bounded build and consumer test with `--config=fastdds`.
 
 ## Development image
 
-Build the pinned Ubuntu 24.04 development image:
+Build the pinned development image when its definition changes:
 
 ```bash
 docker build -f images/dev.Dockerfile -t autoware-bazel-dev:bootstrap .
 ```
 
-Use a named volume for Bazel's cache and mount the source read-only:
+Use a named cache volume and mount the source read-only. Disable convenience
+symlinks because Bazel cannot create them in the mounted workspace:
 
 ```bash
 docker volume create autoware-bazel-bootstrap-cache
@@ -93,179 +153,27 @@ docker run --rm \
   -v autoware-bazel-bootstrap-cache:/home/ubuntu/.cache \
   -v "$PWD:/workspace:ro" \
   autoware-bazel-dev:bootstrap \
-  bazel build --experimental_convenience_symlinks=ignore \
-  //bazel/smoke:talker //bazel/smoke:listener
-```
-
-Add `--config=fastdds` to the container's Bazel command for the compatibility
-build.
-
-## Local Autoware interface modules
-
-The first package-local module is `autoware_common_msgs`. Build every generated
-target exposed by it with:
-
-```bash
-env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
-  bazel build @autoware_common_msgs//...
-```
-
-Run its C++ consumer through the primary and compatibility configurations:
-
-```bash
-env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
-  bazel test //bazel/smoke:autoware_common_msgs_test
-env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
-  bazel test --config=fastdds //bazel/smoke:autoware_common_msgs_test
-```
-
-The package owns its `MODULE.bazel` and BUILD files. The root module makes it
-visible with a direct `bazel_dep` at the published RCR version and selects the
-source tree with `local_path_override`. Removing that override selects the RCR
-source without changing consumer BUILD labels; use `--lockfile_mode=off` for a
-temporary source-selection check. Package-local dependencies use version
-`0.0.0` so the root release selection supplies their concrete versions.
-
-An interface package with dependencies has three matching declarations:
-
-1. direct package dependencies in its package-local `MODULE.bazel`;
-2. referenced interface labels in each `ros_message` or `ros_service` rule;
-3. package repositories in `default_generators.dependencies`.
-
-Build all generated localization targets and run both C++ consumers:
-
-```bash
-env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
-  bazel build @autoware_localization_msgs//...
-env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
-  bazel test \
-  //bazel/smoke:autoware_common_msgs_test \
-  //bazel/smoke:autoware_localization_msgs_test
-```
-
-The generated-message behavior pair is
-`//bazel/smoke:localization_talker` and
-`//bazel/smoke:localization_listener`. Run the listener first, then the talker;
-the listener exits after validating five `KinematicState` payloads. Add
-`--config=fastdds` to both commands for the compatibility gate.
-
-Build the first Phase 2 interface layer and run its consumer:
-
-```bash
-env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
-  bazel build @autoware_control_msgs//...
-env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
-  bazel build @autoware_v2x_msgs//...
-env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
-  bazel test //bazel/smoke:autoware_interface_layer_test
-```
-
-Add `--config=fastdds` to the build and test commands at the bounded-group
-compatibility gate. The consumer verifies same-package nested message targets
-and a bounded sequence generated from `builtin_interfaces/Time`.
-
-Build the expanded base layer sequentially:
-
-```bash
-env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
-  bazel build @autoware_system_msgs//...
-env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
-  bazel build @autoware_sensing_msgs//...
-env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
-  bazel build @autoware_map_msgs//...
-env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
-  bazel build @autoware_planning_msgs//...
-env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
-  bazel build @autoware_perception_msgs//...
-env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
-  bazel test //bazel/smoke:autoware_interface_base_test
-```
-
-`geographic_msgs` is outside the `ros_core` release selection, so the root
-module pins its concrete published version for `autoware_map_msgs`.
-
-Build the dependent interface layer and run its consumer:
-
-```bash
-env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
-  bazel build @autoware_vehicle_msgs//...
-env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
-  bazel build @autoware_simulation_msgs//...
-env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
-  bazel test --nocache_test_results \
-  //bazel/smoke:autoware_interface_dependent_test
-```
-
-`autoware_simulation_msgs` has no published Lyrical RCR module. The root uses
-version `0.0.0` with a local override, so removing that override is not a
-supported source-selection check. The `autoware_msgs` ament metapackage has no
-generated interface surface and is not a Bazel module.
-
-For the complete interface gate, build all 11 module repositories together,
-then force execution of the five interface consumers. Repeat both commands
-with `--config=fastdds` for the compatibility gate.
-
-Run the same gate in the development image with a read-only source mount and a
-named cache volume. Add `--experimental_convenience_symlinks=ignore` because
-Bazel must not create output symlinks in the mounted workspace:
-
-```bash
-docker run --rm \
-  -v autoware-bazel-bootstrap-cache:/home/ubuntu/.cache \
-  -v "$PWD:/workspace:ro" \
-  autoware-bazel-dev:bootstrap \
   bazel test --experimental_convenience_symlinks=ignore \
-  --nocache_test_results \
-  //bazel/smoke:autoware_common_msgs_test \
-  //bazel/smoke:autoware_localization_msgs_test \
-  //bazel/smoke:autoware_interface_layer_test \
-  //bazel/smoke:autoware_interface_base_test \
-  //bazel/smoke:autoware_interface_dependent_test
+  --nocache_test_results //path/to/package:target_test
 ```
 
-Add `--config=fastdds` after `bazel test` for the Tier 2 container gate.
+Add `--config=fastdds` to the Bazel command for the compatibility gate.
 
-## Task workflow
+## Validation and commits
 
-1. State the target and its observable success condition in JOURNAL.md.
-2. Make the smallest change that tests the current question.
-3. Run the relevant build and test commands.
-4. For executable targets, verify behavior rather than relying only on a build.
-5. Record exact commands and results. For a failure, separate symptom, confirmed
-   cause, and fix.
-6. Update PLAN.md if the result establishes or reverses a durable decision.
-7. Add upstream notes only when the evidence is reproducible and useful beyond
-   this branch.
-8. Run `git diff --check`, review the staged diff, and commit with sign-off.
+Validate in proportion to the change:
 
-## Journal standard
+- BUILD or module change: build every affected target surface;
+- library change: build and run focused tests;
+- executable or communication change: run a behavior check;
+- container change: build the image and run a representative target with the
+  source mounted read-only;
+- documentation-only change: run targeted documentation checks and state that
+  no runtime validation was performed.
 
-Treat the journal as a cumulative implementation guide for someone who does
-not have this branch. Every dated entry must make these points recoverable:
+Run only targeted format and static checks for files changed by the task. Do
+not run pre-commit for this experiment.
 
-1. purpose and observable success condition;
-2. prerequisites, source snapshot, and inputs inspected;
-3. minimum files, labels, dependencies, flags, or patches introduced, including
-   why they are needed;
-4. transferable decisions and failure diagnoses, not only a list of edits;
-5. exact build, test, and behavior commands with the result each command proves;
-6. limitations, deferred checks, and the next dependency boundary.
-
-Entries are chronological and may use an earlier entry as an explicit
-prerequisite. They must not require the reader to inspect a commit diff to
-understand the integration pattern. Avoid copying whole BUILD files when a
-rule shape and its required dependency edges describe the method completely.
-
-## Commit boundaries
-
-- Bazel rules, BUILD files, workspace configuration, and integration docs use
-  scopes such as `feat(bazel)`, `fix(bazel)`, or `docs(bazel)`.
-- Compatibility changes under an imported repository use
-  `fix(src/<repository>)` and remain separate from BUILD-file commits.
-- Do not combine unrelated package ports to reduce commit count.
-
-## Validation language
-
-Report only commands run against the current commit. Distinguish build success,
-test success, runtime behavior, and artifact comparison; one does not imply the
-others. Documentation-only changes should say that no build was run.
+Use signed-off Conventional Commits. Keep source compatibility changes in a
+separate `fix(src/<repository>): ...` commit from Bazel build definitions. Do
+not commit `user.bazelrc`, Bazel output trees, or convenience symlinks.

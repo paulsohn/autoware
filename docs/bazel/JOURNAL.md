@@ -2,12 +2,14 @@
 
 ## How to reproduce from this journal
 
-This is a cumulative implementation guide, not only a change log. Dated entries
-assume the successful state of preceding entries unless they name a different
-starting point. A reader applying the same method to another Autoware snapshot
-should preserve the dependency and validation patterns, while re-deriving
-message inventories and compatibility fixes from that snapshot rather than
-assuming identical source contents.
+This is the adoption guide for bringing Bazel to a non-Bazel Autoware tree, not
+a day-to-day developer manual or only a change log. Dated entries are the
+chronological to-dos and milestones, and assume the successful state of
+preceding entries unless they name a different starting point. A reader
+applying the same method to another Autoware snapshot should preserve the
+dependency and validation patterns, while re-deriving message inventories and
+compatibility fixes from that snapshot rather than assuming identical source
+contents.
 
 Every entry records or links its purpose, prerequisites and inspected inputs,
 minimum integration pattern, decision or transferable lesson, exact
@@ -918,11 +920,11 @@ diagnosis, and read-only container method. Planning-only entries now state
 explicitly that their result is a policy or workflow rather than runtime
 evidence.
 
-The requirement is now durable in both `AGENTS.md` and DEVELOPING.md: future
-entries must be understandable without a commit diff and must include purpose,
-prerequisites, the minimum integration pattern and rationale, decisions and
-failure diagnoses, exact verification with observable results, and remaining
-limitations.
+The requirement is now durable in `AGENTS.md` and this journal's reproduction
+preface: future entries must be understandable without a commit diff and must
+include purpose, prerequisites, the minimum integration pattern and rationale,
+decisions and failure diagnoses, exact verification with observable results,
+and remaining limitations.
 
 Coverage was checked mechanically by splitting JOURNAL.md at every dated
 heading and confirming that each section contains `Goal:`, `Reproduction
@@ -957,3 +959,52 @@ and workflow checklist to preserve that property.
 Next: select a small runnable Autoware core target, trace its utility-package
 dependencies, and apply the reproducible-entry standard while establishing
 only the shared Bazel conventions that target requires.
+
+## 2026-11-14: Separate adoption guidance from steady-state development
+
+Goal: give the adoption record and developer guide distinct audiences so a
+project adopting Bazel does not confuse migration experiments with normal
+post-adoption development.
+
+Defined the documentation boundary in PLAN.md and AGENTS.md. PLAN.md owns the
+adoption strategy and durable decisions. JOURNAL.md owns chronological adoption
+to-dos, milestone gates, experiments, diagnosed failures, and verification for
+a non-Bazel Autoware tree. DEVELOPING.md assumes the relevant package or target
+already has Bazel support and documents only the steady-state developer
+workflow.
+
+Replaced the phase-by-phase integration narrative in DEVELOPING.md with a daily
+guide covering prerequisites, narrow build/test/run loops, middleware
+configurations, source layout, dependency conventions, interface maintenance,
+read-only container checks, and commit validation. Bootstrap trials, package
+port order, adoption-specific smoke consumers, journal-writing procedure, and
+milestone history remain in this journal instead.
+
+Targeted documentation validation:
+
+```bash
+markdownlint -c .markdownlint.yaml \
+  AGENTS.md docs/bazel/PLAN.md docs/bazel/JOURNAL.md \
+  docs/bazel/DEVELOPING.md
+prettier --check \
+  AGENTS.md docs/bazel/PLAN.md docs/bazel/JOURNAL.md \
+  docs/bazel/DEVELOPING.md
+git diff --check
+```
+
+No build or runtime validation is required because the change only reorganizes
+and clarifies documentation. Pre-commit is not run.
+
+Reproduction notes: when adapting this documentation model elsewhere, put
+questions such as "what must be ported next, what failed, and what evidence
+closes the milestone?" in the adoption journal. Put questions such as "how do
+I build, test, run, add a dependency, or validate my change now that Bazel is
+supported?" in the developer guide. Promote a command into the developer guide
+only after the adoption journal has validated it as a stable workflow.
+
+Result: the distinction is now explicit in all three entry points, and
+DEVELOPING.md can be read as the post-adoption developer contract without
+following the experiment history.
+
+Next: select a small runnable Autoware core target and record its adoption work
+here; add only the resulting stable developer workflow to DEVELOPING.md.
