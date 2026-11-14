@@ -1658,3 +1658,102 @@ library's direct RCR compile/shared pairs, generate its version header as a
 declared output, and first compile the complete shared-library source surface.
 Add unit-test groups only after the library exposes which Lyrical compatibility
 or link boundaries require source changes.
+
+## 2026-11-14: Build the complete Agnocast shared library
+
+Goal: compile the complete exported `agnocastlib` shared-library surface before
+selecting tests or runtime executables, so the build itself reveals the direct
+ROS dependency boundary and the exact source compatibility needed by Lyrical.
+The target deliberately excludes the kernel module, heap hook, discovery
+agent, component containers, and thread-configurator daemon because none is a
+source or link input of the library being integrated.
+
+The inspected inputs were `agnocastlib/package.xml`, its exported CMake target
+and complete source list, public and private headers, the version-header
+template, its direct includes, the selected RCR BUILD targets, and the Lyrical
+rclcpp, message_filters, TF2, and tracetools APIs exposed by failed compiler
+diagnostics. The previously integrated CIE message and client-transport modules
+are direct local dependencies. All other dependencies are selected from the
+pinned rosdistro graph; the package module declares each one directly rather
+than relying on visibility through another module.
+
+The minimum Bazel pattern is a package-local `agnocastlib@0.0.0` module selected
+by a root `local_path_override`. A declared genrule reads the tracked
+`package.xml` version and expands `agnocast_version.hpp.in` into the generated
+header. `agnocast_library` contains the same 51 compiled sources as the
+exported CMake library, its public and private headers, the rosdistro local
+defines, and C++17 warning settings. Its direct compile dependencies use the
+RCR library or generated-interface targets. The final `cc_shared_library`
+collects the matching ROS shared providers and produces `libagnocast.so`.
+
+Tracing is a configuration-dependent link boundary, not an unconditional
+dependency. Both the compile target and shared-library closure select the RCR
+LTTng providers only through `@rosdistro//:tracing_enabled_linux`. This keeps
+the default artifact independent of LTTng while making the tracing-enabled
+configuration a first-class build gate. The module lockfile update records the
+newly reached module and extension inputs so a fresh checkout resolves the same
+graph.
+
+The first compilation failed because the source calls `TRACEPOINT`, while
+Lyrical's tracetools header exposes `TRACETOOLS_TRACEPOINT`. A compatibility
+alias in the existing tracepoint wrapper preserves the source call sites. The
+next failures were rclcpp 32 overrides whose shared-pointer parameters changed
+from values to const references. A small version-gated parameter macro is used
+only for those executor, logging, generic-client, and generic-service override
+signatures, preserving the older API form for earlier rclcpp versions.
+
+Further compilation exposed distribution API changes in sequence. Lyrical
+message_filters and TF2 install selected headers as `.hpp` rather than the
+older `.h` names, so the includes now name the installed headers. The removed
+`message_filters::mp_count` helper is replaced locally by a fold-expression
+that counts non-null tuple types. rclcpp 32 changed node guard-condition
+ownership and added node graph and parameter virtual methods. The node base now
+owns one shared guard condition and returns or triggers that same instance; the
+new parameter method enables the existing guarded flag. Service endpoint
+introspection follows the package's existing unsupported graph-query behavior
+and throws explicitly. No anticipated source patch was applied beyond a
+compiler error reached by this target.
+
+Verification used a caller environment without a sourced ROS installation:
+
+```bash
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel build @agnocastlib//:agnocast
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel build --config=fastdds @agnocastlib//:agnocast
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel build --@rosdistro//:enable_tracing @agnocastlib//:agnocast
+git diff --check
+```
+
+All three builds produced
+`bazel-bin/external/agnocastlib+/libagnocast.so`. The final default Cyclone DDS
+confirmation configured 59,005 targets, applied 1,755 aspects, and completed
+245 processes with 7,768 action-cache hits and 16 remote-cache hits in 42.876
+seconds. The Fast DDS compatibility build loaded 21 packages, configured
+65,919 targets, applied 1,777 aspects, and completed 219 processes with 9,287
+action-cache hits in 44.595 seconds. The tracing-enabled Cyclone DDS build
+completed 351 actions with 7,767 action-cache hits and 99 remote-cache hits in
+56.276 seconds. Existing ROS codecvt
+deprecations, rules_python implicit-package warnings, Agnocast's missing
+`override`, C-linkage return-type warnings, a deprecated ament-index overload,
+and existing unused fields remained non-fatal. Targeted clang-format was run on
+the changed C++ files, `git diff --check` passed, and pre-commit was not run.
+
+This milestone validates compilation and linking, not Agnocast behavior: a
+shared library has no standalone behavior entry point. The next gate is to add
+focused, kernel-independent `agnocastlib` unit-test groups and execute the
+applicable tests before a wrapper consumes the library. Kernel access,
+LD_PRELOAD allocation, discovery, components, and configurator-daemon behavior
+remain explicitly deferred until a current executable or test requires them.
+After the library test gate, make the product interface set consumable by the
+bridge-plugin rule and compile a representative message and service plugin in
+the same Bazel invocation.
+
+Reproduction notes: begin from the exported library's actual CMake source list,
+not every target in the package; generate configured headers as declared
+outputs; declare direct module dependencies even when the release graph already
+contains them transitively; pair compile and shared providers only at the final
+link boundary; and enable optional tracing during validation so its otherwise
+hidden native link requirements are exercised. Treat compiler diagnostics as
+the boundary for compatibility work and record every deferred runtime surface.

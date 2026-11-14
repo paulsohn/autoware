@@ -394,6 +394,21 @@ Completed first Agnocast prerequisite slice:
   executables, and remaining tests until a current runtime target requires the
   daemon rather than its client API.
 
+Completed Agnocast shared-library slice:
+
+- added `agnocastlib` as a local-only module and compiled the complete source
+  surface of its exported CMake library into `libagnocast.so`;
+- generated `agnocast_version.hpp` from the tracked manifest and template as a
+  declared Bazel output rather than requiring a configured source tree;
+- paired direct ROS compile providers with shared-library dependencies at the
+  final `cc_shared_library` boundary, including conditional LTTng dependencies
+  only when the rosdistro tracing feature is enabled;
+- added only the Lyrical compatibility required by observed rclcpp 32,
+  message_filters, TF2, and tracetools build failures;
+- built the library with Cyclone DDS, Fast DDS, and tracing enabled, while
+  deferring its unit tests and all kernel, heap-hook, discovery, component, and
+  configurator-daemon runtime targets to their own behavior gates.
+
 Exit criteria:
 
 - `autoware_node` builds from local source and its initialization, executor,
