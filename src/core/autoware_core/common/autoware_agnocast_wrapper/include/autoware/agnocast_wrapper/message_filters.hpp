@@ -17,10 +17,10 @@
 #include "autoware/agnocast_wrapper/autoware_agnocast_wrapper.hpp"
 #include "autoware/agnocast_wrapper/node.hpp"
 
-#include <message_filters/subscriber.h>
-#include <message_filters/sync_policies/approximate_time.h>
-#include <message_filters/sync_policies/exact_time.h>
-#include <message_filters/synchronizer.h>
+#include <message_filters/subscriber.hpp>
+#include <message_filters/sync_policies/approximate_time.hpp>
+#include <message_filters/sync_policies/exact_time.hpp>
+#include <message_filters/synchronizer.hpp>
 
 #include <algorithm>
 #include <functional>
@@ -56,7 +56,7 @@ template <class M>
 class Subscriber
 {
 public:
-  using RclcppSubscriber = ::message_filters::Subscriber<M, rclcpp::Node>;
+  using RclcppSubscriber = ::message_filters::Subscriber<M>;
   using AgnocastSubscriber = agnocast::message_filters::Subscriber<M, agnocast::Node>;
 
   Subscriber()
