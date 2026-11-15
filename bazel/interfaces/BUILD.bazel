@@ -1,0 +1,24 @@
+load(":interfaces.bzl", "ros_interface_set")
+
+package(default_visibility = ["//visibility:public"])
+
+ros_interface_set(
+    name = "all_interfaces",
+    roots = [
+        "@agnocast_cie_config_msgs//:cc",
+        "@autoware_common_msgs//:cc",
+        "@autoware_control_msgs//:cc",
+        "@autoware_internal_planning_msgs//:cc",
+        "@autoware_localization_msgs//:cc",
+        "@autoware_map_msgs//:cc",
+        "@autoware_perception_msgs//:cc",
+        "@autoware_planning_msgs//:cc",
+        "@autoware_sensing_msgs//:cc",
+        "@autoware_simulation_msgs//:cc",
+        "@autoware_system_msgs//:cc",
+        "@autoware_v2x_msgs//:cc",
+        "@autoware_vehicle_msgs//:cc",
+        "@std_msgs//:cc",
+        "@std_srvs//:cc",
+    ],
+)

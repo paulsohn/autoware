@@ -1,6 +1,13 @@
 module(name = "autoware_bazel")
 
+bazel_dep(name = "ros2agnocast", version = "0.0.0")
+local_path_override(
+    module_name = "ros2agnocast",
+    path = "src/core/agnocast/src/ros2agnocast",
+)
+
 # Bazel rule and toolchain modules used directly by this workspace.
+bazel_dep(name = "googletest", version = "1.18.0.bcr.1")
 bazel_dep(name = "llvm", version = "0.8.25.rcr.0")
 bazel_dep(name = "platforms", version = "1.1.0")
 bazel_dep(name = "rules_cc", version = "0.2.26.rcr.0")
@@ -14,6 +21,7 @@ bazel_dep(name = "rclcpp", version = "0.0.0")
 bazel_dep(name = "rcutils", version = "0.0.0")
 bazel_dep(name = "rosidl_default_generators", version = "0.0.0")
 bazel_dep(name = "std_msgs", version = "0.0.0")
+bazel_dep(name = "std_srvs", version = "0.0.0")
 
 # ROS packages outside ros_core need an explicit concrete release selection.
 bazel_dep(name = "diagnostic_msgs", version = "5.9.3-1.rcr.0")
@@ -193,16 +201,12 @@ bazel_dep(name = "rosdistro", version = "lyrical.2026-10-05.rcr.3")
 
 register_toolchains("@llvm//toolchain:all")
 
-bazel_dep(name = "rules_rs", version = "0.1.0")
 bazel_dep(name = "rules_shell", version = "0.6.1")
-heaphook_crates = use_extension("@rules_rs//rs:extensions.bzl", "crate")
-heaphook_crates.from_cargo(
-    name = "heaphook_crates",
-    cargo_toml = "//src/core/agnocast/agnocast_heaphook:Cargo.toml",
-    cargo_lock = "//src/core/agnocast/agnocast_heaphook:Cargo.lock",
-    platform_triples = ["x86_64-unknown-linux-gnu"],
+bazel_dep(name = "agnocast_heaphook", version = "0.0.0")
+local_path_override(
+    module_name = "agnocast_heaphook",
+    path = "src/core/agnocast/agnocast_heaphook",
 )
-use_repo(heaphook_crates, "heaphook_crates")
 
 llvm = use_extension("@llvm//extensions:llvm.bzl", "llvm")
 llvm.version(llvm_version = "21.1.8")

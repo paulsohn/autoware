@@ -1,0 +1,9 @@
+package(default_visibility = ["//visibility:public"])
+
+# Reuse the upstream C++ templates; ROS CLI packaging remains separate.
+exports_files([
+    "ros2agnocast/static_sources/generic_functions.cpp",
+    "ros2agnocast/static_sources/generic_functions.hpp",
+    "ros2agnocast/templates/pubsub_bridge_plugin.cpp.em",
+    "ros2agnocast/templates/service_bridge_plugin.cpp.em",
+])

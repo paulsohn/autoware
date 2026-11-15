@@ -2124,3 +2124,195 @@ before submission. No upstream comment or PR was created.
 
 This task changes documentation only. `git diff --check` is the applicable
 validation; no runtime checks were rerun and pre-commit was not run.
+
+## 2026-11-15: Build root-owned typed Agnocast plugins from the interface graph
+
+Purpose and scope: expose the interfaces selected by the top-level build during
+analysis, instantiate the upstream bridge implementations directly in that
+graph, and run the complete eight-case bridge suite with the production heap
+hook and Cyclone DDS. The module boundary also includes the heap hook's Cargo
+setup. Recheck all five existing Agnocast unit groups, allocator tests,
+wrapper C++ tests, and interface consumers. Discovery-agent installation,
+component containers, and the 15 additional upstream Agnocast integration
+groups are separate adoption gates, not covered by this milestone.
+
+Prerequisites and inspected inputs: the pinned RCR Lyrical/rclcpp 32/LLVM
+configuration, package-local generated interface targets, RosInterfaceInfo,
+the upstream ros2agnocast verb/templates/helpers, bridge factory API, and
+existing heap-hook and wrapper test fixtures. Runtime checks require a
+compatible loaded Agnocast kernel module and access to /dev/agnocast. Use the
+ignored user.bazelrc resource limits and run heavy builds sequentially. No
+host ROS installation is sourced and no apt/pip/rosdep target dependencies are
+used. Fast DDS checks require approval at major milestones; none were run
+for this final gate.
+
+Final integration pattern:
+
+1. Put interfaces.bzl in bazel/interfaces and define ros_interface_set with a
+   `roots` label-list attribute. Apply an aspect following `deps`, collect
+   each encountered RosInterfaceInfo's package/kind/name and source file,
+   combine them in depsets, and write a sorted manifest. Return the public
+   RosInterfaceSetInfo metadata for bridges, loggers, or other consumers.
+   Roots are build targets, not module names: individual interfaces, aggregate
+   :cc targets, or applications work through their dependency paths. Aggregate
+   libraries can include more types than the source code actually uses.
+2. Declare only //bazel/interfaces:all_interfaces. List 15 concrete :cc target
+   labels directly in its BUILD file: agnocast_cie_config_msgs, the 12 local
+   Autoware interface packages, std_msgs, and std_srvs. These selected product
+   roots and their declared dependencies are the universe, not every package
+   available in the module registry. Developers register needed interfaces
+   with ros_message/ros_service and default_generators(deps=[...]); undeclared
+   files remain outside the graph. There is no source-directory completeness
+   validator, inventory repository, packages.bzl list, or separate proof set.
+3. Keep product plugin assembly in bazel/agnocast/plugins.bzl and instantiate
+   //bazel/agnocast:plugins in the root module. ros2agnocast is a minimal local
+   module exporting its existing C++ templates and generic helper files. It
+   does not depend back on root labels. A separate autoware_bazel source
+   repository is deferred; the existing root module name is only the
+   metarepository's workspace identity.
+4. Iterate interface descriptors during analysis, declare one C++ translation
+   unit per descriptor, and expand the upstream templates with native
+   ctx.actions.expand_template. Supply the message/service descriptor, C++
+   namespace type, ROS snake-case header path, and flattened symbol suffix.
+   There is no ROS verb invocation, ament-index discovery, Python renderer,
+   generated CMake package, or second build. Keep generic_functions.cpp/.hpp
+   beside the generated sources as declared inputs.
+5. Match the verb's modern-ROS service handling: synthesize one
+   package/srv/Service_Event pub/sub type per service and deduplicate. Its
+   header is the service's own header, not a separate event header. Test
+   String, ResponseStatus, GNSSFix, UInt16 and SetBool_Event naming during
+   analysis. Action interfaces and templates with EmPy control flow remain
+   unsupported; the current C++ templates use substitutions only.
+6. Compile generated sources with explicit interface :cc and Agnocast/RCLCPP
+   library dependencies; collect matching :cc_shared and runtime providers
+   before cc_shared_library links libagnocast_bridge_plugins.so. The plugin
+   BUILD file declares the compile/shared targets directly. Outputs belong
+   to the root plugin target; generated C++ is not checked into source.
+7. Give bridge_plugins_test that library as declared data and a rootpath
+   argument. dlopen the exact file, resolve typed factories with dlsym, and
+   check standard/local messages, SetBool requests/responses, and service-event
+   payloads in both directions. Message publishers run as separate processes
+   because bridge subscriptions ignore local publications. Explicitly add
+   returned callback groups to the mixed executor; run spin() in a thread,
+   then cancel/join before destroying endpoints.
+8. Make agnocast_heaphook its own component module. Put crate.from_cargo beside
+   Cargo.toml/Cargo.lock; name the extension proxy `crate` and retain the
+   generated repository name "heaphook_crates". Keep the real Agnocast shared
+   library import and glibc 2.34 bootstrap selection. The root preload launcher
+   uses the Bash runfiles library and repository mapping, not a source checkout
+   path. Pass the empty canonical source-repository name for the main module;
+   `_main` is its runfiles directory name, not its mapping key.
+
+Diagnosed setup issues: production preload must not be applied to unit suites
+that interpose kernel/allocator calls with mocks. Run those groups without
+the heap hook. Kernel-backed behavior uses --strategy=TestRunner=local because
+reused sandbox PIDs collide with host PID-named shared memory. Source-tree
+relocation probes under /tmp need --sandbox_add_mount_pair for that directory,
+otherwise Python runfiles can point into a masked host /tmp. These are test
+environment constraints, not reasons to skip required tests. Ordinary component
+module boundaries resolve through labels and source overrides.
+
+Final verification commands, in a shell with no sourced ROS environment:
+
+```bash
+clean_bazel() {
+  env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" bazel "$@"
+}
+clean_bazel test --config=no-agnocast --nocache_test_results --test_output=errors \
+  @agnocastlib//... @agnocast_heaphook//... @autoware_agnocast_wrapper//... \
+  //bazel/smoke/... //bazel/agnocast:template_tests \
+  //bazel/interfaces:all_interfaces //bazel/agnocast:plugins
+clean_bazel test --strategy=TestRunner=local \
+  --run_under=//bazel/agnocast:with_heaphook \
+  --nocache_test_results --test_output=errors \
+  @autoware_agnocast_wrapper//... //bazel/agnocast:bridge_plugins_test
+packages=(agnocast_cie_config_msgs autoware_common_msgs autoware_control_msgs
+  autoware_internal_planning_msgs autoware_localization_msgs autoware_map_msgs
+  autoware_perception_msgs autoware_planning_msgs autoware_sensing_msgs
+  autoware_simulation_msgs autoware_system_msgs autoware_v2x_msgs
+  autoware_vehicle_msgs std_msgs std_srvs)
+targets=()
+for package in "${packages[@]}"; do targets+=("@${package}//..."); done
+clean_bazel build "${targets[@]}"
+clean_bazel aquery \
+  'mnemonic("TemplateExpand", //bazel/agnocast:plugins_sources)' --output=text
+git diff --check
+```
+
+Coverage checks: the sorted manifest contains 169 interfaces, including 21
+services; expansion produces 190 typed translation units. All were compared
+byte-for-byte with the upstream template substitutions using the verb's
+CamelCase-to-snake-case algorithm, including the service-event header rule.
+`nm -D --defined-only bazel-bin/bazel/agnocast/libagnocast_bridge_plugins.so`
+contains both typed factories per instantiated type: 380 expected symbols.
+The generic helper sources match the upstream files exactly. The native action
+query shows root-owned TemplateExpand actions with upstream templates as inputs.
+
+The 13-target unit/consumer gate passes: five Agnocast groups (439 cases),
+allocator tests (26), wrapper fallback (37), five interface consumer tests,
+and template naming checks (five assertions). Kernel-backed checks pass the
+complete wrapper suite (37) and all eight bridge cases without skips. All 317
+generated-interface targets across the 15 selected packages build successfully.
+The wrapper's additional case comes from the source fix recorded below.
+
+The broad generation gate first hit a timeout fetching the pinned Ogre archive
+through GitHub's archive URL. Fetching the same version through codeload and
+passing it through --distdir resolved the download; Bazel verified the archive
+against its existing checksum. No dependency version or source patch changed:
+
+```bash
+mkdir -p /tmp/autoware-bazel-distdir
+curl -fL https://codeload.github.com/OGRECave/ogre/tar.gz/refs/tags/v1.12.10 \
+  -o /tmp/autoware-bazel-distdir/v1.12.10.tar.gz
+clean_bazel build --distdir=/tmp/autoware-bazel-distdir "${targets[@]}"
+```
+
+DEVELOPING.md now describes explicit interface registration, mixed packages,
+collector reachability, consumer/link dependencies, and supported day-to-day
+commands. PLAN.md records the final ownership and scope; it does not require
+the deleted source module or validator. Earlier committed milestones remain
+history; this entry consolidates the design iterations into the
+final reproducible pattern. No pre-commit run or Fast DDS check was performed.
+The next runtime gate is normal plugin auto-selection/discovery, not another
+interface collector proof.
+
+## 2026-11-15: Repair the wrapper's Lyrical message-filter subscription path
+
+Source fix and regression commit: `b5d19a6c`, separate from Bazel build support.
+
+Purpose: fix a real public API compile failure missed by a default-construction
+test. On the pinned Lyrical message_filters API, instantiating
+Subscriber<PoseStamped>::subscribe(node, topic, rmw_qos_profile_sensor_data)
+fails because the ROS branch forwards an rmw profile to an overload requiring
+rclcpp::QoS. A syntax-only probe using the wrapper test's actual Bazel compile
+arguments failed; the same header text with explicit conversion passed.
+
+Use the existing profile-preserving detail::to_qos helper already in node.hpp,
+guarded by rclcpp major 32. Preserve the pre-32 call form and the Agnocast
+raw-profile path. Do not duplicate conversion logic or normalize the profile
+through QoSInitialization::from_rmw. The new regression creates a subscriber
+through its constructor, checks topic/history/depth/reliability/durability,
+resubscribes with a different topic/depth, and verifies unsubscribe releases
+the endpoint. It runs against the actual selected backend, with the heap hook
+required for the enabled gate.
+
+Verification: the complete wrapper C++ suite passes all 37 cases without skips
+with both runtime selections, using the two clean_bazel test commands above.
+The regression test would instantiate the failing method before the fix; it
+now checks real endpoint creation rather than only class construction. Targeted
+clang-format and git diff --check pass. Fast DDS, older distributions, and
+ordinary CMake/colcon builds were not run. The rclcpp guard preserves the older
+source path but is not a claim of tested Humble/Jazzy compatibility.
+
+Reviewed upstream main and the actual patch of core PR #1257 on 2026-11-15.
+Main still forwards the raw profile and retains the old Subscriber template
+arity. PR #1257 changes the non-Agnocast API shape, not this enabled subscription
+path. No matching Lyrical QoS repair was found in the documented searches.
+UPSTREAM_AWF.md records exact inspected blob/head hashes, related trackers,
+the independent reproducer, regression, and remaining upstream validation.
+This is wrapper Lyrical compatibility, not a transport behavior modification.
+
+Coverage limitation: the 439 Agnocast unit cases do not replace the 15 upstream
+integration groups not yet declared in our BUILD file. Discovery-agent warn()
+calls also need review against rclpy's warning() API when that module is adopted.
+Those are future module gates; no speculative source patches were applied.

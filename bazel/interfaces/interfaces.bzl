@@ -1,4 +1,4 @@
-"""Analysis-time collection of the ROS interfaces available to Agnocast."""
+"""Consumer-independent analysis-time collection of ROS interface closures."""
 
 load("@rosidl_default_generators//:defs.bzl", "RosInterfaceInfo")
 
@@ -51,28 +51,15 @@ _ros_interface_closure_aspect = aspect(
 def _ros_interface_set_impl(ctx):
     transitive_descriptors = [
         root[RosInterfaceSetInfo].descriptors
-        for root in ctx.attr.package_roots
+        for root in ctx.attr.roots
     ]
     transitive_srcs = [
         root[RosInterfaceSetInfo].srcs
-        for root in ctx.attr.package_roots
+        for root in ctx.attr.roots
     ]
     descriptors = depset(transitive = transitive_descriptors)
     srcs = depset(transitive = transitive_srcs)
     sorted_descriptors = sorted(descriptors.to_list())
-
-    missing = [
-        interface
-        for interface in ctx.attr.required_interfaces
-        if interface not in sorted_descriptors
-    ]
-    if missing:
-        fail("required ROS interfaces are absent: {}".format(", ".join(missing)))
-    if ctx.attr.expected_count and len(sorted_descriptors) != ctx.attr.expected_count:
-        fail("expected {} ROS interfaces, collected {}".format(
-            ctx.attr.expected_count,
-            len(sorted_descriptors),
-        ))
 
     manifest = ctx.actions.declare_file(ctx.label.name + ".interfaces")
     ctx.actions.write(manifest, "\n".join(sorted_descriptors) + "\n")
@@ -87,11 +74,10 @@ def _ros_interface_set_impl(ctx):
 ros_interface_set = rule(
     implementation = _ros_interface_set_impl,
     attrs = {
-        "expected_count": attr.int(),
-        "package_roots": attr.label_list(
+        "roots": attr.label_list(
+            doc = "Build targets whose transitive deps supply ROS interface metadata.",
             aspects = [_ros_interface_closure_aspect],
             mandatory = True,
         ),
-        "required_interfaces": attr.string_list(),
     },
 )

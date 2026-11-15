@@ -17,6 +17,16 @@ experiments, and milestones belong in PLAN.md and JOURNAL.md.
   the existing build and deployment. Do not extend them for Bazel integration.
 - Put Bazel workspace support under `bazel/`, container definitions under
   `images/`, and integration documentation under `docs/bazel/`.
+- Keep interface collection and product-level plugin assembly under `bazel/`.
+  Defer a separate `autoware_bazel` source repository until a concrete
+  cross-repository need requires it. Keep component-specific build support with
+  its component; components must not depend on metarepository paths or labels.
+  The metarepository selects source overrides and composes interface sets
+  usable by bridges, loggers, or other consumers.
+- BUILD declarations define supported interfaces; registering interfaces and
+  their dependencies is the developer's responsibility. Undeclared interface
+  sources remain outside the Bazel graph. Validate generated targets and
+  consumers rather than enforcing source-directory completeness.
 
 ## Working rules
 
@@ -64,6 +74,9 @@ experiments, and milestones belong in PLAN.md and JOURNAL.md.
   static checks against files changed by the current task.
 - Run heavy builds sequentially and respect the resource limits in
   `user.bazelrc`.
+- Use Cyclone DDS for routine validation. Reserve Fast DDS checks for major
+  milestones, and always obtain the user's approval before running any Fast
+  DDS build, test, or behavior check. Earlier results do not authorize a rerun.
 - Add a finding to `UPSTREAM_RCR.md` or `UPSTREAM_AWF.md` only after the
   experiment supplies reproducible evidence and the finding is useful outside
   this repository.

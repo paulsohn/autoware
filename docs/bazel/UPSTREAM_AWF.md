@@ -43,6 +43,7 @@ that the local change has been submitted upstream.
 | Explicit Agnocast context initialization in that test patch | Open [agnocast#1517](https://github.com/autowarefoundation/agnocast/pull/1517) introduces lazy context initialization for nodes/executors in ROS processes. | Related lifecycle work. Revisit the test's explicit initialization if that PR is adopted: its contract rejects explicit init after lazy init. Do not combine the two approaches without lifecycle tests. |
 | Agnocast rclcpp override compatibility, `c9051afc` | [callback_isolated_executor#64](https://github.com/autowarefoundation/callback_isolated_executor/issues/64) discusses the same shared-pointer override API transition; it is an issue, not a merged PR. | The issue proposes a different version threshold from our rclcpp-major-32 guard. Compare actual supported headers and validate older distributions before upstreaming; no equivalent Agnocast Lyrical PR was found in the reviewed search. |
 | Wrapper message-filter header/template compatibility, `ac766b72` | Draft [core#1257](https://github.com/autowarefoundation/autoware_core/pull/1257) changes the same header's fallback API surface. | Related work, not the Lyrical include/template fix. Preserve its intended API parity if reconciling the patches; no matching Lyrical subscriber fix was found. |
+| Wrapper message-filter subscription QoS conversion, `b5d19a6c` | Upstream `main` still forwards the raw profile as of 2026-11-15; draft [core#1257](https://github.com/autowarefoundation/autoware_core/pull/1257) does not fix this path. | Offer a focused Lyrical compatibility patch with the existing include/template adaptation and a subscription-path regression. Reuse upstream's profile-preserving `detail::to_qos` helper. See the finding below. |
 | Direct Bazel compile/shared dependency declarations | Draft [core#1540](https://github.com/autowarefoundation/autoware_core/pull/1540) replaces the removed CMake helper with explicit linking, including wrapper CMake helpers. | Same dependency-boundary concern, different build implementation. Compare exported/public dependencies when a target needs them; no CMake patch is required merely to build the Bazel target. |
 
 The tracker also links the toolchain issue
@@ -58,6 +59,79 @@ generic executor/test fixes, plus the PRs and issue linked above. â€œNot foundâ€
 describes that review, not proof that no other upstream work exists.
 
 ## Findings
+
+### Lyrical message-filter subscriptions need explicit QoS conversion
+
+- [ ] Associate this finding with a matching upstream issue or PR. Reviewed
+  2026-11-15: no matching fix found in repository-scoped PR searches for
+  `Lyrical message_filters`, `Lyrical subscriber`, `message_filters QoS`, and
+  `message_filters subscribe`. The Lyrical trackers are related, not a specific
+  association for this finding. No issue or PR was submitted by this experiment.
+- Repository/package: `autoware_core`, `autoware_agnocast_wrapper`,
+  `include/autoware/agnocast_wrapper/message_filters.hpp`.
+- Local source fix and regression: `b5d19a6c`; the prerequisite include/template
+  adaptation is `ac766b72`. The source fix is kept separate from Bazel rules.
+- Current upstream status: inspected
+  [main's subscription forwarding](https://github.com/autowarefoundation/autoware_core/blob/main/common/autoware_agnocast_wrapper/include/autoware/agnocast_wrapper/message_filters.hpp#L77)
+  on 2026-11-15. File blob SHA:
+  `a1dcb4bcd039c4a4094e8c80149cdbe861300cb3`. It still passes `qos` directly
+  and uses the pre-Lyrical two-parameter Subscriber template. This finding is
+  not already fixed on the inspected default branch.
+- Related PR: inspected draft [core#1257](https://github.com/autowarefoundation/autoware_core/pull/1257),
+  head `7e008dfec3a290bbe251fd04566a2de5f00e1bc9`. Its actual patch curates the
+  non-Agnocast-build API; it does not change the enabled-build subscription path
+  or add Lyrical QoS conversion. Preserve its API intent without treating it
+  as this fix. [core#1538](https://github.com/autowarefoundation/autoware_core/issues/1538)
+  and [autoware#7404](https://github.com/autowarefoundation/autoware/issues/7404)
+  remain the overall Lyrical transition trackers.
+- Reproducer: after the include/template compatibility fix `ac766b72`, instantiate
+  the public method rather than only default-constructing its class:
+
+  ```cpp
+  using Subscriber = autoware::agnocast_wrapper::message_filters::Subscriber<
+    geometry_msgs::msg::PoseStamped>;
+  void reproduce(autoware::agnocast_wrapper::Node * node) {
+    Subscriber subscriber;
+    subscriber.subscribe(node, "/example", rmw_qos_profile_sensor_data);
+  }
+  ```
+
+- Confirmed symptom on Ubuntu 24.04/LLVM 21.1.8/Lyrical rclcpp 32: compile error
+  at the forwarding call, with no conversion from `rmw_qos_profile_t` to
+  `const rclcpp::QoS &`. The existing test only default-constructed the class,
+  leaving the template method body uninstantiated. A default-construction test
+  passing does not establish that the public subscription path compiles.
+- Fix: on rclcpp 32+, forward `detail::to_qos(qos)` to the ROS subscriber.
+  The helper already exists in upstream
+  [node.hpp](https://github.com/autowarefoundation/autoware_core/blob/main/common/autoware_agnocast_wrapper/include/autoware/agnocast_wrapper/node.hpp#L55)
+  (inspected blob `42183b25f3644034637b11f94b61334f923dc7d3`). It preserves
+  the profile's history/depth instead of normalizing them through
+  QoSInitialization::from_rmw. Retain the original pre-32 call and leave
+  Agnocast's raw-profile call unchanged. This is wrapper API compatibility,
+  not an Agnocast transport modification.
+- Regression: `SubscriberForwardsRmwQosOnConstructionAndResubscription` creates
+  real subscriptions through the constructor and subscribe method, checks
+  topic/history/depth/reliability/durability, changes depth and topic, and
+  verifies unsubscribe releases the endpoint. The enabled run uses the real
+  heap hook and kernel module. Both backend selections pass the complete
+  37-case wrapper suite without skips on Cyclone DDS.
+- Validation commands:
+
+  ```bash
+  env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+    bazel test --config=no-agnocast --nocache_test_results \
+    @autoware_agnocast_wrapper//...
+  env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+    bazel test --strategy=TestRunner=local \
+    --run_under=//bazel/agnocast:with_heaphook --nocache_test_results \
+    @autoware_agnocast_wrapper//...
+  ```
+
+- Before submission: validate the ordinary CMake/colcon build, older supported
+  distributions, and AWF's Ubuntu 26.04/GCC toolchain. The pre-32 call is
+  preserved but not tested here. Our runtime fallback is not a separate build
+  with USE_AGNOCAST_ENABLED absent. Combine with the include/template fixes
+  when proposing a complete upstream Lyrical wrapper compatibility change.
 
 ### Wrapper generic pub/sub tests need backend-aware executor setup
 

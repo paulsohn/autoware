@@ -4,7 +4,9 @@
 set -euo pipefail
 
 runfiles_dir="${RUNFILES_DIR:-${TEST_SRCDIR:-$0.runfiles}}"
-hook="$runfiles_dir/_main/src/core/agnocast/agnocast_heaphook/libagnocast_heaphook.so"
+source "$runfiles_dir/bazel_tools/tools/bash/runfiles/runfiles.bash"
+# The main module's canonical name is empty in the repository mapping.
+hook="$(rlocation agnocast_heaphook/libagnocast_heaphook.so '')"
 test -r "$hook"
 # Apply the hook only to the test process: preloading the shell would initialize
 # Agnocast before the test's shared-library closure is available.

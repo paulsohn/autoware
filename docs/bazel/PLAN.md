@@ -37,6 +37,20 @@ For every slice:
 
 ## Current decisions
 
+- Keep component repositories independent of the metarepository's checkout
+  layout. Interface collection lives under `bazel/interfaces/`, and product
+  plugin assembly under `bazel/agnocast/`. Defer a separate autoware_bazel
+  source repository until there is a concrete cross-repository need.
+  ros2agnocast exports its upstream templates and helpers without depending
+  on the metarepository. The root selects overrides and interface roots; its
+  provider has no Agnocast dependency and can serve other consumers.
+  Keep a single `//bazel/interfaces:all_interfaces` selection, with package
+  or application target labels listed directly in `bazel/interfaces/BUILD.bazel`
+  through its `roots` attribute. The plugin declares matching compile/shared
+  target dependencies in its BUILD file; separate proof and sample sets are removed.
+  The heap-hook component owns its Cargo extension; runtime launchers locate
+  its artifact through repository-mapped runfiles rather than source paths.
+
 - The first platform is x86_64 Ubuntu 24.04.
 - Bazel 9.3.2 is selected by `.bazelversion`.
 - The bootstrap uses the RCR's `lyrical.2026-10-05.rcr.0` `ros_core`
@@ -50,6 +64,9 @@ For every slice:
   middleware target. Fast DDS is a Tier 2 compatibility target: keep it
   buildable and test it at explicit compatibility gates, but do not let it
   determine the primary package path.
+  Routine tasks validate Cyclone DDS only. Reserve Fast DDS checks for major
+  milestones and always obtain user approval before running any Fast DDS
+  build, test, or behavior check.
 - The fixed Cyclone DDS smoke graph loads 352 packages and configures 70,383
   targets. Fast DDS remains available through `--config=fastdds`; its smoke
   graph loads 371 packages and configures 76,915 targets.
@@ -100,11 +117,15 @@ For every slice:
   product-owned interface-set target supplies explicit package roots; an aspect
   follows their `RosInterfaceInfo` providers. No build step discovers types
   through `AMENT_PREFIX_PATH` or generates a package for a later build.
-- Every Bazel-supported interface package must expose a test tagged
-  `validation` that compares its declared interface files and direct interface
-  dependencies with the definitions in the source tree. These tests are the
-  local consistency gate for this experiment; they must be runnable directly
-  with Bazel and may not rely on an external CI workflow.
+  Root-module plugin targets expand the upstream C++ templates using native
+  Bazel actions, without a separate Python renderer or the ROS generation verb.
+  Lyrical services also instantiate their synthesized event-message pub/sub
+  plugins, matching the verb's all-interface behavior.
+- Explicit BUILD declarations define supported interfaces. Developers register
+  interfaces and their dependencies when needed; undeclared source files are
+  outside the graph. Test generated targets and their consumers. All-interface
+  collections expose the declared closure of selected product roots, without
+  enforcing complete source-directory registration.
 
 ## Phase 0: bootstrap ROS with Bazel (complete)
 
@@ -498,6 +519,55 @@ Exit criteria:
   Agnocast lane only when it does not expand the fallback baseline merely to
   avoid an Agnocast dependency.
 
+### Validated gate: typed Agnocast bridge for the top-level interface set
+
+The task covers the Bazel bridge generator and the single top-level interface
+selection. Collect declared interfaces from the selected 15 Autoware,
+Agnocast configuration, and standard ROS packages and their transitive
+interface dependencies. Build `//bazel/agnocast:plugins` against that set.
+Use the tracked Agnocast templates as action inputs; do not discover interfaces
+through an installed prefix or invoke a second build.
+
+Acceptance requires generator checks,
+and both directions of payload-checked message/service behavior through the
+loaded shared library. Run the bridge checks with the built heap hook and
+kernel module with Cyclone DDS. Fast DDS checks require a separately approved
+major-milestone compatibility gate. Recheck the
+existing Agnocast library, heap-hook allocator, and wrapper suites as
+regressions. Also check the moved build-support and component modules from
+separate checkout directories when their source-selection boundaries change.
+Commit the validated integration after documentation and source-fix review.
+
+Source-completeness validation and its inventory repository were removed.
+Explicit registration is the developer's responsibility. The provider-based
+interface collection continues to serve arbitrary consumers.
+
+The module-layout gate passes with Cyclone DDS: generator unit cases,
+all 26 allocator cases, six bridge behavior cases, all
+439 existing Agnocast unit cases, and the wrapper's 36 C++ cases with both
+runtime selections. The earlier typed-plugin experiment also passed Fast DDS;
+future compatibility checks require separate approval at major milestones.
+Earlier separate-checkout checks passed before support was consolidated at
+the root. The collector and plugin rules now live under `bazel/`; component
+definitions do not refer to metarepository paths.
+The single set collects 169 interfaces. Adding 21 synthesized service-event
+types produces 190 typed translation units and 380 exported factories in the
+root-module shared library. All eight existing bridge cases pass against this
+library with Cyclone DDS, including event messages in both directions. This
+is full-set compile/symbol coverage plus sampled communication behavior, not
+a runtime test of every type. Next,
+exercise normal runtime plugin selection for a product-owned interface set.
+Automatic bridge management, discovery-agent packaging, and component/launch
+integration remain separate gates.
+
+The wrapper message-filter Subscriber now converts rmw_qos_profile_t through
+the existing profile-preserving `detail::to_qos` helper on Lyrical. A real
+subscription regression checks construction, changed-QoS resubscription, and
+unsubscribe with both runtime backends. Older rclcpp keeps its existing call
+form; older-distribution builds remain untested. The five Agnocast unit groups
+do not cover the 15 additional upstream integration groups. Discovery-agent
+warning paths also need review against rclpy's `warning()` API when adopted.
+
 ## Later phases
 
 These are scope markers, not implementation decisions. Refine each phase only
@@ -508,8 +578,9 @@ when the preceding phase meets its exit criteria.
 3. Install tree, headless OCI image, and planning simulator behavior test.
 4. Cross-build and non-GPU tests for Jetson Thor, followed by hardware tests.
 
-From phase 1 onward, runnable slices use Cyclone DDS by default. Fast DDS
-compatibility is checked after each phase reaches its Cyclone DDS exit criteria.
+From phase 1 onward, runnable slices use Cyclone DDS by default. Propose Fast
+DDS compatibility checks at major milestones after the Cyclone DDS exit
+criteria pass; run them only after explicit user approval.
 
 Potential topics such as OSQP compatibility, OpenMP, CMake parity,
 runtime-image deduplication, and remote caching will be evaluated when a current

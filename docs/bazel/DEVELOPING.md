@@ -68,7 +68,9 @@ Cyclone DDS is the default development middleware. No custom Cyclone DDS XML is
 needed for local loopback communication. Add network configuration only for a
 topology that demonstrates the need.
 
-Fast DDS is the Tier 2 compatibility configuration. Add `--config=fastdds` to
+Fast DDS is the Tier 2 compatibility configuration. Routine validation uses
+Cyclone DDS. Run Fast DDS checks only at major milestones after obtaining the
+user's explicit approval for the check. After approval, add `--config=fastdds` to
 the same build, test, or run command at the compatibility gate:
 
 ```bash
@@ -96,11 +98,59 @@ env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
 ```
 
 The enabled command builds the heap hook and preloads it from declared
-runfiles. It requires a compatible Agnocast kernel module already loaded and
-an accessible `/dev/agnocast`. Use local TestRunner execution because Agnocast
+runfiles using repository mapping. The component owns its Cargo setup in
+`@agnocast_heaphook`; run allocator unit tests separately with
+`bazel test @agnocast_heaphook//:unit_tests`, without production preload.
+The enabled command requires a compatible Agnocast kernel module already loaded
+and an accessible `/dev/agnocast`. Use local TestRunner execution because Agnocast
 shares PID-named objects in the host `/dev/shm`; reused sandbox PIDs can collide.
-Compile actions remain sandboxed. Check the GTest log for all 36 cases passing
-with no skips. Add `--config=fastdds` to both commands at the compatibility gate.
+Compile actions remain sandboxed. Check the GTest log for all 37 cases passing
+with no skips. Run Fast DDS variants only after approval at a major milestone.
+
+## Interface declarations and bridge plugins
+
+BUILD declarations define the interfaces supported by Bazel. Register an
+interface and its dependencies explicitly when a consumer needs it. Undeclared
+source files remain outside the build graph. An all-interface collection is
+the declared dependency closure of its selected product roots.
+
+Maintain the top-level target selection directly in
+`bazel/interfaces/BUILD.bazel`, using `ros_interface_set(roots = [...])`.
+Roots may be individual interface targets, package `:cc` targets, or application
+targets; collection follows their declared `deps`, not actual C++ type usage.
+One `//bazel/interfaces:all_interfaces` target exposes this closure.
+`//bazel/agnocast:plugins` consumes that set and declares the matching `:cc`
+compile and `:cc_shared` dynamic dependencies explicitly in its BUILD file.
+Other consumers can read the same interface provider. The plugin rule iterates the interface
+provider during analysis and uses native `expand_template` actions to produce
+typed C++ factories under that target's output directory, then compiles and
+links `libagnocast_bridge_plugins.so` in the same graph. It reuses the upstream
+C++ templates and helpers without invoking the ROS verb, a Python renderer,
+or a generated CMake package. On Lyrical, each service also gets a pub/sub
+plugin for its synthesized `<Service>_Event` message, using the service header.
+It accepts message and service interfaces; action bridges are unsupported.
+Interface discovery does not use `AMENT_PREFIX_PATH`.
+
+Test the plugin library with the kernel module available:
+
+```bash
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --strategy=TestRunner=local \
+  --run_under=//bazel/agnocast:with_heaphook --nocache_test_results \
+  //bazel/agnocast:bridge_plugins_test
+```
+
+After approval, add `--config=fastdds` for a major-milestone compatibility gate.
+The test loads the declared
+shared library, resolves its typed factory symbols, and checks payloads in
+both directions for standard/local messages, a service, and its event message.
+Publisher peers run in separate processes because bridge subscriptions ignore local
+publications. Add returned bridge callback groups to the mixed executor
+explicitly; the factories create them with automatic registration disabled.
+Run the complete template naming checks with
+`bazel test //bazel/agnocast:template_tests`.
+Run `@agnocastlib//...` unit tests without heap-hook preload: their kernel and
+allocator mocks are incompatible with the production hook.
 
 ## Source and package layout
 
@@ -114,6 +164,14 @@ Keep:
 - package-owned `MODULE.bazel` and BUILD files beside package source;
 - development and runtime container definitions under `images/`;
 - integration strategy and evidence under `docs/bazel/`.
+
+Interface collection and product plugin assembly belong under `bazel/`.
+Assemble interface sets with `//bazel/interfaces:interfaces.bzl`; bridges,
+loggers, and other root-module consumers can share the same provider. A
+separate autoware_bazel source repository is deferred until a concrete need
+justifies it. Components export their own inputs and never depend back on
+metarepository paths. The workspace owns release selection and local
+overrides; resolve rule-owned labels in their defining module.
 
 Do not extend `repositories/`, `docker/`, or `ansible/` for Bazel work; they are
 reference implementations for the existing build and deployment.
@@ -141,6 +199,37 @@ This preserves the RCR shared-library layout required at runtime.
 
 ## Editing interface packages
 
+To add a message or service to a supported package:
+
+1. Add the `.msg` or `.srv` source and a matching `ros_message` or `ros_service`
+   declaration in its interface directory's BUILD.bazel. Declare every
+   referenced interface target in that rule's `deps`.
+2. Add that target (for example, `//msg:NewMessage`) to the package-root
+   `default_generators(deps = [...])` list. This registers it in the generated
+   aggregate `:cc` target. Preserve existing entries.
+3. For a newly referenced external package, update package.xml, MODULE.bazel,
+   and `default_generators.dependencies` as appropriate.
+4. Build the package's generated targets and affected consumers. If its `:cc`
+   target is already a collector root, the new interface appears in
+   `//bazel/interfaces:all_interfaces` through that dependency path. Build
+   `//bazel/agnocast:plugins` to instantiate the expanded plugin set.
+
+For example:
+
+```bash
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel build @your_package//... //bazel/interfaces:all_interfaces \
+  //bazel/agnocast:plugins
+```
+
+Mixed packages containing nodes and interfaces work the same way. When the
+collector root is a node or library, the new interface must be reachable
+through that target's `deps`. If a package is not reachable from any root,
+add an appropriate target to `roots` in `bazel/interfaces/BUILD.bazel` and the
+corresponding compile/shared dependencies in `bazel/agnocast/BUILD.bazel`.
+Keep collection roots independent of the plugin library to avoid a cycle.
+An interface source that is not registered remains outside the Bazel build.
+
 When changing a `.msg` or `.srv` file, keep three dependency declarations
 consistent:
 
@@ -154,23 +243,6 @@ consistent:
 Do not add a manifest-only dependency to generator inputs when no current
 interface references it.
 
-Every interface package provides a Bazel test tagged `validation`. It compares
-the `.msg`, `.srv`, and `.action` files and their directly referenced interface
-types with the interface rules and dependency labels declared in BUILD files.
-Run that package's validation tests whenever an interface file or declaration
-changes:
-
-```bash
-env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
-  bazel test --nocache_test_results --test_tag_filters=validation \
-  @autoware_package_name//...
-```
-
-The validation test is a repository-local development requirement even when no
-external CI service runs it. A generated target compiling successfully is not
-a substitute: an unused source interface or a stale declaration can otherwise
-remain outside the requested build graph.
-
 Build the complete generator surface, not only a C++ consumer:
 
 ```bash
@@ -178,8 +250,9 @@ env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
   bazel build @autoware_package_name//...
 ```
 
-Then run a consumer that constructs or transports the changed type. Repeat the
-bounded build and consumer test with `--config=fastdds`.
+Then run a consumer that constructs or transports the changed type. At an
+approved major milestone, repeat the bounded build and consumer test with
+`--config=fastdds`.
 
 ## Editing C++ utility packages
 
@@ -253,8 +326,8 @@ Add `--config=fastdds` to the Bazel command for the compatibility gate.
 Validate in proportion to the change:
 
 - BUILD or module change: build every affected target surface;
-- interface definition or declaration change: run the package's
-  `validation`-tagged consistency test;
+- interface definition or declaration change: build generated targets and test
+  affected consumers;
 - library change: build and run focused tests;
 - executable or communication change: run a behavior check;
 - container change: build the image and run a representative target with the
