@@ -1,0 +1,63 @@
+load("@rosdistro//ament:defs.bzl", "ament_package", "register_ament_files")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_binary")
+
+package(default_visibility = ["//visibility:public"])
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = [
+        "@agnocastlib//:agnocast",
+        "@rclcpp_components//:component_manager",
+    ],
+)
+
+[cc_binary(
+    name = "agnocast_component_container" + suffix,
+    srcs = ["src/agnocast_component_container" + suffix + ".cpp"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+    deps = [
+        "@agnocast_cie_thread_configurator",
+        "@agnocastlib//:agnocast_library",
+        "@glog",
+        "@rclcpp//:rclcpp_library",
+        "@rclcpp_components//:component_manager_library",
+    ],
+) for suffix in [
+    "",
+    "_mt",
+    "_cie",
+]]
+
+ament_package(
+    data = [":executable_index"] + glob([
+        "cmake/*",
+        "src/*.in",
+    ]),
+    executables = [
+        ":agnocast_component_container",
+        ":agnocast_component_container_mt",
+        ":agnocast_component_container_cie",
+    ],
+    deps = [
+        "@agnocastlib//:ament_package",
+        "@rclcpp_components//:ament_package",
+    ],
+)
+
+exports_files([
+    "defs.bzl",
+    "src/node_main.cpp.in",
+    "src/node_main_agnocast_only.cpp.in",
+])
+
+register_ament_files(
+    name = "executable_index",
+    files = [
+        ":agnocast_component_container",
+        ":agnocast_component_container_cie",
+        ":agnocast_component_container_mt",
+    ],
+    prefix = "lib/agnocast_components",
+    strip_prefix = "*",
+)

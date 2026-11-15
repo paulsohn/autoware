@@ -8,3 +8,14 @@ bazel_dep(name = "googletest", version = "1.18.0.bcr.1")
 bazel_dep(name = "rclcpp", version = "0.0.0")
 bazel_dep(name = "rosdistro", version = "0.0.0")
 bazel_dep(name = "rules_cc", version = "0.2.26.rcr.0")
+bazel_dep(name = "yaml-cpp", version = "0.9.0")
+bazel_dep(name = "rules_rs", version = "0.1.0")
+
+crate = use_extension("@rules_rs//rs:extensions.bzl", "crate")
+crate.from_cargo(
+    name = "configurator_crates",
+    cargo_lock = "//:rust/Cargo.lock",
+    cargo_toml = "//:rust/Cargo.toml",
+    platform_triples = ["x86_64-unknown-linux-gnu"],
+)
+use_repo(crate, "configurator_crates")

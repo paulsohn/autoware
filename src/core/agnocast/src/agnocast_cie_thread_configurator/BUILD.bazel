@@ -1,5 +1,8 @@
+load("@rosdistro//ament:defs.bzl", "ament_package", "register_ament_files")
 load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
-load("@rules_cc//cc:defs.bzl", "cc_library", "cc_test")
+load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library", "cc_shared_library", "cc_test")
+load("@rules_rs//rs:rust_library.bzl", "rust_library")
+load("@rules_rs//rs:rust_test.bzl", "rust_test")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -40,4 +43,122 @@ cc_test(
         ":agnocast_cie_thread_configurator",
         "@googletest//:gtest_main",
     ],
+)
+
+cc_library(
+    name = "configurator_core",
+    srcs = [
+        "src/sched_policy.cpp",
+        "src/startup_checks.cpp",
+        "src/system_scan.cpp",
+        "src/thread_config.cpp",
+    ],
+    hdrs = glob(["include/agnocast_cie_thread_configurator/*.hpp"]),
+    strip_include_prefix = "include",
+    deps = ["@yaml-cpp//:yaml-cpp"],
+)
+
+cc_library(
+    name = "prerun_library",
+    srcs = ["src/prerun_node.cpp"],
+    deps = [
+        ":agnocast_cie_thread_configurator",
+        ":configurator_core",
+    ],
+)
+
+cc_binary(
+    name = "thread_configurator_node",
+    srcs = [
+        "src/main.cpp",
+        "src/thread_configurator_node.cpp",
+    ],
+    dynamic_deps = [":test_dynamic_deps"],
+    deps = [":prerun_library"],
+)
+
+cc_binary(
+    name = "prerun_node",
+    srcs = ["src/prerun_node_main.cpp"],
+    dynamic_deps = [":test_dynamic_deps"],
+    deps = [":prerun_library"],
+)
+
+[cc_test(
+    name = "test_" + group,
+    srcs = ["test/test_" + group + ".cpp"],
+    deps = [
+        ":configurator_core",
+        "@googletest//:gtest_main",
+    ],
+) for group in [
+    "sched_policy",
+    "startup_checks",
+    "thread_config",
+    "system_scan",
+]]
+
+exports_files([
+    "rust/Cargo.toml",
+    "rust/Cargo.lock",
+])
+
+rust_library(
+    name = "rust_client",
+    srcs = glob(["rust/src/*.rs"]),
+    crate_name = "agnocast_cie_thread_configurator_client",
+    crate_root = "rust/src/lib.rs",
+    edition = "2021",
+    deps = [
+        "@configurator_crates//:libc",
+        "@configurator_crates//:log",
+    ],
+)
+
+rust_test(
+    name = "rust_unit_tests",
+    crate = ":rust_client",
+)
+
+rust_test(
+    name = "rust_transport_test",
+    srcs = ["rust/tests/end_to_end.rs"],
+    crate_root = "rust/tests/end_to_end.rs",
+    edition = "2021",
+    tags = [
+        "no-remote",
+        "no-sandbox",
+    ],
+    deps = [":rust_client"],
+)
+
+ament_package(
+    data = [":executable_index"] + glob(["launch/*"]),
+    executables = [
+        ":thread_configurator_node",
+        ":prerun_node",
+    ],
+    headers = glob(["include/**/*.hpp"]),
+    libraries = [":agnocast_thread_configurator"],
+    deps = [
+        "@agnocast_cie_config_msgs//:ament_package",
+        "@rclcpp//:ament_package",
+    ],
+)
+
+cc_shared_library(
+    name = "agnocast_thread_configurator",
+    dynamic_deps = [":test_dynamic_deps"],
+    shared_lib_name = "libagnocast_thread_configurator.so",
+    deps = [":agnocast_cie_thread_configurator"],
+)
+
+register_ament_files(
+    name = "executable_index",
+    files = [
+        ":prerun_node",
+        ":thread_configurator_node",
+    ],
+    prefix = "lib/agnocast_cie_thread_configurator",
+    strip_prefix = "*",
 )

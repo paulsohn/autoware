@@ -1,4 +1,4 @@
-load("@rosidl_default_generators//:defs.bzl", "default_generators")
+load("@rosidl_default_generators//:defs.bzl", "default_generators", "rosidl_ament_package")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -8,4 +8,9 @@ default_generators(
         "//msg:CallbackGroupInfo",
         "//srv:ReapplyConfig",
     ],
+)
+
+rosidl_ament_package(
+    package_xml = "package.xml",
+    deps = [":ament_index"],
 )

@@ -1,6 +1,7 @@
+load("@agnocast_heaphook//:tests.bzl", "heaphook_test")
+load("@rosdistro//ament:defs.bzl", "ament_package")
 load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps", "ros_local_defines")
 load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
-load("@agnocast_heaphook//:tests.bzl", "heaphook_test")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -108,7 +109,7 @@ cc_library(
     local_defines = ros_local_defines(),
     deps = [
         "@agnocast_cie_config_msgs//:cc",
-        "@agnocast_cie_thread_configurator//:agnocast_cie_thread_configurator",
+        "@agnocast_cie_thread_configurator",
         "@ament_index_cpp//:ament_index_cpp_library",
         "@diagnostic_msgs//:cc",
         "@diagnostic_updater//:diagnostic_updater_library",
@@ -133,7 +134,7 @@ cc_library(
 
 cc_shared_library(
     name = "agnocast",
-    dynamic_deps = _DYNAMIC_DEPS,
+    dynamic_deps = ["@agnocast_cie_thread_configurator//:agnocast_thread_configurator"] + _DYNAMIC_DEPS,
     exports_filter = [":agnocast_library"],
     deps = [":agnocast_library"],
 )
@@ -297,24 +298,30 @@ heaphook_test(
         "test/integration/message_filters/test_subscriber.cpp",
         "test/integration/message_filters/test_synchronizer.cpp",
     ] + glob(["test/integration/include/*.hpp"]),
-    includes = ["test/integration/include", "src"],
     dynamic_deps = [":unit_test_dynamic_deps"],
+    includes = [
+        "src",
+        "test/integration/include",
+    ],
     deps = _INTEGRATION_DEPS,
 )
 
 cc_test(
     name = "integration_executors",
+    timeout = "long",
     srcs = [
-        "test/integration/test_agnocast_single_threaded_executor.cpp",
-        "test/integration/test_agnocast_multi_threaded_executor.cpp",
         "test/integration/src/ioctl_mock.cpp",
         "test/integration/src/node_for_executor_test.cpp",
+        "test/integration/test_agnocast_multi_threaded_executor.cpp",
+        "test/integration/test_agnocast_single_threaded_executor.cpp",
     ] + glob(["test/integration/include/*.hpp"]),
-    includes = ["test/integration/include", "src"],
     dynamic_deps = [":unit_test_dynamic_deps"],
-    deps = _INTEGRATION_DEPS,
     env = {"GTEST_DEATH_TEST_STYLE": "threadsafe"},
-    timeout = "long",
+    includes = [
+        "src",
+        "test/integration/include",
+    ],
+    deps = _INTEGRATION_DEPS,
 )
 
 heaphook_test(
@@ -322,8 +329,11 @@ heaphook_test(
     srcs = [
         "test/integration/test_agnocast_only_callback_isolated_executor.cpp",
     ] + glob(["test/integration/include/*.hpp"]),
-    includes = ["test/integration/include", "src"],
     dynamic_deps = [":unit_test_dynamic_deps"],
+    includes = [
+        "src",
+        "test/integration/include",
+    ],
     deps = _INTEGRATION_DEPS,
 )
 
@@ -332,8 +342,11 @@ heaphook_test(
     srcs = [
         "test/integration/test_agnocast_node.cpp",
     ] + glob(["test/integration/include/*.hpp"]),
-    includes = ["test/integration/include", "src"],
     dynamic_deps = [":unit_test_dynamic_deps"],
+    includes = [
+        "src",
+        "test/integration/include",
+    ],
     deps = _INTEGRATION_DEPS,
 )
 
@@ -342,8 +355,11 @@ heaphook_test(
     srcs = [
         "test/integration/test_node_graph.cpp",
     ] + glob(["test/integration/include/*.hpp"]),
-    includes = ["test/integration/include", "src"],
     dynamic_deps = [":unit_test_dynamic_deps"],
+    includes = [
+        "src",
+        "test/integration/include",
+    ],
     deps = _INTEGRATION_DEPS,
 )
 
@@ -352,8 +368,11 @@ heaphook_test(
     srcs = [
         "test/integration/test_agnocast_publisher_counts.cpp",
     ] + glob(["test/integration/include/*.hpp"]),
-    includes = ["test/integration/include", "src"],
     dynamic_deps = [":unit_test_dynamic_deps"],
+    includes = [
+        "src",
+        "test/integration/include",
+    ],
     deps = _INTEGRATION_DEPS,
 )
 
@@ -362,8 +381,11 @@ heaphook_test(
     srcs = [
         "test/integration/test_agnocast_parameter_service.cpp",
     ] + glob(["test/integration/include/*.hpp"]),
-    includes = ["test/integration/include", "src"],
     dynamic_deps = [":unit_test_dynamic_deps"],
+    includes = [
+        "src",
+        "test/integration/include",
+    ],
     deps = _INTEGRATION_DEPS,
 )
 
@@ -372,8 +394,11 @@ heaphook_test(
     srcs = [
         "test/integration/test_diagnostic_updater.cpp",
     ] + glob(["test/integration/include/*.hpp"]),
-    includes = ["test/integration/include", "src"],
     dynamic_deps = [":unit_test_dynamic_deps"],
+    includes = [
+        "src",
+        "test/integration/include",
+    ],
     deps = _INTEGRATION_DEPS,
 )
 
@@ -382,8 +407,11 @@ heaphook_test(
     srcs = [
         "test/integration/test_agnocast_epoll_update.cpp",
     ] + glob(["test/integration/include/*.hpp"]),
-    includes = ["test/integration/include", "src"],
     dynamic_deps = [":unit_test_dynamic_deps"],
+    includes = [
+        "src",
+        "test/integration/include",
+    ],
     deps = _INTEGRATION_DEPS,
 )
 
@@ -392,8 +420,11 @@ heaphook_test(
     srcs = [
         "test/integration/test_agnocast_init_ok_shutdown.cpp",
     ] + glob(["test/integration/include/*.hpp"]),
-    includes = ["test/integration/include", "src"],
     dynamic_deps = [":unit_test_dynamic_deps"],
+    includes = [
+        "src",
+        "test/integration/include",
+    ],
     deps = _INTEGRATION_DEPS,
 )
 
@@ -402,8 +433,11 @@ heaphook_test(
     srcs = [
         "test/integration/test_agnocast_generic_subscription.cpp",
     ] + glob(["test/integration/include/*.hpp"]),
-    includes = ["test/integration/include", "src"],
     dynamic_deps = [":unit_test_dynamic_deps"],
+    includes = [
+        "src",
+        "test/integration/include",
+    ],
     deps = _INTEGRATION_DEPS,
 )
 
@@ -412,8 +446,11 @@ heaphook_test(
     srcs = [
         "test/integration/test_agnocast_generic_publisher.cpp",
     ] + glob(["test/integration/include/*.hpp"]),
-    includes = ["test/integration/include", "src"],
     dynamic_deps = [":unit_test_dynamic_deps"],
+    includes = [
+        "src",
+        "test/integration/include",
+    ],
     deps = _INTEGRATION_DEPS,
 )
 
@@ -422,8 +459,11 @@ heaphook_test(
     srcs = [
         "test/integration/test_agnocast_client.cpp",
     ] + glob(["test/integration/include/*.hpp"]),
-    includes = ["test/integration/include", "src"],
     dynamic_deps = [":unit_test_dynamic_deps"],
+    includes = [
+        "src",
+        "test/integration/include",
+    ],
     deps = _INTEGRATION_DEPS,
 )
 
@@ -432,8 +472,11 @@ heaphook_test(
     srcs = [
         "test/integration/test_agnocast_service_introspection.cpp",
     ] + glob(["test/integration/include/*.hpp"]),
-    includes = ["test/integration/include", "src"],
     dynamic_deps = [":unit_test_dynamic_deps"],
+    includes = [
+        "src",
+        "test/integration/include",
+    ],
     deps = _INTEGRATION_DEPS,
 )
 
@@ -442,9 +485,21 @@ heaphook_test(
     srcs = [
         "test/integration/test_agnocast_heaphook.cpp",
     ] + glob(["test/integration/include/*.hpp"]),
-    includes = ["test/integration/include", "src"],
     dynamic_deps = [":unit_test_dynamic_deps"],
-    deps = _INTEGRATION_DEPS,
+    includes = [
+        "src",
+        "test/integration/include",
+    ],
     kernel = False,
     preload = [":initialize_shutdown_mock"],
+    deps = _INTEGRATION_DEPS,
+)
+
+ament_package(
+    headers = glob(["include/**/*.hpp"]),
+    libraries = [":agnocast"],
+    deps = [
+        "@agnocast_cie_thread_configurator//:ament_package",
+        "@rclcpp//:ament_package",
+    ],
 )
