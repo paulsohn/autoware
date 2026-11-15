@@ -2,13 +2,42 @@
 
 #include "agnocast_cie_thread_configurator/cie_thread_configurator.hpp"
 
+#include <chrono>
 #include <cstddef>
 #include <set>
+#include <thread>
 #include <utility>
 #include <vector>
 
 namespace agnocast_cie_thread_configurator
 {
+
+void spin_domain_nodes(
+  const rclcpp::Node::SharedPtr & node, const std::vector<rclcpp::Node::SharedPtr> & domain_nodes)
+{
+  if (domain_nodes.empty()) {
+    rclcpp::spin(node);
+    return;
+  }
+
+  std::vector<rclcpp::executors::SingleThreadedExecutor::SharedPtr> executors;
+  auto nodes = domain_nodes;
+  nodes.push_back(node);
+  for (const auto & domain_node : nodes) {
+    rclcpp::ExecutorOptions options;
+    options.context = domain_node->get_node_base_interface()->get_context();
+    auto executor = std::make_shared<rclcpp::executors::SingleThreadedExecutor>(options);
+    executor->add_node(domain_node);
+    executors.push_back(std::move(executor));
+  }
+  // These daemon callbacks share state; separate executor threads would race.
+  while (rclcpp::ok(node->get_node_base_interface()->get_context())) {
+    for (const auto & executor : executors) {
+      executor->spin_some();
+    }
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+  }
+}
 
 AnnouncementSources::AnnouncementSources(
   rclcpp::Node & node, size_t default_domain_id, const std::set<size_t> & domain_ids,

@@ -14,10 +14,14 @@
 namespace agnocast_cie_thread_configurator
 {
 
+// Keep callbacks serial while satisfying each executor's context boundary.
+void spin_domain_nodes(
+  const rclcpp::Node::SharedPtr & node, const std::vector<rclcpp::Node::SharedPtr> & domain_nodes);
+
 // The two channels through which threads announce themselves to a daemon,
 // namely the CallbackGroupInfo topic (one subscription per ROS domain) and
 // the non-ROS thread socket. Each extra domain gets its own node, which the
-// caller must add to its executor (domain_nodes()).
+// caller must spin with its own context (domain_nodes()).
 //
 // on_callback_group runs on the executor. on_non_ros_thread runs on the
 // listener's private thread until stop() joins it.

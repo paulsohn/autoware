@@ -2461,3 +2461,111 @@ The full runtime gate then passes, including agent startup and gossip.
 Keep the runtime payload in cc_test data, not the --run_under tool's data:
 otherwise Bazel builds it again in the execution configuration, where the
 fixed target RMW selection does not constrain its dependency closure.
+
+## 2026-11-15–16: Phase 4.3 — component, configurator and Python runtime (in progress)
+
+Purpose and acceptance: build the current Agnocast component containers and
+configurator executables, expose the ROS CLI extensions and wrapper launch
+action, and adopt each package's complete existing tests. Follow with the
+existing functional launches; compilation alone does not close Phase 4.
+
+Inspected the component, sample and end-to-end packages' CMake registration
+lists, upstream standalone-main templates, configurator C++ and Cargo inputs,
+Python setup.py/setup.cfg files, and RCR's component/launch/Python helpers.
+Keep source repositories independent: their modules build their own libraries,
+components and executables; the root assembles runtime resources and selects
+product-level launch scenarios. Standard RCR component registration creates
+records and ROS executables. The Agnocast component package's small adapter
+expands its existing main templates for the selected Agnocast executor while
+reusing RCR's component records and shared-dependency collector.
+
+Configurator pattern: retain the exported client library, add the four-source
+scheduling/YAML core and prerun implementation library, and link both daemon
+entry points. Match CMake's real shared boundary with a separate
+libagnocast_thread_configurator.so target. A consumer that links libagnocast
+and directly uses the configurator client otherwise encounters Bazel's
+"linked statically ... but not exported" error. Give libagnocast the real
+configurator shared dependency instead of exporting another component's
+static implementation from it. Reuse pinned yaml-cpp 0.9.0. The Rust client
+owns a Cargo extension for its tracked lockfile and builds its library, six
+wire-format cases and real Unix-datagram transport case with the RCR toolchain.
+
+Python pattern: reuse the source package's setup.py under a hermetic
+setuptools build tool to generate CLI egg-info and entry points. Declare the
+metadata as py_library data; expose a small ros2 entry point with the full
+extension dependency closure. The initial ros2bag 0.33.3-1.rcr.1 overlay has
+no Python library target. Inspecting the published 0.33.4-1.rcr.0 overlay
+confirmed that it supplies the missing runtime; pin that version and validate
+it instead of adding a local patch or mocking away the recording dependency.
+The wrapper's Python target carries its setup.cfg-equivalent frontend entry
+point and package metadata, and its ament package keeps setup.cfg for install
+metadata. Keep these entry-point declarations consistent when editing them.
+
+Verification commands completed so far:
+
+```bash
+clean_bazel test @agnocast_cie_thread_configurator//... \
+  @agnocast_components//... --test_output=errors --local_test_jobs=1
+clean_bazel test @ros2agnocast//:tests --test_output=errors
+clean_bazel test @autoware_agnocast_wrapper//:launch_tests \
+  @agnocast_sample_application//... @agnocast_e2e_test//... --test_output=errors
+```
+
+Results: five configurator C++ groups pass 137 cases; the Rust wire suite
+passes six and the transport test passes one, without skips. All three
+current component containers build. All 93 CLI cases and 66 wrapper launch
+cases pass. The sample/end-to-end fixture build reports 104 non-test targets
+plus the wrapper launch target. Bazel's fallback XML represents each pytest
+invocation as one case; obtain the actual pytest totals from test.log.
+
+Runtime resources must register executable paths under lib/<package>, not
+only the default runfiles bin/ aliases. Root ament_index targets also need an
+explicit nonempty export_name: Bazel's root canonical repository name is
+empty, so omitting it creates a packages/ marker that shadows the whole
+resource directory. After naming the product index, the existing CIE
+component-container launch passes in 9.4 seconds.
+
+A Python launcher can exec multiple bootstrap stages with the same PID.
+Preloading the allocator before those execs registers the process twice and
+fails AGNOCAST_ADD_PROCESS_CMD with EINVAL. The root runtime wrapper therefore
+allows Python launch drivers to start without preload; a tiny launch-source
+adapter sets LD_PRELOAD after interpreter startup, then loads the unmodified
+scenario in the same module namespace. Its launched native nodes receive the
+hook. Reuse RCR launch_test for environment setup, process cleanup and JUnit
+output. The C++ bridge test still preloads its final executable directly.
+
+Remaining checks: close all seven functional launch gates, then communication
+and service scenarios, actual CLI behavior and combined regressions. Initial
+functional results passed component-container CIE, standalone callback-isolated
+executor, restart and precedence. Reapply/wildcard need their direct CIE Python
+message dependency; multi-domain prerun exposed rclcpp's different-context
+executor rejection. Those are being addressed before any completion claim.
+No Fast DDS or pre-commit check has run.
+
+Functional gate result (2026-11-16): all seven scenarios pass together, 38
+cases with no skips. Add the CIE config package's :py provider explicitly for
+reapply/wildcard's service imports; package resource metadata is not a Python
+compile/import dependency. The multi-domain source failure is diagnosed as
+follows: rclcpp 32 rejects a domain node whose context differs from its
+executor. Introduce one shared spin_domain_nodes helper for all three entry
+point paths. Give each domain node an executor with its own context, then
+spin_some serially on the original thread with a 1 ms idle interval. Retain
+ordinary blocking spin for one domain. This preserves the configurator's
+existing serial callback-state assumptions instead of adding executor threads.
+The full five-group C++ and two-target Rust suite still passes after the fix.
+UPSTREAM_AWF.md records the upstream main blob, searches and comparison.
+
+```bash
+clean_bazel test @agnocast_cie_thread_configurator//... \
+  --nocache_test_results --test_output=errors --local_test_jobs=1
+clean_bazel test --strategy=TestRunner=local \
+  --run_under=//bazel/agnocast:with_runtime --nocache_test_results \
+  --test_output=errors --local_test_jobs=1 \
+  //bazel/agnocast:launch_agnocast_component_container_cie \
+  //bazel/agnocast:launch_agnocast_callback_isolated_executor \
+  //bazel/agnocast:launch_multi_domain_cie_talker \
+  //bazel/agnocast:launch_thread_configurator_restart \
+  //bazel/agnocast:launch_thread_configurator_reapply \
+  //bazel/agnocast:launch_thread_configurator_wildcard \
+  //bazel/agnocast:launch_thread_configurator_precedence
+```

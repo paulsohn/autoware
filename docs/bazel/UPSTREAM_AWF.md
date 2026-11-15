@@ -297,3 +297,39 @@ these corrections. AWF's broader Lyrical trackers remain
 [autoware#7404](https://github.com/autowarefoundation/autoware/issues/7404) and
 [autoware_core#1538](https://github.com/autowarefoundation/autoware_core/issues/1538);
 neither tracker is test evidence for these packages.
+
+### CIE configurator adds nodes from different contexts to one executor
+
+- [ ] Associate this Lyrical compatibility fix with a matching upstream PR.
+
+Verified 2026-11-16: the existing multi-domain CIE launch test fails on pinned
+rclcpp 32.0.3 with `add_node() called with a node with a different context from
+this executor`. The prerun process exits 1 before collecting domain 0/1
+announcements. Single-domain launches pass, so they do not cover this path.
+`AnnouncementSources` correctly creates a context for each extra ROS domain;
+both configurator entry points incorrectly add all those nodes to the default
+context's executor. Pinned rclcpp's Executor::add_node explicitly rejects this.
+
+Use one shared `spin_domain_nodes` helper from the normal configurator,
+deprecated prerun CLI path, and standalone prerun entry point. Each extra
+context gets its own executor. Drive their spin_some calls serially on one
+thread, with a 1 ms idle interval, because callbacks and reapply handlers share
+state under a single-executor assumption. Single-domain execution retains the
+ordinary blocking spin. Creating parallel executor threads would require a
+separate concurrency review; that is unnecessary for this configuration tool.
+
+The complete configurator C++/Rust suite passes (137 C++ cases plus seven Rust
+cases), and all seven existing functional launch scenarios pass 38 cases with
+no skips. These include receiving announcements in both domains and applying,
+reapplying, restarting and resolving wildcard/precedence configurations.
+Reproduce with the Phase 4.3–4.4 Cyclone DDS commands in JOURNAL.md.
+
+Upstream main's
+[prerun_node_main.cpp](https://github.com/autowarefoundation/agnocast/blob/main/src/agnocast_cie_thread_configurator/src/prerun_node_main.cpp),
+blob `37564990adcaeeeeab85fe64455e53736d4b3967`, still uses a single executor
+for every domain node. Its newer init/shutdown exception handling is separate
+from this defect. Searches for Lyrical and context/configurator PRs found
+related scheduling, domain-ID parsing and capability work, but no matching
+executor-context repair. Existing AWF Lyrical trackers are related context,
+not evidence that this path has been fixed or tested upstream. GCC,
+Humble/Jazzy, CMake/colcon and Fast DDS were not checked for this patch.

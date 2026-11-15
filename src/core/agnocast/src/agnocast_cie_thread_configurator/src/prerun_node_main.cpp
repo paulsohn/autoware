@@ -1,3 +1,4 @@
+#include "agnocast_cie_thread_configurator/announcement_sources.hpp"
 #include "agnocast_cie_thread_configurator/prerun_node.hpp"
 #include "rclcpp/rclcpp.hpp"
 
@@ -11,14 +12,7 @@ int main(int argc, char * argv[])
 
   try {
     auto node = std::make_shared<PrerunNode>();
-    auto executor = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
-
-    executor->add_node(node);
-    for (const auto & sub_node : node->get_domain_nodes()) {
-      executor->add_node(sub_node);
-    }
-
-    executor->spin();
+    agnocast_cie_thread_configurator::spin_domain_nodes(node, node->get_domain_nodes());
 
     node->stop();
     node->dump_yaml_config(std::filesystem::current_path());
