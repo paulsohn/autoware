@@ -84,6 +84,13 @@ For every slice:
   untouched and no Bazel targets or removal work are planned for them.
 - Developer-specific resource limits live in ignored `user.bazelrc`.
 - Source compatibility changes and Bazel build definitions use separate commits.
+- Validate Lyrical source compatibility independently while aligning with AWF
+  fixes when their scope matches the current target. The AWF transition is
+  tracked in [autoware#7404](https://github.com/autowarefoundation/autoware/issues/7404)
+  and [autoware_core#1538](https://github.com/autowarefoundation/autoware_core/issues/1538).
+  Record dated local-patch/upstream-PR associations in UPSTREAM_AWF.md, including
+  overlap, differences, and missing validation. Our Ubuntu 24.04/Clang/RCR
+  results do not establish AWF's Ubuntu 26.04/GCC or Humble/Jazzy compatibility.
 - The journal is the reproducible experiment record; upstream notes contain only
   demonstrated, generally useful findings.
 - Agnocast is compiled into Bazel targets unconditionally. `ENABLE_AGNOCAST` is

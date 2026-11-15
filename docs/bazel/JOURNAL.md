@@ -2098,3 +2098,29 @@ Python launch packaging remains the separate scope described in the plan;
 this gate does not claim complete wrapper package adoption. The next runtime
 work is a Bazel-generated representative bridge plugin and its message/service
 behavior, driven by the existing analysis-time interface provider.
+
+## 2026-11-15: Record AWF feedback and Lyrical patch alignment
+
+Purpose: make the verified wrapper test fix reviewable upstream and keep
+independent Lyrical compatibility work aligned with AWF's transition. Inspected
+inputs were AWF autoware issue #7404 and its comments, core issue #1538, linked
+toolchain/context issues, and repository-scoped Lyrical and wrapper PR searches.
+UPSTREAM_AWF.md records dated associations, their exact overlap, and remaining
+upstream validation. The wrapper source patch is `1d0cd537`; its existing
+four-configuration, 36-case C++ results remain the runtime evidence.
+Each finding now includes a Markdown association checkbox. A checked item
+requires a linked issue or PR for that specific finding; related links alone
+are insufficient. Unchecked entries distinguish a completed search with no
+match from a pending upstream review.
+
+The review found related feature/context PRs and a draft CMake transition PR,
+but no matching executor-test fix. Open Agnocast PR #1517 changes context
+ownership and must be reassessed before combining it with explicit test
+initialization. AGENTS.md and PLAN.md now require independent local validation,
+comparison with relevant AWF work, and recorded patch/PR associations without
+pre-applying unrelated fixes. Follow the links and dated search scope in
+UPSTREAM_AWF.md to repeat this review; upstream status must be checked again
+before submission. No upstream comment or PR was created.
+
+This task changes documentation only. `git diff --check` is the applicable
+validation; no runtime checks were rerun and pre-commit was not run.

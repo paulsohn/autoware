@@ -38,6 +38,13 @@ experiments, and milestones belong in PLAN.md and JOURNAL.md.
   next action; do not narrow the acceptance scope to claim success.
 - Treat versions, flags, and patches as hypotheses until a command in this
   branch validates them. Pin accepted inputs in git and record why in PLAN.md.
+- Develop and validate Lyrical compatibility independently. When a current
+  target needs a source fix, inspect AWF's Lyrical trackers and related PRs,
+  compare their actual scope, and align compatible fixes where practical.
+  Record local commit/PR associations and verification dates in
+  `docs/bazel/UPSTREAM_AWF.md`; distinguish matching fixes from related work.
+  Do not pre-apply unrelated changes or treat an upstream PR as local test
+  evidence.
 - Write each JOURNAL.md entry so a reader without this branch can repeat the
   experiment in their own repository. Record the purpose, prerequisites and
   inspected inputs, minimum integration pattern and rationale, transferable
