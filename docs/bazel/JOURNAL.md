@@ -1956,3 +1956,110 @@ Python launch packaging remain absent. Next, run the same wrapper behavior
 gate with the default `ENABLE_AGNOCAST=1`; integrate the heap hook and kernel
 runtime in the smallest order exposed by that attempt. The bridge-plugin rule
 remains an independent analysis-time lane.
+
+## 2026-11-15: Build and preload the Agnocast heap hook
+
+Purpose: prepare the allocator runtime required by the enabled wrapper suite
+and run that suite with the actual shared library preloaded. Prerequisites
+were the integrated wrapper, its passing DDS fallback suites, the Bazel-built
+`libagnocast.so`, and the RCR Rust toolchain. Inspected inputs were the heap
+hook's Cargo manifest, build script, Rust sources and stub, RCR's Rust exports
+and rules_rs toolchain declaration, and the wrapper's heap-hook fixture probe.
+
+The initial enabled invocation selected 36 cases but passed only the backend
+selection case and skipped 35 cases because the heap hook was absent. That
+established the allocator as the next input; a successful Bazel exit with
+those skips does not validate communication.
+
+The heap hook is a Rust 2021 `cdylib` at version 2.4.1. Add a package BUILD
+with `rust_shared_library`, its two Rust source files, and direct `libc` and
+`rlsf` dependencies. Resolve the tracked Cargo manifest through rules_rs
+`crate.from_cargo`, commit its Cargo.lock with checksums, and reuse the RCR
+Rust 1.93.0 toolchain. The accepted lock selects libc 0.2.191 and rlsf 0.2.3.
+The remaining crate closure is cfg-if, const-default, and rustversion.
+
+The Cargo build script compiles an Agnocast stub with ambient rustc and probes
+host glibc with ldd. Bazel instead supplies a `cc_import` of the real
+`@agnocastlib//:agnocast` shared library and sets `CARGO_PKG_VERSION` explicitly.
+`--cfg=glibc_pre_2_35` selects the source's existing allocator-bootstrap path
+for the workspace's glibc 2.34 floor. This preserves deterministic target
+configuration without running the Cargo build script or linking its stub.
+
+Add a `sh_binary` launcher with the heap-hook target in `data`. Resolve the
+library from runfiles and set `LD_PRELOAD` immediately before `exec` of the
+test. Applying preload to the launcher shell itself would initialize Agnocast
+before the test's library closure is available. Select the launcher through
+`--run_under` so ordinary fallback runs retain their existing runtime setup.
+
+Commands from an unsourced caller environment:
+
+```bash
+cargo generate-lockfile --manifest-path \
+  src/core/agnocast/agnocast_heaphook/Cargo.toml
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel build //src/core/agnocast/agnocast_heaphook:agnocast_heaphook
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --run_under=//bazel/agnocast:with_heaphook \
+  --test_env=ENABLE_AGNOCAST=1 --nocache_test_results \
+  @autoware_agnocast_wrapper//:unit_tests
+```
+
+Cargo is used only to produce the initial dependency lock; Bazel performs the
+library build using declared crate inputs and its registered toolchain.
+Subsequent builds consume the committed lock without resolving new versions.
+The library build succeeded in 26.671 seconds with 22 processes and 8,915
+action-cache hits. `readelf -d` confirms `libagnocast.so` as a NEEDED library.
+
+The preloaded Cyclone DDS wrapper suite executed all 36 cases with no skips:
+32 passed and four failed. The test ran for 22.3 seconds; the initial build
+plus test took 275.894 seconds because `--run_under` also builds its runtime
+data in the execution configuration. Startup acquired the available kernel
+device in the test execution environment; no kernel module was installed or
+loaded by this experiment. A workspace-sandbox `ls /dev/agnocast` did not
+expose that device, so a sandbox listing alone is not a runtime availability
+check. Successful polling message delivery demonstrates actual shared-memory
+transport with this host's existing kernel support.
+
+The four failures are in generic pub/sub test execution:
+
+- `GenericPubSubMethod1Test.MacroRoundTrip` and `MacroOnNodeRoundTrip` time out
+  after ten seconds waiting for their callbacks. Both tests instantiate an
+  `rclcpp::executors::SingleThreadedExecutor` although their wrapper endpoints
+  select Agnocast. Executor dispatch is the next hypothesis to test; the
+  timeout alone does not establish a generic transport implementation defect.
+- `GenericPubSubMethod2Test.NodeMemberRoundTrip` and
+  `NodeMemberDepthAndOptionsOverload` throw because they call
+  `get_rclcpp_node()` while the wrapper owns an Agnocast node. The test executor
+  setup needs backend-aware node access.
+
+The discovery agent was absent and startup emitted an observability warning.
+The suite continued through parameter, polling, and introspection tests; the
+warning is not evidence that discovery-agent installation fixes these four
+failures. No callback or production source changes were made in this slice.
+
+The heap hook's existing allocator tests run separately with:
+
+```bash
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --nocache_test_results \
+  //src/core/agnocast/agnocast_heaphook:unit_tests
+```
+
+All 26 tests passed with no ignored cases. The first unit attempt selected the
+production `glibc_pre_2_35` flag and panicked before the harness: its startup
+hook unwraps a resolver that the source excludes under `cfg(test)`. That
+invocation was interrupted. The test target therefore uses its existing
+default bootstrap on Ubuntu 24.04; the production shared library retains the
+legacy path for the ABI floor. Allocator tests cover alignment, zero and
+excessive sizes, realloc, zero-initialized calloc, and TLSF offset changes.
+They do not validate the legacy startup path; the preloaded C++ suite exercises
+that production path. Execution on glibc 2.34 itself remains untested.
+
+`bash -n bazel/agnocast/with_heaphook.sh` and `git diff --check` are the targeted
+static checks. A final `bazel test --config=no-agnocast
+--nocache_test_results @autoware_agnocast_wrapper//:unit_tests` under the same
+empty caller environment passed all 36 fallback cases in 0.3 seconds.
+Pre-commit was not run. The enabled suite remains a failing
+behavior gate with four documented test-executor issues. Next, adapt its
+executor setup to the selected backend and rerun all cases before accepting
+the enabled wrapper milestone or extending the Fast DDS compatibility gate.

@@ -455,6 +455,20 @@ Completed wrapper fallback slice:
   behavior until their current tests require launch packaging, the heap hook,
   kernel access, or component runtime support.
 
+Heap-hook runtime slice:
+
+- built the Rust heap hook from local sources with the RCR Rust 1.93.0
+  toolchain, checksum-locked crates, and the real Bazel-built Agnocast shared
+  library; selected its existing legacy-glibc bootstrap for the 2.34 ABI floor;
+- added a runfiles-based preload launcher and passed all 26 existing allocator
+  unit tests using their default bootstrap on Ubuntu 24.04;
+- ran the enabled wrapper suite with the actual heap hook and the execution
+  host's existing kernel support: 32 cases passed and four generic pub/sub
+  cases failed, with no skips;
+- the next gate is backend-aware executor setup in those tests: two time out
+  while spinning RCLCPP and two request an RCLCPP node from an Agnocast wrapper.
+  Enabled wrapper acceptance remains pending that complete behavior gate.
+
 Exit criteria:
 
 - `autoware_node` builds from local source and its initialization, executor,

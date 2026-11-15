@@ -1,6 +1,13 @@
 load(":interfaces.bzl", "ros_interface_set")
+load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
 
 package(default_visibility = ["//visibility:public"])
+
+sh_binary(
+    name = "with_heaphook",
+    srcs = ["with_heaphook.sh"],
+    data = ["//src/core/agnocast/agnocast_heaphook:agnocast_heaphook"],
+)
 
 # The first proof deliberately combines an upstream package and a local
 # Autoware package. The aspect collects types owned by those roots and types
