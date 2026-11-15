@@ -333,3 +333,31 @@ related scheduling, domain-ID parsing and capability work, but no matching
 executor-context repair. Existing AWF Lyrical trackers are related context,
 not evidence that this path has been fixed or tested upstream. GCC,
 Humble/Jazzy, CMake/colcon and Fast DDS were not checked for this patch.
+
+### Heap-hook version lookup misses ament overlays without preload
+
+- [ ] Associate the overlay-prefix repair with a matching upstream PR.
+
+Verified 2026-11-16: the built CLI reports kernel, library and CLI version
+2.4.1, but reports the heap hook unavailable even though the selected ament
+prefix contains lib/libagnocast_heaphook.so. With LD_PRELOAD unset, the command
+only searches /opt/ros/$ROS_DISTRO/lib. That misses ordinary development
+prefixes as well as Bazel's composed runtime.
+
+Reuse the existing `_get_lib_path` helper to look under the selected
+agnocastlib package prefix before the existing system-install fallback.
+Preserve LD_PRELOAD priority and the warning that an inspected library is not
+preloaded. No global allocator injection or Bazel-specific path is needed.
+The actual command then reports 2.4.1 for all four components. Two regressions
+cover overlay lookup and preload priority with a fake CDLL, while the complete
+CLI suite passes all 95 cases. The product CLI behavior test also reaches and
+passes these version assertions against the actual shared libraries.
+
+Upstream main's
+[agnocast_version.py](https://github.com/autowarefoundation/agnocast/blob/main/src/ros2agnocast/ros2agnocast/verb/agnocast_version.py),
+blob `3b7e0bbdd242233a8dfe7d69c98011c93ba8a32c`, retains the /opt/ros-only
+fallback. [PR #1224](https://github.com/autowarefoundation/agnocast/pull/1224)
+introduced the version command; it is related history, not this prefix repair.
+Searches for version/ament and heaphook/LD_PRELOAD did not identify a matching
+fix. This is install-layout portability, not a newly introduced Lyrical API
+change. Older distributions and CMake/colcon execution were not checked.

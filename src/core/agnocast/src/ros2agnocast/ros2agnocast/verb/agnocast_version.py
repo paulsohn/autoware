@@ -159,7 +159,10 @@ class VersionVerb(VerbExtension):
 
         if lib_path is None:
             not_in_ld_preload = True
-            # LD_PRELOAD not set; fall back to the default install path.
+            lib_path = _get_lib_path('agnocastlib', 'libagnocast_heaphook.so')
+
+        if lib_path is None:
+            # Preserve the system-install fallback when no package prefix resolves.
             ros_distro = os.environ.get('ROS_DISTRO', '')
             if ros_distro:
                 candidate = f'/opt/ros/{ros_distro}/lib/libagnocast_heaphook.so'
