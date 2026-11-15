@@ -253,6 +253,8 @@ describes that review, not proof that no other upstream work exists.
 
 ### Agnocast discovery warning paths and ioctl header self-sufficiency
 
+Local fix: `9b277d8a`.
+
 - [ ] Associate the logger API correction with a matching upstream PR.
 - [ ] Associate the missing `<cerrno>` includes with a matching upstream PR.
 
@@ -300,6 +302,8 @@ neither tracker is test evidence for these packages.
 
 ### CIE configurator adds nodes from different contexts to one executor
 
+Local fix: `8c1c2afc`.
+
 - [ ] Associate this Lyrical compatibility fix with a matching upstream PR.
 
 Verified 2026-11-16: the existing multi-domain CIE launch test fails on pinned
@@ -335,6 +339,8 @@ not evidence that this path has been fixed or tested upstream. GCC,
 Humble/Jazzy, CMake/colcon and Fast DDS were not checked for this patch.
 
 ### Heap-hook version lookup misses ament overlays without preload
+
+Local fix: `54410051`.
 
 - [ ] Associate the overlay-prefix repair with a matching upstream PR.
 

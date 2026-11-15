@@ -385,7 +385,7 @@ smallest publisher/subscriber slice needed to establish node and communication
 test infrastructure. Agnocast becomes a dedicated core subphase when a current
 target requires its wrapper or backend.
 
-## Phase 4: Minimal core and Agnocast communication lanes (started)
+## Phase 4: Minimal core and Agnocast communication lanes (Cyclone DDS complete)
 
 Purpose: establish one runnable core node and a reusable communication behavior
 gate without allowing an Agnocast-free package expansion to delay evaluation of
@@ -409,24 +409,13 @@ Bridge support is part of this lane rather than a post-build packaging step.
 Define a product-owned set of package-level interface roots, collect their
 transitive `RosInterfaceInfo` providers during analysis, and generate each
 bridge translation unit as a declared Bazel output. Link the resulting plugin
-library in the same invocation. The initial proof must combine one RCR package
-and one local Autoware package; expand the root set only after a message and a
-service cross an end-to-end bridge.
-
-Completed analysis-time interface slice:
-
-- added `ros_interface_set`, whose aspect follows rule-level `deps`, collects
-  interface source providers, validates required descriptors and an expected
-  count, and writes a sorted deterministic manifest;
-- proved the provider contract with `std_msgs` plus
-  `autoware_common_msgs`, collecting 32 interfaces without scanning BUILD
-  text or an installed prefix;
-- defined the current product universe from the 12 integrated Autoware
-  interface modules; their direct interface edges produce 136 bridgeable
-  message and service descriptors;
-- deliberately excluded generator-wide dependency-package surfaces: a package
-  becomes wholly bridgeable only when it is an explicit product root, while
-  individual types referenced by a rooted interface remain transitive inputs.
+library in the same invocation. The current product set has 17 explicit roots:
+12 Autoware interface packages, CIE config, sample and discovery interfaces,
+std_msgs and std_srvs. Their transitive providers collect 175 descriptors.
+Undeclared sources remain outside the graph; no source-completeness validator
+or separate proof set is required. Synthesized service-event types bring the
+plugin to 197 translation units and 394 exported typed factories. This gives
+full-set compile/symbol coverage; communication tests sample concrete types.
 
 Completed first Agnocast prerequisite slice:
 
@@ -436,9 +425,9 @@ Completed first Agnocast prerequisite slice:
   transport library, which is the surface directly required by `agnocastlib`;
 - passed its abstract Unix-domain-socket transport test with Cyclone DDS and
   Fast DDS without a kernel module or heap hook;
-- deferred the configurator daemon's scheduling core, YAML dependency,
-  executables, and remaining tests until a current runtime target requires the
-  daemon rather than its client API.
+- subsequently adopted the scheduling core, pinned YAML dependency, both
+  executables, all 137 C++ cases and seven Rust wire/transport cases when the
+  component runtime required them (Phase 4.3).
 
 Completed Agnocast shared-library slice:
 
@@ -552,25 +541,45 @@ future compatibility checks require separate approval at major milestones.
 Earlier separate-checkout checks passed before support was consolidated at
 the root. The collector and plugin rules now live under `bazel/`; component
 definitions do not refer to metarepository paths.
-The single set collects 169 interfaces. Adding 21 synthesized service-event
-types produces 190 typed translation units and 380 exported factories in the
-root-module shared library. All eight existing bridge cases pass against this
-library with Cyclone DDS, including event messages in both directions. This
-is full-set compile/symbol coverage plus sampled communication behavior, not
-a runtime test of every type. Next,
-exercise normal runtime plugin selection for a product-owned interface set.
-Automatic bridge management, discovery-agent packaging, and component/launch
-integration remain separate gates.
+The production BridgeLoader gate now passes 11 cases: loader payloads,
+service events, both automatic bridge directions and actual discovery-agent
+startup/gossip. All 147 discovery-agent cases pass. The modern single-thread,
+multi-thread and CIE containers, configurator, Python launch extension and CLI
+are packaged with their ament resources and explicit runtime dependencies.
 
-The wrapper message-filter Subscriber now converts rmw_qos_profile_t through
-the existing profile-preserving `detail::to_qos` helper on Lyrical. A real
-subscription regression checks construction, changed-QoS resubscription, and
-unsubscribe with both runtime backends. Older rclcpp keeps its existing call
-form; older-distribution builds remain untested. The five Agnocast unit groups
-do not cover the 15 additional upstream integration groups. Discovery-agent
-warning paths also need review against rclpy's `warning()` API when adopted.
+The wrapper message-filter Subscriber preserves its QoS profile on Lyrical.
+All 37 C++ wrapper cases pass with each runtime selection; all 66 Python launch
+cases pass. The complete 20-target library suite passes its supported cases
+(672 total, five upstream unsupported-executor skips). No dependency-related
+skip or test-group omission is accepted.
 
-### Phase 4 remaining substeps: complete Agnocast integration
+Phase 4.4 closes the Cyclone DDS runtime gate: seven functional launches/38
+cases, all 128 one-to-one configurations/384 cases, 24 two-to-two configurations,
+and nine service arrangements/45 cases pass without skips. The real CLI test
+checks discovery, echo, recording, embedded schema and deserialized payload;
+the complete CLI suite passes 95 cases. CUDA samples and kernel KUnit/build
+remain separate platform tasks. These results validate user space against the
+prepared 2.4.1 kernel module; they do not validate a new kernel build. No new
+Fast DDS run was performed; any Tier 2 milestone run requires approval.
+
+Durable runtime decisions from these gates:
+
+- Disable implicit Python initializer creation across the graph; otherwise
+  transitive empty initializers hide generated namespace packages.
+- Use the published ros2bag 0.33.4-1.rcr.0 Python provider rather than a host
+  installation or a local overlay patch.
+- Keep runtime payload in application/test data, outside the run-under tool's
+  execution configuration. Give root ament indexes explicit export names and
+  register ROS executables under lib/<package> for automatic discovery.
+- Start Python without allocator preload, then set it for launched native
+  processes after bootstrap. Preloading across Python exec stages can register
+  the same PID twice with the kernel module.
+- Spin multi-domain configurator nodes serially with one executor per context;
+  shared scheduling state retains its original single-thread assumption.
+- Declare both Python interface providers and generated ament IDL/index data
+  for recording consumers. C++ plugin closure alone supplies neither.
+
+### Phase 4 substeps: completed Cyclone DDS gates
 
 Keep the existing Phase 0–4 numbers. Refer to incoming tasks by these stable
 substep identifiers in plans, journals, and commits:

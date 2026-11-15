@@ -1,5 +1,8 @@
+load("@launch_testing//:defs.bzl", "launch_test")
+load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
 load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
 load("@rules_cc//cc:defs.bzl", "cc_test")
+load("@rules_python//python:defs.bzl", "py_binary", "py_test")
 load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
 load(":plugins.bzl", "agnocast_bridge_plugins", "bridge_template_test")
 
@@ -9,24 +12,6 @@ bridge_template_test(name = "template_tests")
 
 agnocast_bridge_plugins(
     name = "plugins",
-    interface_set = "//bazel/interfaces:all_interfaces",
-    deps = [
-        "@agnocast_cie_config_msgs//:cc",
-        "@autoware_common_msgs//:cc",
-        "@autoware_control_msgs//:cc",
-        "@autoware_internal_planning_msgs//:cc",
-        "@autoware_localization_msgs//:cc",
-        "@autoware_map_msgs//:cc",
-        "@autoware_perception_msgs//:cc",
-        "@autoware_planning_msgs//:cc",
-        "@autoware_sensing_msgs//:cc",
-        "@autoware_simulation_msgs//:cc",
-        "@autoware_system_msgs//:cc",
-        "@autoware_v2x_msgs//:cc",
-        "@autoware_vehicle_msgs//:cc",
-        "@std_msgs//:cc",
-        "@std_srvs//:cc",
-    ],
     dynamic_deps = [
         "@agnocast_cie_config_msgs//:cc_shared",
         "@autoware_common_msgs//:cc_shared",
@@ -41,8 +26,30 @@ agnocast_bridge_plugins(
         "@autoware_system_msgs//:cc_shared",
         "@autoware_v2x_msgs//:cc_shared",
         "@autoware_vehicle_msgs//:cc_shared",
+        "@agnocast_sample_interfaces//:cc_shared",
+        "@ros2agnocast_discovery_msgs//:cc_shared",
         "@std_msgs//:cc_shared",
         "@std_srvs//:cc_shared",
+    ],
+    interface_set = "//bazel/interfaces:all_interfaces",
+    deps = [
+        "@agnocast_cie_config_msgs//:cc",
+        "@agnocast_sample_interfaces//:cc",
+        "@autoware_common_msgs//:cc",
+        "@autoware_control_msgs//:cc",
+        "@autoware_internal_planning_msgs//:cc",
+        "@autoware_localization_msgs//:cc",
+        "@autoware_map_msgs//:cc",
+        "@autoware_perception_msgs//:cc",
+        "@autoware_planning_msgs//:cc",
+        "@autoware_sensing_msgs//:cc",
+        "@autoware_simulation_msgs//:cc",
+        "@autoware_system_msgs//:cc",
+        "@autoware_v2x_msgs//:cc",
+        "@autoware_vehicle_msgs//:cc",
+        "@ros2agnocast_discovery_msgs//:cc",
+        "@std_msgs//:cc",
+        "@std_srvs//:cc",
     ],
 )
 
@@ -52,6 +59,7 @@ collect_transitive_dynamic_deps(
         "@agnocastlib//:agnocast",
         "@autoware_common_msgs//:cc_shared",
         "@rclcpp//:rclcpp",
+        "@ros2agnocast_discovery_msgs//:cc_shared",
         "@std_msgs//:cc_shared",
         "@std_srvs//:cc_shared",
     ],
@@ -61,14 +69,20 @@ cc_test(
     name = "bridge_plugins_test",
     srcs = ["bridge_plugins_test.cpp"],
     args = ["$(rootpath :plugins)"],
-    data = [":plugins"],
+    data = [
+        ":plugins",
+        ":runtime_index",
+        "@agnocast_heaphook",
+    ],
     dynamic_deps = [":bridge_test_dynamic_deps"],
+    env = {"ROS_DOMAIN_ID": "71"},
     tags = ["requires-agnocast-kmod"],
     deps = [
         "@agnocastlib//:agnocast_library",
         "@autoware_common_msgs//:cc",
         "@googletest//:gtest",
         "@rclcpp//:rclcpp_library",
+        "@ros2agnocast_discovery_msgs//:cc",
         "@std_msgs//:cc",
         "@std_srvs//:cc",
     ],
@@ -79,5 +93,216 @@ sh_binary(
     srcs = ["with_heaphook.sh"],
     data = [
         "@bazel_tools//tools/bash/runfiles",
+    ],
+)
+
+ament_index(
+    name = "runtime_index",
+    export_name = "agnocast_bridge_plugins",
+    libraries = [
+        ":plugins",
+        "@agnocast_heaphook//:agnocast_heaphook",
+    ],
+    deps = [
+        "@agnocast_components//:ament_package",
+        "@ros2agnocast_discovery_agent//:ament_package",
+    ],
+)
+
+sh_binary(
+    name = "with_runtime",
+    srcs = ["with_runtime.sh"],
+    data = [
+        "@bazel_tools//tools/bash/runfiles",
+    ],
+)
+
+ament_index(
+    name = "e2e_index",
+    export_name = "autoware_agnocast_e2e",
+    deps = [
+        ":ros_containers",
+        ":runtime_index",
+        "@agnocast_e2e_test//:ament_package",
+        "@agnocast_sample_application//:ament_package",
+    ],
+)
+
+[launch_test(
+    name = "launch_" + scenario,
+    timeout = "long",
+    src = "launch_suite.py",
+    data = [
+        ":e2e_index",
+        "@agnocast_heaphook",
+        "@agnocast_e2e_test//:test/functional/test_" + scenario + "_launch.py",
+    ],
+    env = {
+        "AGNOCAST_TEST_NO_PRELOAD": "1",
+        "AGNOCAST_LAUNCH_SOURCE": "$(rootpath @agnocast_e2e_test//:test/functional/test_" + scenario + "_launch.py)",
+    },
+    tags = [
+        "no-remote",
+        "no-sandbox",
+        "requires-agnocast-kmod",
+    ],
+    deps = [
+        "@agnocast_cie_config_msgs//:py",
+        "@launch_ros",
+        "@rclpy",
+        "@ros2agnocast",
+    ],
+) for scenario in [
+    "agnocast_component_container_cie",
+    "agnocast_callback_isolated_executor",
+    "multi_domain_cie_talker",
+    "thread_configurator_restart",
+    "thread_configurator_reapply",
+    "thread_configurator_wildcard",
+    "thread_configurator_precedence",
+]]
+
+register_ament_files(
+    name = "ros_containers",
+    files = [
+        "@rclcpp_components//:component_container",
+        "@rclcpp_components//:component_container_mt",
+    ],
+    prefix = "lib/rclcpp_components",
+    strip_prefix = "*",
+)
+
+[py_test(
+    name = "matrix_" + kind,
+    timeout = "eternal",
+    srcs = ["e2e_matrix.py"],
+    args = [
+        kind,
+        "$(rootpath @agnocast_e2e_test//:test/test_" + kind + ".py)",
+        "$(rootpath @launch_testing//bazel:launch_test_main.py)",
+        "$(rootpath :launch_suite.py)",
+    ],
+    data = [
+        "launch_suite.py",
+        ":e2e_index",
+        "@agnocast_heaphook",
+        "@agnocast_e2e_test//:test/test_" + kind + ".py",
+        "@launch_testing//bazel:launch_test_main.py",
+    ],
+    env = {"AGNOCAST_TEST_NO_PRELOAD": "1"},
+    main = "e2e_matrix.py",
+    tags = [
+        "no-remote",
+        "no-sandbox",
+        "requires-agnocast-kmod",
+    ],
+    deps = [
+        "@launch//bazel:rcr_launch_guard",
+        "@launch_ros",
+        "@launch_testing",
+        "@launch_xml",
+        "@launch_yaml",
+        "@ros2agnocast",
+    ],
+) for kind in [
+    "1to1",
+    "2to2",
+]]
+
+launch_test(
+    name = "launch_services",
+    timeout = "long",
+    src = "launch_suite.py",
+    data = [
+        ":e2e_index",
+        "@agnocast_e2e_test//:test/test_service.py",
+        "@agnocast_heaphook",
+    ],
+    env = {
+        "AGNOCAST_TEST_NO_PRELOAD": "1",
+        "AGNOCAST_LAUNCH_SOURCE": "$(rootpath @agnocast_e2e_test//:test/test_service.py)",
+    },
+    tags = [
+        "no-remote",
+        "no-sandbox",
+        "requires-agnocast-kmod",
+    ],
+    deps = [
+        "@launch_ros",
+        "@ros2agnocast",
+    ],
+)
+
+py_binary(
+    name = "ros2",
+    srcs = ["@ros2agnocast//:bazel_cli.py"],
+    data = [
+        ":runtime_index",
+        "@agnocast_cie_config_msgs//:ament_index",
+        "@agnocast_sample_interfaces//:ament_index",
+        "@autoware_common_msgs//:ament_index",
+        "@autoware_control_msgs//:ament_index",
+        "@autoware_internal_planning_msgs//:ament_index",
+        "@autoware_localization_msgs//:ament_index",
+        "@autoware_map_msgs//:ament_index",
+        "@autoware_perception_msgs//:ament_index",
+        "@autoware_planning_msgs//:ament_index",
+        "@autoware_sensing_msgs//:ament_index",
+        "@autoware_simulation_msgs//:ament_index",
+        "@autoware_system_msgs//:ament_index",
+        "@autoware_v2x_msgs//:ament_index",
+        "@autoware_vehicle_msgs//:ament_index",
+        "@ros2agnocast_discovery_msgs//:ament_index",
+        "@std_msgs//:ament_index",
+        "@std_srvs//:ament_index",
+    ],
+    main = "@ros2agnocast//:bazel_cli.py",
+    deps = [
+        "@agnocast_cie_config_msgs//:py",
+        "@agnocast_sample_interfaces//:py",
+        "@autoware_common_msgs//:py",
+        "@autoware_control_msgs//:py",
+        "@autoware_internal_planning_msgs//:py",
+        "@autoware_localization_msgs//:py",
+        "@autoware_map_msgs//:py",
+        "@autoware_perception_msgs//:py",
+        "@autoware_planning_msgs//:py",
+        "@autoware_sensing_msgs//:py",
+        "@autoware_simulation_msgs//:py",
+        "@autoware_system_msgs//:py",
+        "@autoware_v2x_msgs//:py",
+        "@autoware_vehicle_msgs//:py",
+        "@ros2agnocast",
+        "@ros2agnocast_discovery_msgs//:py",
+        "@std_msgs//:py",
+        "@std_srvs//:py",
+    ],
+)
+
+py_test(
+    name = "cli_runtime_test",
+    srcs = ["cli_runtime_test.py"],
+    args = [
+        "$(rootpath :ros2)",
+        "$(rootpath @agnocast_sample_application//:talker)",
+    ],
+    data = [
+        ":e2e_index",
+        ":ros2",
+        "@agnocast_heaphook",
+        "@agnocast_sample_application//:talker",
+    ],
+    env = {"AGNOCAST_TEST_NO_PRELOAD": "1"},
+    tags = [
+        "no-remote",
+        "no-sandbox",
+        "requires-agnocast-kmod",
+    ],
+    deps = [
+        "@agnocast_sample_interfaces//:py",
+        "@launch//bazel:rcr_launch_guard",
+        "@rclpy",
+        "@ros2agnocast",
+        "@rosbag2_py",
     ],
 )

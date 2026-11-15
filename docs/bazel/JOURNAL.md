@@ -2393,7 +2393,7 @@ BridgeLoader, then verify normal endpoints automatically activate both bridge
 directions and the auto-started discovery agent reports a typed endpoint.
 Retain message, service-event, and service payload checks. Adopt the complete
 five-file discovery-agent pytest suite and its ioctl/message dependencies.
-Discovery packaging is complete; product bridge activation follows after the runtime component dependencies are available.
+This module gate passes; the complete runtime closure is recorded in Phase 4.4.
 
 Inspected inputs: `agnocastlib`'s bridge loader, manager and process startup;
 the discovery agent's package manifest, scripts, setup metadata and tests;
@@ -2440,97 +2440,279 @@ clean_bazel test --strategy=TestRunner=local \
   --test_output=errors //bazel/agnocast:bridge_plugins_test
 ```
 
-Discovery packaging passes all 147 cases and builds the complete ioctl/message
-surface. Intermediate-tree verification on 2026-11-16 also passes:
-`clean_bazel test @ros2agnocast_discovery_agent//... @agnocast_ioctl_wrapper//...
-@ros2agnocast_discovery_msgs//... --nocache_test_results --test_output=errors
---local_test_jobs=1` (28 non-test targets plus the full agent suite). Product bridge activation and its runtime command above are deferred
-to the root assembly commit; no product-runtime success is claimed here.
-Keep runtime payload in application/test data, outside the run-under tool.
+The second command passes all 11 cases (7.3 seconds in the final run): eight loader cases,
+two automatic bridge directions, and one actual agent gossip case. No case
+is skipped. Runtime assembly supplies ament
+resource symlinks, the agent executables, the ioctl library, typed plugins and
+the heap hook. Set plugin search, ament prefix and library search before
+preloading the final process: the allocator can fork runtime daemons before
+`main()`. Merely setting the plugin environment in the test body is too late
+for the manager fork. Preserve the host PID namespace for kernel-backed tests.
+No Fast DDS or pre-commit check has run.
 
-## 2026-11-15–16: Phase 4.3 — component, configurator and Python runtime (in progress)
+Runtime registration diagnosis: ament_package installs executables under
+lib/<package> in its install metadata, but the reused ament_index runfiles
+layout places them in bin/. The agent's automatic startup could find its
+package marker but not its required executable path. Register the existing
+py_binary outputs under lib/ros2agnocast_discovery_agent with
+register_ament_files and include that registration in ament_package data.
+The full runtime gate then passes, including agent startup and gossip.
+Keep the runtime payload in cc_test data, not the --run_under tool's data:
+otherwise Bazel builds it again in the execution configuration, where the
+fixed target RMW selection does not constrain its dependency closure.
 
-Purpose: provide the real scheduling/configurator and modern component runtime
-before assembling the root product. Inspect the configurator CMake source and
-five test groups, its Rust Cargo manifests, and the three modern container
-mains. Reuse the pinned Lyrical workspace and loaded 2.4.1 kernel module.
+## 2026-11-15–16: Phase 4.3 — component, configurator and Python runtime
 
-Add the scheduling/YAML core, prerun library and both executable entry points
-beside the existing client library. Pin yaml-cpp and resolve the Rust client
-through a component-owned Cargo extension with the existing lockfile. Register
-all five C++ groups and the Rust wire and real Unix-socket transport suites.
-Export the configurator as a shared library, and use it as an Agnocast shared
-dependency; otherwise a consumer of both sees Bazel's statically-linked-but-
-not-exported error. Package headers, executables and launch resources through
-ament_package; register lib/<package> executable aliases for ROS launch.
+Purpose and acceptance: build the current Agnocast component containers and
+configurator executables, expose the ROS CLI extensions and wrapper launch
+action, and adopt each package's complete existing tests. Follow with the
+existing functional launches; compilation alone does not close Phase 4.
 
-Build the single-thread, multi-thread and CIE containers in their own module.
-A small component-owned rule expands the existing standalone-main templates
-and reuses RCR component records. Components contain no root-module labels.
-The multi-context source correction is a separate fix commit: spin one
-executor per domain context serially to preserve shared callback state.
+Inspected the component, sample and end-to-end packages' CMake registration
+lists, upstream standalone-main templates, configurator C++ and Cargo inputs,
+Python setup.py/setup.cfg files, and RCR's component/launch/Python helpers.
+Keep source repositories independent: their modules build their own libraries,
+components and executables; the root assembles runtime resources and selects
+product-level launch scenarios. Standard RCR component registration creates
+records and ROS executables. The Agnocast component package's small adapter
+expands its existing main templates for the selected Agnocast executor while
+reusing RCR's component records and shared-dependency collector.
 
-Validation from the root with the clean_bazel function in Phase 4.2:
+Configurator pattern: retain the exported client library, add the four-source
+scheduling/YAML core and prerun implementation library, and link both daemon
+entry points. Match CMake's real shared boundary with a separate
+libagnocast_thread_configurator.so target. A consumer that links libagnocast
+and directly uses the configurator client otherwise encounters Bazel's
+"linked statically ... but not exported" error. Give libagnocast the real
+configurator shared dependency instead of exporting another component's
+static implementation from it. Reuse pinned yaml-cpp 0.9.0. The Rust client
+owns a Cargo extension for its tracked lockfile and builds its library, six
+wire-format cases and real Unix-datagram transport case with the RCR toolchain.
+
+Python pattern: reuse the source package's setup.py under a hermetic
+setuptools build tool to generate CLI egg-info and entry points. Declare the
+metadata as py_library data; expose a small ros2 entry point with the full
+extension dependency closure. The initial ros2bag 0.33.3-1.rcr.1 overlay has
+no Python library target. Inspecting the published 0.33.4-1.rcr.0 overlay
+confirmed that it supplies the missing runtime; pin that version and validate
+it instead of adding a local patch or mocking away the recording dependency.
+The wrapper's Python target carries its setup.cfg-equivalent frontend entry
+point and package metadata, and its ament package keeps setup.cfg for install
+metadata. Keep these entry-point declarations consistent when editing them.
+
+Verification commands:
 
 ```bash
 clean_bazel test @agnocast_cie_thread_configurator//... \
-  @agnocast_components//... @agnocastlib//... \
-  --nocache_test_results --test_output=errors --local_test_jobs=1
+  @agnocast_components//... --test_output=errors --local_test_jobs=1
+clean_bazel test @ros2agnocast//:tests --test_output=errors
+clean_bazel test @autoware_agnocast_wrapper//:launch_tests \
+  @agnocast_sample_application//... @agnocast_e2e_test//... --test_output=errors
 ```
 
-The complete configurator suite passes 137 C++ cases and seven Rust cases;
-the library suite retains its five documented unsupported-executor skips.
-All three modern containers build. CLI support uses setup.py through a hermetic setuptools tool to generate egg
-metadata and a small ros2 entry point with the declared extension import
-closure. Pin the published ros2bag 0.33.4-1.rcr.0 provider, since the previous
-0.33.3-1.rcr.1 overlay has no Python runtime target. The wrapper exports its
-Python library, setup.cfg-equivalent entry point and ament package resources.
-Keep resource registration separate from Python import dependencies.
+Results: five configurator C++ groups pass 137 cases; the Rust wire suite
+passes six and the transport test passes one, without skips. All three
+current component containers build. All 95 CLI cases (including the two version-path regressions below) and 66 wrapper launch
+cases pass. The sample/end-to-end fixture build reports 104 non-test targets
+plus the wrapper launch target. Bazel's fallback XML represents each pytest
+invocation as one case; obtain the actual pytest totals from test.log.
 
-Validate the package-level CLI and wrapper with:
+Runtime resources must register executable paths under lib/<package>, not
+only the default runfiles bin/ aliases. Root ament_index targets also need an
+explicit nonempty export_name: Bazel's root canonical repository name is
+empty, so omitting it creates a packages/ marker that shadows the whole
+resource directory. After naming the product index, the existing CIE
+component-container launch passes in 9.4 seconds.
+
+A Python launcher can exec multiple bootstrap stages with the same PID.
+Preloading the allocator before those execs registers the process twice and
+fails AGNOCAST_ADD_PROCESS_CMD with EINVAL. The root runtime wrapper therefore
+allows Python launch drivers to start without preload; a tiny launch-source
+adapter sets LD_PRELOAD after interpreter startup, then loads the unmodified
+scenario in the same module namespace. Its launched native nodes receive the
+hook. Reuse RCR launch_test for environment setup, process cleanup and JUnit
+output. The C++ bridge test still preloads its final executable directly.
+
+Functional gate result (2026-11-16): all seven scenarios pass together, 38
+cases with no skips. Add the CIE config package's :py provider explicitly for
+reapply/wildcard's service imports; package resource metadata is not a Python
+compile/import dependency. The multi-domain source failure is diagnosed as
+follows: rclcpp 32 rejects a domain node whose context differs from its
+executor. Introduce one shared spin_domain_nodes helper for all three entry
+point paths. Give each domain node an executor with its own context, then
+spin_some serially on the original thread with a 1 ms idle interval. Retain
+ordinary blocking spin for one domain. This preserves the configurator's
+existing serial callback-state assumptions instead of adding executor threads.
+The full five-group C++ and two-target Rust suite still passes after the fix.
+UPSTREAM_AWF.md records the upstream main blob, searches and comparison.
 
 ```bash
-clean_bazel test --config=no-agnocast @ros2agnocast//... \
-  @autoware_agnocast_wrapper//... --nocache_test_results \
-  --test_output=errors --local_test_jobs=1
+clean_bazel test @agnocast_cie_thread_configurator//... \
+  --nocache_test_results --test_output=errors --local_test_jobs=1
+clean_bazel test --strategy=TestRunner=local \
+  --run_under=//bazel/agnocast:with_runtime --nocache_test_results \
+  --test_output=errors --local_test_jobs=1 \
+  //bazel/agnocast:launch_agnocast_component_container_cie \
+  //bazel/agnocast:launch_agnocast_callback_isolated_executor \
+  //bazel/agnocast:launch_multi_domain_cie_talker \
+  //bazel/agnocast:launch_thread_configurator_restart \
+  //bazel/agnocast:launch_thread_configurator_reapply \
+  //bazel/agnocast:launch_thread_configurator_wildcard \
+  //bazel/agnocast:launch_thread_configurator_precedence
+```
+
+## 2026-11-16: Phase 4.4 — communication matrices and runtime closure
+
+Purpose and acceptance: run the existing Agnocast sample/end-to-end scenarios
+with the packaged Bazel runtime, including the complete 128-configuration
+one-to-one matrix, 24 two-to-two configurations and nine service arrangements.
+Keep the seven functional launches, wrapper backend tests and full adopted
+package suites as regression gates. Actual CLI discovery, echo and recording
+behavior is also required before closure. Kernel compilation/KUnit and CUDA
+transport samples remain separate platform/GPU work, not user-space test
+substitutes. No Fast DDS check is authorized for this task.
+
+Inspected inputs: scripts/test/e2e_test_1to1.bash and e2e_test_2to2.bash,
+plus test_1to1.py, test_2to2.py, test_service.py and their fixture YAMLs. Reuse
+the Python scenarios and their assertions; do not run the shell wrappers,
+which source /opt/ros, invoke colcon, edit checked-in YAML and write to kmsg.
+The one-to-one matrix is the Cartesian product of Agnocast/ROS publisher,
+publisher/subscriber startup order, publisher/subscriber depths 1/10,
+publisher/subscriber durability, and callback/take subscriptions. Two-to-two
+uses agno2agno, ros2agno and agno2ros across the eight original PPSS layouts.
+The service source already parameterizes all nine arrangements itself.
+
+The root e2e_matrix.py driver creates a fresh directory per configuration,
+copies the original scenario beside an immutable JSON-as-YAML configuration,
+and runs RCR's launch-testing entry point with the same pinned interpreter.
+This preserves scripts that locate YAML relative to __file__ without editing
+source or inventing a second scenario. Each case starts in a separate process,
+with the root launch adapter setting preload after Python bootstrap. Keep the
+import closure in PYTHONPATH, reuse RCR's process guard, and bound each launch
+with a timeout/process-group cleanup. Aggregate the actual per-case JUnit
+results and retain configurations, source copies, logs and XML under the
+Bazel target's test.outputs directory. Assert the matrix cardinalities; a
+small direct self-check also verified unique one-to-one configurations and
+exactly two publishers/subscribers in every two-to-two layout.
+
+Add the fixture's sample interfaces and discovery messages as explicit product
+roots and matching plugin compile/shared dependencies. They are current
+runtime inputs, not speculative package adoption. The generated library now
+exports 394 typed factories, representing 197 message/service/event
+instantiations. The interface manifest needs an explicit build to refresh;
+consuming its provider does not require its manifest output action.
+The root CLI explicitly includes Python providers for the selected interface
+packages, because C++ plugin dependencies do not supply Python imports.
+
+Final results:
+
+- The seven functional launches pass 38 cases without skips (see Phase 4.3).
+- The complete two-to-two matrix passes all 24 cases in 245.8 seconds.
+- All nine service arrangements pass 45 assertions/cases in 18.1 seconds,
+  covering native services and both automatic bridge directions.
+- The complete one-to-one matrix passes all 128 configurations, 384 cases,
+  in 1551 seconds, with no failures or skips. Its first build was cancelled
+  before tests after prolonged compilation and almost all 8 GiB of swap being
+  consumed. Reducing machine-local concurrency in ignored user.bazelrc allowed
+  the full unchanged matrix to complete; host limits are not committed.
+- The production bridge gate passes all 11 cases against the final runtime.
+- The actual CLI roundtrip passes in 17.4 seconds: version lookup, topic
+  discovery, daemon status, echo and graceful recording shutdown. The bag has
+  positive message counts, Lyrical distro metadata, an embedded message schema,
+  and a deserializable DynamicSizeArray with correct first/last vector values.
+
+Commands (clean_bazel is the clean-environment function defined above):
+
+```bash
+clean_bazel test --strategy=TestRunner=local \
+  --run_under=//bazel/agnocast:with_runtime --nocache_test_results \
+  --test_output=errors --local_test_jobs=1 \
+  //bazel/agnocast:matrix_2to2 //bazel/agnocast:launch_services
+clean_bazel test --strategy=TestRunner=local \
+  --run_under=//bazel/agnocast:with_runtime --nocache_test_results \
+  --test_output=errors --local_test_jobs=1 //bazel/agnocast:matrix_1to1
+```
+
+All declared Cyclone DDS gates pass. No source test group or configuration
+was removed to bypass a failure.
+
+CLI version-path diagnosis: with LD_PRELOAD unset, the real built command
+reported the heap hook unavailable despite its artifact being present in the
+runtime prefix. Its fallback only checked /opt/ros/$ROS_DISTRO/lib. Reuse the
+existing package-prefix library lookup for agnocastlib before that system
+fallback, retaining preload priority and the existing not-preloaded warning.
+The actual command now finds 2.4.1 for kernel, library, hook and CLI. Two new
+regressions check the overlay case and preload priority; the entire CLI suite
+passes 95 cases. UPSTREAM_AWF.md records the inspected main blob and related
+version-command PR. This source fix is independent of Bazel path conventions.
+
+
+Recording-resource diagnosis: recording initially delivered payloads but warned
+that the message definition could not be found. A Python interface import does
+not install ament IDL resources. Make each local rosidl_ament_package depend
+on its own default_generators :ament_index, and put all 17 selected interface
+indexes in the root CLI data alongside their :py providers. Existing RCR
+helpers then expose IDL and resource-index markers without a custom generator.
+The recording test checks the embedded schema, not only a nonempty bag. Use
+`--topics /my_topic` with the pinned Lyrical recorder and set ROS_DISTRO for
+its recorded distro metadata. Topic-list accepts --spin-time, not --no-daemon.
+
+Final regression and CLI commands (same clean_bazel function):
+
+```bash
+clean_bazel test --strategy=TestRunner=local \
+  --run_under=//bazel/agnocast:with_runtime --nocache_test_results \
+  --test_output=errors //bazel/agnocast:cli_runtime_test \
+  //bazel/agnocast:bridge_plugins_test
+clean_bazel run //bazel/agnocast:ros2 -- agnocast version
+clean_bazel test --config=no-agnocast --nocache_test_results \
+  --test_output=errors --local_test_jobs=1 \
+  @agnocastlib//... @agnocast_heaphook//:unit_tests \
+  @agnocast_cie_thread_configurator//... @ros2agnocast_discovery_agent//... \
+  @ros2agnocast//:tests @autoware_agnocast_wrapper//... \
+  @autoware_node//... //bazel/smoke/... //bazel/agnocast:template_tests
 clean_bazel test --strategy=TestRunner=local \
   --run_under=//bazel/agnocast:with_heaphook --nocache_test_results \
   --test_output=errors @autoware_agnocast_wrapper//:unit_tests
 ```
 
-The complete CLI suite has 95 cases, the wrapper Python suite has 66 and its
-C++ suite has 37 cases per backend. Do not preload Python bootstrap stages;
-only the final native C++ process receives the hook. Keep hook payload in the
-C++ test's data and the launcher limited to runfiles support: the intermediate
-old launcher otherwise schedules redundant execution-configuration interface
-builds. Stop that build before test execution and apply the existing boundary
-fix with wrapper packaging. Product launch, automatic
-bridge and recording checks follow when root resources and fixtures are
-assembled; Phase 4 is not complete at this package-only boundary. No Fast DDS
-or pre-commit check ran for this step.
+The combined regression passes all 39 targets: the 20-group library suite,
+allocator (26), configurator (137 C++ plus seven Rust), discovery agent (147),
+CLI (95), wrapper fallback (37 C++ and 66 Python), core-node, smoke and template
+checks. The library reports 672 cases, with five existing unsupported
+late-timer/callback-isolated-executor skips (upstream #1263); all other cases
+pass. These are upstream unsupported behaviors, not missing dependencies or
+omitted groups. The separate enabled-wrapper run passes all 37 cases without
+skips in 2.2 seconds. The standalone CLI reports all four versions as 2.4.1
+without a sourced ROS installation; its not-preloaded hook warning is expected.
 
-## 2026-11-16: Phase 4.4 — communication matrices and runtime closure (in progress)
+The final metadata-only IDL/index additions were checked by the actual CLI
+roundtrip, refreshed interface manifest (175 descriptors), and production bridge
+runtime. The long communication matrices had already passed against the same
+native fixtures and scenario code. No Fast DDS or pre-commit run was performed.
+Kernel compilation/KUnit, CUDA samples, other distributions and hardware/GPU
+behavior remain outside this user-space gate. Next: Phase 5.1 shared core
+foundations, choosing the next package from runnable dependency graphs.
 
-Purpose: expose all existing non-CUDA sample and end-to-end fixture executables
-and components before assembling their launch tests. Inspect both CMake source
-lists, component registrations, sample message/service definitions and fixture
-resources. Use the pinned Lyrical workspace; declare one local module per
-package and select it with root local_path_override.
+Targeted final static checks pass: buildifier checks all 29 changed Bazel
+files, Python AST parsing and bash -n check the changed scripts, and
+git diff --check reports no whitespace errors. No all-files hook was run.
 
-Generate the three sample interfaces with explicit dependencies. Build every
-existing sample/e2e native executable and component, pairing compile and shared
-ROS dependencies. Reuse agnocast_components' standalone-main rule and package
-component records/executable aliases plus launch/YAML resources through ament.
-These are fixture build declarations; their runtime behavior gate follows in
-the root launch/matrix integration, so compilation alone is not Phase 4 closure.
-CUDA transport samples remain Phase 6 work.
 
-Verify the entire fixture build surface:
-
-```bash
-clean_bazel build @agnocast_sample_interfaces//... \
-  @agnocast_sample_application//... @agnocast_e2e_test//...
-```
-
-Result: all 119 fixture/interface targets build successfully. Runtime scenarios
-remain the next gate; no Fast DDS or pre-commit check ran for this step.
+Module-boundary validation on 2026-11-16 also passes the discovery packages
+with `clean_bazel test @ros2agnocast_discovery_agent//...
+@agnocast_ioctl_wrapper//... @ros2agnocast_discovery_msgs//...
+--nocache_test_results --test_output=errors --local_test_jobs=1` (28 non-test
+targets and 147 agent cases); configurator, containers and library together
+with `clean_bazel test @agnocast_cie_thread_configurator//...
+@agnocast_components//... @agnocastlib//... --nocache_test_results
+--test_output=errors --local_test_jobs=1` (all 27 test targets); and the full
+fixture surface with `clean_bazel build @agnocast_sample_interfaces//...
+@agnocast_sample_application//... @agnocast_e2e_test//...` (119 targets).
+The CLI/wrapper package boundary passes its 95/66/37 cases with
+`clean_bazel test --config=no-agnocast @ros2agnocast//...
+@autoware_agnocast_wrapper//... --nocache_test_results --test_output=errors
+--local_test_jobs=1`, plus the enabled-wrapper command above (37 cases).
+Keep the heap-hook launcher dependency fix with wrapper packaging; retaining
+its old payload dependency caused redundant execution-configuration builds,
+which were stopped before test execution. The corrected launcher passes.

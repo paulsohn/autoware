@@ -18,6 +18,8 @@ ros_interface_set(
         "@autoware_system_msgs//:cc",
         "@autoware_v2x_msgs//:cc",
         "@autoware_vehicle_msgs//:cc",
+        "@agnocast_sample_interfaces//:cc",
+        "@ros2agnocast_discovery_msgs//:cc",
         "@std_msgs//:cc",
         "@std_srvs//:cc",
     ],

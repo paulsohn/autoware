@@ -3,9 +3,11 @@
 
 #include "agnocast/agnocast.hpp"
 #include "agnocast/agnocast_single_threaded_executor.hpp"
+#include "agnocast/bridge/agnocast_bridge_loader.hpp"
 #include "gtest/gtest.h"
 
 #include "autoware_common_msgs/msg/response_status.hpp"
+#include "ros2agnocast_discovery_msgs/msg/agnocast_daemon_state.hpp"
 #include "std_msgs/msg/string.hpp"
 #include "std_srvs/srv/set_bool.hpp"
 
@@ -31,26 +33,6 @@ using SetBoolEvent = std_srvs::srv::SetBool_Event;
 namespace
 {
 std::string plugin_path;
-
-class Plugin
-{
-  void * handle_;
-
-public:
-  Plugin() : handle_(dlopen(plugin_path.c_str(), RTLD_NOW | RTLD_LOCAL))
-  {
-    if (!handle_) throw std::runtime_error(dlerror());
-  }
-  ~Plugin() { dlclose(handle_); }
-  template <class Factory>
-  Factory get(const std::string & symbol)
-  {
-    dlerror();
-    auto result = reinterpret_cast<Factory>(dlsym(handle_, symbol.c_str()));
-    if (const char * error = dlerror()) throw std::runtime_error(error);
-    return result;
-  }
-};
 
 class Spinner
 {
@@ -137,13 +119,13 @@ bool valid(const SetBoolEvent & msg)
 }
 
 template <class Message>
-int publish_peer(bool agno, const std::string & topic)
+int publish_peer(bool agno, const std::string & topic, bool automatic)
 {
   auto node = std::make_shared<rclcpp::Node>("bridge_peer");
   if (agno) {
     agnocast::Publisher<Message> publisher(
       node.get(), topic, rclcpp::QoS(10), agnocast::PublisherOptions{},
-      agnocast::PublisherRole::AgnocastOnly);
+      automatic ? agnocast::PublisherRole::Default : agnocast::PublisherRole::AgnocastOnly);
     for (int i = 0; i < 300 && rclcpp::ok(); ++i) {
       auto msg = publisher.borrow_loaned_message();
       fill(*msg);
@@ -163,16 +145,27 @@ int publish_peer(bool agno, const std::string & topic)
 }
 
 template <class Message>
-void pubsub(bool r2a, const std::string & type)
+void pubsub(bool r2a, const std::string & type, bool automatic = false)
 {
-  Plugin plugin;
   const auto topic = "/bridge_" + std::to_string(getpid()) + (r2a ? "_r2a_" : "_a2r_") + type;
   auto node = std::make_shared<rclcpp::Node>("bridge_test");
-  auto factory = plugin.get<R2APubsubBridgeFactory>(
-    std::string(r2a ? "create_r2a_pubsub_bridge_" : "create_a2r_pubsub_bridge_") + type);
-  auto bridge = factory(node, topic, rclcpp::QoS(10));
-  ASSERT_TRUE(bridge.entity_handle);
-  ASSERT_TRUE(bridge.callback_group);
+  agnocast::BridgeLoader loader(node->get_logger());
+  auto message_type = type;
+  // Package names can contain underscores; the kind is the unambiguous separator.
+  auto kind = message_type.find("_msg_");
+  if (kind == std::string::npos) kind = message_type.find("_srv_");
+  message_type[kind] = '/';
+  message_type[kind + 4] = '/';
+  PubsubBridgeResult bridge;
+  if (!automatic) {
+    bridge = r2a ? loader.create_r2a_pubsub_bridge(node, topic, message_type, rclcpp::QoS(10))
+                 : loader.create_a2r_pubsub_bridge(node, topic, message_type, rclcpp::QoS(10));
+    ASSERT_TRUE(bridge.entity_handle);
+    ASSERT_TRUE(bridge.callback_group);
+    void * loaded = dlopen(plugin_path.c_str(), RTLD_NOW | RTLD_NOLOAD);
+    ASSERT_NE(loaded, nullptr) << "BridgeLoader must load the typed plugin library";
+    dlclose(loaded);
+  }
   std::atomic<bool> received{false};
   typename agnocast::Subscription<Message>::SharedPtr agno_sub;
   typename rclcpp::Subscription<Message>::SharedPtr ros_sub;
@@ -185,7 +178,8 @@ void pubsub(bool r2a, const std::string & type)
       [&received](agnocast::ipc_shared_ptr<Message> msg) {
         if (valid(*msg)) received = true;
       },
-      options, agnocast::SubscriptionRole::AgnocastOnly);
+      options,
+      automatic ? agnocast::SubscriptionRole::Default : agnocast::SubscriptionRole::AgnocastOnly);
   } else {
     ros_sub = node->create_subscription<Message>(
       topic, rclcpp::QoS(10), [&received](typename Message::ConstSharedPtr msg) {
@@ -194,9 +188,10 @@ void pubsub(bool r2a, const std::string & type)
   }
   agnocast::SingleThreadedAgnocastExecutor executor;
   executor.add_node(node);
-  executor.add_callback_group(bridge.callback_group, node->get_node_base_interface());
+  if (!automatic)
+    executor.add_callback_group(bridge.callback_group, node->get_node_base_interface());
   Spinner spinner(executor);
-  Peer peer(r2a ? "ros" : "agno", type, topic);
+  Peer peer(r2a ? "ros" : (automatic ? "agno_auto" : "agno"), type, topic);
   EXPECT_TRUE(wait_for([&] { return received.load(); })) << type;
 }
 
@@ -226,16 +221,48 @@ TEST(BridgePlugins, ServiceEventAgnocastToRos)
   pubsub<SetBoolEvent>(false, "std_srvs_srv_SetBool_Event");
 }
 
+TEST(AutomaticBridge, LocalRosToAgnocast)
+{
+  pubsub<Status>(true, "autoware_common_msgs_msg_ResponseStatus", true);
+}
+TEST(AutomaticBridge, LocalAgnocastToRos)
+{
+  pubsub<Status>(false, "autoware_common_msgs_msg_ResponseStatus", true);
+}
+
+TEST(DiscoveryAgent, AutomaticallyPublishesTypedEndpoint)
+{
+  using State = ros2agnocast_discovery_msgs::msg::AgnocastDaemonState;
+  const auto topic = "/discovery_" + std::to_string(getpid());
+  auto node = std::make_shared<rclcpp::Node>("discovery_test");
+  std::atomic<bool> observed{false};
+  auto subscription = node->create_subscription<State>(
+    "/_agnocast_discovery", rclcpp::QoS(1).reliable().transient_local(),
+    [&](State::ConstSharedPtr state) {
+      if (state->schema_version != 1 || state->host_uuid.empty()) return;
+      for (const auto & entry : state->topics) {
+        if (entry.topic_name != topic || entry.type_name != "std_msgs/msg/String") continue;
+        for (const auto & publisher : entry.publishers) {
+          if (publisher.pid == getpid() && !publisher.is_bridge) observed = true;
+        }
+      }
+    });
+  agnocast::Publisher<String> publisher(
+    node.get(), topic, rclcpp::QoS(10), agnocast::PublisherOptions{});
+  agnocast::SingleThreadedAgnocastExecutor executor;
+  executor.add_node(node);
+  Spinner spinner(executor);
+  EXPECT_TRUE(wait_for([&] { return observed.load(); }));
+}
+
 void service(bool r2a)
 {
-  Plugin plugin;
   auto node = std::make_shared<rclcpp::Node>("bridge_service_test");
   const auto name = "/bridge_service_" + std::to_string(getpid()) + (r2a ? "_r2a" : "_a2r");
   auto qos = rclcpp::ServicesQoS();
-  auto factory = plugin.get<R2AServiceBridgeFactory>(
-    std::string(r2a ? "create_r2a_service_bridge_" : "create_a2r_service_bridge_") +
-    "std_srvs_srv_SetBool");
-  auto bridge = factory(node, name, qos);
+  agnocast::BridgeLoader loader(node->get_logger());
+  auto bridge = r2a ? loader.create_r2a_service_bridge(node, name, "std_srvs/srv/SetBool", qos)
+                    : loader.create_a2r_service_bridge(node, name, "std_srvs/srv/SetBool", qos);
   ASSERT_TRUE(bridge.entity_handle);
   ASSERT_TRUE(bridge.srv_cb_group);
   ASSERT_TRUE(bridge.client_cb_group);
@@ -303,18 +330,21 @@ int main(int argc, char ** argv)
   agnocast::init(0, nullptr);
   int result;
   if (argc == 5 && std::string(argv[1]) == "--peer") {
-    bool agno = std::string(argv[2]) == "agno";
+    bool automatic = std::string(argv[2]) == "agno_auto";
+    bool agno = automatic || std::string(argv[2]) == "agno";
     const std::string type = argv[3];
     if (type == "std_msgs_msg_String") {
-      result = publish_peer<String>(agno, argv[4]);
+      result = publish_peer<String>(agno, argv[4], automatic);
     } else if (type == "std_srvs_srv_SetBool_Event") {
-      result = publish_peer<SetBoolEvent>(agno, argv[4]);
+      result = publish_peer<SetBoolEvent>(agno, argv[4], automatic);
     } else {
-      result = publish_peer<Status>(agno, argv[4]);
+      result = publish_peer<Status>(agno, argv[4], automatic);
     }
   } else {
     if (argc < 2) return 2;
     plugin_path = std::filesystem::absolute(argv[1]);
+    setenv(
+      "AGNOCAST_BRIDGE_PLUGINS_PATH", std::filesystem::path(plugin_path).parent_path().c_str(), 1);
     for (int i = 1; i + 1 < argc; ++i) argv[i] = argv[i + 1];
     --argc;
     testing::InitGoogleTest(&argc, argv);

@@ -94,7 +94,9 @@ env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
   bazel test --strategy=TestRunner=local \
   --run_under=//bazel/agnocast:with_heaphook \
   --test_env=ENABLE_AGNOCAST=1 --nocache_test_results \
-  @autoware_agnocast_wrapper//...
+  @autoware_agnocast_wrapper//:unit_tests
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test @autoware_agnocast_wrapper//:launch_tests
 ```
 
 The enabled command builds the heap hook and preloads it from declared
@@ -104,8 +106,8 @@ runfiles using repository mapping. The component owns its Cargo setup in
 The enabled command requires a compatible Agnocast kernel module already loaded
 and an accessible `/dev/agnocast`. Use local TestRunner execution because Agnocast
 shares PID-named objects in the host `/dev/shm`; reused sandbox PIDs can collide.
-Compile actions remain sandboxed. Check the GTest log for all 37 cases passing
-with no skips. Run Fast DDS variants only after approval at a major milestone.
+Compile actions remain sandboxed. Check the GTest log for all 37 C++ cases and the pytest log for all 66
+launch-action cases passing with no skips. Do not preload Python test drivers. Run Fast DDS variants only after approval at a major milestone.
 
 ## Interface declarations and bridge plugins
 
@@ -136,21 +138,48 @@ Test the plugin library with the kernel module available:
 ```bash
 env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
   bazel test --strategy=TestRunner=local \
-  --run_under=//bazel/agnocast:with_heaphook --nocache_test_results \
+  --run_under=//bazel/agnocast:with_runtime --nocache_test_results \
   //bazel/agnocast:bridge_plugins_test
 ```
 
 After approval, add `--config=fastdds` for a major-milestone compatibility gate.
-The test loads the declared
-shared library, resolves its typed factory symbols, and checks payloads in
+The test uses the production BridgeLoader to select the declared
+shared library and checks payloads in
 both directions for standard/local messages, a service, and its event message.
 Publisher peers run in separate processes because bridge subscriptions ignore local
 publications. Add returned bridge callback groups to the mixed executor
 explicitly; the factories create them with automatic registration disabled.
 Run the complete template naming checks with
 `bazel test //bazel/agnocast:template_tests`.
-Run `@agnocastlib//...` unit tests without heap-hook preload: their kernel and
-allocator mocks are incompatible with the production hook.
+Run `bazel test @agnocastlib//... --local_test_jobs=1` without a global
+preload. The five mocked unit groups and mocked executor integration stay
+unpreloaded; kernel integration groups use their own component-owned heap-hook
+launchers, and allocator integration supplies its mock before the hook.
+Inspect explicit upstream skips in the test XML instead of treating a green
+target as coverage for unsupported behavior.
+
+The root runtime index composes the plugin library, heap hook, discovery agent,
+configurator and component resources. Keep these payloads in test/application
+`data`, not a `--run_under` tool's data, to preserve target RMW selection.
+`with_runtime` sets resource and library paths before final-process startup;
+Python launch tests use `launch_suite.py` to apply preload only after Python's
+bootstrap. Use explicit nonempty `export_name` values on root ament indexes.
+Component modules register executable aliases under `lib/<package>` using
+`register_ament_files`, so launch and automatic agent startup find them.
+
+Run all seven functional launch targets, the communication matrices and service
+arrangements with the same runtime wrapper and `--local_test_jobs=1`. The
+matrix targets are `//bazel/agnocast:matrix_1to1` (128 QoS/order/transport
+configurations) and `//bazel/agnocast:matrix_2to2` (three modes × eight process
+layouts); `//bazel/agnocast:launch_services` covers nine arrangements. Matrix
+logs, immutable configuration copies and per-case JUnit reports are retained
+under each target's `test.outputs` directory. They do not edit source YAML or
+invoke the upstream colcon shell runners.
+
+Keep Python extension metadata consistent with setup.py/setup.cfg. Build and
+run `//bazel/agnocast:ros2` for the product's CLI/runtime closure; package-level
+`@ros2agnocast//:ros2` supplies the extensions without the product resource
+assembly.
 
 ## Source and package layout
 
@@ -297,6 +326,48 @@ does not replace the RCR `cc_shared_library` runtime providers.
 For Boost headers already mapped by the pinned rosdistro, use its narrow target
 rather than adding the BCR umbrella module. For example, UUID consumers use
 `@rosdistro//cc:boost.uuid`.
+
+## Editing Python and launch packages
+
+Declare the Python library's complete source set and direct runtime imports in
+its package-local BUILD file. Reuse RCR Python targets and its pinned pip hub;
+do not install dependencies with host pip. Keep generated ROS Python interfaces
+as namespace packages: the workspace disables implicit initializer creation
+across the graph, because an empty transitive __init__.py can hide generated
+message imports.
+
+Keep CLI/launch extension metadata in the runfiles dependency closure and
+consistent with setup.py or setup.cfg. Adding a Python class alone does not
+register a command or frontend extension. The Agnocast CLI builds its metadata
+from setup.py; the wrapper carries its frontend registration as explicit BUILD
+data and supplies setup.cfg to its install metadata.
+
+Run each package's complete Python suite, for example
+`bazel test @ros2agnocast//:tests` or
+`bazel test @autoware_agnocast_wrapper//:launch_tests`. Check the pytest summary
+in test.log for case totals; the current RCR pytest launcher leaves Bazel a
+single fallback XML case for the invocation. Package resource metadata does
+not replace a Python provider dependency such as `@agnocast_cie_config_msgs//:py`.
+For recording/schema consumers, also include each selected package's
+`:ament_index` in runtime data. Local `rosidl_ament_package` declarations depend
+on their own generator's `:ament_index` to retain generated IDL and resource
+markers. Python imports alone do not provide message definitions to rosbag.
+
+Use `bazel run //bazel/agnocast:ros2 -- agnocast version` for the composed CLI.
+Verify discovery, echo and recorded schema/payload with:
+
+```bash
+bazel test --strategy=TestRunner=local \
+  --run_under=//bazel/agnocast:with_runtime \
+  --nocache_test_results --test_output=errors //bazel/agnocast:cli_runtime_test
+```
+
+
+Python launch drivers must start without the allocator preload. Apply it after
+interpreter startup to the launched native processes, as the root launch
+adapter does. Preserve the host PID namespace for kernel-backed launches and
+run configurator/socket tests sequentially so they do not compete for their
+well-known Unix-domain socket.
 
 ## Development image
 
