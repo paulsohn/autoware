@@ -83,7 +83,11 @@ public:
         if constexpr (std::is_same_v<std::decay_t<decltype(sub)>, AgnocastSubscriber>) {
           sub.subscribe(node->get_agnocast_node().get(), topic, qos);
         } else {
+#if RCLCPP_VERSION_MAJOR >= 32
+          sub.subscribe(node->get_rclcpp_node().get(), topic, detail::to_qos(qos));
+#else
           sub.subscribe(node->get_rclcpp_node().get(), topic, qos);
+#endif
         }
       },
       sub_);

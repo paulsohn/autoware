@@ -14,7 +14,7 @@
 
 // What each backend does with a delivered message is covered by that backend's own tests, so what
 // is left here is the wrapper's own: which of the two callback shapes a registration resolves to,
-// and which backend a Subscriber holds.
+// which backend a Subscriber holds, and how it forwards subscription QoS.
 //
 // Nothing here is built without USE_AGNOCAST_ENABLED: there Synchronizer is a direct alias of
 // ::message_filters::Synchronizer, the two callback shapes collapse to one type, and the wrapper
@@ -23,6 +23,7 @@
 #include "autoware/agnocast_wrapper/message_filters.hpp"
 
 #include "autoware/agnocast_wrapper/runtime.hpp"
+#include "heaphook_probe.hpp"
 
 #include <geometry_msgs/msg/point_stamped.hpp>
 #include <geometry_msgs/msg/pose_stamped.hpp>
@@ -129,6 +130,45 @@ TEST(SynchronizerTest, SubscriberHoldsTheBackendSelectedAtConstruction)
   } else {
     EXPECT_NO_THROW(subscriber.rclcpp_subscriber());
     EXPECT_THROW(subscriber.agnocast_subscriber(), std::bad_variant_access);
+  }
+}
+
+TEST(SynchronizerTest, SubscriberForwardsRmwQosOnConstructionAndResubscription)
+{
+  ASSERT_TRUE(
+    !autoware::agnocast_wrapper::use_agnocast() ||
+    autoware::agnocast_wrapper::test::agnocast_heaphook_loaded());
+  auto node = std::make_shared<autoware::agnocast_wrapper::Node>("filter_qos_test");
+  auto qos = rmw_qos_profile_sensor_data;
+  qos.depth = 7;
+  mf::Subscriber<PoseStamped> subscriber(node.get(), "/filter_qos_first", qos);
+
+  auto check = [&](const std::string & topic) {
+    auto inspect = [&](auto & backend) {
+      auto subscription = backend.getSubscriber();
+      ASSERT_NE(subscription, nullptr);
+      EXPECT_EQ(backend.getTopic(), topic);
+      const auto actual = subscription->get_actual_qos().get_rmw_qos_profile();
+      EXPECT_EQ(actual.history, qos.history);
+      EXPECT_EQ(actual.depth, qos.depth);
+      EXPECT_EQ(actual.reliability, qos.reliability);
+      EXPECT_EQ(actual.durability, qos.durability);
+    };
+    if (autoware::agnocast_wrapper::use_agnocast()) {
+      inspect(subscriber.agnocast_subscriber());
+    } else {
+      inspect(subscriber.rclcpp_subscriber());
+    }
+  };
+  check("/filter_qos_first");
+  qos.depth = 3;
+  subscriber.subscribe(node.get(), "/filter_qos_second", qos);
+  check("/filter_qos_second");
+  subscriber.unsubscribe();
+  if (autoware::agnocast_wrapper::use_agnocast()) {
+    EXPECT_EQ(subscriber.agnocast_subscriber().getSubscriber(), nullptr);
+  } else {
+    EXPECT_EQ(subscriber.rclcpp_subscriber().getSubscriber(), nullptr);
   }
 }
 
