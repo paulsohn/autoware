@@ -39,6 +39,9 @@ build --extra_execution_platforms=//bazel/platforms:linux
 build --@rosdistro//:rmw=rmw_cyclonedds_cpp
 build:fastdds --@rosdistro//:rmw=rmw_fastrtps_cpp
 
+# Generated ROS Python interfaces use namespace packages.
+build --incompatible_default_to_explicit_init_py
+
 # Runtime environment for ROS nodes using the RCR shared-library layout.
 common --run_env=ROS_DISTRO=lyrical
 common --run_env=ROS_HOME=/tmp/autoware-bazel-ros-home

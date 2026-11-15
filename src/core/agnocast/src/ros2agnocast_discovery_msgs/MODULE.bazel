@@ -1,0 +1,6 @@
+module(
+    name = "ros2agnocast_discovery_msgs",
+    version = "0.0.0",
+)
+
+bazel_dep(name = "rosidl_default_generators", version = "0.0.0")

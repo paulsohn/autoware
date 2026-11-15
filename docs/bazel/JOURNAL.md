@@ -2386,15 +2386,14 @@ inputs; cross-compilation and dependency closure do not prove GPU execution
 or device behavior. No SDK download, cross-build, GPU, or hardware check was
 performed for this documentation change. Existing Phase 0–4 numbers remain.
 
-## 2026-11-15: Phase 4.2 — production bridge activation (in progress)
+## 2026-11-15: Phase 4.2 — production bridge activation
 
 Purpose and acceptance: replace direct factory-only checks with the production
 BridgeLoader, then verify normal endpoints automatically activate both bridge
 directions and the auto-started discovery agent reports a typed endpoint.
 Retain message, service-event, and service payload checks. Adopt the complete
 five-file discovery-agent pytest suite and its ioctl/message dependencies.
-Phase 4 remains incomplete until runtime and later component/end-to-end gates
-pass; this entry is updated in place as the task proceeds.
+Discovery packaging is complete; product bridge activation follows after the runtime component dependencies are available.
 
 Inspected inputs: `agnocastlib`'s bridge loader, manager and process startup;
 the discovery agent's package manifest, scripts, setup metadata and tests;
@@ -2405,7 +2404,7 @@ message/module pattern, with explicit local edges Endpoint -> Topic -> State.
 The ioctl wrapper is one C++ library/shared-library pair. Reuse RCR's pytest,
 Python rules, pinned PyYAML wheel and ament package/index rules.
 
-Diagnosed failures so far:
+Diagnosed failures:
 
 - Importing `rcl_interfaces.msg.Parameter` failed before test collection.
   Generated messages are namespace packages and RCR injects its import hook
@@ -2441,26 +2440,13 @@ clean_bazel test --strategy=TestRunner=local \
   --test_output=errors //bazel/agnocast:bridge_plugins_test
 ```
 
-The second command passes all 11 cases in 7.2 seconds: eight loader cases,
-two automatic bridge directions, and one actual agent gossip case. No case
-is skipped. Runtime assembly supplies ament
-resource symlinks, the agent executables, the ioctl library, typed plugins and
-the heap hook. Set plugin search, ament prefix and library search before
-preloading the final process: the allocator can fork runtime daemons before
-`main()`. Merely setting the plugin environment in the test body is too late
-for the manager fork. Preserve the host PID namespace for kernel-backed tests.
-No Fast DDS or pre-commit check has run.
-
-Runtime registration diagnosis: ament_package installs executables under
-lib/<package> in its install metadata, but the reused ament_index runfiles
-layout places them in bin/. The agent's automatic startup could find its
-package marker but not its required executable path. Register the existing
-py_binary outputs under lib/ros2agnocast_discovery_agent with
-register_ament_files and include that registration in ament_package data.
-The full runtime gate then passes, including agent startup and gossip.
-Keep the runtime payload in cc_test data, not the --run_under tool's data:
-otherwise Bazel builds it again in the execution configuration, where the
-fixed target RMW selection does not constrain its dependency closure.
+Discovery packaging passes all 147 cases and builds the complete ioctl/message
+surface. Intermediate-tree verification on 2026-11-16 also passes:
+`clean_bazel test @ros2agnocast_discovery_agent//... @agnocast_ioctl_wrapper//...
+@ros2agnocast_discovery_msgs//... --nocache_test_results --test_output=errors
+--local_test_jobs=1` (28 non-test targets plus the full agent suite). Product bridge activation and its runtime command above are deferred
+to the root assembly commit; no product-runtime success is claimed here.
+Keep runtime payload in application/test data, outside the run-under tool.
 
 ## 2026-11-15–16: Phase 4.3 — component, configurator and Python runtime (in progress)
 

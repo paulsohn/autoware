@@ -212,3 +212,21 @@ llvm = use_extension("@llvm//extensions:llvm.bzl", "llvm")
 llvm.version(llvm_version = "21.1.8")
 llvm.configure(targets = ["X86"])
 use_repo(llvm, "llvm-project")
+
+bazel_dep(name = "ros2agnocast_discovery_msgs", version = "0.0.0")
+local_path_override(
+    module_name = "ros2agnocast_discovery_msgs",
+    path = "src/core/agnocast/src/ros2agnocast_discovery_msgs",
+)
+
+bazel_dep(name = "agnocast_ioctl_wrapper", version = "0.0.0")
+local_path_override(
+    module_name = "agnocast_ioctl_wrapper",
+    path = "src/core/agnocast/src/agnocast_ioctl_wrapper",
+)
+
+bazel_dep(name = "ros2agnocast_discovery_agent", version = "0.0.0")
+local_path_override(
+    module_name = "ros2agnocast_discovery_agent",
+    path = "src/core/agnocast/src/ros2agnocast_discovery_agent",
+)

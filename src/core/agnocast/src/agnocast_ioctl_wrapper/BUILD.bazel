@@ -1,0 +1,20 @@
+load("@rosdistro//ament:defs.bzl", "ament_package")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "ioctl_library",
+    srcs = glob([
+        "src/*.cpp",
+        "src/*.hpp",
+    ]),
+)
+
+cc_shared_library(
+    name = "agnocast_ioctl_wrapper",
+    shared_lib_name = "libagnocast_ioctl_wrapper.so",
+    deps = [":ioctl_library"],
+)
+
+ament_package(libraries = [":agnocast_ioctl_wrapper"])

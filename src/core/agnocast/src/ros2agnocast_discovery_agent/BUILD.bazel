@@ -1,0 +1,81 @@
+load("@pip_ros//:requirements.bzl", "requirement")
+load("@rosdistro//ament:defs.bzl", "ament_index", "ament_package", "register_ament_files")
+load("@rosdistro//python:defs.bzl", "py_pytest")
+load("@rules_python//python:defs.bzl", "py_binary", "py_library")
+
+package(default_visibility = ["//visibility:public"])
+
+py_library(
+    name = "discovery_agent_library",
+    srcs = glob(["ros2agnocast_discovery_agent/*.py"]),
+    deps = [
+        "@rclpy",
+        "@ros2agnocast_discovery_msgs//:py",
+        requirement("pyyaml"),
+    ],
+)
+
+py_pytest(
+    name = "tests",
+    srcs = glob(["test/test_*.py"]),
+    legacy_create_init = False,
+    deps = [":discovery_agent_library"],
+)
+
+ament_index(
+    name = "runtime_index",
+    deps = ["@agnocast_ioctl_wrapper//:ament_package"],
+)
+
+[genrule(
+    name = script + "_main",
+    srcs = ["scripts/" + script],
+    outs = [script + ".py"],
+    cmd = "cp $< $@",
+) for script in [
+    "agnocast_discovery_agent",
+    "discovery_agent",
+    "register_domain_bridge",
+]]
+
+[py_binary(
+    name = script,
+    srcs = [script + ".py"],
+    data = [":runtime_index"],
+    legacy_create_init = False,
+    main = script + ".py",
+    deps = [":discovery_agent_library"],
+) for script in [
+    "agnocast_discovery_agent",
+    "discovery_agent",
+    "register_domain_bridge",
+]]
+
+register_ament_files(
+    name = "executable_index",
+    files = [
+        ":agnocast_discovery_agent",
+        ":discovery_agent",
+        ":register_domain_bridge",
+    ],
+    prefix = "lib/ros2agnocast_discovery_agent",
+    strip_prefix = "*",
+)
+
+ament_package(
+    data = [":executable_index"] + glob([
+        "launch/*",
+        "systemd/*",
+    ]),
+    executables = [
+        ":agnocast_discovery_agent",
+        ":discovery_agent",
+        ":register_domain_bridge",
+    ],
+    python = [":discovery_agent_library"],
+    deps = [
+        "@agnocast_ioctl_wrapper//:ament_package",
+        "@rclpy//:ament_package",
+        "@ros2agnocast_discovery_msgs//:ament_package",
+    ],
+)
