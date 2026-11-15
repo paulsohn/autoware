@@ -1,1 +1,19 @@
-module(name = "ros2agnocast", version = "0.0.0")
+module(
+    name = "ros2agnocast",
+    version = "0.0.0",
+)
+
+bazel_dep(name = "rosdistro", version = "0.0.0")
+bazel_dep(name = "rules_python", version = "2.4.5")
+bazel_dep(name = "rclpy", version = "0.0.0")
+bazel_dep(name = "ros2cli", version = "0.0.0")
+bazel_dep(name = "ros2node", version = "0.0.0")
+bazel_dep(name = "ros2topic", version = "0.0.0")
+bazel_dep(name = "ros2bag", version = "0.0.0")
+bazel_dep(name = "rosidl_runtime_py", version = "0.0.0")
+bazel_dep(name = "ament_index_python", version = "0.0.0")
+bazel_dep(name = "ros2agnocast_discovery_msgs", version = "0.0.0")
+bazel_dep(name = "ros2agnocast_discovery_agent", version = "0.0.0")
+
+pip_ros = use_extension("@rosdistro//python:defs.bzl", "pip_ros")
+use_repo(pip_ros, "pip_ros")

@@ -2480,9 +2480,34 @@ clean_bazel test @agnocast_cie_thread_configurator//... \
 
 The complete configurator suite passes 137 C++ cases and seven Rust cases;
 the library suite retains its five documented unsupported-executor skips.
-All three modern containers build. CLI, wrapper Python support and product
-launch behavior follow in separate integration steps; this entry remains open
-until those checks pass. No Fast DDS or pre-commit check ran for this step.
+All three modern containers build. CLI support uses setup.py through a hermetic setuptools tool to generate egg
+metadata and a small ros2 entry point with the declared extension import
+closure. Pin the published ros2bag 0.33.4-1.rcr.0 provider, since the previous
+0.33.3-1.rcr.1 overlay has no Python runtime target. The wrapper exports its
+Python library, setup.cfg-equivalent entry point and ament package resources.
+Keep resource registration separate from Python import dependencies.
+
+Validate the package-level CLI and wrapper with:
+
+```bash
+clean_bazel test --config=no-agnocast @ros2agnocast//... \
+  @autoware_agnocast_wrapper//... --nocache_test_results \
+  --test_output=errors --local_test_jobs=1
+clean_bazel test --strategy=TestRunner=local \
+  --run_under=//bazel/agnocast:with_heaphook --nocache_test_results \
+  --test_output=errors @autoware_agnocast_wrapper//:unit_tests
+```
+
+The complete CLI suite has 95 cases, the wrapper Python suite has 66 and its
+C++ suite has 37 cases per backend. Do not preload Python bootstrap stages;
+only the final native C++ process receives the hook. Keep hook payload in the
+C++ test's data and the launcher limited to runfiles support: the intermediate
+old launcher otherwise schedules redundant execution-configuration interface
+builds. Stop that build before test execution and apply the existing boundary
+fix with wrapper packaging. Product launch, automatic
+bridge and recording checks follow when root resources and fixtures are
+assembled; Phase 4 is not complete at this package-only boundary. No Fast DDS
+or pre-commit check ran for this step.
 
 ## 2026-11-16: Phase 4.4 — communication matrices and runtime closure (in progress)
 

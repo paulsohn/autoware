@@ -78,7 +78,6 @@ sh_binary(
     name = "with_heaphook",
     srcs = ["with_heaphook.sh"],
     data = [
-        "@agnocast_heaphook//:agnocast_heaphook",
         "@bazel_tools//tools/bash/runfiles",
     ],
 )

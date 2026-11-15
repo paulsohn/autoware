@@ -1,3 +1,7 @@
+load("@pip_ros//:requirements.bzl", "requirement")
+load("@rosdistro//python:defs.bzl", "py_pytest")
+load("@rules_python//python:defs.bzl", "py_binary", "py_library")
+
 package(default_visibility = ["//visibility:public"])
 
 # Reuse the upstream C++ templates; ROS CLI packaging remains separate.
@@ -7,3 +11,63 @@ exports_files([
     "ros2agnocast/templates/pubsub_bridge_plugin.cpp.em",
     "ros2agnocast/templates/service_bridge_plugin.cpp.em",
 ])
+
+py_binary(
+    name = "setup_metadata",
+    srcs = ["setup.py"],
+    main = "setup.py",
+    deps = [requirement("setuptools")],
+)
+
+genrule(
+    name = "metadata",
+    srcs = [
+        "setup.py",
+        "package.xml",
+        "resource/ros2agnocast",
+    ] + glob(["ros2agnocast/**/*.py"]),
+    outs = ["ros2agnocast.egg-info/" + name for name in [
+        "PKG-INFO",
+        "entry_points.txt",
+        "top_level.txt",
+        "SOURCES.txt",
+        "dependency_links.txt",
+        "requires.txt",
+    ]],
+    cmd = "tool=$$(realpath $(execpath :setup_metadata)); base=$$(realpath $(@D)); cd $$(dirname $(location setup.py)); $$tool egg_info --egg-base $$base",
+    tools = [":setup_metadata"],
+)
+
+py_library(
+    name = "ros2agnocast",
+    srcs = glob(["ros2agnocast/**/*.py"]),
+    data = [":metadata"] + glob([
+        "ros2agnocast/templates/*.em",
+        "ros2agnocast/static_sources/*",
+    ]),
+    deps = [
+        "@ament_index_python",
+        "@rclpy",
+        "@ros2agnocast_discovery_agent//:discovery_agent_library",
+        "@ros2agnocast_discovery_msgs//:py",
+        "@ros2bag",
+        "@ros2cli",
+        "@ros2node",
+        "@ros2topic",
+        "@rosidl_runtime_py",
+        requirement("empy"),
+    ],
+)
+
+py_pytest(
+    name = "tests",
+    srcs = glob(["test/test_*.py"]),
+    deps = [":ros2agnocast"],
+)
+
+py_binary(
+    name = "ros2",
+    srcs = ["bazel_cli.py"],
+    main = "bazel_cli.py",
+    deps = [":ros2agnocast"],
+)

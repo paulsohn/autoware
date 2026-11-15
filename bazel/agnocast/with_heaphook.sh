@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 set -euo pipefail
 
-runfiles_dir="${RUNFILES_DIR:-${TEST_SRCDIR:-$0.runfiles}}"
+runfiles_dir="${TEST_SRCDIR:-${RUNFILES_DIR:-$0.runfiles}}"
 source "$runfiles_dir/bazel_tools/tools/bash/runfiles/runfiles.bash"
 # The main module's canonical name is empty in the repository mapping.
 hook="$(rlocation agnocast_heaphook/libagnocast_heaphook.so '')"

@@ -236,3 +236,5 @@ local_path_override(
     module_name = "agnocast_components",
     path = "src/core/agnocast/src/agnocast_components",
 )
+
+bazel_dep(name = "ros2bag", version = "0.33.4-1.rcr.0")
