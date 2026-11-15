@@ -2316,3 +2316,72 @@ Coverage limitation: the 439 Agnocast unit cases do not replace the 15 upstream
 integration groups not yet declared in our BUILD file. Discovery-agent warn()
 calls also need review against rclpy's warning() API when that module is adopted.
 Those are future module gates; no speculative source patches were applied.
+
+## 2026-11-15: Phase 4.1 — adopt the complete Agnocast library test inventory
+
+Purpose: expose the library's existing integration suite in Bazel before
+extending automatic bridge activation. Inspect `agnocastlib/CMakeLists.txt`
+and `test/integration/` to inventory all 15 integration groups alongside the
+five already-supported unit groups. This task changes test/build integration,
+not executor behavior. Phase 0–4 retain their existing numbers; subsequent
+Agnocast tasks are 4.2–4.4, and later work continues at Phase 5.
+
+Prerequisites: the pinned Lyrical/Cyclone workspace, the local heap-hook module,
+and a compatible loaded Agnocast kernel module exposing `/dev/agnocast`.
+No installed ROS environment or externally installed test dependency is used.
+Keep the test source groups aligned with CMake rather than replacing them with
+smaller smoke tests. Declare each group's private integration headers and its
+ROS compile dependencies, and reuse the existing shared dependency boundary
+so mocks interpose the production library's symbols.
+
+The heap-hook component exports `tests.bzl:heaphook_test`. It builds a test-only
+C++ binary and wraps its final execution with the built allocator in
+LD_PRELOAD, resolved through runfiles. Preloading only after the shell starts
+avoids injecting the allocator into the launcher. The rule merges the binary
+and preload libraries' runfiles, preserves arguments and exit status, uses
+thread-safe death tests, and disables sandbox/remote execution so PID-named
+shared memory matches the host kernel's process namespace. The library's
+module declares the hook dependency; neither component refers to root labels.
+
+Preserve the suite's distinct runtime boundaries: executor integration uses
+its existing ioctl mocks and runs without the heap hook; allocator integration
+preloads its existing initialize/shutdown mock before the real hook and does
+not need the kernel; the other 13 integration groups use the real hook and
+kernel. Build the mock as its own shared library to preserve ELF interposition
+order. Do not globally preload the allocator into Bazel or its build tools.
+
+Verification, from the repository root:
+
+```bash
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --nocache_test_results --test_output=errors --local_test_jobs=1 \
+  @agnocastlib//...
+git diff --check
+```
+
+Result: all 20 test targets pass in 107.704 seconds, including all 15 newly
+registered integration groups. The current targets' XML contains 672 cases:
+667 pass and five report the source suite's explicit existing skips. These
+five cases concern adding timers after a callback-isolated executor starts;
+`should_skip_entity_added_after_spawn()` documents unsupported behavior and
+references upstream issue #1263. They are not missing-dependency skips and no
+new filters or skips were added. A green Bazel target therefore does not imply
+that this unsupported executor behavior works. Do not count stale XML for
+previous target names when totaling cases.
+
+No source patch was needed for this adoption gate. No pre-commit or Fast DDS
+check ran. Phase 4 remains incomplete: normal bridge selection/discovery,
+component and tool packaging, wrapper launch support, and end-to-end runtime
+gates follow in 4.2–4.4. The upstream executor limitation remains visible in
+the adopted suite rather than being silently treated as covered behavior.
+
+Phase 8 goal clarification before committing: target JetPack 7.2.1 software
+build compatibility, with physical-device validation deferred. NVIDIA's
+[release page](https://developer.nvidia.com/embedded/jetpack/downloads) and
+[archive](https://developer.nvidia.com/embedded/jetpack-archive), inspected on
+2026-11-15, list Jetson Thor support for JetPack 7.2.1 / Jetson Linux 39.2.1.
+The release's Ubuntu 24.04, CUDA 13.2.2, and TensorRT 10.16.2 versions define a
+planning baseline only. Phase 8 must pin and validate its actual user-space
+inputs; cross-compilation and dependency closure do not prove GPU execution
+or device behavior. No SDK download, cross-build, GPU, or hardware check was
+performed for this documentation change. Existing Phase 0–4 numbers remain.

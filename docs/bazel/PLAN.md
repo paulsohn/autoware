@@ -5,7 +5,9 @@
 Build a useful Autoware subset with Bazel on Ubuntu 24.04 x86_64, using ROS 2
 Lyrical packages from the ROS Central Registry where practical. The experiment
 should produce pinned, repeatable builds and eventually a headless planning
-simulation in an OCI image. Jetson Thor support follows the x86 experiment.
+simulation in an OCI image. After the x86 experiment, target software build
+compatibility with JetPack 7.2.1, a release supporting Jetson Thor. Physical
+Thor hardware is not required to complete this experiment.
 
 ## Method
 
@@ -568,15 +570,57 @@ form; older-distribution builds remain untested. The five Agnocast unit groups
 do not cover the 15 additional upstream integration groups. Discovery-agent
 warning paths also need review against rclpy's `warning()` API when adopted.
 
+### Phase 4 remaining substeps: complete Agnocast integration
+
+Keep the existing Phase 0–4 numbers. Refer to incoming tasks by these stable
+substep identifiers in plans, journals, and commits:
+
+- **4.1 — Complete agnocastlib test adoption.** Register all 15 existing
+  integration groups in addition to the five unit groups, prepare their real
+  kernel/heap-hook and mock preload prerequisites, and pass the entire suite
+  with Cyclone DDS without omissions or dependency-related skips.
+- **4.2 — Production bridge activation.** Exercise ordinary plugin loading
+  and automatic bridge requests using the root-generated library, including
+  discovery-agent dependencies and existing tests when required by that path.
+- **4.3 — Component and CLI runtime.** Build the component containers,
+  configurator executable, and ROS-facing tools needed for normal Agnocast
+  operation, with package resources and their existing applicable tests.
+- **4.4 — Agnocast end-to-end closure.** Run the existing applicable sample and
+  functional launch scenarios against the Bazel-built runtime, retain wrapper
+  runtime-backend checks, and explicitly inventory remaining platform-only
+  prerequisites. Complete Phase 4 only when these gates pass.
+
 ## Later phases
+
+### Incoming phase identifiers
+
+- **Phase 5 — Remaining autoware_core runnable slices.** 5.1 shared foundations,
+  5.2 sensing/perception/localization/planning/control dependency slices, and
+  5.3 API/system composition. Choose packages from executable dependency graphs
+  and pass each declared package suite before advancing.
+- **Phase 6 — CUDA and TensorRT on x86.** Introduce pinned Bazel dependencies
+  when a selected package requires them.
+- **Phase 7 — Runtime packaging and headless planning simulation.** Complete
+  install/resource closure and exercise the packaged scenario.
+- **Phase 8 — JetPack 7.2.1 software compatibility (Thor-supported release).**
+  Cross-build the selected aarch64 targets against a pinned JetPack-compatible
+  user-space dependency set and check binary architecture, link/resource
+  closure, and applicable non-GPU behavior where runnable. Hardware execution,
+  GPU behavior, drivers, performance, and real-time characteristics remain
+  unverified until suitable hardware becomes available; they are not Phase 8
+  completion requirements.
+
+The Phase 8 planning baseline is JetPack 7.2.1 / Jetson Linux 39.2.1, with
+Ubuntu 24.04, CUDA 13.2.2, and TensorRT 10.16.2. NVIDIA lists Thor among its
+[supported platforms](https://developer.nvidia.com/embedded/jetpack/downloads)
+and records the release in the
+[JetPack archive](https://developer.nvidia.com/embedded/jetpack-archive)
+(checked 2026-11-15). This is a researched target, not a validated Bazel input
+or a claim of working Thor deployment. Pin and validate the actual SDK inputs
+when Phase 8 begins; any baseline change must be explicit and journaled.
 
 These are scope markers, not implementation decisions. Refine each phase only
 when the preceding phase meets its exit criteria.
-
-1. Subsequent Autoware core packages in dependency-driven runnable slices.
-2. CUDA and TensorRT packages on x86 hardware.
-3. Install tree, headless OCI image, and planning simulator behavior test.
-4. Cross-build and non-GPU tests for Jetson Thor, followed by hardware tests.
 
 From phase 1 onward, runnable slices use Cyclone DDS by default. Propose Fast
 DDS compatibility checks at major milestones after the Cyclone DDS exit
