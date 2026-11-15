@@ -455,19 +455,23 @@ Completed wrapper fallback slice:
   behavior until their current tests require launch packaging, the heap hook,
   kernel access, or component runtime support.
 
-Heap-hook runtime slice:
+Completed heap-hook and wrapper C++ runtime gate:
 
 - built the Rust heap hook from local sources with the RCR Rust 1.93.0
   toolchain, checksum-locked crates, and the real Bazel-built Agnocast shared
   library; selected its existing legacy-glibc bootstrap for the 2.34 ABI floor;
 - added a runfiles-based preload launcher and passed all 26 existing allocator
   unit tests using their default bootstrap on Ubuntu 24.04;
-- ran the enabled wrapper suite with the actual heap hook and the execution
-  host's existing kernel support: 32 cases passed and four generic pub/sub
-  cases failed, with no skips;
-- the next gate is backend-aware executor setup in those tests: two time out
-  while spinning RCLCPP and two request an RCLCPP node from an Agnocast wrapper.
-  Enabled wrapper acceptance remains pending that complete behavior gate.
+- select the executor matching each test's node API: mixed ROS/Agnocast nodes
+  use `SingleThreadedAgnocastExecutor`, Agnocast-owned nodes use
+  `AgnocastOnlySingleThreadedExecutor`, and fallback uses the RCLCPP executor;
+- initialize both contexts for the mixed C++ suite and use `spin()` with
+  cancellation and joining for Agnocast callback dispatch;
+- run the enabled kernel-backed gate with `--strategy=TestRunner=local` to
+  avoid reused sandbox PIDs colliding on the host's PID-named shared memory;
+- passed all 36 C++ cases without skips under both runtime selections
+  and middleware configurations. Python launch packaging remains a separate
+  planned gate before claiming adoption of the entire wrapper package.
 
 Exit criteria:
 

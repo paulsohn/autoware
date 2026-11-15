@@ -27,6 +27,15 @@ experiments, and milestones belong in PLAN.md and JOURNAL.md.
 - Introduce only what the current experiment requires. Investigate a dependency
   or patch when a current target exposes the need; do not pre-apply anticipated
   fixes.
+- Define integration tasks at module/package scope and identify the complete
+  existing test suite and required behavior checks before implementation.
+  Declare a module task successful only after that whole suite passes in the
+  required configurations. Prepare dependencies and runtime prerequisites
+  needed by those tests; dependency-related skips, omitted test groups, and
+  failures deferred to another session do not satisfy the completion gate.
+  Keep working through in-scope failures. If an external prerequisite prevents
+  completion, report the task as incomplete with the evidence and required
+  next action; do not narrow the acceptance scope to claim success.
 - Treat versions, flags, and patches as hypotheses until a command in this
   branch validates them. Pin accepted inputs in git and record why in PLAN.md.
 - Write each JOURNAL.md entry so a reader without this branch can repeat the
@@ -35,6 +44,11 @@ experiments, and milestones belong in PLAN.md and JOURNAL.md.
   know-how and decisions, exact verification commands and observable results,
   diagnosed failures as symptom/cause/fix, and remaining limitations or next
   step. Do not rely on the diff alone to explain how the integration works.
+- Keep one journal entry per meaningful module task. Consolidate routine
+  reruns into the final result and explain consequential failures through
+  their symptom, cause, and fix. Update the same entry while the task remains
+  incomplete; do not create a milestone for each test invocation or label an
+  incomplete module integration as successful.
 - Keep developer-specific resource limits and paths in ignored
   `user.bazelrc`. Do not commit convenience symlinks or Bazel output trees.
 - Run build, test, and behavior checks appropriate to each commit. State

@@ -78,6 +78,30 @@ env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
 
 Do not let a Fast DDS-only workaround determine the primary Cyclone DDS path.
 
+## Agnocast runtime tests
+
+Agnocast support is compiled into supported wrappers unconditionally.
+`--config=no-agnocast` selects their RCLCPP backend at runtime. Verify the
+complete wrapper C++ suite with both runtime selections:
+
+```bash
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=no-agnocast --nocache_test_results \
+  @autoware_agnocast_wrapper//...
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --strategy=TestRunner=local \
+  --run_under=//bazel/agnocast:with_heaphook \
+  --test_env=ENABLE_AGNOCAST=1 --nocache_test_results \
+  @autoware_agnocast_wrapper//...
+```
+
+The enabled command builds the heap hook and preloads it from declared
+runfiles. It requires a compatible Agnocast kernel module already loaded and
+an accessible `/dev/agnocast`. Use local TestRunner execution because Agnocast
+shares PID-named objects in the host `/dev/shm`; reused sandbox PIDs can collide.
+Compile actions remain sandboxed. Check the GTest log for all 36 cases passing
+with no skips. Add `--config=fastdds` to both commands at the compatibility gate.
+
 ## Source and package layout
 
 Source snapshots under `src/` are ordinary tracked files imported as squashed

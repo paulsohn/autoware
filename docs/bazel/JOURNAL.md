@@ -1957,7 +1957,7 @@ gate with the default `ENABLE_AGNOCAST=1`; integrate the heap hook and kernel
 runtime in the smallest order exposed by that attempt. The bridge-plugin rule
 remains an independent analysis-time lane.
 
-## 2026-11-15: Build and preload the Agnocast heap hook
+## 2026-11-15: Validate the heap hook and enabled wrapper C++ suite
 
 Purpose: prepare the allocator runtime required by the enabled wrapper suite
 and run that suite with the actual shared library preloaded. Prerequisites
@@ -1999,7 +1999,8 @@ cargo generate-lockfile --manifest-path \
 env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
   bazel build //src/core/agnocast/agnocast_heaphook:agnocast_heaphook
 env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
-  bazel test --run_under=//bazel/agnocast:with_heaphook \
+  bazel test --strategy=TestRunner=local \
+  --run_under=//bazel/agnocast:with_heaphook \
   --test_env=ENABLE_AGNOCAST=1 --nocache_test_results \
   @autoware_agnocast_wrapper//:unit_tests
 ```
@@ -2010,32 +2011,44 @@ Subsequent builds consume the committed lock without resolving new versions.
 The library build succeeded in 26.671 seconds with 22 processes and 8,915
 action-cache hits. `readelf -d` confirms `libagnocast.so` as a NEEDED library.
 
-The preloaded Cyclone DDS wrapper suite executed all 36 cases with no skips:
-32 passed and four failed. The test ran for 22.3 seconds; the initial build
-plus test took 275.894 seconds because `--run_under` also builds its runtime
-data in the execution configuration. Startup acquired the available kernel
-device in the test execution environment; no kernel module was installed or
-loaded by this experiment. A workspace-sandbox `ls /dev/agnocast` did not
-expose that device, so a sandbox listing alone is not a runtime availability
-check. Successful polling message delivery demonstrates actual shared-memory
-transport with this host's existing kernel support.
-
-The four failures are in generic pub/sub test execution:
+The enabled suite succeeds after correcting the existing test setup. Without
+these fixes, four generic pub/sub cases fail:
 
 - `GenericPubSubMethod1Test.MacroRoundTrip` and `MacroOnNodeRoundTrip` time out
   after ten seconds waiting for their callbacks. Both tests instantiate an
   `rclcpp::executors::SingleThreadedExecutor` although their wrapper endpoints
-  select Agnocast. Executor dispatch is the next hypothesis to test; the
-  timeout alone does not establish a generic transport implementation defect.
+  select Agnocast. Use `SingleThreadedAgnocastExecutor::spin()` for those
+  mixed ROS/Agnocast nodes. Inherited RCLCPP `spin_some()` does not dispatch
+  Agnocast callbacks.
 - `GenericPubSubMethod2Test.NodeMemberRoundTrip` and
   `NodeMemberDepthAndOptionsOverload` throw because they call
   `get_rclcpp_node()` while the wrapper owns an Agnocast node. The test executor
-  setup needs backend-aware node access.
+  setup now passes the common node-base interface to
+  `AgnocastOnlySingleThreadedExecutor` for Agnocast-owned nodes and to the
+  RCLCPP executor in fallback mode.
+
+The test environment initializes both ROS and Agnocast contexts when enabled:
+Method 1 uses ROS nodes, while the Agnocast-only executor used by Method 2
+requires the Agnocast signal handler. Without the latter initialization,
+executor construction exits with “signal handler is not installed”. A bounded
+test helper runs each selected executor's `spin()` on a worker, waits for the
+message, cancels, and joins before nodes are destroyed. Repeated cancellation
+handles RCLCPP's cancel-before-spin race. Payload assertions are unchanged.
+
+Kernel-backed tests require `--strategy=TestRunner=local`. PID-isolated Bazel
+tests reuse small process IDs while sharing `/dev/shm`; Agnocast names shared
+memory by PID. A subsequent run can fail with `shm_open failed: File exists`
+before the test harness. Local TestRunner execution uses unique host PIDs
+while compile actions retain sandboxing. The execution host's already loaded
+kernel module and accessible `/dev/agnocast` are prerequisites; this experiment
+did not install or load a module. A sandbox device listing alone does not prove
+what the actual test process can access. Do not remove arbitrary shared-memory
+objects to make a test pass.
 
 The discovery agent was absent and startup emitted an observability warning.
 The suite continued through parameter, polling, and introspection tests; the
 warning is not evidence that discovery-agent installation fixes these four
-failures. No callback or production source changes were made in this slice.
+failures. The fixes affect test context and executor setup only.
 
 The heap hook's existing allocator tests run separately with:
 
@@ -2055,11 +2068,33 @@ excessive sizes, realloc, zero-initialized calloc, and TLSF offset changes.
 They do not validate the legacy startup path; the preloaded C++ suite exercises
 that production path. Execution on glibc 2.34 itself remains untested.
 
-`bash -n bazel/agnocast/with_heaphook.sh` and `git diff --check` are the targeted
-static checks. A final `bazel test --config=no-agnocast
---nocache_test_results @autoware_agnocast_wrapper//:unit_tests` under the same
-empty caller environment passed all 36 fallback cases in 0.3 seconds.
-Pre-commit was not run. The enabled suite remains a failing
-behavior gate with four documented test-executor issues. Next, adapt its
-executor setup to the selected backend and rerun all cases before accepting
-the enabled wrapper milestone or extending the Fast DDS compatibility gate.
+Verification also runs the whole C++ suite under fallback and Tier 2 middleware
+configurations, with the same empty caller environment:
+
+```bash
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=no-agnocast --nocache_test_results \
+  @autoware_agnocast_wrapper//...
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=fastdds --config=no-agnocast \
+  --nocache_test_results @autoware_agnocast_wrapper//...
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=fastdds --strategy=TestRunner=local \
+  --run_under=//bazel/agnocast:with_heaphook \
+  --test_env=ENABLE_AGNOCAST=1 --nocache_test_results \
+  @autoware_agnocast_wrapper//...
+```
+
+All four configurations passed all 36 cases without skips. Cyclone DDS passed
+in 2.2 seconds with Agnocast enabled and 0.3 seconds with fallback. Fast DDS
+passed in 0.5 seconds with Agnocast enabled and 0.4 seconds with fallback.
+Targeted clang-format,
+`bash -n bazel/agnocast/with_heaphook.sh`, and `git diff --check` are the static
+checks; pre-commit was not run. AGENTS.md now requires completion against the
+whole declared module test gate and one consolidated journal entry per task.
+
+This completes the C++ runtime test gate.
+Python launch packaging remains the separate scope described in the plan;
+this gate does not claim complete wrapper package adoption. The next runtime
+work is a Bazel-generated representative bridge plugin and its message/service
+behavior, driven by the existing analysis-time interface provider.
