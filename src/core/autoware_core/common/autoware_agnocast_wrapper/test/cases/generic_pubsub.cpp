@@ -34,6 +34,7 @@
 #include <atomic>
 #include <chrono>
 #include <functional>
+#include <future>
 #include <memory>
 #include <stdexcept>
 #include <string>
@@ -43,6 +44,7 @@
 
 #ifdef USE_AGNOCAST_ENABLED
 #include <agnocast/agnocast.hpp>
+#include <agnocast/node/agnocast_only_single_threaded_executor.hpp>
 #endif
 
 namespace
@@ -101,6 +103,48 @@ String deserialize(const rclcpp::SerializedMessage & serialized)
   return msg;
 }
 
+// Agnocast implements callback dispatch in spin(), not the inherited RCLCPP
+// spin_some(). Cancel and join before checking payloads or destroying nodes.
+template <typename ExecutorT>
+void spin_until_received(ExecutorT & executor, const std::atomic<bool> & received)
+{
+  auto spinning = std::async(std::launch::async, [&executor] { executor.spin(); });
+  const auto deadline = std::chrono::steady_clock::now() + discovery_timeout;
+  while (!received.load() && std::chrono::steady_clock::now() < deadline &&
+         spinning.wait_for(poll_interval) != std::future_status::ready) {
+  }
+  // Repeating cancellation also handles the RCLCPP cancel-before-spin race.
+  do {
+    executor.cancel();
+  } while (spinning.wait_for(poll_interval) != std::future_status::ready);
+  spinning.get();
+}
+
+void spin_until_received(
+  const rclcpp::node_interfaces::NodeBaseInterface::SharedPtr & node,
+  const std::atomic<bool> & received, bool agnocast_only = false)
+{
+#ifdef USE_AGNOCAST_ENABLED
+  if (autoware::agnocast_wrapper::use_agnocast()) {
+    if (agnocast_only) {
+      agnocast::AgnocastOnlySingleThreadedExecutor executor;
+      executor.add_node(node);
+      spin_until_received(executor, received);
+    } else {
+      agnocast::SingleThreadedAgnocastExecutor executor;
+      executor.add_node(node);
+      spin_until_received(executor, received);
+    }
+    return;
+  }
+#else
+  (void)agnocast_only;
+#endif
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(node);
+  spin_until_received(executor, received);
+}
+
 /// A plain rclcpp::Node subclass (Method 1: base class stays rclcpp::Node), exercising the
 /// AUTOWARE_CREATE_GENERIC_PUBLISHER*/AUTOWARE_CREATE_GENERIC_SUBSCRIPTION macros the way a
 /// Method 1 node would, rather than calling
@@ -154,9 +198,6 @@ TEST_F(GenericPubSubMethod1Test, MacroRoundTrip)
       received = true;
     });
 
-  rclcpp::executors::SingleThreadedExecutor executor;
-  executor.add_node(sub_node);
-
   const auto discovery_deadline = std::chrono::steady_clock::now() + discovery_timeout;
   while (std::chrono::steady_clock::now() < discovery_deadline &&
          pub->get_subscription_count() + pub->get_intra_process_subscription_count() == 0) {
@@ -168,11 +209,7 @@ TEST_F(GenericPubSubMethod1Test, MacroRoundTrip)
   msg.data = "method1-generic";
   pub->publish(serialize(msg));
 
-  const auto spin_deadline = std::chrono::steady_clock::now() + discovery_timeout;
-  while (!received.load() && std::chrono::steady_clock::now() < spin_deadline) {
-    executor.spin_some();
-    std::this_thread::sleep_for(poll_interval);
-  }
+  spin_until_received(sub_node->get_node_base_interface(), received);
 
   ASSERT_TRUE(received.load());
   EXPECT_EQ(received_data, msg.data);
@@ -230,9 +267,6 @@ TEST_F(GenericPubSubMethod1Test, MacroOnNodeRoundTrip)
     }),
     AUTOWARE_SUBSCRIPTION_OPTIONS{});
 
-  rclcpp::executors::SingleThreadedExecutor executor;
-  executor.add_node(sub_node);
-
   const auto discovery_deadline = std::chrono::steady_clock::now() + discovery_timeout;
   while (std::chrono::steady_clock::now() < discovery_deadline &&
          pub->get_subscription_count() + pub->get_intra_process_subscription_count() == 0) {
@@ -244,11 +278,7 @@ TEST_F(GenericPubSubMethod1Test, MacroOnNodeRoundTrip)
   msg.data = "method1-on-node-generic";
   pub->publish(serialize(msg));
 
-  const auto spin_deadline = std::chrono::steady_clock::now() + discovery_timeout;
-  while (!received.load() && std::chrono::steady_clock::now() < spin_deadline) {
-    executor.spin_some();
-    std::this_thread::sleep_for(poll_interval);
-  }
+  spin_until_received(sub_node->get_node_base_interface(), received);
 
   ASSERT_TRUE(received.load());
   EXPECT_EQ(received_data, msg.data);
@@ -301,9 +331,6 @@ TEST_F(GenericPubSubMethod2Test, NodeMemberRoundTrip)
       received = true;
     });
 
-  rclcpp::executors::SingleThreadedExecutor executor;
-  executor.add_node(sub_node->get_rclcpp_node());
-
   const auto discovery_deadline = std::chrono::steady_clock::now() + discovery_timeout;
   while (std::chrono::steady_clock::now() < discovery_deadline &&
          pub->get_subscription_count() + pub->get_intra_process_subscription_count() == 0) {
@@ -315,11 +342,7 @@ TEST_F(GenericPubSubMethod2Test, NodeMemberRoundTrip)
   msg.data = "method2-generic";
   pub->publish(serialize(msg));
 
-  const auto spin_deadline = std::chrono::steady_clock::now() + discovery_timeout;
-  while (!received.load() && std::chrono::steady_clock::now() < spin_deadline) {
-    executor.spin_some();
-    std::this_thread::sleep_for(poll_interval);
-  }
+  spin_until_received(sub_node->get_node_base_interface(), received, true);
 
   ASSERT_TRUE(received.load());
   EXPECT_EQ(received_data, msg.data);
@@ -348,9 +371,6 @@ TEST_F(GenericPubSubMethod2Test, NodeMemberDepthAndOptionsOverload)
     },
     AUTOWARE_SUBSCRIPTION_OPTIONS{});
 
-  rclcpp::executors::SingleThreadedExecutor executor;
-  executor.add_node(sub_node->get_rclcpp_node());
-
   const auto discovery_deadline = std::chrono::steady_clock::now() + discovery_timeout;
   while (std::chrono::steady_clock::now() < discovery_deadline &&
          pub->get_subscription_count() + pub->get_intra_process_subscription_count() == 0) {
@@ -362,11 +382,7 @@ TEST_F(GenericPubSubMethod2Test, NodeMemberDepthAndOptionsOverload)
   msg.data = "method2-generic-depth-options";
   pub->publish(serialize(msg));
 
-  const auto spin_deadline = std::chrono::steady_clock::now() + discovery_timeout;
-  while (!received.load() && std::chrono::steady_clock::now() < spin_deadline) {
-    executor.spin_some();
-    std::this_thread::sleep_for(poll_interval);
-  }
+  spin_until_received(sub_node->get_node_base_interface(), received, true);
 
   ASSERT_TRUE(received.load());
   EXPECT_EQ(received_data, msg.data);
