@@ -1873,3 +1873,86 @@ first run its applicable communication behavior under `--config=no-agnocast`.
 Introduce the heap hook and kernel/runtime prerequisites only when the default
 Agnocast behavior gate reaches them; bridge-plugin generation remains the
 parallel analysis-time lane.
+
+## 2026-11-15: Validate the Agnocast wrapper fallback backend
+
+Goal: make the first Autoware consumer of `libagnocast.so` compile with
+Agnocast support unconditionally, then prove that the same artifact selects
+and runs its RCLCPP fallback when `ENABLE_AGNOCAST=0`. This isolates wrapper
+API and link integration before adding the privileged enabled-transport
+runtime.
+
+Prerequisites were the Bazel-built Agnocast shared library and its passing
+kernel-independent unit gate, the local `autoware_utils_rclcpp` module, the
+pinned Lyrical ROS graph, and `.bazelrc` runtime selection through
+`--config=no-agnocast`. The inspected inputs were the wrapper manifest, CMake
+library and test definitions, its two compiled sources, all public headers,
+and the five existing C++ test-case files. The Python launch-action test was
+not selected: it validates installed launch packaging rather than the C++
+wrapper and introduces a separate Python/launch dependency surface.
+
+The minimum integration is a package-local `autoware_agnocast_wrapper@1.10.0`
+module selected by a root `local_path_override`. The compile library contains
+`src/node.cpp`, `src/runtime.cpp`, and all public headers; it publishes
+`USE_AGNOCAST_ENABLED` unconditionally and depends on the Agnocast compile
+provider. A `cc_shared_library` links it with `libagnocast.so` and the direct
+ROS shared providers. The test compiles the existing CMake C++ suite as one
+binary and uses the same wrapper shared-library boundary. `std_msgs` remains a
+test-only dependency.
+
+This arrangement separates two independent choices. Bazel always compiles the
+two backend implementations into the wrapper, so downstream source sees one
+stable API. The test environment set by `--config=no-agnocast` supplies
+`ENABLE_AGNOCAST=0`, causing `use_agnocast()` and each wrapper object to select
+the RCLCPP path at runtime. No alternate library or source configuration is
+built for fallback testing.
+
+Observed failures and fixes were:
+
+- The first test compile could not find `heaphook_probe.hpp`. CMake inherited
+  the test source directory, while Bazel requires the header to be a declared
+  test input; adding it to the test sources fixed the hermetic input boundary.
+- Lyrical installs the four wrapper-used message-filter headers with `.hpp`
+  names rather than `.h`, so the compiler-reported public includes were
+  updated.
+- Lyrical's `message_filters::Subscriber` takes only the message type; node
+  types are accepted by constructor and `subscribe()` overloads. Removing the
+  obsolete `rclcpp::Node` template argument retained the wrapper's runtime
+  dispatch while matching the selected public API.
+
+Verification used an empty caller environment:
+
+```bash
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=no-agnocast --nocache_test_results \
+  @autoware_agnocast_wrapper//...
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=fastdds --config=no-agnocast \
+  --nocache_test_results @autoware_agnocast_wrapper//...
+git diff --check
+```
+
+Both invocations ran 36 tests from eight suites and passed every test. The
+Cyclone DDS run completed 235 processes with 7,839 action-cache hits in 47.075
+seconds; the test ran in 0.3 seconds. The Fast DDS compatibility run completed
+234 processes with 9,411 action-cache hits in 51.400 seconds; the test ran in
+0.4 seconds. Existing rules_python implicit-package, ROS codecvt,
+missing-`override`, C-linkage return-type, unused capture, and test-only unused
+variable warnings remained non-fatal. Targeted clang-format was applied to the
+changed C++ header, `git diff --check` passed, and pre-commit was not run.
+
+Reproduction notes: do not model runtime backend selection with two Bazel
+libraries. Publish the Agnocast compile definition and dependency from one
+wrapper target, then vary only the test/run environment. Keep compile
+providers and shared providers paired at the final executable boundary, and
+declare test helper headers even when a legacy build system found them through
+an ambient include directory. Exercise both middleware configurations before
+adding privileged runtime dependencies.
+
+Remaining limitations: this result proves the DDS fallback of an
+Agnocast-capable artifact, not zero-copy transport. The heap hook,
+`/dev/agnocast`, kernel module, discovery agent, component containers, and
+Python launch packaging remain absent. Next, run the same wrapper behavior
+gate with the default `ENABLE_AGNOCAST=1`; integrate the heap hook and kernel
+runtime in the smallest order exposed by that attempt. The bridge-plugin rule
+remains an independent analysis-time lane.

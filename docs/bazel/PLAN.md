@@ -439,6 +439,22 @@ Completed kernel-independent Agnocast test slice:
 - passed all five groups with Cyclone DDS and Fast DDS without `/dev/agnocast`,
   the heap hook, or an installed ROS environment.
 
+Completed wrapper fallback slice:
+
+- added `autoware_agnocast_wrapper` as a local module whose library always
+  exports `USE_AGNOCAST_ENABLED` and links the Bazel-built `libagnocast.so`;
+- kept `ENABLE_AGNOCAST` solely as the runtime selector, so
+  `--config=no-agnocast` exercises the RCLCPP backend from the same compiled
+  wrapper and test binary;
+- preserved the existing C++ behavior suite for generic pub/sub, polling
+  subscribers, parameter clients, service introspection, message filters, and
+  backend selection;
+- passed all 36 tests with the Cyclone DDS fallback and the Fast DDS
+  compatibility fallback without a sourced ROS installation;
+- deferred the Python launch extension and the default Agnocast transport
+  behavior until their current tests require launch packaging, the heap hook,
+  kernel access, or component runtime support.
+
 Exit criteria:
 
 - `autoware_node` builds from local source and its initialization, executor,

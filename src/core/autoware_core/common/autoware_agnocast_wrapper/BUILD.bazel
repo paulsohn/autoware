@@ -1,0 +1,77 @@
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps", "ros_local_defines")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+_DYNAMIC_DEPS = [
+    "@agnocastlib//:agnocast",
+    "@diagnostic_updater//:diagnostic_updater",
+    "@geometry_msgs//:cc_shared",
+    "@message_filters//:message_filters",
+    "@rcl//:rcl",
+    "@rcl_interfaces//:cc_shared",
+    "@rclcpp//:rclcpp",
+    "@tf2//:tf2",
+    "@tf2_ros//:tf2_ros",
+]
+
+cc_library(
+    name = "autoware_agnocast_wrapper_library",
+    srcs = [
+        "src/node.cpp",
+        "src/runtime.cpp",
+    ],
+    hdrs = glob(["include/**/*.hpp"]),
+    defines = ["USE_AGNOCAST_ENABLED"],
+    local_defines = ros_local_defines(),
+    strip_include_prefix = "include",
+    deps = [
+        "@agnocastlib//:agnocast_library",
+        "@autoware_utils_rclcpp//:autoware_utils_rclcpp",
+        "@diagnostic_updater//:diagnostic_updater_library",
+        "@geometry_msgs//:cc",
+        "@message_filters//:message_filters_library",
+        "@rcl//:rcl_library",
+        "@rcl_interfaces//:cc",
+        "@rclcpp//:rclcpp_library",
+        "@tf2//:tf2_library",
+        "@tf2_ros//:tf2_ros_library",
+    ],
+)
+
+cc_shared_library(
+    name = "autoware_agnocast_wrapper",
+    dynamic_deps = _DYNAMIC_DEPS,
+    exports_filter = [":autoware_agnocast_wrapper_library"],
+    deps = [":autoware_agnocast_wrapper_library"],
+)
+
+collect_transitive_dynamic_deps(
+    name = "test_dynamic_deps",
+    dynamic_deps = [
+        ":autoware_agnocast_wrapper",
+        "@std_msgs//:cc_shared",
+    ] + _DYNAMIC_DEPS,
+)
+
+cc_test(
+    name = "unit_tests",
+    srcs = [
+        "test/cases/generic_pubsub.cpp",
+        "test/cases/message_filters.cpp",
+        "test/cases/parameter_client.cpp",
+        "test/cases/polling_subscriber.cpp",
+        "test/cases/service_introspection.cpp",
+        "test/heaphook_probe.hpp",
+        "test/main.cpp",
+    ],
+    dynamic_deps = [":test_dynamic_deps"],
+    includes = ["test"],
+    deps = [
+        ":autoware_agnocast_wrapper_library",
+        "@geometry_msgs//:cc",
+        "@googletest//:gtest",
+        "@rcl_interfaces//:cc",
+        "@std_msgs//:cc",
+    ],
+)
