@@ -2570,7 +2570,7 @@ Keep the seven functional launches, wrapper backend tests and full adopted
 package suites as regression gates. Actual CLI discovery, echo and recording
 behavior is also required before closure. Kernel compilation/KUnit and CUDA
 transport samples remain separate platform/GPU work, not user-space test
-substitutes. No Fast DDS check is authorized for this task.
+substitutes. The initial runtime gate uses Cyclone DDS; the separately approved Tier 2 milestone is recorded below.
 
 Inspected inputs: scripts/test/e2e_test_1to1.bash and e2e_test_2to2.bash,
 plus test_1to1.py, test_2to2.py, test_service.py and their fixture YAMLs. Reuse
@@ -2716,3 +2716,72 @@ The CLI/wrapper package boundary passes its 95/66/37 cases with
 Keep the heap-hook launcher dependency fix with wrapper packaging; retaining
 its old payload dependency caused redundant execution-configuration builds,
 which were stopped before test execution. The corrected launcher passes.
+
+
+### Phase 4 Tier 2 milestone — Fast DDS (in progress)
+
+Purpose: complete Phase 4's secondary middleware compatibility gate after its
+Cyclone DDS module and product checks pass. The user explicitly approved this
+Fast DDS run on 2026-11-16. Keep the same package suites, complete matrices,
+loaded 2.4.1 kernel module and built heap hook; use --config=fastdds instead of
+changing test sources or narrowing assertions. Run heavy builds and tests
+sequentially with the ignored host resource limits. No pre-commit is used.
+
+Acceptance: the complete 39-target package regression, enabled-wrapper C++
+suite, production bridge/CLI tests, all seven functional launches, all nine
+service arrangements and both complete communication matrices must pass.
+Five existing unsupported-executor library skips retain their original scope;
+no missing dependency or omitted configuration is acceptable. Completion is
+pending the actual results below.
+
+Exact commands (same clean_bazel function as above):
+
+```bash
+clean_bazel test --config=fastdds --config=no-agnocast \
+  --nocache_test_results --test_output=errors --local_test_jobs=1 \
+  @agnocastlib//... @agnocast_heaphook//:unit_tests \
+  @agnocast_cie_thread_configurator//... @ros2agnocast_discovery_agent//... \
+  @ros2agnocast//:tests @autoware_agnocast_wrapper//... \
+  @autoware_node//... //bazel/smoke/... //bazel/agnocast:template_tests
+clean_bazel test --config=fastdds --strategy=TestRunner=local \
+  --run_under=//bazel/agnocast:with_heaphook --nocache_test_results \
+  --test_output=errors \
+  @autoware_agnocast_wrapper//:unit_tests
+clean_bazel test --config=fastdds --strategy=TestRunner=local \
+  --run_under=//bazel/agnocast:with_runtime --nocache_test_results \
+  --test_output=errors --local_test_jobs=1 \
+  //bazel/agnocast:bridge_plugins_test //bazel/agnocast:cli_runtime_test \
+  //bazel/agnocast:launch_agnocast_component_container_cie \
+  //bazel/agnocast:launch_agnocast_callback_isolated_executor \
+  //bazel/agnocast:launch_multi_domain_cie_talker \
+  //bazel/agnocast:launch_thread_configurator_restart \
+  //bazel/agnocast:launch_thread_configurator_reapply \
+  //bazel/agnocast:launch_thread_configurator_wildcard \
+  //bazel/agnocast:launch_thread_configurator_precedence \
+  //bazel/agnocast:launch_services \
+  //bazel/agnocast:matrix_1to1 //bazel/agnocast:matrix_2to2
+```
+
+
+Fast DDS shutdown diagnosis: the initial regression passes 38 targets, while
+the CLI's 95 assertions pass and its interpreter then aborts with a glibc heap
+corruption error. GDB locates the exit-time destructor in Fast DDS code embedded
+in rclpy/_rclpy_pybind11.so. The RCR rclpy overlay omits dynamic_deps on that
+extension, statically copying ROS/DDS code while rosbag loads shared copies.
+ELF inspection confirms the extension exports the DDS destructor and lacks
+ROS/DDS DT_NEEDED entries. Add only dynamic_deps = DEPENDENCIES.keys() via a
+pinned rclpy 10.0.11-1.rcr.0 single_version_override BUILD patch. The complete
+CLI suite then passes all 95 cases and exits normally with Fast DDS; the
+extension now links the shared ROS/DDS libraries and has no DDS destructor
+copy. UPSTREAM_RCR.md records the published overlay checksum, current release
+check and reproducer. This is a Bazel dependency-boundary correction, not an
+Agnocast source workaround.
+
+The same patch also passes the complete directly affected Cyclone Python suites:
+`clean_bazel test --config=no-agnocast --nocache_test_results
+--test_output=errors @ros2agnocast//:tests
+@ros2agnocast_discovery_agent//:tests @autoware_agnocast_wrapper//:launch_tests`
+(95, 147 and 66 cases, no skips). Patch files carry rationale and validation
+before their diff; the module override also verifies Bazel's patch application.
+The complete Fast DDS milestone is rerun after this correction; its status
+remains pending until every gate passes.

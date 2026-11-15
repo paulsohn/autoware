@@ -1,0 +1,32 @@
+Subject: Keep rclpy ROS/DDS dependencies shared with other Python extensions
+
+Applies to: RCR rclpy 10.0.11-1.rcr.0, BUILD.bazel, rclpy_bindings.
+
+Problem: importing rclpy and rosbag2_py in one Fast DDS process can abort at
+interpreter shutdown with double-free/heap-corruption diagnostics. The native
+backtrace reaches DomainParticipantQos::~DomainParticipantQos inside rclpy's
+extension. Its missing dynamic_deps causes ROS/DDS code and globals to be
+embedded alongside the shared copies used by other extensions.
+
+Change: use the existing DEPENDENCIES shared targets on rclpy_bindings, matching
+their compile-target counterparts. This changes the Bazel link boundary only.
+Do not suppress Python shutdown or remove tests to hide the corruption.
+
+Verification: the complete ros2agnocast CLI suite passes all 95 cases and exits
+normally with --config=fastdds --config=no-agnocast. ELF DT_NEEDED now contains
+librcl.so and librmw_fastrtps_cpp.so; the extension no longer defines the DDS
+destructor. Full milestone results and exact commands: docs/bazel/JOURNAL.md.
+
+Upstream: the published overlay still lacks this dependency boundary, checked
+2026-11-16. No matching upstream association is recorded. See
+docs/bazel/UPSTREAM_RCR.md for the published overlay checksum and reproducer.
+
+--- a/BUILD.bazel
++++ b/BUILD.bazel
+@@ -185,5 +185,6 @@
+ cc_shared_library(
+     name = "rclpy_bindings",
++    dynamic_deps = DEPENDENCIES.keys(),
+     exports_filter = ["//:__subpackages__"],
+     shared_lib_name = "rclpy/_rclpy_pybind11.so",
+     user_link_flags = select({
