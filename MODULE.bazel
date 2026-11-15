@@ -238,3 +238,21 @@ local_path_override(
 )
 
 bazel_dep(name = "ros2bag", version = "0.33.4-1.rcr.0")
+
+bazel_dep(name = "agnocast_sample_interfaces", version = "0.0.0")
+local_path_override(
+    module_name = "agnocast_sample_interfaces",
+    path = "src/core/agnocast/src/agnocast_sample_interfaces",
+)
+
+bazel_dep(name = "agnocast_sample_application", version = "0.0.0")
+local_path_override(
+    module_name = "agnocast_sample_application",
+    path = "src/core/agnocast/src/agnocast_sample_application",
+)
+
+bazel_dep(name = "agnocast_e2e_test", version = "0.0.0")
+local_path_override(
+    module_name = "agnocast_e2e_test",
+    path = "src/core/agnocast/src/agnocast_e2e_test",
+)

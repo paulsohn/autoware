@@ -2511,81 +2511,26 @@ or pre-commit check ran for this step.
 
 ## 2026-11-16: Phase 4.4 — communication matrices and runtime closure (in progress)
 
-Purpose and acceptance: run the existing Agnocast sample/end-to-end scenarios
-with the packaged Bazel runtime, including the complete 128-configuration
-one-to-one matrix, 24 two-to-two configurations and nine service arrangements.
-Keep the seven functional launches, wrapper backend tests and full adopted
-package suites as regression gates. Actual CLI discovery, echo and recording
-behavior is also required before closure. Kernel compilation/KUnit and CUDA
-transport samples remain separate platform/GPU work, not user-space test
-substitutes. No Fast DDS check is authorized for this task.
+Purpose: expose all existing non-CUDA sample and end-to-end fixture executables
+and components before assembling their launch tests. Inspect both CMake source
+lists, component registrations, sample message/service definitions and fixture
+resources. Use the pinned Lyrical workspace; declare one local module per
+package and select it with root local_path_override.
 
-Inspected inputs: scripts/test/e2e_test_1to1.bash and e2e_test_2to2.bash,
-plus test_1to1.py, test_2to2.py, test_service.py and their fixture YAMLs. Reuse
-the Python scenarios and their assertions; do not run the shell wrappers,
-which source /opt/ros, invoke colcon, edit checked-in YAML and write to kmsg.
-The one-to-one matrix is the Cartesian product of Agnocast/ROS publisher,
-publisher/subscriber startup order, publisher/subscriber depths 1/10,
-publisher/subscriber durability, and callback/take subscriptions. Two-to-two
-uses agno2agno, ros2agno and agno2ros across the eight original PPSS layouts.
-The service source already parameterizes all nine arrangements itself.
+Generate the three sample interfaces with explicit dependencies. Build every
+existing sample/e2e native executable and component, pairing compile and shared
+ROS dependencies. Reuse agnocast_components' standalone-main rule and package
+component records/executable aliases plus launch/YAML resources through ament.
+These are fixture build declarations; their runtime behavior gate follows in
+the root launch/matrix integration, so compilation alone is not Phase 4 closure.
+CUDA transport samples remain Phase 6 work.
 
-The root e2e_matrix.py driver creates a fresh directory per configuration,
-copies the original scenario beside an immutable JSON-as-YAML configuration,
-and runs RCR's launch-testing entry point with the same pinned interpreter.
-This preserves scripts that locate YAML relative to __file__ without editing
-source or inventing a second scenario. Each case starts in a separate process,
-with the root launch adapter setting preload after Python bootstrap. Keep the
-import closure in PYTHONPATH, reuse RCR's process guard, and bound each launch
-with a timeout/process-group cleanup. Aggregate the actual per-case JUnit
-results and retain configurations, source copies, logs and XML under the
-Bazel target's test.outputs directory. Assert the matrix cardinalities; a
-small direct self-check also verified unique one-to-one configurations and
-exactly two publishers/subscribers in every two-to-two layout.
-
-Add the fixture's sample interfaces and discovery messages as explicit product
-roots and matching plugin compile/shared dependencies. They are current
-runtime inputs, not speculative package adoption. The generated library now
-exports 394 typed factories, representing 197 message/service/event
-instantiations. The interface manifest needs an explicit build to refresh;
-consuming its provider does not require its manifest output action.
-The root CLI explicitly includes Python providers for the selected interface
-packages, because C++ plugin dependencies do not supply Python imports.
-
-Results so far:
-
-- The seven functional launches pass 38 cases without skips (see Phase 4.3).
-- The complete two-to-two matrix passes all 24 cases in 245.8 seconds.
-- All nine service arrangements pass 45 assertions/cases in 18.1 seconds,
-  covering native services and both automatic bridge directions.
-- The one-to-one matrix is still pending. Its first build was cancelled before
-  test execution after prolonged compilation. Host inspection found almost
-  all 8 GiB of swap in use. Reduce machine-local concurrency in ignored
-  user.bazelrc; do not commit host limits or weaken the matrix. The retry is
-  progressing with fewer concurrent compilations.
-
-Commands (clean_bazel is the clean-environment function defined above):
+Verify the entire fixture build surface:
 
 ```bash
-clean_bazel test --strategy=TestRunner=local \
-  --run_under=//bazel/agnocast:with_runtime --nocache_test_results \
-  --test_output=errors --local_test_jobs=1 \
-  //bazel/agnocast:matrix_2to2 //bazel/agnocast:launch_services
-clean_bazel test --strategy=TestRunner=local \
-  --run_under=//bazel/agnocast:with_runtime --nocache_test_results \
-  --test_output=errors --local_test_jobs=1 //bazel/agnocast:matrix_1to1
+clean_bazel build @agnocast_sample_interfaces//... \
+  @agnocast_sample_application//... @agnocast_e2e_test//...
 ```
 
-The module task remains incomplete until the one-to-one matrix, CLI behavior
-and combined regressions pass. No source test groups or configurations have
-been removed to bypass a failure.
-
-CLI version-path diagnosis: with LD_PRELOAD unset, the real built command
-reported the heap hook unavailable despite its artifact being present in the
-runtime prefix. Its fallback only checked /opt/ros/$ROS_DISTRO/lib. Reuse the
-existing package-prefix library lookup for agnocastlib before that system
-fallback, retaining preload priority and the existing not-preloaded warning.
-The actual command now finds 2.4.1 for kernel, library, hook and CLI. Two new
-regressions check the overlay case and preload priority; the entire CLI suite
-passes 95 cases. UPSTREAM_AWF.md records the inspected main blob and related
-version-command PR. This source fix is independent of Bazel path conventions.
+Result: all 119 fixture/interface targets build successfully. Runtime scenarios
+remain the next gate; no Fast DDS or pre-commit check ran for this step.

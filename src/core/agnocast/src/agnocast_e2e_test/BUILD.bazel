@@ -1,0 +1,270 @@
+load("@agnocast_components//:defs.bzl", "agnocast_components_register_node")
+load("@rclcpp_components//:defs.bzl", "rclcpp_components_register_node")
+load("@rosdistro//ament:defs.bzl", "ament_package", "register_ament_files")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library", "cc_shared_library")
+
+package(default_visibility = ["//visibility:public"])
+
+_DEPS = [
+    "@agnocastlib//:agnocast_library",
+    "@agnocast_sample_interfaces//:cc",
+    "@rclcpp//:rclcpp_library",
+    "@rclcpp_components//:rclcpp_components_library",
+    "@std_msgs//:cc",
+    "@agnocast_cie_thread_configurator//:agnocast_cie_thread_configurator",
+]
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = [
+        "@agnocastlib//:agnocast",
+        "@agnocast_sample_interfaces//:cc_shared",
+        "@rclcpp_components//:rclcpp_components",
+        "@std_msgs//:cc_shared",
+    ],
+)
+
+cc_library(
+    name = "test_talker_library",
+    srcs = ["src/test_publisher.cpp"],
+    deps = _DEPS,
+)
+
+cc_shared_library(
+    name = "test_talker_component",
+    dynamic_deps = [":runtime_dynamic_deps"],
+    deps = [":test_talker_library"],
+)
+
+rclcpp_components_register_node(
+    name = "test_talker",
+    component = ":test_talker_component",
+    node_name = "test_talker",
+    plugin = "TestPublisher",
+)
+
+cc_library(
+    name = "test_listener_library",
+    srcs = ["src/test_subscriber.cpp"],
+    deps = _DEPS,
+)
+
+cc_shared_library(
+    name = "test_listener_component",
+    dynamic_deps = [":runtime_dynamic_deps"],
+    deps = [":test_listener_library"],
+)
+
+rclcpp_components_register_node(
+    name = "test_listener",
+    component = ":test_listener_component",
+    node_name = "test_listener",
+    plugin = "TestSubscriber",
+)
+
+cc_library(
+    name = "test_taker_library",
+    srcs = ["src/test_take_subscriber.cpp"],
+    deps = _DEPS,
+)
+
+cc_shared_library(
+    name = "test_taker_component",
+    dynamic_deps = [":runtime_dynamic_deps"],
+    deps = [":test_taker_library"],
+)
+
+rclcpp_components_register_node(
+    name = "test_taker",
+    component = ":test_taker_component",
+    node_name = "test_taker",
+    plugin = "TestTakeSubscriber",
+)
+
+cc_library(
+    name = "test_ros2_listener_library",
+    srcs = ["src/test_ros2_subscriber.cpp"],
+    deps = _DEPS,
+)
+
+cc_shared_library(
+    name = "test_ros2_listener_component",
+    dynamic_deps = [":runtime_dynamic_deps"],
+    deps = [":test_ros2_listener_library"],
+)
+
+rclcpp_components_register_node(
+    name = "test_ros2_listener",
+    component = ":test_ros2_listener_component",
+    node_name = "test_ros2_listener",
+    plugin = "TestROS2Subscriber",
+)
+
+cc_library(
+    name = "test_ros2_talker_library",
+    srcs = ["src/test_ros2_publisher.cpp"],
+    deps = _DEPS,
+)
+
+cc_shared_library(
+    name = "test_ros2_talker_component",
+    dynamic_deps = [":runtime_dynamic_deps"],
+    deps = [":test_ros2_talker_library"],
+)
+
+rclcpp_components_register_node(
+    name = "test_ros2_talker",
+    component = ":test_ros2_talker_component",
+    node_name = "test_ros2_talker",
+    plugin = "TestROS2Publisher",
+)
+
+cc_library(
+    name = "test_client_library",
+    srcs = ["src/test_client.cpp"],
+    deps = _DEPS,
+)
+
+cc_shared_library(
+    name = "test_client_component",
+    dynamic_deps = [":runtime_dynamic_deps"],
+    deps = [":test_client_library"],
+)
+
+rclcpp_components_register_node(
+    name = "test_client",
+    component = ":test_client_component",
+    node_name = "test_client",
+    plugin = "TestClient",
+)
+
+rclcpp_components_register_node(
+    name = "test_ros2_client",
+    component = ":test_client_component",
+    node_name = "test_ros2_client",
+    plugin = "TestROS2Client",
+)
+
+cc_library(
+    name = "test_server_library",
+    srcs = ["src/test_server.cpp"],
+    deps = _DEPS,
+)
+
+cc_shared_library(
+    name = "test_server_component",
+    dynamic_deps = [":runtime_dynamic_deps"],
+    deps = [":test_server_library"],
+)
+
+rclcpp_components_register_node(
+    name = "test_server",
+    component = ":test_server_component",
+    node_name = "test_server",
+    plugin = "TestServer",
+)
+
+rclcpp_components_register_node(
+    name = "test_ros2_server",
+    component = ":test_server_component",
+    node_name = "test_ros2_server",
+    plugin = "TestROS2Server",
+)
+
+cc_library(
+    name = "test_cie_publisher_library",
+    srcs = ["src/test_publisher_component.cpp"],
+    deps = _DEPS,
+)
+
+cc_shared_library(
+    name = "test_cie_publisher_component",
+    dynamic_deps = [":runtime_dynamic_deps"],
+    deps = [":test_cie_publisher_library"],
+)
+
+agnocast_components_register_node(
+    name = "test_cie_publisher",
+    component = ":test_cie_publisher_component",
+    executor = "CallbackIsolatedAgnocastExecutor",
+    plugin = "agnocast_e2e_test::TestPublisherComponent",
+)
+
+cc_library(
+    name = "test_cie_subscriber_library",
+    srcs = ["src/test_subscription_component.cpp"],
+    deps = _DEPS,
+)
+
+cc_shared_library(
+    name = "test_cie_subscriber_component",
+    dynamic_deps = [":runtime_dynamic_deps"],
+    deps = [":test_cie_subscriber_library"],
+)
+
+agnocast_components_register_node(
+    name = "test_cie_subscriber",
+    component = ":test_cie_subscriber_component",
+    executor = "CallbackIsolatedAgnocastExecutor",
+    plugin = "agnocast_e2e_test::TestSubscriptionComponent",
+)
+
+exports_files(glob([
+    "test/**/*.py",
+    "test/*.yaml",
+]))
+
+register_ament_files(
+    name = "executable_index",
+    files = [
+        ":test_cie_publisher",
+        ":test_cie_subscriber",
+        ":test_client",
+        ":test_listener",
+        ":test_ros2_client",
+        ":test_ros2_listener",
+        ":test_ros2_server",
+        ":test_ros2_talker",
+        ":test_server",
+        ":test_taker",
+        ":test_talker",
+    ],
+    prefix = "lib/agnocast_e2e_test",
+    strip_prefix = "*",
+)
+
+ament_package(
+    components = [
+        ":test_talker_record",
+        ":test_listener_record",
+        ":test_taker_record",
+        ":test_ros2_listener_record",
+        ":test_ros2_talker_record",
+        ":test_client_record",
+        ":test_ros2_client_record",
+        ":test_server_record",
+        ":test_ros2_server_record",
+        ":test_cie_publisher_record",
+        ":test_cie_subscriber_record",
+    ],
+    data = [":executable_index"] + glob(["test/**"]),
+    executables = [
+        ":test_talker",
+        ":test_listener",
+        ":test_taker",
+        ":test_ros2_listener",
+        ":test_ros2_talker",
+        ":test_client",
+        ":test_ros2_client",
+        ":test_server",
+        ":test_ros2_server",
+        ":test_cie_publisher",
+        ":test_cie_subscriber",
+    ],
+    deps = [
+        "@agnocast_components//:ament_package",
+        "@agnocast_sample_interfaces//:ament_package",
+        "@agnocastlib//:ament_package",
+    ],
+)

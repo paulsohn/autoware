@@ -1,0 +1,6 @@
+module(
+    name = "agnocast_sample_interfaces",
+    version = "0.0.0",
+)
+
+bazel_dep(name = "rosidl_default_generators", version = "0.0.0")
