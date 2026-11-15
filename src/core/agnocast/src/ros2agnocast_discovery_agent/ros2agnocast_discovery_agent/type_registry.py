@@ -89,7 +89,7 @@ class TypeRegistryReader:
             return
         except PermissionError as exc:
             if self._logger is not None:
-                self._logger.warn(f'type_registry: cannot read {self._ns_dir}: {exc}')
+                self._logger.warning(f'type_registry: cannot read {self._ns_dir}: {exc}')
             self._table = new_table
             return
 
@@ -124,7 +124,7 @@ class TypeRegistryReader:
             fields = line.split('\t')
             if len(fields) < 4:
                 if path not in self._warned_malformed_files and self._logger is not None:
-                    self._logger.warn(
+                    self._logger.warning(
                         f'type_registry: malformed line in {path}: '
                         f'expected at least 4 tab-separated fields, got {len(fields)}')
                     self._warned_malformed_files.add(path)
@@ -149,7 +149,7 @@ class TypeRegistryReader:
             return
         except PermissionError as exc:
             if self._logger is not None:
-                self._logger.warn(f'type_registry: cannot list {self._ns_dir} for cleanup: {exc}')
+                self._logger.warning(f'type_registry: cannot list {self._ns_dir} for cleanup: {exc}')
             return
 
         for entry in entries:
@@ -167,7 +167,7 @@ class TypeRegistryReader:
                 pass
             except PermissionError as exc:
                 if self._logger is not None:
-                    self._logger.warn(
+                    self._logger.warning(
                         f'type_registry: failed to unlink stale {entry.path}: {exc}')
 
     def lookup(

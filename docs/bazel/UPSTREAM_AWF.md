@@ -250,3 +250,50 @@ describes that review, not proof that no other upstream work exists.
   `#if defined(__GNUC__) && !defined(__clang__)`. This preserves the intended
   suppression for GCC while avoiding an unknown pragma under Clang. Validate
   with both compilers and the normal package tests before proposing the patch.
+
+### Agnocast discovery warning paths and ioctl header self-sufficiency
+
+- [ ] Associate the logger API correction with a matching upstream PR.
+- [ ] Associate the missing `<cerrno>` includes with a matching upstream PR.
+
+Verified 2026-11-15 with Lyrical RCR rclpy 10.0.11, Clang 21.1.8/libc++,
+Ubuntu 24.04 x86_64. These are source compatibility findings exposed during
+Phase 4.2; they do not change bridge selection or delivery semantics.
+
+The complete discovery-agent suite initially collected 147 cases and failed
+`test_dispatch_service_reports_a_failure_through_a_real_logger` with
+`AttributeError: 'RcutilsLogger' object has no attribute 'warn'`. The real
+rclpy logger exposes `warning()`. Use that method in agent.py,
+bridge_decider.py and type_registry.py, and update the existing mock
+expectations. All 147 cases then pass. The same method also works with the
+registry's standard Python logger; no compatibility shim is necessary.
+
+Upstream main's
+[bridge_decider.py](https://github.com/autowarefoundation/agnocast/blob/main/src/ros2agnocast_discovery_agent/ros2agnocast_discovery_agent/bridge_decider.py),
+blob `8f6d4d81c833a42d84c98724158b4f933e993bf1`, still uses `warn()` in its
+escalation and both dispatch-failure paths. Merged
+[PR #1574](https://github.com/autowarefoundation/agnocast/pull/1574) fixes
+rclpy-incompatible positional formatting arguments, but retains `warn()`:
+related work, not a matching fix. Searches for Lyrical, warning/logger and
+warn/discovery PRs did not find a matching API correction.
+
+The ioctl wrapper separately fails compilation on undeclared `errno` and
+`ENOENT`. Its node_info.cpp, topic_info.cpp and topic_list.cpp use them without
+including `<cerrno>`; add the direct include in those translation units.
+Other wrapper sources already include it. Upstream main's
+[node_info.cpp](https://github.com/autowarefoundation/agnocast/blob/main/src/agnocast_ioctl_wrapper/src/node_info.cpp)
+blob `bd80a485cf745c8db8926f8f09e334710a68af8b` and
+[topic_info.cpp](https://github.com/autowarefoundation/agnocast/blob/main/src/agnocast_ioctl_wrapper/src/topic_info.cpp)
+blob `556f9188931f0363dbd0d14d0e56f45a4f4defce` retain the omission. Searching
+cerrno PRs found unrelated configurator/graph changes, not this include repair.
+
+Reproduce with the Phase 4.2 module definitions and clean environment commands
+in JOURNAL.md: `bazel test @ros2agnocast_discovery_agent//:tests
+@agnocast_ioctl_wrapper//... --test_output=errors`. All ioctl targets build
+and all agent cases pass after the fixes. The runtime gate also passes 11
+cases, including actual automatic agent startup and a typed gossip endpoint.
+No Humble/Jazzy, GCC, CMake/colcon, or Fast DDS validation was performed for
+these corrections. AWF's broader Lyrical trackers remain
+[autoware#7404](https://github.com/autowarefoundation/autoware/issues/7404) and
+[autoware_core#1538](https://github.com/autowarefoundation/autoware_core/issues/1538);
+neither tracker is test evidence for these packages.

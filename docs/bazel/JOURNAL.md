@@ -2385,3 +2385,79 @@ planning baseline only. Phase 8 must pin and validate its actual user-space
 inputs; cross-compilation and dependency closure do not prove GPU execution
 or device behavior. No SDK download, cross-build, GPU, or hardware check was
 performed for this documentation change. Existing Phase 0–4 numbers remain.
+
+## 2026-11-15: Phase 4.2 — production bridge activation (in progress)
+
+Purpose and acceptance: replace direct factory-only checks with the production
+BridgeLoader, then verify normal endpoints automatically activate both bridge
+directions and the auto-started discovery agent reports a typed endpoint.
+Retain message, service-event, and service payload checks. Adopt the complete
+five-file discovery-agent pytest suite and its ioctl/message dependencies.
+Phase 4 remains incomplete until runtime and later component/end-to-end gates
+pass; this entry is updated in place as the task proceeds.
+
+Inspected inputs: `agnocastlib`'s bridge loader, manager and process startup;
+the discovery agent's package manifest, scripts, setup metadata and tests;
+the ioctl wrapper's CMake source list; and RCR Python/ament helpers. The root
+assembles plugins and runtime resources; each source package owns its module
+and declares no metarepository label. Discovery messages follow the existing
+message/module pattern, with explicit local edges Endpoint -> Topic -> State.
+The ioctl wrapper is one C++ library/shared-library pair. Reuse RCR's pytest,
+Python rules, pinned PyYAML wheel and ament package/index rules.
+
+Diagnosed failures so far:
+
+- Importing `rcl_interfaces.msg.Parameter` failed before test collection.
+  Generated messages are namespace packages and RCR injects its import hook
+  through `sitecustomize.py`. Disabling implicit `__init__.py` creation on the
+  final test alone was insufficient: transitive executables' runfiles still
+  supplied empty initializers. `--incompatible_default_to_explicit_init_py`
+  removes those across the graph; keep the setting in `.bazelrc`.
+- The ioctl wrapper failed on undeclared `errno`/`ENOENT`. Add `<cerrno>` to
+  node_info.cpp, topic_info.cpp and topic_list.cpp, which use those names.
+  Other source files already include it. This is header self-sufficiency,
+  not a runtime logic change.
+- After message imports worked, the complete suite collected 147 cases and
+  reported 146 passes plus one AttributeError: RcutilsLogger has no `warn`.
+  Use `warning()` consistently in the agent, bridge decider and registry;
+  update existing mock expectations. The existing real-logger failure-path
+  test exposes this API issue without inventing another logger abstraction.
+  All 147 cases now pass, and all ioctl library targets build.
+- Bazel Python mains must end in `.py`, while upstream's installed wrappers
+  have extensionless names. Copy the existing scripts to declared `.py`
+  outputs and use them as py_binary mains, retaining the public executable
+  names and their existing alias behavior.
+
+Commands used (clean caller environment, no sourced ROS):
+
+```bash
+clean_bazel() {
+  env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" bazel "$@"
+}
+clean_bazel test @ros2agnocast_discovery_agent//:tests \
+  @agnocast_ioctl_wrapper//... --test_output=errors
+clean_bazel test --strategy=TestRunner=local \
+  --run_under=//bazel/agnocast:with_runtime --nocache_test_results \
+  --test_output=errors //bazel/agnocast:bridge_plugins_test
+```
+
+The second command passes all 11 cases in 7.2 seconds: eight loader cases,
+two automatic bridge directions, and one actual agent gossip case. No case
+is skipped. Runtime assembly supplies ament
+resource symlinks, the agent executables, the ioctl library, typed plugins and
+the heap hook. Set plugin search, ament prefix and library search before
+preloading the final process: the allocator can fork runtime daemons before
+`main()`. Merely setting the plugin environment in the test body is too late
+for the manager fork. Preserve the host PID namespace for kernel-backed tests.
+No Fast DDS or pre-commit check has run.
+
+Runtime registration diagnosis: ament_package installs executables under
+lib/<package> in its install metadata, but the reused ament_index runfiles
+layout places them in bin/. The agent's automatic startup could find its
+package marker but not its required executable path. Register the existing
+py_binary outputs under lib/ros2agnocast_discovery_agent with
+register_ament_files and include that registration in ament_package data.
+The full runtime gate then passes, including agent startup and gossip.
+Keep the runtime payload in cc_test data, not the --run_under tool's data:
+otherwise Bazel builds it again in the execution configuration, where the
+fixed target RMW selection does not constrain its dependency closure.

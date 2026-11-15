@@ -477,7 +477,7 @@ def test_load_domain_rules_returns_empty_when_no_config_exists(monkeypatch, tmp_
 
     assert _load_domain_rules(logger) == []
     logger.info.assert_called_once()
-    logger.warn.assert_not_called()
+    logger.warning.assert_not_called()
 
 
 def test_load_domain_rules_falls_back_to_the_default_path(monkeypatch, tmp_path):
@@ -495,7 +495,7 @@ def test_load_domain_rules_warns_when_the_configured_path_is_absent(monkeypatch,
     logger = MagicMock()
 
     assert _load_domain_rules(logger) == []
-    logger.warn.assert_called_once()
+    logger.warning.assert_called_once()
 
 
 def test_load_domain_rules_logs_what_it_loaded(monkeypatch, tmp_path):
@@ -536,7 +536,7 @@ def test_load_domain_rules_warns_about_topics_without_a_domain_pair(monkeypatch,
     logger = MagicMock()
 
     assert _load_domain_rules(logger) == [('/x', '/x', 1, 2)]
-    assert '/y' in logger.warn.call_args[0][0]
+    assert '/y' in logger.warning.call_args[0][0]
 
 
 def test_load_domain_rules_errors_and_returns_empty_on_a_broken_config(monkeypatch, tmp_path):
@@ -571,7 +571,7 @@ def test_load_domain_rules_warns_that_the_env_var_shadows_the_drop_ins(monkeypat
     logger = MagicMock()
 
     assert _load_domain_rules(logger) == [('/x', '/x', 1, 2)]
-    warning = logger.warn.call_args[0][0]
+    warning = logger.warning.call_args[0][0]
     assert domain_bridge_config.SHADOWED_DROP_INS_NOTICE in warning
     assert str(drop_in_dir / '10-base.yaml') in warning
 
@@ -584,7 +584,7 @@ def test_load_domain_rules_is_quiet_when_the_drop_in_directory_is_empty(monkeypa
     logger = MagicMock()
 
     assert _load_domain_rules(logger) == [('/x', '/x', 1, 2)]
-    logger.warn.assert_not_called()
+    logger.warning.assert_not_called()
 
 
 def test_load_domain_rules_keeps_the_configs_that_load_around_a_broken_one(monkeypatch, tmp_path):
