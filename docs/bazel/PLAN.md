@@ -675,7 +675,8 @@ one module at a time, committing each successful module separately:
 | 4 | autoware_interpolation | All four sources and public headers; all eight existing test files (32 test declarations). |
 | 5 | autoware_vehicle_info_utils | Both sources, current and compatibility include paths, ament-indexed YAML/launch resources, calculator entry point, and both existing test targets (2 ROS parameter cases plus 13 pure geometry cases). |
 
-These counts are a static source inventory, not executed-case results. Remaining definitions are unvalidated drafts. Local-only modules use 0.0.0 and
+These counts are a static source inventory, not executed-case results. Remaining
+definitions are unvalidated drafts. Local-only modules use 0.0.0 and
 root local_path_override selections; no RCR counterpart is asserted. Reuse the
 already-selected Eigen, Boost.Optional, ROS/message and geometry/TF providers.
 Do not introduce another dependency version or source patch without an actual
@@ -700,8 +701,8 @@ Fast DDS run, full communication matrix, or repeat of the whole development
 image is an automatic requirement here. Reuse unaffected Phase 3/4 evidence.
 
 Validation is now authorized and proceeds one module at a time with Cyclone
-DDS. Completed: Kalman (23 cases) and QoS (one consumer case). Pending: signal
-processing, interpolation and vehicle-info. Commit and push each validated
+DDS. Completed: Kalman (23 cases), QoS (one consumer case) and signal processing
+(12 cases). Pending: interpolation and vehicle-info. Commit and push each validated
 module separately, and retain incomplete entries until their gates pass.
 
 Domain-specific point/PCL, mapping/Lanelet2, motion/trajectory and solver

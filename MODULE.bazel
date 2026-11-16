@@ -286,3 +286,9 @@ local_path_override(
     module_name = "autoware_qos_utils",
     path = "src/core/autoware_core/common/autoware_qos_utils",
 )
+
+bazel_dep(name = "autoware_signal_processing", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_signal_processing",
+    path = "src/core/autoware_core/common/autoware_signal_processing",
+)

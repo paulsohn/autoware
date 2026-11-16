@@ -2989,3 +2989,38 @@ existing suites, this new test has no local main. Depend on gtest_main rather
 than gtest for the runner. The complete corrected module gate passes in
 5.837 seconds. Targeted formatting and whitespace checks pass; no source
 compatibility patch, Fast DDS run or broad matrix is needed.
+
+## 2026-11-16: Phase 5.1 — autoware_signal_processing
+
+Purpose: Provide the low-pass and Butterworth filters used by
+localization/planning.
+
+Prerequisites and inspected inputs: the pinned Phase 3/4 workspace and
+CMakeLists.txt, package.xml, all three implementation files, public includes,
+three existing test files and the private Butterworth fixture header.
+
+Minimum integration pattern and rationale: Use the narrow Boost.Optional and
+generated geometry interfaces alongside RCLCPP logging. Keep the fixture include
+directory on the test and collect geometry/RCLCPP shared providers at the final
+executable. All 12 existing static test declarations are registered.
+
+Select the package-local 0.0.0 module with a root local_path_override. Component
+definitions use only package/external labels, with no root bazel/ dependency.
+Source compatibility patches and dependency upgrades remain hypotheses until
+this target exposes a need.
+
+Verification command:
+
+```bash
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --nocache_test_results --test_output=errors \
+  --local_test_jobs=1 @autoware_signal_processing//...
+```
+
+Result: all three implementations and three existing test files build. All 12
+cases pass without failures, errors, disabled cases or skips, confirmed in GTest
+XML. The complete module gate takes 9.117 seconds with cached dependencies.
+These sources have no test main, so the target explicitly depends on gtest_main
+as its runner. No source compatibility patch or dependency upgrade is required.
+Targeted buildifier and whitespace checks pass. No Fast DDS check, pre-commit,
+broad communication matrix or container rerun is performed.

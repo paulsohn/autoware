@@ -1,0 +1,42 @@
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "autoware_signal_processing",
+    srcs = [
+        "src/butterworth.cpp",
+        "src/lowpass_filter.cpp",
+        "src/lowpass_filter_1d.cpp",
+    ],
+    hdrs = glob(["include/**/*.hpp"]),
+    strip_include_prefix = "include",
+    deps = [
+        "@geometry_msgs//:cc",
+        "@rclcpp//:rclcpp_library",
+        "@rosdistro//cc:boost.optional",
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "test_dynamic_deps",
+    dynamic_deps = [
+        "@geometry_msgs//:cc_shared",
+        "@rclcpp//:rclcpp",
+    ],
+)
+
+cc_test(
+    name = "test_signal_processing",
+    srcs = glob([
+        "test/src/*.cpp",
+        "test/include/*.hpp",
+    ]),
+    dynamic_deps = [":test_dynamic_deps"],
+    includes = ["test/include"],
+    deps = [
+        ":autoware_signal_processing",
+        "@googletest//:gtest_main",
+    ],
+)
