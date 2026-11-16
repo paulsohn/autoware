@@ -867,7 +867,11 @@ map visualization, then NDT scan matching and pose initialization after their
 actual prerequisites. Inventory each package's complete suite before coding it.
 The specifications prerequisite passes all 30 existing cases, including C++17,
 manifest regeneration and explicitly enabled type-hash freshness against its
-unchanged committed fixtures. No source patch or fixture refresh is needed.
+unchanged committed fixtures. No source patch or fixture refresh is needed. Projection loader also passes
+all fourteen C++ cases, four original ROS launch suites (eight cases), and both
+RCLCPP/Agnocast publication probes without a production source patch. Its enabled
+gate uses the existing MapProjectorInfo bridge plugin and built heap hook.
+The map loader requires the unpublished local Lanelet2 utility library next.
 Keep package commits separate and heavy builds sequential; routine Cyclone DDS
 only. Phase 5.3 system/API composition and Phase 6 GPU integration stay separate.
 

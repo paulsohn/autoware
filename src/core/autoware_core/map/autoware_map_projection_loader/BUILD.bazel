@@ -1,0 +1,109 @@
+load("@autoware_agnocast_wrapper//:defs.bzl", "autoware_agnocast_node")
+load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+exports_files(glob([
+    "test/*.test.py",
+    "test/data/*.yaml",
+]) + ["test/test_standalone.py"])
+
+cc_library(
+    name = "autoware_map_projection_loader",
+    srcs = [
+        "src/load_info_from_lanelet2_map.cpp",
+        "src/map_projection_loader.cpp",
+    ],
+    hdrs = glob(["include/**/*.hpp"]),
+    strip_include_prefix = "include",
+    deps = [
+        "@autoware_lanelet2_extension//:autoware_lanelet2_extension_lib_library",
+        "@autoware_map_msgs//:cc",
+        "@lanelet2_core//:lanelet2_core_library",
+        "@lanelet2_io//:lanelet2_io_library",
+        "@lanelet2_projection//:lanelet2_projection_library",
+        "@rosdistro//cc:yaml-cpp_library",
+    ],
+)
+
+cc_library(
+    name = "node_library",
+    srcs = ["src/map_projection_loader_node.cpp"],
+    hdrs = ["src/map_projection_loader_node.hpp"],
+    deps = [
+        ":autoware_map_projection_loader",
+        "@autoware_agnocast_wrapper//:autoware_agnocast_wrapper_library",
+        "@autoware_component_interface_specs",
+        "@rclcpp//:rclcpp_library",
+        "@rclcpp_components//:rclcpp_components_library",
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "core_dynamic_deps",
+    dynamic_deps = [
+        "@autoware_lanelet2_extension//:autoware_lanelet2_extension_lib",
+        "@autoware_map_msgs//:cc_shared",
+        "@rosdistro//cc:yaml-cpp",
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = [
+        ":core_dynamic_deps",
+        "@autoware_agnocast_wrapper//:autoware_agnocast_wrapper",
+        "@rclcpp_components//:rclcpp_components",
+    ],
+)
+
+cc_shared_library(
+    name = "projection_component",
+    dynamic_deps = [":runtime_dynamic_deps"],
+    deps = [":node_library"],
+)
+
+autoware_agnocast_node(
+    name = "autoware_map_projection_loader_node",
+    package_name = "autoware_map_projection_loader",
+    component = ":projection_component",
+    plugin = "autoware::map_projection_loader::MapProjectionLoader",
+)
+
+register_ament_files(
+    name = "node_executables",
+    files = [":autoware_map_projection_loader_node"],
+    prefix = "lib/autoware_map_projection_loader",
+    strip_prefix = "*",
+)
+
+ament_index(
+    components = [":autoware_map_projection_loader_node_components"],
+    data = glob([
+        "config/*",
+        "launch/*",
+        "test/data/*",
+    ]) + [
+        ":autoware_map_projection_loader_node_plugin",
+        ":node_executables",
+    ],
+    package_xml = "package.xml",
+)
+
+[
+    cc_test(
+        name = name,
+        srcs = ["test/" + name + ".cpp"],
+        dynamic_deps = [":core_dynamic_deps"],
+        deps = [
+            ":autoware_map_projection_loader",
+            "@googletest//:gtest",
+        ],
+    )
+    for name in [
+        "test_load_info_from_yaml",
+        "test_load_info_from_lanelet2_map",
+    ]
+]

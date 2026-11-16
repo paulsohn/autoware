@@ -4202,3 +4202,62 @@ fixtures must also be declared as test data. Inspect XML only for current test
 targets, since the shared output cache can retain logs for unrelated old labels.
 Targeted buildifier and whitespace checks pass. No Fast DDS, pre-commit,
 container or communication-matrix check was run. Next: map projection loader.
+
+
+## 2026-11-16: Phase 5.2.4 — autoware_map_projection_loader
+
+Purpose: run map projection publication from YAML or Lanelet2 metadata. Inspected
+three sources, public/node headers, CMake, parameters/launch and every existing
+test. Gate: eleven YAML/selection C++ cases, three Lanelet metadata C++ cases,
+all four original ROS launch suites (live assertion and clean-exit assertion),
+and standalone publication with both RCLCPP and enabled Agnocast. Host device
+and module were verified outside the sandbox: /dev/agnocast exists, version2.4.1
+matches running kernel7.0.0-43-generic. No Fast DDS is selected.
+
+Pattern: keep pure parser sources separate from the wrapper-derived node;
+public core header target and core shared closure let parser tests run without
+kernel/heap-hook requirements. Node adds the validated specifications headers,
+wrapper shared provider and standard switchable launcher/plugin/index support.
+Register config/launch/test fixtures in the ament index. Original launch tests
+run unchanged with ENABLE_AGNOCAST=0; use a small explicit standalone probe for
+the enabled backend, preloading only its child and selecting the root bridge
+runtime. MapProjectorInfo already belongs to the top-level interface closure.
+Verification commands (sequential):
+
+```bash
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --nocache_test_results --test_output=errors --local_test_jobs=1 \
+  @autoware_map_projection_loader//...
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --nocache_test_results --test_output=errors --local_test_jobs=1 \
+  --strategy=TestRunner=local \
+  //bazel/tests:map_projection_mgrs_launch_test \
+  //bazel/tests:map_projection_local_launch_test \
+  //bazel/tests:map_projection_local_cartesian_utm_launch_test \
+  //bazel/tests:map_projection_transverse_mercator_launch_test
+for backend in rclcpp agnocast; do
+  env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+    bazel test --nocache_test_results --test_output=errors --local_test_jobs=1 \
+    --strategy=TestRunner=local --run_under=//bazel/agnocast:with_runtime \
+    //bazel/tests:map_projection_${backend}_test
+done
+```
+
+Result: all fourteen C++ cases pass without failures/errors/disabled/skips,
+confirmed in current-target GTest XML. All four original launch suites pass
+(two cases each: live output and clean exit), plus both standalone probes.
+Module invocation: 18.419 seconds; launch invocation25.209 seconds, each suite
+2.8–2.9 seconds. Standalone RCLCPP0.7 seconds (2.043-second invocation) and
+Agnocast1.2 seconds (3.540-second invocation). Enabled mode uses the built heap
+hook and root interface bridge with an ordinary rclpy transient-local peer;
+assert projector type, datum, complete origin and clean SIGINT exit.
+
+Setup know-how: the pinned Googletest target is gtest (also exporting gmock),
+not a separate gmock label. ROS CLI needs lanelet2_map_path:="" for an empty
+string; a bare := fails argument parsing before node initialization. Keep the
+runtime wrapper's AGNOCAST_TEST_NO_PRELOAD=1 so the Python peer stays ordinary
+ROS and only the enabled child preloads the hook. These are test/build setup
+corrections, not production patches. Original launch sources remain unchanged.
+Targeted buildifier, Python syntax and whitespace checks pass. No Fast DDS,
+pre-commit, container or broad matrix rerun was performed. Next: the Lanelet2
+utility library needed by the actual map-loader source.
