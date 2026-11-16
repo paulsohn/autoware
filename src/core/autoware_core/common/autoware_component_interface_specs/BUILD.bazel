@@ -1,0 +1,106 @@
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "autoware_component_interface_specs",
+    hdrs = glob(["include/**/*.hpp"]),
+    strip_include_prefix = "include",
+    deps = [
+        "@autoware_adapi_v1_msgs//:cc",
+        "@autoware_control_msgs//:cc",
+        "@autoware_localization_msgs//:cc",
+        "@autoware_map_msgs//:cc",
+        "@autoware_perception_msgs//:cc",
+        "@autoware_planning_msgs//:cc",
+        "@autoware_system_msgs//:cc",
+        "@autoware_vehicle_msgs//:cc",
+        "@geometry_msgs//:cc",
+        "@nav_msgs//:cc",
+        "@rclcpp//:rclcpp_library",
+        "@rmw//:rmw_library",
+        "@sensor_msgs//:cc",
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = [
+        "@rclcpp//:rclcpp",
+        "@autoware_adapi_v1_msgs//:cc_shared",
+        "@autoware_control_msgs//:cc_shared",
+        "@autoware_localization_msgs//:cc_shared",
+        "@autoware_map_msgs//:cc_shared",
+        "@autoware_perception_msgs//:cc_shared",
+        "@autoware_planning_msgs//:cc_shared",
+        "@autoware_system_msgs//:cc_shared",
+        "@autoware_vehicle_msgs//:cc_shared",
+        "@geometry_msgs//:cc_shared",
+        "@nav_msgs//:cc_shared",
+        "@sensor_msgs//:cc_shared",
+    ],
+)
+
+cc_binary(
+    name = "generate_interface_manifest",
+    srcs = ["src/generate_interface_manifest.cpp"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+    deps = [":autoware_component_interface_specs"],
+)
+
+cc_binary(
+    name = "generate_type_hashes",
+    srcs = ["src/generate_type_hashes.cpp"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+    deps = [
+        ":autoware_component_interface_specs",
+        "@rcutils//:rcutils_library",
+        "@rosidl_runtime_c//:rosidl_runtime_c_library",
+        "@rosidl_runtime_cpp//:rosidl_runtime_cpp_library",
+        "@rosidl_typesupport_cpp//:rosidl_typesupport_cpp_library",
+    ],
+)
+
+cc_test(
+    name = "test_component_interface_specs",
+    srcs = glob(
+        [
+            "test/*.cpp",
+            "test/*.hpp",
+        ],
+        exclude = ["test/test_cxx17_compat.cpp"],
+    ),
+    data = [
+        "interface_manifest.json",
+        "interface_type_hashes.jazzy.lock",
+        ":generate_interface_manifest",
+        ":generate_type_hashes",
+    ],
+    dynamic_deps = [":runtime_dynamic_deps"],
+    env = {"AUTOWARE_CIS_CHECK_TYPE_HASHES": "1"},
+    local_defines = [
+        'GENERATE_TOOL=\\"$(rootpath :generate_interface_manifest)\\"',
+        'GENERATE_HASHES_TOOL=\\"$(rootpath :generate_type_hashes)\\"',
+        'COMMITTED_MANIFEST=\\"$(rootpath :interface_manifest.json)\\"',
+        'COMMITTED_HASHES=\\"$(rootpath :interface_type_hashes.jazzy.lock)\\"',
+    ],
+    deps = [
+        ":autoware_component_interface_specs",
+        "@googletest//:gtest",
+    ],
+)
+
+cc_test(
+    name = "test_component_interface_specs_cxx17",
+    srcs = [
+        "test/gtest_main.cpp",
+        "test/test_cxx17_compat.cpp",
+    ],
+    copts = ["-std=c++17"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+    deps = [
+        ":autoware_component_interface_specs",
+        "@googletest//:gtest",
+    ],
+)

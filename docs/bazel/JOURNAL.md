@@ -4157,3 +4157,48 @@ results, not a new aggregate system sweep. Ordinary RCLCPP backend behavior is
 preserved. The unused PCL utility and optional test-helper visualization header
 remain outside this slice until a real consumer needs them. Phase 5.2.4 starts
 with map loading and projection prerequisites; CUDA stays in Phase 6.
+
+
+## 2026-11-16: Phase 5.2.4 — autoware_component_interface_specs
+
+Purpose: prepare the projection loader's actual domain/QoS header dependency.
+Inspected its CMake, manifest, all domain/utility headers, two producer tools,
+committed manifest/hash fixtures and all tests. RCR metadata returns 404 for
+this package and the projection loader; use local-only modules. Gate: all
+28 current-platform domain/concept/manifest/hash cases plus two C++17 consumer
+cases (the conditional no-hash-API skip case is not selected on Lyrical).
+Enable AUTOWARE_CIS_CHECK_TYPE_HASHES=1 to execute the existing opt-in freshness
+gate rather than accepting its default skip.
+
+Pattern: scoped header library over declared message targets and RCLCPP/RMW,
+package-owned shared dependency provider, both producer binaries, tests with
+declared tool/fixture data and rootpath compile definitions. The C++17 test
+keeps its explicit language mode and original #error guard; other targets use
+the pinned C++23 default. Retain the committed Jazzy hash fixture initially:
+if it fails, inspect the exact type/schema differences before deciding a fix.
+No runtime node is introduced by this header-only package.
+
+Verification:
+
+```bash
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --nocache_test_results --test_output=errors --local_test_jobs=1 \
+  @autoware_component_interface_specs//...
+```
+
+Result: all 30 cases pass with no failures/errors/disabled/skips, confirmed in
+GTest XML of the two declared targets (28 primary and two C++17). Both producer
+tools build and execute via the original tests. The original committed manifest
+and Jazzy type hashes match this pinned Lyrical interface graph; no refresh or
+source compatibility patch is needed. The C++17 source's original #error guard
+passes with target copts -std=c++17 while generators and other cases retain
+C++23. This is consumer language validation, not a Humble/Jazzy runtime claim.
+Final invocation: 8.993 seconds; tests 0.6/0.1 seconds.
+
+Build declaration know-how: include the existing spec_test_utils.hpp in test
+sources, and escape quotes around rootpath-based C++ macro definitions; Bazel
+tokenization otherwise removes the C++ string quotes. Generator and committed
+fixtures must also be declared as test data. Inspect XML only for current test
+targets, since the shared output cache can retain logs for unrelated old labels.
+Targeted buildifier and whitespace checks pass. No Fast DDS, pre-commit,
+container or communication-matrix check was run. Next: map projection loader.

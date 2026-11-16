@@ -852,6 +852,25 @@ sensing/perception packages. Defer that utility's local adoption until an actual
 consumer (such as NDT in Phase 5.2.4) requires it; this group uses native PCL
 and conversion providers directly where its sources need them.
 
+#### Phase 5.2.4: Map loading and map-dependent localization (in progress)
+
+Start with map projection, whose current source requires component-interface
+specifications. Neither package has a published RCR module, so introduce local
+modules in dependency order. Preserve the specifications package's full domain,
+concept, manifest, type-hash and C++17 compatibility tests, including its opt-in
+hash freshness check. Do not silently skip or refresh a dependency-skew failure.
+Then validate the projection loader's two C++ suites and four original launch
+suites with RCLCPP, plus relevant enabled Agnocast behavior. Reuse the existing
+Lanelet2 extension/geography providers until a current consumer exposes a need
+for local source adoption. Continue with both map loaders, height fitting and
+map visualization, then NDT scan matching and pose initialization after their
+actual prerequisites. Inventory each package's complete suite before coding it.
+The specifications prerequisite passes all 30 existing cases, including C++17,
+manifest regeneration and explicitly enabled type-hash freshness against its
+unchanged committed fixtures. No source patch or fixture refresh is needed.
+Keep package commits separate and heavy builds sequential; routine Cyclone DDS
+only. Phase 5.3 system/API composition and Phase 6 GPU integration stay separate.
+
 ## Later phases
 
 ### Incoming phase identifiers

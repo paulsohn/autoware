@@ -417,3 +417,9 @@ local_path_override(
     module_name = "autoware_perception_objects_converter",
     path = "src/core/autoware_core/perception/autoware_perception_objects_converter",
 )
+
+bazel_dep(name = "autoware_component_interface_specs", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_component_interface_specs",
+    path = "src/core/autoware_core/common/autoware_component_interface_specs",
+)
