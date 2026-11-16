@@ -3286,3 +3286,70 @@ or additional dependency version was required by this module. Targeted
 buildifier, Python syntax/template inventory and whitespace checks pass.
 Existing unchanged wrapper suites retain their Phase 4 evidence. No Fast DDS,
 pre-commit or broad communication/container sweep was run.
+
+## 2026-11-16: Phase 5.2.1 — autoware_stop_filter
+
+Purpose: Expose stopped-vehicle odometry filtering and the timestamped stop flag
+as a switchable standalone node, reusing the converter's packaging pattern.
+
+Inputs: package.xml, CMakeLists.txt, both source/header pairs, YAML/launch files,
+six existing pure cases and one RCLCPP node case. The node case is omitted by
+CMake with ENABLE_AGNOCAST=1; retain it under the explicit no-agnocast gate.
+Neither file has main. The current source requires BoolStamped and Odometry.
+RCR metadata supplies autoware_internal_debug_msgs 1.16.0-1.rcr.0, matching the
+source snapshot's version; select it without making an unnecessary local
+interface module. nav_msgs 5.9.3-1.rcr.0 is already in the resolved ROS graph.
+The module build below validates these selections.
+
+Integration: package-local algorithm library, node library/shared component,
+wrapper-owned switchable main, ament index with component/plugin records and
+lib/<package> executable, existing YAML/launch resources, and both unmodified
+existing test files using gtest_main. The final closure needs debug/nav message
+shared providers and the wrapper/component runtime. Add debug/nav interfaces
+to the product's all-interface roots and bridge compile/shared lists because
+the enabled standalone test exposes these types to ordinary ROS peers.
+
+Behavior gate: the actual standalone binary reads its YAML, consumes Odometry
+with velocities below the configured thresholds, publishes zeroed twist and a
+true BoolStamped stop flag, preserving frame/pose and timestamp. Test both
+backends and normal SIGINT exit, without preloading the Python driver. Existing
+pure tests cover moving/threshold/axis behavior. No source compatibility patch
+is anticipated or applied.
+
+Verification commands (executed sequentially):
+
+```bash
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=no-agnocast --nocache_test_results --test_output=errors \
+  --local_test_jobs=1 @autoware_stop_filter//...
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=no-agnocast --nocache_test_results --test_output=errors \
+  --local_test_jobs=1 --strategy=TestRunner=local \
+  --run_under=//bazel/agnocast:with_runtime //bazel/tests:stop_filter_rclcpp_test
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --nocache_test_results --test_output=errors \
+  --local_test_jobs=1 --strategy=TestRunner=local \
+  --run_under=//bazel/agnocast:with_runtime //bazel/tests:stop_filter_agnocast_test
+```
+
+Result: the full module surface builds and both existing targets pass all
+seven cases, confirmed in XML with no failures/errors/skips (106.749-second
+initial build/test). The standalone RCLCPP and Agnocast checks pass in
+1.3 and 1.6 seconds respectively from test/test_standalone.py, checking both
+outputs and clean exit. Each target selects and asserts the actual backend.
+The published debug messages and pinned nav_msgs resolve without a local
+interface override or host dependency installation.
+
+Adding debug/nav package roots expands the existing generated plugin library's
+compile include set and invalidates many plugin compile actions; the first
+expanded-runtime invocation takes 472.823 seconds, while its actual standalone
+check takes 2.3 seconds. Reuse this built runtime for remaining checks; do not
+mistake generated-plugin compilation cost for a slow node test. Later runs use
+cached compilation. No plugin-rule redesign is introduced here. RCR metadata
+was inspected at
+https://bazel.ros.org/modules/autoware_internal_debug_msgs/metadata.json.
+
+No source compatibility patch was needed. Targeted buildifier, Python syntax
+and whitespace checks pass. XML launch composition/install-image checks belong
+to later product gates. No Fast DDS, pre-commit or broad communication/container
+sweep was run.

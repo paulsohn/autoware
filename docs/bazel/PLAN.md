@@ -774,9 +774,10 @@ Validation order (build pause lifted; proceed sequentially):
    seven and twelve cases respectively; enumerate their required behavior
    checks before writing their definitions.
 
-Converter passes its full six-case existing suite and both standalone runtime
-checks with Cyclone DDS. Stop filter and twist2accel remain the next package
-boundaries in this group; each needs its full suite and both runtime checks.
+Converter and stop filter pass their full existing suites (six and seven
+cases), plus standalone RCLCPP and Agnocast checks. Stop filter validates the
+published debug messages 1.16.0-1.rcr.0 and nav_msgs 5.9.3-1.rcr.0.
+Twist2accel is the remaining module gate for this group.
 
 ## Commit and publication policy
 
