@@ -819,7 +819,9 @@ communication-matrix gate is added.
 
 Point types passes all 33 cases with no skips using PCL common and the published
 point_cloud_msg_wrapper 1.0.7-6.rcr.2. This pin is validated; no source patch or
-broad PCL provider was needed. Debug utilities are next.
+broad PCL provider was needed. Debug utilities also pass all six existing
+cases, validating autoware_internal_msgs 1.16.0-1.rcr.0 and the utility
+1.4.2-4.rcr.2 counterpart with a local override. Crop-box filtering is next.
 
 ## Later phases
 

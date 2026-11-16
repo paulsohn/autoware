@@ -3778,3 +3778,42 @@ broad PCL dependency. This validates the wrapper 1.0.7-6.rcr.2 selection.
 Targeted buildifier and whitespace checks pass. No CUDA target, host dependency
 install, Fast DDS, pre-commit, broad communication matrix or container rerun is
 needed for this module. Debug utilities are the next package gate.
+
+## 2026-11-16: Phase 5.2.3 — autoware_utils_debug
+
+Purpose: Supply processing-time, debug and published-time instrumentation for
+crop-box and later point-cloud nodes. Inputs: package.xml, CMakeLists.txt,
+time_keeper.cpp, all public headers, five existing case files and main.cpp.
+The complete suite has six cases: two traits cases and four instantiation
+cases, under its existing ROS-context environment/main. Preserve the suite's
+actual coverage; the later filter-node behavior gates exercise a runnable
+consumer. No case is disabled or skipped by inspection.
+
+Pattern: one compiled package-local cc_library with scoped headers and direct
+system utility, fmt, RCLCPP, diagnostic, standard and internal message compile
+providers. PublishedTime comes from autoware_internal_msgs, distinct from the
+already selected debug-message package. Select its published 1.16.0-1.rcr.0
+source at the root; no local interface module is needed for this consumer.
+Root metadata inspection identifies the debug utility's published counterpart
+as 1.4.2-4.rcr.2; choose that plus the local override. Export a generic
+runtime_dynamic_deps collector for final tests and subsequent nodes. Keep
+existing main.cpp and gtest, not a second test runner. Source code and context
+lifecycle remain unchanged.
+
+Verification command (executed):
+
+```bash
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --nocache_test_results --test_output=errors --local_test_jobs=1 \
+  @autoware_utils_debug//...
+```
+
+Result: the compiled source, public headers and full existing suite build;
+all six cases execute successfully with no failures/errors/skips, confirmed in
+GTest XML. The invocation takes 21.988 seconds and the suite runs for 0.1
+seconds. The published internal-message provider supplies PublishedTime and
+the debug-message provider supplies ProcessingTimeTree without a local
+interface override. This validates both new root selections. No source
+compatibility patch is needed. Targeted buildifier and whitespace checks pass.
+No Fast DDS, pre-commit, broad matrix or container rerun was performed.
+Crop-box filtering is the next runnable package boundary.
