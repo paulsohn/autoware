@@ -3172,3 +3172,22 @@ env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
 The complete module builds and its one consumer case passes from test/, with
 no failures/errors/skips in GTest XML. Targeted buildifier and whitespace checks
 pass. No Fast DDS, pre-commit or communication matrix was run.
+
+## 2026-11-16: autoware_node test layout
+
+Purpose: Keep the personal pub/sub consumer test beside the existing upstream
+initialization test. Move test_pubsub.cpp into test/, update its BUILD srcs and
+remove the empty Bazel-specific test directory. Preserve source and target
+behavior and the original test_init/shutdown source.
+
+Verification:
+
+```bash
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --nocache_test_results --test_output=errors --local_test_jobs=1 \
+  @autoware_node//...
+```
+
+The complete module builds and both cases pass from test/, with no
+failures/errors/skips in GTest XML. Targeted buildifier and whitespace checks
+pass. No Fast DDS, pre-commit or communication matrix was run.

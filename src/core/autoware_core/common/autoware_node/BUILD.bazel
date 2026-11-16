@@ -26,8 +26,8 @@ collect_transitive_dynamic_deps(
 cc_test(
     name = "test_autoware_node",
     srcs = [
-        "bazel/test_pubsub.cpp",
         "test/test_an_init_shutdown.cpp",
+        "test/test_pubsub.cpp",
     ],
     dynamic_deps = [":test_dynamic_deps"],
     deps = [
