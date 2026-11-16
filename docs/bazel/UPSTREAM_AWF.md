@@ -67,6 +67,7 @@ describes that review, not proof that no other upstream work exists.
   header blob is `2b087d9c20ae47cb25c293eda1314adf26eefa3b` and already
   includes `tl/expected.hpp`; this is an existing upstream fix, not a new
   submission opportunity.
+- Local source fix: `92256b96`, kept separate from Bazel build definitions.
 - Package: `autoware_core/sensing/autoware_downsample_filters`. The source
   snapshot includes `tl_expected/expected.hpp`, but RCR's native tl_expected
   provider exports `tl/expected.hpp`. On Ubuntu 24.04 with pinned LLVM 21.1.8,

@@ -1,0 +1,107 @@
+load("@rclcpp_components//:defs.bzl", "rclcpp_components_register_node")
+load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+exports_files(glob(["config/*.yaml"]) + ["test/test_standalone.py"])
+
+cc_library(
+    name = "autoware_downsample_filters",
+    srcs = glob(["src/**/*.cpp"]),
+    hdrs = glob(["src/**/*.hpp"]),
+    deps = [
+        "@autoware_utils_debug",
+        "@autoware_utils_system",
+        "@autoware_utils_tf",
+        "@pcl_conversions//:pcl_conversions_library",
+        "@pcl_ros//:pcl_ros_tf_library",
+        "@rclcpp//:rclcpp_library",
+        "@rclcpp_components//:rclcpp_components_library",
+        "@rosdistro//cc:boost.thread",
+        "@rosdistro//cc:eigen",
+        "@rosdistro//cc:pcl_filters",
+        "@rosdistro//cc:tl_expected",
+        "@sensor_msgs//:cc",
+        "@tf2_eigen//:tf2_eigen_library",
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = [
+        "@autoware_utils_debug//:runtime_dynamic_deps",
+        "@autoware_internal_planning_msgs//:cc_shared",
+        "@autoware_perception_msgs//:cc_shared",
+        "@autoware_planning_msgs//:cc_shared",
+        "@geometry_msgs//:cc_shared",
+        "@sensor_msgs//:cc_shared",
+        "@rcl_interfaces//:cc_shared",
+        "@rclcpp_components//:rclcpp_components",
+        "@pcl_conversions//:pcl_conversions",
+        "@pcl_ros//:pcl_ros_tf",
+        "@tf2//:tf2",
+        "@tf2_eigen//:tf2_eigen",
+        "@tf2_geometry_msgs//:tf2_geometry_msgs",
+        "@tf2_ros//:tf2_ros",
+    ],
+)
+
+cc_shared_library(
+    name = "downsample_components",
+    dynamic_deps = [":runtime_dynamic_deps"],
+    deps = [":autoware_downsample_filters"],
+)
+
+[
+    rclcpp_components_register_node(
+        name = executable,
+        component = ":downsample_components",
+        node_name = executable,
+        plugin = plugin,
+    )
+    for executable, plugin in [
+        ("random_downsample_filter_node", "autoware::downsample_filters::RandomDownsampleFilter"),
+        ("voxel_grid_downsample_filter_node", "autoware::downsample_filters::VoxelGridDownsampleFilterNode"),
+    ]
+]
+
+register_ament_files(
+    name = "node_executables",
+    files = [
+        ":random_downsample_filter_node",
+        ":voxel_grid_downsample_filter_node",
+    ],
+    prefix = "lib/autoware_downsample_filters",
+    strip_prefix = "*",
+)
+
+ament_index(
+    components = [
+        ":random_downsample_filter_node_record",
+        ":voxel_grid_downsample_filter_node_record",
+    ],
+    data = glob([
+        "config/*",
+        "launch/*",
+    ]) + [":node_executables"],
+    package_xml = "package.xml",
+)
+
+[
+    cc_test(
+        name = name,
+        srcs = [src],
+        dynamic_deps = [":runtime_dynamic_deps"],
+        includes = ["src"],
+        deps = [
+            ":autoware_downsample_filters",
+            "@googletest//:gtest" if integration else "@googletest//:gtest_main",
+        ],
+    )
+    for name, src, integration in [
+        ("test_voxel_grid_downsample_filter", "test/test_voxel_grid_downsample_filter.cpp", False),
+        ("test_voxel_grid_downsample_filter_integration", "test/test_voxel_grid_downsample_filter_integration.cpp", True),
+    ]
+]

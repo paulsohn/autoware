@@ -384,3 +384,31 @@ py_test(
         "@sensor_msgs//:py",
     ],
 )
+
+[
+    py_test(
+        name = mode + "_downsample_filter_test",
+        srcs = ["@autoware_downsample_filters//:test/test_standalone.py"],
+        args = [
+            "$(rootpath @autoware_downsample_filters//:" + executable + ")",
+            "$(rootpath @autoware_downsample_filters//:config/" + executable + ".param.yaml)",
+            mode,
+        ],
+        data = [
+            "@autoware_downsample_filters//:ament_index",
+            "@autoware_downsample_filters//:" + executable,
+            "@autoware_downsample_filters//:config/" + executable + ".param.yaml",
+        ],
+        env = {"LD_LIBRARY_PATH": "lib"},
+        main = "@autoware_downsample_filters//:test/test_standalone.py",
+        deps = [
+            "@autoware_internal_msgs//:py",
+            "@rclpy",
+            "@sensor_msgs//:py",
+        ],
+    )
+    for mode, executable in [
+        ("voxel", "voxel_grid_downsample_filter_node"),
+        ("random", "random_downsample_filter_node"),
+    ]
+]

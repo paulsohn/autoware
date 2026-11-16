@@ -823,7 +823,12 @@ broad PCL provider was needed. Debug utilities also pass all six existing
 cases, validating autoware_internal_msgs 1.16.0-1.rcr.0 and the utility
 1.4.2-4.rcr.2 counterpart with a local override. Crop-box filtering also passes
 all eleven existing cases and one standalone cloud/polygon/published-time
-check, preserving its ordinary RCLCPP component. Downsampling is next.
+check, preserving its ordinary RCLCPP component. Downsampling passes all twelve
+existing cases and both standalone voxel/random behavior checks. Its native
+expected header/manifest transition matches AWF core PR #1539; no algorithm
+change is required by the pinned C++23 toolchain. Pinned pcl_conversions
+2.10.0-1.rcr.0 and pcl_ros 2.10.0-1.rcr.1 provide the tested CPU PCL closure.
+Ground filtering and its test prerequisites are next.
 
 Source inspection finds no autoware_utils_pcl include/dependency in the selected
 sensing/perception packages. Defer that utility's local adoption until an actual

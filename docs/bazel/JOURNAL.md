@@ -3876,3 +3876,72 @@ host ROS, or patch message sources. This preserves the ordinary RCLCPP node's
 actual middleware and avoids an unnecessary runtime wrapper. Targeted
 buildifier, Python syntax and whitespace checks pass. No Fast DDS, pre-commit,
 broad matrix or container rerun was performed. Downsampling is next.
+
+## 2026-11-16: Phase 5.2.3 — autoware_downsample_filters
+
+Purpose: Integrate voxel-grid and random-sample filtering as two ordinary
+RCLCPP executables/components. Inputs: package.xml, CMakeLists.txt, four source/
+header pairs, both YAML files/launch resources, both existing test files and
+RCR PCL conversion/TF overlays. The complete existing suite is six algorithm
+and six pub/sub integration cases. The integration source supplies global main;
+the core source needs gtest_main. No disabled or skipped case was found.
+
+Pattern: package-local compiled library matching the existing CMake source set,
+shared component with two registrations/executables, combined ament records
+and resource index. Source needs PCL filters/conversions, pcl_ros transforms,
+TF Eigen, debug/system/TF utilities and tl::expected. Published ROS tl_expected
+metadata has only a source stub; use rosdistro's pinned native tl_expected
+provider rather than attempting a host package install. Keep source unchanged
+until compilation exposes any required compatibility work. Select the current
+RCR pcl_conversions 2.10.0-1.rcr.0 and pcl_ros 2.10.0-1.rcr.1 at the root.
+Final executables/tests use their shared providers, which own PCL and its
+native dependencies consistently. CUDA targets are not selected.
+
+Standalone checks launch each actual executable with its shipped YAML and
+match cloud output using best-effort subscriptions. Feed three XYZIRC points:
+two share a voxel and one is separate. Voxel output must contain the two
+expected centroids independent of output order. Random output uses sample_num=1
+and must be one original point (no assumption about which sample is chosen).
+Supply its input_frame/output_frame parameters as base_link, matching normal
+launch composition; these required parameters are not in the YAML. Both cases
+require frame/stamp and published-time metadata plus normal SIGINT exit.
+The root py_tests set LD_LIBRARY_PATH=lib for declared C introspection libs,
+without Agnocast preload or bridge dependencies.
+
+Verification commands (executed sequentially):
+
+```bash
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --nocache_test_results --test_output=errors --local_test_jobs=1 \
+  @autoware_downsample_filters//...
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --nocache_test_results --test_output=errors --local_test_jobs=1 \
+  --strategy=TestRunner=local //bazel/tests:voxel_downsample_filter_test
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --nocache_test_results --test_output=errors --local_test_jobs=1 \
+  --strategy=TestRunner=local //bazel/tests:random_downsample_filter_test
+```
+
+Result: all twelve existing cases pass (six core and six integration), with
+GTest XML confirming no failures/errors/disabled/skipped cases. Both executable
+checks pass: voxel 1.8 seconds, random 1.6 seconds; complete invocations take
+32.176 and 6.155 seconds respectively. The successful module invocation takes
+81.686 seconds, including the remaining first-use PCL dependency compilation.
+Targeted buildifier, Python syntax, package XML and whitespace checks pass.
+
+The first build fails before tests because the legacy tl_expected/expected.hpp
+include is not provided by the native expected library. Change only this
+package's include to tl/expected.hpp and manifest dependency to libexpected-dev,
+matching AWF core PR #1539 (actual patch and main reviewed 2026-11-16). No host
+package is installed. Under the pinned C++23 toolchain the original unexpected
+error returns compile and the suite passes; the PR's additional make_unexpected
+changes are unnecessary here. UPSTREAM_AWF.md records the exact association.
+
+The first PCL shared closure also brings Qt/VTK visualization dependencies from
+the published provider, despite these targets selecting CPU point filtering.
+Its first invocation takes 595.048 seconds and fails at our legacy include;
+subsequent invocations reuse the prepared dependencies. Native CUDA targets
+are not selected. Keep heavy builds sequential with user.bazelrc limits. No
+Fast DDS, pre-commit, full communication matrix or container rerun was performed.
+Next: prepare the test helper needed by ground filtering, then integrate the
+complete ground-filter module.
