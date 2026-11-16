@@ -346,6 +346,20 @@ env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
   bazel run @autoware_vehicle_info_utils//:min_turning_radius_calculator
 ```
 
+Geography consumers can use `@autoware_geography_utils//:runtime_dynamic_deps`
+for its shared-library closure and `:geoid_grid` as a declared data file. Set
+GEOGRAPHICLIB_GEOID_PATH to the grid's runfiles directory in the consuming
+process when EGM2008 is selected. Do not rely on an apt-installed geoid dataset.
+The geography suite runs both grid-present and deliberately grid-absent cases;
+the GNSS suites run against the real grid without skipping height conversion:
+
+```bash
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --nocache_test_results @autoware_geography_utils//...
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=no-agnocast --nocache_test_results @autoware_gnss_poser//...
+```
+
 ## Switchable standalone nodes
 
 For a wrapper-derived node using AgnocastOnlyCallbackIsolatedExecutor and a

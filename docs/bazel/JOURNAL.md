@@ -3626,14 +3626,15 @@ needed. Library sources and scoped include paths stay package-owned.
 Verification command (executed):
 
 ```bash
-# Optional: reuse the already downloaded, checksum-verified official archive.
-# task_geo_distdir is a local cache directory, not a build dependency.
 env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
-  bazel test --distdir="$task_geo_distdir" --nocache_test_results \
-  --test_output=errors --local_test_jobs=1 @autoware_geography_utils//...
+  bazel test --nocache_test_results --test_output=errors --local_test_jobs=1 \
+  @autoware_geography_utils//...
 ```
 
-Without a preseeded archive, omit --distdir and Bazel fetches the declared URL.
+The initial invocation additionally used --distdir="$task_geo_distdir" to
+reuse the downloaded, checksum-verified official archive. Without a preseeded
+archive, Bazel fetches the declared URL. The normal command above also passes
+after the shared-provider rename recorded in the GNSS entry.
 The current experiment's download directory is temporary; no developer path is
 part of a committed build definition. Require full library compilation and all
 21 cases across both XML reports without failures/errors/skips.
@@ -3648,3 +3649,95 @@ Lanelet2 1.2.1-8.rcr.2 inputs are now validated for this boundary. Targeted
 buildifier, shell syntax and whitespace checks pass. No Fast DDS, pre-commit,
 broad communication matrix or container rerun was performed. GNSS poser is the
 remaining Phase 5.2.2 package gate.
+
+## 2026-11-16: Phase 5.2.2 — autoware_gnss_poser
+
+Purpose: Integrate the final localization slice's GNSS projection node, with
+real geoid conversion and the existing runtime/characterization suites.
+Inputs: package.xml, CMakeLists.txt, source/header, config/launch files and both
+existing test files. Their complete gate is 44 cases (13 node plus 31
+characterization), including a real EGM2008 case that would skip without data.
+Both supply global main and initialize their ROS context; retain separate
+executables with gtest rather than introducing another runner. CMake omits
+both suites in enabled builds; keep the full RCLCPP gate and enabled standalone
+behavior separately.
+
+Pattern: one node cc_library/shared component, the existing switchable-main
+adapter with executable name gnss_poser, and ament resources plus lib/<package>
+entry. Compile with geography, wrapper, message/TF and narrow Boost.CircularBuffer
+providers. Reuse geography's shared closure under the production-facing name
+runtime_dynamic_deps (rename its test-specific label now that a consumer needs
+it). Its geoid_grid alias supplies data without exposing the private external
+repository name to root or GNSS consumers.
+
+Wrap each existing test executable with a tiny test-owned shell launcher that
+sets GEOGRAPHICLIB_GEOID_PATH to that declared grid and forwards GTest XML.
+Run every original case, without filters or dataset-related skips. The
+characterization source's GNSS_POSER_CONFIG_DIR macro points at
+share/autoware_gnss_poser/config, supplied by its own ament_index in runtime
+data. This is a package-relative resource convention, not a metarepository
+source path; it avoids embedding a developer checkout or canonical repository
+name. Keep the private src include path only on tests.
+
+Standalone checks load the real YAML, selecting motion-derived orientation for
+a deterministic single-fix scenario. Publish a transient-local LocalCartesian
+map origin and an EGM2008 vertical datum, then valid NavSatFix samples at that
+origin. Require map-frame pose with zero horizontal displacement, nontrivial
+geoid height correction, unit orientation, configured covariance and timestamped
+true gnss_fixed, followed by normal SIGINT exit. Run both actual backends with
+ordinary ROS peers and native-child-only heap preload. Add only NavSatFix and
+its declared type closure to existing sensor plugin selection; the compile/shared
+sensor providers already exist, so unrelated interfaces need not be added.
+
+Verification commands (executed sequentially):
+
+```bash
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --nocache_test_results --test_output=errors --local_test_jobs=1 \
+  @autoware_geography_utils//...
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=no-agnocast --nocache_test_results --test_output=errors \
+  --local_test_jobs=1 @autoware_gnss_poser//...
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --nocache_test_results --test_output=errors --local_test_jobs=1 \
+  --strategy=TestRunner=local --run_under=//bazel/agnocast:with_runtime \
+  //bazel/tests:gnss_poser_rclcpp_test
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --nocache_test_results --test_output=errors --local_test_jobs=1 \
+  --strategy=TestRunner=local --run_under=//bazel/agnocast:with_runtime \
+  //bazel/tests:gnss_poser_agnocast_test
+```
+
+Result: the complete module builds, and all 44 original cases execute and
+pass without failures/errors/skips, including the EGM2008 characterization
+case. GTest XML confirms 13 and 31 cases. The final existing-suite invocation
+takes 42.094 seconds; characterization runs for 25.0 seconds and the node
+suite for 0.7 seconds. The renamed geography provider also passes its full
+21-case regression in 3.986 seconds with the normal cached-input command.
+
+The first characterization compile treated the config macro as identifiers:
+Bazel flag tokenization consumed unescaped quotes around the path. Preserve
+escaped quotes in the BUILD defines value, e.g.:
+
+```starlark
+defines = ['GNSS_POSER_CONFIG_DIR=\\"share/autoware_gnss_poser/config\\"']
+```
+
+The resulting C++ macro is a string literal and the unchanged test loads the
+YAML from its ament-index runfiles. No source workaround or checkout-specific
+path is needed. Both standalone checks pass in 1.5 seconds each, including
+real grid-backed height correction, pose/covariance/fix status, backend startup
+assertions and normal SIGINT exit. The RCLCPP invocation builds the two added
+NavSatFix/Status bridge sources (22.013 seconds total); existing plugin objects
+remain cached because the sensor compile/shared provider selection is unchanged.
+The enabled invocation then takes 3.711 seconds total. The final
+15-target build also passes in 3.752 seconds after marking the two test binaries
+test-only; their tested source/runtime configuration is unchanged.
+
+Targeted buildifier, Python syntax, shell syntax and whitespace checks pass.
+No production GNSS source fix or additional dependency version was required.
+No Fast DDS, pre-commit, broad communication matrix or container sweep was run.
+This completes Phase 5.2.2: 182 C++ cases across five packages plus eight
+node/launch assertions pass, with no dependency-related skips. EKF's launch
+readiness source correction remains isolated in 5515a02e; all other production
+sources are unchanged. Phase 5.2.3 point-cloud sensing/CPU perception is next.

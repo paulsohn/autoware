@@ -353,3 +353,10 @@ local_path_override(
     module_name = "autoware_geography_utils",
     path = "src/core/autoware_core/common/autoware_geography_utils",
 )
+
+bazel_dep(name = "tf2_msgs", version = "0.0.0")
+bazel_dep(name = "autoware_gnss_poser", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_gnss_poser",
+    path = "src/core/autoware_core/sensing/autoware_gnss_poser",
+)

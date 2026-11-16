@@ -26,7 +26,7 @@ cc_library(
 )
 
 collect_transitive_dynamic_deps(
-    name = "test_dynamic_deps",
+    name = "runtime_dynamic_deps",
     dynamic_deps = [
         "@autoware_lanelet2_extension//:autoware_lanelet2_extension_lib",
         "@geographic_msgs//:cc_shared",
@@ -37,7 +37,7 @@ cc_binary(
     name = "geography_tests",
     testonly = True,
     srcs = glob(["test/*.cpp"]),
-    dynamic_deps = [":test_dynamic_deps"],
+    dynamic_deps = [":runtime_dynamic_deps"],
     deps = [
         ":autoware_geography_utils",
         "@googletest//:gtest",

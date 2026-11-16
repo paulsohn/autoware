@@ -754,9 +754,9 @@ Package test sources live under test/, alongside their non-Bazel peers. Root
 integration test targets and runtime composition share bazel/tests/.
 Each validated package retains a separate commit and reproducible journal entry.
 No Fast DDS, broad communication matrix or container sweep was run.
-Phase 5.2.2 is the next dependency slice.
+Phase 5.2.2 follows this slice.
 
-#### Phase 5.2.2: Localization (in progress)
+#### Phase 5.2.2: Localization (complete)
 
 Proceed in package boundaries: localization utilities, gyro odometer, EKF
 localizer, geography utilities and GNSS poser. Introduce remaining TF/message
@@ -764,24 +764,34 @@ providers only when the selected source requires them. Keep the full existing
 RCLCPP suites, including tests CMake omits when Agnocast is enabled; add targeted
 enabled standalone checks for each node as in Phase 5.2.1.
 
-The first gate is autoware_localization_util: four sources and five public
-headers; four existing suites with 33 cases (8 pose-buffer, 6 optimizer,
-6 covariance/marker and 13 utility cases). Preserve separate executables because
-the pose-buffer source has its own global main. No test data is read by these suites; the
-pose-buffer file includes ament_index_cpp and rcl_yaml_param_parser headers but
-does not access a package index or YAML at runtime. Do not invent resource
-packaging for this library. Run the complete module suite with Cyclone DDS;
-no communication matrix or Fast DDS check is required for this library gate.
+All five package gates passed sequentially with Cyclone DDS:
 
-Localization utilities passed all 33 cases with no skips. The matching
-tf2_eigen 0.45.10-1.rcr.0 is validated and pinned. Gyro odometer also passes its complete 35-case suite and both standalone
-backends. Its sensor_msgs 5.9.3-1.rcr.0 pin and specific Imu/DiagnosticArray
-bridge roots are validated. EKF also passes all 49 C++ cases and both original launch assertions under
-each backend. Its discovery synchronization fix is isolated in source commit
-5515a02e; production node code is unchanged. Geography utilities also pass all 21 cases with no skips across explicit
-dataset-present/absent configurations. Their pinned official EGM2008 grid,
-RCR Lanelet2 extension 0.7.2-3.rcr.2 and transitive Lanelet2 1.2.1-8.rcr.2
-inputs are validated. GNSS poser remains the final Phase 5.2.2 gate.
+| Package | Complete existing suite | Additional runtime gate |
+| --- | --- | --- |
+| autoware_localization_util | 33 cases across four targets | Existing suites exercise the library behavior. |
+| autoware_gyro_odometer | 35 fusion/diagnostics/node cases | One standalone case per backend: all four outputs, covariance and healthy diagnostics. |
+| autoware_ekf_localizer | 49 C++ cases across ten targets | Original XML launch behavior and exit assertions under each backend. |
+| autoware_geography_utils | 21 cases across controlled grid-present/absent targets | Real pinned EGM2008 grid; no dataset-related skips. |
+| autoware_gnss_poser | 44 node/characterization cases | One standalone case per backend with real geoid height conversion. |
+
+This totals 182 C++ cases plus eight standalone/launch assertions, with
+no failures or dependency-related skips. Keep the existing RCLCPP fixtures under
+no-agnocast; enabled node behavior is validated separately. The only source
+correction is EKF launch discovery synchronization in 5515a02e; production node
+code is unchanged. Each package has its own integration commit and journal.
+
+Validated inputs added for these targets are tf2_eigen 0.45.10-1.rcr.0,
+sensor_msgs 5.9.3-1.rcr.0, RCR Lanelet2 extension 0.7.2-3.rcr.2 and its
+transitive Lanelet2 1.2.1-8.rcr.2, plus the official egm2008-1 archive pinned by
+SHA256 in the geography module. Reuse rosdistro's existing GeographicLib provider.
+The real grid is a declared runtime/test resource, not a host install. Geography
+exports geoid_grid and runtime_dynamic_deps for its consumers; no metarepository
+label enters the component graph. Root bridge selection adds only the needed
+Imu, DiagnosticArray and NavSatFix interface closures.
+
+No Fast DDS, broad communication matrix or container rerun was required.
+Phase 5.2.3 point-cloud sensing/CPU perception is the next dependency slice;
+Phase 5.2 and Phase 5 overall remain in progress.
 
 ## Later phases
 

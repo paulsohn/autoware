@@ -322,3 +322,43 @@ cc_test(
         ("agnocast", "1"),
     ]
 ]
+
+[
+    py_test(
+        name = "gnss_poser_" + backend + "_test",
+        srcs = ["@autoware_gnss_poser//:test/test_standalone.py"],
+        args = [
+            "$(rootpath @autoware_gnss_poser//:gnss_poser)",
+            "$(rootpath @autoware_gnss_poser//:config/gnss_poser.param.yaml)",
+            "$(rootpath @autoware_geography_utils//:geoid_grid)",
+        ],
+        data = [
+            "//bazel/agnocast:runtime_index",
+            "@agnocast_heaphook",
+            "@autoware_geography_utils//:geoid_grid",
+            "@autoware_gnss_poser//:ament_index",
+            "@autoware_gnss_poser//:config/gnss_poser.param.yaml",
+            "@autoware_gnss_poser//:gnss_poser",
+        ],
+        env = {
+            "AGNOCAST_TEST_NO_PRELOAD": "1",
+            "AUTOWARE_TEST_AGNOCAST": enabled,
+        },
+        main = "@autoware_gnss_poser//:test/test_standalone.py",
+        tags = [
+            "no-remote",
+            "no-sandbox",
+        ] + (["requires-agnocast-kmod"] if enabled == "1" else []),
+        deps = [
+            "@autoware_internal_debug_msgs//:py",
+            "@autoware_map_msgs//:py",
+            "@geometry_msgs//:py",
+            "@rclpy",
+            "@sensor_msgs//:py",
+        ],
+    )
+    for backend, enabled in [
+        ("rclcpp", "0"),
+        ("agnocast", "1"),
+    ]
+]

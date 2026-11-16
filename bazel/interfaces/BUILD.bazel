@@ -24,6 +24,7 @@ ros_interface_set(
         "@nav_msgs//:cc",
         "@diagnostic_msgs//msg:DiagnosticArray",
         "@sensor_msgs//msg:Imu",
+        "@sensor_msgs//msg:NavSatFix",
         "@std_msgs//:cc",
         "@std_srvs//:cc",
     ],
