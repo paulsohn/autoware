@@ -1,0 +1,103 @@
+load("@autoware_agnocast_wrapper//:defs.bzl", "autoware_agnocast_node")
+load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+exports_files([
+    "test/test_standalone.py",
+    "config/twist2accel.param.yaml",
+])
+
+cc_library(
+    name = "autoware_twist2accel",
+    srcs = ["src/accel_estimator.cpp"],
+    hdrs = ["src/accel_estimator.hpp"],
+    deps = [
+        "@autoware_signal_processing",
+        "@autoware_utils_geometry",
+        "@geometry_msgs//:cc",
+        "@nav_msgs//:cc",
+        "@rclcpp//:rclcpp_library",
+    ],
+)
+
+cc_library(
+    name = "node_library",
+    srcs = ["src/twist2accel.cpp"],
+    hdrs = ["src/twist2accel.hpp"],
+    deps = [
+        ":autoware_twist2accel",
+        "@autoware_agnocast_wrapper//:autoware_agnocast_wrapper_library",
+        "@rclcpp//:rclcpp_library",
+        "@rclcpp_components//:rclcpp_components_library",
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = [
+        "@autoware_agnocast_wrapper//:autoware_agnocast_wrapper",
+        "@autoware_internal_planning_msgs//:cc_shared",
+        "@autoware_perception_msgs//:cc_shared",
+        "@autoware_planning_msgs//:cc_shared",
+        "@nav_msgs//:cc_shared",
+        "@geometry_msgs//:cc_shared",
+        "@rclcpp_components//:rclcpp_components",
+        "@tf2//:tf2",
+        "@tf2_geometry_msgs//:tf2_geometry_msgs",
+    ],
+)
+
+cc_shared_library(
+    name = "autoware_twist2accel_ros",
+    dynamic_deps = [":runtime_dynamic_deps"],
+    deps = [":node_library"],
+)
+
+autoware_agnocast_node(
+    name = "autoware_twist2accel_node",
+    package_name = "autoware_twist2accel",
+    component = ":autoware_twist2accel_ros",
+    plugin = "autoware::twist2accel::Twist2Accel",
+)
+
+register_ament_files(
+    name = "node_executable",
+    files = [":autoware_twist2accel_node"],
+    prefix = "lib/autoware_twist2accel",
+    strip_prefix = "*",
+)
+
+ament_index(
+    components = [":autoware_twist2accel_node_components"],
+    data = glob([
+        "config/*",
+        "launch/*",
+    ]) + [
+        ":autoware_twist2accel_node_plugin",
+        ":node_executable",
+    ],
+    package_xml = "package.xml",
+)
+
+cc_test(
+    name = "test_accel_estimator",
+    srcs = ["test/test_accel_estimator.cpp"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+    deps = [
+        ":autoware_twist2accel",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "test_twist2accel_node",
+    srcs = ["test/test_twist2accel_node.cpp"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+    deps = [
+        ":node_library",
+        "@googletest//:gtest_main",
+    ],
+)

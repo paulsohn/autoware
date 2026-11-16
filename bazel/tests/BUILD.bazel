@@ -210,3 +210,39 @@ cc_test(
         ("agnocast", "1"),
     ]
 ]
+
+[
+    py_test(
+        name = "twist2accel_" + backend + "_test",
+        srcs = ["@autoware_twist2accel//:test/test_standalone.py"],
+        args = [
+            "$(rootpath @autoware_twist2accel//:autoware_twist2accel_node)",
+            "$(rootpath @autoware_twist2accel//:config/twist2accel.param.yaml)",
+        ],
+        data = [
+            "//bazel/agnocast:runtime_index",
+            "@agnocast_heaphook",
+            "@autoware_twist2accel//:ament_index",
+            "@autoware_twist2accel//:autoware_twist2accel_node",
+            "@autoware_twist2accel//:config/twist2accel.param.yaml",
+        ],
+        env = {
+            "AGNOCAST_TEST_NO_PRELOAD": "1",
+            "AUTOWARE_TEST_AGNOCAST": enabled,
+        },
+        main = "@autoware_twist2accel//:test/test_standalone.py",
+        tags = [
+            "no-remote",
+            "no-sandbox",
+        ] + (["requires-agnocast-kmod"] if enabled == "1" else []),
+        deps = [
+            "@geometry_msgs//:py",
+            "@nav_msgs//:py",
+            "@rclpy",
+        ],
+    )
+    for backend, enabled in [
+        ("rclcpp", "0"),
+        ("agnocast", "1"),
+    ]
+]

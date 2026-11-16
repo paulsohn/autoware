@@ -3353,3 +3353,61 @@ No source compatibility patch was needed. Targeted buildifier, Python syntax
 and whitespace checks pass. XML launch composition/install-image checks belong
 to later product gates. No Fast DDS, pre-commit or broad communication/container
 sweep was run.
+
+## 2026-11-16: Phase 5.2.1 — autoware_twist2accel
+
+Purpose: Expose finite-difference acceleration estimation and a standalone node
+that accepts odometry or twist-with-covariance, completing this velocity group.
+
+Inputs: package.xml, CMakeLists.txt, both sources/headers, YAML and launch file,
+nine estimator cases and three RCLCPP node cases across the two existing test
+files. The original node suite covers twist input, odometry input and ignored
+odometry when use_odom is false. Neither test file has main. Dependencies on
+signal processing, geometry and ROS/nav messages are already selected.
+
+Integration: layer an estimator cc_library beneath the node library/shared
+component and wrapper-owned switchable main. Reuse geometry's complete shared
+closure plus nav_msgs and wrapper providers. Register component/plugin metadata,
+YAML/launch resources and the executable's lib/<package> alias in ament_index.
+Keep all twelve existing cases with gtest_main in two separate targets. The
+existing RCLCPP fixtures run with no-agnocast; the enabled executable retains
+AgnocastOnlyCallbackIsolatedExecutor support unconditionally.
+
+Standalone behavior: run two cases per backend, one per use_odom selection,
+loading the real YAML and overriding accel_lowpass_gain to zero for a precise
+finite-difference contract. Send increasing velocities at one-second message
+timestamp intervals; require linear acceleration 2.0 and yaw acceleration 0.5,
+frame propagation, configured fixed covariance and normal SIGINT shutdown.
+The Python driver uses ordinary ROS peers. Enabled checks use the same product
+bridge/runtime and native-child-only heap preload as the previous modules.
+No new interface roots are required beyond the selected geometry/nav closure.
+
+Verification commands (executed sequentially):
+
+```bash
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=no-agnocast --nocache_test_results --test_output=errors \
+  --local_test_jobs=1 @autoware_twist2accel//...
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=no-agnocast --nocache_test_results --test_output=errors \
+  --local_test_jobs=1 --strategy=TestRunner=local \
+  --run_under=//bazel/agnocast:with_runtime //bazel/tests:twist2accel_rclcpp_test
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --nocache_test_results --test_output=errors \
+  --local_test_jobs=1 --strategy=TestRunner=local \
+  --run_under=//bazel/agnocast:with_runtime //bazel/tests:twist2accel_agnocast_test
+```
+
+Result: the whole module builds and both existing targets pass all twelve
+cases (9 estimator and 3 node cases), verified in GTest XML without
+failures/errors/skips. Initial build/test takes 23.696 seconds. The standalone
+RCLCPP and Agnocast targets each execute two cases; unittest logs confirm both
+input modes pass, with no skips and normal node exits. They pass in 1.9 seconds each from test/test_standalone.py under bazel/tests.
+Each target selects and asserts its actual backend. Bazel's fallback XML counts
+one invocation, so use the unittest log's two-case count for these targets.
+
+No source patch or new dependency version was required. Targeted buildifier,
+Python syntax and whitespace checks pass. The module reuses the same built
+bridge runtime as stop filter. This closes Phase 5.2.1: all 25 existing cases
+and eight standalone behavior cases pass across the three packages. No Fast
+DDS, pre-commit, broad communication matrix or container sweep was run.

@@ -733,7 +733,7 @@ prerequisite; it need not wait for whole-system composition. CUDA/TensorRT
 remains Phase 6. Source-less grouping metapackages do not need artificial build
 targets. Exclude system-designer packages throughout.
 
-#### Phase 5.2.1: Velocity and acceleration nodes (in progress)
+#### Phase 5.2.1: Velocity and acceleration nodes (complete)
 
 Start with `autoware_vehicle_velocity_converter`, not the entire group at once.
 Its existing suite consists of five algorithm cases and one RCLCPP pub/sub case
@@ -774,10 +774,20 @@ Validation order (build pause lifted; proceed sequentially):
    seven and twelve cases respectively; enumerate their required behavior
    checks before writing their definitions.
 
-Converter and stop filter pass their full existing suites (six and seven
-cases), plus standalone RCLCPP and Agnocast checks. Stop filter validates the
-published debug messages 1.16.0-1.rcr.0 and nav_msgs 5.9.3-1.rcr.0.
-Twist2accel is the remaining module gate for this group.
+All three package gates passed with Cyclone DDS: six converter, seven stop-filter
+and twelve acceleration cases, with no skips, plus eight standalone cases
+across RCLCPP and Agnocast (both acceleration input modes). Shared dependencies
+were built once and reused; native children alone received heap preload.
+The installed 2.4.1 kernel/device is accessible from host execution. No source
+compatibility patches were required. RCR debug messages 1.16.0-1.rcr.0 and
+nav_msgs 5.9.3-1.rcr.0 are validated inputs for stop filter. The expanded bridge
+library required a costly initial compile; subsequent node checks reused it.
+
+Package test sources live under test/, alongside their non-Bazel peers. Root
+integration test targets and runtime composition share bazel/tests/.
+Each validated package retains a separate commit and reproducible journal entry.
+No Fast DDS, broad communication matrix or container sweep was run.
+Phase 5.2.2 is the next dependency slice.
 
 ## Commit and publication policy
 
