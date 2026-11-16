@@ -3817,3 +3817,62 @@ interface override. This validates both new root selections. No source
 compatibility patch is needed. Targeted buildifier and whitespace checks pass.
 No Fast DDS, pre-commit, broad matrix or container rerun was performed.
 Crop-box filtering is the next runnable package boundary.
+
+## 2026-11-16: Phase 5.2.3 — autoware_crop_box_filter
+
+Purpose: Adopt the first runnable point-cloud filter, preserving its ordinary
+RCLCPP backend. Inputs: CMakeLists.txt, package.xml, both source/header pairs,
+YAML/launch files and both existing test files. The full suite is ten algorithm
+cases plus one pub/sub/TF integration case. Both files have global main; the
+integration main owns ROS init/shutdown. No case is disabled or skipped.
+
+Pattern: separate algorithm and node cc_library targets, then the shared
+component. Reuse RCR rclcpp_components_register_node for its normal executable
+and component record; no Agnocast wrapper or new executor is required by these
+sources. Register resources, component metadata and lib/<package> executable
+in ament_index. Keep src includes test-private. The algorithm uses Eigen,
+geometry/sensor messages and TF Eigen; the node adds debug/system/TF utilities,
+RCLCPP components and parameter interfaces. Reuse the debug utility's exported
+runtime closure and include geometry's compiled message/TF shared providers.
+The package manifest lists point types, but these source files do not include
+it; do not invent a compile edge for an unused manifest dependency.
+
+Keep both original suites with gtest and their own main. The existing integration
+case exercises non-identity static transforms and output points. A test-owned
+Python source, composed at root under bazel/tests, launches the actual ordinary
+component executable with its shipped YAML. Send two XYZIRC points (one inside,
+one outside the configured box), require the exact kept-point bytes/header,
+16-point polygon and published-time metadata carrying the input stamp, then
+normal SIGINT exit. Use a best-effort cloud subscriber to match SensorDataQoS;
+polygon and timestamp topics use their normal reliable subscriptions. Poll
+until all outputs arrive rather than sleeping for a fixed discovery interval.
+No heap hook or bridge runtime is needed for this RCLCPP-only node.
+
+Verification commands (executed sequentially):
+
+```bash
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --nocache_test_results --test_output=errors --local_test_jobs=1 \
+  @autoware_crop_box_filter//...
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --nocache_test_results --test_output=errors --local_test_jobs=1 \
+  --strategy=TestRunner=local //bazel/tests:crop_box_filter_test
+```
+
+Result: the full module surface builds and all eleven existing cases execute
+successfully, confirmed in GTest XML with no failures/errors/skips. The initial
+module invocation takes 14.268 seconds. The standalone case passes in 0.9
+seconds (2.874-second final invocation), checking the actual shared component
+executable, shipped crop_box_filter_node.param.yaml, exact kept-point bytes,
+frame/stamp, 16-point polygon, published-time metadata and normal SIGINT exit.
+No source compatibility patch or additional PCL provider is needed.
+
+Initial standalone setup failed before launching the node: Python's C
+typesupport loader found sensor_msgs but could not locate its std_msgs C
+introspection dependency. Both shared files were present under the declared
+runfiles lib directory. Set LD_LIBRARY_PATH=lib on the root py_test so the
+loader sees that prefix from process startup; do not preload Agnocast, install
+host ROS, or patch message sources. This preserves the ordinary RCLCPP node's
+actual middleware and avoids an unnecessary runtime wrapper. Targeted
+buildifier, Python syntax and whitespace checks pass. No Fast DDS, pre-commit,
+broad matrix or container rerun was performed. Downsampling is next.

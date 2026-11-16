@@ -362,3 +362,25 @@ cc_test(
         ("agnocast", "1"),
     ]
 ]
+
+py_test(
+    name = "crop_box_filter_test",
+    srcs = ["@autoware_crop_box_filter//:test/test_standalone.py"],
+    args = [
+        "$(rootpath @autoware_crop_box_filter//:crop_box_filter)",
+        "$(rootpath @autoware_crop_box_filter//:config/crop_box_filter_node.param.yaml)",
+    ],
+    data = [
+        "@autoware_crop_box_filter//:ament_index",
+        "@autoware_crop_box_filter//:config/crop_box_filter_node.param.yaml",
+        "@autoware_crop_box_filter//:crop_box_filter",
+    ],
+    env = {"LD_LIBRARY_PATH": "lib"},
+    main = "@autoware_crop_box_filter//:test/test_standalone.py",
+    deps = [
+        "@autoware_internal_msgs//:py",
+        "@geometry_msgs//:py",
+        "@rclpy",
+        "@sensor_msgs//:py",
+    ],
+)

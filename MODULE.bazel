@@ -374,3 +374,9 @@ local_path_override(
     module_name = "autoware_utils_debug",
     path = "src/core/autoware_utils/autoware_utils_debug",
 )
+
+bazel_dep(name = "autoware_crop_box_filter", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_crop_box_filter",
+    path = "src/core/autoware_core/sensing/autoware_crop_box_filter",
+)

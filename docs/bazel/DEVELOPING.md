@@ -360,6 +360,18 @@ env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
   bazel test --config=no-agnocast --nocache_test_results @autoware_gnss_poser//...
 ```
 
+Ordinary RCLCPP component behavior tests need no Agnocast preload or bridge.
+For root Python consumers of generated messages, set LD_LIBRARY_PATH=lib on
+the py_test so transitive C introspection libraries resolve from the declared
+runfiles prefix at process startup. Keep component resources and shared
+libraries in data through its ament_index. For example:
+
+```bash
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --nocache_test_results --strategy=TestRunner=local \
+  //bazel/tests:crop_box_filter_test
+```
+
 ## Switchable standalone nodes
 
 For a wrapper-derived node using AgnocastOnlyCallbackIsolatedExecutor and a
