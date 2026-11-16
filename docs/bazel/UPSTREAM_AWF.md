@@ -60,6 +60,36 @@ describes that review, not proof that no other upstream work exists.
 
 ## Findings
 
+### Nearest-lanelet tests assume unspecified tie ordering
+
+- [ ] Associate with a matching upstream fix. Reviewed 2026-11-16: repository
+  PR searches for `lanelet2_utils nearest distance`, `nn_search Lyrical` and
+  `find_nearest tie` found no matching test fix. Actual
+  [core#839](https://github.com/autowarefoundation/autoware_core/pull/839)
+  introduces the nearest-search API and hardcoded-ID tests; it is related
+  feature history, not a fix. Current main still has those assertions, test
+  blob `b67ceb31dbccb7334d85bbf93b0b5d4c8c6e57a2`, implementation blob
+  `58bed08550cbe9eeed6d9c52a5b0bf5b5f41e508`.
+- Scope: autoware_core/common/autoware_lanelet2_utils/test/nn_search.cpp.
+  Reproduce with the full utility command in the Phase 5.2.4 JOURNAL entry,
+  Ubuntu 24.04, LLVM 21.1.8/libc++, C++23, Lanelet2 1.2.1-8.rcr.2 and the current
+  local extension 1.3.0. Four ID assertions fail while all other cases pass.
+- Confirmed diagnosis using temporary distance logging (removed from final
+  code): fixture 001 P1 reference 2267 returns 2262; P2 reference 2262 returns 2281;
+  fixture 002 P0 reference 2270 returns 2305; P2 reference 2268 returns 2282. Every
+  returned/reference pair has distance 0: both polygons contain the query point.
+  The production nth_element/sort compares only distance and specifies no
+  tie-break by lanelet ID. Those results satisfy the current API.
+- Fix the nine nearest-search fixture assertions to retain count 1 and verify
+  both reported score and actual returned-polygon distance against the known
+  reference lanelet. Positive-distance cases also retain exact distance checks.
+  Do not introduce a production ID tie-breaker merely to match one STL's order.
+  All 173 existing cases across all eleven suites then pass with no skips;
+  production code is unchanged. This is portable test behavior, not a new
+  Lyrical algorithm or an older-ROS compatibility claim. No upstream submission
+  was made by this experiment.
+
+
 ### Ground filtering needs portable float constants and subscription QoS
 
 Local source fix: `fd3c132e`, separate from the Bazel build definitions.

@@ -39,6 +39,20 @@
 
 namespace autoware::experimental
 {
+namespace
+{
+// Equal-distance lanelets have no specified ID ordering in find_nearest.
+void expect_same_nearest_distance(
+  const std::pair<double, lanelet::ConstLanelet> & nearest, const lanelet::ConstLanelet & reference,
+  const geometry_msgs::msg::Pose & pose)
+{
+  const lanelet::BasicPoint2d point{pose.position.x, pose.position.y};
+  const double distance = lanelet::geometry::distance2d(reference, point);
+  EXPECT_DOUBLE_EQ(nearest.first, distance);
+  EXPECT_DOUBLE_EQ(lanelet::geometry::distance2d(nearest.second, point), distance);
+}
+}  // namespace
+
 class TestNNSearch001 : public ::testing::Test
 {
 protected:
@@ -83,7 +97,7 @@ TEST_F(TestNNSearch001, find_nearest_against_P0)
   const auto nearests = lanelet2_utils::find_nearest(lanelet_map_ptr_->laneletLayer, P0, 1);
   ASSERT_EQ(nearests.size(), 1);
 
-  ASSERT_EQ(nearests.front().second.id(), 2246);
+  expect_same_nearest_distance(nearests.front(), lanelet_map_ptr_->laneletLayer.get(2246), P0);
 }
 
 TEST_F(TestNNSearch001, find_nearest_against_P1)
@@ -91,7 +105,7 @@ TEST_F(TestNNSearch001, find_nearest_against_P1)
   const auto nearests = lanelet2_utils::find_nearest(lanelet_map_ptr_->laneletLayer, P1, 1);
   ASSERT_EQ(nearests.size(), 1);
 
-  ASSERT_EQ(nearests.front().second.id(), 2267);
+  expect_same_nearest_distance(nearests.front(), lanelet_map_ptr_->laneletLayer.get(2267), P1);
 }
 
 TEST_F(TestNNSearch001, find_nearest_against_P2)
@@ -99,7 +113,7 @@ TEST_F(TestNNSearch001, find_nearest_against_P2)
   const auto nearests = lanelet2_utils::find_nearest(lanelet_map_ptr_->laneletLayer, P2, 1);
   ASSERT_EQ(nearests.size(), 1);
 
-  ASSERT_EQ(nearests.front().second.id(), 2262);
+  expect_same_nearest_distance(nearests.front(), lanelet_map_ptr_->laneletLayer.get(2262), P2);
 }
 
 TEST_F(TestNNSearch001, find_nearest_against_P3)
@@ -107,7 +121,7 @@ TEST_F(TestNNSearch001, find_nearest_against_P3)
   const auto nearests = lanelet2_utils::find_nearest(lanelet_map_ptr_->laneletLayer, P3, 1);
   ASSERT_EQ(nearests.size(), 1);
 
-  ASSERT_EQ(nearests.front().second.id(), 2312);
+  expect_same_nearest_distance(nearests.front(), lanelet_map_ptr_->laneletLayer.get(2312), P3);
 }
 
 TEST_F(TestNNSearch001, find_nearest_against_P4)
@@ -115,7 +129,7 @@ TEST_F(TestNNSearch001, find_nearest_against_P4)
   const auto nearests = lanelet2_utils::find_nearest(lanelet_map_ptr_->laneletLayer, P4, 1);
   ASSERT_EQ(nearests.size(), 1);
 
-  ASSERT_EQ(nearests.front().second.id(), 2312);
+  expect_same_nearest_distance(nearests.front(), lanelet_map_ptr_->laneletLayer.get(2312), P4);
 }
 
 TEST_F(TestNNSearch001, find_nearest_against_P5)
@@ -123,7 +137,7 @@ TEST_F(TestNNSearch001, find_nearest_against_P5)
   const auto nearests = lanelet2_utils::find_nearest(lanelet_map_ptr_->laneletLayer, P5, 1);
   ASSERT_EQ(nearests.size(), 1);
 
-  ASSERT_EQ(nearests.front().second.id(), 2311);
+  expect_same_nearest_distance(nearests.front(), lanelet_map_ptr_->laneletLayer.get(2311), P5);
 }
 
 TEST_F(TestNNSearch001, get_closest_against_P0)
@@ -393,7 +407,7 @@ TEST_F(TestNNSearch002, find_nearest_against_P0)
   const auto nearests = lanelet2_utils::find_nearest(lanelet_map_ptr_->laneletLayer, P0, 1);
   ASSERT_EQ(nearests.size(), 1);
 
-  ASSERT_EQ(nearests.front().second.id(), 2270);
+  expect_same_nearest_distance(nearests.front(), lanelet_map_ptr_->laneletLayer.get(2270), P0);
 }
 
 TEST_F(TestNNSearch002, find_nearest_against_P1)
@@ -401,7 +415,7 @@ TEST_F(TestNNSearch002, find_nearest_against_P1)
   const auto nearests = lanelet2_utils::find_nearest(lanelet_map_ptr_->laneletLayer, P1, 1);
   ASSERT_EQ(nearests.size(), 1);
 
-  ASSERT_EQ(nearests.front().second.id(), 2292);
+  expect_same_nearest_distance(nearests.front(), lanelet_map_ptr_->laneletLayer.get(2292), P1);
 }
 
 TEST_F(TestNNSearch002, find_nearest_against_P2)
@@ -409,7 +423,7 @@ TEST_F(TestNNSearch002, find_nearest_against_P2)
   const auto nearests = lanelet2_utils::find_nearest(lanelet_map_ptr_->laneletLayer, P2, 1);
   ASSERT_EQ(nearests.size(), 1);
 
-  ASSERT_EQ(nearests.front().second.id(), 2268);
+  expect_same_nearest_distance(nearests.front(), lanelet_map_ptr_->laneletLayer.get(2268), P2);
 }
 
 TEST_F(TestNNSearch002, get_closest_against_P0)
