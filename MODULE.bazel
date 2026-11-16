@@ -292,3 +292,9 @@ local_path_override(
     module_name = "autoware_signal_processing",
     path = "src/core/autoware_core/common/autoware_signal_processing",
 )
+
+bazel_dep(name = "autoware_interpolation", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_interpolation",
+    path = "src/core/autoware_core/common/autoware_interpolation",
+)

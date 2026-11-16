@@ -702,7 +702,7 @@ image is an automatic requirement here. Reuse unaffected Phase 3/4 evidence.
 
 Validation is now authorized and proceeds one module at a time with Cyclone
 DDS. Completed: Kalman (23 cases), QoS (one consumer case) and signal processing
-(12 cases). Pending: interpolation and vehicle-info. Commit and push each validated
+(12 cases), and interpolation (32 cases). Pending: vehicle-info. Commit and push each validated
 module separately, and retain incomplete entries until their gates pass.
 
 Domain-specific point/PCL, mapping/Lanelet2, motion/trajectory and solver
