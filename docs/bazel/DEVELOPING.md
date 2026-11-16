@@ -116,14 +116,32 @@ interface and its dependencies explicitly when a consumer needs it. Undeclared
 source files remain outside the build graph. An all-interface collection is
 the declared dependency closure of its selected product roots.
 
-Maintain the top-level target selection directly in
-`bazel/interfaces/BUILD.bazel`, using `ros_interface_set(roots = [...])`.
-Roots may be individual interface targets, package `:cc` targets, or application
-targets; collection follows their declared `deps`, not actual C++ type usage.
-One `//bazel/interfaces:all_interfaces` target exposes this closure.
-`//bazel/agnocast:plugins` consumes that set and declares the matching `:cc`
-compile and `:cc_shared` dynamic dependencies explicitly in its BUILD file.
-Other consumers can read the same interface provider. The plugin rule iterates the interface
+Maintain the top-level selection in `bazel/interfaces/BUILD.bazel`. Each
+`ros_interface_package(cc, shared, roots = ...)` entry pairs the package's
+explicit C++ and shared-provider targets once. Its default selection is the
+whole `cc` interface closure; supply `roots` to select individual interfaces.
+For example:
+
+```starlark
+ros_interface_package(
+    "@your_interfaces//:cc",
+    "@your_interfaces//:cc_shared",
+    roots = ["@your_interfaces//msg:YourMessage"],
+)
+```
+
+`ros_interface_set(packages = [...])` combines those entries. Its optional
+`roots` override can select application targets; collection follows their
+declared `deps`, not actual C++ type usage. The corresponding package providers
+must still be declared explicitly. No labels are guessed from interface names.
+
+`//bazel/interfaces:all_interfaces` exposes the metadata closure, merged
+`CcInfo`, shared-library provider and runtime files. A compiled consumer can
+use that target in both `deps` and `dynamic_deps`; a metadata-only consumer can
+read `RosInterfaceSetInfo`. Agnocast declares only `interface_set` on its plugin
+macro and supplies its own Agnocast/RCLCPP dependencies internally. Package
+registration belongs only in the central selection, not the plugin BUILD file.
+The collection has no Agnocast dependency. The plugin rule iterates the interface
 provider during analysis and uses native `expand_template` actions to produce
 typed C++ factories under that target's output directory, then compiles and
 links `libagnocast_bridge_plugins.so` in the same graph. It reuses the upstream
@@ -257,8 +275,9 @@ env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
 Mixed packages containing nodes and interfaces work the same way. When the
 collector root is a node or library, the new interface must be reachable
 through that target's `deps`. If a package is not reachable from any root,
-add an appropriate target to `roots` in `bazel/interfaces/BUILD.bazel` and the
-corresponding compile/shared dependencies in `bazel/agnocast/BUILD.bazel`.
+add or update its central `ros_interface_package` entry, including the selected
+roots and explicit compile/shared providers. The plugin consumer needs no
+matching list update.
 Keep collection roots independent of the plugin library to avoid a cycle.
 An interface source that is not registered remains outside the Bazel build.
 

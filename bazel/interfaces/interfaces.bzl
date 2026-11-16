@@ -1,6 +1,10 @@
 """Consumer-independent analysis-time collection of ROS interface closures."""
 
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
 load("@rosidl_default_generators//:defs.bzl", "RosInterfaceInfo")
+load("@rules_cc//cc/common:cc_common.bzl", "cc_common")
+load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
+load("@rules_cc//cc/common:cc_shared_library_info.bzl", "CcSharedLibraryInfo")
 
 RosInterfaceSetInfo = provider(
     "The deterministic ROS interface closure of a product-owned root set.",
@@ -64,16 +68,26 @@ def _ros_interface_set_impl(ctx):
     manifest = ctx.actions.declare_file(ctx.label.name + ".interfaces")
     ctx.actions.write(manifest, "\n".join(sorted_descriptors) + "\n")
     return [
-        DefaultInfo(files = depset([manifest])),
+        DefaultInfo(
+            files = depset([manifest]),
+            runfiles = ctx.runfiles(files = [manifest]).merge(
+                ctx.attr.runtime[DefaultInfo].default_runfiles,
+            ),
+        ),
+        cc_common.merge_cc_infos(cc_infos = [dep[CcInfo] for dep in ctx.attr.cc_deps]),
+        ctx.attr.runtime[CcSharedLibraryInfo],
         RosInterfaceSetInfo(
             descriptors = descriptors,
             srcs = srcs,
         ),
     ]
 
-ros_interface_set = rule(
+_ros_interface_set = rule(
     implementation = _ros_interface_set_impl,
+    provides = [RosInterfaceSetInfo, CcInfo, CcSharedLibraryInfo],
     attrs = {
+        "cc_deps": attr.label_list(providers = [CcInfo], mandatory = True),
+        "runtime": attr.label(providers = [CcSharedLibraryInfo], mandatory = True),
         "roots": attr.label_list(
             doc = "Build targets whose transitive deps supply ROS interface metadata.",
             aspects = [_ros_interface_closure_aspect],
@@ -81,3 +95,31 @@ ros_interface_set = rule(
         ),
     },
 )
+
+def ros_interface_package(cc, shared, roots = None):
+    """Pair declared C++/shared providers with the selected interface roots.
+
+    By default select the package's entire cc interface closure. Explicit roots
+    can select individual interfaces without narrowing its compiled provider.
+    """
+    return struct(cc = cc, shared = shared, roots = [cc] if roots == None else roots)
+
+def ros_interface_set(name, packages, roots = None, **kwargs):
+    """Expose interface metadata, CcInfo and shared runtime from one declaration.
+
+    Optional roots may select application targets instead; packages still
+    declares the providers needed to compile consumers of their interface set.
+    No dependency labels are inferred from analysis-time interface names.
+    """
+    collect_transitive_dynamic_deps(
+        name = name + "_runtime",
+        dynamic_deps = [package.shared for package in packages],
+        visibility = ["//visibility:private"],
+    )
+    _ros_interface_set(
+        name = name,
+        roots = [root for package in packages for root in package.roots] if roots == None else roots,
+        cc_deps = [package.cc for package in packages],
+        runtime = ":" + name + "_runtime",
+        **kwargs
+    )

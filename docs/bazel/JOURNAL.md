@@ -4443,3 +4443,79 @@ node/service groups is omitted.
 Targeted buildifier, Python syntax and whitespace checks pass. No Fast DDS,
 pre-commit, container or full matrix was run. Phase 5.2.4 remains open for height
 fitting, visualization and then map-dependent localization prerequisites.
+
+
+## 2026-11-17: Central interface dependency providers
+
+Purpose: remove the repeated interface-package registry from Agnocast product
+assembly before continuing Phase 5.2.4 height fitting. Inspected the existing
+interface aspect/provider, source renderer/plugin macro, both BUILD declarations
+and pinned RCR shared-dependency collector/aspect implementation. Current scope
+is the existing selection: 22 roots over 21 compiled/shared package providers.
+Height-fitting additions are kept separate; no new interface is selected here.
+
+Integration pattern: declare each package once through
+ros_interface_package(cc, shared, roots=None) in the central BUILD. Default roots
+select the package's cc closure; diagnostic and sensor entries retain their
+specific original roots. Both providers are explicit labels, supporting different
+package layouts without guessing sibling targets from names. The set macro
+creates a private RCR shared-dependency aggregate and declares all dependencies
+before analysis. Its rule retains the metadata aspect/manifest, merges CcInfo
+with cc_common.merge_cc_infos, forwards the aggregate CcSharedLibraryInfo and
+propagates runtime runfiles. The manifest remains the public default output.
+
+The Agnocast macro consumes the set as a C++ dependency and a shared dependency,
+adding only its own Agnocast/RCLCPP providers. Its BUILD call needs only name and
+interface_set. Collection has no dependency on the plugin or Agnocast. Another
+compiled consumer can use the same set in deps/dynamic_deps; a metadata consumer
+can read RosInterfaceSetInfo. Application-target roots remain supported through
+the set's optional roots override and explicitly declared package providers.
+No directory-completeness validator or representative interface target is added.
+
+Static verification: buildifier and whitespace checks; a one-time declaration
+comparison evaluates the package/set macro's loading-time inputs against the
+previous declarations. It confirms the exact same 22 roots and 21 compile/shared
+provider pairs, including the narrow selections. An application-root override
+check confirms that it leaves the declared providers intact. These checks do not
+validate Bazel provider analysis, generated C++ compilation, linking or runtime.
+
+Verification commands, executed sequentially from an unsourced environment:
+
+```bash
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --nocache_test_results --test_output=errors --local_test_jobs=1 \
+  //bazel/agnocast:template_tests
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel build //bazel/interfaces:all_interfaces //bazel/agnocast:plugins
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --nocache_test_results --test_output=errors --local_test_jobs=1 \
+  --strategy=TestRunner=local --run_under=//bazel/agnocast:with_runtime \
+  //bazel/agnocast:bridge_plugins_test
+```
+
+The runtime prerequisite is the built heap hook, compatible loaded kernel module
+and device, plus declared product runtime index. Existing bridge-plugin tests
+exercise actual loading, standard/local payloads, service replies and service-
+event messages.
+
+Result: the template target passes in 0.1 seconds (7.854-second invocation).
+Bazel analysis accepts the merged C++ and forwarded shared providers. The full
+plugin library compiles and links successfully (444.398-second invocation,
+including recompilation against the changed dependency layout). The public
+manifest is sorted/unique and contains 207 interfaces: 180 messages and 27 services;
+service-event factories are additionally generated as before. No height-fitting
+interface is selected by this isolated change.
+
+All eleven existing runtime cases pass in 8.3 seconds (50.181-second invocation),
+confirmed in GTest XML with no failures/errors/disabled/skips. This covers actual
+BridgeLoader loading, standard/local messages in both directions, service
+request/reply, service-event traffic, automatic handoff and discovery. Runtime
+runfiles propagation is exercised by the real product index/heap-hook launcher.
+The host device and loaded Agnocast 2.4.1 module were available for this gate.
+No build/link/runtime correction or source patch was required after the prepared
+refactor. Targeted buildifier and whitespace checks also pass. Fast DDS,
+pre-commit and a full communication matrix were not run.
+
+This refactor gate is complete. Resume Phase 5.2.4 height fitting separately,
+porting its prepared interface additions into the central declaration rather
+than restoring consumer-owned package lists.

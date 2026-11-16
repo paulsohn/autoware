@@ -1,31 +1,41 @@
-load(":interfaces.bzl", "ros_interface_set")
+load(":interfaces.bzl", "ros_interface_package", "ros_interface_set")
 
 package(default_visibility = ["//visibility:public"])
 
 ros_interface_set(
     name = "all_interfaces",
-    roots = [
-        "@agnocast_cie_config_msgs//:cc",
-        "@autoware_common_msgs//:cc",
-        "@autoware_control_msgs//:cc",
-        "@autoware_internal_debug_msgs//:cc",
-        "@autoware_internal_planning_msgs//:cc",
-        "@autoware_localization_msgs//:cc",
-        "@autoware_map_msgs//:cc",
-        "@autoware_perception_msgs//:cc",
-        "@autoware_planning_msgs//:cc",
-        "@autoware_sensing_msgs//:cc",
-        "@autoware_simulation_msgs//:cc",
-        "@autoware_system_msgs//:cc",
-        "@autoware_v2x_msgs//:cc",
-        "@autoware_vehicle_msgs//:cc",
-        "@agnocast_sample_interfaces//:cc",
-        "@ros2agnocast_discovery_msgs//:cc",
-        "@nav_msgs//:cc",
-        "@diagnostic_msgs//msg:DiagnosticArray",
-        "@sensor_msgs//msg:Imu",
-        "@sensor_msgs//msg:NavSatFix",
-        "@std_msgs//:cc",
-        "@std_srvs//:cc",
+    packages = [
+        ros_interface_package("@agnocast_cie_config_msgs//:cc", "@agnocast_cie_config_msgs//:cc_shared"),
+        ros_interface_package("@autoware_common_msgs//:cc", "@autoware_common_msgs//:cc_shared"),
+        ros_interface_package("@autoware_control_msgs//:cc", "@autoware_control_msgs//:cc_shared"),
+        ros_interface_package("@autoware_internal_debug_msgs//:cc", "@autoware_internal_debug_msgs//:cc_shared"),
+        ros_interface_package("@autoware_internal_planning_msgs//:cc", "@autoware_internal_planning_msgs//:cc_shared"),
+        ros_interface_package("@autoware_localization_msgs//:cc", "@autoware_localization_msgs//:cc_shared"),
+        ros_interface_package("@autoware_map_msgs//:cc", "@autoware_map_msgs//:cc_shared"),
+        ros_interface_package("@autoware_perception_msgs//:cc", "@autoware_perception_msgs//:cc_shared"),
+        ros_interface_package("@autoware_planning_msgs//:cc", "@autoware_planning_msgs//:cc_shared"),
+        ros_interface_package("@autoware_sensing_msgs//:cc", "@autoware_sensing_msgs//:cc_shared"),
+        ros_interface_package("@autoware_simulation_msgs//:cc", "@autoware_simulation_msgs//:cc_shared"),
+        ros_interface_package("@autoware_system_msgs//:cc", "@autoware_system_msgs//:cc_shared"),
+        ros_interface_package("@autoware_v2x_msgs//:cc", "@autoware_v2x_msgs//:cc_shared"),
+        ros_interface_package("@autoware_vehicle_msgs//:cc", "@autoware_vehicle_msgs//:cc_shared"),
+        ros_interface_package("@agnocast_sample_interfaces//:cc", "@agnocast_sample_interfaces//:cc_shared"),
+        ros_interface_package("@ros2agnocast_discovery_msgs//:cc", "@ros2agnocast_discovery_msgs//:cc_shared"),
+        ros_interface_package("@nav_msgs//:cc", "@nav_msgs//:cc_shared"),
+        ros_interface_package(
+            "@diagnostic_msgs//:cc",
+            "@diagnostic_msgs//:cc_shared",
+            roots = ["@diagnostic_msgs//msg:DiagnosticArray"],
+        ),
+        ros_interface_package(
+            "@sensor_msgs//:cc",
+            "@sensor_msgs//:cc_shared",
+            roots = [
+                "@sensor_msgs//msg:Imu",
+                "@sensor_msgs//msg:NavSatFix",
+            ],
+        ),
+        ros_interface_package("@std_msgs//:cc", "@std_msgs//:cc_shared"),
+        ros_interface_package("@std_srvs//:cc", "@std_srvs//:cc_shared"),
     ],
 )

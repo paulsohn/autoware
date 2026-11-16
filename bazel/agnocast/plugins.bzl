@@ -6,6 +6,7 @@ load("//bazel/interfaces:interfaces.bzl", "RosInterfaceSetInfo")
 
 def _header_path(descriptor):
     package, kind, name = descriptor.split("/")
+
     # ROS service-event messages are declared by the service's own header.
     name = name.removesuffix("_Event")
     snake = ""
@@ -86,18 +87,18 @@ _bridge_sources = rule(
     },
 )
 
-def agnocast_bridge_plugins(name, interface_set, deps, dynamic_deps):
-    """Compile every collected message/service with the caller's ROS providers."""
+def agnocast_bridge_plugins(name, interface_set):
+    """Compile collected interfaces using the set's C++ and shared providers."""
     _bridge_sources(name = name + "_sources", interface_set = interface_set)
     cc_library(
         name = name + "_library",
         srcs = [":" + name + "_sources"],
         local_defines = ros_local_defines(),
-        deps = deps + [Label("@agnocastlib//:agnocast_library"), Label("@rclcpp//:rclcpp_library")],
+        deps = [interface_set, Label("@agnocastlib//:agnocast_library"), Label("@rclcpp//:rclcpp_library")],
     )
     collect_transitive_dynamic_deps(
         name = name + "_dynamic_deps",
-        dynamic_deps = dynamic_deps + [Label("@agnocastlib//:agnocast"), Label("@rclcpp//:rclcpp")],
+        dynamic_deps = [interface_set, Label("@agnocastlib//:agnocast"), Label("@rclcpp//:rclcpp")],
     )
     cc_shared_library(
         name = name,

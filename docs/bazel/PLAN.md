@@ -46,10 +46,13 @@ For every slice:
   ros2agnocast exports its upstream templates and helpers without depending
   on the metarepository. The root selects overrides and interface roots; its
   provider has no Agnocast dependency and can serve other consumers.
-  Keep a single `//bazel/interfaces:all_interfaces` selection, with package
-  or application target labels listed directly in `bazel/interfaces/BUILD.bazel`
-  through its `roots` attribute. The plugin declares matching compile/shared
-  target dependencies in its BUILD file; separate proof and sample sets are removed.
+  Keep a single `//bazel/interfaces:all_interfaces` selection in
+  `bazel/interfaces/BUILD.bazel`. Pair explicit compile/shared provider targets
+  once per package, with optional narrowed interface roots; application roots
+  can override the metadata selection. The set forwards metadata, CcInfo and
+  shared runtime providers to consumers. The plugin takes only this set and
+  retains its own Agnocast/RCLCPP dependencies; separate proof/sample sets and
+  consumer-owned copies of the package registry are unnecessary.
   The heap-hook component owns its Cargo extension; runtime launchers locate
   its artifact through repository-mapped runfiles rather than source paths.
 
@@ -888,6 +891,14 @@ contract rather than omitting its conditionally excluded node/service tests;
 enabled behavior uses the real executable/hook/bridge. Height fitting and map
 visualization are next. The legacy external-API map-hash Python node remains
 Phase 5.3 system/API composition, separate from these two C++ loaders.
+The central-interface dependency refactor is complete before height fitting.
+It preserves the existing 22 metadata roots and 21 C++/shared provider pairs in
+one declaration list, forwarding providers through all_interfaces. Narrow
+sensor/diagnostic selections remain unchanged. Template checks, full generated
+plugin compilation/linking and all eleven bridge-plugin runtime cases pass with
+Cyclone DDS, with no skips. The manifest contains 207 interfaces (180 messages,
+27 services); service-event factories remain included. Height fitting resumes
+separately, adapting its prepared additions to this central registry.
 Keep package commits separate and heavy builds sequential; routine Cyclone DDS
 only. Phase 5.3 system/API composition and Phase 6 GPU integration stay separate.
 
