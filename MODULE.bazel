@@ -429,3 +429,8 @@ local_path_override(
     module_name = "autoware_map_projection_loader",
     path = "src/core/autoware_core/map/autoware_map_projection_loader",
 )
+
+local_path_override(
+    module_name = "autoware_lanelet2_extension",
+    path = "src/core/autoware_lanelet2_extension/autoware_lanelet2_extension",
+)

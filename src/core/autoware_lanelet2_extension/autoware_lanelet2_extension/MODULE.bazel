@@ -1,0 +1,21 @@
+module(
+    name = "autoware_lanelet2_extension",
+    version = "0.0.0",
+)
+
+bazel_dep(name = "autoware_map_msgs", version = "0.0.0")
+bazel_dep(name = "autoware_planning_msgs", version = "0.0.0")
+bazel_dep(name = "geometry_msgs", version = "0.0.0")
+bazel_dep(name = "visualization_msgs", version = "0.0.0")
+bazel_dep(name = "rclcpp", version = "0.0.0")
+bazel_dep(name = "tf2", version = "0.0.0")
+bazel_dep(name = "tf2_geometry_msgs", version = "0.0.0")
+bazel_dep(name = "rosdistro", version = "0.0.0")
+bazel_dep(name = "lanelet2_core", version = "1.2.1-8.rcr.2")
+bazel_dep(name = "lanelet2_io", version = "1.2.1-8.rcr.2")
+bazel_dep(name = "lanelet2_projection", version = "1.2.1-8.rcr.2")
+bazel_dep(name = "lanelet2_routing", version = "1.2.1-8.rcr.2")
+bazel_dep(name = "lanelet2_traffic_rules", version = "1.2.1-8.rcr.2")
+bazel_dep(name = "lanelet2_validation", version = "1.2.1-8.rcr.2")
+bazel_dep(name = "googletest", version = "1.18.0.bcr.1")
+bazel_dep(name = "rules_cc", version = "0.2.26.rcr.0")

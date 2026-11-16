@@ -4261,3 +4261,89 @@ corrections, not production patches. Original launch sources remain unchanged.
 Targeted buildifier, Python syntax and whitespace checks pass. No Fast DDS,
 pre-commit, container or broad matrix rerun was performed. Next: the Lanelet2
 utility library needed by the actual map-loader source.
+
+
+## 2026-11-16: Phase 5.2.4 — autoware_lanelet2_utils library (in progress)
+
+Purpose: provide the actual map-loader dependency for map parsing, geometry and
+routing. RCR metadata has no published module. Inspected all eleven library
+sources/public headers, CMake/manifest and eleven existing test sources plus
+helpers, sample maps and YAML fixtures. Scope: compiled utility API and its
+complete existing suite, 173 static cases. Plotting example executables and
+Python map-maintenance tools are separate consumers and are not introduced by
+this library task. No runtime node is defined by this scope.
+
+Pattern: scoped header/compiled library, published Lanelet2 extension/core/io/
+routing/traffic rules and existing Autoware geometry/math/message providers;
+native range-v3/Eigen/Boost serialization. Ament index declares sample_map and
+test_data. Each original suite gets its own target; conversion and nearest-
+neighbor search need gtest_main, other files retain their mains. Local test
+helpers include the prepared mock parser; carry its shared provider and yaml-cpp
+explicitly. Preserve all existing cases. Conversion's defensive GTEST_SKIP
+branches follow assertions and must never trigger in the passing gate.
+Status: incomplete. The first build exposes a real dependency gap: published
+extension0.7.2 lacks traffic_rules/autoware_traffic_rules.hpp, which map_handler
+includes. RCR metadata confirms0.7.2-3.rcr.2 is its newest provider. Prepare the
+current local extension and run its full gate before resuming this full suite.
+Cyclone DDS only, sequential resource-limited builds.
+
+
+## 2026-11-16: Phase 5.2.4 — autoware_lanelet2_extension
+
+Purpose: supply current traffic-rule support required by the Lanelet2 utility
+library. Prerequisite evidence is its missing-header compile failure against
+the newest published0.7.2-3.rcr.2 extension. Inspected current1.3.0 snapshot's
+CMake/manifest, all21 library sources, public/private headers and six test files.
+Gate: all19 active existing cases over projector, query, regulatory elements, utilities,
+route validation and angle normalization. All tests supply their own main and
+construct fixtures in memory; no dependency skip is declared. Source inventory
+initially counted20 TEST tokens, but copyZ is inside an existing block comment;
+there are19 compiled cases, and that dormant test is not activated by this work.
+
+Pattern: retain the published library target names so existing consumers keep
+independent labels. Compile current lib sources/headers and link shared ROS,
+Lanelet and native providers consistently. Always link the library to retain
+factory/projector/regulatory/traffic-rule static registrations. Keep Lanelet
+modules pinned to the previously validated1.2.1-8.rcr.2 family. Root selects a
+local override; components still refer only to module-owned labels. Tests link
+the actual shared extension, not independent embedded copies.
+
+Verification commands (sequential):
+
+```bash
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --nocache_test_results --test_output=errors --local_test_jobs=1 \
+  @autoware_lanelet2_extension//...
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=no-agnocast --nocache_test_results --test_output=errors \
+  --local_test_jobs=1 @autoware_geography_utils//... \
+  @autoware_map_projection_loader//... @autoware_gnss_poser//... @autoware_test_utils//...
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --nocache_test_results --test_output=errors --local_test_jobs=1 \
+  --strategy=TestRunner=local //bazel/tests:map_projection_mgrs_launch_test \
+  //bazel/tests:map_projection_local_launch_test \
+  //bazel/tests:map_projection_local_cartesian_utm_launch_test \
+  //bazel/tests:map_projection_transverse_mercator_launch_test \
+  //bazel/tests:topic_snapshot_saver_test
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --nocache_test_results --test_output=errors --local_test_jobs=1 \
+  --strategy=TestRunner=local --run_under=//bazel/agnocast:with_runtime \
+  //bazel/tests:map_projection_rclcpp_test //bazel/tests:map_projection_agnocast_test \
+  //bazel/tests:gnss_poser_rclcpp_test //bazel/tests:gnss_poser_agnocast_test
+```
+
+Result: all19 active extension cases pass with no failures/errors/disabled/skips,
+confirmed in XML of its six declared targets. Final extension invocation9.013
+seconds. The selected complete consumer suites also pass (geography21 including
+both grid states, projection14, GNSS44 and test helpers21 =100 cases); invocation
+74.527 seconds. All four original projection launch suites pass again, as does
+the snapshot executable (27.400-second invocation). Both GNSS and projection
+standalone backends pass (four cases, 19.454-second invocation). This checks the
+actual changed shared provider without expanding to a full DDS/system matrix.
+
+Initial extension test links fail with unresolved Lanelet map-layer symbols:
+test sources call Lanelet directly, so declare its shared providers directly
+alongside the extension rather than relying on transitive ELF dependencies.
+No source compatibility fix is needed. Targeted buildifier/whitespace checks
+pass. No Fast DDS, pre-commit or container check was performed. Resume the
+incomplete utility gate against this prepared provider.
