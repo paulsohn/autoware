@@ -120,7 +120,7 @@ Host validation:
 
 ```bash
 env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
-  bazel build //bazel/smoke:talker //bazel/smoke:listener
+  bazel build //bazel/tests:talker //bazel/tests:listener
 ```
 
 The build passed with 7,352 actions in the graph. The completed invocation used
@@ -149,7 +149,7 @@ docker run --rm \
   -v "$PWD:/workspace:ro" \
   autoware-bazel-dev:bootstrap \
   bazel build --experimental_convenience_symlinks=ignore \
-  //bazel/smoke:talker //bazel/smoke:listener
+  //bazel/tests:talker //bazel/tests:listener
 ```
 
 The image build passed. The source was read-only and the cache volume began
@@ -238,10 +238,10 @@ Host builds used a caller environment without ROS variables:
 
 ```bash
 env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
-  bazel build //bazel/smoke:talker //bazel/smoke:listener
+  bazel build //bazel/tests:talker //bazel/tests:listener
 env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
   bazel build --config=fastdds \
-  //bazel/smoke:talker //bazel/smoke:listener
+  //bazel/tests:talker //bazel/tests:listener
 ```
 
 For each configuration, `bazel run --script_path` generated listener and talker
@@ -259,13 +259,13 @@ docker run --rm \
   -v "$PWD:/workspace:ro" \
   autoware-bazel-dev:bootstrap \
   bazel build --experimental_convenience_symlinks=ignore \
-  //bazel/smoke:talker //bazel/smoke:listener
+  //bazel/tests:talker //bazel/tests:listener
 docker run --rm \
   -v autoware-bazel-bootstrap-cache:/home/ubuntu/.cache \
   -v "$PWD:/workspace:ro" \
   autoware-bazel-dev:bootstrap \
   bazel build --config=fastdds --experimental_convenience_symlinks=ignore \
-  //bazel/smoke:talker //bazel/smoke:listener
+  //bazel/tests:talker //bazel/tests:listener
 ```
 
 Measured graphs:
@@ -337,9 +337,9 @@ Host validation:
 
 ```bash
 env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
-  bazel test //bazel/smoke:autoware_common_msgs_test
+  bazel test //bazel/tests:autoware_common_msgs_test
 env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
-  bazel test --config=fastdds //bazel/smoke:autoware_common_msgs_test
+  bazel test --config=fastdds //bazel/tests:autoware_common_msgs_test
 env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
   bazel build @autoware_common_msgs//...
 ```
@@ -357,7 +357,7 @@ docker run --rm \
   -v "$PWD:/workspace:ro" \
   autoware-bazel-dev:bootstrap \
   bazel test --experimental_convenience_symlinks=ignore \
-  //bazel/smoke:autoware_common_msgs_test
+  //bazel/tests:autoware_common_msgs_test
 ```
 
 The test passed. Its host and container executable SHA-256 digests matched:
@@ -396,12 +396,12 @@ middleware paths.
 
 The source-selection trial replaced the local `autoware_common_msgs` override
 with the concrete published version `1.11.0-3.rcr.2` and left
-`//bazel/smoke:autoware_common_msgs_test` unchanged:
+`//bazel/tests:autoware_common_msgs_test` unchanged:
 
 ```bash
 env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
   bazel test --lockfile_mode=off \
-  //bazel/smoke:autoware_common_msgs_test
+  //bazel/tests:autoware_common_msgs_test
 ```
 
 The test passed. The published module analysis loaded 199 packages and
@@ -423,12 +423,12 @@ The local C++ consumers passed:
 ```bash
 env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
   bazel test \
-  //bazel/smoke:autoware_common_msgs_test \
-  //bazel/smoke:autoware_localization_msgs_test
+  //bazel/tests:autoware_common_msgs_test \
+  //bazel/tests:autoware_localization_msgs_test
 env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
   bazel test --config=fastdds \
-  //bazel/smoke:autoware_common_msgs_test \
-  //bazel/smoke:autoware_localization_msgs_test
+  //bazel/tests:autoware_common_msgs_test \
+  //bazel/tests:autoware_localization_msgs_test
 ```
 
 The localization consumer constructs both generated interfaces and verifies
@@ -463,8 +463,8 @@ docker run --rm \
   -v "$PWD:/workspace:ro" \
   autoware-bazel-dev:bootstrap \
   bazel test --experimental_convenience_symlinks=ignore \
-  //bazel/smoke:autoware_common_msgs_test \
-  //bazel/smoke:autoware_localization_msgs_test
+  //bazel/tests:autoware_common_msgs_test \
+  //bazel/tests:autoware_localization_msgs_test
 ```
 
 The container configured 69,312 targets across 331 packages with 994 aspect
@@ -537,7 +537,7 @@ Primary validation used the clean caller environment:
 
 ```bash
 env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
-  bazel test //bazel/smoke:autoware_interface_layer_test
+  bazel test //bazel/tests:autoware_interface_layer_test
 env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
   bazel build @autoware_control_msgs//...
 env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
@@ -558,7 +558,7 @@ env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
   @autoware_control_msgs//... @autoware_v2x_msgs//...
 env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
   bazel test --config=fastdds --nocache_test_results \
-  //bazel/smoke:autoware_interface_layer_test
+  //bazel/tests:autoware_interface_layer_test
 ```
 
 All 30 module targets built, and forcing test execution confirmed that the
@@ -572,7 +572,7 @@ docker run --rm \
   -v "$PWD:/workspace:ro" \
   autoware-bazel-dev:bootstrap \
   bazel test --experimental_convenience_symlinks=ignore \
-  --nocache_test_results //bazel/smoke:autoware_interface_layer_test
+  --nocache_test_results //bazel/tests:autoware_interface_layer_test
 ```
 
 Symptom: Docker failed before starting a container because the selected
@@ -655,7 +655,7 @@ predicted perception object:
 
 ```bash
 env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
-  bazel test //bazel/smoke:autoware_interface_base_test
+  bazel test //bazel/tests:autoware_interface_base_test
 ```
 
 The test compiled and executed successfully.
@@ -671,7 +671,7 @@ env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
   @autoware_perception_msgs//...
 env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
   bazel test --config=fastdds --nocache_test_results \
-  //bazel/smoke:autoware_interface_base_test
+  //bazel/tests:autoware_interface_base_test
 ```
 
 Both commands passed. The combined Fast DDS analysis configured 59,689 targets
@@ -741,7 +741,7 @@ simulated object containing perception classification and shape fields:
 ```bash
 env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
   bazel test --nocache_test_results \
-  //bazel/smoke:autoware_interface_dependent_test
+  //bazel/tests:autoware_interface_dependent_test
 ```
 
 Its first execution failed on the expected numeric value for
@@ -757,7 +757,7 @@ env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
   @autoware_vehicle_msgs//... @autoware_simulation_msgs//...
 env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
   bazel test --config=fastdds --nocache_test_results \
-  //bazel/smoke:autoware_interface_dependent_test
+  //bazel/tests:autoware_interface_dependent_test
 ```
 
 The complete interface build then passed for all 208 targets from
@@ -789,11 +789,11 @@ Finally, one command forced all five interface consumers to execute together:
 ```bash
 env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
   bazel test --nocache_test_results \
-  //bazel/smoke:autoware_common_msgs_test \
-  //bazel/smoke:autoware_localization_msgs_test \
-  //bazel/smoke:autoware_interface_layer_test \
-  //bazel/smoke:autoware_interface_base_test \
-  //bazel/smoke:autoware_interface_dependent_test
+  //bazel/tests:autoware_common_msgs_test \
+  //bazel/tests:autoware_localization_msgs_test \
+  //bazel/tests:autoware_interface_layer_test \
+  //bazel/tests:autoware_interface_base_test \
+  //bazel/tests:autoware_interface_dependent_test
 ```
 
 All five passed under Cyclone DDS. Repeating the command with
@@ -867,11 +867,11 @@ docker run --rm \
   autoware-bazel-dev:bootstrap \
   bazel test --experimental_convenience_symlinks=ignore \
   --nocache_test_results \
-  //bazel/smoke:autoware_common_msgs_test \
-  //bazel/smoke:autoware_localization_msgs_test \
-  //bazel/smoke:autoware_interface_layer_test \
-  //bazel/smoke:autoware_interface_base_test \
-  //bazel/smoke:autoware_interface_dependent_test
+  //bazel/tests:autoware_common_msgs_test \
+  //bazel/tests:autoware_localization_msgs_test \
+  //bazel/tests:autoware_interface_layer_test \
+  //bazel/tests:autoware_interface_base_test \
+  //bazel/tests:autoware_interface_dependent_test
 ```
 
 All five tests passed. The command configured 69,631 targets and applied 2,625
@@ -2220,7 +2220,7 @@ clean_bazel() {
 }
 clean_bazel test --config=no-agnocast --nocache_test_results --test_output=errors \
   @agnocastlib//... @agnocast_heaphook//... @autoware_agnocast_wrapper//... \
-  //bazel/smoke/... //bazel/agnocast:template_tests \
+  //bazel/tests/... //bazel/agnocast:template_tests \
   //bazel/interfaces:all_interfaces //bazel/agnocast:plugins
 clean_bazel test --strategy=TestRunner=local \
   --run_under=//bazel/agnocast:with_heaphook \
@@ -2670,7 +2670,7 @@ clean_bazel test --config=no-agnocast --nocache_test_results \
   @agnocastlib//... @agnocast_heaphook//:unit_tests \
   @agnocast_cie_thread_configurator//... @ros2agnocast_discovery_agent//... \
   @ros2agnocast//:tests @autoware_agnocast_wrapper//... \
-  @autoware_node//... //bazel/smoke/... //bazel/agnocast:template_tests
+  @autoware_node//... //bazel/tests/... //bazel/agnocast:template_tests
 clean_bazel test --strategy=TestRunner=local \
   --run_under=//bazel/agnocast:with_heaphook --nocache_test_results \
   --test_output=errors @autoware_agnocast_wrapper//:unit_tests
@@ -2765,7 +2765,7 @@ clean_bazel test --config=fastdds --config=no-agnocast \
   @agnocastlib//... @agnocast_heaphook//:unit_tests \
   @agnocast_cie_thread_configurator//... @ros2agnocast_discovery_agent//... \
   @ros2agnocast//:tests @autoware_agnocast_wrapper//... \
-  @autoware_node//... //bazel/smoke/... //bazel/agnocast:template_tests
+  @autoware_node//... //bazel/tests/... //bazel/agnocast:template_tests
 clean_bazel test --config=fastdds --strategy=TestRunner=local \
   --run_under=//bazel/agnocast:with_heaphook --nocache_test_results \
   --test_output=errors \
@@ -3114,3 +3114,42 @@ Targeted buildifier and whitespace checks pass. Launch files are exposed as
 resources; launch composition and shared/install exports remain for consumers
 that require them. No Fast DDS check, pre-commit, broad communication matrix or
 container rerun is performed. This closes the five-module Phase 5.1 gate.
+
+## 2026-11-16: Root integration test layout
+
+Purpose: Keep root-owned integration targets in one intuitive package,
+bazel/tests, without distinguishing bootstrap from core behavior by directory.
+
+Inputs: all five interface consumer tests, four talker/listener executables and
+nine unchanged C++ sources previously in the bootstrap test package. Move them
+together without aliases. Keep target names unchanged; update journal commands
+to the current namespace. Package-owned tests belong in each component's test/
+directory; root targets select product runtime dependencies. Genuine Bazel rule
+implementations remain with their owning component or workspace support.
+
+Verification (Cyclone DDS, sequential builds and local_test_jobs=1):
+
+```bash
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --nocache_test_results --test_output=errors --local_test_jobs=1 \
+  //bazel/tests:autoware_common_msgs_test \
+  //bazel/tests:autoware_localization_msgs_test \
+  //bazel/tests:autoware_interface_layer_test \
+  //bazel/tests:autoware_interface_base_test \
+  //bazel/tests:autoware_interface_dependent_test
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel build //bazel/tests:talker //bazel/tests:listener \
+  //bazel/tests:localization_talker //bazel/tests:localization_listener
+```
+
+For each pair, run the built listener before its talker in a clean environment
+with HOME, PATH, ROS_DISTRO=lyrical, RMW_IMPLEMENTATION=rmw_cyclonedds_cpp,
+LD_LIBRARY_PATH=lib and ROS_HOME=/tmp/autoware-bazel-ros-home. Use ROS_DOMAIN_ID=81
+for the plain pair and 82 for localization. Capture listener output with a
+20-second timeout; require exit 0 and respectively `Received 5 messages; smoke
+test passed` or `Received 5 localization states; behavior test passed`. Send
+SIGINT to the continuously running talker and wait up to five seconds, killing
+and reaping only on timeout. The Python subprocess harness ran both pairs in
+this order; both received five messages and exited successfully. All five
+interface tests pass with no failures. Targeted buildifier and whitespace
+checks pass. No Fast DDS, container sweep or pre-commit was run.

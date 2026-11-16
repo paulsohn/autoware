@@ -23,6 +23,10 @@ experiments, and milestones belong in PLAN.md and JOURNAL.md.
   its component; components must not depend on metarepository paths or labels.
   The metarepository selects source overrides and composes interface sets
   usable by bridges, loggers, or other consumers.
+- Put package-specific test sources and fixtures under the package's `test/`
+  directory alongside its existing tests, including tests introduced for Bazel.
+  Keep root-level integration tests and their runtime composition under
+  `bazel/tests/`.
 - BUILD declarations define supported interfaces; registering interfaces and
   their dependencies is the developer's responsibility. Undeclared interface
   sources remain outside the Bazel graph. Validate generated targets and

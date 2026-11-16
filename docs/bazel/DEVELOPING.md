@@ -191,6 +191,9 @@ Keep:
 
 - workspace-wide Bazel support under `bazel/`;
 - package-owned `MODULE.bazel` and BUILD files beside package source;
+- package-specific test sources and fixtures under `test/`, including tests
+  introduced for Bazel;
+- root-level integration test targets and runtime composition under `bazel/tests/`;
 - development and runtime container definitions under `images/`;
 - integration strategy and evidence under `docs/bazel/`.
 
