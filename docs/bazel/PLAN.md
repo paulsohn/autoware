@@ -622,45 +622,12 @@ substep identifiers in plans, journals, and commits:
   runtime-backend checks, and explicitly inventory remaining platform-only
   prerequisites. Complete Phase 4 only when these gates pass.
 
-## Later phases
+## Phase 5: Remaining autoware_core runnable slices (in progress)
 
-### Incoming phase identifiers
-
-- **Phase 5 — Remaining autoware_core runnable slices.** 5.1 shared foundations,
-  5.2 sensing/perception/localization/planning/control dependency slices, and
-  5.3 API/system composition. Choose packages from executable dependency graphs
-  and pass each declared package suite before advancing.
-- **Phase 6 — CUDA and TensorRT on x86.** Introduce pinned Bazel dependencies
-  when a selected package requires them.
-- **Phase 7 — Runtime packaging and headless planning simulation.** Complete
-  install/resource closure and exercise the packaged scenario.
-- **Phase 8 — JetPack 7.2.1 software compatibility (Thor-supported release).**
-  Cross-build the selected aarch64 targets against a pinned JetPack-compatible
-  user-space dependency set and check binary architecture, link/resource
-  closure, and applicable non-GPU behavior where runnable. Hardware execution,
-  GPU behavior, drivers, performance, and real-time characteristics remain
-  unverified until suitable hardware becomes available; they are not Phase 8
-  completion requirements.
-
-The Phase 8 planning baseline is JetPack 7.2.1 / Jetson Linux 39.2.1, with
-Ubuntu 24.04, CUDA 13.2.2, and TensorRT 10.16.2. NVIDIA lists Thor among its
-[supported platforms](https://developer.nvidia.com/embedded/jetpack/downloads)
-and records the release in the
-[JetPack archive](https://developer.nvidia.com/embedded/jetpack-archive)
-(checked 2026-11-15). This is a researched target, not a validated Bazel input
-or a claim of working Thor deployment. Pin and validate the actual SDK inputs
-when Phase 8 begins; any baseline change must be explicit and journaled.
-
-These are scope markers, not implementation decisions. Refine each phase only
-when the preceding phase meets its exit criteria.
-
-From phase 1 onward, runnable slices use Cyclone DDS by default. Propose Fast
-DDS compatibility checks at major milestones after the Cyclone DDS exit
-criteria pass; run them only after explicit user approval.
-
-Potential topics such as OSQP compatibility, OpenMP, CMake parity,
-runtime-image deduplication, and remote caching will be evaluated when a current
-target requires them.
+Phase 5.1 covers shared foundations; Phase 5.2 adopts sensing, perception,
+localization, planning and control dependency slices; Phase 5.3 composes API
+and system behavior. Choose packages from executable dependency graphs and pass
+each declared package suite before advancing.
 
 ### Phase 5.1: Shared core foundations (complete)
 
@@ -788,6 +755,63 @@ integration test targets and runtime composition share bazel/tests/.
 Each validated package retains a separate commit and reproducible journal entry.
 No Fast DDS, broad communication matrix or container sweep was run.
 Phase 5.2.2 is the next dependency slice.
+
+#### Phase 5.2.2: Localization (in progress)
+
+Proceed in package boundaries: localization utilities, gyro odometer, EKF
+localizer, geography utilities and GNSS poser. Introduce remaining TF/message
+providers only when the selected source requires them. Keep the full existing
+RCLCPP suites, including tests CMake omits when Agnocast is enabled; add targeted
+enabled standalone checks for each node as in Phase 5.2.1.
+
+The first gate is autoware_localization_util: four sources and five public
+headers; four existing suites with 33 cases (8 pose-buffer, 6 optimizer,
+6 covariance/marker and 13 utility cases). Preserve separate executables because
+the pose-buffer source has its own global main. No test data is read by these suites; the
+pose-buffer file includes ament_index_cpp and rcl_yaml_param_parser headers but
+does not access a package index or YAML at runtime. Do not invent resource
+packaging for this library. Run the complete module suite with Cyclone DDS;
+no communication matrix or Fast DDS check is required for this library gate.
+
+Localization utilities passed all 33 cases with no skips. The matching
+tf2_eigen 0.45.10-1.rcr.0 is validated and pinned. Gyro odometer is next; the
+remaining node and GNSS gates keep Phase 5.2.2 open.
+
+## Later phases
+
+### Incoming phase identifiers
+
+- **Phase 6 — CUDA and TensorRT on x86.** Introduce pinned Bazel dependencies
+  when a selected package requires them.
+- **Phase 7 — Runtime packaging and headless planning simulation.** Complete
+  install/resource closure and exercise the packaged scenario.
+- **Phase 8 — JetPack 7.2.1 software compatibility (Thor-supported release).**
+  Cross-build the selected aarch64 targets against a pinned JetPack-compatible
+  user-space dependency set and check binary architecture, link/resource
+  closure, and applicable non-GPU behavior where runnable. Hardware execution,
+  GPU behavior, drivers, performance, and real-time characteristics remain
+  unverified until suitable hardware becomes available; they are not Phase 8
+  completion requirements.
+
+The Phase 8 planning baseline is JetPack 7.2.1 / Jetson Linux 39.2.1, with
+Ubuntu 24.04, CUDA 13.2.2, and TensorRT 10.16.2. NVIDIA lists Thor among its
+[supported platforms](https://developer.nvidia.com/embedded/jetpack/downloads)
+and records the release in the
+[JetPack archive](https://developer.nvidia.com/embedded/jetpack-archive)
+(checked 2026-11-15). This is a researched target, not a validated Bazel input
+or a claim of working Thor deployment. Pin and validate the actual SDK inputs
+when Phase 8 begins; any baseline change must be explicit and journaled.
+
+These are scope markers, not implementation decisions. Refine each phase only
+when the preceding phase meets its exit criteria.
+
+From phase 1 onward, runnable slices use Cyclone DDS by default. Propose Fast
+DDS compatibility checks at major milestones after the Cyclone DDS exit
+criteria pass; run them only after explicit user approval.
+
+Potential topics such as OSQP compatibility, OpenMP, CMake parity,
+runtime-image deduplication, and remote caching will be evaluated when a current
+target requires them.
 
 ## Commit and publication policy
 

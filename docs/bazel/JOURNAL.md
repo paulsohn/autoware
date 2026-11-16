@@ -3411,3 +3411,51 @@ Python syntax and whitespace checks pass. The module reuses the same built
 bridge runtime as stop filter. This closes Phase 5.2.1: all 25 existing cases
 and eight standalone behavior cases pass across the three packages. No Fast
 DDS, pre-commit, broad communication matrix or container sweep was run.
+
+## 2026-11-16: Phase 5.2.2 — autoware_localization_util
+
+Purpose: Supply pose buffering/interpolation, covariance visualization, pose/TF
+helpers and the tree-structured Parzen estimator required by gyro/EKF localization.
+Move the active Phase 5 section ahead of the future Phase 6–8 scope markers in
+PLAN.md; its subphase numbering and existing acceptance boundaries stay intact.
+
+Inputs: CMakeLists.txt, package.xml, all four implementations, five public
+headers and four existing test files. The complete gate is 33 cases: eight
+smart-pose-buffer, six TPE, six ellipse/marker and thirteen utility cases. Preserve four test executables; only pose-buffer supplies global main, while
+the utility file's similarly named function is namespaced and needs gtest_main. No existing case is disabled or skipped by inspection.
+
+Integration pattern: local 0.0.0 module selected through the root override;
+one compiled cc_library with the existing scoped include tree; direct geometry,
+math, Eigen, ROS message/RCLCPP and TF compile providers. Select tf2_eigen
+0.45.10-1.rcr.0 to match the already-pinned TF family. Keep the final shared
+closure on each test, including compiled geometry's message dependencies and
+TF/Eigen/visualization providers. The pose-buffer source includes ament-index
+and YAML-parser headers, so declare those test dependencies; it does not read
+resources and needs no artificial package-index or YAML fixture target.
+Compile the existing library once rather than duplicating its source in tests.
+No source patch is introduced without an observed failure.
+
+Verification command (executed in a clean caller environment):
+
+```bash
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --nocache_test_results --test_output=errors --local_test_jobs=1 \
+  @autoware_localization_util//...
+```
+
+Result: all four sources and exported headers build, and all 33 cases execute
+successfully across the four targets, confirmed in GTest XML without failures,
+errors, disabled cases or skips. The corrected complete gate takes 6.376 seconds
+with dependencies compiled during the initial invocation; TPE executes for
+1.1 seconds and the other suites each for 0.1 seconds.
+
+The first utility-test link failed on undefined main. Its apparent main is
+inside namespace autoware::localization_util and is not a process entry point.
+Select gtest_main for that target, as well as the two suites without main; only
+smart-pose-buffer uses gtest with its own global entry point. No source change
+is needed. Header-only TF Eigen and its declared shared provider resolve at the
+matching 0.45.10-1.rcr.0 pin. No host ROS, apt/pip dependency or new resource
+wrapper is required. Targeted buildifier and whitespace checks pass. No Fast
+DDS, pre-commit, communication matrix or container rerun was performed.
+
+Phase 5.2.2 remains in progress; gyro odometer is the next package boundary.

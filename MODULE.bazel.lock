@@ -1683,6 +1683,9 @@
     "https://bazel.ros.org/modules/tf2/0.0.0/MODULE.bazel": "64b742c14165095cb234b43e64f605de0cab8abab6d2bdedafd32a3e4d0c9c81",
     "https://bazel.ros.org/modules/tf2/0.45.10-1.rcr.0/MODULE.bazel": "e5c6061c09d585f0e532beb9c283e51246a8acd190a0b21d42591ddd060835e9",
     "https://bazel.ros.org/modules/tf2/0.45.10-1.rcr.0/source.json": "1300a460a36483661c2a2ac2cac65d171ee1773522b309dbfb370a9949f9b50e",
+    "https://bazel.ros.org/modules/tf2_eigen/0.0.0/MODULE.bazel": "bda6b3915ee38ce204a5b2135a950371e5adcf39e1a54c68a2f560c8a3f5b511",
+    "https://bazel.ros.org/modules/tf2_eigen/0.45.10-1.rcr.0/MODULE.bazel": "4c72e3ce31048109c169c0c8d2c4de87995c37f4c25c5d3d77226732d9cfb45c",
+    "https://bazel.ros.org/modules/tf2_eigen/0.45.10-1.rcr.0/source.json": "ebbbe6cf45a513243bc0b1a10df405e2210f5b2daad6691c1d3d38cd05cb472e",
     "https://bazel.ros.org/modules/tf2_geometry_msgs/0.0.0/MODULE.bazel": "64a02838f1a854fc9180580670d11d117f29cf825546430dfe8c2eb0c3ed0747",
     "https://bazel.ros.org/modules/tf2_geometry_msgs/0.45.10-1.rcr.0/MODULE.bazel": "10e36700cb089fa445a7d9d420f2a611d0ec6c96c891970f3cb46a90e773cd82",
     "https://bazel.ros.org/modules/tf2_geometry_msgs/0.45.10-1.rcr.0/source.json": "6d90b000e76d5fc71c20421db30169f5b0fd970aa5415b99348afcb446e2ebca",
@@ -3439,7 +3442,7 @@
     "@@rosdistro+//python:defs.bzl%pip_ros": {
       "general": {
         "bzlTransitiveDigest": "Wf1bYPS+v1MXSxPm/3sa2yWsKIiJG8ikAIrD+e7Djmk=",
-        "usagesDigest": "uXWES2OI41fwBiNZztGKLVhYcLTb0+7PWDpmF1iOP5A=",
+        "usagesDigest": "VdzQD8h+10Vti7la9W0oCmw2Inr1X0jSp1LeaeoG2kE=",
         "recordedInputs": [
           "REPO_MAPPING:bazel_features+,bazel_features_globals bazel_features++version_extension+bazel_features_globals",
           "REPO_MAPPING:bazel_features+,bazel_features_version bazel_features++version_extension+bazel_features_version",
