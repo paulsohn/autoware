@@ -315,7 +315,7 @@ Exit criteria:
 
 All Phase 2 exit criteria are met.
 
-## Phase 3: Autoware utilities and C++ package conventions (in progress)
+## Phase 3: Autoware utilities and C++ package conventions (complete)
 
 Purpose: establish the package-local Bazel conventions needed by Autoware C++
 libraries and tests before selecting the first runnable core slice.
@@ -391,10 +391,17 @@ Exit criteria:
   documented only after examples demonstrate them.
 - The complete bounded utility set passes in the read-only development image.
 
-The following core phase will keep its Agnocast-free portion limited to the
-smallest publisher/subscriber slice needed to establish node and communication
-test infrastructure. Agnocast becomes a dedicated core subphase when a current
-target requires its wrapper or backend.
+The closing development-image gate passes with Cyclone DDS: all 26 selected
+targets build and all nine utility suites pass 165 executed cases from the
+read-only source mount. Two pre-existing geometry cases remain source-disabled
+for known polygon-intersection edge behavior; they are not counted as passes.
+JOURNAL.md records the exact image, commands, resource limits and XML results.
+The documented additional service-callback/timeout coverage gaps do not change
+the existing default-suite exit criterion. No Fast DDS repeat is required.
+
+This utility baseline now supports the minimal core node and Agnocast
+communication lane completed in Phase 4. Continue package adoption through
+Phase 5.1's runnable dependency graph rather than expanding utilities in bulk.
 
 ## Phase 4: Minimal core and Agnocast communication lanes (complete)
 

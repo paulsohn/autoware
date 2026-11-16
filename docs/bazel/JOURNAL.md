@@ -2810,3 +2810,110 @@ outside this user-space milestone. Phase 4's primary and Tier 2 gates are
 complete. Phase 3 still has its separate read-only utility-image gate open;
 close that recorded gap before further core expansion in Phase 5.1. Future
 Fast DDS gates still require fresh approval.
+
+## 2026-11-16: Phase 3 — complete utility development-image gate
+
+Purpose: validate the complete bounded utility set independently of host ROS
+and development packages, closing the remaining Phase 3 exit criterion.
+The scope is the nine already-integrated packages: math, system, rclcpp, UUID,
+visualization, logging, diagnostics, geometry and TF. Each package's existing
+BUILD test target includes its complete test source set. This gate adds no
+packages or tests and requires no Agnocast kernel module or communication
+matrix. Cyclone DDS is the only middleware selected for this container check.
+
+Prerequisites and inspected inputs: images/dev.Dockerfile, the root's nine
+local_path_override selections, each utility's BUILD test source glob, and
+Phase 3's previous host results. Docker Desktop 29.8.2 is available. Build the
+tracked image definition rather than assuming an existing tag is current:
+
+```bash
+docker build -f images/dev.Dockerfile -t autoware-bazel-dev:bootstrap .
+docker volume create autoware-bazel-bootstrap-cache
+```
+
+The image build succeeds with image ID
+`sha256:08faa9513d454694410dcbdc7a667ff7a5eabc68057da684042515ea300fbfec`.
+Its Ubuntu 24.04 base and Bazelisk version/checksum procedure are tracked in
+the Dockerfile. Reuse the existing named cache volume; no host cache or ROS
+installation is mounted. Stop an idle host Bazel server if needed to release
+memory. The resource values below are invocation-specific, not new committed
+machine defaults; choose limits appropriate to the Docker VM.
+
+Run all declared utility targets, forcing actual test execution:
+
+```bash
+docker run --name autoware-bazel-phase3-20261116-j2 --memory=6g --cpus=2 \
+  -v autoware-bazel-bootstrap-cache:/home/ubuntu/.cache \
+  -v "$PWD:/workspace:ro" \
+  autoware-bazel-dev:bootstrap \
+  bazel --host_jvm_args=-Xmx3g test \
+  --experimental_convenience_symlinks=ignore \
+  --jobs=2 --local_resources=cpu=2 --local_resources=memory=2048 \
+  --local_test_jobs=1 --nocache_test_results --test_output=errors \
+  --build_event_json_file=/home/ubuntu/.cache/phase3-validation.bep.json \
+  @autoware_utils_math//... @autoware_utils_system//... \
+  @autoware_utils_rclcpp//... @autoware_utils_uuid//... \
+  @autoware_utils_visualization//... @autoware_utils_logging//... \
+  @autoware_utils_diagnostics//... @autoware_utils_geometry//... \
+  @autoware_utils_tf//...
+```
+
+Docker inspection confirms /workspace has RW=false, the named cache has
+RW=true, and the 6 GiB/two-CPU container limits apply. The ignored host
+user.bazelrc is visible through the source mount, so the command explicitly
+overrides its build resources for the smaller Docker VM. The JVM cap bounds
+analysis memory. An initial single-worker build was stopped before tests after
+measurement showed 1.8 GiB of 6 GiB in use and less than one CPU utilized;
+the final invocation uses two workers with the same cache and unchanged scope. Convenience symlinks are disabled so Bazel never needs to
+create output links in the read-only source. The image provides only bootstrap
+tools; target headers, libraries, compilers and test dependencies come through
+the Bazel graph. Keep the stopped container until its XML and build-event
+reports have been inspected, then remove it while retaining the cache volume.
+
+Result: the final invocation succeeds in 484.622 seconds, building all 26
+selected targets (17 non-test targets and nine test targets). All nine test
+targets pass; XML confirms 165 executed cases pass with no failures, errors
+or runtime skips. Geometry also lists two pre-existing source-disabled cases:
+DISABLED_intersectPolygon and DISABLED_intersectConcavePolygon. Their source
+comments identify differing GJK results for shared-edge/shared-point cases.
+They remain disabled by the existing suite; this gate adds no filter and does
+not count them as passed. No dependency-related skip or omitted package is used.
+
+| Utility package | Executed/pass | Source-disabled |
+| --- | ---: | ---: |
+| autoware_utils_diagnostics | 3 | 0 |
+| autoware_utils_geometry | 80 | 2 |
+| autoware_utils_logging | 1 | 0 |
+| autoware_utils_math | 40 | 0 |
+| autoware_utils_rclcpp | 10 | 0 |
+| autoware_utils_system | 17 | 0 |
+| autoware_utils_tf | 2 | 0 |
+| autoware_utils_uuid | 5 | 0 |
+| autoware_utils_visualization | 7 | 0 |
+
+The container exits 0. Final Docker inspection confirms the read-only source
+mount and writable cache, and build-event summaries show PASSED for all nine
+suites. Export the build-event file before removing the stopped container:
+
+```bash
+docker cp autoware-bazel-phase3-20261116-j2:/home/ubuntu/.cache/phase3-validation.bep.json \
+  /tmp/phase3-validation.bep.json
+```
+
+Each testResult event identifies its test.xml and test.log through
+file:// URIs inside the container. Copy those exact paths with docker cp and
+inspect testcase status/result as well as failures/errors/skipped: GTest lists
+DISABLED_ cases as status=notrun, result=suppressed rather than skipped elements.
+The reports were exported and inspected for this gate. Remove only this task's
+stopped containers afterward, keeping the named cache volume for future work.
+
+All Phase 3 exit criteria are now met: the bounded local-source utility set
+builds and its complete existing default suites execute in the minimal image
+with the source read-only. Package-local C++/ROS/shared-library conventions
+are already documented in DEVELOPING.md. No source or build-definition fix was
+required. Additional service-callback/timeout coverage and the two explicitly
+disabled geometry cases remain known test limitations, not missing container
+prerequisites. No Fast DDS middleware validation, pre-commit or unrelated
+runtime sweep was run. This closure changes documentation only and records
+the completed container run; it needs no further runtime rerun. Next: Phase
+5.1 shared core foundations, with Phase 4's communication lane already complete.
