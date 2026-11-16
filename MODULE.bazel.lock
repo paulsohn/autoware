@@ -491,6 +491,7 @@
     "https://bazel.ros.org/modules/ceres-solver/2.2.0.rcr.0/source.json": "f1ffdf209c2408580c6f8481a00ecbdb7232113b8e72cdd5da41f3efb96791bd",
     "https://bazel.ros.org/modules/cgrindel_bazel_starlib/0.27.0/MODULE.bazel": "not found",
     "https://bazel.ros.org/modules/civetweb/1.16/MODULE.bazel": "not found",
+    "https://bazel.ros.org/modules/class_loader/0.0.0/MODULE.bazel": "fa36b296e31462374859873c7f8a1d07011c38b9f6a3c1428661d623ed2c7a57",
     "https://bazel.ros.org/modules/class_loader/2.9.4-3.rcr.2/MODULE.bazel": "6b44aa704e04c836b3dbc8826d42e9017fceef67a6b3d37c0a6581544be0009b",
     "https://bazel.ros.org/modules/class_loader/2.9.4-3.rcr.2/source.json": "452307a7aa83138aa93608101056a8e5d77776511205310c72850c7d31690bb4",
     "https://bazel.ros.org/modules/cli11/2.6.2/MODULE.bazel": "not found",

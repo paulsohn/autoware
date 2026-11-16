@@ -3191,3 +3191,98 @@ env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
 The complete module builds and both cases pass from test/, with no
 failures/errors/skips in GTest XML. Targeted buildifier and whitespace checks
 pass. No Fast DDS, pre-commit or communication matrix was run.
+
+## 2026-11-16: Phase 5.2.1 — autoware_vehicle_velocity_converter
+
+Purpose: Introduce the first core sensing executable using the available
+Agnocast wrapper and geometry providers. Validate speed scaling, axis mapping,
+covariance and headers across a real standalone node before bringing in new
+point-cloud, map or solver dependencies.
+
+Prerequisites and inspected inputs: completed Phase 5.1; the package's
+CMakeLists.txt, package.xml, two implementation/header pairs, both existing test
+files, parameter YAML and XML launch file; the wrapper's registration CMake and
+switchable-main template; pinned RCR rclcpp_components rules and rosdistro ament
+index/resource and dynamic-closure rules. The two existing test files contain
+five algorithm cases and one RCLCPP-only node case, with no local test main.
+
+Minimum integration pattern: create a local 0.0.0 module and select it with a
+root local_path_override. Export the algorithm as a cc_library; keep its
+source-local headers at their existing paths. Layer a node cc_library and
+cc_shared_library over it. Include the already-validated geometry message/TF
+closure and wrapper shared provider at the final link boundary. Use gtest_main
+for both existing test files, retaining the RCLCPP-only node suite rather than
+following CMake's ENABLE_AGNOCAST-dependent omission.
+
+Add a wrapper-owned defs.bzl adapter that expands the existing main template
+through a native Bazel action. Get the actual shared-library basename from
+CcSharedLibraryInfo instead of guessing an output filename. Fix the executor
+pair to the current package's declared AgnocastOnlyCallbackIsolatedExecutor and
+SingleThreadedExecutor; keep other executor variants out until needed. Reuse
+RCR component records and register the autoware_node_plugins resource as
+`<package>__<executable>` with `<class>;1`, matching the launch extension's
+compiled-support marker. Put component records, YAML and launch files in an
+ament_index, with the executable registered under lib/<package> for package
+lookup. The adapter resolves its own template and compile dependency
+labels in the wrapper repository, independent of the consumer's checkout path.
+
+Product-owned behavior composition lives in bazel/tests. Package-owned Python test source stays in test/test_standalone.py alongside
+the existing tests; root composition supplies the two Python unittest targets.
+These targets launch the actual executable with the real YAML and a scale override
+of 1.5, send VelocityReport with ordinary RCLCPP peers, and check a scaled
+longitudinal speed of 3.0, lateral/yaw values, frame and configured covariance.
+They require normal SIGINT exit. The enabled case exercises automatic bridging
+using the existing all-interface plugins, which already include vehicle and
+geometry message types. The component has no dependency on these root targets.
+The driver is never heap-preloaded; only the enabled native child gets the
+heap hook. Both variants use the established root runtime launcher.
+
+Acceptance commands (results below):
+
+```bash
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel build @autoware_vehicle_velocity_converter//...
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=no-agnocast --nocache_test_results --test_output=errors \
+  --local_test_jobs=1 @autoware_vehicle_velocity_converter//...
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=no-agnocast --nocache_test_results --test_output=errors \
+  --local_test_jobs=1 --strategy=TestRunner=local \
+  --run_under=//bazel/agnocast:with_runtime \
+  //bazel/tests:vehicle_velocity_converter_rclcpp_test
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --nocache_test_results --test_output=errors \
+  --local_test_jobs=1 --strategy=TestRunner=local \
+  --run_under=//bazel/agnocast:with_runtime \
+  //bazel/tests:vehicle_velocity_converter_agnocast_test
+```
+
+The enabled command needs the compatible loaded kernel module and accessible
+/dev/agnocast, plus the declared runtime_index and heap-hook targets. Reuse the
+Phase 4 setup rather than skipping this gate if a prerequisite is absent.
+Inspect GTest XML for all six original cases executed with no failures/skips;
+each standalone variant must execute its one behavior case. The runtime launch
+checks do not establish XML launch composition or install-image behavior; those
+remain with later product composition and packaging gates. Existing unchanged
+wrapper runtime suites retain their Phase 4 evidence; this task specifically
+exercises the new main-generation path.
+
+Result: the complete 14-target module surface builds (28.251 seconds), and
+both existing targets execute all six cases without failures/errors/skips,
+confirmed in GTest XML. The standalone checks pass from test/test_standalone.py
+under the unified bazel/tests package: RCLCPP in 1.1 seconds and Agnocast in
+1.3 seconds. Both verify dynamic component loading, YAML/override resolution,
+payload/header/covariance and normal SIGINT exit. Each target explicitly selects
+the native child's ENABLE_AGNOCAST and asserts its startup backend log, so a
+global test environment flag cannot silently switch the tested mode. The
+Python driver is not heap-preloaded.
+
+Device checks must use host execution: the ordinary command sandbox has an
+isolated /dev and misleadingly showed no device. Host execution confirms an
+accessible /dev/agnocast and loaded 2.4.1 module. An attempted sudo -n modprobe
+required authentication; the developer also ran modprobe successfully. No
+kernel rebuild or device workaround was needed. No source compatibility patch
+or additional dependency version was required by this module. Targeted
+buildifier, Python syntax/template inventory and whitespace checks pass.
+Existing unchanged wrapper suites retain their Phase 4 evidence. No Fast DDS,
+pre-commit or broad communication/container sweep was run.

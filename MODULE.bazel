@@ -304,3 +304,9 @@ local_path_override(
     module_name = "autoware_vehicle_info_utils",
     path = "src/core/autoware_core/common/autoware_vehicle_info_utils",
 )
+
+bazel_dep(name = "autoware_vehicle_velocity_converter", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_vehicle_velocity_converter",
+    path = "src/core/autoware_core/sensing/autoware_vehicle_velocity_converter",
+)

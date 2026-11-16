@@ -1,0 +1,101 @@
+load("@autoware_agnocast_wrapper//:defs.bzl", "autoware_agnocast_node")
+load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+exports_files([
+    "test/test_standalone.py",
+    "config/vehicle_velocity_converter.param.yaml",
+])
+
+cc_library(
+    name = "autoware_vehicle_velocity_converter",
+    srcs = ["src/vehicle_velocity_converter.cpp"],
+    hdrs = ["src/vehicle_velocity_converter.hpp"],
+    deps = [
+        "@autoware_utils_geometry",
+        "@autoware_vehicle_msgs//:cc",
+        "@geometry_msgs//:cc",
+    ],
+)
+
+cc_library(
+    name = "node_library",
+    srcs = ["src/vehicle_velocity_converter_node.cpp"],
+    hdrs = ["src/vehicle_velocity_converter_node.hpp"],
+    deps = [
+        ":autoware_vehicle_velocity_converter",
+        "@autoware_agnocast_wrapper//:autoware_agnocast_wrapper_library",
+        "@rclcpp//:rclcpp_library",
+        "@rclcpp_components//:rclcpp_components_library",
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = [
+        "@autoware_agnocast_wrapper//:autoware_agnocast_wrapper",
+        "@autoware_internal_planning_msgs//:cc_shared",
+        "@autoware_perception_msgs//:cc_shared",
+        "@autoware_planning_msgs//:cc_shared",
+        "@autoware_vehicle_msgs//:cc_shared",
+        "@geometry_msgs//:cc_shared",
+        "@rclcpp_components//:rclcpp_components",
+        "@tf2//:tf2",
+        "@tf2_geometry_msgs//:tf2_geometry_msgs",
+    ],
+)
+
+cc_shared_library(
+    name = "autoware_vehicle_velocity_converter_ros",
+    dynamic_deps = [":runtime_dynamic_deps"],
+    deps = [":node_library"],
+)
+
+autoware_agnocast_node(
+    name = "autoware_vehicle_velocity_converter_node",
+    package_name = "autoware_vehicle_velocity_converter",
+    component = ":autoware_vehicle_velocity_converter_ros",
+    plugin = "autoware::vehicle_velocity_converter::VehicleVelocityConverterNode",
+)
+
+register_ament_files(
+    name = "node_executable",
+    files = [":autoware_vehicle_velocity_converter_node"],
+    prefix = "lib/autoware_vehicle_velocity_converter",
+    strip_prefix = "*",
+)
+
+ament_index(
+    components = [":autoware_vehicle_velocity_converter_node_components"],
+    data = glob([
+        "config/*",
+        "launch/*",
+    ]) + [
+        ":autoware_vehicle_velocity_converter_node_plugin",
+        ":node_executable",
+    ],
+    package_xml = "package.xml",
+)
+
+cc_test(
+    name = "test_autoware_vehicle_velocity_converter",
+    srcs = ["test/test_vehicle_velocity_converter.cpp"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+    deps = [
+        ":autoware_vehicle_velocity_converter",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "test_autoware_vehicle_velocity_converter_node",
+    srcs = ["test/test_vehicle_velocity_converter_node.cpp"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+    deps = [
+        ":node_library",
+        "@googletest//:gtest_main",
+    ],
+)

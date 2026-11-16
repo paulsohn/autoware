@@ -1,0 +1,19 @@
+module(
+    name = "autoware_vehicle_velocity_converter",
+    version = "0.0.0",
+)
+
+bazel_dep(name = "autoware_agnocast_wrapper", version = "1.10.0")
+bazel_dep(name = "autoware_internal_planning_msgs", version = "0.0.0")
+bazel_dep(name = "autoware_perception_msgs", version = "0.0.0")
+bazel_dep(name = "autoware_planning_msgs", version = "0.0.0")
+bazel_dep(name = "autoware_utils_geometry", version = "0.0.0")
+bazel_dep(name = "autoware_vehicle_msgs", version = "0.0.0")
+bazel_dep(name = "geometry_msgs", version = "0.0.0")
+bazel_dep(name = "googletest", version = "1.18.0.bcr.1")
+bazel_dep(name = "rclcpp", version = "0.0.0")
+bazel_dep(name = "rclcpp_components", version = "0.0.0")
+bazel_dep(name = "rosdistro", version = "0.0.0")
+bazel_dep(name = "rules_cc", version = "0.2.26.rcr.0")
+bazel_dep(name = "tf2", version = "0.0.0")
+bazel_dep(name = "tf2_geometry_msgs", version = "0.0.0")

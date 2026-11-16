@@ -346,6 +346,33 @@ env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
   bazel run @autoware_vehicle_info_utils//:min_turning_radius_calculator
 ```
 
+## Switchable standalone nodes
+
+For a wrapper-derived node using AgnocastOnlyCallbackIsolatedExecutor and a
+SingleThreadedExecutor fallback, load `autoware_agnocast_node` from
+`@autoware_agnocast_wrapper//:defs.bzl`. Supply the shared component, plugin class,
+package name and executable name. Add its `<name>_components` and `<name>_plugin`
+records to the package's ament_index; register the executable under lib/<package>
+with register_ament_files. Other executor pairs need explicit support before use.
+
+Keep package behavior sources under test/. Root targets under bazel/tests select
+product runtime dependencies without introducing component-to-root labels.
+Run ordinary RCLCPP fixture suites with --config=no-agnocast. Standalone
+behavior targets explicitly select and verify their native child's backend:
+
+```bash
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --nocache_test_results --test_output=errors \
+  --local_test_jobs=1 --strategy=TestRunner=local \
+  --run_under=//bazel/agnocast:with_runtime \
+  //bazel/tests:vehicle_velocity_converter_agnocast_test
+```
+
+The enabled child needs /dev/agnocast, the declared heap hook and root bridge
+runtime; the Python peer stays unpreloaded. The matching `_rclcpp_test` target
+selects the RCLCPP backend. Check unittest logs for case totals; the acceleration
+targets each run two cases while Bazel's fallback XML records one invocation.
+
 ## Editing Python and launch packages
 
 Declare the Python library's complete source set and direct runtime imports in

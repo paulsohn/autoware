@@ -7,6 +7,11 @@ load("@rules_python//python:defs.bzl", "py_library")
 
 package(default_visibility = ["//visibility:public"])
 
+exports_files([
+    "defs.bzl",
+    "templates/node_main_switchable.cpp.in",
+])
+
 _DYNAMIC_DEPS = [
     "@agnocastlib//:agnocast",
     "@diagnostic_updater//:diagnostic_updater",

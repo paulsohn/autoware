@@ -712,6 +712,72 @@ packages belong to their selected Phase 5.2 runnable slices. Component-interface
 and global-parameter/API composition belongs to Phase 5.3; CUDA/TensorRT remains
 Phase 6. Additional common packages are not implicit Phase 5.1 scope.
 
+### Phase 5.2: Runnable dependency slices (in progress)
+
+Split by executable dependency groups, keeping the package as the validation
+and commit boundary. The groups below order investigation; they do not authorize
+adding every dependency or patch at once. Refine later groups from their actual
+source/test graphs as they begin.
+
+| Subphase | Runnable boundary | Dependencies to introduce when needed |
+| --- | --- | --- |
+| 5.2.1 | Vehicle velocity converter → stop filter → twist2accel | Reuse the wrapper, generated interfaces, geometry and signal processing. Establish switchable standalone nodes, component records, resources and package tests. |
+| 5.2.2 | Gyro odometer and EKF localization | Localization utilities, remaining TF helpers and diagnostics; then GNSS conversion with geography support. |
+| 5.2.3 | Point-cloud sensing and CPU perception | Point types, debug/TF/PCL utilities, crop/downsample/ground filtering, clustering and object conversion, selected in dependency order. |
+| 5.2.4 | Map loading and map-dependent localization | Geography, Lanelet2 utilities/extension, projection/map loaders, height fitting and visualization; NDT scan matching and pose initialization after their actual prerequisites. |
+| 5.2.5 | Planning and control | Motion/trajectory utilities, solvers, route/path generation, smoothing, planner plugins and pure pursuit, in executable/test dependency order. |
+
+Phase 5.3 retains API/system composition. A shared interface-specification or
+test-support package required by a Phase 5.2 executable enters as that slice's
+prerequisite; it need not wait for whole-system composition. CUDA/TensorRT
+remains Phase 6. Source-less grouping metapackages do not need artificial build
+targets. Exclude system-designer packages throughout.
+
+#### Phase 5.2.1: Velocity and acceleration nodes (in progress)
+
+Start with `autoware_vehicle_velocity_converter`, not the entire group at once.
+Its existing suite consists of five algorithm cases and one RCLCPP pub/sub case
+across two test targets. Retain both even though CMake omits the node target
+when ENABLE_AGNOCAST=1. Run the complete existing suite with
+`--config=no-agnocast`; its peers and executor are RCLCPP-only. Compile Agnocast
+support unconditionally and test enabled behavior separately.
+
+Validated integration pattern:
+
+- package-local algorithm and node libraries, a shared component, component
+  records, config/launch resources and the original two test files;
+- a wrapper-owned Bazel adapter expanding its existing switchable-main template
+  with the executor pair selected by this package's CMake:
+  AgnocastOnlyCallbackIsolatedExecutor / SingleThreadedExecutor;
+- root-owned standalone behavior tests that load the real parameter YAML,
+  override the speed scale and check output/header/covariance plus orderly
+  SIGINT shutdown with each runtime backend. The enabled case composes the
+  existing root bridge plugins; no component depends on that root label.
+
+The adapter supports only the currently needed executor pair. Extend it when a
+current package needs another pair. Resolve rule-owned template and dependency
+labels in the wrapper module. Reuse RCR component record generation and ament
+resource rules instead of introducing another plugin registry. Keep component
+source files unchanged until a build or behavior check demonstrates a need.
+
+Validation order (build pause lifted; proceed sequentially):
+
+1. Build the converter's complete target surface with Cyclone DDS.
+2. Run both existing targets with no-agnocast, requiring all six cases and no
+   dependency-related skips.
+3. Run its standalone RCLCPP behavior test.
+4. Prepare the existing kernel/heap-hook/bridge prerequisites and run the
+   standalone enabled behavior test without preloading the Python driver.
+5. Update the same journal entry with real results, commit the validated module
+   and its necessary wrapper/root support, then prepare stop filter and
+   twist2accel as separate module tasks. Their inspected test inventories are
+   seven and twelve cases respectively; enumerate their required behavior
+   checks before writing their definitions.
+
+Converter passes its full six-case existing suite and both standalone runtime
+checks with Cyclone DDS. Stop filter and twist2accel remain the next package
+boundaries in this group; each needs its full suite and both runtime checks.
+
 ## Commit and publication policy
 
 Use signed-off Conventional Commits and validate each task in proportion to its

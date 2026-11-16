@@ -1,0 +1,79 @@
+"""Bazel entry point for Agnocast-only nodes with a ROS executor fallback."""
+
+load("@rclcpp_components//:defs.bzl", "rclcpp_components_register_nodes")
+load("@rosdistro//ament:defs.bzl", "register_ament_resource")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_binary")
+load("@rules_cc//cc/common:cc_shared_library_info.bzl", "CcSharedLibraryInfo")
+
+def _main_impl(ctx):
+    library = ctx.attr.component[CcSharedLibraryInfo].linker_input.libraries[0].dynamic_library
+    output = ctx.actions.declare_file(ctx.label.name + ".cpp")
+    ctx.actions.expand_template(
+        template = ctx.file._template,
+        output = output,
+        substitutions = {
+            "@_AWR_node@": ctx.attr.node_name,
+            "@_AWR_component@": ctx.attr.plugin,
+            "@_AWR_library_name@": library.basename,
+            "@_AWR_agnocast_only@": "true",
+            "@_AWR_agnocast_executor_include@": "agnocast/node/agnocast_only_callback_isolated_executor.hpp",
+            "@_AWR_agnocast_executor_type@": "agnocast::AgnocastOnlyCallbackIsolatedExecutor",
+            "@_AWR_agnocast_add_node_expr@": "get_agnocast_node()",
+            "@_AWR_ros2_executor_type@": "rclcpp::executors::SingleThreadedExecutor",
+        },
+    )
+    return [DefaultInfo(files = depset([output]))]
+
+_node_main = rule(
+    implementation = _main_impl,
+    attrs = {
+        "component": attr.label(mandatory = True, providers = [CcSharedLibraryInfo]),
+        "plugin": attr.string(mandatory = True),
+        "node_name": attr.string(mandatory = True),
+        "_template": attr.label(
+            default = Label(":templates/node_main_switchable.cpp.in"),
+            allow_single_file = True,
+        ),
+    },
+)
+
+def autoware_agnocast_node(name, component, plugin, package_name, data = []):
+    """Use the current callback-isolated/SingleThreaded executor pair.
+
+    Emits <name>_components and <name>_plugin for the caller's ament index.
+    """
+    rclcpp_components_register_nodes(
+        name = name + "_components",
+        component = component,
+        plugins = [plugin],
+    )
+    register_ament_resource(
+        name = name + "_plugin",
+        category = "autoware_node_plugins",
+        package_name = package_name + "__" + name,
+        content = plugin + ";1",
+    )
+    _node_main(
+        name = name + "_main",
+        node_name = name,
+        component = component,
+        plugin = plugin,
+    )
+    collect_transitive_dynamic_deps(
+        name = name + "_dynamic_deps",
+        dynamic_deps = [component, Label("@rosdistro//cc:glog")],
+    )
+    cc_binary(
+        name = name,
+        srcs = [":" + name + "_main"],
+        data = data,
+        dynamic_deps = [":" + name + "_dynamic_deps"],
+        deps = [
+            Label(":autoware_agnocast_wrapper_library"),
+            Label("@agnocastlib//:agnocast_library"),
+            Label("@class_loader//:class_loader_library"),
+            Label("@rclcpp_components//:rclcpp_components_library"),
+            Label("@rosdistro//cc:glog_library"),
+        ],
+    )
