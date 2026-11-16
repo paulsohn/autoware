@@ -3522,7 +3522,7 @@ host dependencies, source patches or new executor variant were needed.
 Targeted buildifier, Python syntax and whitespace checks pass. No Fast DDS,
 pre-commit, broad matrix or container rerun was performed. EKF is next.
 
-## 2026-11-16: Phase 5.2.2 — autoware_ekf_localizer (in progress)
+## 2026-11-16: Phase 5.2.2 — autoware_ekf_localizer
 
 Purpose: Integrate EKF prediction/measurement updates and the standalone ROS
 node with activation, initialization, odometry and clean process shutdown.
@@ -3552,7 +3552,7 @@ exit assertion. No scenario assertion or production node is changed. A discovery
 by the enabled check is corrected in the test source as recorded below. Existing bridge roots already cover this node's
 geometry, navigation, diagnostics, debug and SetBool types.
 
-Acceptance commands (sequential; pending):
+Verification commands (executed sequentially):
 
 ```bash
 env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
@@ -3568,7 +3568,7 @@ env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
   //bazel/tests:ekf_localizer_agnocast_test
 ```
 
-Current results: all 49 C++ cases pass across ten targets without
+Result: all 49 C++ cases pass across ten targets without
 failures/errors/skips, confirmed against the currently declared source/target
 list in GTest XML (35.434 seconds for the initial module invocation). The
 original XML scenario passes in RCLCPP but fails in Agnocast: activation is
@@ -3592,5 +3592,5 @@ readiness race. UPSTREAM_AWF.md records the dated association/limitations. Keep
 the test-source correction in a separate fix(src/autoware_core) commit from the
 Bazel definitions. No production-node patch is needed. Targeted Python syntax,
 buildifier and whitespace checks pass; no Fast DDS, pre-commit or broad
-communication/container sweep was run. The module acceptance has passed; its
-Bazel definition commit follows the source fix. Geography/GNSS remain pending.
+communication/container sweep was run. Source correction: 5515a02e. The complete module gate passes. Geography/GNSS
+remain pending.

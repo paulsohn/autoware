@@ -776,8 +776,10 @@ no communication matrix or Fast DDS check is required for this library gate.
 Localization utilities passed all 33 cases with no skips. The matching
 tf2_eigen 0.45.10-1.rcr.0 is validated and pinned. Gyro odometer also passes its complete 35-case suite and both standalone
 backends. Its sensor_msgs 5.9.3-1.rcr.0 pin and specific Imu/DiagnosticArray
-bridge roots are validated. EKF and the geography/GNSS gates keep Phase 5.2.2
-open.
+bridge roots are validated. EKF also passes all 49 C++ cases and both original launch assertions under
+each backend. Its discovery synchronization fix is isolated in source commit
+5515a02e; production node code is unchanged. The geography/GNSS gates keep
+Phase 5.2.2 open.
 
 ## Later phases
 

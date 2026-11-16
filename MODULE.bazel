@@ -339,3 +339,10 @@ local_path_override(
     module_name = "autoware_gyro_odometer",
     path = "src/core/autoware_core/localization/autoware_gyro_odometer",
 )
+
+bazel_dep(name = "ament_index_python", version = "0.0.0")
+bazel_dep(name = "autoware_ekf_localizer", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_ekf_localizer",
+    path = "src/core/autoware_core/localization/autoware_ekf_localizer",
+)

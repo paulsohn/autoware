@@ -409,6 +409,8 @@ before slow teardown. Upstream PR test claims are not local validation.
 
 ## EKF launch test waits for discovery and first output
 
+Local source correction: `5515a02e`.
+
 Checked 2026-11-16. This is middleware/test readiness, not a Lyrical API fix.
 
 - [x] Reproduce the original launch test failure with Cyclone DDS plus Agnocast:

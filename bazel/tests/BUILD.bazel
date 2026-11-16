@@ -1,3 +1,4 @@
+load("@launch_testing//:defs.bzl", "launch_test")
 load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
 load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_test")
 load("@rules_python//python:defs.bzl", "py_test")
@@ -276,6 +277,44 @@ cc_test(
             "@geometry_msgs//:py",
             "@rclpy",
             "@sensor_msgs//:py",
+        ],
+    )
+    for backend, enabled in [
+        ("rclcpp", "0"),
+        ("agnocast", "1"),
+    ]
+]
+
+[
+    launch_test(
+        name = "ekf_localizer_" + backend + "_test",
+        src = "@autoware_ekf_localizer//:test/launch_adapter.py",
+        data = [
+            "//bazel/agnocast:runtime_index",
+            "@agnocast_heaphook",
+            "@autoware_agnocast_wrapper//:ament_package",
+            "@autoware_ekf_localizer//:ament_index",
+            "@autoware_ekf_localizer//:test/utils/test_ekf_localizer_launch.py",
+        ],
+        env = {
+            "AGNOCAST_TEST_NO_PRELOAD": "1",
+            "AUTOWARE_TEST_AGNOCAST": enabled,
+            "AUTOWARE_LAUNCH_SOURCE": "$(rootpath @autoware_ekf_localizer//:test/utils/test_ekf_localizer_launch.py)",
+            "ROS_DOMAIN_ID": "80",
+        },
+        tags = [
+            "no-remote",
+            "no-sandbox",
+        ] + (["requires-agnocast-kmod"] if enabled == "1" else []),
+        deps = [
+            "@ament_index_python",
+            "@autoware_agnocast_wrapper//:python",
+            "@geometry_msgs//:py",
+            "@launch_ros",
+            "@launch_xml",
+            "@nav_msgs//:py",
+            "@rclpy",
+            "@std_srvs//:py",
         ],
     )
     for backend, enabled in [

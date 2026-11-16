@@ -1,0 +1,214 @@
+load("@autoware_agnocast_wrapper//:defs.bzl", "autoware_agnocast_node")
+load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+exports_files([
+    "test/launch_adapter.py",
+    "test/utils/test_ekf_localizer_launch.py",
+])
+
+cc_library(
+    name = "autoware_ekf_localizer",
+    srcs = glob(["src/**/*.cpp"]),
+    hdrs = glob(["src/**/*.hpp"]),
+    includes = ["src"],
+    deps = [
+        "@autoware_agnocast_wrapper//:autoware_agnocast_wrapper_library",
+        "@autoware_internal_debug_msgs//:cc",
+        "@autoware_kalman_filter",
+        "@autoware_localization_util",
+        "@autoware_utils_geometry",
+        "@autoware_utils_logging",
+        "@autoware_utils_system",
+        "@diagnostic_msgs//:cc",
+        "@geometry_msgs//:cc",
+        "@nav_msgs//:cc",
+        "@rclcpp//:rclcpp_library",
+        "@rclcpp_components//:rclcpp_components_library",
+        "@rosdistro//cc:eigen",
+        "@rosdistro//cc:fmt",
+        "@std_srvs//:cc",
+        "@tf2//:tf2_library",
+        "@tf2_ros//:tf2_ros_library",
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = [
+        "@autoware_agnocast_wrapper//:autoware_agnocast_wrapper",
+        "@autoware_internal_planning_msgs//:cc_shared",
+        "@autoware_perception_msgs//:cc_shared",
+        "@autoware_planning_msgs//:cc_shared",
+        "@diagnostic_msgs//:cc_shared",
+        "@diagnostic_updater//:diagnostic_updater",
+        "@geometry_msgs//:cc_shared",
+        "@logging_demo//:cc_shared",
+        "@rcutils//:rcutils",
+        "@rosgraph_msgs//:cc_shared",
+        "@autoware_internal_debug_msgs//:cc_shared",
+        "@nav_msgs//:cc_shared",
+        "@std_srvs//:cc_shared",
+        "@tf2_eigen//:tf2_eigen",
+        "@visualization_msgs//:cc_shared",
+        "@tf2//:tf2",
+        "@tf2_geometry_msgs//:tf2_geometry_msgs",
+        "@tf2_ros//:tf2_ros",
+        "@rclcpp_components//:rclcpp_components",
+    ],
+)
+
+cc_shared_library(
+    name = "autoware_ekf_localizer_ros",
+    dynamic_deps = [":runtime_dynamic_deps"],
+    deps = [":autoware_ekf_localizer"],
+)
+
+autoware_agnocast_node(
+    name = "autoware_ekf_localizer_node",
+    package_name = "autoware_ekf_localizer",
+    component = ":autoware_ekf_localizer_ros",
+    plugin = "autoware::ekf_localizer::EKFLocalizerNode",
+)
+
+register_ament_files(
+    name = "node_executable",
+    files = [":autoware_ekf_localizer_node"],
+    prefix = "lib/autoware_ekf_localizer",
+    strip_prefix = "*",
+)
+
+ament_index(
+    components = [":autoware_ekf_localizer_node_components"],
+    data = glob([
+        "config/*",
+        "launch/*",
+    ]) + [
+        ":autoware_ekf_localizer_node_plugin",
+        ":node_executable",
+    ],
+    package_xml = "package.xml",
+)
+
+cc_test(
+    name = "test_ekf_localizer",
+    srcs = ["test/test_ekf_localizer.cpp"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+    includes = ["."],
+    deps = [
+        ":autoware_ekf_localizer",
+        "@googletest//:gtest_main",
+        "@rosgraph_msgs//:cc",
+    ],
+)
+
+cc_test(
+    name = "test_ekf_localizer_node_integration",
+    srcs = ["test/test_ekf_localizer_node_integration.cpp"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+    includes = ["."],
+    deps = [
+        ":autoware_ekf_localizer",
+        "@googletest//:gtest_main",
+        "@rosgraph_msgs//:cc",
+    ],
+)
+
+cc_test(
+    name = "test_aged_object_queue",
+    srcs = ["test/utils/test_aged_object_queue.cpp"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+    includes = ["."],
+    deps = [
+        ":autoware_ekf_localizer",
+        "@googletest//:gtest_main",
+        "@rosgraph_msgs//:cc",
+    ],
+)
+
+cc_test(
+    name = "test_covariance",
+    srcs = ["test/utils/test_covariance.cpp"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+    includes = ["."],
+    deps = [
+        ":autoware_ekf_localizer",
+        "@googletest//:gtest_main",
+        "@rosgraph_msgs//:cc",
+    ],
+)
+
+cc_test(
+    name = "test_mahalanobis",
+    srcs = ["test/utils/test_mahalanobis.cpp"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+    includes = ["."],
+    deps = [
+        ":autoware_ekf_localizer",
+        "@googletest//:gtest_main",
+        "@rosgraph_msgs//:cc",
+    ],
+)
+
+cc_test(
+    name = "test_measurement",
+    srcs = ["test/utils/test_measurement.cpp"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+    includes = ["."],
+    deps = [
+        ":autoware_ekf_localizer",
+        "@googletest//:gtest_main",
+        "@rosgraph_msgs//:cc",
+    ],
+)
+
+cc_test(
+    name = "test_numeric",
+    srcs = ["test/utils/test_numeric.cpp"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+    includes = ["."],
+    deps = [
+        ":autoware_ekf_localizer",
+        "@googletest//:gtest_main",
+        "@rosgraph_msgs//:cc",
+    ],
+)
+
+cc_test(
+    name = "test_state_transition",
+    srcs = ["test/utils/test_state_transition.cpp"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+    includes = ["."],
+    deps = [
+        ":autoware_ekf_localizer",
+        "@googletest//:gtest_main",
+        "@rosgraph_msgs//:cc",
+    ],
+)
+
+cc_test(
+    name = "test_string",
+    srcs = ["test/utils/test_string.cpp"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+    includes = ["."],
+    deps = [
+        ":autoware_ekf_localizer",
+        "@googletest//:gtest_main",
+        "@rosgraph_msgs//:cc",
+    ],
+)
+
+cc_test(
+    name = "test_warning_message",
+    srcs = ["test/utils/test_warning_message.cpp"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+    includes = ["."],
+    deps = [
+        ":autoware_ekf_localizer",
+        "@googletest//:gtest_main",
+        "@rosgraph_msgs//:cc",
+    ],
+)
