@@ -20,6 +20,7 @@
 #include <autoware_utils_math/unit_conversion.hpp>
 #include <autoware_vehicle_info_utils/vehicle_info_utils.hpp>
 #include <rclcpp/rclcpp.hpp>
+#include <rclcpp/version.h>
 
 #include <memory>
 #include <string>
@@ -188,10 +189,13 @@ void GroundFilterComponent::subscribe()
 {
   if (use_indices_) {
     // Subscribe to the input using a filter
-    sub_input_filter_.subscribe(
-      this, "input", rclcpp::SensorDataQoS().keep_last(max_queue_size_).get_rmw_qos_profile());
-    sub_indices_filter_.subscribe(
-      this, "indices", rclcpp::SensorDataQoS().keep_last(max_queue_size_).get_rmw_qos_profile());
+#if RCLCPP_VERSION_MAJOR >= 32
+    const auto qos = rclcpp::SensorDataQoS().keep_last(max_queue_size_);
+#else
+    const auto qos = rclcpp::SensorDataQoS().keep_last(max_queue_size_).get_rmw_qos_profile();
+#endif
+    sub_input_filter_.subscribe(this, "input", qos);
+    sub_indices_filter_.subscribe(this, "indices", qos);
 
     if (approximate_sync_) {
       sync_input_indices_a_ = std::make_shared<

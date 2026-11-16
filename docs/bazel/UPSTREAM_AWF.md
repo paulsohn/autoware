@@ -60,6 +60,35 @@ describes that review, not proof that no other upstream work exists.
 
 ## Findings
 
+### Ground filtering needs portable float constants and subscription QoS
+
+- [ ] Associate with matching upstream fixes. Reviewed 2026-11-16: searches for
+  `ground_filter M_PI`, `ground_filter lyrical` and `ground_filter QoS` find no
+  matching PR. Current main still has both paths: grid.hpp blob
+  `8157550bf4ce838c677cc9fa93fcaefab746ac81` and ground_filter_node.cpp blob
+  `ed442301962611e0d02c0423319f1fb8dfd1f243`. The Lyrical trackers are related,
+  not specific associations for these two findings.
+- Scope: autoware_core/perception/autoware_ground_filter, Ubuntu 24.04 with
+  LLVM 21.1.8/C++23, glibc 2.34 ABI toolchain, Lyrical RCR/Cyclone DDS. Run the
+  module command in the Phase 5.2.3 JOURNAL entry to reproduce.
+- First compile failure: nonportable `M_PIf`, `M_PI_2f` and `M_PI_4f` macros
+  are undeclared in grid.hpp. Derive float pi/half-pi/quarter-pi constants from
+  existing autoware_utils_math::pi and replace those uses. Preserve the float
+  precision and original arithmetic; no global compiler macro or C++20-only
+  constant is needed. This keeps the source language requirement compatible
+  with the existing C++17 project convention.
+- Next compile failure: both indexed input message-filter subscribers pass
+  rmw_qos_profile_t, but the current Subscriber API accepts rclcpp::QoS. For
+  rclcpp major >=32 pass the SensorDataQoS object with the same queue depth;
+  preserve the legacy profile on the older branch. This follows the wrapper's
+  existing local compatibility boundary without making this component depend
+  on that wrapper. The old branch remains unverified on older distributions.
+- Verification: all 24 existing cases pass with no skips, including both exact
+  and approximate indexed synchronization, grid/radial algorithms, and sanity
+  rejection. No colcon, Humble/Jazzy or Ubuntu 26.04/GCC result is claimed.
+  No upstream issue/PR has been submitted by this experiment.
+
+
 ### Test-helper relay test must shut down its ROS context
 
 Local source fix: `5086091b`, separate from the Bazel module definitions.

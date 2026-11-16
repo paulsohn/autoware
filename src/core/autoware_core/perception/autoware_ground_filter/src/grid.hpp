@@ -17,6 +17,7 @@
 
 #include <autoware_utils_debug/time_keeper.hpp>
 #include <autoware_utils_geometry/geometry.hpp>
+#include <autoware_utils_math/constants.hpp>
 #include <autoware_utils_math/normalization.hpp>
 
 #include <algorithm>
@@ -28,6 +29,11 @@
 namespace
 {
 
+// Float-suffixed math macros are not available on every libc/toolchain.
+constexpr float pi_f = static_cast<float>(autoware_utils_math::pi);
+constexpr float half_pi_f = pi_f / 2.0f;
+constexpr float quarter_pi_f = pi_f / 4.0f;
+
 float pseudoArcTan2(const float y, const float x)
 {
   // lightweight arc tangent
@@ -35,35 +41,35 @@ float pseudoArcTan2(const float y, const float x)
   // avoid divide-by-zero
   if (y == 0.0f) {
     if (x >= 0.0f) return 0.0f;
-    return M_PIf;
+    return pi_f;
   }
   if (x == 0.0f) {
-    if (y >= 0.0f) return M_PI_2f;
-    return -M_PI_2f;
+    if (y >= 0.0f) return half_pi_f;
+    return -half_pi_f;
   }
 
   const float x_abs = std::abs(x);
   const float y_abs = std::abs(y);
 
   // divide to 8 zones
-  constexpr float M_2PIf = 2.0f * M_PIf;
-  constexpr float M_3PI_2f = 3.0f * M_PI_2f;
+  constexpr float M_2PIf = 2.0f * pi_f;
+  constexpr float M_3PI_2f = 3.0f * half_pi_f;
   if (x_abs > y_abs) {
     const float ratio = y_abs / x_abs;
-    const float angle = ratio * M_PI_4f;
+    const float angle = ratio * quarter_pi_f;
     if (y >= 0.0f) {
       if (x >= 0.0f) return angle;  // 1st zone
-      return M_PIf - angle;         // 2nd zone
+      return pi_f - angle;          // 2nd zone
     } else {
       if (x >= 0.0f) return M_2PIf - angle;  // 4th zone
-      return M_PIf + angle;                  // 3rd zone
+      return pi_f + angle;                   // 3rd zone
     }
   } else {
     const float ratio = x_abs / y_abs;
-    const float angle = ratio * M_PI_4f;
+    const float angle = ratio * quarter_pi_f;
     if (y >= 0.0f) {
-      if (x >= 0.0f) return M_PI_2f - angle;  // 1st zone
-      return M_PI_2f + angle;                 // 2nd zone
+      if (x >= 0.0f) return half_pi_f - angle;  // 1st zone
+      return half_pi_f + angle;                 // 2nd zone
     } else {
       if (x >= 0.0f) return M_3PI_2f + angle;  // 4th zone
       return M_3PI_2f - angle;                 // 3rd zone
@@ -77,20 +83,20 @@ float pseudoTan(const float theta)
 
   // normalize the angle, range of [-pi/2, pi/2]
   float normalized_theta = theta;
-  while (normalized_theta > M_PI_2f) {
-    normalized_theta -= M_PIf;
+  while (normalized_theta > half_pi_f) {
+    normalized_theta -= pi_f;
   }
-  while (normalized_theta < -M_PI_2f) {
-    normalized_theta += M_PIf;
+  while (normalized_theta < -half_pi_f) {
+    normalized_theta += pi_f;
   }
 
   // avoid divide-by-zero
   if (normalized_theta == 0.0f) return 0.0f;
 
   if (std::abs(normalized_theta) <= 1.0f) {
-    return normalized_theta / M_PI_4f;
+    return normalized_theta / quarter_pi_f;
   }
-  return std::copysign(M_PI_4f / (M_PI_2f - std::abs(normalized_theta)), normalized_theta);
+  return std::copysign(quarter_pi_f / (half_pi_f - std::abs(normalized_theta)), normalized_theta);
 }
 }  // namespace
 
@@ -331,9 +337,9 @@ private:
       azimuth_grids_per_radial_.resize(radial_grid_num);
       azimuth_interval_per_radial_.resize(radial_grid_num);
       azimuth_grids_per_radial_[0] = 1;
-      azimuth_interval_per_radial_[0] = 2.0f * M_PIf;
+      azimuth_interval_per_radial_[0] = 2.0f * pi_f;
 
-      const int max_azimuth_grid_num = static_cast<int>(2.0 * M_PIf / grid_azimuth_size_);
+      const int max_azimuth_grid_num = static_cast<int>(2.0 * pi_f / grid_azimuth_size_);
 
       int divider = 1;
       for (size_t i = radial_grid_num - 1; i > 0; --i) {
@@ -346,7 +352,7 @@ private:
         // set azimuth grid number
         const int grid_num = static_cast<int>(max_azimuth_grid_num / divider);
         const int azimuth_grid_num = std::max(std::min(grid_num, max_azimuth_grid_num), 1);
-        const float azimuth_interval_evened = 2.0f * M_PIf / azimuth_grid_num;
+        const float azimuth_interval_evened = 2.0f * pi_f / azimuth_grid_num;
 
         azimuth_grids_per_radial_[i] = azimuth_grid_num;
         azimuth_interval_per_radial_[i] = azimuth_interval_evened;
