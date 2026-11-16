@@ -22,6 +22,8 @@ ros_interface_set(
         "@agnocast_sample_interfaces//:cc",
         "@ros2agnocast_discovery_msgs//:cc",
         "@nav_msgs//:cc",
+        "@diagnostic_msgs//msg:DiagnosticArray",
+        "@sensor_msgs//msg:Imu",
         "@std_msgs//:cc",
         "@std_srvs//:cc",
     ],

@@ -331,3 +331,11 @@ local_path_override(
     module_name = "autoware_localization_util",
     path = "src/core/autoware_core/localization/autoware_localization_util",
 )
+
+bazel_dep(name = "sensor_msgs", version = "5.9.3-1.rcr.0")
+bazel_dep(name = "rosgraph_msgs", version = "0.0.0")
+bazel_dep(name = "autoware_gyro_odometer", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_gyro_odometer",
+    path = "src/core/autoware_core/localization/autoware_gyro_odometer",
+)

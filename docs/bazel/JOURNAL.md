@@ -3459,3 +3459,65 @@ wrapper is required. Targeted buildifier and whitespace checks pass. No Fast
 DDS, pre-commit, communication matrix or container rerun was performed.
 
 Phase 5.2.2 remains in progress; gyro odometer is the next package boundary.
+
+## 2026-11-16: Phase 5.2.2 — autoware_gyro_odometer
+
+Purpose: Integrate IMU/vehicle-twist fusion as a switchable standalone node,
+including diagnostics and TF lookup. Inputs: package.xml, CMakeLists.txt, three
+source/header pairs, config/launch files and all three existing test files.
+The complete existing gate is 35 cases: 20 fusion, six diagnostics and nine
+node cases. Keep the node suite despite CMake omitting it for enabled builds;
+its ordinary RCLCPP peers/executor require the no-agnocast runtime selection.
+All three files need gtest_main. No source case is disabled or skipped.
+
+Pattern: separate algorithm/diagnostics cc_library and wrapper-derived node
+library/shared component. Reuse the switchable-main adapter and ament resource
+pattern established in Phase 5.2.1, with tests under test/. Declare actual
+geometry, diagnostics, fmt and sensor-message compile dependencies and the
+complete final ROS/TF/logging/diagnostics shared closure. Select sensor_msgs
+5.9.3-1.rcr.0 with the same ROS interface release family; expose rosgraph_msgs
+for the existing simulated-clock node tests. No source patch is pre-applied.
+
+The root standalone checks load the actual YAML and relax only message timeout
+to ten seconds. Send matching vehicle/IMU samples in base_link, require all
+four fused output topics, angular covariance reduction and healthy diagnostic
+status, then require normal SIGINT exit. Existing node tests cover rotated and
+unresolvable TF cases and simulated-clock diagnostics. Both backend checks
+select and assert the actual child runtime. Enabled tests use the real heap
+hook and bridge; Python peers remain unpreloaded. Add the specific Imu and
+DiagnosticArray interface roots (and their declared closure), rather than
+unrelated sensor interfaces, to the product bridge selection. Component files
+have no root-module labels.
+
+Verification commands (executed sequentially):
+
+```bash
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=no-agnocast --nocache_test_results --test_output=errors \
+  --local_test_jobs=1 @autoware_gyro_odometer//...
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --nocache_test_results --test_output=errors --local_test_jobs=1 \
+  --strategy=TestRunner=local --run_under=//bazel/agnocast:with_runtime \
+  //bazel/tests:gyro_odometer_rclcpp_test
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --nocache_test_results --test_output=errors --local_test_jobs=1 \
+  --strategy=TestRunner=local --run_under=//bazel/agnocast:with_runtime \
+  //bazel/tests:gyro_odometer_agnocast_test
+```
+
+Result: the complete module surface builds and all 35 original cases pass
+without failures/errors/skips, confirmed in GTest XML. The final complete
+existing-suite invocation takes 21.051 seconds. Initial compilation exposed
+missing test-private header lookup: these tests include headers by basename,
+so put includes=["src"] on each test, matching CMake's PRIVATE src path,
+rather than changing source includes or exporting a broad library include path.
+
+Both standalone checks pass: RCLCPP in 1.8 seconds and Agnocast in 1.5 seconds,
+including all four output topics, covariance, healthy diagnostics and normal
+SIGINT shutdown. Unittest logs confirm one executed case in each. The expanded
+bridge compiles once (311.632-second invocation), then the enabled invocation
+reuses it (3.484 seconds total). The specific Imu/DiagnosticArray root selections
+avoid adding unrelated sensor plugins. The sensor_msgs pin is validated; no
+host dependencies, source patches or new executor variant were needed.
+Targeted buildifier, Python syntax and whitespace checks pass. No Fast DDS,
+pre-commit, broad matrix or container rerun was performed. EKF is next.

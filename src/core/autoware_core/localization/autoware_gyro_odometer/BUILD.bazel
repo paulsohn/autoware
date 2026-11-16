@@ -1,0 +1,136 @@
+load("@autoware_agnocast_wrapper//:defs.bzl", "autoware_agnocast_node")
+load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+exports_files([
+    "test/test_standalone.py",
+    "config/gyro_odometer.param.yaml",
+])
+
+cc_library(
+    name = "autoware_gyro_odometer",
+    srcs = [
+        "src/gyro_odometer.cpp",
+        "src/gyro_odometer_diagnostics.cpp",
+    ],
+    hdrs = [
+        "src/gyro_odometer.hpp",
+        "src/gyro_odometer_diagnostics.hpp",
+    ],
+    deps = [
+        "@autoware_utils_geometry",
+        "@diagnostic_msgs//:cc",
+        "@geometry_msgs//:cc",
+        "@rclcpp//:rclcpp_library",
+        "@rosdistro//cc:fmt",
+        "@sensor_msgs//:cc",
+    ],
+)
+
+cc_library(
+    name = "node_library",
+    srcs = ["src/gyro_odometer_node.cpp"],
+    hdrs = ["src/gyro_odometer_node.hpp"],
+    deps = [
+        ":autoware_gyro_odometer",
+        "@autoware_agnocast_wrapper//:autoware_agnocast_wrapper_library",
+        "@autoware_utils_diagnostics",
+        "@autoware_utils_logging",
+        "@autoware_utils_tf",
+        "@rclcpp//:rclcpp_library",
+        "@rclcpp_components//:rclcpp_components_library",
+        "@tf2_geometry_msgs//:tf2_geometry_msgs_library",
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = [
+        "@autoware_agnocast_wrapper//:autoware_agnocast_wrapper",
+        "@autoware_internal_planning_msgs//:cc_shared",
+        "@autoware_perception_msgs//:cc_shared",
+        "@autoware_planning_msgs//:cc_shared",
+        "@diagnostic_msgs//:cc_shared",
+        "@diagnostic_updater//:diagnostic_updater",
+        "@geometry_msgs//:cc_shared",
+        "@logging_demo//:cc_shared",
+        "@rcutils//:rcutils",
+        "@rosgraph_msgs//:cc_shared",
+        "@sensor_msgs//:cc_shared",
+        "@tf2//:tf2",
+        "@tf2_geometry_msgs//:tf2_geometry_msgs",
+        "@tf2_ros//:tf2_ros",
+        "@rclcpp_components//:rclcpp_components",
+    ],
+)
+
+cc_shared_library(
+    name = "autoware_gyro_odometer_ros",
+    dynamic_deps = [":runtime_dynamic_deps"],
+    deps = [":node_library"],
+)
+
+autoware_agnocast_node(
+    name = "autoware_gyro_odometer_node",
+    package_name = "autoware_gyro_odometer",
+    component = ":autoware_gyro_odometer_ros",
+    plugin = "autoware::gyro_odometer::GyroOdometerNode",
+)
+
+register_ament_files(
+    name = "node_executable",
+    files = [":autoware_gyro_odometer_node"],
+    prefix = "lib/autoware_gyro_odometer",
+    strip_prefix = "*",
+)
+
+ament_index(
+    components = [":autoware_gyro_odometer_node_components"],
+    data = glob([
+        "config/*",
+        "launch/*",
+    ]) + [
+        ":autoware_gyro_odometer_node_plugin",
+        ":node_executable",
+    ],
+    package_xml = "package.xml",
+)
+
+cc_test(
+    name = "test_gyro_odometer",
+    srcs = ["test/test_gyro_odometer.cpp"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+    includes = ["src"],
+    deps = [
+        ":autoware_gyro_odometer",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "test_gyro_odometer_node",
+    srcs = ["test/test_gyro_odometer_node.cpp"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+    includes = ["src"],
+    deps = [
+        ":node_library",
+        "@builtin_interfaces//:cc",
+        "@googletest//:gtest_main",
+        "@rosgraph_msgs//:cc",
+        "@tf2_ros//:tf2_ros_library",
+    ],
+)
+
+cc_test(
+    name = "test_gyro_odometer_diagnostics",
+    srcs = ["test/test_gyro_odometer_diagnostics.cpp"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+    includes = ["src"],
+    deps = [
+        ":autoware_gyro_odometer",
+        "@googletest//:gtest_main",
+    ],
+)
