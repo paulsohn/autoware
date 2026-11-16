@@ -60,6 +60,32 @@ describes that review, not proof that no other upstream work exists.
 
 ## Findings
 
+### Downsampling uses the native expected header
+
+- [x] Associated with merged [core#1539](https://github.com/autowarefoundation/autoware_core/pull/1539).
+  Reviewed its actual patch and current main on 2026-11-16. Main's downsampling
+  header blob is `2b087d9c20ae47cb25c293eda1314adf26eefa3b` and already
+  includes `tl/expected.hpp`; this is an existing upstream fix, not a new
+  submission opportunity.
+- Package: `autoware_core/sensing/autoware_downsample_filters`. The source
+  snapshot includes `tl_expected/expected.hpp`, but RCR's native tl_expected
+  provider exports `tl/expected.hpp`. On Ubuntu 24.04 with pinned LLVM 21.1.8,
+  C++23 and Lyrical RCR, the full module build fails with that legacy header
+  not found before executing any tests.
+- Change the include to `tl/expected.hpp` and replace the manifest's ROS
+  `tl_expected` dependency with `libexpected-dev`, matching that package's
+  upstream transition. Bazel supplies the native library through
+  `@rosdistro//cc:tl_expected`; the manifest change does not authorize a host
+  apt dependency for Bazel.
+- Reproducer/verification: run the downsampling module command in the Phase
+  5.2.3 JOURNAL entry. After the header change, all twelve existing tests pass
+  without skips. The PR also changes three string-literal error returns to
+  `tl::make_unexpected`; the pinned C++23 toolchain compiles and tests the
+  original returns, so that extra change is not needed by this target. Other
+  packages touched by the PR are outside this package's fix. No colcon,
+  Humble/Jazzy or Ubuntu 26.04/GCC validation is claimed.
+
+
 ### Lyrical message-filter subscriptions need explicit QoS conversion
 
 - [ ] Associate this finding with a matching upstream issue or PR. Reviewed
