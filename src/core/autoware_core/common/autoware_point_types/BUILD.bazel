@@ -1,0 +1,36 @@
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "autoware_point_types",
+    hdrs = glob(["include/**/*.hpp"]),
+    strip_include_prefix = "include",
+    deps = [
+        "@point_cloud_msg_wrapper",
+        "@rosdistro//cc:pcl_common",
+        "@sensor_msgs//:cc",
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "test_dynamic_deps",
+    dynamic_deps = ["@sensor_msgs//:cc_shared"],
+)
+
+[
+    cc_test(
+        name = name,
+        srcs = [src],
+        dynamic_deps = [":test_dynamic_deps"],
+        deps = [
+            ":autoware_point_types",
+            "@googletest//:gtest_main",
+        ],
+    )
+    for name, src in [
+        ("test_autoware_point_types", "test/test_point_types.cpp"),
+        ("test_autoware_point_types_memory", "test/test_memory.cpp"),
+    ]
+]

@@ -3741,3 +3741,40 @@ This completes Phase 5.2.2: 182 C++ cases across five packages plus eight
 node/launch assertions pass, with no dependency-related skips. EKF's launch
 readiness source correction remains isolated in 5515a02e; all other production
 sources are unchanged. Phase 5.2.3 point-cloud sensing/CPU perception is next.
+
+## 2026-11-16: Phase 5.2.3 — autoware_point_types
+
+Purpose: Establish point layouts and PointCloud2 field/memory compatibility
+before adopting point-cloud nodes. Inputs: package.xml, CMakeLists.txt, both
+public headers and both existing test files. The complete gate is 33 cases:
+11 point/equality/classification/wrapper and 22 memory/field cases. Neither
+source supplies main or contains a disabled/skipped case by inspection.
+
+Pattern: a header-only package-local cc_library with scoped includes, direct
+sensor interfaces and point_cloud_msg_wrapper, and the pinned rosdistro's narrow
+pcl_common target. The public types include PCL definitions; this first target
+does not need broad pcl_ros or the all-PCL shared provider. Select published
+point_cloud_msg_wrapper 1.0.7-6.rcr.2 at the root, keeping the component dependency
+at 0.0.0. The inspected RCR overlay exports the wrapper as a header-only library
+with sensor interfaces. Preserve both existing suites as separate cc_test
+executables using gtest_main; collect sensor_msgs:cc_shared at their final
+link boundary. No new ROS context or middleware matrix is needed for this
+layout/memory behavior. Treat pins and ABI assumptions as pending until tested.
+
+Verification command (executed with sequential tests):
+
+```bash
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --nocache_test_results --test_output=errors --local_test_jobs=1 \
+  @autoware_point_types//...
+```
+
+Result: both complete suites build and all 33 cases pass (11 plus 22),
+confirmed in GTest XML without failures/errors/skips or disabled cases. The
+invocation completes in 19.718 seconds; both tests execute rather than reusing
+cached test results. The header-only library, PCL common and published wrapper
+work with the pinned toolchain and sensor providers without a source patch or
+broad PCL dependency. This validates the wrapper 1.0.7-6.rcr.2 selection.
+Targeted buildifier and whitespace checks pass. No CUDA target, host dependency
+install, Fast DDS, pre-commit, broad communication matrix or container rerun is
+needed for this module. Debug utilities are the next package gate.

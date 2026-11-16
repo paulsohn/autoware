@@ -793,6 +793,34 @@ No Fast DDS, broad communication matrix or container rerun was required.
 Phase 5.2.3 point-cloud sensing/CPU perception is the next dependency slice;
 Phase 5.2 and Phase 5 overall remain in progress.
 
+#### Phase 5.2.3: Point-cloud sensing and CPU perception (in progress)
+
+Use package gates in dependency order, reusing existing geometry, TF,
+vehicle-info, wrapper and message support. Start with point types (33 existing
+cases across two targets), then debug utilities (six static test declarations
+across five case files plus their main) and crop-box filtering (ten algorithm
+cases and one integration case). Add PCL utilities when a selected consumer
+requires them (seven existing cases), then downsampling (twelve), ground
+filtering (24), CPU clustering/object detection (25) and object conversion
+(six). Inventory parameterized/expanded case totals and resource/runtime
+requirements per module before implementation; these counts are source
+inventories until commands validate them.
+
+Point types uses only PCL common and the published point-cloud message wrapper;
+do not pull the broad PCL shared provider into this first header-only boundary.
+Add PCL conversion/filter/search providers when later nodes actually use them.
+Select pinned Bazel dependencies instead of host apt/pip/rosdep installations.
+CUDA targets and GPU behavior remain Phase 6. These particular filter/perception
+nodes currently register ordinary RCLCPP components, so preserve their declared
+backend rather than converting them to Agnocast as part of build adoption.
+Run each complete existing suite with Cyclone DDS plus standalone/component
+behavior appropriate to its executable outputs. No automatic Fast DDS or full
+communication-matrix gate is added.
+
+Point types passes all 33 cases with no skips using PCL common and the published
+point_cloud_msg_wrapper 1.0.7-6.rcr.2. This pin is validated; no source patch or
+broad PCL provider was needed. Debug utilities are next.
+
 ## Later phases
 
 ### Incoming phase identifiers
