@@ -367,3 +367,38 @@ introduced the version command; it is related history, not this prefix repair.
 Searches for version/ament and heaphook/LD_PRELOAD did not identify a matching
 fix. This is install-layout portability, not a newly introduced Lyrical API
 change. Older distributions and CMake/colcon execution were not checked.
+
+
+### Bridge-manager handoff retains the old abstract socket during DDS teardown
+
+- [x] Associate the observed failure with [issue #1501](https://github.com/autowarefoundation/agnocast/issues/1501).
+- [x] Align the source correction with [draft PR #1519](https://github.com/autowarefoundation/agnocast/pull/1519).
+
+Observed 2026-11-16 in the complete nine-arrangement Fast DDS service suite:
+a replacement BridgeManager reports `bridge UDS bind() failed: Address already
+in use`; the synchronous Agnocast-client/ROS-server arrangement then times out
+with no requests delivered. The kernel clears its manager role before the old
+manager releases its abstract socket. DDS teardown makes that window visible.
+This is a runtime lifecycle race, not a newly introduced Lyrical API change.
+
+PR #1519 at head `be1c2b1dae9a2d5105026871f874ddb84d2305aa` is a matching
+fix, reviewed as an open draft, not merged. Apply its four-file scope: close
+the listener after the main event loop stops and before worker/DDS teardown;
+retry only EADDRINUSE with a bounded 50 × 100 ms default budget; retain other
+error paths and a zero-retry duplicate-bind test. Its new unit case holds and
+releases an address to exercise the retry. No scenario is skipped or given
+weaker assertions. The full Fast DDS library suite passes 673 cases (five existing unsupported
+skips), including the new retry test; the previously failing service target
+passes all nine arrangements and 45 cases with the source unchanged. Product
+bridge and CLI behavior also pass. The complete Cyclone 39-target regression and enabled-wrapper suite also pass.
+Product Cyclone behavior and complete matrix gates remain pending; final local
+results belong in JOURNAL.md.
+
+Inspected main still has the original single bind and late close:
+[UDS helper](https://github.com/autowarefoundation/agnocast/blob/main/src/agnocastlib/include/agnocast/bridge/agnocast_bridge_uds.hpp)
+blob `88c136e59eb933dd896f98b33369fe7e3ba30404`, and
+[manager](https://github.com/autowarefoundation/agnocast/blob/main/src/agnocastlib/src/bridge/agnocast_bridge_manager.cpp)
+blob `899689b7b08b0091aa18c148dea3c96ad2cbb5cb`.
+[PR #1507](https://github.com/autowarefoundation/agnocast/pull/1507) is related:
+its eventfd wakeup is already present locally, but does not release the listener
+before slow teardown. Upstream PR test claims are not local validation.

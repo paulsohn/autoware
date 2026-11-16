@@ -2785,3 +2785,43 @@ The same patch also passes the complete directly affected Cyclone Python suites:
 before their diff; the module override also verifies Bazel's patch application.
 The complete Fast DDS milestone is rerun after this correction; its status
 remains pending until every gate passes.
+
+
+Bridge-handoff diagnosis: after the RCR fix, all 39 Fast DDS regression targets
+and all 37 enabled-wrapper cases pass. The product service suite then exposes
+an EADDRINUSE manager-start failure in one of its nine arrangements. The
+previous manager has already relinquished its kernel role while retaining the
+abstract socket through slow DDS shutdown. Stop the long matrix at that
+failure and inspect the actual lifecycle code and AWF issue #1501/PR #1519.
+The matching four-file draft PR provides early listener release plus bounded
+bind retry and a regression unit case. Apply that scope in place, keep the
+service's original nine arrangements and all assertions, and rerun complete
+library and product gates. Main still lacks this fix on the verification date;
+UPSTREAM_AWF.md records the inspected blobs and draft head. This task remains
+incomplete while the full-suite reruns are pending.
+
+
+The handoff correction passes all 20 Fast DDS library targets: 673 cases
+including the new retry case (200 ms), with the same five source-documented
+unsupported-executor skips and no failures. Product behavior is checked with
+the Phase 4.4 runtime command above, first selecting the ten bridge/CLI,
+functional and service targets before the long matrix targets. The full
+nine-arrangement service source and its 45 assertions/cases are unchanged.
+No additional scenario timeout, source-test filter or cleanup workaround is
+introduced.
+
+
+With the handoff source correction, the Fast DDS service suite passes all nine
+arrangements and 45 cases without EADDRINUSE or weakened assertions. The
+production bridge and real CLI roundtrip also pass. The remaining functional
+launches, Cyclone regression and full Fast DDS matrices are still required
+before marking Phase 4 complete.
+
+
+After both corrections, the complete 39-target Cyclone regression and all 37
+enabled-wrapper cases pass. Fast DDS has passed all 20 library targets and all
+ten product behavior targets, including all seven functional launches, the
+production bridge, real CLI recording and all nine service arrangements. The
+library now has 673 cases with five unchanged unsupported-executor skips.
+The source correction is kept separate from Bazel declarations. Cyclone
+product regression and full Fast DDS matrices remain open phase gates.
