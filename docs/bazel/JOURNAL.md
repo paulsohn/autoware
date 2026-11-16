@@ -4558,3 +4558,106 @@ while the service waits; their exact commands and results are in the height-
 fitting entry. This validates the new opt-in executor with its actual consumer,
 without adding a synthetic demonstration node. Targeted buildifier and whitespace
 checks pass. No Fast DDS, pre-commit or broad communication matrix was run.
+
+## 2026-11-17: Phase 5.2.4 — autoware_map_height_fitter
+
+Purpose: expose map-based height fitting through its actual service component.
+Prerequisites: completed Lanelet2 utility/map-loader providers and existing QoS
+and TF support. Inspected CMake/manifest, all three implementation sources,
+public/private headers, deployment YAML and both existing test files. Gate:
+fifteen kernel cases (including vector maps, non-finite inputs and reference
+comparisons) plus two fitting/translated-frame cases, with the complete original
+RCLCPP test contract. Add whole-cloud and partial-map executable probes in both
+RCLCPP and Agnocast. No existing test case declares a skip or disable.
+
+Integration pattern: package-local compiled library and shared component with
+scoped include root, standard switchable executable/plugin/index and original
+config/launch resources. Kernel tests use gtest_main; fitting tests retain their
+existing ROS init/shutdown main. Both run with ENABLE_AGNOCAST=0 rather than
+omitting the fitting group under the default enabled environment. Runtime probes
+use ordinary rclpy peers, child-only heap preload for Agnocast, declared bridge
+runtime and bounded readiness/service/shutdown waits.
+
+Current CMake selects MultiThreadedExecutor for the ROS fallback. Preserve that
+choice: partial-map fitting waits for a client response in a separate callback
+group while serving the fit request. Add a constrained ros2_executor choice to
+the existing launcher rule, keeping SingleThreadedExecutor as its default. No
+production C++ compatibility or algorithm patch is introduced speculatively.
+
+Select the published autoware_internal_localization_msgs 1.16.0-1.rcr.0 provider
+for the concrete PoseWithCovarianceStamped service; the complete module and
+service gates below validate this pin. At the root, select that service and the
+rcl_interfaces family for
+bridge generation, using central ros_interface_package entries. The Agnocast
+plugin BUILD declaration remains unchanged after the provider refactor. Source
+inspection shows AsyncParametersClient waits for all
+six parameter services before fetching enable_partial_load, so exporting only
+GetParameters would leave startup waiting. Component modules do not depend on
+these root labels.
+
+Standalone probes construct a two-point cloud at the query location with z=5
+and z=8, then require fitted z=5, preserved XY/header/orientation/covariance and
+normal SIGINT exit. The ROS peer declares the map-loader parameter and exposes
+a partial-map service. Whole mode must consume the latched cloud without a
+partial request; partial mode must make the expected area request and complete
+the fitting service. This last path exercises the multithreaded fallback's
+callback progress as well as the enabled service bridges.
+
+Verification commands, executed sequentially from an unsourced environment:
+
+```bash
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --jobs=1 --local_resources=cpu=1 --nocache_test_results \
+  --test_output=errors --local_test_jobs=1 @autoware_map_height_fitter//...
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --jobs=1 --local_resources=cpu=1 --config=no-agnocast \
+  --nocache_test_results --test_output=errors --local_test_jobs=1 \
+  @autoware_agnocast_wrapper//...
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --jobs=1 --local_resources=cpu=1 --nocache_test_results \
+  --test_output=errors --local_test_jobs=1 --strategy=TestRunner=local \
+  --run_under=//bazel/agnocast:with_heaphook @autoware_agnocast_wrapper//:unit_tests
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --jobs=1 --local_resources=cpu=1 --nocache_test_results \
+  --test_output=errors --local_test_jobs=1 --strategy=TestRunner=local \
+  --run_under=//bazel/agnocast:with_runtime \
+  //bazel/tests:map_height_fitter_whole_rclcpp_test \
+  //bazel/tests:map_height_fitter_partial_rclcpp_test
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --jobs=1 --local_resources=cpu=1 --nocache_test_results \
+  --test_output=errors --local_test_jobs=1 --strategy=TestRunner=local \
+  --run_under=//bazel/agnocast:with_runtime \
+  //bazel/tests:map_height_fitter_whole_agnocast_test \
+  //bazel/tests:map_height_fitter_partial_agnocast_test \
+  //bazel/agnocast:bridge_plugins_test
+```
+
+Result: all seventeen existing cases pass, confirmed in the two declared GTest
+XML files with no failures/errors/disabled/skips: fifteen kernel and two fitting
+cases. Module invocation 110.064 seconds, each target 0.7 seconds. No production
+source compatibility patch was needed. The complete wrapper regressions pass:
+37 C++ cases in each backend and 66 Python launch-action cases (pytest log),
+with no skips; the separate launcher entry records that boundary.
+
+All four actual-executable probes pass: whole-cloud RCLCPP 2.6/Agnocast 2.2 seconds,
+partial-service RCLCPP 2.0/Agnocast 2.0 seconds. They verify fitted z=5, unchanged
+XY/header/orientation/covariance, correct partial-area request only in partial
+mode, and clean SIGINT exit. The partial ROS probe exercises callback progress
+while its fitting service waits for the map response, validating the selected
+MultiThreadedExecutor fallback. Enabled probes also exercise the ordinary-peer
+parameter-service bridges during startup.
+
+The ROS probe invocation takes 1234.848 seconds, including rebuilding the full
+bridge library against the expanded interface-provider closure; this also
+builds the new fitting/parameter factories. The following enabled/bridge
+invocation reuses that library and takes 17.631 seconds. All eleven existing
+bridge-plugin cases pass in 7.3 seconds with no skips, confirmed in XML. The
+central manifest now contains 229 interfaces (193 messages, 36 services), including
+the selected fitting service and all six parameter services. No package list
+was added back to the Agnocast consumer BUILD.
+
+Targeted buildifier, Python syntax and whitespace checks pass. No dependency
+omission, skipped test group, deferred failure or source patch was necessary.
+No Fast DDS, pre-commit, container or full communication matrix was run. Height
+fitting's complete module gate is closed; map visualization is the next package
+boundary in Phase 5.2.4, which remains in progress.

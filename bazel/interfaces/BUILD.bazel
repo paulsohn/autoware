@@ -9,6 +9,11 @@ ros_interface_set(
         ros_interface_package("@autoware_common_msgs//:cc", "@autoware_common_msgs//:cc_shared"),
         ros_interface_package("@autoware_control_msgs//:cc", "@autoware_control_msgs//:cc_shared"),
         ros_interface_package("@autoware_internal_debug_msgs//:cc", "@autoware_internal_debug_msgs//:cc_shared"),
+        ros_interface_package(
+            "@autoware_internal_localization_msgs//:cc",
+            "@autoware_internal_localization_msgs//:cc_shared",
+            roots = ["@autoware_internal_localization_msgs//srv:PoseWithCovarianceStamped"],
+        ),
         ros_interface_package("@autoware_internal_planning_msgs//:cc", "@autoware_internal_planning_msgs//:cc_shared"),
         ros_interface_package("@autoware_localization_msgs//:cc", "@autoware_localization_msgs//:cc_shared"),
         ros_interface_package("@autoware_map_msgs//:cc", "@autoware_map_msgs//:cc_shared"),
@@ -22,6 +27,7 @@ ros_interface_set(
         ros_interface_package("@agnocast_sample_interfaces//:cc", "@agnocast_sample_interfaces//:cc_shared"),
         ros_interface_package("@ros2agnocast_discovery_msgs//:cc", "@ros2agnocast_discovery_msgs//:cc_shared"),
         ros_interface_package("@nav_msgs//:cc", "@nav_msgs//:cc_shared"),
+        ros_interface_package("@rcl_interfaces//:cc", "@rcl_interfaces//:cc_shared"),
         ros_interface_package(
             "@diagnostic_msgs//:cc",
             "@diagnostic_msgs//:cc_shared",

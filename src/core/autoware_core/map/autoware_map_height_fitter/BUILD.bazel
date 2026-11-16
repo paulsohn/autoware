@@ -1,0 +1,103 @@
+load("@autoware_agnocast_wrapper//:defs.bzl", "autoware_agnocast_node")
+load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+exports_files(["test/test_standalone.py"])
+
+cc_library(
+    name = "autoware_map_height_fitter",
+    srcs = glob(["src/*.cpp"]),
+    hdrs = glob([
+        "src/*.hpp",
+        "include/**/*.hpp",
+    ]),
+    includes = ["include"],
+    deps = [
+        "@autoware_agnocast_wrapper//:autoware_agnocast_wrapper_library",
+        "@autoware_internal_localization_msgs//:cc",
+        "@autoware_lanelet2_utils",
+        "@autoware_map_msgs//:cc",
+        "@autoware_qos_utils",
+        "@geometry_msgs//:cc",
+        "@lanelet2_core//:lanelet2_core_library",
+        "@pcl_conversions//:pcl_conversions_library",
+        "@rclcpp//:rclcpp_library",
+        "@rclcpp_components//:rclcpp_components_library",
+        "@rosdistro//cc:pcl_common",
+        "@rosdistro//cc:pcl_kdtree",
+        "@sensor_msgs//:cc",
+        "@tf2//:tf2_library",
+        "@tf2_geometry_msgs//:tf2_geometry_msgs_library",
+        "@tf2_ros//:tf2_ros_library",
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = [
+        "@autoware_agnocast_wrapper//:autoware_agnocast_wrapper",
+        "@autoware_internal_localization_msgs//:cc_shared",
+        "@autoware_lanelet2_utils//:runtime_dynamic_deps",
+        "@autoware_map_msgs//:cc_shared",
+        "@geometry_msgs//:cc_shared",
+        "@pcl_conversions//:pcl_conversions",
+        "@rclcpp_components//:rclcpp_components",
+        "@sensor_msgs//:cc_shared",
+        "@tf2_msgs//:cc_shared",
+        "@tf2_ros//:tf2_ros",
+    ],
+)
+
+cc_shared_library(
+    name = "height_fitter_component",
+    dynamic_deps = [":runtime_dynamic_deps"],
+    deps = [":autoware_map_height_fitter"],
+)
+
+autoware_agnocast_node(
+    name = "autoware_map_height_fitter_node",
+    package_name = "autoware_map_height_fitter",
+    component = ":height_fitter_component",
+    plugin = "autoware::map_height_fitter::MapHeightFitterNode",
+    ros2_executor = "MultiThreadedExecutor",
+)
+
+register_ament_files(
+    name = "node_executables",
+    files = [":autoware_map_height_fitter_node"],
+    prefix = "lib/autoware_map_height_fitter",
+    strip_prefix = "*",
+)
+
+ament_index(
+    components = [":autoware_map_height_fitter_node_components"],
+    data = glob([
+        "config/*",
+        "launch/*",
+    ]) + [
+        ":autoware_map_height_fitter_node_plugin",
+        ":node_executables",
+    ],
+    package_xml = "package.xml",
+)
+
+[
+    cc_test(
+        name = "test_map_height_fitter_" + kind,
+        srcs = ["test/test_map_height_fitter_" + kind + ".cpp"],
+        dynamic_deps = [":runtime_dynamic_deps"],
+        env = {"ENABLE_AGNOCAST": "0"},
+        includes = ["src"],
+        deps = [
+            ":autoware_map_height_fitter",
+            "@googletest//:gtest_main" if kind == "kernel" else "@googletest//:gtest",
+        ],
+    )
+    for kind in [
+        "kernel",
+        "fit",
+    ]
+]

@@ -446,3 +446,11 @@ local_path_override(
     module_name = "autoware_map_loader",
     path = "src/core/autoware_core/map/autoware_map_loader",
 )
+
+bazel_dep(name = "autoware_internal_localization_msgs", version = "1.16.0-1.rcr.0")
+bazel_dep(name = "rcl_interfaces", version = "0.0.0")
+bazel_dep(name = "autoware_map_height_fitter", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_map_height_fitter",
+    path = "src/core/autoware_core/map/autoware_map_height_fitter",
+)

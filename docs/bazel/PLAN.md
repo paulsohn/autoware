@@ -897,8 +897,19 @@ one declaration list, forwarding providers through all_interfaces. Narrow
 sensor/diagnostic selections remain unchanged. Template checks, full generated
 plugin compilation/linking and all eleven bridge-plugin runtime cases pass with
 Cyclone DDS, with no skips. The manifest contains 207 interfaces (180 messages,
-27 services); service-event factories remain included. Height fitting resumes
-separately, adapting its prepared additions to this central registry.
+27 services); service-event factories remain included.
+
+Height fitting is complete: all fifteen kernel and two fitting/TF cases pass,
+as do whole-cloud and partial-service executable probes in both backends.
+The opt-in MultiThreadedExecutor fallback preserves its CMake contract while
+existing callers retain SingleThreadedExecutor. The internal-localization
+1.16.0-1.rcr.0 pin is validated by these builds and service checks. Its consumed
+PoseWithCovarianceStamped service and the parameter interface family are
+registered only in the central declarations; AsyncParametersClient needs all
+six parameter services. The expanded manifest has 229 interfaces. Wrapper
+regressions pass (37 C++ cases per backend and 66 Python cases), along with all
+eleven bridge-plugin cases. No duplicate plugin dependency list is required.
+Map visualization is the next package boundary; Phase 5.2.4 remains in progress.
 Keep package commits separate and heavy builds sequential; routine Cyclone DDS
 only. Phase 5.3 system/API composition and Phase 6 GPU integration stay separate.
 

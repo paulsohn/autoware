@@ -629,3 +629,41 @@ py_test(
         ("lanelet", "autoware_lanelet2_map_loader", "agnocast", "1"),
     ]
 ]
+
+[
+    py_test(
+        name = "map_height_fitter_" + mode + "_" + backend + "_test",
+        srcs = ["@autoware_map_height_fitter//:test/test_standalone.py"],
+        args = [
+            "$(rootpath @autoware_map_height_fitter//:autoware_map_height_fitter_node)",
+            mode,
+        ],
+        data = [
+            "//bazel/agnocast:runtime_index",
+            "@agnocast_heaphook",
+            "@autoware_map_height_fitter//:ament_index",
+            "@autoware_map_height_fitter//:autoware_map_height_fitter_node",
+        ],
+        env = {
+            "AGNOCAST_TEST_NO_PRELOAD": "1",
+            "AUTOWARE_TEST_AGNOCAST": enabled,
+        },
+        main = "@autoware_map_height_fitter//:test/test_standalone.py",
+        tags = [
+            "no-remote",
+            "no-sandbox",
+        ] + (["requires-agnocast-kmod"] if enabled == "1" else []),
+        deps = [
+            "@autoware_internal_localization_msgs//:py",
+            "@autoware_map_msgs//:py",
+            "@rclpy",
+            "@sensor_msgs//:py",
+        ],
+    )
+    for mode, backend, enabled in [
+        ("whole", "rclcpp", "0"),
+        ("partial", "rclcpp", "0"),
+        ("whole", "agnocast", "1"),
+        ("partial", "agnocast", "1"),
+    ]
+]

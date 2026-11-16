@@ -175,6 +175,7 @@
     "https://bazel.ros.org/modules/autoware_internal_debug_msgs/0.0.0/MODULE.bazel": "9b4897e21e6f19c9cf8853df49181c7192f97c4c93144fd1720be4de7e0a58df",
     "https://bazel.ros.org/modules/autoware_internal_debug_msgs/1.16.0-1.rcr.0/MODULE.bazel": "f3f20f7cfbae4e9f9b02b373d06f3ffda794bf3cb574806dcb7a7b41b90f63d9",
     "https://bazel.ros.org/modules/autoware_internal_debug_msgs/1.16.0-1.rcr.0/source.json": "07a6e89862bc76eadaed09173372390e94f5b57272647c2104f6f5a04a419614",
+    "https://bazel.ros.org/modules/autoware_internal_localization_msgs/0.0.0/MODULE.bazel": "71ffa468f3e503cf49ba842430c0b8820ef34d45244b78a86835cf90ed599720",
     "https://bazel.ros.org/modules/autoware_internal_localization_msgs/1.16.0-1.rcr.0/MODULE.bazel": "a18e3b0225b71ed90d6972ef70bdfe3eaf37e0bf22737fc45e00d0390debf0d8",
     "https://bazel.ros.org/modules/autoware_internal_localization_msgs/1.16.0-1.rcr.0/source.json": "81b338d17ec13727e573bb69f7a16fea81aa69cb16ab5b9d857c3496d7bf3a4c",
     "https://bazel.ros.org/modules/autoware_internal_metric_msgs/1.16.0-1.rcr.0/MODULE.bazel": "c464263610242f6115bb60d8374d2d8ed8a5602e68c0f0f8e9f0c849617c0ecb",
@@ -3509,7 +3510,7 @@
     "@@rosdistro+//python:defs.bzl%pip_ros": {
       "general": {
         "bzlTransitiveDigest": "Wf1bYPS+v1MXSxPm/3sa2yWsKIiJG8ikAIrD+e7Djmk=",
-        "usagesDigest": "3+GEjp8kJm7HYA9m73iqwuKmwzzfWUT+qtzxlh++le4=",
+        "usagesDigest": "2iFmsqR1G6xN5G/uzWURiO7TO1WTcNXY7OrTDKTEHAM=",
         "recordedInputs": [
           "REPO_MAPPING:bazel_features+,bazel_features_globals bazel_features++version_extension+bazel_features_globals",
           "REPO_MAPPING:bazel_features+,bazel_features_version bazel_features++version_extension+bazel_features_version",
