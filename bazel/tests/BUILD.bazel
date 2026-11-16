@@ -431,3 +431,25 @@ py_test(
         requirement("pyyaml"),
     ],
 )
+
+py_test(
+    name = "ground_filter_test",
+    srcs = ["@autoware_ground_filter//:test/test_standalone.py"],
+    args = [
+        "$(rootpath @autoware_ground_filter//:ground_filter_node)",
+        "$(rootpath @autoware_ground_filter//:config/ground_filter.param.yaml)",
+    ],
+    data = [
+        "@autoware_ground_filter//:ament_index",
+        "@autoware_ground_filter//:config/ground_filter.param.yaml",
+        "@autoware_ground_filter//:ground_filter_node",
+        "@autoware_test_utils//:ament_index",
+    ],
+    env = {"LD_LIBRARY_PATH": "lib"},
+    main = "@autoware_ground_filter//:test/test_standalone.py",
+    deps = [
+        "@autoware_internal_msgs//:py",
+        "@rclpy",
+        "@sensor_msgs//:py",
+    ],
+)

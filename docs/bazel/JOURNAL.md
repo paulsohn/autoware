@@ -4006,3 +4006,55 @@ The initial dependency preparation/module invocation takes 254.656 seconds;
 consolidate that setup failure into this final result, not a separate milestone.
 Targeted buildifier, Python syntax and whitespace checks pass. No Fast DDS,
 pre-commit, container or full system matrix was run. Ground filtering is next.
+
+
+## 2026-11-16: Phase 5.2.3 — autoware_ground_filter
+
+Purpose: integrate CPU ground removal with its actual ordinary RCLCPP component.
+Prerequisites: prepared PCL providers and fully validated autoware_test_utils.
+Inspected CMake, manifest, three sources, public/private headers, YAML/launch
+resources and all three test files. Gate: 14 algorithm, five sanity and five
+integration cases (24 total), including radial/grid behavior, exact/approximate
+indices synchronization and invalid-input rejection, plus a real executable
+cloud/published-time/shutdown check. No disabled/skipped cases were found.
+
+Pattern: one compiled library, shared component/standard registration, ament
+resource index/executable alias; reuse package-owned shared dependency providers.
+Tests retain their existing mains (integration uses gtest_main), include src
+privately, and carry both ground-filter and test-helper ament resources. Use
+pinned tf2_sensor_msgs 0.45.10-1.rcr.0, existing PCL conversion/TF libraries and
+native PCL providers; no host ROS packages or CUDA are selected. The existing
+rcpputils expected header remains available in the selected release, so no
+expected-header transition is required by this package.
+Verification commands (sequential):
+
+```bash
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --nocache_test_results --test_output=errors --local_test_jobs=1 \
+  @autoware_ground_filter//...
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --nocache_test_results --test_output=errors --local_test_jobs=1 \
+  --strategy=TestRunner=local //bazel/tests:ground_filter_test
+```
+
+Result: all 24 existing cases pass with no failures/errors/disabled/skipped
+cases, confirmed in GTest XML (14 algorithm, five sanity, five integration).
+Final module invocation: 29.746 seconds, tests 0.5/0.5/1.6 seconds. Standalone
+passes in 1.8 seconds (13.325-second invocation). Load the shipped vehicle and
+filter YAML, override radial mode, base_link frames and 15-degree slopes as in
+the existing deterministic integration fixture. Feed four XYZIRC points along
+one ray: two ground and two elevated obstacles. Require only the two expected
+obstacles, original frame/stamp, PublishedTime stamp and normal SIGINT exit.
+
+Failures and fixes: grid.hpp uses unavailable float-specific math macros;
+derive float pi, half-pi and quarter-pi from the existing project constant,
+preserving precision/arithmetic. The next compile exposes raw-profile arguments
+to the two message-filter subscriptions; pass the equivalent SensorDataQoS
+object for rclcpp major >=32 and retain the older profile path. The complete
+suite exercises the changed exact/approximate synchronization paths; older
+ROS configurations remain unverified. Inspected AWF main and repository-scoped
+PR searches on 2026-11-16; no matching fix found. UPSTREAM_AWF.md records the
+source blobs, exact errors and limitations. No expected-header patch is needed.
+Targeted buildifier, changed-line clang-format, Python syntax and whitespace
+checks pass. No Fast DDS, pre-commit, container or broad matrix rerun was run.
+Next: CPU Euclidean clustering/object detection.

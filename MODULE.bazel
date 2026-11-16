@@ -398,3 +398,10 @@ local_path_override(
 
 pip_ros = use_extension("@rosdistro//python:defs.bzl", "pip_ros")
 use_repo(pip_ros, "pip_ros")
+
+bazel_dep(name = "tf2_sensor_msgs", version = "0.45.10-1.rcr.0")
+bazel_dep(name = "autoware_ground_filter", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_ground_filter",
+    path = "src/core/autoware_core/perception/autoware_ground_filter",
+)

@@ -830,7 +830,11 @@ change is required by the pinned C++23 toolchain. Pinned pcl_conversions
 2.10.0-1.rcr.0 and pcl_ros 2.10.0-1.rcr.1 provide the tested CPU PCL closure.
 The local-only autoware_test_utils prerequisite also passes all 21 existing
 cases plus its snapshot-executable service/YAML check; explicit fixture-owned
-ROS shutdown fixes an observed process-exit failure. Ground filtering is next.
+ROS shutdown fixes an observed process-exit failure. Ground filtering passes
+all 24 existing cases and a standalone obstacle/published-time check after
+portable float-constant and message-filter QoS fixes. Its existing rcpputils
+expected header is available; no extra expected transition is needed. CPU
+clustering/object detection is next.
 
 Source inspection finds no autoware_utils_pcl include/dependency in the selected
 sensing/perception packages. Defer that utility's local adoption until an actual

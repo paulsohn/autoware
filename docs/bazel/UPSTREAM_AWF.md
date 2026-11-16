@@ -62,6 +62,8 @@ describes that review, not proof that no other upstream work exists.
 
 ### Ground filtering needs portable float constants and subscription QoS
 
+Local source fix: `fd3c132e`, separate from the Bazel build definitions.
+
 - [ ] Associate with matching upstream fixes. Reviewed 2026-11-16: searches for
   `ground_filter M_PI`, `ground_filter lyrical` and `ground_filter QoS` find no
   matching PR. Current main still has both paths: grid.hpp blob
