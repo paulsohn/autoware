@@ -662,7 +662,7 @@ Potential topics such as OSQP compatibility, OpenMP, CMake parity,
 runtime-image deduplication, and remote caching will be evaluated when a current
 target requires them.
 
-### Phase 5.1: Shared core foundations (in progress)
+### Phase 5.1: Shared core foundations (complete)
 
 Bound this subphase to five local autoware_core packages. Prepare and validate
 one module at a time, committing each successful module separately:
@@ -675,8 +675,8 @@ one module at a time, committing each successful module separately:
 | 4 | autoware_interpolation | All four sources and public headers; all eight existing test files (32 test declarations). |
 | 5 | autoware_vehicle_info_utils | Both sources, current and compatibility include paths, ament-indexed YAML/launch resources, calculator entry point, and both existing test targets (2 ROS parameter cases plus 13 pure geometry cases). |
 
-These counts are a static source inventory, not executed-case results. Remaining
-definitions are unvalidated drafts. Local-only modules use 0.0.0 and
+All listed test cases have executed successfully; actual results and commands
+are recorded per module in JOURNAL.md. Local-only modules use 0.0.0 and
 root local_path_override selections; no RCR counterpart is asserted. Reuse the
 already-selected Eigen, Boost.Optional, ROS/message and geometry/TF providers.
 Do not introduce another dependency version or source patch without an actual
@@ -700,10 +700,12 @@ vehicle calculator also needs a direct run with its default indexed YAML. No
 Fast DDS run, full communication matrix, or repeat of the whole development
 image is an automatic requirement here. Reuse unaffected Phase 3/4 evidence.
 
-Validation is now authorized and proceeds one module at a time with Cyclone
-DDS. Completed: Kalman (23 cases), QoS (one consumer case) and signal processing
-(12 cases), and interpolation (32 cases). Pending: vehicle-info. Commit and push each validated
-module separately, and retain incomplete entries until their gates pass.
+All five module gates passed sequentially with Cyclone DDS: Kalman (23 cases),
+QoS (one consumer case), signal processing (12 cases), interpolation (32 cases)
+and vehicle-info (15 cases), totaling 83 executed cases with no skips or
+failures. The vehicle calculator also passed its default indexed-YAML run.
+Each module has its own validated commit and journal entry. No source
+compatibility patches or new dependency versions were needed.
 
 Domain-specific point/PCL, mapping/Lanelet2, motion/trajectory and solver
 packages belong to their selected Phase 5.2 runnable slices. Component-interface

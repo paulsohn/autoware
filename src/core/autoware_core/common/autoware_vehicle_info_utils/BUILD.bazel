@@ -1,0 +1,80 @@
+load("@pip_ros//:requirements.bzl", "requirement")
+load("@rosdistro//ament:defs.bzl", "ament_index")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_test")
+load("@rules_python//python:defs.bzl", "py_binary")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "autoware_vehicle_info_utils",
+    srcs = [
+        "src/vehicle_info.cpp",
+        "src/vehicle_info_utils.cpp",
+    ],
+    hdrs = glob(["include/**/*.hpp"]),
+    strip_include_prefix = "include",
+    deps = [
+        "@autoware_utils_geometry",
+        "@autoware_utils_rclcpp",
+        "@geometry_msgs//:cc",
+        "@rclcpp//:rclcpp_library",
+    ],
+)
+
+ament_index(
+    data = glob([
+        "config/*.yaml",
+        "launch/*.py",
+    ]),
+    package_xml = "package.xml",
+)
+
+collect_transitive_dynamic_deps(
+    name = "test_dynamic_deps",
+    dynamic_deps = [
+        "@autoware_internal_planning_msgs//:cc_shared",
+        "@autoware_perception_msgs//:cc_shared",
+        "@autoware_planning_msgs//:cc_shared",
+        "@geometry_msgs//:cc_shared",
+        "@tf2//:tf2",
+        "@tf2_geometry_msgs//:tf2_geometry_msgs",
+        "@rclcpp//:rclcpp",
+    ],
+)
+
+cc_test(
+    name = "test_autoware_vehicle_info_utils",
+    srcs = ["test/test_vehicle_info_utils.cpp"],
+    data = [":ament_index"],
+    dynamic_deps = [
+        ":test_dynamic_deps",
+        "@ament_index_cpp//:ament_index_cpp",
+    ],
+    deps = [
+        ":autoware_vehicle_info_utils",
+        "@ament_index_cpp//:ament_index_cpp_library",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "test_vehicle_info",
+    srcs = ["test/test_vehicle_info.cpp"],
+    dynamic_deps = [":test_dynamic_deps"],
+    deps = [
+        ":autoware_vehicle_info_utils",
+        "@googletest//:gtest_main",
+    ],
+)
+
+py_binary(
+    name = "min_turning_radius_calculator",
+    srcs = ["scripts/min_turning_radius_calculator.py"],
+    data = [":ament_index"],
+    main = "scripts/min_turning_radius_calculator.py",
+    deps = [
+        "@ament_index_python",
+        requirement("pyyaml"),
+    ],
+)

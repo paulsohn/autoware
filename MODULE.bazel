@@ -298,3 +298,9 @@ local_path_override(
     module_name = "autoware_interpolation",
     path = "src/core/autoware_core/common/autoware_interpolation",
 )
+
+bazel_dep(name = "autoware_vehicle_info_utils", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_vehicle_info_utils",
+    path = "src/core/autoware_core/common/autoware_vehicle_info_utils",
+)

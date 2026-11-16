@@ -298,6 +298,10 @@ dependency. Bzlmod ignores `dev_dependency` declarations in a module when that
 module is consumed from the root workspace, including through a
 `local_path_override`.
 
+For C++ tests that do not supply their own main, depend on
+`@googletest//:gtest_main`. Use `@googletest//:gtest` when the existing test
+sources already define main.
+
 A `cc_library` declares the RCR compile target, such as
 `@rclcpp//:rclcpp_library`, in `deps`. Put the corresponding shared-library
 target, such as `@rclcpp//:rclcpp`, in the `collect_transitive_dynamic_deps`
@@ -326,6 +330,18 @@ does not replace the RCR `cc_shared_library` runtime providers.
 For Boost headers already mapped by the pinned rosdistro, use its narrow target
 rather than adding the BCR umbrella module. For example, UUID consumers use
 `@rosdistro//cc:boost.uuid`.
+
+Package resources accessed through ament_index_cpp or ament_index_python need
+an `ament_index` target from `@rosdistro//ament:defs.bzl`, with `package_xml`
+and the required resources in `data`. Add that index to the consuming test or
+binary's runtime `data`; it supports package-share lookup from runfiles without
+sourcing a host ROS installation. For example, run the vehicle calculator with
+its default indexed YAML:
+
+```bash
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel run @autoware_vehicle_info_utils//:min_turning_radius_calculator
+```
 
 ## Editing Python and launch packages
 

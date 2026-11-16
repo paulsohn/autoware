@@ -3062,3 +3062,55 @@ than adding another runner. The declared geometry/message/TF shared closure
 links successfully. No source compatibility patch or dependency upgrade is
 required. Targeted buildifier and whitespace checks pass. No Fast DDS check,
 pre-commit, broad communication matrix or container rerun is performed.
+
+## 2026-11-16: Phase 5.1 — autoware_vehicle_info_utils
+
+Purpose: Expose vehicle parameters, derived geometry and package resources to
+later runnable slices.
+
+Prerequisites and inspected inputs: the pinned Phase 3/4 workspace and
+CMakeLists.txt, package.xml, both implementations, scoped and compatibility
+headers, both existing test files, config/launch resources and the installed
+calculator script.
+
+Minimum integration pattern and rationale: Register an ament_index containing
+package.xml and the config/launch files. The original parameter test reads
+config/vehicle_info.param.yaml via ament_index_cpp; carry the index in its data
+rather than rewriting the test. Keep the two ROS parameter cases separate from
+13 pure vehicle-geometry cases. The calculator py_binary uses ament_index_python
+and the pinned RCR PyYAML provider with the same resource index. Libraries/tests
+retain the geometry and RCLCPP shared closure.
+
+Select the package-local 0.0.0 module with a root local_path_override. Component
+definitions use only package/external labels, with no root bazel/ dependency.
+Source compatibility patches and dependency upgrades remain hypotheses until
+this target exposes a need.
+
+Verification commands:
+
+```bash
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --nocache_test_results --test_output=errors \
+  --local_test_jobs=1 @autoware_vehicle_info_utils//...
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel run @autoware_vehicle_info_utils//:min_turning_radius_calculator
+```
+
+Result: both implementations, both include layouts, resource index, calculator
+and both existing test targets build. All 15 cases (2 parameter and 13 geometry)
+pass without failures, errors, disabled cases or skips, confirmed in GTest XML.
+The complete module gate takes 11.905 seconds with cached dependencies. Both
+test files lack main, so both targets use gtest_main. The unchanged parameter
+tests find the declared YAML through ament_index_cpp with no host ROS setup.
+
+The calculator's default run succeeds through ament_index_python's runfiles
+lookup, reporting rear radius 3.253042620027102 m and front radius
+4.253220695862465 m. These equal wheel_base / tan(max_steer_angle) and
+wheel_base / sin(max_steer_angle) for the indexed YAML's 2.74 m and 0.70 rad.
+The package reuses the pinned pip_ros PyYAML wheel; the lockfile records the
+additional extension usage without changing its dependency versions. No host
+pip installation, source patch or custom package-index wrapper is required.
+Targeted buildifier and whitespace checks pass. Launch files are exposed as
+resources; launch composition and shared/install exports remain for consumers
+that require them. No Fast DDS check, pre-commit, broad communication matrix or
+container rerun is performed. This closes the five-module Phase 5.1 gate.
