@@ -44,10 +44,16 @@ private:
   rclcpp::Publisher<std_msgs::msg::String>::SharedPtr publisher_;
 };
 
-TEST(AutowareTestManagerTest, TestRelayNode)
+class AutowareTestManagerTest : public ::testing::Test
 {
-  rclcpp::init(0, nullptr);
+protected:
+  void SetUp() override { rclcpp::init(0, nullptr); }
 
+  void TearDown() override { rclcpp::shutdown(); }
+};
+
+TEST_F(AutowareTestManagerTest, TestRelayNode)
+{
   const std::string input_topic_name = "input_topic";
   const std::string output_topic_name = "output_topic";
 

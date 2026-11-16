@@ -60,6 +60,32 @@ describes that review, not proof that no other upstream work exists.
 
 ## Findings
 
+### Test-helper relay test must shut down its ROS context
+
+- [ ] Associate with a matching upstream issue or PR. Reviewed 2026-11-16:
+  repository-scoped search for `autoware_test_utils shutdown` finds
+  [core#1181](https://github.com/autowarefoundation/autoware_core/pull/1181),
+  but its actual fixture patch changes autoware_planning_test_manager, not
+  this relay test. Related lifecycle work is not this specific fix.
+- Current main's test_autoware_test_manager.cpp blob
+  `9e0e00d199f6716d6c01afafc399e2cf4ace9718` still initializes ROS without
+  shutdown. Scope: autoware_core/testing/autoware_test_utils, relay test only.
+- Reproducer: the complete module command in the Phase 5.2.3 JOURNAL entry
+  on Ubuntu 24.04, LLVM 21.1.8/C++23 and Lyrical RCR/Cyclone DDS. All 21
+  assertions pass, then the process exits with SIGSEGV. GDB shows
+  `DefaultContext` destruction -> `Context::shutdown` ->
+  `rcl_logging_external_shutdown` -> spdlog logger registry access during
+  static destruction. The relay test is the only suite member that calls init.
+- Fix: give that test a GTest fixture with SetUp init and TearDown shutdown.
+  This also handles assertion/exception exits instead of leaving the context
+  initialized. After the change the complete 21-case suite passes and exits
+  normally. No production helper API or logging-library patch is needed.
+  The upstream planning fixture uses the same ownership pattern; its graph
+  discovery changes are unrelated and are not applied here.
+- This demonstrates an exit-order failure in the pinned environment, not proof
+  of failure on every ROS distribution/link layout. No colcon or older-ROS
+  validation and no upstream submission are claimed.
+
 ### Downsampling uses the native expected header
 
 - [x] Associated with merged [core#1539](https://github.com/autowarefoundation/autoware_core/pull/1539).
