@@ -67,7 +67,7 @@ class TestEKFLocalizer(unittest.TestCase):
     def setUp(self):
         # Create a ROS node for tests
         self.test_node = rclpy.create_node("test_node")
-        self.evaluation_time = 0.2  # 200ms
+        self.evaluation_time = 10.0  # Maximum discovery/output wait; finish when ready.
 
     def tearDown(self):
         self.test_node.destroy_node()
@@ -146,17 +146,24 @@ class TestEKFLocalizer(unittest.TestCase):
             0.0,
             0.01,
         ]
-        pub_init_pose.publish(init_pose)
-
-        # Receive Odometry
+        # Subscribe before initialization so the first output cannot be missed.
         msg_buffer = []
-        self.test_node.create_subscription(
+        sub_odom = self.test_node.create_subscription(
             Odometry, "/ekf_odom", lambda msg: msg_buffer.append(msg), 10
         )
 
-        # Wait until the node publishes some topic
-        end_time = time.time() + self.evaluation_time
-        while time.time() < end_time:
+        # The initial pose is volatile: wait for both endpoints before publishing once.
+        end_time = time.monotonic() + self.evaluation_time
+        while time.monotonic() < end_time:
+            if pub_init_pose.get_subscription_count() > 0 and sub_odom.get_publisher_count() > 0:
+                break
+            rclpy.spin_once(self.test_node, timeout_sec=0.1)
+        self.assertGreater(pub_init_pose.get_subscription_count(), 0)
+        self.assertGreater(sub_odom.get_publisher_count(), 0)
+        pub_init_pose.publish(init_pose)
+
+        end_time = time.monotonic() + self.evaluation_time
+        while time.monotonic() < end_time and not msg_buffer:
             rclpy.spin_once(self.test_node, timeout_sec=0.1)
 
         # Check if the EKF outputs some Odometry

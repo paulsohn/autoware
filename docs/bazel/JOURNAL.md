@@ -3521,3 +3521,76 @@ avoid adding unrelated sensor plugins. The sensor_msgs pin is validated; no
 host dependencies, source patches or new executor variant were needed.
 Targeted buildifier, Python syntax and whitespace checks pass. No Fast DDS,
 pre-commit, broad matrix or container rerun was performed. EKF is next.
+
+## 2026-11-16: Phase 5.2.2 — autoware_ekf_localizer (in progress)
+
+Purpose: Integrate EKF prediction/measurement updates and the standalone ROS
+node with activation, initialization, odometry and clean process shutdown.
+Inputs: package.xml, CMakeLists.txt, nine implementation files, source headers,
+all ten C++ test files, existing Python launch test, YAML and XML launch file.
+The current complete C++ inventory is 49 cases; none supplies main or disables
+cases. Retain node integration despite CMake filtering it for enabled builds.
+The Python launch suite has one live behavior case and one post-shutdown case.
+
+Integration: one source-scoped cc_library mirrors the CMake target, reusing
+Kalman/localization utilities, wrapper, geometry/logging/system, Eigen/fmt and
+ROS/TF/message providers. Tests need the package root for src/... includes;
+the library exposes src for utils/... includes. Preserve all ten test targets,
+using gtest_main and the complete final shared closure, including visualization
+and TF Eigen reached through localization utilities. Build a shared component
+and switchable node with the existing adapter and ament index; register YAML,
+XML launch, component/plugin metadata and the lib/<package> executable alias.
+
+Root launch_test targets reuse the original scenario under both backends. The
+package-owned test/launch_adapter.py executes the original suite and prepends
+one launch configuration: agnocast_heaphook_path from the declared runfiles,
+avoiding the XML default's host /opt/ros path. It selects ENABLE_AGNOCAST per
+target before the scenario creates processes; the Python driver is unpreloaded.
+Both tests use real XML launch/package-index discovery and the original
+activation service, initial-pose publication, odometry assertion and process
+exit assertion. No scenario assertion or production node is changed. A discovery race exposed
+by the enabled check is corrected in the test source as recorded below. Existing bridge roots already cover this node's
+geometry, navigation, diagnostics, debug and SetBool types.
+
+Acceptance commands (sequential; pending):
+
+```bash
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=no-agnocast --nocache_test_results --test_output=errors \
+  --local_test_jobs=1 @autoware_ekf_localizer//...
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --nocache_test_results --test_output=errors --local_test_jobs=1 \
+  --strategy=TestRunner=local --run_under=//bazel/agnocast:with_runtime \
+  //bazel/tests:ekf_localizer_rclcpp_test
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --nocache_test_results --test_output=errors --local_test_jobs=1 \
+  --strategy=TestRunner=local --run_under=//bazel/agnocast:with_runtime \
+  //bazel/tests:ekf_localizer_agnocast_test
+```
+
+Current results: all 49 C++ cases pass across ten targets without
+failures/errors/skips, confirmed against the currently declared source/target
+list in GTest XML (35.434 seconds for the initial module invocation). The
+original XML scenario passes in RCLCPP but fails in Agnocast: activation is
+successful, yet the one-shot volatile initial pose can precede bridge discovery
+and the 200 ms output observation returns empty. Shutdown still passes.
+
+Fix test synchronization: create the output subscriber first, poll for both
+input/output endpoints before publishing the initial pose once, then poll for
+odometry with a monotonic ten-second maximum deadline. Finish immediately when
+ready; retain the output and exit-code assertions. The corrected original
+suite passes both assertions under RCLCPP (1.4 seconds) and Agnocast
+(3.3 seconds), with actual startup backend messages confirmed in launch logs.
+The adapter supplies the declared heap-hook path; no host /opt/ros library is
+used. Existing unchanged C++ results are reused after this Python-only change.
+
+Upstream main's launch-test blob 1db0863636b041e18c653c3e049eeb4fa042ff89
+matches the local pre-fix source. Searches and the actual #1190 patch show no
+matching discovery fix; #1190 conditionally omits enabled launch tests instead.
+Lyrical trackers #1538/#7404 concern the distribution transition, not this
+readiness race. UPSTREAM_AWF.md records the dated association/limitations. Keep
+the test-source correction in a separate fix(src/autoware_core) commit from the
+Bazel definitions. No production-node patch is needed. Targeted Python syntax,
+buildifier and whitespace checks pass; no Fast DDS, pre-commit or broad
+communication/container sweep was run. The module acceptance has passed; its
+Bazel definition commit follows the source fix. Geography/GNSS remain pending.

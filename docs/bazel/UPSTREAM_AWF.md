@@ -406,3 +406,36 @@ blob `899689b7b08b0091aa18c148dea3c96ad2cbb5cb`.
 [PR #1507](https://github.com/autowarefoundation/agnocast/pull/1507) is related:
 its eventfd wakeup is already present locally, but does not release the listener
 before slow teardown. Upstream PR test claims are not local validation.
+
+## EKF launch test waits for discovery and first output
+
+Checked 2026-11-16. This is middleware/test readiness, not a Lyrical API fix.
+
+- [x] Reproduce the original launch test failure with Cyclone DDS plus Agnocast:
+  activation succeeds but `test_node_link` sees no odometry after a one-shot
+  initial pose and a 200 ms observation window; process shutdown succeeds.
+- [x] Preserve both assertions and verify the corrected test with RCLCPP and
+  Agnocast. Subscribe to odometry first, wait for both topic endpoints before
+  publishing the volatile initial pose, and use monotonic ten-second maximum
+  deadlines that finish when ready. Observed tests complete in 1.4 and 3.3
+  seconds, not ten-second sleeps. All 49 existing C++ cases also pass.
+- [x] Inspect the current upstream
+  [launch test](https://github.com/autowarefoundation/autoware_core/blob/main/localization/autoware_ekf_localizer/test/utils/test_ekf_localizer_launch.py),
+  blob `1db0863636b041e18c653c3e049eeb4fa042ff89`: it still publishes before
+  endpoint matching and waits only 0.2 seconds. The local pre-fix blob matches.
+- [ ] Associate a matching upstream fix: none found in searches for the launch
+  test, EKF discovery and EKF/Agnocast. Related
+  [PR #1190](https://github.com/autowarefoundation/autoware_core/pull/1190)
+  applies the Agnocast node wrapper and conditionally omits launch tests when
+  enabled; its actual patch does not synchronize this launch scenario.
+  [Core Lyrical tracker #1538](https://github.com/autowarefoundation/autoware_core/issues/1538)
+  and [Autoware tracker #7404](https://github.com/autowarefoundation/autoware/issues/7404)
+  track build/transition work, not a matching readiness correction.
+- [ ] Submit/associate an upstream PR after review; none is opened by this task.
+
+Scope: only test synchronization in test_ekf_localizer_launch.py; no production
+node, timeout in its launch system, middleware setting or test assertion is
+removed. The timeout bounds discovery/output failure rather than asserting
+real-time latency. Local evidence uses Ubuntu 24.04/Clang/RCR Lyrical; it does
+not establish Humble/Jazzy, GCC/Ubuntu 26.04 or hardware behavior. JOURNAL.md
+contains the exact two launch commands and full-module gate.
