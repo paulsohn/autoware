@@ -273,3 +273,10 @@ single_version_override(
     patches = ["//bazel/patches:rclpy_shared_dependencies.patch"],
     version = "10.0.11-1.rcr.0",
 )
+
+# Phase 5.1 local core foundation packages.
+bazel_dep(name = "autoware_kalman_filter", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_kalman_filter",
+    path = "src/core/autoware_core/common/autoware_kalman_filter",
+)

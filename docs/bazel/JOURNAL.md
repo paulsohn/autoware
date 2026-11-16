@@ -2917,3 +2917,37 @@ prerequisites. No Fast DDS middleware validation, pre-commit or unrelated
 runtime sweep was run. This closure changes documentation only and records
 the completed container run; it needs no further runtime rerun. Next: Phase
 5.1 shared core foundations, with Phase 4's communication lane already complete.
+
+## 2026-11-16: Phase 5.1 — autoware_kalman_filter
+
+Purpose: Eigen-only state-estimation primitives for the EKF localizer.
+
+Prerequisites and inspected inputs: the pinned Phase 3/4 workspace and
+CMakeLists.txt, package.xml, both public headers, two implementation files and
+both existing test files. No ROS include is used by this implementation.
+
+Minimum integration pattern and rationale: Use one cc_library with the RCR Eigen
+provider and one cc_test containing both existing files (23 static test
+declarations). No ROS shared closure or separate Eigen download is required.
+
+Select the package-local 0.0.0 module with a root local_path_override. Component
+definitions use only package/external labels, with no root bazel/ dependency.
+Source compatibility patches and dependency upgrades remain hypotheses until
+this target exposes a need.
+
+Verification command:
+
+```bash
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --nocache_test_results --test_output=errors \
+  --local_test_jobs=1 @autoware_kalman_filter//...
+```
+
+Result: both library sources and both existing test files build. All 23 cases
+pass without failures, errors, disabled cases or skips, confirmed in GTest XML.
+The module-only root selection passes the full gate in 7.538 seconds with
+cached compilation and actual test execution. Keep each committed root override
+paired with its package MODULE/BUILD files; future draft modules are not needed
+by this commit. No ROS runtime, source compatibility fix or additional Eigen
+release was required. Targeted buildifier and whitespace checks pass. No Fast
+DDS, pre-commit, broad communication matrix or container rerun was performed.

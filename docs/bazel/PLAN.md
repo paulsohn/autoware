@@ -662,6 +662,53 @@ Potential topics such as OSQP compatibility, OpenMP, CMake parity,
 runtime-image deduplication, and remote caching will be evaluated when a current
 target requires them.
 
+### Phase 5.1: Shared core foundations (in progress)
+
+Bound this subphase to five local autoware_core packages. Prepare and validate
+one module at a time, committing each successful module separately:
+
+| Order | Package | Build and acceptance boundary |
+| --- | --- | --- |
+| 1 | autoware_kalman_filter | Two-source Eigen library; both existing test files (23 test declarations). |
+| 2 | autoware_qos_utils | Public compatibility header; one Bazel-owned consumer test constructing real RCLCPP publisher/service entities with the default macros. |
+| 3 | autoware_signal_processing | All three filter sources; all three existing test files and their fixture header (12 test declarations). |
+| 4 | autoware_interpolation | All four sources and public headers; all eight existing test files (32 test declarations). |
+| 5 | autoware_vehicle_info_utils | Both sources, current and compatibility include paths, ament-indexed YAML/launch resources, calculator entry point, and both existing test targets (2 ROS parameter cases plus 13 pure geometry cases). |
+
+These counts are a static source inventory, not executed-case results. Remaining definitions are unvalidated drafts. Local-only modules use 0.0.0 and
+root local_path_override selections; no RCR counterpart is asserted. Reuse the
+already-selected Eigen, Boost.Optional, ROS/message and geometry/TF providers.
+Do not introduce another dependency version or source patch without an actual
+current-target need.
+
+Keep public libraries as cc_library targets following the Phase 3 convention;
+introduce shared/install exports when a runnable consumer requires that boundary.
+Final ROS executables/tests collect the shared closure of their static
+libraries, including geometry's message/TF dependencies. Vehicle-info's
+parameter test must locate its real YAML through the package index; its pure
+suite remains a separate target. Preserve both scoped and legacy include paths.
+The existing calculator uses pinned RCR Python/YAML dependencies and the same
+index. Launch files are exposed as resources; launch composition is not a new
+Phase 5.1 system-level gate.
+
+Exit criteria: each module's complete existing suite and any specified consumer
+check pass with Cyclone DDS; its exported headers/resources work without host
+ROS, apt/pip target dependencies or metarepository labels inside the component;
+and the final journal records actual commands, results and limitations. The
+vehicle calculator also needs a direct run with its default indexed YAML. No
+Fast DDS run, full communication matrix, or repeat of the whole development
+image is an automatic requirement here. Reuse unaffected Phase 3/4 evidence.
+
+Validation is now authorized and proceeds one module at a time with Cyclone
+DDS. Completed: autoware_kalman_filter (23 cases). Pending: QoS, signal
+processing, interpolation and vehicle-info. Commit and push each validated
+module separately, and retain incomplete entries until their gates pass.
+
+Domain-specific point/PCL, mapping/Lanelet2, motion/trajectory and solver
+packages belong to their selected Phase 5.2 runnable slices. Component-interface
+and global-parameter/API composition belongs to Phase 5.3; CUDA/TensorRT remains
+Phase 6. Additional common packages are not implicit Phase 5.1 scope.
+
 ## Commit and publication policy
 
 Use signed-off Conventional Commits and validate each task in proportion to its

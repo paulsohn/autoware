@@ -1,0 +1,23 @@
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "autoware_kalman_filter",
+    srcs = [
+        "src/kalman_filter.cpp",
+        "src/time_delay_kalman_filter.cpp",
+    ],
+    hdrs = glob(["include/**/*.hpp"]),
+    strip_include_prefix = "include",
+    deps = ["@rosdistro//cc:eigen"],
+)
+
+cc_test(
+    name = "test_autoware_kalman_filter",
+    srcs = glob(["test/**/*.cpp"]),
+    deps = [
+        ":autoware_kalman_filter",
+        "@googletest//:gtest",
+    ],
+)
