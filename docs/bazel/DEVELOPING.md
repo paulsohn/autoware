@@ -392,6 +392,15 @@ docker run --rm \
 
 Add `--config=fastdds` to the Bazel command for the compatibility gate.
 
+## Dependency patches
+
+Keep dependency patches under `bazel/patches/` and apply them through a pinned
+module override. Before the diff in each patch file, document the affected
+module/version and target, observed failure, why the change fixes it, its scope,
+verification commands/results or their journal reference, and upstream status
+or tracking reference. Update this preface when the patch or its validation
+changes. Verify that Bazel can still apply the documented patch.
+
 ## Validation and commits
 
 Validate in proportion to the change:
@@ -399,12 +408,19 @@ Validate in proportion to the change:
 - BUILD or module change: build every affected target surface;
 - interface definition or declaration change: build generated targets and test
   affected consumers;
-- library change: build and run focused tests;
+- library change: build and run the affected module's complete test suite;
 - executable or communication change: run a behavior check;
 - container change: build the image and run a representative target with the
   source mounted read-only;
 - documentation-only change: run targeted documentation checks and state that
   no runtime validation was performed.
+
+Use Cyclone DDS routinely. Run the complete changed module suite and relevant
+behavior checks; do not repeat the entire communication matrix for every
+commit or phase. Reserve full system matrices for communication-layer changes
+or explicitly scoped milestones, and run Fast DDS only with approval. Reuse
+passing results when code and configuration are unchanged. Document the actual
+scope; an interrupted sweep is not a passing sweep.
 
 Run only targeted format and static checks for files changed by the task. Do
 not run pre-commit for this experiment.

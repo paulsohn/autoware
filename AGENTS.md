@@ -32,8 +32,14 @@ experiments, and milestones belong in PLAN.md and JOURNAL.md.
 
 - Work directly on branch `bazel` and push validated commits to remote
   `paulsohn`.
+- Commit each validated module/package boundary separately, including its
+  relevant journal and documentation updates. A phase may contain several
+  commits; do not accumulate independent integrations into one phase commit.
 - Use signed-off Conventional Commits. Keep source compatibility fixes in
   separate `fix(src/<repository>): ...` commits from Bazel build definitions.
+- Preface every Bazel dependency patch file with its affected module/version,
+  observed failure, rationale and scope, verification, and upstream status or
+  reference before the diff. Keep verification claims current.
 - Introduce only what the current experiment requires. Investigate a dependency
   or patch when a current target exposes the need; do not pre-apply anticipated
   fixes.
@@ -46,6 +52,14 @@ experiments, and milestones belong in PLAN.md and JOURNAL.md.
   Keep working through in-scope failures. If an external prerequisite prevents
   completion, report the task as incomplete with the evidence and required
   next action; do not narrow the acceptance scope to claim success.
+- Keep validation proportional to the affected module and behavior. Routine
+  work builds affected targets and runs the changed module's complete suite
+  with Cyclone DDS plus relevant behavior checks. Full system communication
+  matrices are for communication-layer changes or explicitly scoped milestones,
+  not automatic requirements for every commit or phase. Select the required
+  middleware configurations in advance and record exactly what passed.
+  Reuse passing results for unchanged code/configuration; documentation-only
+  updates do not require runtime reruns. Preserve the complete module gate.
 - Treat versions, flags, and patches as hypotheses until a command in this
   branch validates them. Pin accepted inputs in git and record why in PLAN.md.
 - Develop and validate Lyrical compatibility independently. When a current

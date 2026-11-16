@@ -2718,23 +2718,46 @@ its old payload dependency caused redundant execution-configuration builds,
 which were stopped before test execution. The corrected launcher passes.
 
 
-### Phase 4 Tier 2 milestone — Fast DDS (in progress)
+### Phase 4 Tier 2 milestone — Fast DDS (complete)
 
-Purpose: complete Phase 4's secondary middleware compatibility gate after its
-Cyclone DDS module and product checks pass. The user explicitly approved this
-Fast DDS run on 2026-11-16. Keep the same package suites, complete matrices,
-loaded 2.4.1 kernel module and built heap hook; use --config=fastdds instead of
-changing test sources or narrowing assertions. Run heavy builds and tests
-sequentially with the ignored host resource limits. No pre-commit is used.
+Purpose and prerequisites: complete Phase 4's secondary middleware gate after
+the Cyclone module/product checks pass. The user approved this milestone on
+2026-11-16. Use the same pinned Lyrical workspace, loaded 2.4.1 kernel module,
+built heap hook and complete suites with --config=fastdds. Keep the ignored
+host limits and sequential tests; no pre-commit or test filters are used.
 
-Acceptance: the complete 39-target package regression, enabled-wrapper C++
-suite, production bridge/CLI tests, all seven functional launches, all nine
-service arrangements and both complete communication matrices must pass.
-Five existing unsupported-executor library skips retain their original scope;
-no missing dependency or omitted configuration is acceptable. Completion is
-pending the actual results below.
+Two failures required corrections before this gate could pass:
 
-Exact commands (same clean_bazel function as above):
+- Native Python shutdown: the CLI passed all 95 assertions, then aborted in
+  Fast DDS's DomainParticipantQos destructor. RCR rclpy embedded ROS/DDS code
+  without dynamic_deps while rosbag loaded shared copies. A pinned
+  rclpy 10.0.11-1.rcr.0 BUILD patch adds the existing DEPENDENCIES shared targets.
+  ELF inspection then shows ROS/DDS DT_NEEDED entries and no embedded DDS
+  destructor. The complete CLI suite exits normally. The documented patch
+  preface and UPSTREAM_RCR.md include the published overlay identity and
+  reproducer; local correction is a2dcb386.
+- Bridge handoff: one of nine service arrangements failed after a replacement
+  manager encountered EADDRINUSE. The kernel had cleared the old manager's
+  role while its abstract socket remained held through DDS teardown. Align
+  the four-file source correction with draft AWF PR #1519 at
+  be1c2b1dae9a2d5105026871f874ddb84d2305aa: release the listener before teardown
+  and bound bind retry to 50 × 100 ms. Preserve other errors and the zero-retry
+  duplicate-bind test; its added held-address retry case passes in 200 ms.
+  All nine original service arrangements and their assertions are unchanged.
+  UPSTREAM_AWF.md associates issue #1501 and the draft PR, distinguishing it
+  from the already-present eventfd wakeup in PR #1507. Local fix is 26f1d0ae.
+
+The complete library and product behavior suites pass after these changes.
+Cyclone passes all 39 package regression targets, all 37 enabled-wrapper cases,
+and all ten bridge/CLI, functional and service targets. The full Cyclone
+matrices passed earlier in Phase 4; the final Fast DDS sweep covers every
+configuration after the corrections. An additional final-code Cyclone repeat
+was stopped after 37/128 configurations (111 cases, no failures/skips) when
+the user requested more proportionate validation. That partial repeat is not
+counted as a completed sweep. No middleware result is inferred from upstream
+PR testing claims.
+
+Exact final Fast DDS commands (same clean_bazel function as above):
 
 ```bash
 clean_bazel test --config=fastdds --config=no-agnocast \
@@ -2762,66 +2785,28 @@ clean_bazel test --config=fastdds --strategy=TestRunner=local \
   //bazel/agnocast:matrix_1to1 //bazel/agnocast:matrix_2to2
 ```
 
+Final result: all 39 Fast DDS regression targets, the enabled-wrapper target
+(37 cases), and all 12 product-runtime targets pass. The library has 673 cases,
+including the new regression; five existing unsupported-executor skips remain
+and all 668 supported cases pass. No dependency-related skips or omitted groups
+were introduced. Product results have no skips: 128 one-to-one configurations
+(384 cases), 24 two-to-two configurations, nine service arrangements (45 cases),
+seven functional launches (38 cases), production bridge loading/activation
+(11 cases) and actual CLI discovery/echo/recording (one roundtrip checking
+embedded schema, distro metadata and deserialized payload). Both wrapper
+runtime selections and its complete 66-case Python suite pass.
 
-Fast DDS shutdown diagnosis: the initial regression passes 38 targets, while
-the CLI's 95 assertions pass and its interpreter then aborts with a glibc heap
-corruption error. GDB locates the exit-time destructor in Fast DDS code embedded
-in rclpy/_rclpy_pybind11.so. The RCR rclpy overlay omits dynamic_deps on that
-extension, statically copying ROS/DDS code while rosbag loads shared copies.
-ELF inspection confirms the extension exports the DDS destructor and lacks
-ROS/DDS DT_NEEDED entries. Add only dynamic_deps = DEPENDENCIES.keys() via a
-pinned rclpy 10.0.11-1.rcr.0 single_version_override BUILD patch. The complete
-CLI suite then passes all 95 cases and exits normally with Fast DDS; the
-extension now links the shared ROS/DDS libraries and has no DDS destructor
-copy. UPSTREAM_RCR.md records the published overlay checksum, current release
-check and reproducer. This is a Bazel dependency-boundary correction, not an
-Agnocast source workaround.
-
-The same patch also passes the complete directly affected Cyclone Python suites:
-`clean_bazel test --config=no-agnocast --nocache_test_results
---test_output=errors @ros2agnocast//:tests
-@ros2agnocast_discovery_agent//:tests @autoware_agnocast_wrapper//:launch_tests`
-(95, 147 and 66 cases, no skips). Patch files carry rationale and validation
-before their diff; the module override also verifies Bazel's patch application.
-The complete Fast DDS milestone is rerun after this correction; its status
-remains pending until every gate passes.
-
-
-Bridge-handoff diagnosis: after the RCR fix, all 39 Fast DDS regression targets
-and all 37 enabled-wrapper cases pass. The product service suite then exposes
-an EADDRINUSE manager-start failure in one of its nine arrangements. The
-previous manager has already relinquished its kernel role while retaining the
-abstract socket through slow DDS shutdown. Stop the long matrix at that
-failure and inspect the actual lifecycle code and AWF issue #1501/PR #1519.
-The matching four-file draft PR provides early listener release plus bounded
-bind retry and a regression unit case. Apply that scope in place, keep the
-service's original nine arrangements and all assertions, and rerun complete
-library and product gates. Main still lacks this fix on the verification date;
-UPSTREAM_AWF.md records the inspected blobs and draft head. This task remains
-incomplete while the full-suite reruns are pending.
-
-
-The handoff correction passes all 20 Fast DDS library targets: 673 cases
-including the new retry case (200 ms), with the same five source-documented
-unsupported-executor skips and no failures. Product behavior is checked with
-the Phase 4.4 runtime command above, first selecting the ten bridge/CLI,
-functional and service targets before the long matrix targets. The full
-nine-arrangement service source and its 45 assertions/cases are unchanged.
-No additional scenario timeout, source-test filter or cleanup workaround is
-introduced.
-
-
-With the handoff source correction, the Fast DDS service suite passes all nine
-arrangements and 45 cases without EADDRINUSE or weakened assertions. The
-production bridge and real CLI roundtrip also pass. The remaining functional
-launches, Cyclone regression and full Fast DDS matrices are still required
-before marking Phase 4 complete.
-
-
-After both corrections, the complete 39-target Cyclone regression and all 37
-enabled-wrapper cases pass. Fast DDS has passed all 20 library targets and all
-ten product behavior targets, including all seven functional launches, the
-production bridge, real CLI recording and all nine service arrangements. The
-library now has 673 cases with five unchanged unsupported-executor skips.
-The source correction is kept separate from Bazel declarations. Cyclone
-product regression and full Fast DDS matrices remain open phase gates.
+The complete post-fix Cyclone regression uses the same three commands with
+--config=fastdds omitted and the two long matrix labels omitted from the last
+command; it passes 39 + 1 + 10 targets. The complete module suites remain
+mandatory, while broad system-matrix repeats are selected by changed behavior
+and approved milestone scope rather than automatically per phase. Reuse valid
+results for unchanged code/configuration and document the actual boundary.
+Targeted format/syntax checks, patch application and git diff --check pass.
+This documentation-only closure performs no additional runtime validation;
+it records the completed commands above. No pre-commit was run. Kernel compilation/KUnit,
+CUDA samples, other distributions, device/GPU behavior and performance remain
+outside this user-space milestone. Phase 4's primary and Tier 2 gates are
+complete. Phase 3 still has its separate read-only utility-image gate open;
+close that recorded gap before further core expansion in Phase 5.1. Future
+Fast DDS gates still require fresh approval.

@@ -69,11 +69,22 @@ For every slice:
   Routine tasks validate Cyclone DDS only. Reserve Fast DDS checks for major
   milestones and always obtain user approval before running any Fast DDS
   build, test, or behavior check.
+- Routine validation builds affected targets, runs the changed module's full
+  suite with Cyclone DDS and checks relevant behavior. Full system matrices
+  are selected for communication-layer changes or scoped milestones, not
+  automatically for each phase. Fast DDS remains explicitly approved Tier 2
+  validation. Reuse evidence for unchanged code/configuration and distinguish
+  complete sweeps from partial runs in the journal.
 - The fixed Cyclone DDS smoke graph loads 352 packages and configures 70,383
   targets. Fast DDS remains available through `--config=fastdds`; its smoke
   graph loads 371 packages and configures 76,915 targets.
 - The loopback smoke behavior needs no custom Cyclone DDS XML or host network
   tuning. Add either only when a later network topology demonstrates the need.
+- Pin rclpy 10.0.11-1.rcr.0 with the small shared-dependency BUILD correction
+  under `bazel/patches/`. Its extension must use the existing ROS/DDS shared
+  targets, so importing rclpy alongside rosbag does not duplicate DDS globals
+  and corrupt interpreter shutdown. The CLI suite verifies normal exit;
+  UPSTREAM_RCR.md records the published overlay and reproducible evidence.
 - Committed Bazel inputs include the module lockfile. Registry ordering and the
   read-only RCR CI cache are repository configuration.
 - ROS packages should come from the RCR until a local source package is needed
@@ -385,7 +396,7 @@ smallest publisher/subscriber slice needed to establish node and communication
 test infrastructure. Agnocast becomes a dedicated core subphase when a current
 target requires its wrapper or backend.
 
-## Phase 4: Minimal core and Agnocast communication lanes (Cyclone DDS complete)
+## Phase 4: Minimal core and Agnocast communication lanes (complete)
 
 Purpose: establish one runnable core node and a reusable communication behavior
 gate without allowing an Agnocast-free package expansion to delay evaluation of
@@ -550,7 +561,7 @@ are packaged with their ament resources and explicit runtime dependencies.
 The wrapper message-filter Subscriber preserves its QoS profile on Lyrical.
 All 37 C++ wrapper cases pass with each runtime selection; all 66 Python launch
 cases pass. The complete 20-target library suite passes its supported cases
-(672 total, five upstream unsupported-executor skips). No dependency-related
+(673 total, five upstream unsupported-executor skips). No dependency-related
 skip or test-group omission is accepted.
 
 Phase 4.4 closes the Cyclone DDS runtime gate: seven functional launches/38
@@ -559,8 +570,13 @@ and nine service arrangements/45 cases pass without skips. The real CLI test
 checks discovery, echo, recording, embedded schema and deserialized payload;
 the complete CLI suite passes 95 cases. CUDA samples and kernel KUnit/build
 remain separate platform tasks. These results validate user space against the
-prepared 2.4.1 kernel module; they do not validate a new kernel build. No new
-Fast DDS run was performed; any Tier 2 milestone run requires approval.
+prepared 2.4.1 kernel module; they do not validate a new kernel build.
+The approved Fast DDS milestone also passes all 39 regression targets, both
+wrapper backends and the complete 12-target runtime gate, including both full
+matrices. It exposed the rclpy shared-dependency omission and a bridge-manager
+handoff race; both corrections have independent commits and reproducible
+upstream notes. The source handoff fix aligns with draft AWF PR #1519.
+Future Fast DDS checks require fresh approval.
 
 Durable runtime decisions from these gates:
 
@@ -579,7 +595,7 @@ Durable runtime decisions from these gates:
 - Declare both Python interface providers and generated ament IDL/index data
   for recording consumers. C++ plugin closure alone supplies neither.
 
-### Phase 4 substeps: completed Cyclone DDS gates
+### Phase 4 substeps: completed gates
 
 Keep the existing Phase 0–4 numbers. Refer to incoming tasks by these stable
 substep identifiers in plans, journals, and commits:

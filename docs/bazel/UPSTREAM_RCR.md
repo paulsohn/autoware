@@ -17,6 +17,8 @@ For each finding, record:
 
 ### rclpy statically embeds ROS/DDS globals in its Python extension
 
+Local correction: `a2dcb386`.
+
 - [ ] Associate the shared-dependency correction with an upstream RCR change.
 
 Verified 2026-11-16 on Ubuntu 24.04 x86_64, Bazel 9.3.2, LLVM/libc++ 21.1.8,

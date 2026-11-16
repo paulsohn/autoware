@@ -371,6 +371,8 @@ change. Older distributions and CMake/colcon execution were not checked.
 
 ### Bridge-manager handoff retains the old abstract socket during DDS teardown
 
+Local correction: `26f1d0ae`.
+
 - [x] Associate the observed failure with [issue #1501](https://github.com/autowarefoundation/agnocast/issues/1501).
 - [x] Align the source correction with [draft PR #1519](https://github.com/autowarefoundation/agnocast/pull/1519).
 
@@ -387,12 +389,14 @@ the listener after the main event loop stops and before worker/DDS teardown;
 retry only EADDRINUSE with a bounded 50 × 100 ms default budget; retain other
 error paths and a zero-retry duplicate-bind test. Its new unit case holds and
 releases an address to exercise the retry. No scenario is skipped or given
-weaker assertions. The full Fast DDS library suite passes 673 cases (five existing unsupported
-skips), including the new retry test; the previously failing service target
-passes all nine arrangements and 45 cases with the source unchanged. Product
-bridge and CLI behavior also pass. The complete Cyclone 39-target regression and enabled-wrapper suite also pass.
-Product Cyclone behavior and complete matrix gates remain pending; final local
-results belong in JOURNAL.md.
+weaker assertions. The full Fast DDS library suite reports 673 cases: 668 pass
+and five retain existing unsupported-behavior skips. The new retry test passes;
+the previously failing service target passes all nine arrangements and 45
+cases with its source unchanged. Product bridge and CLI behavior also pass.
+The complete Cyclone 39-target regression and enabled-wrapper suite pass.
+All ten Cyclone product behavior targets and both full Fast DDS matrices also
+pass against the correction. JOURNAL.md records exact commands and scope.
+The upstream PR remains a draft; local test evidence does not imply merger.
 
 Inspected main still has the original single bind and late close:
 [UDS helper](https://github.com/autowarefoundation/agnocast/blob/main/src/agnocastlib/include/agnocast/bridge/agnocast_bridge_uds.hpp)
