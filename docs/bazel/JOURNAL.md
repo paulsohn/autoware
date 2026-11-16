@@ -2962,7 +2962,7 @@ CMakeLists.txt, package.xml, the sole public header and cached RCLCPP
 publisher/service declarations. The package has no existing tests.
 
 Minimum integration pattern and rationale: Export a header-only cc_library. A
-Bazel-owned test under bazel/ consumes both macros through real RCLCPP
+Bazel-owned test under test/ consumes both macros through real RCLCPP
 publisher/service construction, checking topic depth and service naming. This is
 a Lyrical consumer contract check, not a cross-distribution or delivery-matrix
 claim.
@@ -3153,3 +3153,22 @@ and reaping only on timeout. The Python subprocess harness ran both pairs in
 this order; both received five messages and exited successfully. All five
 interface tests pass with no failures. Targeted buildifier and whitespace
 checks pass. No Fast DDS, container sweep or pre-commit was run.
+
+## 2026-11-16: autoware_qos_utils test layout
+
+Purpose: Keep the personal QoS consumer test alongside conventional package
+tests. Move qos_compatibility_test.cpp from the package's Bazel-specific test
+directory into test/, update its BUILD srcs and remove the empty directory.
+The source, target name, dependencies and contract are unchanged.
+
+Verification:
+
+```bash
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --nocache_test_results --test_output=errors --local_test_jobs=1 \
+  @autoware_qos_utils//...
+```
+
+The complete module builds and its one consumer case passes from test/, with
+no failures/errors/skips in GTest XML. Targeted buildifier and whitespace checks
+pass. No Fast DDS, pre-commit or communication matrix was run.
