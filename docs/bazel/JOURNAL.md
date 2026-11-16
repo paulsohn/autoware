@@ -4519,3 +4519,42 @@ pre-commit and a full communication matrix were not run.
 This refactor gate is complete. Resume Phase 5.2.4 height fitting separately,
 porting its prepared interface additions into the central declaration rather
 than restoring consumer-owned package lists.
+
+## 2026-11-17: Wrapper launcher ROS executor selection
+
+Purpose: preserve the first height-fitting consumer's existing multithreaded
+ROS executor contract. Inspected its CMake registration and synchronous partial-
+map client wait in a separate callback group, plus the wrapper's existing Bazel
+launcher/template. Scope: shared launcher build API; no wrapper production C++
+source changes. Complete gate: 37 C++ cases in each backend, 66 launch-action
+cases, and real height-fitting whole/partial service behavior in both backends.
+
+Pattern: add an optional ros2_executor argument to autoware_agnocast_node and
+pass it to the template-expansion rule. Constrain it to SingleThreadedExecutor
+or MultiThreadedExecutor. Keep the former as default, so existing callers retain
+the same generated executor type. Agnocast retains its callback-isolated
+executor. A consumer selects the executor its callback progress requires;
+height fitting is the first opt-in caller. No consumer depends on root labels.
+
+Verification (sequential, unsourced caller environment):
+
+```bash
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --jobs=1 --local_resources=cpu=1 --config=no-agnocast \
+  --nocache_test_results --test_output=errors --local_test_jobs=1 \
+  @autoware_agnocast_wrapper//...
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --jobs=1 --local_resources=cpu=1 --nocache_test_results \
+  --test_output=errors --local_test_jobs=1 --strategy=TestRunner=local \
+  --run_under=//bazel/agnocast:with_heaphook @autoware_agnocast_wrapper//:unit_tests
+```
+
+Result: 37 fallback and 37 enabled C++ cases pass without failures/errors/disabled/
+skips in GTest XML. All 66 Python cases pass according to the pytest log (Bazel's
+XML wraps that process as one case). Invocations 70.541/11.371 seconds; native
+cases 0.4/2.3 seconds and Python 2.3 seconds. The four real height-fitting service
+probes also pass, including the partial ROS path that needs callbacks to run
+while the service waits; their exact commands and results are in the height-
+fitting entry. This validates the new opt-in executor with its actual consumer,
+without adding a synthetic demonstration node. Targeted buildifier and whitespace
+checks pass. No Fast DDS, pre-commit or broad communication matrix was run.

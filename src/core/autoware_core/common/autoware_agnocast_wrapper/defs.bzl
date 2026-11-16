@@ -20,7 +20,7 @@ def _main_impl(ctx):
             "@_AWR_agnocast_executor_include@": "agnocast/node/agnocast_only_callback_isolated_executor.hpp",
             "@_AWR_agnocast_executor_type@": "agnocast::AgnocastOnlyCallbackIsolatedExecutor",
             "@_AWR_agnocast_add_node_expr@": "get_agnocast_node()",
-            "@_AWR_ros2_executor_type@": "rclcpp::executors::SingleThreadedExecutor",
+            "@_AWR_ros2_executor_type@": "rclcpp::executors::" + ctx.attr.ros2_executor,
         },
     )
     return [DefaultInfo(files = depset([output]))]
@@ -31,6 +31,10 @@ _node_main = rule(
         "component": attr.label(mandatory = True, providers = [CcSharedLibraryInfo]),
         "plugin": attr.string(mandatory = True),
         "node_name": attr.string(mandatory = True),
+        "ros2_executor": attr.string(
+            default = "SingleThreadedExecutor",
+            values = ["SingleThreadedExecutor", "MultiThreadedExecutor"],
+        ),
         "_template": attr.label(
             default = Label(":templates/node_main_switchable.cpp.in"),
             allow_single_file = True,
@@ -38,8 +42,8 @@ _node_main = rule(
     },
 )
 
-def autoware_agnocast_node(name, component, plugin, package_name, data = []):
-    """Use the current callback-isolated/SingleThreaded executor pair.
+def autoware_agnocast_node(name, component, plugin, package_name, data = [], ros2_executor = "SingleThreadedExecutor"):
+    """Use the callback-isolated executor with the selected ROS executor fallback.
 
     Emits <name>_components and <name>_plugin for the caller's ament index.
     """
@@ -57,6 +61,7 @@ def autoware_agnocast_node(name, component, plugin, package_name, data = []):
     _node_main(
         name = name + "_main",
         node_name = name,
+        ros2_executor = ros2_executor,
         component = component,
         plugin = plugin,
     )

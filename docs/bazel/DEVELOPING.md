@@ -404,7 +404,10 @@ so context cleanup also runs after failed assertions.
 For a wrapper-derived node using AgnocastOnlyCallbackIsolatedExecutor and a
 SingleThreadedExecutor fallback, load `autoware_agnocast_node` from
 `@autoware_agnocast_wrapper//:defs.bzl`. Supply the shared component, plugin class,
-package name and executable name. Add its `<name>_components` and `<name>_plugin`
+package name and executable name. The ROS fallback defaults to SingleThreadedExecutor;
+set `ros2_executor = "MultiThreadedExecutor"` when the component needs callbacks
+in separate groups to progress during a blocking service operation. Match the
+component's existing executor contract. Add its `<name>_components` and `<name>_plugin`
 records to the package's ament_index; register the executable under lib/<package>
 with register_ament_files. Other executor pairs need explicit support before use.
 
