@@ -1,0 +1,89 @@
+load("@rosdistro//ament:defs.bzl", "ament_index")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "autoware_lanelet2_utils",
+    srcs = glob(["src/*.cpp"]),
+    hdrs = glob(["include/**/*.hpp"]),
+    strip_include_prefix = "include",
+    deps = [
+        "@autoware_lanelet2_extension//:autoware_lanelet2_extension_lib_library",
+        "@autoware_map_msgs//:cc",
+        "@autoware_planning_msgs//:cc",
+        "@autoware_utils_geometry",
+        "@autoware_utils_math",
+        "@geometry_msgs//:cc",
+        "@lanelet2_core//:lanelet2_core_library",
+        "@lanelet2_io//:lanelet2_io_library",
+        "@lanelet2_routing//:lanelet2_routing_library",
+        "@lanelet2_traffic_rules//:lanelet2_traffic_rules_library",
+        "@rclcpp//:rclcpp_library",
+        "@rosdistro//cc:boost.serialization",
+        "@rosdistro//cc:eigen",
+        "@rosdistro//cc:range-v3",
+        "@tf2//:tf2_library",
+        "@tf2_geometry_msgs//:tf2_geometry_msgs_library",
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = [
+        "@autoware_lanelet2_extension//:autoware_lanelet2_extension_lib",
+        "@autoware_internal_planning_msgs//:cc_shared",
+        "@autoware_map_msgs//:cc_shared",
+        "@autoware_perception_msgs//:cc_shared",
+        "@autoware_planning_msgs//:cc_shared",
+        "@geometry_msgs//:cc_shared",
+        "@rclcpp//:rclcpp",
+        "@tf2//:tf2",
+        "@tf2_geometry_msgs//:tf2_geometry_msgs",
+    ],
+)
+
+ament_index(
+    data = glob([
+        "sample_map/**",
+        "test_data/**",
+    ]),
+    package_xml = "package.xml",
+)
+
+[
+    cc_test(
+        name = "test_" + name,
+        srcs = ["test/" + name + ".cpp"] + glob(["test/*.hpp"]),
+        data = [":ament_index"],
+        dynamic_deps = [
+            ":runtime_dynamic_deps",
+            "@ament_index_cpp//:ament_index_cpp",
+            "@autoware_test_utils//:runtime_dynamic_deps",
+        ],
+        deps = [
+            ":autoware_lanelet2_utils",
+            "@ament_index_cpp//:ament_index_cpp_library",
+            "@autoware_test_utils",
+            "@rosdistro//cc:yaml-cpp_library",
+            "@googletest//:gtest_main" if name in [
+                "conversion",
+                "nn_search",
+            ] else "@googletest//:gtest",
+        ],
+    )
+    for name in [
+        "kind",
+        "topology",
+        "stop_line",
+        "intersection",
+        "conversion",
+        "geometry",
+        "hatched_road_marking",
+        "lane_sequence",
+        "nn_search",
+        "map_handler",
+        "route_manager",
+    ]
+]

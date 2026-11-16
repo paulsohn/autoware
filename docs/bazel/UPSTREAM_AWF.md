@@ -62,6 +62,8 @@ describes that review, not proof that no other upstream work exists.
 
 ### Nearest-lanelet tests assume unspecified tie ordering
 
+Local source test fix: `ffc328da`, separate from the Bazel definitions.
+
 - [ ] Associate with a matching upstream fix. Reviewed 2026-11-16: repository
   PR searches for `lanelet2_utils nearest distance`, `nn_search Lyrical` and
   `find_nearest tie` found no matching test fix. Actual

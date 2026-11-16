@@ -4211,8 +4211,8 @@ three sources, public/node headers, CMake, parameters/launch and every existing
 test. Gate: eleven YAML/selection C++ cases, three Lanelet metadata C++ cases,
 all four original ROS launch suites (live assertion and clean-exit assertion),
 and standalone publication with both RCLCPP and enabled Agnocast. Host device
-and module were verified outside the sandbox: /dev/agnocast exists, version2.4.1
-matches running kernel7.0.0-43-generic. No Fast DDS is selected.
+and module were verified outside the sandbox: /dev/agnocast exists, version 2.4.1
+matches running kernel 7.0.0-43-generic. No Fast DDS is selected.
 
 Pattern: keep pure parser sources separate from the wrapper-derived node;
 public core header target and core shared closure let parser tests run without
@@ -4246,9 +4246,9 @@ done
 Result: all fourteen C++ cases pass without failures/errors/disabled/skips,
 confirmed in current-target GTest XML. All four original launch suites pass
 (two cases each: live output and clean exit), plus both standalone probes.
-Module invocation: 18.419 seconds; launch invocation25.209 seconds, each suite
-2.8–2.9 seconds. Standalone RCLCPP0.7 seconds (2.043-second invocation) and
-Agnocast1.2 seconds (3.540-second invocation). Enabled mode uses the built heap
+Module invocation: 18.419 seconds; launch invocation 25.209 seconds, each suite
+2.8–2.9 seconds. Standalone RCLCPP 0.7 seconds (2.043-second invocation) and
+Agnocast 1.2 seconds (3.540-second invocation). Enabled mode uses the built heap
 hook and root interface bridge with an ordinary rclpy transient-local peer;
 assert projector type, datum, complete origin and clean SIGINT exit.
 
@@ -4263,7 +4263,7 @@ pre-commit, container or broad matrix rerun was performed. Next: the Lanelet2
 utility library needed by the actual map-loader source.
 
 
-## 2026-11-16: Phase 5.2.4 — autoware_lanelet2_utils library (in progress)
+## 2026-11-16: Phase 5.2.4 — autoware_lanelet2_utils library
 
 Purpose: provide the actual map-loader dependency for map parsing, geometry and
 routing. RCR metadata has no published module. Inspected all eleven library
@@ -4281,24 +4281,55 @@ neighbor search need gtest_main, other files retain their mains. Local test
 helpers include the prepared mock parser; carry its shared provider and yaml-cpp
 explicitly. Preserve all existing cases. Conversion's defensive GTEST_SKIP
 branches follow assertions and must never trigger in the passing gate.
-Status: incomplete. The first build exposes a real dependency gap: published
-extension0.7.2 lacks traffic_rules/autoware_traffic_rules.hpp, which map_handler
-includes. RCR metadata confirms0.7.2-3.rcr.2 is its newest provider. Prepare the
-current local extension and run its full gate before resuming this full suite.
-Cyclone DDS only, sequential resource-limited builds.
+The first build exposes a real dependency gap: published extension 0.7.2 lacks
+traffic_rules/autoware_traffic_rules.hpp, which map_handler includes. RCR
+metadata confirms 0.7.2-3.rcr.2 is its newest provider. The local extension task
+below prepares and validates the current provider before this full gate resumes.
+
+Verification:
+
+```bash
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --nocache_test_results --test_output=errors --local_test_jobs=1 \
+  @autoware_lanelet2_utils//...
+```
+
+Result: all 173 existing cases across eleven suites pass with no failures,
+errors, disabled or skips, confirmed in XML of exactly the declared test labels.
+Conversion's defensive skip branches never execute. Final invocation 16.165
+seconds; nearest-search 0.5 seconds and other suites 0.1–0.7 seconds. No new
+runtime node or plotting dependency is needed by this compiled-API task.
+
+The first full suite after preparing the extension exposes four nearest-search
+ID assertion failures. Temporary diagnostic logging shows returned and expected
+lanelets have identical zero distance at overlapping/boundary polygons:
+001/P1 2267->2262, 001/P2 2262->2281, 002/P0 2270->2305, 002/P2 2268->2282.
+The production comparison has no ID tie-break; different nth_element ordering
+is allowed. Correct all nine nearest-search fixture assertions to preserve
+count 1, reported distance and actual returned-polygon distance against the known
+reference geometry, including positive-distance cases. Do not change production
+selection semantics. The temporary diagnostics are removed. AWF main still has
+these ID assumptions; PR #839 introduces the feature, not this fix. The dated
+source blobs, search scope and evidence are in UPSTREAM_AWF.md.
+
+Targeted buildifier, changed-line clang-format and whitespace checks pass. Source
+test correction is committed separately from build definitions. No Fast DDS,
+pre-commit, container or full communication matrix was run. The complete utility
+API/test gate is closed; map loaders are next. Plotting examples and Python
+maintenance tools remain separate consumers outside this compiled-library task.
 
 
 ## 2026-11-16: Phase 5.2.4 — autoware_lanelet2_extension
 
 Purpose: supply current traffic-rule support required by the Lanelet2 utility
 library. Prerequisite evidence is its missing-header compile failure against
-the newest published0.7.2-3.rcr.2 extension. Inspected current1.3.0 snapshot's
-CMake/manifest, all21 library sources, public/private headers and six test files.
-Gate: all19 active existing cases over projector, query, regulatory elements, utilities,
+the newest published 0.7.2-3.rcr.2 extension. Inspected current 1.3.0 snapshot's
+CMake/manifest, all 21 library sources, public/private headers and six test files.
+Gate: all 19 active existing cases over projector, query, regulatory elements, utilities,
 route validation and angle normalization. All tests supply their own main and
 construct fixtures in memory; no dependency skip is declared. Source inventory
-initially counted20 TEST tokens, but copyZ is inside an existing block comment;
-there are19 compiled cases, and that dormant test is not activated by this work.
+initially counted 20 TEST tokens, but copyZ is inside an existing block comment;
+there are 19 compiled cases, and that dormant test is not activated by this work.
 
 Pattern: retain the published library target names so existing consumers keep
 independent labels. Compile current lib sources/headers and link shared ROS,
@@ -4332,10 +4363,10 @@ env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
   //bazel/tests:gnss_poser_rclcpp_test //bazel/tests:gnss_poser_agnocast_test
 ```
 
-Result: all19 active extension cases pass with no failures/errors/disabled/skips,
-confirmed in XML of its six declared targets. Final extension invocation9.013
-seconds. The selected complete consumer suites also pass (geography21 including
-both grid states, projection14, GNSS44 and test helpers21 =100 cases); invocation
+Result: all 19 active extension cases pass with no failures/errors/disabled/skips,
+confirmed in XML of its six declared targets. Final extension invocation 9.013
+seconds. The selected complete consumer suites also pass (geography 21 including
+both grid states, projection 14, GNSS 44 and test helpers 21 = 100 cases); invocation
 74.527 seconds. All four original projection launch suites pass again, as does
 the snapshot executable (27.400-second invocation). Both GNSS and projection
 standalone backends pass (four cases, 19.454-second invocation). This checks the

@@ -873,12 +873,15 @@ RCLCPP/Agnocast publication probes without a production source patch. Its enable
 gate uses the existing MapProjectorInfo bridge plugin and built heap hook.
 The map loader requires the unpublished local Lanelet2 utility library next.
 Its first build exposes a missing current traffic-rule header in the newest
-published extension0.7.2, so select the local1.3.0 extension snapshot. Preserve
-the published target labels and Lanelet1.2.1-8.rcr.2 family. All19 active extension
-cases pass, plus100 cases in its existing complete geography/projection/GNSS/test-
+published extension 0.7.2, so select the local 1.3.0 extension snapshot. Preserve
+the published target labels and Lanelet 1.2.1-8.rcr.2 family. All19 active extension
+cases pass, plus 100 cases in its existing complete geography/projection/GNSS/test-
 helper consumer suites, original projection launches, snapshot behavior and both
-GNSS/projection backends. No extension source patch is needed. Utility gate is
-still open until all eleven suites pass.
+GNSS/projection backends. No extension source patch is needed. The utility's full 173-case gate now passes across all eleven suites. A focused
+test-only fix replaces unspecified nearest-lanelet ID ties with distance/geometry
+assertions; production selection stays unchanged. Plotting examples and Python
+maintenance tools remain separate consumers from this compiled-library boundary.
+Both map loaders are next.
 Keep package commits separate and heavy builds sequential; routine Cyclone DDS
 only. Phase 5.3 system/API composition and Phase 6 GPU integration stay separate.
 

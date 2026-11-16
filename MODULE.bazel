@@ -434,3 +434,9 @@ local_path_override(
     module_name = "autoware_lanelet2_extension",
     path = "src/core/autoware_lanelet2_extension/autoware_lanelet2_extension",
 )
+
+bazel_dep(name = "autoware_lanelet2_utils", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_lanelet2_utils",
+    path = "src/core/autoware_core/common/autoware_lanelet2_utils",
+)
