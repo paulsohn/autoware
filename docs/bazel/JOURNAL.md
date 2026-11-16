@@ -2951,3 +2951,41 @@ paired with its package MODULE/BUILD files; future draft modules are not needed
 by this commit. No ROS runtime, source compatibility fix or additional Eigen
 release was required. Targeted buildifier and whitespace checks pass. No Fast
 DDS, pre-commit, broad communication matrix or container rerun was performed.
+
+## 2026-11-16: Phase 5.1 — autoware_qos_utils
+
+Purpose: Expose the default QoS compatibility macros for map/localization
+consumers.
+
+Prerequisites and inspected inputs: the pinned Phase 3/4 workspace and
+CMakeLists.txt, package.xml, the sole public header and cached RCLCPP
+publisher/service declarations. The package has no existing tests.
+
+Minimum integration pattern and rationale: Export a header-only cc_library. A
+Bazel-owned test under bazel/ consumes both macros through real RCLCPP
+publisher/service construction, checking topic depth and service naming. This is
+a Lyrical consumer contract check, not a cross-distribution or delivery-matrix
+claim.
+
+Select the package-local 0.0.0 module with a root local_path_override. Component
+definitions use only package/external labels, with no root bazel/ dependency.
+Source compatibility patches and dependency upgrades remain hypotheses until
+this target exposes a need.
+
+Verification command:
+
+```bash
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --nocache_test_results --test_output=errors \
+  --local_test_jobs=1 @autoware_qos_utils//...
+```
+
+Result: the header library and consumer executable build; the single consumer
+case passes with Cyclone DDS and no skips. The test constructs a publisher and
+service through both macros, checking the resolved topic depth and service
+name. It checks the Lyrical API contract, not service delivery or older ROS
+distributions. The initial link failed on undefined main: unlike several
+existing suites, this new test has no local main. Depend on gtest_main rather
+than gtest for the runner. The complete corrected module gate passes in
+5.837 seconds. Targeted formatting and whitespace checks pass; no source
+compatibility patch, Fast DDS run or broad matrix is needed.

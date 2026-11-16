@@ -700,7 +700,7 @@ Fast DDS run, full communication matrix, or repeat of the whole development
 image is an automatic requirement here. Reuse unaffected Phase 3/4 evidence.
 
 Validation is now authorized and proceeds one module at a time with Cyclone
-DDS. Completed: autoware_kalman_filter (23 cases). Pending: QoS, signal
+DDS. Completed: Kalman (23 cases) and QoS (one consumer case). Pending: signal
 processing, interpolation and vehicle-info. Commit and push each validated
 module separately, and retain incomplete entries until their gates pass.
 

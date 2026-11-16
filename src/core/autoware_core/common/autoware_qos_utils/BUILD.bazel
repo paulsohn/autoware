@@ -1,0 +1,32 @@
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "autoware_qos_utils",
+    hdrs = glob(["include/**/*.hpp"]),
+    strip_include_prefix = "include",
+    deps = ["@rclcpp//:rclcpp_library"],
+)
+
+collect_transitive_dynamic_deps(
+    name = "test_dynamic_deps",
+    dynamic_deps = [
+        "@rclcpp//:rclcpp",
+        "@std_msgs//:cc_shared",
+        "@std_srvs//:cc_shared",
+    ],
+)
+
+cc_test(
+    name = "test_qos_compatibility",
+    srcs = ["bazel/qos_compatibility_test.cpp"],
+    dynamic_deps = [":test_dynamic_deps"],
+    deps = [
+        ":autoware_qos_utils",
+        "@googletest//:gtest_main",
+        "@std_msgs//:cc",
+        "@std_srvs//:cc",
+    ],
+)

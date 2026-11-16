@@ -280,3 +280,9 @@ local_path_override(
     module_name = "autoware_kalman_filter",
     path = "src/core/autoware_core/common/autoware_kalman_filter",
 )
+
+bazel_dep(name = "autoware_qos_utils", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_qos_utils",
+    path = "src/core/autoware_core/common/autoware_qos_utils",
+)
