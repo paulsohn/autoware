@@ -1,0 +1,112 @@
+load("@rclcpp_components//:defs.bzl", "rclcpp_components_register_node")
+load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+exports_files(glob(["config/*.yaml"]) + ["test/test_standalone.py"])
+
+cc_library(
+    name = "autoware_euclidean_cluster_object_detector",
+    srcs = glob([
+        "src/*.cpp",
+        "lib/*.cpp",
+    ]),
+    hdrs = glob([
+        "src/*.hpp",
+        "lib/*.hpp",
+    ]),
+    includes = ["src"],
+    deps = [
+        "@autoware_perception_msgs//:cc",
+        "@autoware_utils_debug",
+        "@autoware_utils_diagnostics",
+        "@autoware_utils_system",
+        "@geometry_msgs//:cc",
+        "@pcl_conversions//:pcl_conversions_library",
+        "@rclcpp//:rclcpp_library",
+        "@rclcpp_components//:rclcpp_components_library",
+        "@rosdistro//cc:pcl_filters",
+        "@rosdistro//cc:pcl_kdtree",
+        "@rosdistro//cc:pcl_search",
+        "@rosdistro//cc:pcl_segmentation",
+        "@sensor_msgs//:cc",
+        "@std_msgs//:cc",
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = [
+        "@autoware_utils_debug//:runtime_dynamic_deps",
+        "@autoware_perception_msgs//:cc_shared",
+        "@diagnostic_msgs//:cc_shared",
+        "@diagnostic_updater//:diagnostic_updater",
+        "@geometry_msgs//:cc_shared",
+        "@sensor_msgs//:cc_shared",
+        "@pcl_conversions//:pcl_conversions",
+        "@rclcpp_components//:rclcpp_components",
+    ],
+)
+
+cc_shared_library(
+    name = "cluster_components",
+    dynamic_deps = [":runtime_dynamic_deps"],
+    deps = [":autoware_euclidean_cluster_object_detector"],
+)
+
+[
+    rclcpp_components_register_node(
+        name = executable,
+        component = ":cluster_components",
+        node_name = executable,
+        plugin = plugin,
+    )
+    for executable, plugin in [
+        ("euclidean_cluster_node", "autoware::euclidean_cluster::EuclideanClusterNode"),
+        ("voxel_grid_based_euclidean_cluster_node", "autoware::euclidean_cluster::VoxelGridBasedEuclideanClusterNode"),
+    ]
+]
+
+register_ament_files(
+    name = "node_executables",
+    files = [
+        ":euclidean_cluster_node",
+        ":voxel_grid_based_euclidean_cluster_node",
+    ],
+    prefix = "lib/autoware_euclidean_cluster_object_detector",
+    strip_prefix = "*",
+)
+
+ament_index(
+    components = [
+        ":euclidean_cluster_node_record",
+        ":voxel_grid_based_euclidean_cluster_node_record",
+    ],
+    data = glob([
+        "config/*",
+        "launch/*",
+    ]) + [":node_executables"],
+    package_xml = "package.xml",
+)
+
+[
+    cc_test(
+        name = name,
+        srcs = ["test/" + source + ".cpp"],
+        dynamic_deps = [":runtime_dynamic_deps"],
+        deps = [
+            ":autoware_euclidean_cluster_object_detector",
+            "@autoware_point_types",
+            "@googletest//:gtest_main" if integration else "@googletest//:gtest",
+        ],
+    )
+    for name, source, integration in [
+        ("test_voxel_grid_based_euclidean_cluster_fusion", "test_voxel_grid_based_euclidean_cluster", False),
+        ("test_euclidean_cluster", "test_euclidean_cluster", False),
+        ("test_ros_conversions", "test_ros_conversions", False),
+        ("test_nodes", "test_nodes", False),
+        ("test_euclidean_cluster_object_detector_integration", "test_euclidean_cluster_object_detector_integration", True),
+    ]
+]

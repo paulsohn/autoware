@@ -453,3 +453,30 @@ py_test(
         "@sensor_msgs//:py",
     ],
 )
+
+[
+    py_test(
+        name = mode + "_cluster_test",
+        srcs = ["@autoware_euclidean_cluster_object_detector//:test/test_standalone.py"],
+        args = [
+            "$(rootpath @autoware_euclidean_cluster_object_detector//:" + executable + ")",
+            "$(rootpath @autoware_euclidean_cluster_object_detector//:config/" + config + ".param.yaml)",
+        ],
+        data = [
+            "@autoware_euclidean_cluster_object_detector//:ament_index",
+            "@autoware_euclidean_cluster_object_detector//:" + executable,
+            "@autoware_euclidean_cluster_object_detector//:config/" + config + ".param.yaml",
+        ],
+        env = {"LD_LIBRARY_PATH": "lib"},
+        main = "@autoware_euclidean_cluster_object_detector//:test/test_standalone.py",
+        deps = [
+            "@autoware_perception_msgs//:py",
+            "@rclpy",
+            "@sensor_msgs//:py",
+        ],
+    )
+    for mode, executable, config in [
+        ("euclidean", "euclidean_cluster_node", "euclidean_cluster"),
+        ("voxel", "voxel_grid_based_euclidean_cluster_node", "voxel_grid_based_euclidean_cluster"),
+    ]
+]

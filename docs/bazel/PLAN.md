@@ -834,7 +834,8 @@ ROS shutdown fixes an observed process-exit failure. Ground filtering passes
 all 24 existing cases and a standalone obstacle/published-time check after
 portable float-constant and message-filter QoS fixes. Its existing rcpputils
 expected header is available; no extra expected transition is needed. CPU
-clustering/object detection is next.
+clustering/object detection passes all 25 existing cases plus both executable
+centroid/debug-cloud checks without source changes. Object conversion is next.
 
 Source inspection finds no autoware_utils_pcl include/dependency in the selected
 sensing/perception packages. Defer that utility's local adoption until an actual

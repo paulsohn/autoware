@@ -4058,3 +4058,58 @@ source blobs, exact errors and limitations. No expected-header patch is needed.
 Targeted buildifier, changed-line clang-format, Python syntax and whitespace
 checks pass. No Fast DDS, pre-commit, container or broad matrix rerun was run.
 Next: CPU Euclidean clustering/object detection.
+
+
+## 2026-11-16: Phase 5.2.3 — autoware_euclidean_cluster_object_detector
+
+Purpose: build CPU Euclidean clustering and both ordinary RCLCPP node variants.
+Inspected CMake, all four source files, conversion/algorithm/node headers,
+config/launch and five test files. Complete gate: nine voxel-clustering,
+four standard-clustering, four conversion, five node and three integration
+cases (25 total), plus both executable behavior checks. Tests include size
+limits, empty/degenerate inputs, centroids and existing parameter-update
+behavior. No test disables/skips are declared.
+
+Pattern: one package-owned compiled library/shared component with two standard
+registrations/executables and an ament resource index. Use existing PCL filter,
+segmentation/search/kdtree targets, conversion provider, debug/diagnostics/system
+utilities and perception/geometry/sensor messages. Each original test source
+gets a separate target preserving its main; only integration needs gtest_main.
+Point types are a real test dependency, not a production include. No new host
+package, CUDA or middleware conversion is required.
+
+Verification commands (sequential):
+
+```bash
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --nocache_test_results --test_output=errors --local_test_jobs=1 \
+  @autoware_euclidean_cluster_object_detector//...
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --nocache_test_results --test_output=errors --local_test_jobs=1 \
+  --strategy=TestRunner=local //bazel/tests:euclidean_cluster_test
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --nocache_test_results --test_output=errors --local_test_jobs=1 \
+  --strategy=TestRunner=local //bazel/tests:voxel_cluster_test
+```
+
+Result: all 25 existing cases pass, confirmed in GTest XML with no failures,
+errors, disabled or skipped cases. Module invocation: 46.844 seconds. Both
+standalone cases pass in 1.7 seconds (14.024-second standard and 4.607-second
+voxel invocations). No source compatibility patch or new dependency pin is
+needed. Reuse the prepared PCL closure; do not add autoware_utils_pcl merely
+because the node uses PCL directly.
+
+Standalone pattern: launch each real component executable with its own shipped
+YAML, without overriding the clustering defaults. Publish 24 XYZ points in two
+well-separated groups of twelve, meeting each YAML's minimum of ten. Check two
+detected objects, order-independent original 3D centroids, classification
+probabilities, frame/stamp, all 24 points in the debug cloud and clean SIGINT
+exit. The voxel implementation clusters flattened centroids but reports original
+point centroids; this test preserves that behavior, not a new algorithm policy.
+Polling requires both normal and debug outputs, so discovery cannot silently
+omit the optional subscribed debug path. Root Python tests use LD_LIBRARY_PATH=lib
+and no Agnocast preload for these ordinary RCLCPP components.
+
+Targeted buildifier, Python syntax and whitespace checks pass. No Fast DDS,
+pre-commit, container or full matrix rerun was performed. Object conversion is
+next; its existing six cases and an executable round-trip will close this slice.
