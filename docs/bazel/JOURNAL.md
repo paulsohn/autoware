@@ -3594,3 +3594,57 @@ Bazel definitions. No production-node patch is needed. Targeted Python syntax,
 buildifier and whitespace checks pass; no Fast DDS, pre-commit or broad
 communication/container sweep was run. Source correction: 5515a02e. The complete module gate passes. Geography/GNSS
 remain pending.
+
+## 2026-11-16: Phase 5.2.2 — autoware_geography_utils
+
+Purpose: Supply map projection and WGS84/EGM2008 height conversion for GNSS.
+Inputs: package.xml, CMakeLists.txt, all three implementations/public headers,
+four existing test files (one main plus 21 cases), and the RCR Lanelet2
+extension overlay/module. The published extension 0.7.2-3.rcr.2 exposes the
+required MGRS and transverse-Mercator projectors and pins Lanelet2 1.2.1-8.rcr.2.
+Reuse its compile/shared providers and rosdistro's GeographicLib provider;
+no local extension snapshot or unrelated map-package adoption is required yet.
+
+The height suite has mutually exclusive dataset-present and dataset-absent
+cases. A single host-dependent invocation would skip one side. Declare the
+real egm2008-1 archive in the package's MODULE with http_archive, official URL
+and SHA256 bdb382d0be7ece9142450eacc24b7b7f0889ee3e0ba4f535b04ec383f94c0fb5.
+Its geoids/egm2008-1.pgm file is exposed as geoid_grid for tests and later
+product consumers. The downloaded archive is 162388303 bytes; keep it in Bazel's
+external cache, never git or an apt-installed host resource directory.
+
+Build the original four test sources into one executable using their own main.
+Run all 19 non-missing-grid cases with GEOGRAPHICLIB_GEOID_PATH pointing at the
+declared grid's runfiles directory. Run the two missing-grid cases separately
+with that environment forced to an empty TEST_TMPDIR directory. Filters select
+the mutually exclusive cases across both targets; their union must execute all
+21 cases with no dependency-related skips. Preserve the original assertions
+and test sources. The small shell launcher forwards GTest XML to Bazel and
+finishes by exec; no custom test generator or production resource wrapper is
+needed. Library sources and scoped include paths stay package-owned.
+
+Verification command (executed):
+
+```bash
+# Optional: reuse the already downloaded, checksum-verified official archive.
+# task_geo_distdir is a local cache directory, not a build dependency.
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --distdir="$task_geo_distdir" --nocache_test_results \
+  --test_output=errors --local_test_jobs=1 @autoware_geography_utils//...
+```
+
+Without a preseeded archive, omit --distdir and Bazel fetches the declared URL.
+The current experiment's download directory is temporary; no developer path is
+part of a committed build definition. Require full library compilation and all
+21 cases across both XML reports without failures/errors/skips.
+
+Result: the full module surface builds and all 21 cases execute successfully:
+19 with the declared grid and two with the deliberately empty grid path. GTest
+XML confirms no failures/errors/skips. The complete invocation takes 50.439
+seconds using the preseeded official archive and cached RCR dependencies. The
+GeographicLib and Lanelet2 extension providers link without source patches or
+host dependency installation. The published extension 0.7.2-3.rcr.2 and its
+Lanelet2 1.2.1-8.rcr.2 inputs are now validated for this boundary. Targeted
+buildifier, shell syntax and whitespace checks pass. No Fast DDS, pre-commit,
+broad communication matrix or container rerun was performed. GNSS poser is the
+remaining Phase 5.2.2 package gate.

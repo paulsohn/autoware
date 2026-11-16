@@ -1,0 +1,69 @@
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library")
+load("@rules_shell//shell:sh_test.bzl", "sh_test")
+
+package(default_visibility = ["//visibility:public"])
+
+alias(
+    name = "geoid_grid",
+    actual = "@egm2008_1//:egm2008-1.pgm",
+)
+
+cc_library(
+    name = "autoware_geography_utils",
+    srcs = glob(["src/*.cpp"]),
+    hdrs = glob(["include/**/*.hpp"]),
+    strip_include_prefix = "include",
+    deps = [
+        "@autoware_lanelet2_extension//:autoware_lanelet2_extension_lib_library",
+        "@autoware_map_msgs//:cc",
+        "@geographic_msgs//:cc",
+        "@geometry_msgs//:cc",
+        "@lanelet2_io//:lanelet2_io_library",
+        "@lanelet2_projection//:lanelet2_projection_library",
+        "@rosdistro//cc:geographiclib_library",
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "test_dynamic_deps",
+    dynamic_deps = [
+        "@autoware_lanelet2_extension//:autoware_lanelet2_extension_lib",
+        "@geographic_msgs//:cc_shared",
+    ],
+)
+
+cc_binary(
+    name = "geography_tests",
+    testonly = True,
+    srcs = glob(["test/*.cpp"]),
+    dynamic_deps = [":test_dynamic_deps"],
+    deps = [
+        ":autoware_geography_utils",
+        "@googletest//:gtest",
+    ],
+)
+
+sh_test(
+    name = "test_geography_with_grid",
+    srcs = ["test/run_geoid_test.sh"],
+    args = [
+        "$(rootpath :geography_tests)",
+        "present",
+        "$(rootpath :geoid_grid)",
+    ],
+    data = [
+        ":geography_tests",
+        ":geoid_grid",
+    ],
+)
+
+sh_test(
+    name = "test_geography_without_grid",
+    srcs = ["test/run_geoid_test.sh"],
+    args = [
+        "$(rootpath :geography_tests)",
+        "absent",
+    ],
+    data = [":geography_tests"],
+)

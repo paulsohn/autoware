@@ -778,8 +778,10 @@ tf2_eigen 0.45.10-1.rcr.0 is validated and pinned. Gyro odometer also passes its
 backends. Its sensor_msgs 5.9.3-1.rcr.0 pin and specific Imu/DiagnosticArray
 bridge roots are validated. EKF also passes all 49 C++ cases and both original launch assertions under
 each backend. Its discovery synchronization fix is isolated in source commit
-5515a02e; production node code is unchanged. The geography/GNSS gates keep
-Phase 5.2.2 open.
+5515a02e; production node code is unchanged. Geography utilities also pass all 21 cases with no skips across explicit
+dataset-present/absent configurations. Their pinned official EGM2008 grid,
+RCR Lanelet2 extension 0.7.2-3.rcr.2 and transitive Lanelet2 1.2.1-8.rcr.2
+inputs are validated. GNSS poser remains the final Phase 5.2.2 gate.
 
 ## Later phases
 

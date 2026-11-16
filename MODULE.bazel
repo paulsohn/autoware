@@ -346,3 +346,10 @@ local_path_override(
     module_name = "autoware_ekf_localizer",
     path = "src/core/autoware_core/localization/autoware_ekf_localizer",
 )
+
+bazel_dep(name = "autoware_lanelet2_extension", version = "0.7.2-3.rcr.2")
+bazel_dep(name = "autoware_geography_utils", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_geography_utils",
+    path = "src/core/autoware_core/common/autoware_geography_utils",
+)

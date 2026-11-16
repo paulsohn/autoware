@@ -1,0 +1,25 @@
+module(
+    name = "autoware_geography_utils",
+    version = "0.0.0",
+)
+
+bazel_dep(name = "autoware_lanelet2_extension", version = "0.0.0")
+bazel_dep(name = "autoware_map_msgs", version = "0.0.0")
+bazel_dep(name = "geographic_msgs", version = "0.0.0")
+bazel_dep(name = "geometry_msgs", version = "0.0.0")
+bazel_dep(name = "lanelet2_io", version = "0.0.0")
+bazel_dep(name = "lanelet2_projection", version = "0.0.0")
+bazel_dep(name = "rosdistro", version = "0.0.0")
+bazel_dep(name = "googletest", version = "1.18.0.bcr.1")
+bazel_dep(name = "rules_cc", version = "0.2.26.rcr.0")
+bazel_dep(name = "rules_shell", version = "0.8.0")
+
+http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
+http_archive(
+    name = "egm2008_1",
+    build_file_content = 'exports_files(["egm2008-1.pgm"], visibility = ["//visibility:public"])',
+    sha256 = "bdb382d0be7ece9142450eacc24b7b7f0889ee3e0ba4f535b04ec383f94c0fb5",
+    strip_prefix = "geoids",
+    urls = ["https://downloads.sourceforge.net/project/geographiclib/geoids-distrib/egm2008-1.tar.bz2"],
+)
