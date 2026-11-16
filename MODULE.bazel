@@ -440,3 +440,9 @@ local_path_override(
     module_name = "autoware_lanelet2_utils",
     path = "src/core/autoware_core/common/autoware_lanelet2_utils",
 )
+
+bazel_dep(name = "autoware_map_loader", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_map_loader",
+    path = "src/core/autoware_core/map/autoware_map_loader",
+)

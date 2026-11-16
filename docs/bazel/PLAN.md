@@ -881,7 +881,13 @@ GNSS/projection backends. No extension source patch is needed. The utility's ful
 test-only fix replaces unspecified nearest-lanelet ID ties with distance/geometry
 assertions; production selection stays unchanged. Plotting examples and Python
 maintenance tools remain separate consumers from this compiled-library boundary.
-Both map loaders are next.
+Both map loaders now pass the complete 55-case C++ suite, both original launch
+suites (four cases) and four executable pub/sub/service checks across RCLCPP and
+Agnocast. No map-loader source patch is needed. Preserve the full C++ RCLCPP
+contract rather than omitting its conditionally excluded node/service tests;
+enabled behavior uses the real executable/hook/bridge. Height fitting and map
+visualization are next. The legacy external-API map-hash Python node remains
+Phase 5.3 system/API composition, separate from these two C++ loaders.
 Keep package commits separate and heavy builds sequential; routine Cyclone DDS
 only. Phase 5.3 system/API composition and Phase 6 GPU integration stay separate.
 

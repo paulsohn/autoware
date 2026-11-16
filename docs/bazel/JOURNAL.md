@@ -4378,3 +4378,68 @@ alongside the extension rather than relying on transitive ELF dependencies.
 No source compatibility fix is needed. Targeted buildifier/whitespace checks
 pass. No Fast DDS, pre-commit or container check was performed. Resume the
 incomplete utility gate against this prepared provider.
+
+
+## 2026-11-16: Phase 5.2.4 — autoware_map_loader
+
+Purpose: run both point-cloud and Lanelet map loaders using the prepared
+extension/utility/specification/geography providers. Inspected all eleven C++
+sources/private/public headers, CMake/manifest, YAML/launch resources, twelve
+existing C++ suites (55 cases) and two original launch suites. Gate: all 55 cases
+with their current RCLCPP test contract (including node/service tests), both
+original launch suites, and relevant point-cloud/Lanelet executable checks in
+both backends. No existing case disables/skips were found. The separate legacy
+external-API map_hash_generator Python node belongs to system/API composition
+in Phase 5.3; it is not required by these two C++ executables.
+
+Pattern: package-owned compiled library/shared component and two switchable
+executables/records. Reuse actual Lanelet/geography providers and native PCL
+common/io/filter plus conversion, yaml-cpp and fmt. All test resources are ament
+data. The private test include root include/ also resolves existing ../src
+includes without source copies or checkout symlinks. Each suite retains its
+own main; cylinder-overlap and Lanelet integration need gtest_main. Set
+ENABLE_AGNOCAST=0 on the full existing C++ suites (their original CMake contract)
+and validate enabled behavior separately with the real hook/bridge runtime.
+Verification commands (sequential):
+
+```bash
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --nocache_test_results --test_output=errors --local_test_jobs=1 \
+  @autoware_map_loader//...
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --nocache_test_results --test_output=errors --local_test_jobs=1 \
+  --strategy=TestRunner=local //bazel/tests:map_loader_lanelet_launch_test \
+  //bazel/tests:map_loader_pointcloud_launch_test
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --nocache_test_results --test_output=errors --local_test_jobs=1 \
+  --strategy=TestRunner=local --run_under=//bazel/agnocast:with_runtime \
+  //bazel/tests:map_loader_pointcloud_rclcpp_test \
+  //bazel/tests:map_loader_lanelet_rclcpp_test \
+  //bazel/tests:map_loader_pointcloud_agnocast_test \
+  //bazel/tests:map_loader_lanelet_agnocast_test
+```
+
+Result: all 55 C++ cases execute successfully with no failures/errors/disabled/
+skips, confirmed in XML of the twelve declared targets (87.441-second module
+invocation). Both original launch suites pass unchanged: one Lanelet clean-exit
+case and three PCD metadata/no-whole-topic/clean-exit cases; invocation 19.605
+seconds. All four standalone cases pass (26.505-second invocation): Lanelet
+RCLCPP 1.9/Agnocast 2.1 seconds, point-cloud RCLCPP 2.0/Agnocast 2.4 seconds.
+No source compatibility patch or additional native dependency pin is required.
+
+Standalone know-how: write a temporary three-point ASCII PCD and concrete
+parameters (the deployment YAML contains launch substitutions). Require whole
+cloud and single-cell metadata, fetch the cell via differential service, then
+repeat with cached_ids and require no reload/removal. For Lanelet, use the
+shipped test_map.osm, publish MGRS/WGS84 projector info, enable selected loading,
+and require both full serialized map and single-cell metadata. Fetch its cell
+through GetSelectedLanelet2Map and verify nested map/header data. Both modes
+check map frame and clean SIGINT exit, using ordinary transient-local rclpy
+peers. Enabled children preload the built heap hook and use the existing root
+bridge graph, including these map services. No extra interface list is needed.
+The original C++ suite remains the full RCLCPP contract; none of its conditional
+node/service groups is omitted.
+
+Targeted buildifier, Python syntax and whitespace checks pass. No Fast DDS,
+pre-commit, container or full matrix was run. Phase 5.2.4 remains open for height
+fitting, visualization and then map-dependent localization prerequisites.

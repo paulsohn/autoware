@@ -561,3 +561,71 @@ py_test(
         ("agnocast", "1"),
     ]
 ]
+
+[
+    launch_test(
+        name = "map_loader_" + mode + "_launch_test",
+        src = "@autoware_map_loader//:test/" + source,
+        data = ["@autoware_map_loader//:ament_index"],
+        env = {
+            "ENABLE_AGNOCAST": "0",
+            "LD_LIBRARY_PATH": "lib",
+            "ROS_DOMAIN_ID": "93",
+        },
+        tags = [
+            "no-remote",
+            "no-sandbox",
+        ],
+        deps = [
+            "@ament_index_python",
+            "@autoware_map_msgs//:py",
+            "@launch_ros",
+            "@rclpy",
+            "@sensor_msgs//:py",
+        ],
+    )
+    for mode, source in [
+        ("lanelet", "lanelet2_map_loader_launch.test.py"),
+        ("pointcloud", "pointcloud_map_loader_metadata_launch.test.py"),
+    ]
+]
+
+[
+    py_test(
+        name = "map_loader_" + mode + "_" + backend + "_test",
+        srcs = ["@autoware_map_loader//:test/test_standalone.py"],
+        args = [
+            "$(rootpath @autoware_map_loader//:" + executable + ")",
+            "$(rootpath @autoware_map_loader//:test/data/test_map.osm)",
+            mode,
+        ],
+        data = [
+            "//bazel/agnocast:runtime_index",
+            "@agnocast_heaphook",
+            "@autoware_map_loader//:ament_index",
+            "@autoware_map_loader//:" + executable,
+            "@autoware_map_loader//:test/data/test_map.osm",
+        ],
+        env = {
+            "AGNOCAST_TEST_NO_PRELOAD": "1",
+            "AUTOWARE_TEST_AGNOCAST": enabled,
+        },
+        main = "@autoware_map_loader//:test/test_standalone.py",
+        tags = [
+            "no-remote",
+            "no-sandbox",
+        ] + (["requires-agnocast-kmod"] if enabled == "1" else []),
+        deps = [
+            "@autoware_map_msgs//:py",
+            "@rclpy",
+            "@sensor_msgs//:py",
+            requirement("pyyaml"),
+        ],
+    )
+    for mode, executable, backend, enabled in [
+        ("pointcloud", "autoware_pointcloud_map_loader", "rclcpp", "0"),
+        ("pointcloud", "autoware_pointcloud_map_loader", "agnocast", "1"),
+        ("lanelet", "autoware_lanelet2_map_loader", "rclcpp", "0"),
+        ("lanelet", "autoware_lanelet2_map_loader", "agnocast", "1"),
+    ]
+]

@@ -1,0 +1,142 @@
+load("@autoware_agnocast_wrapper//:defs.bzl", "autoware_agnocast_node")
+load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+exports_files(["test/test_standalone.py"] + glob([
+    "test/*.test.py",
+    "test/data/*",
+]))
+
+cc_library(
+    name = "autoware_map_loader",
+    srcs = glob(["src/**/*.cpp"]),
+    hdrs = glob([
+        "src/**/*.hpp",
+        "include/**/*.hpp",
+    ]),
+    includes = ["include"],
+    deps = [
+        "@autoware_agnocast_wrapper//:autoware_agnocast_wrapper_library",
+        "@autoware_component_interface_specs",
+        "@autoware_geography_utils",
+        "@autoware_lanelet2_extension//:autoware_lanelet2_extension_lib_library",
+        "@autoware_lanelet2_utils",
+        "@autoware_map_msgs//:cc",
+        "@geometry_msgs//:cc",
+        "@lanelet2_core//:lanelet2_core_library",
+        "@lanelet2_io//:lanelet2_io_library",
+        "@lanelet2_projection//:lanelet2_projection_library",
+        "@pcl_conversions//:pcl_conversions_library",
+        "@rclcpp//:rclcpp_library",
+        "@rclcpp_components//:rclcpp_components_library",
+        "@rosdistro//cc:boost.optional",
+        "@rosdistro//cc:fmt",
+        "@rosdistro//cc:pcl_common",
+        "@rosdistro//cc:pcl_filters",
+        "@rosdistro//cc:pcl_io",
+        "@rosdistro//cc:yaml-cpp_library",
+        "@sensor_msgs//:cc",
+        "@visualization_msgs//:cc",
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = [
+        "@autoware_agnocast_wrapper//:autoware_agnocast_wrapper",
+        "@autoware_geography_utils//:runtime_dynamic_deps",
+        "@autoware_lanelet2_utils//:runtime_dynamic_deps",
+        "@autoware_map_msgs//:cc_shared",
+        "@geometry_msgs//:cc_shared",
+        "@sensor_msgs//:cc_shared",
+        "@visualization_msgs//:cc_shared",
+        "@pcl_conversions//:pcl_conversions",
+        "@rclcpp_components//:rclcpp_components",
+        "@rosdistro//cc:yaml-cpp",
+    ],
+)
+
+cc_shared_library(
+    name = "map_components",
+    dynamic_deps = [":runtime_dynamic_deps"],
+    deps = [":autoware_map_loader"],
+)
+
+[
+    autoware_agnocast_node(
+        name = executable,
+        package_name = "autoware_map_loader",
+        component = ":map_components",
+        plugin = plugin,
+    )
+    for executable, plugin in [
+        ("autoware_pointcloud_map_loader", "autoware::map_loader::PointCloudMapLoaderNode"),
+        ("autoware_lanelet2_map_loader", "autoware::map_loader::Lanelet2MapLoaderNode"),
+    ]
+]
+
+register_ament_files(
+    name = "node_executables",
+    files = [
+        ":autoware_lanelet2_map_loader",
+        ":autoware_pointcloud_map_loader",
+    ],
+    prefix = "lib/autoware_map_loader",
+    strip_prefix = "*",
+)
+
+ament_index(
+    components = [
+        ":autoware_pointcloud_map_loader_components",
+        ":autoware_lanelet2_map_loader_components",
+    ],
+    data = glob([
+        "config/*",
+        "launch/*",
+        "test/data/**",
+    ]) + [
+        ":autoware_lanelet2_map_loader_plugin",
+        ":autoware_pointcloud_map_loader_plugin",
+        ":node_executables",
+    ],
+    package_xml = "package.xml",
+)
+
+[
+    cc_test(
+        name = source,
+        srcs = ["test/" + group + "/" + source + ".cpp"],
+        data = [":ament_index"],
+        dynamic_deps = [
+            ":runtime_dynamic_deps",
+            "@ament_index_cpp//:ament_index_cpp",
+        ],
+        env = {"ENABLE_AGNOCAST": "0"},
+        includes = ["include"],
+        deps = [
+            ":autoware_map_loader",
+            "@ament_index_cpp//:ament_index_cpp_library",
+            "@googletest//:gtest_main" if source in [
+                "test_cylinder_box_overlap",
+                "test_lanelet2_map_loader_integration",
+            ] else "@googletest//:gtest",
+        ],
+    )
+    for group, source in [
+        ("pointcloud_map_loader", "test_cylinder_box_overlap"),
+        ("pointcloud_map_loader", "test_replace_with_absolute_path"),
+        ("pointcloud_map_loader", "test_load_pcd_metadata"),
+        ("pointcloud_map_loader", "test_pointcloud_map_loader"),
+        ("pointcloud_map_loader", "test_partial_map_loader"),
+        ("pointcloud_map_loader", "test_differential_map_loader"),
+        ("pointcloud_map_loader", "test_selected_map_loader"),
+        ("pointcloud_map_loader", "test_pointcloud_map_loader_node"),
+        ("lanelet2_map_loader", "test_lanelet2_map_loader_utils"),
+        ("lanelet2_map_loader", "test_lanelet2_map_cell_metadata"),
+        ("lanelet2_map_loader", "test_lanelet2_selected_map_loader_module"),
+        ("lanelet2_map_loader", "test_lanelet2_map_loader_integration"),
+    ]
+]
