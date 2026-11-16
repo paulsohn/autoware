@@ -388,3 +388,13 @@ local_path_override(
     module_name = "autoware_downsample_filters",
     path = "src/core/autoware_core/sensing/autoware_downsample_filters",
 )
+
+bazel_dep(name = "autoware_adapi_v1_msgs", version = "1.9.0-4.rcr.2")
+bazel_dep(name = "autoware_test_utils", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_test_utils",
+    path = "src/core/autoware_core/testing/autoware_test_utils",
+)
+
+pip_ros = use_extension("@rosdistro//python:defs.bzl", "pip_ros")
+use_repo(pip_ros, "pip_ros")

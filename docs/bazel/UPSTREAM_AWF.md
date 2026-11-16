@@ -62,6 +62,8 @@ describes that review, not proof that no other upstream work exists.
 
 ### Test-helper relay test must shut down its ROS context
 
+Local source fix: `5086091b`, separate from the Bazel module definitions.
+
 - [ ] Associate with a matching upstream issue or PR. Reviewed 2026-11-16:
   repository-scoped search for `autoware_test_utils shutdown` finds
   [core#1181](https://github.com/autowarefoundation/autoware_core/pull/1181),

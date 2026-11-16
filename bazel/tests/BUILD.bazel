@@ -1,4 +1,5 @@
 load("@launch_testing//:defs.bzl", "launch_test")
+load("@pip_ros//:requirements.bzl", "requirement")
 load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
 load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_test")
 load("@rules_python//python:defs.bzl", "py_test")
@@ -412,3 +413,21 @@ py_test(
         ("random", "random_downsample_filter_node"),
     ]
 ]
+
+py_test(
+    name = "topic_snapshot_saver_test",
+    srcs = ["@autoware_test_utils//:test/test_snapshot.py"],
+    args = ["$(rootpath @autoware_test_utils//:topic_snapshot_saver)"],
+    data = [
+        "@autoware_test_utils//:ament_index",
+        "@autoware_test_utils//:topic_snapshot_saver",
+    ],
+    env = {"LD_LIBRARY_PATH": "lib"},
+    main = "@autoware_test_utils//:test/test_snapshot.py",
+    deps = [
+        "@nav_msgs//:py",
+        "@rclpy",
+        "@std_srvs//:py",
+        requirement("pyyaml"),
+    ],
+)

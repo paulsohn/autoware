@@ -1,0 +1,102 @@
+load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+exports_files(["test/test_snapshot.py"])
+
+cc_library(
+    name = "autoware_test_utils",
+    srcs = [
+        "src/autoware_test_utils.cpp",
+        "src/mock_data_parser.cpp",
+    ],
+    # Optional plotting helpers need a separate pyplot consumer.
+    hdrs = [
+        "include/autoware_test_utils/autoware_test_utils.hpp",
+        "include/autoware_test_utils/mock_data_parser.hpp",
+    ],
+    strip_include_prefix = "include",
+    deps = [
+        "@ament_index_cpp//:ament_index_cpp_library",
+        "@autoware_adapi_v1_msgs//:cc",
+        "@autoware_internal_planning_msgs//:cc",
+        "@autoware_lanelet2_extension//:autoware_lanelet2_extension_lib_library",
+        "@autoware_map_msgs//:cc",
+        "@autoware_perception_msgs//:cc",
+        "@autoware_planning_msgs//:cc",
+        "@autoware_utils_geometry",
+        "@builtin_interfaces//:cc",
+        "@geometry_msgs//:cc",
+        "@lanelet2_core//:lanelet2_core_library",
+        "@lanelet2_io//:lanelet2_io_library",
+        "@nav_msgs//:cc",
+        "@rclcpp//:rclcpp_library",
+        "@rosdistro//cc:boost.serialization",
+        "@rosdistro//cc:yaml-cpp_library",
+        "@rosgraph_msgs//:cc",
+        "@std_msgs//:cc",
+        "@std_srvs//:cc",
+        "@tf2//:tf2_library",
+        "@tf2_msgs//:cc",
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = [
+        "@ament_index_cpp//:ament_index_cpp",
+        "@autoware_lanelet2_extension//:autoware_lanelet2_extension_lib",
+        "@rclcpp//:rclcpp",
+        "@tf2//:tf2",
+        "@tf2_geometry_msgs//:tf2_geometry_msgs",
+        "@tf2_ros//:tf2_ros",
+        "@autoware_adapi_v1_msgs//:cc_shared",
+        "@autoware_internal_planning_msgs//:cc_shared",
+        "@autoware_map_msgs//:cc_shared",
+        "@autoware_perception_msgs//:cc_shared",
+        "@autoware_planning_msgs//:cc_shared",
+        "@geometry_msgs//:cc_shared",
+        "@nav_msgs//:cc_shared",
+        "@rosgraph_msgs//:cc_shared",
+        "@std_msgs//:cc_shared",
+        "@std_srvs//:cc_shared",
+        "@tf2_msgs//:cc_shared",
+    ],
+)
+
+cc_binary(
+    name = "topic_snapshot_saver",
+    srcs = ["src/topic_snapshot_saver.cpp"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+    deps = [":autoware_test_utils"],
+)
+
+register_ament_files(
+    name = "node_executables",
+    files = [":topic_snapshot_saver"],
+    prefix = "lib/autoware_test_utils",
+    strip_prefix = "*",
+)
+
+ament_index(
+    data = glob([
+        "config/**",
+        "test_map/**",
+        "test_data/**",
+        "rviz/**",
+    ]) + [":node_executables"],
+    package_xml = "package.xml",
+)
+
+cc_test(
+    name = "test_autoware_test_utils",
+    srcs = glob(["test/*.cpp"]),
+    data = [":ament_index"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+    deps = [
+        ":autoware_test_utils",
+        "@googletest//:gtest_main",
+    ],
+)

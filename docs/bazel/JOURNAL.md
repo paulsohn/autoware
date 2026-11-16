@@ -3945,3 +3945,64 @@ are not selected. Keep heavy builds sequential with user.bazelrc limits. No
 Fast DDS, pre-commit, full communication matrix or container rerun was performed.
 Next: prepare the test helper needed by ground filtering, then integrate the
 complete ground-filter module.
+
+
+## 2026-11-16: Phase 5.2.3 — autoware_test_utils
+
+Purpose: prepare ground filtering's existing test dependency without a host ROS
+installation. Inspected its CMake sources, three test files, runtime resources,
+headers and snapshot executable. RCR metadata for autoware_test_utils returns
+404; use a local-only module rather than inventing a registry counterpart.
+Select published autoware_adapi_v1_msgs 1.9.0-4.rcr.2 for the actual OperationModeState
+includes. The gate is all 21 existing cases (six parser, fourteen helper and one
+relay-manager), plus snapshot-executable service/file behavior.
+
+Pattern: compile both existing library sources, expose their two public headers,
+use native yaml-cpp/Boost serialization and the published Lanelet extension,
+and collect the existing ROS shared providers. Keep config/maps/test-data/rviz
+in an ament index and register the executable. The optional visualization.hpp
+header is separate from this compiled API: no source or existing test includes
+it, and its plotting dependency is test-only in package.xml. Defer that unused
+header until a plotting consumer requires it; do not omit any existing test.
+Tests use gtest_main and the indexed resources, including parser fixture YAML.
+
+Verification: full module suite under Cyclone DDS and a root behavior
+test that launches the actual snapshot executable with shipped configuration,
+publishes odometry, calls its Empty service, validates saved YAML and clean
+SIGINT exit. Build/test invocations are sequential and honor user.bazelrc.
+
+
+```bash
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --nocache_test_results --test_output=errors --local_test_jobs=1 \
+  @autoware_test_utils//...
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --nocache_test_results --test_output=errors --local_test_jobs=1 \
+  --strategy=TestRunner=local //bazel/tests:topic_snapshot_saver_test
+```
+
+
+Result: all 21 existing cases pass without failures/errors/disabled/skipped
+cases, confirmed in GTest XML; the test process exits normally. Final module
+invocation: 13.084 seconds, test 0.5 seconds. The snapshot case passes in 1.6
+seconds (24.295-second invocation), validating the real shipped sample config,
+service response, format version, map URI, odometry frame/stamp/position, other
+configured output fields, and clean SIGINT exit. Run the child in a temporary
+working directory for its generated YAML and make LD_LIBRARY_PATH absolute
+before changing cwd; the RCR ament library uses declared runfiles resources.
+The root explicitly imports the RCR pip_ros extension for pinned PyYAML rather
+than relying on a host pip installation.
+
+Diagnosed failure: all 21 assertions originally passed but the process ended
+with SIGSEGV. GDB shows static default-context destruction calling logging
+shutdown after spdlog registry lifetime. Only the relay test initializes ROS,
+and it never shuts down. Give that test a fixture with SetUp init and TearDown
+shutdown, so normal completion and failed assertions clean up before static
+exit. The entire suite then passes with clean exit. AWF main still lacks this
+fix; core PR #1181 applies the same fixture pattern to a different package,
+so it is related rather than a matching fix. UPSTREAM_AWF.md records the exact
+source blob, scope and backtrace. No production helper behavior was changed.
+The initial dependency preparation/module invocation takes 254.656 seconds;
+consolidate that setup failure into this final result, not a separate milestone.
+Targeted buildifier, Python syntax and whitespace checks pass. No Fast DDS,
+pre-commit, container or full system matrix was run. Ground filtering is next.
