@@ -1,0 +1,68 @@
+load("@rclcpp_components//:defs.bzl", "rclcpp_components_register_node")
+load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+exports_files(["test/test_standalone.py"])
+
+cc_library(
+    name = "autoware_perception_objects_converter",
+    srcs = ["src/detected_to_predicted_objects_converter.cpp"],
+    hdrs = glob(["src/*.hpp"]),
+    deps = [
+        "@autoware_perception_msgs//:cc",
+        "@autoware_utils_uuid",
+        "@geometry_msgs//:cc",
+        "@rclcpp//:rclcpp_library",
+        "@rclcpp_components//:rclcpp_components_library",
+        "@unique_identifier_msgs//:cc",
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = [
+        "@autoware_perception_msgs//:cc_shared",
+        "@geometry_msgs//:cc_shared",
+        "@rclcpp_components//:rclcpp_components",
+        "@unique_identifier_msgs//:cc_shared",
+    ],
+)
+
+cc_shared_library(
+    name = "converter_component",
+    dynamic_deps = [":runtime_dynamic_deps"],
+    deps = [":autoware_perception_objects_converter"],
+)
+
+rclcpp_components_register_node(
+    name = "detected_to_predicted_objects_converter_node",
+    component = ":converter_component",
+    node_name = "detected_to_predicted_objects_converter_node",
+    plugin = "autoware::perception_objects_converter::DetectedToPredictedObjectsConverter",
+)
+
+register_ament_files(
+    name = "node_executables",
+    files = [":detected_to_predicted_objects_converter_node"],
+    prefix = "lib/autoware_perception_objects_converter",
+    strip_prefix = "*",
+)
+
+ament_index(
+    components = [":detected_to_predicted_objects_converter_node_record"],
+    data = glob(["launch/*"]) + [":node_executables"],
+    package_xml = "package.xml",
+)
+
+cc_test(
+    name = "test_autoware_perception_objects_converter",
+    srcs = ["test/test_conversion.cpp"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+    deps = [
+        ":autoware_perception_objects_converter",
+        "@googletest//:gtest",
+    ],
+)

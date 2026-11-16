@@ -4113,3 +4113,47 @@ and no Agnocast preload for these ordinary RCLCPP components.
 Targeted buildifier, Python syntax and whitespace checks pass. No Fast DDS,
 pre-commit, container or full matrix rerun was performed. Object conversion is
 next; its existing six cases and an executable round-trip will close this slice.
+
+
+## 2026-11-16: Phase 5.2.3 — autoware_perception_objects_converter
+
+Purpose: make the detected-to-predicted converter runnable with Bazel. Inspected
+its one compiled source, conversion/component headers, launch XML and complete
+six-case conversion suite with its own global main. Existing cases cover header,
+exact field mapping, both twist branches and deterministic/default UUID behavior.
+Gate: all six existing cases plus actual executable pub/sub and clean shutdown.
+
+Pattern: package-local library/shared component and standard RCLCPP registration,
+ament launch resources and executable alias. Reuse the existing UUID utility,
+perception/geometry/UUID messages and RCLCPP shared providers; no new version pin
+or host dependency is introduced. The root selects and composes the module.
+Standalone behavior sends two detected objects with different has_twist flags,
+requires header/shape/classification/pose mapping, the appropriate twist/default,
+empty prediction paths and nonzero distinct UUIDs.
+
+Verification commands (sequential):
+
+```bash
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --nocache_test_results --test_output=errors --local_test_jobs=1 \
+  @autoware_perception_objects_converter//...
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --nocache_test_results --test_output=errors --local_test_jobs=1 \
+  --strategy=TestRunner=local //bazel/tests:perception_objects_converter_test
+```
+
+Result: all six existing cases pass, confirmed in GTest XML without failures,
+errors, disabled or skipped cases. Full module invocation: 11.162 seconds,
+test 0.1 seconds. Standalone passes in 1.3 seconds (11.791-second invocation),
+including normal SIGINT exit. No source patch or setup failure is needed.
+Targeted buildifier, Python syntax and whitespace checks pass. No Fast DDS,
+pre-commit, container or full communication-matrix rerun was performed.
+
+Phase 5.2.3 is complete at its package gates: point types 33, debug utilities
+six, crop box eleven, downsampling twelve, shared test helpers 21, ground
+filtering 24, CPU clustering 25 and object conversion six = 138 existing C++
+cases, plus eight standalone checks. These are the recorded sequential module
+results, not a new aggregate system sweep. Ordinary RCLCPP backend behavior is
+preserved. The unused PCL utility and optional test-helper visualization header
+remain outside this slice until a real consumer needs them. Phase 5.2.4 starts
+with map loading and projection prerequisites; CUDA stays in Phase 6.

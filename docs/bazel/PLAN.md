@@ -790,10 +790,10 @@ label enters the component graph. Root bridge selection adds only the needed
 Imu, DiagnosticArray and NavSatFix interface closures.
 
 No Fast DDS, broad communication matrix or container rerun was required.
-Phase 5.2.3 point-cloud sensing/CPU perception is the next dependency slice;
-Phase 5.2 and Phase 5 overall remain in progress.
+Phase 5.2 and Phase 5 overall remain in progress; the next slice after
+point-cloud sensing/CPU perception is Phase 5.2.4 map loading/localization.
 
-#### Phase 5.2.3: Point-cloud sensing and CPU perception (in progress)
+#### Phase 5.2.3: Point-cloud sensing and CPU perception (complete)
 
 Use package gates in dependency order, reusing existing geometry, TF,
 vehicle-info, wrapper and message support. Start with point types (33 existing
@@ -835,7 +835,17 @@ all 24 existing cases and a standalone obstacle/published-time check after
 portable float-constant and message-filter QoS fixes. Its existing rcpputils
 expected header is available; no extra expected transition is needed. CPU
 clustering/object detection passes all 25 existing cases plus both executable
-centroid/debug-cloud checks without source changes. Object conversion is next.
+centroid/debug-cloud checks without source changes. Object conversion passes
+all six existing cases and its real executable field/UUID/twist check without
+source changes.
+
+Completion gate: 138 existing C++ cases across the eight package boundaries
+above, plus eight standalone executable checks, all with Cyclone DDS and no
+skips. Reuse the recorded module results; this is not an aggregate middleware
+matrix or evidence for CUDA/GPU behavior. Source compatibility fixes remain
+separate commits, associated with upstream where a matching fix exists. Phase
+5.2.4 map loading/projection and map-dependent localization is next; introduce
+its prerequisites only when the selected target needs them.
 
 Source inspection finds no autoware_utils_pcl include/dependency in the selected
 sensing/perception packages. Defer that utility's local adoption until an actual

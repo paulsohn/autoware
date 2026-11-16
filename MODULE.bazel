@@ -411,3 +411,9 @@ local_path_override(
     module_name = "autoware_euclidean_cluster_object_detector",
     path = "src/core/autoware_core/perception/autoware_euclidean_cluster_object_detector",
 )
+
+bazel_dep(name = "autoware_perception_objects_converter", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_perception_objects_converter",
+    path = "src/core/autoware_core/perception/autoware_perception_objects_converter",
+)

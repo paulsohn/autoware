@@ -480,3 +480,19 @@ py_test(
         ("voxel", "voxel_grid_based_euclidean_cluster_node", "voxel_grid_based_euclidean_cluster"),
     ]
 ]
+
+py_test(
+    name = "perception_objects_converter_test",
+    srcs = ["@autoware_perception_objects_converter//:test/test_standalone.py"],
+    args = ["$(rootpath @autoware_perception_objects_converter//:detected_to_predicted_objects_converter_node)"],
+    data = [
+        "@autoware_perception_objects_converter//:ament_index",
+        "@autoware_perception_objects_converter//:detected_to_predicted_objects_converter_node",
+    ],
+    env = {"LD_LIBRARY_PATH": "lib"},
+    main = "@autoware_perception_objects_converter//:test/test_standalone.py",
+    deps = [
+        "@autoware_perception_msgs//:py",
+        "@rclpy",
+    ],
+)

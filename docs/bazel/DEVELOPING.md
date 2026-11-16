@@ -372,6 +372,14 @@ env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
   //bazel/tests:crop_box_filter_test
 ```
 
+Tests using the compiled helpers or parser from autoware_test_utils declare
+`@autoware_test_utils` in deps and `@autoware_test_utils//:runtime_dynamic_deps`
+in dynamic_deps. Add its `:ament_index` to data for config, parser fixtures and
+map URI resolution; do not use checkout-relative resource paths. Its optional
+visualization header is not currently exported by these compiled-helper targets.
+Use a test fixture to own ROS init/shutdown when the source has no custom main,
+so context cleanup also runs after failed assertions.
+
 ## Switchable standalone nodes
 
 For a wrapper-derived node using AgnocastOnlyCallbackIsolatedExecutor and a
