@@ -1,0 +1,46 @@
+load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
+load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "autoware_component_interface_admission",
+    srcs = [
+        "src/manifest_admit_cli.cpp",
+        "src/manifest_json.cpp",
+    ],
+    hdrs = glob(["include/**/*.hpp"]),
+    strip_include_prefix = "include",
+    deps = ["@nlohmann_json//:json"],
+)
+
+cc_binary(
+    name = "manifest_admit",
+    srcs = ["src/manifest_admit.cpp"],
+    deps = [":autoware_component_interface_admission"],
+)
+
+register_ament_files(
+    name = "cli",
+    files = [":manifest_admit"],
+    prefix = "lib/autoware_component_interface_admission",
+    strip_prefix = "*",
+)
+
+ament_index(
+    data = [":cli"],
+    package_xml = "package.xml",
+)
+
+[cc_test(
+    name = name,
+    srcs = ["test/" + name + ".cpp"],
+    deps = [
+        ":autoware_component_interface_admission",
+        "@googletest//:gtest_main",
+    ],
+) for name in [
+    "test_admission_rule",
+    "test_manifest_json",
+    "test_manifest_admit",
+]]

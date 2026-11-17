@@ -7302,3 +7302,26 @@ Upstream reviewed on 2026-11-18: autoware_core main
 Searches for RViz/headless and launch_rviz found no matching issue/PR; the larger
 autoware_launch package already offers an RViz switch, which is related precedent,
 not an associated fix. Record the actionable finding in UPSTREAM_AWF.md.
+
+## 2026-11-18: Phase 5.3.4 — component-interface admission
+
+Purpose: close this remaining autoware_core package boundary. Inspect its
+manifest, original build/install declarations and all registered tests.
+
+Three original C++ suites; deploy CLI and public JSON/rule library. Use the existing pinned nlohmann_json header provider, register manifest_admit under its original ROS executable path, and keep source unchanged.
+
+Add package-local MODULE/BUILD rules selected with adjacent root 0.0.0
+dependency/local_path_override pairs. Added adapters/behavior tests belong under
+bazel/tests; original sources and tests remain in place. The complete module
+gate is declared in PLAN.md Phase 5.3.4. The final combined command recorded
+with the top-level composition entry passed, with no failures, errors,
+dependency-related skips or disabled tests. Reuse preceding unchanged
+component/backend results; this group uses Cyclone DDS/native RCLCPP.
+
+Result: all 74 original C++ cases passed across test_admission_rule (42),
+test_manifest_json (19) and test_manifest_admit (13). The actual CLI also
+preserved the operational-error contract: run
+`env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" bazel run --config=no-agnocast @autoware_component_interface_admission//:manifest_admit -- /tmp/autoware-nonexistent-admission-input.json`
+with that path absent; it reports `cannot open manifest` and exits 2. The
+original suite covers accepted/rejected pairings and CLI verdict/output logic.
+No production or original-test change was needed.
