@@ -857,6 +857,67 @@ launch_test(
     ]
 ]
 
+py_test(
+    name = "command_gate_rclcpp_test",
+    srcs = ["autoware_command_gate/test_standalone.py"],
+    args = ["$(rootpath @autoware_command_gate//:autoware_command_gate_exe)"],
+    data = [
+        "@autoware_command_gate//:ament_index",
+        "@autoware_command_gate//:autoware_command_gate_exe",
+    ],
+    env = {
+        "ENABLE_AGNOCAST": "0",
+        "LD_LIBRARY_PATH": "lib",
+    },
+    main = "autoware_command_gate/test_standalone.py",
+    precompile = "disabled",
+    tags = [
+        "no-remote",
+        "no-sandbox",
+    ],
+    deps = [
+        "@autoware_adapi_v1_msgs//:py",
+        "@autoware_system_msgs//:py",
+        "@autoware_vehicle_msgs//:py",
+        "@rclpy",
+    ],
+)
+
+py_test(
+    name = "simple_pure_pursuit_rclcpp_test",
+    srcs = ["autoware_simple_pure_pursuit/test_standalone.py"],
+    args = ["$(rootpath @autoware_simple_pure_pursuit//:autoware_simple_pure_pursuit_exe)"],
+    data = [
+        "@autoware_simple_pure_pursuit//:ament_index",
+        "@autoware_simple_pure_pursuit//:autoware_simple_pure_pursuit_exe",
+        "@autoware_test_utils//:ament_index",
+    ],
+    env = {
+        "ENABLE_AGNOCAST": "0",
+        "LD_LIBRARY_PATH": "lib",
+    },
+    main = "autoware_simple_pure_pursuit/test_standalone.py",
+    precompile = "disabled",
+    tags = [
+        "no-remote",
+        "no-sandbox",
+    ],
+    deps = [
+        "@ament_index_python",
+        "@autoware_control_msgs//:py",
+        "@autoware_planning_msgs//:py",
+        "@nav_msgs//:py",
+        "@rclpy",
+    ],
+)
+
+cc_test(
+    name = "adapi_specs_headers_test",
+    srcs = ["autoware_adapi_specs/test_headers.cpp"],
+    dynamic_deps = ["@autoware_adapi_specs//:runtime_dynamic_deps"],
+    deps = ["@autoware_adapi_specs"],
+)
+
 cc_test(
     name = "node_pubsub_test",
     srcs = ["autoware_node/test_pubsub.cpp"],
@@ -934,37 +995,4 @@ py_pytest(
     name = "ros2agnocast_version_test",
     srcs = ["ros2agnocast/test_version.py"],
     deps = ["@ros2agnocast"],
-)
-
-cc_test(
-    name = "adapi_specs_headers_test",
-    srcs = ["autoware_adapi_specs/test_headers.cpp"],
-    dynamic_deps = ["@autoware_adapi_specs//:runtime_dynamic_deps"],
-    deps = ["@autoware_adapi_specs"],
-)
-
-py_test(
-    name = "command_gate_rclcpp_test",
-    srcs = ["autoware_command_gate/test_standalone.py"],
-    args = ["$(rootpath @autoware_command_gate//:autoware_command_gate_exe)"],
-    data = [
-        "@autoware_command_gate//:ament_index",
-        "@autoware_command_gate//:autoware_command_gate_exe",
-    ],
-    env = {
-        "ENABLE_AGNOCAST": "0",
-        "LD_LIBRARY_PATH": "lib",
-    },
-    main = "autoware_command_gate/test_standalone.py",
-    precompile = "disabled",
-    tags = [
-        "no-remote",
-        "no-sandbox",
-    ],
-    deps = [
-        "@autoware_adapi_v1_msgs//:py",
-        "@autoware_system_msgs//:py",
-        "@autoware_vehicle_msgs//:py",
-        "@rclpy",
-    ],
 )

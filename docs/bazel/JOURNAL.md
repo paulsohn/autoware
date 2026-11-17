@@ -5412,3 +5412,50 @@ executable peer passes in 1.5 seconds. The successful final group invocation
 takes 17.772 seconds. This module gate is complete, without an omitted test
 group or deferred failure. No source patch, Fast DDS, Agnocast backend conversion,
 pre-commit, container or colcon/ament/CMake validation is included. Retain this validated module as a separate commit.
+
+## 2026-11-17: Phase 5.2.5 — simple pure pursuit in the native-control group
+
+Purpose: run the native trajectory-to-control component against existing motion,
+vehicle-info and polling-subscriber providers. Inspected core and node sources/
+headers, CMake/manifest, config/launch and both original test files. Complete
+original suite: 13 cases, seven core and six node integration cases, including
+waiting for both inputs, terminal braking, empty trajectory, external velocity,
+lookahead fallbacks and lateral-offset correction. Reuse validated motion
+utilities and test helpers; autoware_testing is only a CMake find dependency here,
+with no include/runtime consumer in these source files, so no artificial Bazel
+module is added for its CMake helpers.
+
+Pattern: package-local compiled library with explicit generated ROS compile
+providers, package-specific shared component, native RCR node launcher and
+component record, original executable name, declared config/launch index and
+registered executable. Preserve plain rclcpp::Node and SingleThreadedExecutor.
+Core tests use gtest_main; the node suite has its own main. Both tests declare
+the compiled autoware_test_utils helper and runtime provider, and its index so
+vehicle configuration resolves through ament rather than checkout paths.
+
+The standalone peer resolves the original vehicle/test-helper and controller
+configuration through their package indexes and starts the actual executable.
+Feed ordinary ROS odometry and trajectories. Require straight tracking with
+velocity/acceleration 1/1 and zero steering; trajectory-end stopping with zero
+velocity, -10 acceleration and defined acceleration flag; empty-trajectory zero
+velocity/acceleration; and negative steering for a 1 m lateral offset. Give each
+case a distinct input stamp and require output with that stamp so a retained
+command from a preceding case cannot satisfy a later assertion. Readiness is
+bounded by a 15-second deadline, inputs are republished while waiting, child logs
+are preserved on failure, and SIGINT must produce a clean exit. Set the peer's
+LD_LIBRARY_PATH=lib as diagnosed for command gate; existing declared indexes
+supply the runtime libraries. No product bridge change is involved.
+
+Verification: the complete-group command in the ADAPI entry builds every target,
+runs all original suites and both actual-executable checks sequentially with
+Cyclone DDS. The five existing/core-header targets and two standalone targets
+all pass in the final 17.772-second invocation. This package's seven core cases
+pass in 0.2 seconds, six original node cases in 0.6 seconds and executable check
+in 1.5 seconds. XML confirms no failures/errors/skips. No production source or
+existing test is modified. Targeted buildifier, Python AST, clang-format on the
+new C++ header consumer and whitespace checks pass. No Fast DDS, Agnocast
+conversion, pre-commit, container or colcon/ament/CMake check is run.
+
+All three native-control group gates are complete. Phase 5.2.5 remains in progress. Next inventory the trajectory,
+plotting and route-handler group together, preserving plotting consumers when
+their complete existing suites require them rather than omitting those checks.

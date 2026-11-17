@@ -961,8 +961,33 @@ only. Phase 5.3 system/API composition and Phase 6 GPU integration stay separate
 
 #### Phase 5.2.5: Planning and control (in progress)
 
-Validated autoware_command_gate; see its module journal entry for the complete gate.
-Remaining native-control and planning dependency groups retain separate tasks.
+The first related group integrates native control endpoints using the already
+validated motion and component-interface utilities: autoware_adapi_specs,
+autoware_command_gate and autoware_simple_pure_pursuit. Both executables derive
+from rclcpp::Node in the current source. Preserve that contract with the RCR's
+rclcpp_components_register_node macro, shared component metadata and native
+single-threaded launcher rather than introducing a middleware source change.
+Use the checked-in ADAPI message snapshots at 1.9.2 and add their missing
+package-local generator declarations. The registry overlay is not a substitute
+for local sources. The same audit selects local internal debug, localization
+and legacy messages at 1.16.0; validate their affected consumer closure.
+
+The complete 18-case command-gate and 13-case pure-pursuit suites pass, including
+real component discovery/loading. Actual executable checks pass for four mode
+changes and rejection of an unknown mode without publishing, and for straight
+tracking, terminal braking, empty-trajectory fallback and lateral correction.
+Existing package indexes expose the Python peers' C shared/type-support closure;
+tests explicitly set LD_LIBRARY_PATH=lib. No additional runtime index is needed. No production source patch or change
+to the central Agnocast interface set is required. These targets are native
+RCLCPP/Cyclone DDS consumers. Local provider selection is also covered by the
+root regression suite and all eleven bridge cases.
+
+Next inspect the
+trajectory/plotting/route-handler dependency group together: route-handler tests
+require plotting and trajectory providers, so inventory their complete suites
+and runtime resources before implementation. Later path generation, smoothing,
+solver and planner groups follow their actual dependencies. Phase 5.2.5 remains
+open; do not treat the two native control nodes as a complete planning stack.
 
 ## Later phases
 
