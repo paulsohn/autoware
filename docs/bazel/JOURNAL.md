@@ -7607,7 +7607,9 @@ Observed failures and fixes, consolidated into the accepted result:
   modern-libc++ branches to Linux/libc++ >= 21; do not enable Android C-library
   branches or alter other standard libraries. Keep a documented two-file CRT
   patch; the native patch parser misattributes the second file's hunks when
-  both are in one patch, so apply separate .h and .hpp patches.
+  both are in one patch, so apply separate .h and .hpp patches. Use
+  zero-context diffs to avoid preserving vendor tab/trailing-space context in
+  the patch files; the resulting patched headers are unchanged.
 - Upstream rules need no fork for component patching. Fetch the exact CRT
   13.2.86 archive through http_archive (SHA-256
   174ad29ab90c9301bd25f32f935345e65f19fbb0f39c15788daae25b0e924892),
@@ -7632,7 +7634,7 @@ env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
   //bazel/tests:core_system_headless_launch_test
 ```
 
-Result: the final CUDA gate passed in 5.917 seconds (2.9-second test action).
+Result: the final CUDA gate passed in 4.056 seconds (2.9-second test action).
 XML records 17 cases: error checks 2, unique-pointer utilities 5, clear utility
 1, streams 5 and Thrust 4; zero failures/errors/disabled/skipped cases. All
 five original CUDA source files compile, and original test registration is

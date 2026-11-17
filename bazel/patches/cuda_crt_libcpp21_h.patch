@@ -12,23 +12,11 @@ x86 by policy. No upstream fix or vendor support is claimed.
 
 --- a/crt/include/crt/math_functions.h
 +++ b/crt/include/crt/math_functions.h
-@@ -4796,7 +4796,8 @@
- #else /* !(__ANDROID__ || __HORIZON__) */
- __forceinline__ __DEVICE_FUNCTIONS_DECL__ __cudart_builtin__ int isnan(double x) throw();
- #endif /* __ANDROID__ */
+@@ -4799 +4799,2 @@
 -#if (defined(__ANDROID__) || defined(__HORIZON__)) && _LIBCPP_VERSION >= 8000
 +#if ((defined(__ANDROID__) || defined(__HORIZON__)) && _LIBCPP_VERSION >= 8000) || \
 +    (defined(__linux__) && (_LIBCPP_VERSION >= 210000))
- inline _LIBCPP_INLINE_VISIBILITY  __DEVICE_FUNCTIONS_DECL__ __cudart_builtin__ bool isnan(long double x) _NOEXCEPT;
- #else /* !( (defined(__ANDROID__) || defined(__HORIZON__)) && _LIBCPP_VERSION >= 8000) */
- __forceinline__ __DEVICE_FUNCTIONS_DECL__ __cudart_builtin__  NV_INT_OR_BOOL isnan(long double x);
-@@ -5395,7 +5396,8 @@
- extern __DEVICE_FUNCTIONS_DECL__ __cudart_builtin__ float    __cdecl sqrt(float) NV_MATH_NOEXCEPT_OR_THROW;
- extern __DEVICE_FUNCTIONS_DECL__ __cudart_builtin__ float    __cdecl pow(float, float) NV_MATH_NOEXCEPT_OR_THROW;
- #if defined(_LIBCPP_VERSION)
+@@ -5398 +5399,2 @@
 -#if (defined (__ANDROID__) || defined(__HORIZON__)) && (_LIBCPP_VERSION >= 9000)
 +#if ((defined(__ANDROID__) || defined(__HORIZON__)) && (_LIBCPP_VERSION >= 9000)) || \
 +    (defined(__linux__) && (_LIBCPP_VERSION >= 210000))
- #if _LIBCPP_VERSION >= 210000
- template <class _A1, class _A2,
- 	  std::__enable_if_t<std::is_arithmetic<_A1>::value && std::is_arithmetic<_A2>::value, int>>
