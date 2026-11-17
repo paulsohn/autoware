@@ -98,3 +98,14 @@ cc_test(
         "@googletest//:gtest_main",
     ],
 )
+
+# Optional plotting stays separate from the ordinary test-helper dependency.
+cc_library(
+    name = "visualization",
+    hdrs = ["include/autoware_test_utils/visualization.hpp"],
+    strip_include_prefix = "include",
+    deps = [
+        ":autoware_test_utils",
+        "@autoware_pyplot",
+    ],
+)

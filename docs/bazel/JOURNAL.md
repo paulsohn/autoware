@@ -5572,3 +5572,23 @@ seconds. Bazel's own linux-sandbox host process is separate from the native
 consumer when interpreting the trace. No source patch, Fast DDS, container or
 CMake validation is included. Reuse this runtime composition for the two
 plotting consumers below; other architectures need their own runtime inputs.
+
+
+## 2026-11-17: Phase 5.2.5 — optional test-helper visualization export
+
+Purpose: expose autoware_test_utils/visualization.hpp for the planning suites
+without adding plotting to its ordinary helper target. Inspect the inline
+header's pyplot, geometry, lanelet and interface includes; the existing ordinary
+compiled helper already supplies the non-plotting closure.
+
+Pattern: add a package-local :visualization cc_library containing that original
+header, strip_include_prefix=include, and dependencies on :autoware_test_utils
+and @autoware_pyplot. Add the latter module dependency. Leave original helper
+sources, snapshot behavior and tests unchanged. The plotting consumers name the
+optional target explicitly; no metarepository label enters the package.
+
+Verification: the route-handler/test-helper command below passes all 21 original
+helper cases without failures/errors/skips. The header is additionally compiled
+and exercised by trajectory and route-handler's complete plotted suites. The
+ordinary helper remains usable without depending on the optional target.
+No Fast DDS or broad communication sweep is required for this header export.
