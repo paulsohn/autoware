@@ -1,0 +1,65 @@
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "autoware_motion_utils",
+    srcs = glob(["src/**/*.cpp"]),
+    hdrs = glob(["include/**/*.hpp"]),
+    strip_include_prefix = "include",
+    deps = [
+        "@autoware_adapi_v1_msgs//:cc",
+        "@autoware_internal_planning_msgs//:cc",
+        "@autoware_interpolation",
+        "@autoware_planning_msgs//:cc",
+        "@autoware_utils_geometry",
+        "@autoware_utils_math",
+        "@autoware_utils_system",
+        "@autoware_utils_visualization",
+        "@autoware_vehicle_msgs//:cc",
+        "@builtin_interfaces//:cc",
+        "@geometry_msgs//:cc",
+        "@nav_msgs//:cc",
+        "@rclcpp//:rclcpp_library",
+        "@rosdistro//cc:boost.geometry",
+        "@rosdistro//cc:eigen",
+        "@std_msgs//:cc",
+        "@tf2//:tf2_library",
+        "@tf2_geometry_msgs//:tf2_geometry_msgs_library",
+        "@visualization_msgs//:cc",
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = [
+        "@autoware_adapi_v1_msgs//:cc_shared",
+        "@autoware_internal_planning_msgs//:cc_shared",
+        "@autoware_planning_msgs//:cc_shared",
+        "@autoware_vehicle_msgs//:cc_shared",
+        "@builtin_interfaces//:cc_shared",
+        "@geometry_msgs//:cc_shared",
+        "@nav_msgs//:cc_shared",
+        "@rclcpp//:rclcpp",
+        "@std_msgs//:cc_shared",
+        "@tf2//:tf2",
+        "@tf2_geometry_msgs//:tf2_geometry_msgs",
+        "@visualization_msgs//:cc_shared",
+    ],
+)
+
+cc_test(
+    name = "test_autoware_motion_utils",
+    timeout = "long",
+    srcs = glob([
+        "test/**/*.cpp",
+        "test/**/*.hpp",
+    ]),
+    dynamic_deps = [":runtime_dynamic_deps"],
+    env = {"ROS_DOMAIN_ID": "99"},
+    deps = [
+        ":autoware_motion_utils",
+        "@googletest//:gtest",
+    ],
+)

@@ -4925,3 +4925,38 @@ XML files, target times 0.3/0.1/0.1/0.2 seconds. The final grouped invocation
 takes 16.632 seconds and also passes all 118 motion and 23 pose cases. This
 module gate is complete; executable enabled behavior remains the pose module's
 separate gate below. No Fast DDS, pre-commit, container or colcon/ament/CMake build-path check.
+
+
+## 2026-11-17: Phase 5.2.4 — motion utilities in the pose group
+
+Purpose: provide PoseInitializer's VehicleStopCheckerBase through the complete
+motion utility package. Inspected CMake/manifest, ten compiled sources, public
+headers and all eleven C++ test files plus the helper header. No new prerequisite
+beyond already integrated interpolation, geometry/math/system/visualization and
+message providers is required. Complete suite: 118 cases, including vehicle
+stop checks, resampling, distances, trajectory/path operations, marker behavior,
+overlap characterization and the existing lateral-offset benchmark test.
+
+Pattern: package-local compiled library over src/**/*.cpp and scoped public
+headers, explicit compile dependencies on referenced providers, and a final
+runtime provider matching the ROS interface/shared dependencies. Preserve
+CMake's single complete test binary, whose test_motion_utils.cpp supplies main.
+Declare the helper header as an input. No source patch, fixture replacement,
+benchmark omission or new solver dependency is needed for this current target.
+The VehicleStopCheckerBase constructor already accepts the switchable node
+through its existing template; do not alter the stop-check algorithm.
+
+Verification, run as part of the same sequential group:
+
+```bash
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --local_test_jobs=1 --nocache_test_results --test_output=errors \
+  @autoware_component_interface_utils//... @autoware_motion_utils//... \
+  @autoware_pose_initializer//...
+```
+
+Result: all 118 cases pass in 7.2 seconds, confirmed in XML without failures/
+errors/skips. The grouped invocation takes 16.632 seconds. The existing pose
+integration cases also exercise this library's stop checker. No production
+source or existing-test modification is required. No Fast DDS, pre-commit or
+container check was run. This module gate is complete.
