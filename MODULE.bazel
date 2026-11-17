@@ -517,3 +517,9 @@ local_path_override(
     module_name = "autoware_internal_msgs",
     path = "src/core/autoware_internal_msgs/autoware_internal_msgs",
 )
+
+bazel_dep(name = "autoware_adapi_specs", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_adapi_specs",
+    path = "src/core/autoware_core/api/autoware_adapi_specs",
+)

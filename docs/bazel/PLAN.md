@@ -959,6 +959,11 @@ Keep package commits separate and heavy builds sequential; routine Cyclone DDS
 only. Phase 5.3 system/API composition and Phase 6 GPU integration stay separate.
 
 
+#### Phase 5.2.5: Planning and control (in progress)
+
+Validated autoware_adapi_specs; see its module journal entry for the complete gate.
+Remaining native-control and planning dependency groups retain separate tasks.
+
 ## Later phases
 
 ### Incoming phase identifiers

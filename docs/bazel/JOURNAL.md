@@ -5323,3 +5323,40 @@ whitespace checks accompany the runtime gates.
 
 No Fast DDS, pre-commit or colcon/ament/CMake run is included. Phase 5.2.5 continues with its remaining package groups;
 this layout change does not mark the entire phase complete.
+## 2026-11-17: Phase 5.2.5 — ADAPI specifications in the native-control group
+
+Purpose: supply command gate's public operation-mode contracts while preserving
+all headers of the ADAPI specification package. Inspected CMake/manifest and all
+eleven public headers. There is no existing functional test suite; CMake installs
+this header-only package. Add a root-owned compile/link consumer under bazel/tests/autoware_adapi_specs
+including every public header, then validate concrete use through command gate. This is not
+an interface-directory completeness validator or a new interface registry.
+
+Pattern: package-local header library with scoped includes, autoware_adapi_v1_msgs,
+autoware_adapi_version_msgs and RCLCPP compile providers, plus a corresponding
+shared runtime provider for final consumers. Keep this API prerequisite in
+Phase 5.2.5 rather than waiting for Phase 5.3's full system/API composition.
+The version-interface header uses the checked-in ADAPI 1.9.2 snapshots, with
+new package-local Bazel declarations for their existing definitions. Select
+both with root local_path_override and retain package-local 0.0.0 dependencies.
+Do not replace an available snapshot with a registry overlay because that
+snapshot lacks Bazel files. The local-interface entries below record the
+complete generated surfaces and consumer gate. Registry providers remain for
+standard ROS dependencies absent from the checkout.
+
+Verification (all three packages and executable checks in one final gate):
+
+```bash
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --local_test_jobs=1 --nocache_test_results --test_output=errors \
+  @autoware_adapi_specs//... @autoware_command_gate//... \
+  @autoware_simple_pure_pursuit//... //bazel/tests:command_gate_rclcpp_test \
+  //bazel/tests:simple_pure_pursuit_rclcpp_test
+```
+
+Result: the public-header consumer passes in 0.1 seconds, with no failures/
+errors/skips. All command-gate cases and its real executable also pass with
+these contracts. The final complete-group invocation takes 17.772 seconds.
+No source compatibility patch or generated interface change is required. The
+package gate is complete. Fast DDS,
+pre-commit, container and colcon/ament/CMake checks were not run.

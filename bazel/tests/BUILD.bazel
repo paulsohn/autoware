@@ -935,3 +935,10 @@ py_pytest(
     srcs = ["ros2agnocast/test_version.py"],
     deps = ["@ros2agnocast"],
 )
+
+cc_test(
+    name = "adapi_specs_headers_test",
+    srcs = ["autoware_adapi_specs/test_headers.cpp"],
+    dynamic_deps = ["@autoware_adapi_specs//:runtime_dynamic_deps"],
+    deps = ["@autoware_adapi_specs"],
+)

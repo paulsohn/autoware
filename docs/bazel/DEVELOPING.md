@@ -406,6 +406,22 @@ visualization header is not currently exported by these compiled-helper targets.
 Use a test fixture to own ROS init/shutdown when the source has no custom main,
 so context cleanup also runs after failed assertions.
 
+## Native ROS component nodes
+
+For a component deriving directly from rclcpp::Node, use
+`rclcpp_components_register_node` from `@rclcpp_components//:defs.bzl`. Supply
+its shared component and plugin, and set `node_name` to generate the executable.
+Register `<name>_record` in the package's ament_index and install the executable
+through register_ament_files. Keep package-specific shared-library names so
+libraries from multiple components can coexist in a runtime prefix.
+
+Python integration peers need their C message type-support libraries available
+to dlopen as well as their generated Python modules. Declare the package
+ament_index in test data and check that its runfiles expose the exercised shared
+libraries. Set the test's `LD_LIBRARY_PATH` to `lib`; `--run_env` settings
+alone do not configure a native py_test environment. Native ROS-only nodes do
+not interpret ENABLE_AGNOCAST as a backend switch.
+
 ## Switchable standalone nodes
 
 For a wrapper-derived node using AgnocastOnlyCallbackIsolatedExecutor and a
