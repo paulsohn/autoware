@@ -6524,6 +6524,26 @@ planning launch resolves the indexed names and shuts down cleanly. Exact shared
 command, platform and aggregate results are recorded at that link; reuse results
 for unchanged binaries. No Fast DDS, CMake or container run was performed.
 
+## 2026-11-17: Phase 5.2.5 — planning-topic-converter executable index
+
+Purpose: make the existing executable(s) discoverable through the original core
+planning XML. Inspect the package's CMake executable declarations, native Bazel
+launcher targets and node_executables registration. Standalone rootpath checks
+use Bazel filenames directly and therefore do not prove ROS libexec discovery.
+The aggregate launch first fails to resolve its expected executable name.
+
+Preserve Bazel target labels/binaries and add register_ament_files(renames=...)
+under lib/autoware_planning_topic_converter. Map path_to_trajectory_converter_exe to path_to_trajectory_converter.
+This preserves the upstream runtime contract without aliases in original XML or
+convenience symlinks in the checkout. No original source or test changes.
+
+Verification: [the complete composed gate](#2026-11-17-phase-525--core-planning-launch-composition) runs @autoware_planning_topic_converter//...
+and its existing path converter runtime check(s), then starts the original XML.
+All 4 original C++ cases and those executable checks pass; the six-node
+planning launch resolves the indexed names and shuts down cleanly. Exact shared
+command, platform and aggregate results are recorded at that link; reuse results
+for unchanged binaries. No Fast DDS, CMake or container run was performed.
+
 ## 2026-11-17: Phase 5.2.5 — core planning launch composition
 
 The original XML starts behavior/motion planners with vehicle_param_file but

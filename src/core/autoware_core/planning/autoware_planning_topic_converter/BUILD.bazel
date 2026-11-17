@@ -56,6 +56,7 @@ register_ament_files(
         ":path_to_trajectory_converter_exe",
     ],
     prefix = "lib/autoware_planning_topic_converter",
+    renames = {":path_to_trajectory_converter_exe": "path_to_trajectory_converter"},
     strip_prefix = "*",
 )
 
