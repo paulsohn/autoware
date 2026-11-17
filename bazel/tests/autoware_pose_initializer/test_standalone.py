@@ -25,7 +25,7 @@ EXECUTABLE = str(Path(sys.argv.pop(1)).resolve())
 
 class PoseInitializerRuntime(unittest.TestCase):
     def test_initialization_transactions(self):
-        os.environ['ROS_DOMAIN_ID'] = '102'
+        os.environ['ROS_DOMAIN_ID'] = '61'
         environment = dict(os.environ, ENABLE_AGNOCAST=os.environ['AUTOWARE_TEST_AGNOCAST'])
         if environment['ENABLE_AGNOCAST'] == '1':
             environment['LD_PRELOAD'] = environment['AGNOCAST_TEST_HEAPHOOK']

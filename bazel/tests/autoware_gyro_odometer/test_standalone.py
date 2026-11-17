@@ -65,19 +65,35 @@ class GyroOdometerRuntime(unittest.TestCase):
                     imu.angular_velocity.y = 0.2
                     imu.angular_velocity.z = 0.3
                     imu.angular_velocity_covariance = [0.01, 0.0, 0.0, 0.0, 0.02, 0.0, 0.0, 0.0, 0.03]
-                    deadline = time.monotonic() + 30
-                    while time.monotonic() < deadline and not (all(outputs.values()) and healthy()):
-                        if process.poll() is not None:
-                            break
-                        stamp = node.get_clock().now().to_msg()
-                        vehicle.header.stamp = stamp
-                        imu.header.stamp = stamp
-                        vehicle_publisher.publish(vehicle)
-                        imu_publisher.publish(imu)
-                        rclpy.spin_once(node, timeout_sec=0.05)
-                    if not all(outputs.values()) or not healthy():
+                    def wait_for(predicate):
+                        deadline = time.monotonic() + 30
+                        while time.monotonic() < deadline and process.poll() is None:
+                            if predicate():
+                                return
+                            rclpy.spin_once(node, timeout_sec=0.1)
                         log.seek(0)
-                        self.fail("Missing fusion/healthy diagnostics; node log:\n" + log.read())
+                        self.fail("Fusion readiness/output timed out; node log:\n" + log.read())
+
+                    def status_value(key, expected):
+                        return any(
+                            "gyro_odometer_status" in status.name and
+                            dict((v.key, v.value.lower()) for v in status.values).get(key) == expected
+                            for message in diagnostics for status in message.status)
+
+                    wait_for(lambda: vehicle_publisher.get_subscription_count() > 0 and
+                             imu_publisher.get_subscription_count() > 0 and
+                             all(node.count_publishers(name) > 0 for name in outputs))
+                    # Prime arrival state, then acknowledge exactly one queued IMU sample.
+                    # Repeated input pairs can legitimately reduce covariance by their count.
+                    vehicle.header.stamp = node.get_clock().now().to_msg()
+                    vehicle_publisher.publish(vehicle)
+                    wait_for(lambda: status_value("is_arrived_first_vehicle_twist", "true"))
+                    imu.header.stamp = node.get_clock().now().to_msg()
+                    imu_publisher.publish(imu)
+                    wait_for(lambda: status_value("imu_queue_size", "1"))
+                    vehicle.header.stamp = node.get_clock().now().to_msg()
+                    vehicle_publisher.publish(vehicle)
+                    wait_for(lambda: all(outputs.values()) and healthy())
                     for name, messages in outputs.items():
                         output = messages[-1]
                         twist = output.twist.twist if "covariance" in name else output.twist

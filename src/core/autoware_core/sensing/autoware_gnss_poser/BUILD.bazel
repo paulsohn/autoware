@@ -2,12 +2,10 @@ load("@autoware_agnocast_wrapper//:defs.bzl", "autoware_agnocast_node")
 load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
 load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
 load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library", "cc_shared_library")
-load("@rules_shell//shell:sh_test.bzl", "sh_test")
 
 package(default_visibility = ["//visibility:public"])
 
 exports_files([
-    "test/test_standalone.py",
     "config/gnss_poser.param.yaml",
 ])
 
@@ -99,26 +97,5 @@ ament_index(
     for name, src in [
         ("test_gnss_poser", "test/test_gnss_poser_node.cpp"),
         ("test_gnss_poser_characterization", "test/test_gnss_poser_node_characterization.cpp"),
-    ]
-]
-
-[
-    sh_test(
-        name = name,
-        timeout = "long",
-        srcs = ["test/run_geoid_test.sh"],
-        args = [
-            "$(rootpath :" + name + "_binary)",
-            "$(rootpath @autoware_geography_utils//:geoid_grid)",
-        ],
-        data = [
-            ":" + name + "_binary",
-            ":ament_index",
-            "@autoware_geography_utils//:geoid_grid",
-        ],
-    )
-    for name in [
-        "test_gnss_poser",
-        "test_gnss_poser_characterization",
     ]
 ]

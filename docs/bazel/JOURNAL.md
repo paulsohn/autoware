@@ -5247,3 +5247,79 @@ The relocated root executable/bridge validation is recorded in the relocation
 entry. Standard ROS dependencies absent locally still come from pinned RCR.
 No Fast DDS, pre-commit, container or
 colcon/ament/CMake run was performed.
+
+## 2026-11-17: Keep added integration tests outside component packages
+
+Purpose: preserve the original source snapshots while keeping the full Bazel
+acceptance coverage. Existing implementations and upstream tests change only for
+a demonstrated integration/testing blocker, compatibility issue or genuinely
+incorrect implementation. AGENTS.md, PLAN.md and DEVELOPING.md now specify this
+boundary. New tests, adapters and fixtures belong under bazel/tests/<package>/.
+
+Prerequisites and inspected inputs: compare each moved file with the starting
+source snapshot, inspect its BUILD exports and root consumers, and retain the
+original package test suite. All 26 relocated files were additions to that
+snapshot: 18 standalone Python probes, three C++ consumers, two geoid wrappers,
+an EKF launch adapter, a snapshot helper and a CLI version regression. Original
+upstream tests and production implementations remain in place.
+
+Integration pattern: move each added source to bazel/tests/<package>/ and change
+root srcs/main labels to that path. Remove obsolete component exports. Keep
+original test binaries package-local; root wrappers consume their executable
+and resource providers. Components never acquire dependencies on root labels.
+The node package retains its original initialization test; its added pub/sub
+consumer moves to //bazel/tests:node_pubsub_test. Other renamed consumers are
+//bazel/tests:adapi_specs_headers_test, :qos_compatibility_test,
+:geography_with_grid_test, :geography_without_grid_test, :gnss_poser_unit_test,
+:gnss_poser_characterization_test and :ros2agnocast_version_test. Existing root
+standalone target names remain unchanged.
+
+Diagnosed failures and fixes in the added test infrastructure:
+
+- Python backend variants sharing one source generated conflicting bytecode
+  actions. Disable precompilation on root Python/launch test targets; keep one
+  source per probe rather than duplicate it for backend variants.
+- DDS domain 102 selected port 32900 inside the host ephemeral port range and
+  failed to bind. Use domains 60–63 for the affected native-control and pose
+  checks instead of 102–105.
+- The gyro covariance check sent repeated IMUs while waiting, legitimately
+  averaging several samples and changing its expected covariance. Wait for
+  endpoint discovery and diagnostic acknowledgements, then submit one IMU and
+  one vehicle sample. Keep the original numeric assertions.
+- Repeated projector publication triggered repeated map reloads and service
+  replacement. Publish one transient-local projector and wait for the service.
+
+Verification (Cyclone DDS, sequential invocations, existing user.bazelrc limits):
+
+```bash
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --local_test_jobs=1 --nocache_test_results --test_output=errors \
+  --strategy=TestRunner=local --test_env=AGNOCAST_TEST_NO_PRELOAD=1 \
+  --run_under=//bazel/agnocast:with_runtime \
+  //bazel/tests:all @autoware_node//... @ros2agnocast//:tests
+
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --local_test_jobs=1 --nocache_test_results --test_output=errors \
+  --strategy=TestRunner=local --run_under=//bazel/agnocast:with_runtime \
+  //bazel/agnocast:bridge_plugins_test
+```
+
+The root gate passes all 61 targets in 110.141 seconds, with 131 XML cases and
+no failures/errors/skips. The original ros2agnocast pytest suite reports 93
+cases and the relocated version regression reports two cases (pytest wrapper
+XML counts represent processes). Agnocast-enabled children explicitly preload
+the heap hook; the first command keeps unrelated parent processes unpreloaded.
+The bridge gate requires parent preloading and passes all 11 cases in 10.742
+seconds. The installed Agnocast kernel module and device are available.
+
+Repeat the preceding shared local-provider command with the additional
+//bazel/tests:adapi_specs_headers_test label. This current-layout invocation
+passes all 24 test targets / 185 XML cases and builds 217 non-test targets in
+40.710 seconds, including both complete original native-control suites. There
+are no failures/errors/skips. Together these commands cover the relocated
+consumers, unchanged module suites and bridge behavior after local message
+provider selection. Targeted formatting, Python parsing, shell syntax and
+whitespace checks accompany the runtime gates.
+
+No Fast DDS, pre-commit or colcon/ament/CMake run is included. Phase 5.2.5 continues with its remaining package groups;
+this layout change does not mark the entire phase complete.

@@ -7,7 +7,6 @@ package(default_visibility = ["//visibility:public"])
 
 exports_files([
     "test/test_ndt_scan_matcher_launch.py",
-    "test/test_standalone.py",
     "config/ndt_scan_matcher.param.yaml",
 ])
 

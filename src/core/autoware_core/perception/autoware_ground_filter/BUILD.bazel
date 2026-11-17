@@ -7,7 +7,6 @@ package(default_visibility = ["//visibility:public"])
 
 exports_files([
     "config/ground_filter.param.yaml",
-    "test/test_standalone.py",
 ])
 
 cc_library(

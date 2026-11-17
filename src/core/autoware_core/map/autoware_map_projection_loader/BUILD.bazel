@@ -8,7 +8,7 @@ package(default_visibility = ["//visibility:public"])
 exports_files(glob([
     "test/*.test.py",
     "test/data/*.yaml",
-]) + ["test/test_standalone.py"])
+]))
 
 cc_library(
     name = "autoware_map_projection_loader",

@@ -5,7 +5,7 @@ load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
 
 package(default_visibility = ["//visibility:public"])
 
-exports_files(glob(["config/*.yaml"]) + ["test/test_standalone.py"])
+exports_files(glob(["config/*.yaml"]))
 
 cc_library(
     name = "autoware_euclidean_cluster_object_detector",

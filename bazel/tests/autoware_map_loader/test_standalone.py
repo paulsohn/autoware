@@ -84,12 +84,12 @@ class MapRuntime(unittest.TestCase):
                     projector.projector_type = MapProjectorInfo.MGRS
                     projector.mgrs_grid = "54SUE"
                     projector.vertical_datum = MapProjectorInfo.WGS84
+                    if not is_cloud:
+                        projector_pub.publish(projector)
                     deadline = time.monotonic() + 30
                     while time.monotonic() < deadline and process.poll() is None:
                         if maps and metadata and client.service_is_ready():
                             break
-                        if not is_cloud:
-                            projector_pub.publish(projector)
                         rclpy.spin_once(node, timeout_sec=0.1)
                     if not (maps and metadata and client.service_is_ready()):
                         log.seek(0)
