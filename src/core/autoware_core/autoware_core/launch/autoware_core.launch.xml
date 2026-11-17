@@ -19,6 +19,8 @@
   <arg name="launch_vehicle" default="true" description="launch vehicle"/>
   <arg name="launch_api" default="true" description="launch api"/>
 
+  <arg name="launch_rviz" default="true" description="launch RViz visualization"/>
+
   <!-- Global parameters -->
   <group scoped="false">
     <include file="$(find-pkg-share autoware_global_parameter_loader)/launch/global_params.launch.py">
@@ -75,6 +77,6 @@
 
   <!-- Tools -->
   <group>
-    <node pkg="rviz2" exec="rviz2" name="rviz2" output="screen" args="-d $(find-pkg-share autoware_core)/rviz/autoware_core.rviz"/>
+    <node if="$(var launch_rviz)" pkg="rviz2" exec="rviz2" name="rviz2" output="screen" args="-d $(find-pkg-share autoware_core)/rviz/autoware_core.rviz"/>
   </group>
 </launch>

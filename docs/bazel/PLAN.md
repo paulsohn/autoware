@@ -1204,13 +1204,32 @@ validate RCR xacro 2.1.1-3.rcr.3 and
 robot_state_publisher 3.5.6-1.rcr.0; pin both inputs. Both sensor-kit variants
 passed rendered URDF, mesh lookup, static transform and shutdown assertions.
 
-#### Phase 5.3.4: Top-level headless launch boundary (next)
+#### Phase 5.3.4: Top-level headless launch and final package closure (in progress)
 
-The root autoware_core launch unconditionally starts RViz. Inspect the intended
-headless consumer and declare a bounded acceptance gate before choosing how to
-expose the original launch resources. Preserve original packages; do not add a
-GUI bypass or substitute a root-owned driving scenario without a demonstrated
-integration need. Full driving simulation and image packaging remain Phase 7.
+Finish the six remaining local packages: autoware_component_interface_admission,
+autoware_marker_utils, autoware_interface_spec_lint, autoware_test_node,
+autoware_testing and the top-level autoware_core resource package. Preserve
+three original admission suites, the original marker-conversion suite (including
+its custom main), and all original interface-lint pytest files, supplying real
+sibling specs/configuration and the built manifest generator rather than skips.
+Exercise the example node's original launch and native component registration;
+run autoware_testing's original generic smoke suite against that real executable.
+No component code or Python test needs a metarepository label.
+
+The original top-level core launch unconditionally starts RViz. Demonstrate that
+headless startup is blocked, then add a default-on launch_rviz option as a
+separate source fix. Run that original launch with RViz disabled and all eight
+functional groups enabled: real model/map resources, expected node graph,
+vehicle parameters, typed sensing/localization relay, planning/control graph,
+API version request and clean shutdown. Cyclone DDS/native RCLCPP is the declared
+aggregate configuration; reuse earlier enabled Agnocast module/API evidence.
+No Fast DDS run is authorized or required for this gate. GUI execution, driving
+simulation, hardware/sensor drivers and image packaging remain later scope.
+
+Close Phase 5 only after every package gate above passes without dependency
+skips or deferred failures, the all-74-package declaration inventory is complete,
+and source changes, definitions, journal and steady-state conventions are
+committed at their respective boundaries.
 
 ## Later phases
 

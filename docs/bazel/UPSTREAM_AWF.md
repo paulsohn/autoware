@@ -833,3 +833,38 @@ planning journal for exact commands and separate Bazel resource-name fixes.
 This is a launch configuration bug, not a Lyrical-only correction. Ubuntu 24.04,
 LLVM/libc++ 21.1.8 and RCR Lyrical were used; upstream CMake/GCC, other ROS
 releases and closed-loop driving were not tested. No upstream submission made.
+
+## Optional RViz in the top-level core launch
+
+- [ ] Associate with an upstream issue or PR. Reviewed 2026-11-18; no matching
+  RViz/headless or launch_rviz issue/PR found. This finding has not been submitted.
+
+Package: autoware_core, original launch/autoware_core.launch.xml. Local pre-fix
+branch revision: 9080cb68582a1816b62d634734a0f134a5903746. Inspected upstream
+[launch source at 9799c6d](https://github.com/autowarefoundation/autoware_core/blob/9799c6da7cdf4cb0bd9d9766e62acb406fd2f73c/autoware_core/launch/autoware_core.launch.xml)
+still starts RViz unconditionally, unlike its eight switchable functional groups.
+
+Reproducer: assemble the core runtime and model/map resources without a GUI
+runtime, then include the original top-level launch with all functional groups
+enabled. Supplying launch_rviz=false has no effect because the argument/node
+condition is absent. The launch fails trying to resolve rviz2 before its behavior
+tests finish. This applies to a headless deployment regardless of build system.
+
+Proposed fix: add a default-true launch_rviz argument and condition only the
+existing RViz node on it. Existing GUI callers retain the same default. Related
+precedent: [autoware_launch's RViz option](https://github.com/autowarefoundation/autoware_launch/blob/main/autoware_launch/launch/autoware.launch.xml),
+which is not a matching core fix. This issue is independent of Lyrical support;
+[AWF's Lyrical tracker](https://github.com/autowarefoundation/autoware/issues/7404)
+does not supply evidence for this launch behavior.
+
+Local validation: Ubuntu 24.04, LLVM/libc++ 21.1.8, RCR Lyrical and Cyclone DDS.
+The original full launch failed before the change and passed afterward with
+launch_rviz=false, actual map/model data, all eight functional groups, vehicle
+parameters, typed velocity relay, API version request, planning/control graph
+and clean shutdown. The added test also asserts the original XML keeps the GUI
+option default true. Reproduce with
+`bazel test --config=no-agnocast //bazel/tests:core_system_headless_launch_test`.
+The final Phase 5.3.4 journal records the complete ten-target/204-case gate.
+Upstream CMake/GCC, other ROS releases and default-on GUI rendering were not
+run. Local source commit is recorded by the phase's separate signed-off source
+fix; no corresponding upstream PR is currently associated.

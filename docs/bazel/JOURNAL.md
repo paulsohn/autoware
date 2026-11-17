@@ -7273,3 +7273,32 @@ sensor driver, Gazebo/AWSIM execution or driving simulation was performed.
 The model-resource group is complete. Inspection of the original top-level
 core launch found an unconditional RViz node; this separate headless-entry
 boundary is next, and no original launch has been modified to bypass it.
+
+## 2026-11-18: Phase 5.3.4 — optional RViz in the original core launch
+
+Purpose: permit the existing top-level core launch to run in a headless product
+without changing its default GUI behavior. Inspect the original XML: all eight
+functional groups have switches, but RViz starts unconditionally. The native
+aggregate gate failed before tests completed with `package 'rviz2' not found`,
+even when the caller supplied launch_rviz=false. A headless bundle should not
+need an unused GUI runtime. This is a launch-contract issue, not a ROS/toolchain
+compatibility patch.
+
+Add one launch_rviz argument defaulting to true and guard only the existing
+RViz node with it. Preserve all original functional groups, arguments and paths.
+Keep this source fix separate from the Bazel definitions. Do not replace the
+full launch or suppress process failures in the test adapter.
+
+Verification: the same //bazel/tests:core_system_headless_launch_test gate
+failed without the option and passed with launch_rviz=false, all eight core
+groups enabled and clean shutdown. The test also parses the indexed original
+XML to assert the GUI default is still true. The final complete Phase 5.3.4 gate
+records commands and results with the core composition entry. Default-on GUI
+execution itself was not run; this is a statically preserved default, not a
+claim of rendered GUI validation. No upstream CMake/GCC build was performed.
+
+Upstream reviewed on 2026-11-18: autoware_core main
+9799c6da7cdf4cb0bd9d9766e62acb406fd2f73c still has the unconditional node.
+Searches for RViz/headless and launch_rviz found no matching issue/PR; the larger
+autoware_launch package already offers an RViz switch, which is related precedent,
+not an associated fix. Record the actionable finding in UPSTREAM_AWF.md.
