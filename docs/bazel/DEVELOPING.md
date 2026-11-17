@@ -662,3 +662,14 @@ through launch_test, checking configuration/remaps and clean exits. Core plannin
 uses //bazel/tests:core_planning_launch_test; core control uses
 //bazel/tests:core_control_launch_test and
 //bazel/tests:core_control_gate_launch_test, all with --config=no-agnocast.
+
+Dynamic launch arguments do not create Bazel dependency edges. The global
+parameter loader resolves `<vehicle_model>_description` at runtime; keep that
+loader independent of a particular vehicle. The application or test bundle must
+explicitly include its selected description's `:ament_index` in runtime `data`
+and select that module in its dependency graph. For example,
+`vehicle_model=autoware_sample_vehicle` requires
+`@autoware_sample_vehicle_description//:ament_index`. A root `bazel_dep` and
+`local_path_override` select the local source, but the runtime data edge is what
+makes its resources available to the launched process. Include all supported
+model descriptions when a bundle permits choosing among several models.

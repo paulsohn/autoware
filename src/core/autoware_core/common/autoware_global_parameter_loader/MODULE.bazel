@@ -1,0 +1,7 @@
+module(
+    name = "autoware_global_parameter_loader",
+    version = "0.0.0",
+)
+
+bazel_dep(name = "autoware_vehicle_info_utils", version = "0.0.0")
+bazel_dep(name = "rosdistro", version = "0.0.0")

@@ -686,6 +686,12 @@ local_path_override(
     path = "src/core/autoware_core/api/autoware_adapi_adaptors",
 )
 
+bazel_dep(name = "autoware_global_parameter_loader", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_global_parameter_loader",
+    path = "src/core/autoware_core/common/autoware_global_parameter_loader",
+)
+
 bazel_dep(name = "autoware_default_adapi", version = "0.0.0")
 local_path_override(
     module_name = "autoware_default_adapi",

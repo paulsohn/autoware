@@ -6915,3 +6915,42 @@ There are no registered existing runtime tests in this resource-only module.
 Unchanged component algorithm/backend results remain applicable. No source fix
 was needed. Simulated time is selected but not advanced; this does not establish
 simulation progression, URDF rendering or localization convergence.
+
+## 2026-11-18: Phase 5.3.2 — global parameter loader
+
+Purpose: integrate autoware_global_parameter_loader in its actual global/runtime context.
+
+Inspect global_params.launch.py and the existing vehicle-info launch helper.
+Expose launch/** with ament_index, composing the vehicle-info resource index.
+Keep model selection dynamic: the loader module does not depend on one chosen
+vehicle description or metarepository labels. The loader derives
+<vehicle_model>_description from a runtime string; Bazel cannot infer that edge.
+The product/test explicitly declares
+@autoware_sample_vehicle_description//:ament_index in its runtime data and
+passes vehicle_model=autoware_sample_vehicle. Select the local description with
+its root dependency/override pair too: source selection alone does not put its
+resources in the launched process's runfiles. A bundle supporting multiple
+runtime model choices must explicitly include each supported description.
+A model-specific loader target could instead fix the model and declare its
+resource dependency statically, at the cost of per-model boilerplate. Record
+this as a future design option in PLAN.md, not an implemented or tested change.
+
+Include the original loader in an unscoped GroupAction
+so its SetParameter actions apply to following launches. A real path-generator
+probe gets no explicit vehicle YAML: successful construction and queried vehicle
+values prove global inheritance rather than duplicated per-node inputs. Check
+use_sim_time false and true. The source package has no existing runtime tests.
+
+Pattern: retain original sources/configurations and add only package-local
+MODULE/BUILD resource definitions selected by adjacent root 0.0.0 dependency/
+local_path_override pairs. Added tests/fixtures live in bazel/tests/system_context.
+The shared original-launch gate uses Cyclone DDS, serialized tests and declared
+resources, with separate ROS domains for the two clock variants.
+
+Verification: the complete Phase 5.3.2 gate below passed with Cyclone DDS.
+Both original combined contexts passed (wall and simulated clock selection,
+3.3 seconds each), including this module's assertions and clean shutdown.
+There are no registered existing runtime tests in this resource-only module.
+Unchanged component algorithm/backend results remain applicable. No source fix
+was needed. Simulated time is selected but not advanced; this does not establish
+simulation progression, URDF rendering or localization convergence.
