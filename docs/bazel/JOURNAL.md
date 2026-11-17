@@ -7189,3 +7189,23 @@ entry passed using Cyclone DDS. Both original vehicle launches passed all two
 cases each (behavior and shutdown), with zero failures, errors or skips.
 No source change, dependency patch or compatibility fix was needed. This
 checks descriptions and fixed transforms, not sensor drivers or simulation.
+
+## 2026-11-18: Phase 5.3.3 — AWSIM sensor-kit resources
+
+Purpose: integrate autoware_awsim_sensor_kit_description for the original vehicle-description launch.
+
+Expose config and urdf and compose both local sample sensor-kit and Velodyne indexes. The AWSIM macros reuse camera/IMU files from the sample kit, so its declared index must preserve that transitive lookup. The original CMake has no runtime suite. This renders description resources, not an AWSIM simulator integration.
+
+Integration pattern: add package-local MODULE/BUILD definitions, select local
+sources with adjacent root dependency/override pairs, and put added tests under
+bazel/tests/vehicle_description. The complete group gate renders both sensor
+variants through the original XML, observes robot_description and tf_static,
+checks base_link to sensor_kit_base_link translation (0.9, 0, 2.0), resolves
+every rendered mesh URI in declared runfiles, and checks process shutdown.
+Cyclone DDS only; the robot publisher is not a switchable Agnocast component.
+
+Verification: the complete four-module gate recorded with the core-vehicle
+entry passed using Cyclone DDS. Both original vehicle launches passed all two
+cases each (behavior and shutdown), with zero failures, errors or skips.
+No source change, dependency patch or compatibility fix was needed. This
+checks descriptions and fixed transforms, not sensor drivers or simulation.

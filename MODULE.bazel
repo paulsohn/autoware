@@ -746,3 +746,9 @@ local_path_override(
     module_name = "autoware_sample_sensor_kit_description",
     path = "src/core/autoware_core/description/autoware_sample_sensor_kit_description",
 )
+
+bazel_dep(name = "autoware_awsim_sensor_kit_description", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_awsim_sensor_kit_description",
+    path = "src/core/autoware_core/description/autoware_awsim_sensor_kit_description",
+)
