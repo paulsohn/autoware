@@ -5042,3 +5042,15 @@ All three module gates are complete, and Phase 5.2.4 is closed. The callback
 source fix and the three package integrations use separate commits. Next is the
 Phase 5.2.5 planning/control dependency-group inventory; do not pre-apply future
 solver or planner patches.
+
+
+## 2026-11-17: Source selection and package preservation conventions
+
+Require checked-in dependency snapshots, adding missing Bazel declarations
+transitively instead of selecting registry sources for convenience. Preserve
+original implementations and tests except for demonstrated blockers,
+compatibility fixes or genuinely incorrect behavior. Keep new tests, adapters
+and fixtures under bazel/tests/<package>/ and expose original tests through
+component-owned Bazel rules. AGENTS.md, PLAN.md and DEVELOPING.md define these
+conventions. This documentation-only task has no runtime validation; subsequent
+module and test-layout entries record their complete acceptance gates.

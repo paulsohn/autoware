@@ -39,6 +39,13 @@ For every slice:
 
 ## Current decisions
 
+- Keep existing source packages unchanged except for Bazel definitions and
+  required build support. Source/original-test changes need a demonstrated
+  integration/testing blocker (including Lyrical/Clang compatibility) or a
+  genuinely incorrect implementation. Put all new tests, adapters and fixtures
+  under bazel/tests/<package>/; leave upstream test sources in place. Root
+  composition consumes package targets without package-to-root dependencies.
+
 - Keep component repositories independent of the metarepository's checkout
   layout. Interface collection lives under `bazel/interfaces/`, and product
   plugin assembly under `bazel/agnocast/`. Defer a separate autoware_bazel
@@ -90,12 +97,15 @@ For every slice:
   UPSTREAM_RCR.md records the published overlay and reproducible evidence.
 - Committed Bazel inputs include the module lockfile. Registry ordering and the
   read-only RCR CI cache are repository configuration.
-- ROS packages should come from the RCR until a local source package is needed
-  for the current target.
+- Required dependencies present under src/ use their local snapshots. Add
+  missing package-local Bazel definitions transitively, including message
+  packages, rather than selecting an older registry version with an overlay.
+  Registry sources supply dependencies absent locally; explicit source-selection
+  comparisons are separate experiments requested by the user.
 - A local Autoware ROS package is a package-local Bazel module selected by a
-  root `local_path_override`. The root pins the package's published RCR version
-  so removing only the override selects the registry source without changing
-  consumer BUILD files.
+  root `local_path_override`, recording the local snapshot version.
+  Registry comparisons require explicit user direction and compatible temporary
+  version selection without changing consumer BUILD files.
 - An interface package retains its manifest-level package dependencies in its
   `MODULE.bazel`. Each `ros_message` or `ros_service` declares only referenced
   interface targets, and `default_generators.dependencies` contains only
@@ -126,9 +136,12 @@ For every slice:
   results do not establish AWF's Ubuntu 26.04/GCC or Humble/Jazzy compatibility.
 - The journal is the reproducible experiment record; upstream notes contain only
   demonstrated, generally useful findings.
-- Agnocast is compiled into Bazel targets unconditionally. `ENABLE_AGNOCAST` is
-  a runtime choice: Bazel run and test actions select Agnocast by default, while
-  `--config=no-agnocast` selects the RCLCPP backend from the same binaries.
+- For wrapper-derived nodes, Agnocast is compiled into Bazel targets
+  unconditionally. `ENABLE_AGNOCAST` is a runtime choice: Bazel run and test
+  actions select Agnocast by default, while `--config=no-agnocast` selects the
+  RCLCPP backend from the same binaries. Existing plain rclcpp::Node components
+  retain their native ROS contract and use the RCR's native component launcher;
+  their validation selects RCLCPP without claiming Agnocast support.
 - Agnocast bridge plugins are generated and linked inside the Bazel graph. A
   product-owned interface-set target supplies explicit package roots; an aspect
   follows their `RosInterfaceInfo` providers. No build step discovers types
@@ -753,8 +766,8 @@ compatibility patches were required. RCR debug messages 1.16.0-1.rcr.0 and
 nav_msgs 5.9.3-1.rcr.0 are validated inputs for stop filter. The expanded bridge
 library required a costly initial compile; subsequent node checks reused it.
 
-Package test sources live under test/, alongside their non-Bazel peers. Root
-integration test targets and runtime composition share bazel/tests/.
+Original package tests remain alongside their source. Added tests, adapters
+and fixtures live under bazel/tests/<package>/ with root runtime composition.
 Each validated package retains a separate commit and reproducible journal entry.
 No Fast DDS, broad communication matrix or container sweep was run.
 Phase 5.2.2 follows this slice.
@@ -944,6 +957,7 @@ all eleven bridge regressions pass. The central manifest contains 235 interfaces
 (199 messages, 36 services). Phase 5.2.4 is complete. Phase 5.2.5 planning/control is next.
 Keep package commits separate and heavy builds sequential; routine Cyclone DDS
 only. Phase 5.3 system/API composition and Phase 6 GPU integration stay separate.
+
 
 ## Later phases
 

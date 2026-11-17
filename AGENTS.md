@@ -23,10 +23,15 @@ experiments, and milestones belong in PLAN.md and JOURNAL.md.
   its component; components must not depend on metarepository paths or labels.
   The metarepository selects source overrides and composes interface sets
   usable by bridges, loggers, or other consumers.
-- Put package-specific test sources and fixtures under the package's `test/`
-  directory alongside its existing tests, including tests introduced for Bazel.
-  Keep root-level integration tests and their runtime composition under
-  `bazel/tests/`.
+- Keep existing source packages unchanged except for Bazel definitions/build
+  support. Modify existing implementation or original tests only when a
+  demonstrated issue blocks Bazel integration/testing (including ROS/toolchain
+  compatibility) or the implementation is genuinely incorrect; document and
+  validate the fix separately.
+- Put all newly added integration tests, adapters and fixtures under `bazel/`
+  (normally `bazel/tests/<package>/`), not inside original source packages.
+  Keep original upstream tests in place and expose them through package-local
+  Bazel rules. Compose added tests at the root without component-to-root labels.
 - BUILD declarations define supported interfaces; registering interfaces and
   their dependencies is the developer's responsibility. Undeclared interface
   sources remain outside the Bazel graph. Validate generated targets and
@@ -44,6 +49,14 @@ experiments, and milestones belong in PLAN.md and JOURNAL.md.
 - Preface every Bazel dependency patch file with its affected module/version,
   observed failure, rationale and scope, verification, and upstream status or
   reference before the diff. Keep verification claims current.
+- Prefer source snapshots under `src/` whenever a required dependency is present
+  locally. Missing Bazel definitions are integration work: add package-local
+  MODULE/BUILD declarations transitively for required local dependencies,
+  including message packages, and select them with root local_path_override.
+  Do not substitute an older registry source because it already has Bazel
+  support. Use registry sources for dependencies absent locally; use a registry
+  counterpart for a local package only when the user explicitly requests a
+  source-selection comparison. Validate the affected local dependency closure.
 - Introduce only what the current experiment requires. Investigate a dependency
   or patch when a current target exposes the need; do not pre-apply anticipated
   fixes.

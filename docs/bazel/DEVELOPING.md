@@ -209,8 +209,8 @@ Keep:
 
 - workspace-wide Bazel support under `bazel/`;
 - package-owned `MODULE.bazel` and BUILD files beside package source;
-- package-specific test sources and fixtures under `test/`, including tests
-  introduced for Bazel;
+- original upstream tests in their existing package directories;
+- all newly added tests, adapters and fixtures under `bazel/tests/<package>/`;
 - root-level integration test targets and runtime composition under `bazel/tests/`;
 - development and runtime container definitions under `images/`;
 - integration strategy and evidence under `docs/bazel/`.
@@ -228,16 +228,17 @@ reference implementations for the existing build and deployment.
 
 ## Dependency conventions
 
-Use ROS packages from the ROS Central Registry until a package must build from
-the repository source. A local Autoware package owns a package-local Bazel
-module. The root module selects it with a concrete published version and a
-`local_path_override` when an RCR counterpart exists. Package-local dependency
-versions remain `0.0.0` so the root release selection supplies concrete ROS
+Use the local source snapshot for every supported package present under src/.
+Use the ROS Central Registry for dependencies absent from the source checkout.
+A local Autoware package owns a package-local Bazel module. The root module
+selects the local snapshot with `local_path_override` and records its version.
+Package-local dependency versions remain `0.0.0` so the root release selection supplies concrete ROS
 versions.
 
-Removing a local override is a deliberate source-selection check, not part of
-the normal developer loop. It is unsupported for a package that has no
-published RCR counterpart.
+Removing a local override requires an explicitly requested source-selection
+comparison and a compatible registry version. It is not part of the normal
+developer loop. Add missing Bazel definitions when adopting a required local
+package; absence of those definitions is not a reason to use registry sources.
 
 For a C++ consumer using generated ROS libraries, pair compile and runtime
 dependencies:
@@ -417,8 +418,9 @@ component's existing executor contract. Add its `<name>_components` and `<name>_
 records to the package's ament_index; register the executable under lib/<package>
 with register_ament_files. Other executor pairs need explicit support before use.
 
-Keep package behavior sources under test/. Root targets under bazel/tests select
-product runtime dependencies without introducing component-to-root labels.
+Keep added behavior sources and fixtures under bazel/tests/<package>/. Root
+targets select product runtime dependencies; package BUILD files expose original
+upstream suites without introducing component-to-root labels.
 Run ordinary RCLCPP fixture suites with --config=no-agnocast. Standalone
 behavior targets explicitly select and verify their native child's backend:
 
