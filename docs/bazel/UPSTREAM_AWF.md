@@ -751,3 +751,25 @@ is still provided. All 33 original cases across eight sources pass with the
 one-line correction. No production source changes. The module journal records
 the complete clean-environment command; this is the removed-header category
 already identified above, not a new solver/API transition.
+
+## Behavior-common smoothing test needs explicit ROS shutdown
+
+Local source correction: pending behavior-common commit association.
+
+- [ ] Associate with a matching upstream PR. Checked 2026-11-17: a
+  smoothPath/shutdown PR search found no match. Main
+  [test_trajectory_utils.cpp](https://github.com/autowarefoundation/autoware_core/blob/main/planning/behavior_velocity_planner/autoware_behavior_velocity_planner_common/test/src/test_trajectory_utils.cpp)
+  (blob c43a390befa3df5ba5acecab482cbadcccf941b6) initializes RCLCPP in
+  smoothPath.nominal without shutting it down.
+
+All 43 assertions pass, followed by a SIGSEGV during process exit. Gdb shows
+spdlog registry find/drop called from rcl_logging_external_shutdown and the
+global RCLCPP context destructor. Add a local shutdown guard immediately after
+init, so node/planner locals destruct before ROS shutdown and shutdown precedes
+static teardown, even on early test return. All 43 original cases then pass with
+successful exit; no assertions, cases or production source are changed.
+This is a test-lifecycle correction exposed by this LLVM/libc++/Lyrical build,
+not evidence of a production logger bug. See the module journal for the complete
+command and stack-capture environment. Both findings were verified on Ubuntu
+24.04, LLVM/libc++ 21.1.8 and RCR Lyrical/Cyclone DDS; upstream GCC/CMake and
+Humble/Jazzy were not run.

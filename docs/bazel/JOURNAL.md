@@ -6144,3 +6144,20 @@ module invocation builds ten non-test targets and passes all 105 active cases in
 16.498 seconds. Motion-common retains its one upstream-disabled benchmark.
 No Fast DDS, CMake or container check was run. Reuse these
 results for unchanged foundations in the downstream planner/plugin gate.
+
+## 2026-11-17: Phase 5.2.5 — behavior-planner common library
+
+The full prepared suite passes all 43 assertions but segfaults at process exit.
+Gdb traces spdlog registry access from the global ROS context destructor;
+smoothPath.nominal initializes RCLCPP without shutdown. Add a local shutdown
+guard before node/planner locals, preserving every assertion and test name.
+The complete suite then passes with successful exit in the 16.498-second
+foundation invocation. UPSTREAM_AWF.md records the dated upstream association
+check. The complete integration entry consolidates commands and build pattern;
+Bazel declarations are committed separately. No Fast DDS or CMake run is included.
+
+Verification command (prepared module definitions):
+
+```bash
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" bazel test --config=no-agnocast --local_test_jobs=1 --nocache_test_results --test_output=errors @autoware_object_recognition_utils//... @autoware_behavior_velocity_planner_common//... @autoware_motion_velocity_planner_common//...
+```

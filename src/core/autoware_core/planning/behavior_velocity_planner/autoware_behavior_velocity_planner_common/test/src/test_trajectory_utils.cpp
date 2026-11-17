@@ -32,6 +32,10 @@ TEST(smoothPath, nominal)
   using autoware_internal_planning_msgs::msg::PathWithLaneId;
 
   rclcpp::init(0, nullptr);
+  struct ShutdownGuard
+  {
+    ~ShutdownGuard() { rclcpp::shutdown(); }
+  } shutdown_guard;
   rclcpp::NodeOptions options;
   options.arguments(
     {"--ros-args", "--params-file",
