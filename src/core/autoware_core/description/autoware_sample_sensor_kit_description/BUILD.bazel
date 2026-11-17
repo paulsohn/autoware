@@ -1,0 +1,15 @@
+load("@rosdistro//ament:defs.bzl", "ament_index")
+
+package(default_visibility = ["//visibility:public"])
+
+ament_index(
+    data = glob([
+        "config/**",
+        "urdf/**",
+        "sensor/**",
+    ]),
+    package_xml = "package.xml",
+    deps = [
+        "@velodyne_description//:ament_index",
+    ],
+)

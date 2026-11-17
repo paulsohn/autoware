@@ -7169,3 +7169,23 @@ entry passed using Cyclone DDS. Both original vehicle launches passed all two
 cases each (behavior and shutdown), with zero failures, errors or skips.
 No source change, dependency patch or compatibility fix was needed. This
 checks descriptions and fixed transforms, not sensor drivers or simulation.
+
+## 2026-11-18: Phase 5.3.3 — sample sensor-kit resources
+
+Purpose: integrate autoware_sample_sensor_kit_description for the original vehicle-description launch.
+
+Expose config, urdf and sensor assets, and compose the local Velodyne resource index. The original xacro uses its own camera/IMU/VLS macros and Velodyne VLP-16 macros, with calibration loaded from YAML. Its manifest registers no existing runtime suite. The root bundle supplies the sample vehicle independently; the description module does not depend on the root.
+
+Integration pattern: add package-local MODULE/BUILD definitions, select local
+sources with adjacent root dependency/override pairs, and put added tests under
+bazel/tests/vehicle_description. The complete group gate renders both sensor
+variants through the original XML, observes robot_description and tf_static,
+checks base_link to sensor_kit_base_link translation (0.9, 0, 2.0), resolves
+every rendered mesh URI in declared runfiles, and checks process shutdown.
+Cyclone DDS only; the robot publisher is not a switchable Agnocast component.
+
+Verification: the complete four-module gate recorded with the core-vehicle
+entry passed using Cyclone DDS. Both original vehicle launches passed all two
+cases each (behavior and shutdown), with zero failures, errors or skips.
+No source change, dependency patch or compatibility fix was needed. This
+checks descriptions and fixed transforms, not sensor drivers or simulation.
