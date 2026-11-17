@@ -735,3 +735,19 @@ algorithms additionally pass in both RCLCPP and enabled Agnocast configurations.
 No production code changed. The package journal gives exact commands and
 symptom/cause/fix details. Verified with Ubuntu 24.04, LLVM/libc++ 21.1.8 and RCR
 Lyrical; upstream GCC/CMake and Humble/Jazzy were not tested.
+
+## Object-recognition transform test uses a removed TF header
+
+Local source correction: pending object-recognition commit association.
+
+- [ ] Associate with a matching upstream PR. Checked 2026-11-17: no matching
+  object_recognition_utils/Quaternion PR found. Main
+  [test_transform.cpp](https://github.com/autowarefoundation/autoware_core/blob/main/common/autoware_object_recognition_utils/test/src/test_transform.cpp)
+  (blob c35e2dd42a1e4eec1726f223d2026754fa5353c1) retains Quaternion.h.
+
+The full module fails to compile against the selected Lyrical TF provider.
+Use tf2/LinearMath/Quaternion.hpp; retain every assertion and buffer.h, which
+is still provided. All 33 original cases across eight sources pass with the
+one-line correction. No production source changes. The module journal records
+the complete clean-environment command; this is the removed-header category
+already identified above, not a new solver/API transition.

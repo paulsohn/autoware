@@ -6102,3 +6102,19 @@ CMake/container or system-wide communication sweep is included. The runtime
 scenario is straight-line motion; it does not establish full scenario simulation
 or mixed OSQP-ABI safety. Next take behavior/motion planner foundations and
 plugins; Phase 5.2.5 remains open.
+
+## 2026-11-17: Phase 5.2.5 — object-recognition utilities
+
+The complete module gate exposes a removed TF header in test_transform.cpp.
+Use Quaternion.hpp only; retain all original assertions and buffer.h, which the
+provider still supplies. UPSTREAM_AWF.md records the dated upstream check.
+With the prepared Bazel definitions, the complete 33-case suite passes as part
+of the foundation command recorded in this entry's completed integration form.
+Source compatibility and package build definitions are separate commits.
+No Fast DDS or upstream CMake validation was run.
+
+Verification command (prepared module definitions):
+
+```bash
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" bazel test --config=no-agnocast --local_test_jobs=1 --nocache_test_results --test_output=errors @autoware_object_recognition_utils//...
+```
