@@ -6105,16 +6105,42 @@ plugins; Phase 5.2.5 remains open.
 
 ## 2026-11-17: Phase 5.2.5 — object-recognition utilities
 
-The complete module gate exposes a removed TF header in test_transform.cpp.
-Use Quaternion.hpp only; retain all original assertions and buffer.h, which the
-provider still supplies. UPSTREAM_AWF.md records the dated upstream check.
-With the prepared Bazel definitions, the complete 33-case suite passes as part
-of the foundation command recorded in this entry's completed integration form.
-Source compatibility and package build definitions are separate commits.
-No Fast DDS or upstream CMake validation was run.
+Purpose: satisfy the motion-planner common library's local dependency without
+substituting registry sources. Inspect package.xml, both implementation sources,
+eight public headers and all eight original test sources (including the public
+API compile-check translation unit). CMake collects all test/**/*.cpp in one
+suite. Existing dependencies include interpolation, local perception messages,
+point types and geometry/math utilities, plus pinned PCL/ROS/TF providers.
 
-Verification command (prepared module definitions):
+Pattern: a package-local MODULE declares those dependencies; BUILD exposes both
+sources and public headers, pairing generated message compile/shared targets
+and ROS library/runtime providers. Keep the RCR pcl_ros provider already selected
+by this workspace; no host ROS/PCL installation is required. One cc_test over
+all eight original sources preserves the complete suite. Register the local
+source with a root 0.0.0 dependency/override pair before the planner consumers.
+
+Diagnosed blocker: test_transform.cpp includes removed Quaternion.h, so the
+complete target cannot compile with the selected Lyrical provider. Use
+Quaternion.hpp only. Upstream main still contains the old spelling on
+2026-11-17 (blob c35e2dd42a1e4eec1726f223d2026754fa5353c1); the repository-scoped
+object_recognition_utils/Quaternion PR search found no match. Leave buffer.h
+unchanged because the current provider still supplies it. Keep this source
+correction separate from Bazel declarations. No production source is changed.
+
+Verification, sequential clean-environment foundation gate:
 
 ```bash
-env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" bazel test --config=no-agnocast --local_test_jobs=1 --nocache_test_results --test_output=errors @autoware_object_recognition_utils//...
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=no-agnocast --local_test_jobs=1 \
+  --nocache_test_results --test_output=errors \
+  @autoware_object_recognition_utils//... \
+  @autoware_behavior_velocity_planner_common//... \
+  @autoware_motion_velocity_planner_common//...
 ```
+
+All 33 existing cases pass with successful process exit and no failures,
+errors, skips or disabled cases (test action 0.3 seconds). The complete three-
+module invocation builds ten non-test targets and passes all 105 active cases in
+16.498 seconds. Motion-common retains its one upstream-disabled benchmark.
+No Fast DDS, CMake or container check was run. Reuse these
+results for unchanged foundations in the downstream planner/plugin gate.

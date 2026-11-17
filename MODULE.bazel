@@ -625,3 +625,9 @@ local_path_override(
     module_name = "autoware_velocity_smoother",
     path = "src/core/autoware_core/planning/autoware_velocity_smoother",
 )
+
+bazel_dep(name = "autoware_object_recognition_utils", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_object_recognition_utils",
+    path = "src/core/autoware_core/common/autoware_object_recognition_utils",
+)

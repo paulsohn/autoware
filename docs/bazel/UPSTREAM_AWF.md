@@ -738,7 +738,7 @@ Lyrical; upstream GCC/CMake and Humble/Jazzy were not tested.
 
 ## Object-recognition transform test uses a removed TF header
 
-Local source correction: pending object-recognition commit association.
+Local source correction: `ea4a5a80`.
 
 - [ ] Associate with a matching upstream PR. Checked 2026-11-17: no matching
   object_recognition_utils/Quaternion PR found. Main
