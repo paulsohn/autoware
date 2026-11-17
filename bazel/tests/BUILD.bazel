@@ -1111,3 +1111,42 @@ py_binary(
         ("agnocast", "1"),
     ]
 ]
+
+[
+    py_test(
+        name = "behavior_velocity_planner_" + mode + "_runtime_test",
+        srcs = ["behavior_velocity_planner/test_runtime.py"],
+        args = [
+            "$(rootpath @autoware_behavior_velocity_planner//:" + executable + ")",
+            enabled,
+        ],
+        data = [
+            "@autoware_behavior_velocity_planner//:" + executable,
+            "@autoware_behavior_velocity_planner//:ament_index",
+            "@autoware_behavior_velocity_planner_common//:ament_index",
+            "@autoware_behavior_velocity_stop_line_module//:ament_index",
+            "@autoware_test_utils//:ament_index",
+            "@autoware_velocity_smoother//:ament_index",
+        ],
+        env = {
+            "ENABLE_AGNOCAST": "0",
+            "LD_LIBRARY_PATH": "lib",
+        },
+        main = "behavior_velocity_planner/test_runtime.py",
+        precompile = "disabled",
+        tags = [
+            "no-remote",
+            "no-sandbox",
+        ],
+        deps = [
+            "@ament_index_python",
+            "@autoware_internal_planning_msgs//:py",
+            "@rcl_interfaces//:py",
+            "@rclpy",
+        ],
+    )
+    for mode, executable, enabled in [
+        ("standard", "autoware_behavior_velocity_planner_node", "0"),
+        ("experimental", "experimental_autoware_behavior_velocity_planner_node", "1"),
+    ]
+]

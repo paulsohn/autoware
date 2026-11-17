@@ -53,6 +53,8 @@ only when your current target demonstrates the need.
   [Evidence: tests outside component packages](JOURNAL.md#2026-11-17-keep-added-integration-tests-outside-component-packages).
 - [ ] Separate component ownership from product-level composition.
   [Evidence: root-owned interface consumers](JOURNAL.md#2026-11-15-build-root-owned-typed-agnocast-plugins-from-the-interface-graph).
+  [Native plugin registration](DEVELOPING.md#native-plugin-libraries);
+  [evidence: stop-line plugin](JOURNAL.md#2026-11-17-phase-525--stop-line-plugin).
 - [ ] Inventory complete module suites, runtime prerequisites and required
   middleware configurations before implementing each task.
   [Backend executor convention](DEVELOPING.md#switchable-standalone-nodes);
@@ -1076,7 +1078,23 @@ C++ cases pass without failures/errors/skips/disabled cases. Each of the four
 algorithms also passes through the actual executable in both RCLCPP and enabled
 Agnocast modes, including velocity-limit acknowledgement and clean shutdown.
 
-Next take behavior/motion planner foundations and plugins in dependency groups.
+The next group covers local autoware_object_recognition_utils, behavior-planner
+common, behavior planner, stop-line plugin and motion-planner common. Preserve
+all eight object-recognition test sources, six behavior-common sources, two
+planner test targets, three stop-line sources and three motion-common sources.
+Preserve motion-common's original DISABLED_Benchmark separately.
+Build both standard and experimental planner executables and the original
+plugin XML's two factories. Native RCLCPP/Cyclone DDS is the selected gate;
+root-owned executable checks must prove plugin discovery, initial loading,
+unload/reload, original YAML parameter values and clean shutdown for both
+factories. Keep test helpers outside the production library closure. This group
+is complete: all 137 active existing cases and both executable/plugin lifecycle
+checks pass, with no failures or added skips. Motion-common's one original
+disabled benchmark remains separate. Source changes are limited to the proven
+recognition-test TF include and behavior-common test shutdown corrections.
+The experimental planner gate validates assembly/lifecycle; full experimental
+scenario parity remains outside this gate. Next take the motion planner and
+obstacle-stop plugin group with their actual dependencies.
 Phase 5.2.5 remains open; these endpoints are not the complete planning stack.
 
 ## Later phases

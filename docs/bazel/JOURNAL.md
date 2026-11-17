@@ -6281,3 +6281,62 @@ and stop-line suites cover nominal/empty/off-track paths; the experimental
 executable gate establishes factory assembly/lifecycle, not full map/scenario
 parity. Next take motion planner and obstacle-stop plugin dependencies;
 Phase 5.2.5 remains open.
+
+## 2026-11-17: Phase 5.2.5 — stop-line plugin
+
+Purpose: make both existing stop-line factories discoverable by the actual
+behavior-planner executables. Inspect plugins.xml, all six standard/experimental
+implementation sources, their private headers, stop_line.param.yaml and all
+three original test sources. Preserve CMake's single scene/utility/node-interface
+suite, including its plugin-loading/off-track case.
+
+Pattern: package-local library over all six sources, shared library named
+libautoware_behavior_velocity_stop_line_module.so to match the original XML,
+and ament_index(libraries=[...], plugin_categories={"plugins.xml":
+"autoware_behavior_velocity_planner"}). This registers the original XML beneath
+the base package's pluginlib resource category, rather than the plugin package's
+own name. The XML and shared library are declared runfiles; no post-build ament
+scan or host installation is involved. Tests use the planner's testonly helper
+and all original fixture/config indexes. Components have no root labels.
+
+Put the added executable driver in bazel/tests/behavior_velocity_planner/ and
+compose two root py_tests. Each launches the corresponding native executable
+with original test vehicle/common/search, smoother, planner and stop-line YAML.
+Select the matching fully-qualified plugin class at startup, prove its load log
+and mapped shared library, query original parameter values, unload by module
+name stop_line, reload by plugin class, and require clean SIGINT exit. The service
+responses have no success payload, so verify lifecycle logs as well as replies.
+Give each child a unique PID-derived ROS namespace to avoid stale discovery. No heap hook
+is preloaded for this native RCLCPP gate. Full path/stop geometry remains covered
+by the original C++ suites; this driver tests assembly and plugin lifecycle.
+
+Verification, sequential complete module/executable gate:
+
+```bash
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=no-agnocast --local_test_jobs=1 \
+  --nocache_test_results --test_output=errors \
+  @autoware_behavior_velocity_planner//... \
+  @autoware_behavior_velocity_stop_line_module//... \
+  //bazel/tests:behavior_velocity_planner_standard_runtime_test \
+  //bazel/tests:behavior_velocity_planner_experimental_runtime_test
+```
+
+Result: 20 non-test targets build and all five test targets pass in 427.489
+seconds. Both original planner targets pass all nine cases (node two in 10.2
+seconds; data processing seven in 0.6 seconds), and the complete stop-line suite
+passes all 23 cases in 10.2 seconds. No failures/errors/skips/disabled cases in
+these modules. Standard and experimental executable checks each pass one
+lifecycle case (2.3 and 2.0 seconds), including the matching plugin factory,
+original parameter values, unload/reload and clean shutdown.
+
+Reuse the unchanged 105-active-case foundation gate, retaining motion-common's
+one original disabled benchmark. Together the five-package group passes all
+137 active existing cases and both executable checks. Targeted buildifier,
+Python parsing, changed-line C++ formatting, full source/test inventories,
+component-boundary checks and XML/log counts also pass. No Fast DDS, CMake,
+container or system-wide communication matrix was run. Original standard node
+and stop-line suites cover nominal/empty/off-track paths; the experimental
+executable gate establishes factory assembly/lifecycle, not full map/scenario
+parity. Next take motion planner and obstacle-stop plugin dependencies;
+Phase 5.2.5 remains open.

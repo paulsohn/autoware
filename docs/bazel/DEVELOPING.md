@@ -612,3 +612,22 @@ for smoother runtime changes run both velocity_smoother backend tests under
 The enabled target requires the kernel module/device and built heap hook. See
 [the solver/smoother experiment](JOURNAL.md#2026-11-17-phase-525--osqp-interface)
 for input rationale, complete commands and coverage limits.
+
+## Native plugin libraries
+
+Keep the original plugin XML and its exported base-package category. Build a
+cc_shared_library with shared_lib_name matching the XML library path, then
+register it through ament_index(libraries=[...], plugin_categories={"plugins.xml":
+"base_package"}). The map key is the XML label; the value is the package passed
+to pluginlib::ClassLoader. Consumers declare the plugin package's :ament_index
+as data so the XML, resource record and library are available in runfiles.
+Do not add a component-to-root label or scan the host ament environment.
+
+Validate each factory through a real consumer, including discovery and clean
+shutdown. For behavior planners, loading uses the fully-qualified plugin class;
+unloading uses the module name (stop_line). Run
+//bazel/tests:behavior_velocity_planner_standard_runtime_test and
+//bazel/tests:behavior_velocity_planner_experimental_runtime_test with
+--config=no-agnocast after changing their plugin assembly.
+Keep existing test helper sources in testonly libraries rather than linking
+planning test managers into production components.
