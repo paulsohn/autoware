@@ -614,6 +614,11 @@
     "https://bazel.ros.org/modules/gazelle/0.47.0/MODULE.bazel": "not found",
     "https://bazel.ros.org/modules/gazelle/0.51.3/MODULE.bazel": "not found",
     "https://bazel.ros.org/modules/generate_export_header/0.1.0/MODULE.bazel": "not found",
+    "https://bazel.ros.org/modules/generate_parameter_library/0.0.0/MODULE.bazel": "8bb87aad38d55f337edb48fc9167e5895cb87f5489723dd2adad293efd52ba9d",
+    "https://bazel.ros.org/modules/generate_parameter_library/1.3.0-1.rcr.0/MODULE.bazel": "e81c637d2ac6bcd9d6b7944d8372b121298b6d0472de200eadf99c593c0415f0",
+    "https://bazel.ros.org/modules/generate_parameter_library/1.3.0-1.rcr.0/source.json": "bc368683e182968308383ece833bb870872020ee8edc321989f8b06be8199c9e",
+    "https://bazel.ros.org/modules/generate_parameter_library_py/1.3.0-1.rcr.0/MODULE.bazel": "46f447364535592d2c1b31c869e0be826bbc23841e5e7dc403729f8d76b64eef",
+    "https://bazel.ros.org/modules/generate_parameter_library_py/1.3.0-1.rcr.0/source.json": "f4d5cf56c24b42672f97da16ea094cf55b341ac65362b6f6fda5a7b9e8b21de7",
     "https://bazel.ros.org/modules/geographic_msgs/0.0.0/MODULE.bazel": "907f209697eec8dc2957b2b9ecfe423a46197d3c608ac4214238cbbe2eae4df2",
     "https://bazel.ros.org/modules/geographic_msgs/1.0.6-3.rcr.2/MODULE.bazel": "9ca685581de6c4620d12829a6bbdbdaeadd0b65ea18c442a28f068411664e999",
     "https://bazel.ros.org/modules/geographic_msgs/1.0.6-3.rcr.2/source.json": "60ed1ed7984926ea32dbfd9674de6220849704757495da166f449e535ca8fa4e",
@@ -1441,6 +1446,8 @@
     "https://bazel.ros.org/modules/rosidl_typesupport_protobuf_cpp/1.0.0.rcr.3/source.json": "f10b89d3628c6daa796536dab4eac5aa768259082edce51b7a31ede58beee678",
     "https://bazel.ros.org/modules/rpyutils/0.7.2-3.rcr.2/MODULE.bazel": "57b1b7749a5580c4c9ec9e001f801e48964e2cf5b074515d63532f47baaf2656",
     "https://bazel.ros.org/modules/rpyutils/0.7.2-3.rcr.2/source.json": "cf0fce60873e205f05606f641d8a8c5c19163d6b27948630ebff8bc4a0b808d4",
+    "https://bazel.ros.org/modules/rsl/1.3.0-3.rcr.3/MODULE.bazel": "489880806ec3a97d3b1a90bef367d52f448c29db8228151351cf81bea0ad791c",
+    "https://bazel.ros.org/modules/rsl/1.3.0-3.rcr.3/source.json": "ebd66dfd8ed1446fa19afc69ebeee50fecb8865f1934c3865cfb5439a3484e87",
     "https://bazel.ros.org/modules/rti_connext_dds_cmake_module/1.2.8-1.rcr.0/MODULE.bazel": "2a1d958a1f0c4f9f6623b8ca05c023fa37893633e393d211b24b59835262b09c",
     "https://bazel.ros.org/modules/rti_connext_dds_cmake_module/1.2.8-1.rcr.0/source.json": "ba026d33702fbf9b567dc54a64aa641931fef73737333955e43bc1e825874209",
     "https://bazel.ros.org/modules/rules_android/0.1.1/MODULE.bazel": "not found",
@@ -1731,6 +1738,8 @@
     "https://bazel.ros.org/modules/tar.bzl/0.10.4/MODULE.bazel": "not found",
     "https://bazel.ros.org/modules/tar.bzl/0.2.1/MODULE.bazel": "not found",
     "https://bazel.ros.org/modules/tar.bzl/0.5.1/MODULE.bazel": "not found",
+    "https://bazel.ros.org/modules/tcb_span/2.0.3-1.rcr.3/MODULE.bazel": "f975d1129d79eb7693d2e7f02417a3b933ca6d153bc82c0e1e496b98577d1592",
+    "https://bazel.ros.org/modules/tcb_span/2.0.3-1.rcr.3/source.json": "50375818fab25998b2ed772f42aaf9db30b0196fcb3f56c8801052d55b6f3461",
     "https://bazel.ros.org/modules/test_interface_files/0.14.1-3.rcr.2/MODULE.bazel": "2130cb241e5f2dc385f2ce6d52298aa447db738d8c244def923a0e817481fabb",
     "https://bazel.ros.org/modules/test_interface_files/0.14.1-3.rcr.2/source.json": "9b03f33af8e648e3a3be215fe88535c4e54ca0922786d3dd9a8899904cd1df88",
     "https://bazel.ros.org/modules/test_msgs/2.4.5-1.rcr.2/MODULE.bazel": "48dfccd27687f4e3926bd7b64b532e859a256666fd341c14551b6dabd13d28f5",
@@ -3501,7 +3510,7 @@
     "@@rosdistro+//python:defs.bzl%pip_ros": {
       "general": {
         "bzlTransitiveDigest": "Wf1bYPS+v1MXSxPm/3sa2yWsKIiJG8ikAIrD+e7Djmk=",
-        "usagesDigest": "h3WbNRVr5d+6gL1y8AGQIKFONpvSdpGJEPySkDgs8rM=",
+        "usagesDigest": "crfYrlkvCoqsCxz3d5nvdWCugTiK03upmAYLdrbYU8A=",
         "recordedInputs": [
           "REPO_MAPPING:bazel_features+,bazel_features_globals bazel_features++version_extension+bazel_features_globals",
           "REPO_MAPPING:bazel_features+,bazel_features_version bazel_features++version_extension+bazel_features_version",

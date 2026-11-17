@@ -669,6 +669,8 @@ commands; this is an executor-test correction rather than a Lyrical-only fix.
 
 ## Path-generator endpoint comparison after quaternion interpolation
 
+Local source correction: `d9ae1378`.
+
 - [ ] Associate with a matching upstream PR. Checked 2026-11-17: a search for
   connectPathToGoal found no PR; main test_goal_connection.cpp, blob
   731452d4d5b65044da6435bc09d536f469911cb8, still compares the whole interpolated

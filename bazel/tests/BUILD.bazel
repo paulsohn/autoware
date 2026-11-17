@@ -1047,5 +1047,13 @@ py_binary(
             "@autoware_planning_topic_converter//:path_to_trajectory_converter_exe",
             ["@autoware_planning_topic_converter//:ament_index"],
         ),
+        (
+            "path_generator",
+            "@autoware_path_generator//:path_generator_node_exe",
+            [
+                "@autoware_path_generator//:ament_index",
+                "@autoware_test_utils//:ament_index",
+            ],
+        ),
     ]
 ]

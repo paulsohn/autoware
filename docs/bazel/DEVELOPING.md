@@ -412,6 +412,17 @@ visualization header is not currently exported by these compiled-helper targets.
 Use a test fixture to own ROS init/shutdown when the source has no custom main,
 so context cleanup also runs after failed assertions.
 
+## Generated parameter libraries
+
+For an already-supported package using generate_parameter_library, load its
+macro from `@generate_parameter_library//:defs.bzl`, pass the original parameter
+schema as yaml_file, and depend on the generated target from the component.
+The macro emits include/<package>/<target>.hpp using a Bazel execution tool.
+Keep parameter defaults, validation and runtime configuration in the original
+schema/config files; do not check in a manually generated replacement header.
+Consumers using its runtime helpers include the generator package's rsl and
+rclcpp_lifecycle shared providers in their dynamic dependency closure.
+
 ## Native ROS component nodes
 
 For a component deriving directly from rclcpp::Node, use

@@ -5825,8 +5825,17 @@ fixtures and all five original test translation units (38 cases, including six
 real node-interface cases). Add the required local planning test manager before
 selecting a registry fallback. The parameter generator is absent locally.
 
-The package-local build definitions are prepared with this task and committed
-separately; verification below records that tested working tree.
+Pattern: use the existing RCR generate_parameter_library macro from
+@generate_parameter_library//:defs.bzl with the original
+param/path_generator_parameters.yaml. Pin 1.3.0-1.rcr.0 in the root, matching
+this RCR snapshot. The rule runs its declared Python generator in the build
+execution configuration and emits include/autoware_path_generator/
+path_generator_parameters.hpp. Add that target to the component library, and
+include the generator's rsl and rclcpp_lifecycle shared providers in the runtime
+closure. Do not hand-maintain generated C++, invoke host pip or invent a local
+renderer. Register the native PathGenerator component, path_generator_node
+executable, original config and test_route resources. Tests additionally need
+the vehicle, lanelet and test-helper resource indexes.
 
 Diagnosed failure: UtilsTest.connectPathToGoal compares an interpolated start
 point against a raw fixture with exact whole-message equality. Quaternion
