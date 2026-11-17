@@ -7325,3 +7325,24 @@ preserved the operational-error contract: run
 with that path absent; it reports `cannot open manifest` and exits 2. The
 original suite covers accepted/rejected pairings and CLI verdict/output logic.
 No production or original-test change was needed.
+
+## 2026-11-18: Phase 5.3.4 — marker utilities
+
+Purpose: close this remaining autoware_core package boundary. Inspect its
+manifest, original build/install declarations and all registered tests.
+
+Original marker-conversion suite and public library, with local geometry, vehicle and Lanelet/message dependencies. Preserve its custom test main instead of linking a second gtest_main. Compose shared runtime dependencies at the test executable.
+
+Add package-local MODULE/BUILD rules selected with adjacent root 0.0.0
+dependency/local_path_override pairs. Added adapters/behavior tests belong under
+bazel/tests; original sources and tests remain in place. The complete module
+gate is declared in PLAN.md Phase 5.3.4. The final combined command recorded
+with the top-level composition entry passed, with no failures, errors,
+dependency-related skips or disabled tests. Reuse preceding unchanged
+component/backend results; this group uses Cyclone DDS/native RCLCPP.
+
+Result: all 29 original MarkerConversionTest cases passed. Initial linking
+reported duplicate main because this test supplies its own rclcpp-initializing
+entry point; link gtest, not gtest_main. This is a Bazel declaration correction,
+not a source patch. The public target preserves scoped include paths and uses
+the existing local geometry/Lanelet/vehicle closure.

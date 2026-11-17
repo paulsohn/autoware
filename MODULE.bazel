@@ -766,3 +766,9 @@ local_path_override(
     module_name = "autoware_component_interface_admission",
     path = "src/core/autoware_core/common/autoware_component_interface_admission",
 )
+
+bazel_dep(name = "autoware_marker_utils", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_marker_utils",
+    path = "src/core/autoware_core/common/autoware_marker_utils",
+)
