@@ -5178,3 +5178,37 @@ The relocated root executable/bridge validation is recorded in the relocation
 entry. Standard ROS dependencies absent locally still come from pinned RCR.
 No Fast DDS, pre-commit, container or
 colcon/ament/CMake run was performed.
+
+## 2026-11-17: Local interface adoption — autoware_internal_localization_msgs
+
+Purpose: select local PoseWithCovarianceStamped and InitializeLocalization
+contracts for height fitting, NDT and pose initialization. Inspected both
+service definitions, manifest and CMake. Field dependencies are geometry_msgs
+and the already-local autoware_common_msgs; retain std_msgs from the manifest
+without adding it as a generator dependency when no field references it.
+Keep the product's existing narrowed PoseWithCovarianceStamped metadata root;
+source adoption does not require broadening product interface selection.
+
+Snapshot 1.16.0 declares two services.
+
+Integration pattern: declare a package-local module at the snapshot's manifest
+version, retain its manifest-level interface dependencies, add explicit
+ros_message/ros_service targets in the existing interface directories and call
+default_generators at the package root. Each interface target names only its
+referenced message dependencies; same-package edges use their actual directory
+labels and external edges use the referenced package's message target. Root
+local_path_override selects the snapshot; consumers keep their existing labels.
+The BUILD declarations are the supported interface list. No source-completeness
+validator, generator verb or new message definition is introduced.
+
+Verification: the shared local-provider command below builds every declared
+surface in these five modules and runs complete existing consumer suites. The
+successful invocation takes 257.564 seconds, builds 217 non-test targets and
+passes 24 test targets / 185 XML cases, including unchanged interface manifest/
+type-hash freshness and C++17 checks, component-interface utilities, debug
+utilities, height fitting, NDT, pose initialization and both native control
+packages. No failures/errors/skips occur. Original message files are unchanged.
+The relocated root executable/bridge validation is recorded in the relocation
+entry. Standard ROS dependencies absent locally still come from pinned RCR.
+No Fast DDS, pre-commit, container or
+colcon/ament/CMake run was performed.
