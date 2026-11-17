@@ -7077,3 +7077,74 @@ There are no registered existing runtime tests in this resource-only module.
 Unchanged component algorithm/backend results remain applicable. No source fix
 was needed. Simulated time is selected but not advanced; this does not establish
 simulation progression, URDF rendering or localization convergence.
+
+## 2026-11-18: Phase 5.3.2 — core localization context
+
+Purpose: integrate autoware_core_localization in its actual global/runtime context.
+
+Inspect the original downsample/NDT, relay, EKF, stop-filter, twist2accel and
+pose-initializer launch graph and parameters. Expose launch/** and compose all
+local component indexes, wrapper environment files and the topic_tools runtime
+bundle. topic_tools is absent locally; inspect the official RCR metadata and
+select 1.5.0-1.rcr.2 with its pinned topic_tools_interfaces dependency. The
+original relay launch and typed data gate validate this choice. Root registry declarations precede
+local module pairs. The original XML's typed TwistWithCovarianceStamped relay
+must carry the actual sensing output, not a replacement forwarding script.
+Run alongside the real map loaders, providing the pointcloud parameter service
+required during pose-initializer construction. Check NDT discovery and relay
+clock/values in both contexts; no scan matching convergence is claimed here.
+The source package has no registered runtime suite.
+
+Pattern: retain original sources/configurations and add only package-local
+MODULE/BUILD resource definitions selected by adjacent root 0.0.0 dependency/
+local_path_override pairs. Added tests/fixtures live in bazel/tests/system_context.
+The shared original-launch gate uses Cyclone DDS, serialized tests and declared
+resources, with separate ROS domains for the two clock variants.
+
+Verification: the complete Phase 5.3.2 gate below passed with Cyclone DDS.
+Both original combined contexts passed (wall and simulated clock selection,
+3.3 seconds each), including this module's assertions and clean shutdown.
+There are no registered existing runtime tests in this resource-only module.
+Unchanged component algorithm/backend results remain applicable. No source fix
+was needed. Simulated time is selected but not advanced; this does not establish
+simulation progression, URDF rendering or localization convergence.
+
+### Phase 5.3.2 complete resource/consumer gate
+
+Prerequisites: the preceding component integrations, local model and test map,
+Cyclone DDS, and the root source overrides. Inspect each package's CMakeLists.txt
+and package.xml before declaring the resource globs and transitive resource
+indexes described above. The six resource-only packages register lint checks,
+not additional runtime suites; pre-commit/lint aggregation is not run here.
+The added launch driver and fixtures live in bazel/tests/system_context.
+Run from the repository root in a clean ROS environment:
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=no-agnocast --local_test_jobs=1 \
+  --nocache_test_results --test_output=errors \
+  @autoware_sample_vehicle_description//... @autoware_global_parameter_loader//... \
+  @autoware_core_sensing//... @autoware_core_perception//... \
+  @autoware_core_map//... @autoware_core_localization//... \
+  @autoware_default_adapi//... \
+  //bazel/tests:default_adapi_original_launch_test \
+  //bazel/tests:core_api_rclcpp_launch_test \
+  //bazel/tests:core_context_wall_launch_test \
+  //bazel/tests:core_context_sim_launch_test \
+  //bazel/tests:default_adapi_global_context_launch_test
+```
+
+Result: 29 non-test targets and all six test targets passed in 53.540 seconds.
+This retains all 15 original default-API C++ cases and its original version
+launch suite, the existing core-API transaction gate and the new contexts.
+The sensing relay preserved longitudinal/lateral velocity 2.0/0.125 and heading
+rate 0.25; map outputs contained the real lanelet map and three-point cloud.
+The model probe observed wheelbase 2.79, wheel radius 0.383 and height 2.5.
+
+Registry input evidence: inspect
+https://bazel.ros.org/modules/topic_tools/metadata.json and
+https://bazel.ros.org/modules/topic_tools/1.5.0-1.rcr.2/MODULE.bazel.
+No local topic_tools snapshot exists. Pin the exercised RCR release in the root,
+keep registry declarations before local pairs, and retain its lockfile hashes.
+The published ament_package supplies the original relay executable/launch files;
+no replacement executable or dependency patch was needed.

@@ -1284,6 +1284,54 @@ launch_test(
 
 [
     launch_test(
+        name = "core_context_" + mode + "_launch_test",
+        src = "system_context/test_launch.py",
+        data = [
+            "system_context/projector.yaml",
+            "system_context/single.pcd",
+            "@autoware_core_localization//:ament_index",
+            "@autoware_core_map//:ament_index",
+            "@autoware_core_perception//:ament_index",
+            "@autoware_core_planning//:ament_index",
+            "@autoware_core_sensing//:ament_index",
+            "@autoware_global_parameter_loader//:ament_index",
+            "@autoware_path_generator//:ament_index",
+            "@autoware_sample_vehicle_description//:ament_index",
+            "@autoware_test_utils//:ament_index",
+        ],
+        env = {
+            "CORE_CONTEXT_SIM_TIME": simulated,
+            "ENABLE_AGNOCAST": "0",
+            "LD_LIBRARY_PATH": "lib",
+            "ROS_DOMAIN_ID": domain,
+            "OMP_NUM_THREADS": "1",
+        },
+        precompile = "disabled",
+        tags = [
+            "no-remote",
+            "no-sandbox",
+        ],
+        deps = [
+            "@ament_index_python",
+            "@autoware_agnocast_wrapper//:python",
+            "@autoware_map_msgs//:py",
+            "@autoware_vehicle_msgs//:py",
+            "@geometry_msgs//:py",
+            "@launch_ros",
+            "@launch_xml",
+            "@rcl_interfaces//:py",
+            "@rclpy",
+            "@sensor_msgs//:py",
+        ],
+    )
+    for mode, simulated, domain in [
+        ("wall", "false", "78"),
+        ("sim", "true", "79"),
+    ]
+]
+
+[
+    launch_test(
         name = "default_adapi_global_context_launch_test" if backend == "rclcpp" else "default_adapi_global_context_agnocast_launch_test",
         src = "system_context/test_api_loader.py",
         data = [

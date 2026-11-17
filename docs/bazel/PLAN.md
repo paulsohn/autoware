@@ -59,6 +59,9 @@ only when your current target demonstrates the need.
   [Runtime resource convention](DEVELOPING.md#launch-resource-composition);
   [published container providers](JOURNAL.md#2026-11-18-phase-531--default-ad-api);
   [evidence: original core launches](JOURNAL.md#2026-11-17-phase-525--core-planning-launch-composition).
+- [ ] Declare caller-owned resources for dynamic runtime package selection.
+  [Launch resource convention](DEVELOPING.md#launch-resource-composition);
+  [evidence: global loader](JOURNAL.md#2026-11-18-phase-532--global-parameter-loader).
 - [ ] Inventory complete module suites, runtime prerequisites and required
   middleware configurations before implementing each task.
   [Backend executor convention](DEVELOPING.md#switchable-standalone-nodes);
@@ -1151,10 +1154,10 @@ also passes routing/localization/adaptor transactions and clean shutdown in
 both RCLCPP and enabled Agnocast configurations, with process/preload assertions
 proving the three-process container and five-process standalone paths. No
 source fix, new dependency version or product-interface selection was needed.
-Global/model context and the separate loader-based test XML remain next; full
-vehicle behavior is not established by controlled internal service fixtures.
+Global/model context and the separate loader-based test XML are covered in
+Phase 5.3.2. Full vehicle behavior is not established by these API fixtures.
 
-#### Phase 5.3.2: Global parameters and remaining core launch context (next)
+#### Phase 5.3.2: Global parameters and remaining core launch context (complete)
 
 Select global-parameter/model resources and remaining real core launches from
 their executable/parameter dependencies. Prefer local descriptions and introduce
@@ -1162,6 +1165,36 @@ xacro or other providers only when the selected launch actually needs them.
 Inventory complete existing suites and declare configuration/state gates before
 implementation. Keep empty grouping packages and system-designer out of scope;
 full vehicle simulation remains Phase 7.
+
+The current group covers six local resource modules: sample vehicle description,
+global parameter loader and core sensing, perception, map and localization.
+They have no registered runtime suites. Their declared acceptance is the
+original combined XML/Python context with real model and map resources, global
+vehicle/clock inheritance, map publications, typed sensing-to-localization relay,
+component discovery and clean exits, with use_sim_time false and true. A
+path-generator probe receives vehicle data solely through the global loader.
+The original relay and typed data gate validate the published topic_tools
+1.5.0-1.rcr.2 runtime provider for the absent local dependency. Pin that release
+and its lockfile inputs. All six native test targets passed; the loader-based
+API XML also passed with enabled Agnocast and verified process/preload behavior.
+No source patch was needed. Clock selection is tested without advancing /clock.
+A possible future improvement is a model-specific parameter-loader target for
+each vehicle model. Each target would fix the model choice and explicitly depend
+on that description's resource index, making the model dependency static and
+letting applications select it through a Bazel label. This adds per-model
+boilerplate; a shared helper could retain common loading logic. Keep this as an
+unimplemented option while the current loader accepts runtime model selection.
+Vehicle/sensor description rendering and the top-level GUI entry point remain
+separate investigation boundaries; this group does not assert full driving.
+
+#### Phase 5.3.3: Vehicle/sensor descriptions and headless launch boundary (next)
+
+Inspect the remaining local core resource packages and original top-level launch
+includes. Identify the minimum vehicle/sensor description rendering consumer and
+its complete tests before introducing xacro providers. Keep dynamic model choices
+explicit in the product bundle and preserve original packages. Separate headless
+resource/launch closure from GUI execution and Phase 7 full simulation. Declare
+the exact module gate after inspection, then add only required dependencies.
 
 ## Later phases
 

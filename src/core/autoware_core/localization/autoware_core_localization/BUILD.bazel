@@ -1,0 +1,18 @@
+load("@rosdistro//ament:defs.bzl", "ament_index")
+
+package(default_visibility = ["//visibility:public"])
+
+ament_index(
+    data = glob(["launch/**"]),
+    package_xml = "package.xml",
+    deps = [
+        "@autoware_agnocast_wrapper//:ament_package",
+        "@autoware_downsample_filters//:ament_index",
+        "@autoware_ekf_localizer//:ament_index",
+        "@autoware_ndt_scan_matcher//:ament_index",
+        "@autoware_pose_initializer//:ament_index",
+        "@autoware_stop_filter//:ament_index",
+        "@autoware_twist2accel//:ament_index",
+        "@topic_tools//:ament_package",
+    ],
+)
