@@ -855,7 +855,7 @@ sensing/perception packages. Defer that utility's local adoption until an actual
 consumer (such as NDT in Phase 5.2.4) requires it; this group uses native PCL
 and conversion providers directly where its sources need them.
 
-#### Phase 5.2.4: Map loading and map-dependent localization (in progress)
+#### Phase 5.2.4: Map loading and map-dependent localization (complete)
 
 Start with map projection, whose current source requires component-interface
 specifications. Neither package has a published RCR module, so introduce local
@@ -928,7 +928,20 @@ but its linker inputs are lost through the native shared-library graph aspect;
 a package-local cc_import of its declared archive restores native ownership and
 passes compilation, linking and both runtime gates. No host OpenMP dependency,
 production source patch or central-interface expansion is required.
-Pose initialization follows this group. Phase 5.2.4 remains in progress.
+Pose initialization is the current three-package group: component-interface
+utilities, motion utilities and the pose initializer. Their complete existing
+C++ gates pass (25, 118 and 23 cases). Preserve the manifest fragments, service/
+subscription registration and introspection checks, and motion benchmark case.
+The callback adaptor needs a current Clang/libc++ compatibility fix: move its
+named member-function pointer into std::bind so RCLCPP can match its traits.
+Keep this source correction separate from eventual build-definition commits.
+The executable gate checks DIRECT/AUTO initialization, reset/state publication,
+trigger order, empty-input rejection and clean exit in both backends. Register
+only LocalizationInitializationState from the ADAPI package centrally and run
+the expanded bridge's full eleven cases. Both executable gates pass, including
+trigger sequencing and state/reset publication through ordinary ROS peers, and
+all eleven bridge regressions pass. The central manifest contains 235 interfaces
+(199 messages, 36 services). Phase 5.2.4 is complete. Phase 5.2.5 planning/control is next.
 Keep package commits separate and heavy builds sequential; routine Cyclone DDS
 only. Phase 5.3 system/API composition and Phase 6 GPU integration stay separate.
 

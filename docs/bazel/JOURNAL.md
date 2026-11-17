@@ -4960,3 +4960,85 @@ errors/skips. The grouped invocation takes 16.632 seconds. The existing pose
 integration cases also exercise this library's stop checker. No production
 source or existing-test modification is required. No Fast DDS, pre-commit or
 container check was run. This module gate is complete.
+
+## 2026-11-17: Phase 5.2.4 — pose initializer
+
+Purpose: complete the map-dependent localization slice with the real switchable
+pose initialization node. Prerequisites: the two modules above, existing height
+fitter, specs, diagnostics/logging/geometry and ROS interfaces. Inspected all six
+implementation sources, headers, CMake/manifest, launch/config and all three
+existing test files. Complete C++ gate: 23 cases (3 vector/array, 7 pose utility,
+13 node integration including initialization/rejection/recovery/startup cases).
+There is no original launch test in this package. Require real executable
+DIRECT/AUTO initialization behavior in both backends, plus the expanded bridge's
+existing eleven regression cases before declaring completion.
+
+Pattern: package-local compiled library/shared component, MultiThreadedExecutor
+ROS fallback and existing Agnocast executor through the standard launcher, plus
+executable/component/plugin index and original deployment resources. Use
+RCLCPP for the complete original test contract, not CMake's enabled omission.
+The pinned GoogleTest module exposes gtest_main (including mock headers) rather
+than a separate gmock_main target. The integration test supplies its own main.
+Height-fitter/motion runtime providers and diagnostics/logger shared providers
+supply their actual dynamic closure. No pose initializer source change is needed.
+
+Root behavior probes use ordinary rclpy peers for NDT alignment and EKF/NDT
+trigger services. Require initial UNINITIALIZED state, DIRECT reset with the
+original pose, AUTO reset with a simulated 1 m alignment shift, configured
+covariance on both, exact deactivate/deactivate/activate/activate trigger order
+per request, no DIRECT aligner call, empty-DIRECT failure with UNINITIALIZED
+state, and clean SIGINT exit. Readiness, service and teardown waits are bounded.
+Only enabled executable children preload the built heap hook. The probe disables
+GNSS/stop/error modules to isolate transaction routing; all their original C++
+module tests remain included. A generated JSON/YAML parameter file supplies the
+concrete standalone settings; installed YAML contains launch substitutions and
+is retained for normal launch use rather than parsed as standalone parameters.
+
+Select only the needed ADAPI LocalizationInitializationState metadata root with
+its paired C++/shared providers centrally. Published ADAPI uses domain-specific
+labels: //localization/msg:LocalizationInitializationState, not //msg. The
+initial incorrect label was corrected after analysis rejected it. Keep the
+component independent of root labels and leave plugin composition on the root.
+This new interface requires regenerating/linking the product bridge; retain its
+full regression gate.
+
+Verification:
+
+```bash
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --local_test_jobs=1 --nocache_test_results --test_output=errors \
+  @autoware_component_interface_utils//... @autoware_motion_utils//... \
+  @autoware_pose_initializer//...
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --local_test_jobs=1 --nocache_test_results --test_output=errors \
+  --strategy=TestRunner=local --run_under=//bazel/agnocast:with_runtime \
+  //bazel/tests:pose_initializer_rclcpp_test \
+  //bazel/tests:pose_initializer_agnocast_test //bazel/agnocast:bridge_plugins_test
+```
+
+Result: all 23 existing C++ cases pass in 0.5/0.5/6.7 seconds, with no
+failures/errors/skips in XML (16.632-second grouped invocation). The enabled
+runtime prerequisite is the built heap hook, compatible loaded Agnocast module
+and device, verified available at 2.4.1. Both executable probes pass: RCLCPP
+2.2 seconds and Agnocast 2.1 seconds. They verify DIRECT and AUTO resets with
+the expected X positions and configured covariance, exact trigger ordering,
+only one aligner call, expected initialization-state transitions, empty-request
+failure and clean SIGINT shutdown. All eleven existing bridge-plugin regression
+cases pass in 7.5 seconds; XML confirms both standalone cases and eleven bridge
+cases without failures/errors/skips.
+
+The runtime invocation takes 438.156 seconds, including recompiling/linking the
+bridge against the added ADAPI compile/shared provider closure. Its sorted,
+unique manifest has 235 interfaces (199 messages, 36 services), adding exactly
+the initialization-state message. No dependent test group is omitted. Reuse
+unchanged wrapper gates from the preceding validated tasks; no full system DDS
+matrix is needed for this package integration. Targeted buildifier, Python AST,
+clang-format on the changed callback header and whitespace checks pass. Module
+resolution records the new nlohmann_json minimum-version lookup in the lockfile;
+the existing resolved 3.12.0.bcr.2 provider remains selected. No Fast DDS,
+pre-commit, container, Humble/Jazzy or colcon/ament/CMake build was run.
+
+All three module gates are complete, and Phase 5.2.4 is closed. The callback
+source fix and the three package integrations use separate commits. Next is the
+Phase 5.2.5 planning/control dependency-group inventory; do not pre-apply future
+solver or planner patches.

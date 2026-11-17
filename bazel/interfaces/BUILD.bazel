@@ -5,6 +5,11 @@ package(default_visibility = ["//visibility:public"])
 ros_interface_set(
     name = "all_interfaces",
     packages = [
+        ros_interface_package(
+            "@autoware_adapi_v1_msgs//:cc",
+            "@autoware_adapi_v1_msgs//:cc_shared",
+            roots = ["@autoware_adapi_v1_msgs//localization/msg:LocalizationInitializationState"],
+        ),
         ros_interface_package("@agnocast_cie_config_msgs//:cc", "@agnocast_cie_config_msgs//:cc_shared"),
         ros_interface_package("@autoware_common_msgs//:cc", "@autoware_common_msgs//:cc_shared"),
         ros_interface_package("@autoware_control_msgs//:cc", "@autoware_control_msgs//:cc_shared"),

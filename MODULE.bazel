@@ -484,3 +484,9 @@ local_path_override(
     module_name = "autoware_component_interface_utils",
     path = "src/core/autoware_core/common/autoware_component_interface_utils",
 )
+
+bazel_dep(name = "autoware_pose_initializer", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_pose_initializer",
+    path = "src/core/autoware_core/localization/autoware_pose_initializer",
+)
