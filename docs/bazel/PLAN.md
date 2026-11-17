@@ -681,7 +681,7 @@ substep identifiers in plans, journals, and commits:
   runtime-backend checks, and explicitly inventory remaining platform-only
   prerequisites. Complete Phase 4 only when these gates pass.
 
-## Phase 5: Remaining autoware_core runnable slices (in progress)
+## Phase 5: Remaining autoware_core runnable slices (complete)
 
 Phase 5.1 covers shared foundations; Phase 5.2 adopts sensing, perception,
 localization, planning and control dependency slices; Phase 5.3 composes API
@@ -1130,7 +1130,7 @@ are complete, reusing prior unchanged module/backend evidence. This gate does
 not claim full scenario simulation, an Agnocast aggregate launch or a new
 Fast DDS compatibility run.
 
-### Phase 5.3: System and API composition (in progress)
+### Phase 5.3: System and API composition (complete)
 
 Inventory the current system/API executable dependency graphs and existing
 suites, starting with local packages not yet exposed through Bazel. Introduce
@@ -1138,7 +1138,7 @@ only the selected runtime closure and validate complete package suites plus
 relevant API/state transactions. Compose remaining real launch/resource
 packages when a runnable consumer needs them; do not create artificial targets
 for empty grouping metapackages. Keep system-designer packages out of scope.
-Phase 5 remains in progress; runtime images and full driving simulation are
+Phase 5 is complete; runtime images and full driving simulation are
 Phase 7, with GPU dependencies introduced separately in Phase 6.
 
 #### Phase 5.3.1: AD API and RViz adaptors (complete)
@@ -1207,7 +1207,7 @@ validate RCR xacro 2.1.1-3.rcr.3 and
 robot_state_publisher 3.5.6-1.rcr.0; pin both inputs. Both sensor-kit variants
 passed rendered URDF, mesh lookup, static transform and shutdown assertions.
 
-#### Phase 5.3.4: Top-level headless launch and final package closure (in progress)
+#### Phase 5.3.4: Top-level headless launch and final package closure (complete)
 
 Finish the six remaining local packages: autoware_component_interface_admission,
 autoware_marker_utils, autoware_interface_spec_lint, autoware_test_node,
@@ -1233,6 +1233,16 @@ Close Phase 5 only after every package gate above passes without dependency
 skips or deferred failures, the all-74-package declaration inventory is complete,
 and source changes, definitions, journal and steady-state conventions are
 committed at their respective boundaries.
+
+All gates passed: 204 cases across ten test targets, with zero failures, errors,
+skips or disabled cases. All 74 local core packages now have module/build
+rules and root local selections. The complete original aggregate starts and
+shuts down headlessly with all eight functional groups enabled; the default-on
+launch_rviz option preserves the GUI launch default. The root Bazel index
+currently supplies the headless closure; GUI consumers must add RViz runtime
+resources explicitly. No full driving behavior or GUI rendering is claimed.
+Prior unchanged Agnocast/module evidence remains applicable; no new middleware
+matrix is required to close this phase. Phase 6 is next.
 
 ## Later phases
 

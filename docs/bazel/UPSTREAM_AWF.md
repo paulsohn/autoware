@@ -866,5 +866,5 @@ option default true. Reproduce with
 `bazel test --config=no-agnocast //bazel/tests:core_system_headless_launch_test`.
 The final Phase 5.3.4 journal records the complete ten-target/204-case gate.
 Upstream CMake/GCC, other ROS releases and default-on GUI rendering were not
-run. Local source commit is recorded by the phase's separate signed-off source
-fix; no corresponding upstream PR is currently associated.
+run. Local source fix: `01f30be24d7bcea96d4059ea937e67159288ddef`. No corresponding upstream PR is currently
+associated.

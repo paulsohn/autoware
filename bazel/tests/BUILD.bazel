@@ -1471,3 +1471,40 @@ launch_test(
         "@rclpy",
     ],
 )
+
+launch_test(
+    name = "core_system_headless_launch_test",
+    src = "core_system/test_launch.py",
+    data = [
+        "system_context/projector.yaml",
+        "system_context/single.pcd",
+        "@autoware_core//:ament_index",
+        "@autoware_sample_sensor_kit_description//:ament_index",
+        "@autoware_sample_vehicle_description//:ament_index",
+        "@autoware_test_utils//:ament_index",
+    ],
+    env = {
+        "ENABLE_AGNOCAST": "0",
+        "LD_LIBRARY_PATH": "lib",
+        "ROS_DOMAIN_ID": "86",
+        "OMP_NUM_THREADS": "1",
+    },
+    precompile = "disabled",
+    tags = [
+        "no-remote",
+        "no-sandbox",
+    ],
+    deps = [
+        "@ament_index_python",
+        "@autoware_adapi_version_msgs//:py",
+        "@autoware_agnocast_wrapper//:python",
+        "@autoware_map_msgs//:py",
+        "@autoware_vehicle_msgs//:py",
+        "@geometry_msgs//:py",
+        "@launch_ros",
+        "@launch_xml",
+        "@rcl_interfaces//:py",
+        "@rclpy",
+        "@std_msgs//:py",
+    ],
+)

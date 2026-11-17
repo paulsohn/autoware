@@ -7434,3 +7434,73 @@ entities and original test classes. The resource-only CMake package registers
 no additional runtime tests of its own; its smoke-test helper is the behavior
 under test. CMake helper files remain available as indexed resources; no new
 CMake build or compatibility claim is made.
+
+## 2026-11-18: Phase 5.3.4 — top-level core composition
+
+Purpose: close this remaining autoware_core package boundary. Inspect its
+manifest, original build/install declarations and all registered tests.
+
+Expose original launch/RViz resources and compose all eight local core-group indexes plus the global loader. Select the concrete model and sensor indexes in root test data. Use a declared tiny map bundle and the original full launch; do not replace any functional group with a test double.
+
+Add package-local MODULE/BUILD rules selected with adjacent root 0.0.0
+dependency/local_path_override pairs. Added adapters/behavior tests belong under
+bazel/tests; original sources and tests remain in place. The complete module
+gate is declared in PLAN.md Phase 5.3.4. The final combined command recorded
+with the top-level composition entry passed, with no failures, errors,
+dependency-related skips or disabled tests. Reuse preceding unchanged
+component/backend results; this group uses Cyclone DDS/native RCLCPP.
+
+Result: the original full launch passed both behavior and shutdown cases,
+with all eight functional group switches left at their true defaults and
+launch_rviz=false. Real map loaders and robot publisher produced indexed map
+and rendered vehicle data; sensing-to-localization carried velocity 2.0, the
+path generator and pure pursuit received wheelbase 2.79, the real version
+service returned 1.9.1, and planning/control publisher/subscriber connections
+were present. The test checks the new RViz argument remains default true.
+All original launched processes exited cleanly. This proves headless resource,
+configuration and communication assembly, not planning/driving scenario output.
+The root package index composes the headless closure; GUI consumers must add
+their RViz runtime provider separately. A default-on source flag is the only
+original launch change; its evidence is in the separate source-fix entry.
+
+### Phase 5.3.4 complete gate and Phase 5 closure
+
+Prerequisites: completed preceding Phase 5 slices, current root local overrides,
+RCR Cyclone DDS/toolchain providers and the local sample model/sensor description
+indexes. No host ROS installation, extra apt/pip package, Agnocast kernel device
+or allocator preload is needed for this native aggregate. Component repositories
+export their own build/resources; only root test data selects concrete models,
+fixtures and complete product composition. Run sequentially from the repository
+root in a clean environment:
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=no-agnocast --local_test_jobs=1 \
+  --nocache_test_results --test_output=errors \
+  @autoware_component_interface_admission//... @autoware_marker_utils//... \
+  @autoware_interface_spec_lint//... @autoware_test_node//... \
+  @autoware_testing//... @autoware_core//... \
+  @autoware_component_interface_specs//... \
+  //bazel/tests:interface_spec_lint_tests \
+  //bazel/tests:autoware_test_node_launch_test \
+  //bazel/tests:autoware_testing_original_smoke_test \
+  //bazel/tests:core_system_headless_launch_test
+```
+
+Final result: 28 non-test targets and all ten test targets passed in 13.162
+seconds. XML records 204 executed cases: admission 74, markers 29, specs 30,
+lint 65, example node 2, original smoke helper 2 and top-level core 2. Every
+selected XML reports zero failures/errors/skips/disabled cases. The full core
+launch action took 4.0 seconds. Earlier unaffected module and Agnocast results
+remain their existing journal evidence, rather than rerunning the whole system
+matrix. Targeted buildifier, Python parsing and git diff --check passed.
+
+Audit every package.xml under src/core/autoware_core: all 74 package directories
+now have package-local MODULE.bazel and BUILD.bazel and matching root local
+source overrides; zero packages remain without declarations. This declaration
+audit is not a substitute for runtime testing; the suites above and preceding
+module entries provide the validation. Phase 5.1, 5.2, 5.3 and Phase 5 are closed.
+No Fast DDS check, upstream CMake/GCC build, GUI display, sensor hardware,
+Agnocast aggregate, localization convergence or full driving simulation was
+run for this gate. Runtime images and full simulation remain Phase 7; introduce
+GPU dependencies against an actual selected Phase 6 consumer next.

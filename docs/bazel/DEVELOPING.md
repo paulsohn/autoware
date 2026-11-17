@@ -699,3 +699,16 @@ that executable registration; avoid an executable-to-same-index data edge.
 Use `//bazel/tests:autoware_test_node_launch_test` for standalone/component
 checks and `//bazel/tests:autoware_testing_original_smoke_test` for the original
 generic smoke helper, both with `--config=no-agnocast`.
+
+## Headless core composition
+
+The original autoware_core launch accepts `launch_rviz=false`; it defaults to
+true for existing GUI callers. `@autoware_core//:ament_index` supplies the
+headless runtime/resource closure. Include concrete vehicle and sensor indexes
+in the caller's data and pass their model names explicitly; GUI bundles must
+also provide an RViz runtime index. Map bundles contain lanelet2_map.osm,
+map_projector_info.yaml and pointcloud_map.pcd (plus metadata for multi-file maps).
+Validate aggregate startup, configuration, map/model publications, velocity relay,
+API service and clean shutdown with
+`bazel test --config=no-agnocast //bazel/tests:core_system_headless_launch_test`.
+This gate does not assert a full driving scenario.

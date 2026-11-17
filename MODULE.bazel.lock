@@ -92,6 +92,7 @@
     "https://bazel.ros.org/modules/ament_cmake_version/2.8.8-1.rcr.0/source.json": "475e77d6c9cf53859a3d745ffb44e80c365f8fe50e29df5696788dc2ea28d6ac",
     "https://bazel.ros.org/modules/ament_cmake_xmllint/0.20.6-1.rcr.2/MODULE.bazel": "9ba24bb7aebaee0563ab3dbbeb5d8624a6cbbf3b25d09ef09bbc0b4a695a1428",
     "https://bazel.ros.org/modules/ament_cmake_xmllint/0.20.6-1.rcr.2/source.json": "9fce81649261bc9bc54f66d1211001dad02ac9e9a946c9f6b0c4bbcd40f75a88",
+    "https://bazel.ros.org/modules/ament_copyright/0.0.0/MODULE.bazel": "d35ec207a9569121c0819b7b1c8d10d15d8a332e2bff2211a2791e27aa7638aa",
     "https://bazel.ros.org/modules/ament_copyright/0.20.6-1.rcr.2/MODULE.bazel": "fae47ea8416b23fee57d817278661b21cd7958b5200b37f86f45ce6c65d44bf2",
     "https://bazel.ros.org/modules/ament_copyright/0.20.6-1.rcr.2/source.json": "0b17b1fe3335eeac0deea701bed979a08a53061e0343c67441d8192b91435c9d",
     "https://bazel.ros.org/modules/ament_cppcheck/0.20.6-1.rcr.2/MODULE.bazel": "f2672be949397fefb874695e76efba825a383782fb66baf4ef69493f9360cf45",
@@ -3536,7 +3537,7 @@
     "@@rosdistro+//python:defs.bzl%pip_ros": {
       "general": {
         "bzlTransitiveDigest": "Wf1bYPS+v1MXSxPm/3sa2yWsKIiJG8ikAIrD+e7Djmk=",
-        "usagesDigest": "JmnalskPAnud2dEfQfoB9Jl6LSqKpQslNTjyO1Ju5Z4=",
+        "usagesDigest": "ixD+KJrgofe+iNFEL7RoKGGr2rE092FP8Hcg8etYtNY=",
         "recordedInputs": [
           "REPO_MAPPING:bazel_features+,bazel_features_globals bazel_features++version_extension+bazel_features_globals",
           "REPO_MAPPING:bazel_features+,bazel_features_version bazel_features++version_extension+bazel_features_version",
