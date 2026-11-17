@@ -1,0 +1,6 @@
+module(
+    name = "autoware_adapi_version_msgs",
+    version = "1.9.2",
+)
+
+bazel_dep(name = "rosidl_default_generators", version = "0.0.0")
