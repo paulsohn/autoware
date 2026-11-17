@@ -5978,3 +5978,36 @@ Only the legacy ABI is linked into current consumers. Loading both OSQP ABIs in
 one process remains unsupported/unverified; revisit the input strategy before
 introducing such a consumer. No Fast DDS, CMake or container run is included.
 Next add the QP abstraction and its ProxQP backend.
+
+## 2026-11-17: Phase 5.2.5 — QP interface
+
+Purpose: expose both existing OSQP and ProxQP implementations for smoothing.
+Inspect the four implementation and four original test sources and CMake's
+single test group. The complete suite is 16 cases covering the base abstraction,
+CSC utilities, OSQP and ProxQP. Reuse the validated legacy solver selection from
+the preceding entry; ProxSuite is absent from local snapshots, so pin RCR's
+proxsuite 0.7.3-1.rcr.0 at the root. Its existing header-only overlay supplies the
+configuration headers and Eigen dependency; no host apt/pip provider is used.
+
+Add a package-local module and library over all four original sources/public
+headers, depending on @proxsuite, the package-local legacy OSQP forwarding-header
+library, Eigen and RCLCPP. Keep the same two-header namespace adapter locally so
+this independent package does not depend on another interface just for build
+support. A RCLCPP runtime collector and the original single test_osqp_interface
+target (all four test sources, gtest_main) complete the surface. Select the local
+module with the root 0.0.0 dependency/override pair after its solver prerequisite.
+No implementation or original test changes are required.
+
+Verification:
+
+```bash
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=no-agnocast --local_test_jobs=1 \
+  --nocache_test_results --test_output=errors @autoware_qp_interface//...
+```
+
+All four non-test targets build and all 16 original cases pass without failures,
+errors, skips or disabled cases (26.265 seconds total; test 0.1 seconds).
+Both solver backends are covered on the selected Cyclone/LLVM platform. The
+preceding entry's dual-OSQP-ABI limitation still applies. No Fast DDS, CMake or
+container run is included. Next consume both interfaces in velocity smoothing.

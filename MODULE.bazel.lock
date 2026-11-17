@@ -1107,6 +1107,9 @@
     "https://bazel.ros.org/modules/protoc-gen-validate/1.2.1.bcr.1/MODULE.bazel": "not found",
     "https://bazel.ros.org/modules/protoc-gen-validate/1.2.1.bcr.2/MODULE.bazel": "not found",
     "https://bazel.ros.org/modules/protoc-gen-validate/1.2.1/MODULE.bazel": "not found",
+    "https://bazel.ros.org/modules/proxsuite/0.0.0/MODULE.bazel": "5e884439d016387c7d82ae5b4964e7b2bbe46d950c0940ffba651e0ee059e45f",
+    "https://bazel.ros.org/modules/proxsuite/0.7.3-1.rcr.0/MODULE.bazel": "48a065c58ea263e51b32a36d8007f26282fc2b288298e1a9ad63f48d5d7f6e9a",
+    "https://bazel.ros.org/modules/proxsuite/0.7.3-1.rcr.0/source.json": "7ff41732de4279ec812b27e966dd976f8ded4986d19d85108b146357445397ba",
     "https://bazel.ros.org/modules/pugixml/1.15/MODULE.bazel": "not found",
     "https://bazel.ros.org/modules/pybind11_bazel/2.11.1/MODULE.bazel": "not found",
     "https://bazel.ros.org/modules/pybind11_bazel/2.12.0/MODULE.bazel": "not found",
@@ -1726,6 +1729,7 @@
     "https://bazel.ros.org/modules/suitesparse/7.10.1.bcr.4/MODULE.bazel": "not found",
     "https://bazel.ros.org/modules/suitesparse/7.10.1.rcr.0/MODULE.bazel": "e51cae1e6f7c1ca94fc54d4f4d316b343ed41fa56c688d8ea564722f34eaa80c",
     "https://bazel.ros.org/modules/suitesparse/7.10.1.rcr.0/source.json": "3d24227ff534c8e9567b64273bd2b222255a1f3b906d7aef80aa6b76552c4998",
+    "https://bazel.ros.org/modules/suitesparse/7.6.0.bcr.2/MODULE.bazel": "not found",
     "https://bazel.ros.org/modules/svox-pico/1.0.0-20221014.rcr.0/MODULE.bazel": "a28cb7dcff7b26e2ac9559492eb72cc627a00ddcdfe8ddd890602879e6b24493",
     "https://bazel.ros.org/modules/svox-pico/1.0.0-20221014.rcr.0/source.json": "1df32b329fc7313504f921ffacc911b46eb0773974952f4311c626d6f6280e74",
     "https://bazel.ros.org/modules/swift_argument_parser/1.3.1.1/MODULE.bazel": "not found",
@@ -3137,6 +3141,7 @@
     "https://bcr.bazel.build/modules/stb/0.0.0-20251026-f1c79c0/MODULE.bazel": "876fbb466f92f46af04a349d8ce5d1c1a322f999e5ea9240154ccf911f170ee9",
     "https://bcr.bazel.build/modules/stb/0.0.0-20251026-f1c79c0/source.json": "b372e27f3ebf0cb39e158bacfe6e24242c1b1f6087530b14e44eada060b28f2b",
     "https://bcr.bazel.build/modules/suitesparse/7.10.1.bcr.4/MODULE.bazel": "7eaf4acbc5397664f9e6f08c87bdc627fe308adf08e5ad289a33ff621d5520c1",
+    "https://bcr.bazel.build/modules/suitesparse/7.6.0.bcr.2/MODULE.bazel": "50e1fe595ad7d177ddcc599f23c84cd8d0a923a406cbca804afdb54eaba7a573",
     "https://bcr.bazel.build/modules/swift_argument_parser/1.3.1.1/MODULE.bazel": "5e463fbfba7b1701d957555ed45097d7f984211330106ccd1352c6e0af0dcf91",
     "https://bcr.bazel.build/modules/swift_argument_parser/1.3.1.2/MODULE.bazel": "75aab2373a4bbe2a1260b9bf2a1ebbdbf872d3bd36f80bff058dccd82e89422f",
     "https://bcr.bazel.build/modules/swift_argument_parser/1.3.1.2/source.json": "5fba48bbe0ba48761f9e9f75f92876cafb5d07c0ce059cc7a8027416de94a05b",
@@ -3513,7 +3518,7 @@
     "@@rosdistro+//python:defs.bzl%pip_ros": {
       "general": {
         "bzlTransitiveDigest": "Wf1bYPS+v1MXSxPm/3sa2yWsKIiJG8ikAIrD+e7Djmk=",
-        "usagesDigest": "crfYrlkvCoqsCxz3d5nvdWCugTiK03upmAYLdrbYU8A=",
+        "usagesDigest": "XQIGLHoS5oVFz8jHe58VD56St+4tI5ESPW9eZ/hF1lc=",
         "recordedInputs": [
           "REPO_MAPPING:bazel_features+,bazel_features_globals bazel_features++version_extension+bazel_features_globals",
           "REPO_MAPPING:bazel_features+,bazel_features_version bazel_features++version_extension+bazel_features_version",

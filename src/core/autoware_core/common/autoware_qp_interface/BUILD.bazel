@@ -1,0 +1,49 @@
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "autoware_qp_interface",
+    srcs = glob(["src/*.cpp"]),
+    hdrs = glob(["include/**/*.hpp"]),
+    strip_include_prefix = "include",
+    deps = [
+        ":osqp_headers",
+        "@proxsuite",
+        "@rclcpp//:rclcpp_library",
+        "@rosdistro//cc:eigen",
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = ["@rclcpp//:rclcpp"],
+)
+
+cc_test(
+    name = "test_osqp_interface",
+    srcs = glob(["test/*.cpp"]),
+    dynamic_deps = [":runtime_dynamic_deps"],
+    deps = [
+        ":autoware_qp_interface",
+        "@googletest//:gtest_main",
+    ],
+)
+
+# Match the ROS vendor include namespace without changing original package sources.
+genrule(
+    name = "osqp_forwarding_headers",
+    outs = [
+        "osqp_include/osqp/osqp.h",
+        "osqp_include/osqp/glob_opts.h",
+    ],
+    cmd = "echo '#include <osqp.h>' > $(location osqp_include/osqp/osqp.h); echo '#include <glob_opts.h>' > $(location osqp_include/osqp/glob_opts.h)",
+)
+
+cc_library(
+    name = "osqp_headers",
+    hdrs = [":osqp_forwarding_headers"],
+    strip_include_prefix = "osqp_include",
+    deps = ["@osqp_legacy//:osqp"],
+)
