@@ -559,3 +559,40 @@ removed. The timeout bounds discovery/output failure rather than asserting
 real-time latency. Local evidence uses Ubuntu 24.04/Clang/RCR Lyrical; it does
 not establish Humble/Jazzy, GCC/Ubuntu 26.04 or hardware behavior. JOURNAL.md
 contains the exact two launch commands and full-module gate.
+
+## Component-interface member callbacks with Clang/libc++
+
+- [ ] Associate with a matching upstream PR. Searched 2026-11-17 for
+  component_interface_utils/libc++ PRs; no match found. The related Lyrical
+  tracker [core#1538](https://github.com/autowarefoundation/autoware_core/issues/1538)
+  and target-export discussion/PR #1540 concern broader/GCC/CMake compatibility,
+  rather than this demonstrated member-pointer trait failure.
+
+Local source fix: decay member-pointer arguments before binding. Package:
+common/autoware_component_interface_utils, rclcpp.hpp. Upstream main checked
+2026-11-17, file blob ae900b8fb2895f8da558049c836587a5cf85edbc; all six
+member callback adapters still use std::bind(callback, instance, ...).
+The tracker describes Ubuntu 26.04/GCC 15, Boost 1.90 and fmt 11. This finding
+is demonstrated with Ubuntu 24.04, Clang 21.1.8/libc++, C++23 and Lyrical RCR;
+it does not establish a failure in AWF's GCC environment.
+
+Reproduce with the complete test_component_interface_utils suite, specifically
+node_adaptor_create_subscription_member_callbacks. Both shared-pointer and
+const-reference callbacks fail to compile in RCLCPP function_traits.hpp:
+reference to overloaded FunctionT::operator() cannot be resolved. The named
+rvalue-reference member pointer becomes an lvalue when passed to std::bind;
+libc++ records a member-pointer reference in its binder template arguments,
+which does not match RCLCPP's member-pointer binder trait specialization.
+
+Move the member-function pointer into std::bind at all six member overloads,
+including legacy init_sub/init_srv and returning subscription/service forms.
+Member pointers are values, so this retains invocation/ownership semantics and
+uses the already included utility header. Do not change callback signatures or
+omit member-callback tests. The full 25-case utility suite passes after this
+correction and declaring its proper interface runtime closure; the latter is
+Bazel packaging, separate from the compile failure. The grouped command in the
+pose-initialization JOURNAL entries reproduces the full suite. Motion's 118 and
+pose initialization's 23 original C++ cases also pass with the corrected public
+header. Both actual pose-initializer executables and all eleven expanded bridge
+regression cases pass too. Humble/Jazzy, GCC/libstdc++ and upstream CMake builds
+were not rerun.
