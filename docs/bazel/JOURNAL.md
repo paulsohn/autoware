@@ -7021,3 +7021,31 @@ There are no registered existing runtime tests in this resource-only module.
 Unchanged component algorithm/backend results remain applicable. No source fix
 was needed. Simulated time is selected but not advanced; this does not establish
 simulation progression, URDF rendering or localization convergence.
+
+## 2026-11-18: Phase 5.3.2 — core perception context
+
+Purpose: integrate autoware_core_perception in its actual global/runtime context.
+
+Inspect all original configuration, XML includes and the cluster Python launch.
+Expose config/** and launch/**, composing ground-filter, cluster and object-
+converter indexes. The cluster launch starts a native component_container, so
+compose the published rclcpp_components ament_package runtime provider too.
+Select the original default no-cropbox/no-external-container branch. Gate the
+real ground node's global clock parameter and discovery of cluster/converter
+nodes with the original namespaces. This package has no existing runtime suite;
+unchanged component algorithm/data tests remain their earlier evidence. This
+context gate does not claim a new perception scenario or GPU path.
+
+Pattern: retain original sources/configurations and add only package-local
+MODULE/BUILD resource definitions selected by adjacent root 0.0.0 dependency/
+local_path_override pairs. Added tests/fixtures live in bazel/tests/system_context.
+The shared original-launch gate uses Cyclone DDS, serialized tests and declared
+resources, with separate ROS domains for the two clock variants.
+
+Verification: the complete Phase 5.3.2 gate below passed with Cyclone DDS.
+Both original combined contexts passed (wall and simulated clock selection,
+3.3 seconds each), including this module's assertions and clean shutdown.
+There are no registered existing runtime tests in this resource-only module.
+Unchanged component algorithm/backend results remain applicable. No source fix
+was needed. Simulated time is selected but not advanced; this does not establish
+simulation progression, URDF rendering or localization convergence.
