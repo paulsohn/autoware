@@ -6230,3 +6230,54 @@ errors or skips; the original DISABLED_Benchmark remains disabled (test action 0
 module invocation builds ten non-test targets and passes all 105 active cases in
 16.498 seconds. No Fast DDS, CMake or container check was run. Reuse these
 results for unchanged foundations in the downstream planner/plugin gate.
+
+
+## 2026-11-17: Phase 5.2.5 — behavior planner
+
+Purpose: produce both standard and experimental behavior-planner executables
+against the current common library. Inspect all six original implementation
+sources, installed/private headers, launch/config files, and both test sources.
+Preserve CMake's two test targets: node-interface nominal/empty/off-track checks
+and all data-processing cases. Both node classes derive from rclcpp::Node;
+retain the native RCR component launcher rather than changing middleware APIs.
+
+Pattern: production library contains five sources, excluding src/test_utils.cpp
+and its header. Expose that existing helper in a separate testonly library for
+both planner and plugin tests, with test-manager/test-helper dependencies kept
+outside the production closure. Link the two registered node factories in one
+shared component; create both original executable names and ament component
+records with rclcpp_components_register_node. Register launch/config and
+executables. Pair ROS generated/native compile/shared providers, including the
+logging_demo service's dynamic typesupport dependency. Tests preserve source
+and assertion inventories, original configuration resources and RCLCPP selection.
+
+Verification, sequential complete module/executable gate:
+
+```bash
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=no-agnocast --local_test_jobs=1 \
+  --nocache_test_results --test_output=errors \
+  @autoware_behavior_velocity_planner//... \
+  @autoware_behavior_velocity_stop_line_module//... \
+  //bazel/tests:behavior_velocity_planner_standard_runtime_test \
+  //bazel/tests:behavior_velocity_planner_experimental_runtime_test
+```
+
+Result: 20 non-test targets build and all five test targets pass in 427.489
+seconds. Both original planner targets pass all nine cases (node two in 10.2
+seconds; data processing seven in 0.6 seconds), and the complete stop-line suite
+passes all 23 cases in 10.2 seconds. No failures/errors/skips/disabled cases in
+these modules. Standard and experimental executable checks each pass one
+lifecycle case (2.3 and 2.0 seconds), including the matching plugin factory,
+original parameter values, unload/reload and clean shutdown.
+
+Reuse the unchanged 105-active-case foundation gate, retaining motion-common's
+one original disabled benchmark. Together the five-package group passes all
+137 active existing cases and both executable checks. Targeted buildifier,
+Python parsing, changed-line C++ formatting, full source/test inventories,
+component-boundary checks and XML/log counts also pass. No Fast DDS, CMake,
+container or system-wide communication matrix was run. Original standard node
+and stop-line suites cover nominal/empty/off-track paths; the experimental
+executable gate establishes factory assembly/lifecycle, not full map/scenario
+parity. Next take motion planner and obstacle-stop plugin dependencies;
+Phase 5.2.5 remains open.
