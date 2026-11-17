@@ -34,6 +34,7 @@
 
     <node pkg="autoware_mission_planner" exec="mission_planner" name="mission_planner" namespace="mission_planning">
       <param from="$(var mission_planner_param_path)"/>
+      <param from="$(var vehicle_param_file)"/>
       <remap from="~/input/vector_map" to="$(var map_topic_name)"/>
       <remap from="~/input/odometry" to="/localization/kinematic_state"/>
       <remap from="~/input/operation_mode_state" to="/system/operation_mode/state"/>
@@ -45,6 +46,7 @@
       <push-ros-namespace namespace="scenario_planning/lane_driving/behavior_planning"/>
       <node pkg="autoware_path_generator" exec="path_generator_node" name="path_generator">
         <param from="$(find-pkg-share autoware_path_generator)/config/path_generator.param.yaml"/>
+        <param from="$(var vehicle_param_file)"/>
         <param from="$(find-pkg-share autoware_core_planning)/config/nearest_search.param.yaml"/>
         <remap from="~/input/route" to="/planning/route"/>
         <remap from="~/input/vector_map" to="$(var map_topic_name)"/>
@@ -121,6 +123,7 @@
     <!-- Velocity Smoothing -->
     <node pkg="autoware_velocity_smoother" exec="velocity_smoother_node" name="velocity_smoother" namespace="scenario_planning">
       <param name="algorithm_type" value="$(var velocity_smoother_type)"/>
+      <param from="$(var vehicle_param_file)"/>
       <param from="$(var common_param_path)"/>
       <param from="$(var nearest_search_param_path)"/>
       <param from="$(var velocity_smoother_param_path)"/>

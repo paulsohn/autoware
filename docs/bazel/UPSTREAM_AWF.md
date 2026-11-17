@@ -804,3 +804,32 @@ with no skips or assertion changes. See the motion-planner journal for exact
 commands and declared resources. Verified on Ubuntu 24.04, LLVM/libc++ 21.1.8,
 RCR Lyrical and Cyclone DDS; upstream CMake/GCC and other ROS releases were not
 run. No upstream submission has been made.
+
+## Core planning launch omits vehicle parameters for three nodes
+
+Local source correction: pending core-planning commit association.
+
+- [x] Associate related upstream evidence: merged
+  [core#1327](https://github.com/autowarefoundation/autoware_core/pull/1327)
+  explicitly reports the same wheel_radius startup failure for mission planner,
+  path generator and velocity smoother. Its inspected diff changes NodeAdaptor
+  endpoints and corresponding remaps; it does not supply vehicle parameters.
+- [ ] Associate a matching fix. Checked 2026-11-17: upstream main XML (blob
+  381a878cc439d98a5af4aa53bf06ddf18950a875) retains all three omissions; the
+  repository-scoped core-planning/vehicle PR search found no matching fix.
+
+Reproduce by launching the original autoware_core_planning XML with a valid
+vehicle_param_file override. Behavior/motion planners receive that file, but
+mission planner/path generator abort on uninitialized wheel_radius and smoother
+fails construction with an unset double. Add the existing vehicle_param_file
+as a param-file input to exactly those three missing consumers. Preserve vehicle
+values, XML defaults, node logic and topic names; do not hide the omission with
+global test parameter injection or fallback values in VehicleInfoUtils.
+
+The original six-process XML launch then passes configuration/graph checks and
+clean exit assertions under Bazel/Cyclone DDS. The complete affected suite gate
+passes all 167 original C++ cases and existing executable checks; see the core
+planning journal for exact commands and separate Bazel resource-name fixes.
+This is a launch configuration bug, not a Lyrical-only correction. Ubuntu 24.04,
+LLVM/libc++ 21.1.8 and RCR Lyrical were used; upstream CMake/GCC, other ROS
+releases and closed-loop driving were not tested. No upstream submission made.

@@ -6483,3 +6483,50 @@ Agnocast-enabled gate is claimed for this native node. The runtime regression
 checks assembly and lifecycle; full scenario simulation remains a later phase.
 Next inspect the core planning metapackage's launch/resource composition and
 remaining Phase 5.2.5 completion criteria before moving to Phase 5.3.
+
+## 2026-11-17: Phase 5.2.5 — core planning launch composition
+
+The original XML starts behavior/motion planners with vehicle_param_file but
+omits it for mission planner, path generator and smoother. With a valid explicit
+vehicle file, the first two abort on uninitialized wheel_radius and smoother
+fails construction on an unset double. Add the same param-file input to those
+three missing consumers only; preserve defaults, values, node logic and remaps.
+UPSTREAM_AWF.md records the upstream-main blob and related PR #1327, whose diff
+does not fix these omissions. This is a launch configuration fix, not Lyrical-
+only compatibility. Keep it separate from Bazel build/resource corrections.
+
+The new root launch regression includes the original XML and verifies six node
+names, configured values, remapped endpoints and clean shutdown. With prepared
+local resource definitions and corrected executable/library indexes, the exact
+complete gate is:
+
+```bash
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=no-agnocast --local_test_jobs=1 \
+  --nocache_test_results --test_output=errors \
+  @autoware_behavior_velocity_planner//... \
+  @autoware_behavior_velocity_stop_line_module//... \
+  @autoware_motion_velocity_planner//... \
+  @autoware_motion_velocity_obstacle_stop_module//... \
+  @autoware_mission_planner//... @autoware_path_generator//... \
+  @autoware_planning_topic_converter//... \
+  @autoware_core_planning//... @autoware_core_control//... \
+  //bazel/tests:planning_mission_planner_runtime_test \
+  //bazel/tests:planning_goal_visualizer_runtime_test \
+  //bazel/tests:planning_path_generator_runtime_test \
+  //bazel/tests:planning_converter_runtime_test \
+  //bazel/tests:behavior_velocity_planner_standard_runtime_test \
+  //bazel/tests:behavior_velocity_planner_experimental_runtime_test \
+  //bazel/tests:motion_velocity_planner_runtime_test \
+  //bazel/tests:core_planning_launch_test \
+  //bazel/tests:core_control_launch_test \
+  //bazel/tests:core_control_gate_launch_test
+```
+
+All 23 targets pass in 61.267 seconds: 167 selected existing C++ cases, seven
+existing standalone checks and six active/shutdown launch assertions. Planning
+starts all six nodes together and passes in 2.5 seconds. No failures or skips.
+Bazel declarations and resource corrections are separate package commits; the
+complete entry will consolidate their patterns and limitations. No Fast DDS,
+CMake, container or enabled Agnocast aggregate launch was run. Full driving
+simulation remains unverified.
