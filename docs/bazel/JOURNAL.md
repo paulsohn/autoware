@@ -5648,3 +5648,40 @@ source-list checks, Python parsing and whitespace checks pass. No Fast DDS,
 Agnocast conversion, example runtime sweep or colcon/ament/CMake run is included.
 The route-handler gate below additionally consumes this library and its YAML
 resources. Compatibility changes are limited to the demonstrated blockers.
+
+
+## 2026-11-17: Phase 5.2.5 — autoware_route_handler
+
+Purpose: integrate route/lane queries and centerline-path generation using the
+validated trajectory and lanelet providers. Inspect the one implementation,
+public header, all six CMake test sources, shared test headers, test_route YAML
+files and lookups of trajectory/lanelet/test-helper resources. Preserve the
+original PLOT definition, test main and upstream-disabled disconnected-lane
+case; introduce no filter or dependency-driven omission.
+
+Pattern: package-local library with trajectory, lanelet extension/utilities,
+ROS interfaces, geometry/math and TF dependencies; collect their shared runtime
+providers. Register test_route through ament_index. The original cc_test uses
+its own main, optional visualization helper, fmt/YAML/range dependencies and all
+four resource indexes (own, trajectory, lanelet utilities, test utilities).
+Use the same root Python launcher and headless output directory as pyplot.
+No production or original test source change is required in this package.
+
+Verification:
+
+```bash
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --local_test_jobs=1 --nocache_test_results --test_output=errors \
+  --run_under=//bazel/tests:with_python \
+  @autoware_route_handler//... @autoware_test_utils//...
+```
+
+Result: both complete original targets pass in 57.287 seconds. Route-handler
+runs 158 active cases in 16.2 seconds; its XML lists 159 cases including the one
+original DISABLED_ case (not run), with no failures/errors/runtime skips. All 21
+test-helper cases pass in 0.9 seconds. Route-handler produces 87 SVG figures.
+The disabled upstream case is retained as an explicit limitation, not newly
+excluded to make this gate pass. No Fast DDS, Agnocast conversion, container or
+colcon/ament/CMake check is included. This dependency group is complete; Phase
+5.2.5 remains in progress. Next inventory path generation, its local planning-
+test-manager prerequisite and generated-parameter support with their full gates.

@@ -1010,10 +1010,27 @@ to the central Agnocast interface set is required. These targets are native
 RCLCPP/Cyclone DDS consumers. Local provider selection is also covered by the
 root regression suite and all eleven bridge cases.
 
-Next inspect the
-trajectory/plotting/route-handler dependency group together: route-handler tests
-require plotting and trajectory providers, so inventory their complete suites
-and runtime resources before implementation. Later path generation, smoothing,
+The next related group is autoware_pyplot, the optional visualization export
+from autoware_test_utils, autoware_trajectory and autoware_route_handler. Preserve
+PLOT compilation and enable trajectory's existing ENABLE_TEST_PLOT switch.
+Acceptance includes pyplot's original test, all 20 trajectory test sources,
+all six route-handler test sources, all 19 CMake-declared trajectory examples,
+and the existing test-helper suite. Preserve route-handler's one upstream
+DISABLED_ case and report it separately; add no filters or dependency skips.
+Use a root-owned embedded-Python launcher with the selected Python toolchain,
+pinned Matplotlib wheels and Agg rendering. Tests write figures to Bazel's
+undeclared-output directory. Keep new harness sources outside components.
+This group is complete: pyplot's one case, all 293 trajectory cases, 158 active
+route-handler cases (one upstream-disabled case retained), all 21 test-helper
+cases and all 19 trajectory examples pass. Trajectory and route-handler each
+produce 87 SVG figures; pyplot produces two PNGs and one SVG. The GNU wheel
+runtimes are pinned Bazel archives, with native loader tracing confirming their
+use. Trajectory keeps its upstream C++17 implementation contract and needs
+current-target expected/TF header fixes plus a four-ULP floating-point test
+comparison; the journal and UPSTREAM_AWF.md record scope and evidence.
+Next inventory autoware_path_generator with its local planning-test-manager
+prerequisite and generated-parameter support; retain its complete node-interface
+and geometry suites before advancing to later planner/solver groups. Later path generation, smoothing,
 solver and planner groups follow their actual dependencies. Phase 5.2.5 remains
 open; do not treat the two native control nodes as a complete planning stack.
 

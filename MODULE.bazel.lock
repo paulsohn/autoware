@@ -3501,7 +3501,7 @@
     "@@rosdistro+//python:defs.bzl%pip_ros": {
       "general": {
         "bzlTransitiveDigest": "Wf1bYPS+v1MXSxPm/3sa2yWsKIiJG8ikAIrD+e7Djmk=",
-        "usagesDigest": "hnKxY1VkISPF5WKz0lARhyZ/oT4muL2tSvj1lsKhBis=",
+        "usagesDigest": "h3WbNRVr5d+6gL1y8AGQIKFONpvSdpGJEPySkDgs8rM=",
         "recordedInputs": [
           "REPO_MAPPING:bazel_features+,bazel_features_globals bazel_features++version_extension+bazel_features_globals",
           "REPO_MAPPING:bazel_features+,bazel_features_version bazel_features++version_extension+bazel_features_version",
@@ -3789,7 +3789,7 @@
     "@@rules_python+//python/uv:uv.bzl%uv": {
       "general": {
         "bzlTransitiveDigest": "RH0xYDM+3D/BJrY901xKB9oHbAVDI7DBo6UhvEjliCw=",
-        "usagesDigest": "r+MAP04PeXfFyoyJNKKXM53SjuGDKW5W84h89tpoN+M=",
+        "usagesDigest": "0uFXksYfuP62YLi2pGrLBBYLuZbbxxn0GCSNsMVGOe8=",
         "recordedInputs": [
           "REPO_MAPPING:rules_python+,bazel_tools bazel_tools",
           "REPO_MAPPING:rules_python+,platforms platforms"
