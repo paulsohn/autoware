@@ -5738,8 +5738,12 @@ runtime collector and the heap hook. Do not turn a test dependency into a
 production backend conversion. The existing all-interface selection already
 contains PlanningFactorArray and its dependencies; no bridge expansion is needed.
 
-The package-local build definitions are prepared with this task and committed
-separately; verification below records that tested working tree.
+Pattern: package-local compiled library plus a runtime_dynamic_deps collector,
+then one cc_test with its original main. Use the wrapper's
+:autoware_agnocast_wrapper_library for compile information and :test_dynamic_deps
+for its shared closure. Declare @agnocast_heaphook in test data so the launcher
+can resolve the built library through runfiles. The module depends on the
+heap-hook module for that test prerequisite; there is no metarepository label.
 
 Diagnosed failure: enabling the backend first exits without the undeclared heap
 hook. Declare it and preload only the native process. With this fixed, six cases

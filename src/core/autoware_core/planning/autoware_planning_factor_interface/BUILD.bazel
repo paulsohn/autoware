@@ -1,0 +1,56 @@
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "autoware_planning_factor_interface",
+    srcs = [
+        "src/planing_factor_interface.cpp",
+    ],
+    hdrs = [
+        "include/autoware/planning_factor_interface/planning_factor_interface.hpp",
+    ],
+    includes = [
+        "include",
+        "src",
+    ],
+    deps = [
+        "@autoware_internal_planning_msgs//:cc",
+        "@autoware_motion_utils",
+        "@autoware_planning_msgs//:cc",
+        "@autoware_utils_geometry",
+        "@geometry_msgs//:cc",
+        "@rclcpp//:rclcpp_library",
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = [
+        "@autoware_internal_planning_msgs//:cc_shared",
+        "@autoware_motion_utils//:runtime_dynamic_deps",
+        "@autoware_planning_msgs//:cc_shared",
+        "@geometry_msgs//:cc_shared",
+        "@rclcpp//:rclcpp",
+    ],
+)
+
+cc_test(
+    name = "test_planning_factor_interface",
+    timeout = "long",
+    srcs = [
+        "test/test_planning_factor_interface.cpp",
+    ],
+    data = ["@agnocast_heaphook"],
+    dynamic_deps = [
+        ":runtime_dynamic_deps",
+        "@autoware_agnocast_wrapper//:test_dynamic_deps",
+    ],
+    env = {"ROS_DOMAIN_ID": "65"},
+    deps = [
+        ":autoware_planning_factor_interface",
+        "@autoware_agnocast_wrapper//:autoware_agnocast_wrapper_library",
+        "@googletest//:gtest",
+    ],
+)

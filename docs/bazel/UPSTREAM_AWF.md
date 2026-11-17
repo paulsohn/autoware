@@ -644,6 +644,8 @@ patch. Humble/Jazzy, GCC and colcon/ament/CMake were not run locally.
 
 ## Planning-factor test must dispatch the selected backend
 
+Local source correction: `2c3383fd`.
+
 - [ ] Associate with a matching upstream PR. Checked 2026-11-17: no matching
   planning-factor executor PR was found. Main test_planning_factor_interface.cpp
   (blob 578b369eefb5ea0f3441289d30c43f1d793c132c) spins a wrapper Node through
