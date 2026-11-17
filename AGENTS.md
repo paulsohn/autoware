@@ -57,6 +57,12 @@ experiments, and milestones belong in PLAN.md and JOURNAL.md.
   support. Use registry sources for dependencies absent locally; use a registry
   counterpart for a local package only when the user explicitly requests a
   source-selection comparison. Validate the affected local dependency closure.
+- For CMake-only dependency shims or metapackages, experiment with direct
+  Bazel toolchain/library providers before adding an otherwise empty module.
+  Omit the shim only after inspecting its exported effects and validating the
+  complete affected consumer suites; preserve required flags, definitions and
+  runtime resources in the owning Bazel targets. Journal the evidence. This
+  does not permit replacing locally available implementation or interface code.
 - Introduce only what the current experiment requires. Investigate a dependency
   or patch when a current target exposes the need; do not pre-apply anticipated
   fixes.

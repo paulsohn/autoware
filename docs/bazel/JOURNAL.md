@@ -7504,3 +7504,49 @@ No Fast DDS check, upstream CMake/GCC build, GUI display, sensor hardware,
 Agnocast aggregate, localization convergence or full driving simulation was
 run for this gate. Runtime images and full simulation remain Phase 7; introduce
 GPU dependencies against an actual selected Phase 6 consumer next.
+
+## 2026-11-18: Phase 6 — SDK choices and direct-provider experiment plan
+
+Purpose: define the next GPU adoption experiments after Phase 5, separating
+candidate SDK/toolchain choices from tested integration results. PLAN.md owns
+the numbered steps and decisions; do not repeat them in the developer manual
+until they describe supported targets.
+
+Inspected inputs: current CUDA-utils/TensorRT/common/transport manifests, CMake
+sources and original tests; CUDA dependency-meta CMake extras; existing LLVM/
+RCR graph; NVIDIA redistributable and package indexes; current rules_cuda
+registry metadata and source descriptions. The agreed first route keeps the
+existing host toolchain, tries nvcc/CUDA 13.2.2 and evaluates current upstream
+rules before introducing patches. TensorRT 10.16.1.11 for CUDA 13.2 is an x86
+candidate; JetPack's 10.16.2 remains a distinct later target.
+
+Metadata inspection is reproducible from these primary inputs:
+
+- [CUDA manifest](https://developer.download.nvidia.com/compute/cuda/redist/redistrib_13.2.2.json).
+- [Upstream rule versions](https://bcr.bazel.build/modules/rules_cuda/metadata.json)
+  and [RCR rule versions](https://bazel.ros.org/modules/rules_cuda/metadata.json).
+- NVIDIA Ubuntu 24.04 package indexes:
+  [x86_64](https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2404/x86_64/Packages.gz)
+  and [SBSA](https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2404/sbsa/Packages.gz).
+  Decompress each index and inspect Package: libnvinfer10 stanzas with Version:
+  10.16*. On this review date, both list 10.16.1.11 for CUDA 13.2 and neither
+  lists 10.16.2. This establishes availability only, not build compatibility.
+
+New experiment: a package.xml dependency need not imply a separate Bazel module
+when it exists only to carry CMake settings. autoware_cuda_dependency_meta
+exports no code; its extras set CMAKE_C_FLAGS/CMAKE_CXX_FLAGS with -fno-lto to
+avoid duplicate fatbinData symbols. Test CUDA-utils with direct rules_cuda/
+CUDA-runtime/CCCL dependencies and inspect actual LTO/link actions. Preserve
+required effects in the appropriate targets; omit an empty shim only after the
+complete existing consumer suite passes. Do not remove the original package or
+apply this exception to real implementation/interface dependencies. The working
+rule and adoption checklist now require that inspection and evidence.
+
+Verification: documentation-only change; git diff --check and added local
+Markdown link/anchor checks. Read-only host inspection with
+`nvidia-smi --query-gpu=name,compute_cap,driver_version --format=csv,noheader`
+reported RTX 5070 Laptop GPU, compute capability 12.0 and driver 620.70.06.
+This confirms device visibility, not successful CUDA execution. No SDK download/
+extraction, compiler probe, Bazel build/test, runtime integration or Fast DDS
+check was performed. All proposed technical inputs and shim omission remain
+unvalidated; Phase 6.1 is the next implementation task.

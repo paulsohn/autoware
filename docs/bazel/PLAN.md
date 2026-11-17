@@ -69,6 +69,9 @@ only when your current target demonstrates the need.
   middleware configurations before implementing each task.
   [Backend executor convention](DEVELOPING.md#switchable-standalone-nodes);
   [evidence: complete Agnocast test inventory](JOURNAL.md#2026-11-15-phase-41--adopt-the-complete-agnocast-library-test-inventory).
+- [ ] Inspect build-system-only shims before creating empty Bazel modules.
+  [Working rule](../../AGENTS.md#working-rules);
+  [planned experiment: CUDA foundation](#phase-61-cuda-foundation-and-direct-provider-experiment).
 - [ ] Check dependency API and header-layout compatibility before changing source.
   [Evidence: solver input selection](JOURNAL.md#2026-11-17-phase-525--osqp-interface).
 - [ ] Choose validated package boundaries for commits, keeping source fixes
@@ -1244,12 +1247,99 @@ resources explicitly. No full driving behavior or GUI rendering is claimed.
 Prior unchanged Agnocast/module evidence remains applicable; no new middleware
 matrix is required to close this phase. Phase 6 is next.
 
+## Phase 6: CUDA and TensorRT on x86 (planned)
+
+Bring the required GPU SDK and local CUDA consumers into the Bazel graph,
+without host toolkit discovery or apt/pip installation. GPU drivers/devices
+remain execution prerequisites. These are agreed experiment choices, not
+validated build inputs. Pin accepted versions and patches only after current
+consumers pass their complete suites.
+
+### Initial decisions and validation boundaries
+
+- Keep the current LLVM/libc++ 21.1.8 C++ toolchain. First try nvcc with that
+  hermetic host compiler; do not bundle a project-wide LLVM upgrade into CUDA
+  adoption. Keep CUDA language flags local to the targets that require them.
+- Try CUDA 13.2.2, matching the JetPack 7.2.1 planning baseline. Fetch the NVIDIA
+  [redistributable manifest](https://developer.download.nvidia.com/compute/cuda/redist/redistrib_13.2.2.json)
+  and required component archives with checksums. Add SDK components when an
+  actual consumer requires them, rather than reproducing a provisioning list.
+- Evaluate upstream rules_cuda 0.4.0 against RCR's 0.3.0.rcr.0 before selecting
+  the rule implementation. Inspect their toolchain/linking differences and
+  exercise the current compiler/runtime closure. Do not pre-apply architecture,
+  component-patching, CUDA-header or reproducibility patches.
+- Start with explicit sm_120 code generation for the available x86 GPU. Keep
+  that product selection separate from package rules. The broader architecture
+  matrix, SBSA cross-build and sm_110 verification belong to Phase 8.
+- Try TensorRT 10.16.1.11-1+cuda13.2 from checksum-pinned NVIDIA binary package
+  payloads. Extracting .deb data archives through Bazel is acceptable and does
+  not require apt installation. The public Ubuntu 24.04 x86_64/SBSA indexes
+  checked on 2026-11-18 do not list 10.16.2, although JetPack 7.2.1 specifies
+  it. Preserve this version gap explicitly; x86 validation cannot establish
+  compatibility with the Phase 8 SDK. Do not assume an arbitrary patch-level
+  substitution is equivalent.
+- Declare TensorRT builder-resource libraries loaded at runtime, plus its
+  required GNU runtime libraries. Audit GLIBC/GLIBCXX requirements and pin the
+  user-space runtime closure instead of silently using host libstdc++/libgcc.
+  Keep platform downloads lazy and runtime paths repository-mapping aware.
+  Do not change the existing core ABI-floor claim based on an unchecked vendor
+  binary. Engine generation/compatibility is specific to the execution target;
+  do not assume an x86 test engine can be reused on Thor.
+- Run complete original module suites on the actual GPU; inspect case counts
+  and reject dependency-related skips or zero-case successes. Preserve existing
+  test mains and any CUDA test-object registration needed by the linker.
+  Separate successful compilation, GPU execution and reproducibility claims.
+  Measure reproducibility before adding compiler wrappers or deterministic-output
+  patches. CUDA/libc++ compatibility is an open experiment, not an accepted fix.
+
+### Phase 6.1: CUDA foundation and direct-provider experiment
+
+Select the minimal pinned SDK/rules closure and integrate local
+autoware_cuda_utils, including every original CUDA test source and its existing
+main. First inspect autoware_cuda_dependency_meta's build exports: it contains
+no implementation or runtime payload and its CMake extras add -fno-lto to C/C++
+flags to avoid duplicate fatbinData symbols. Try direct rules_cuda toolkit,
+CUDA runtime and CCCL dependencies in the consumer, without a separate Bazel
+module for that shim. Inspect emitted compile/link actions for LTO and required
+flags and pass the complete consumer suite, including Thrust coverage, before
+accepting the omission. If a required effect is missing, express it in the
+owning CUDA target/toolchain or add the smallest justified compatibility target.
+Preserve the original package/manifest; this is a Bazel mapping experiment, not
+permission to discard real local libraries, interfaces or package resources.
+
+### Phase 6.2: TensorRT foundation
+
+Integrate local autoware_tensorrt_common against the selected binary SDK and
+explicit runtime closure. Expose the real ONNX fixture and run its complete
+original suite, including engine builds on the GPU. Inspect any CMake-only
+find-module/meta dependency for required effects before creating Bazel modules;
+validate concrete headers, definitions, linkage and runtime behavior directly.
+
+### Phase 6.3: CUDA transport
+
+Integrate local negotiated interfaces/library/examples and cuda_blackboard in
+dependency order, at package commit boundaries. Inventory all current original
+suites and example/component behavior before implementation. Preserve native
+versus switchable node contracts and require the specified Agnocast worker/
+backend checks with their actual runtime prerequisites.
+
+### Phase 6.4: Representative GPU consumer
+
+Select a useful real consumer and validate its complete dependency closure and
+existing suite. Kernel-only reference checks may be an intermediate experiment,
+but cannot close an otherwise partially integrated plugin package. Introduce
+additional vendor/model dependencies only when that consumer needs them.
+
+Phase 6 closes when its selected module boundaries pass complete declared
+build/test/behavior gates and the SDK inputs/runtime requirements are pinned
+and reproducible from the journals. Runtime images/full driving remain Phase 7;
+Thor-compatible software builds remain Phase 8. Routine middleware validation
+uses Cyclone DDS; any Fast DDS check still requires explicit approval.
+
 ## Later phases
 
 ### Incoming phase identifiers
 
-- **Phase 6 — CUDA and TensorRT on x86.** Introduce pinned Bazel dependencies
-  when a selected package requires them.
 - **Phase 7 — Runtime packaging and headless planning simulation.** Complete
   install/resource closure and exercise the packaged scenario.
 - **Phase 8 — JetPack 7.2.1 software compatibility (Thor-supported release).**
