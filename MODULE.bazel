@@ -785,3 +785,9 @@ local_path_override(
     module_name = "autoware_test_node",
     path = "src/core/autoware_core/testing/autoware_test_node",
 )
+
+bazel_dep(name = "autoware_testing", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_testing",
+    path = "src/core/autoware_core/testing/autoware_testing",
+)

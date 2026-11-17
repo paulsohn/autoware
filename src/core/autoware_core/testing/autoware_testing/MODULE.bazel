@@ -1,0 +1,11 @@
+module(
+    name = "autoware_testing",
+    version = "0.0.0",
+)
+
+bazel_dep(name = "launch_ros", version = "0.0.0")
+bazel_dep(name = "launch_testing", version = "0.0.0")
+bazel_dep(name = "rclpy", version = "0.0.0")
+bazel_dep(name = "rosdistro", version = "0.0.0")
+bazel_dep(name = "rules_python", version = "2.4.5")
+bazel_dep(name = "ament_index_python", version = "0.0.0")

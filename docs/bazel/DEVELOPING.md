@@ -692,3 +692,10 @@ or accept dependency-related skips. Supply real generator executables through
 runtime data/arguments. The interface-lint suite uses
 `//bazel/tests:interface_spec_lint_tests`; it includes all original cases and
 its committed-spec/manifest checks. Its original config determines active gates.
+
+The example node uses native RCLCPP component registration, with its original
+ROS executable name registered under lib/autoware_test_node. Its index owns
+that executable registration; avoid an executable-to-same-index data edge.
+Use `//bazel/tests:autoware_test_node_launch_test` for standalone/component
+checks and `//bazel/tests:autoware_testing_original_smoke_test` for the original
+generic smoke helper, both with `--config=no-agnocast`.

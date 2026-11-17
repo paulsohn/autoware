@@ -1,0 +1,24 @@
+load("@rosdistro//ament:defs.bzl", "ament_index")
+load("@rules_python//python:defs.bzl", "py_library")
+
+package(default_visibility = ["//visibility:public"])
+
+py_library(
+    name = "autoware_testing",
+    srcs = glob(["autoware_testing/*.py"]),
+    imports = ["."],
+    deps = [
+        "@ament_index_python",
+        "@launch_ros",
+        "@launch_testing",
+        "@rclpy",
+    ],
+)
+
+ament_index(
+    data = glob([
+        "cmake/**",
+        "autoware_testing/*.py",
+    ]),
+    package_xml = "package.xml",
+)

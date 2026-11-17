@@ -7411,3 +7411,26 @@ binary. Register autoware_test_node_node under lib/autoware_test_node and includ
 that registration in the index. Keep the indexed executable free of a reverse
 data edge to that same index, which would create an index/executable cycle.
 The caller includes the index in runtime data. No source change was needed.
+
+## 2026-11-18: Phase 5.3.4 — generic smoke-test support
+
+Purpose: close this remaining autoware_core package boundary. Inspect its
+manifest, original build/install declarations and all registered tests.
+
+Expose the original Python helper and CMake/resource files. Run both original smoke test cases against autoware_test_node with empty optional parameter filename lists. The root adapter supplies launch configurations and reuses the original suite rather than replacing its assertions.
+
+Add package-local MODULE/BUILD rules selected with adjacent root 0.0.0
+dependency/local_path_override pairs. Added adapters/behavior tests belong under
+bazel/tests; original sources and tests remain in place. The complete module
+gate is declared in PLAN.md Phase 5.3.4. The final combined command recorded
+with the top-level composition entry passed, with no failures, errors,
+dependency-related skips or disabled tests. Reuse preceding unchanged
+component/backend results; this group uses Cyclone DDS/native RCLCPP.
+
+Result: both original smoke suite cases passed against the actual test-node
+executable. The adapter only supplies arg_package, arg_package_exe and empty
+optional parameter filename lists, then uses the helper's original launch
+entities and original test classes. The resource-only CMake package registers
+no additional runtime tests of its own; its smoke-test helper is the behavior
+under test. CMake helper files remain available as indexed resources; no new
+CMake build or compatibility claim is made.

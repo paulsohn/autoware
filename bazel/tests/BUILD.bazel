@@ -1450,3 +1450,24 @@ launch_test(
         "@rclpy",
     ],
 )
+
+launch_test(
+    name = "autoware_testing_original_smoke_test",
+    src = "autoware_testing/test_launch.py",
+    data = ["@autoware_test_node//:ament_index"],
+    env = {
+        "ENABLE_AGNOCAST": "0",
+        "LD_LIBRARY_PATH": "lib",
+        "ROS_DOMAIN_ID": "85",
+    },
+    precompile = "disabled",
+    tags = [
+        "no-remote",
+        "no-sandbox",
+    ],
+    deps = [
+        "@autoware_testing",
+        "@launch_ros",
+        "@rclpy",
+    ],
+)
