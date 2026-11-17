@@ -46,6 +46,16 @@ bazel_dep(name = "std_srvs", version = "0.0.0")
 bazel_dep(name = "tf2_sensor_msgs", version = "0.45.10-1.rcr.0")
 bazel_dep(name = "generate_parameter_library", version = "1.3.0-1.rcr.0")
 
+# Keep the existing solver API separate from RCR's OSQP 1.x consumers.
+# shortcut: current consumers link only 0.6; revisit before mixing both ABIs in one process.
+multiple_version_override(
+    module_name = "osqp",
+    versions = [
+        "0.6.3.bcr.3",
+        "1.0.0.bcr.3",
+    ],
+)
+
 # Keep ROS/DDS globals shared with other native Python extensions.
 single_version_override(
     module_name = "rclpy",
@@ -595,4 +605,10 @@ bazel_dep(name = "autoware_mission_planner", version = "0.0.0")
 local_path_override(
     module_name = "autoware_mission_planner",
     path = "src/core/autoware_core/planning/autoware_mission_planner",
+)
+
+bazel_dep(name = "autoware_osqp_interface", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_osqp_interface",
+    path = "src/core/autoware_core/common/autoware_osqp_interface",
 )

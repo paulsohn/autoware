@@ -5934,3 +5934,47 @@ this step. Targeted buildifier, Python parsing, changed-line C++ formatting,
 source/test inventories and XML/log case checks accompany the runtime gates.
 Phase 5.2.5 remains in progress; next take OSQP/QP and velocity smoothing together
 before the behavior/motion planner groups. No container or CMake run is included.
+
+## 2026-11-17: Phase 5.2.5 — OSQP interface
+
+Purpose: provide the current Autoware solver API before velocity smoothing.
+Inspect package.xml, CMakeLists.txt, both implementation sources, public headers
+and both original test sources. The complete existing suite is eight cases in
+one target, including CSC conversion and solver behavior. Prerequisites are the
+existing LLVM/Lyrical workspace, Eigen, RCLCPP and GTest; no host OSQP install.
+
+The first attempt through @rosdistro//cc:osqp_library fails on
+osqp/glob_opts.h. Inspecting the consumer shows the OSQP 0.6 API (c_float,
+OSQPWorkspace and OSQPData), whereas RCR selects 1.0.0.bcr.3. Select the maintained
+[BCR 0.6.3.bcr.3 overlay](https://github.com/bazelbuild/bazel-central-registry/tree/main/modules/osqp/0.6.3.bcr.3)
+through a component-local osqp_legacy repository alias. At the root use
+multiple_version_override with 0.6.3.bcr.3 and 1.0.0.bcr.3; this preserves RCR's
+selection for separate consumers instead of globally downgrading it. API
+compatibility and include layout are separate questions: the BCR overlay exposes
+bare osqp.h/glob_opts.h, so a package-local genrule creates two forwarding headers
+under osqp_include/osqp/, with strip_include_prefix removing osqp_include. Each
+forwards to the bare upstream header. No production API or source patch is needed.
+
+Integration pattern: package-local MODULE with rules_cc, rosdistro, rclcpp,
+googletest and the pinned legacy solver; BUILD library over both original sources
+and public headers, Eigen/RCLCPP compile dependencies, a RCLCPP shared-runtime
+collector, and one cc_test over both original test sources with gtest_main.
+Select the package through an adjacent root bazel_dep(version=0.0.0) and
+local_path_override. Keep the forwarding support component-owned, without root
+labels. Commit the registry lock inputs.
+
+Verification on Ubuntu 24.04, LLVM/libc++ 21.1.8, Cyclone DDS:
+
+```bash
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=no-agnocast --local_test_jobs=1 \
+  --nocache_test_results --test_output=errors @autoware_osqp_interface//...
+```
+
+Result: four non-test targets build and all eight original cases pass, with no
+failures/errors/skips/disabled cases (13.077 seconds total, test 0.1 seconds).
+This validates the old API against the selected input, not OSQP 1.x support.
+Only the legacy ABI is linked into current consumers. Loading both OSQP ABIs in
+one process remains unsupported/unverified; revisit the input strategy before
+introducing such a consumer. No Fast DDS, CMake or container run is included.
+Next add the QP abstraction and its ProxQP backend.
