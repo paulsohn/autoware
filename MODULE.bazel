@@ -63,6 +63,27 @@ use_repo(llvm, "llvm-project")
 pip_ros = use_extension("@rosdistro//python:defs.bzl", "pip_ros")
 use_repo(pip_ros, "pip_ros")
 
+# GNU runtime ABI required by the pinned manylinux numerical wheels.
+http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
+http_archive(
+    name = "python_libstdcxx_linux_x86_64",
+    build_file_content = """exports_files(["lib/libstdc++.so.6.0.30"])
+filegroup(name = "runtime", srcs = glob(["lib/libstdc++.so*"]), visibility = ["//visibility:public"])
+""",
+    sha256 = "0289e6a7b9a5249161a3967909e12dcfb4ab4475cdede984635d3fb65c606f08",
+    urls = ["https://conda.anaconda.org/conda-forge/linux-64/libstdcxx-ng-12.2.0-h46fd767_19.tar.bz2"],
+)
+
+http_archive(
+    name = "python_libgcc_linux_x86_64",
+    build_file_content = """exports_files(["lib/libgcc_s.so.1"])
+filegroup(name = "runtime", srcs = glob(["lib/libgcc_s.so*"]), visibility = ["//visibility:public"])
+""",
+    sha256 = "f3899c26824cee023f1e360bd0859b0e149e2b3e8b1668bc6dd04bfc70dcd659",
+    urls = ["https://conda.anaconda.org/conda-forge/linux-64/libgcc-ng-12.2.0-h65d4601_19.tar.bz2"],
+)
+
 # Local source dependencies, ordered by their package-local MODULE declarations.
 # Overrides select the source; root declarations need no registry release version.
 bazel_dep(name = "agnocast_cie_config_msgs", version = "0.0.0")
@@ -345,6 +366,12 @@ bazel_dep(name = "autoware_gnss_poser", version = "0.0.0")
 local_path_override(
     module_name = "autoware_gnss_poser",
     path = "src/core/autoware_core/sensing/autoware_gnss_poser",
+)
+
+bazel_dep(name = "autoware_pyplot", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_pyplot",
+    path = "src/core/autoware_core/testing/autoware_pyplot",
 )
 
 bazel_dep(name = "autoware_test_utils", version = "0.0.0")

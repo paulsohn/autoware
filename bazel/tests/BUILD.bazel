@@ -3,7 +3,7 @@ load("@pip_ros//:requirements.bzl", "requirement")
 load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
 load("@rosdistro//python:defs.bzl", "py_pytest")
 load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_test")
-load("@rules_python//python:defs.bzl", "py_test")
+load("@rules_python//python:defs.bzl", "py_binary", "py_test")
 load("@rules_shell//shell:sh_test.bzl", "sh_test")
 
 package(default_visibility = ["//visibility:public"])
@@ -995,4 +995,19 @@ py_pytest(
     name = "ros2agnocast_version_test",
     srcs = ["ros2agnocast/test_version.py"],
     deps = ["@ros2agnocast"],
+)
+
+# Supplies embedded Python and headless plotting to unchanged native test suites.
+py_binary(
+    name = "with_python",
+    srcs = ["with_python.py"],
+    data = [
+        "embedded_python/sitecustomize.py",
+        "@python_libgcc_linux_x86_64//:runtime",
+        "@python_libstdcxx_linux_x86_64//:runtime",
+    ],
+    deps = [
+        requirement("matplotlib"),
+        "@rules_python//python/runfiles",
+    ],
 )

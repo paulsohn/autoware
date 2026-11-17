@@ -5513,3 +5513,62 @@ Verification: the trajectory and route-handler commands below successfully
 analyze, build and test against this layout and local version convention.
 Targeted buildifier and whitespace checks pass. No middleware matrix is needed
 for declaration organization; the affected module gates remain complete.
+
+
+## 2026-11-17: Phase 5.2.5 — autoware_pyplot and embedded Python
+
+Purpose: supply the plotting dependency required by the original trajectory
+and route-handler suites, preserving their PLOT-enabled compilation. Inspect
+pyplot's manifest, eight implementation sources, public headers and its one
+existing GTest case. It embeds Python with pybind11 and exercises line plots,
+subplots, patches, axes forwarders and text rotation while saving real figures.
+
+Integration pattern: package-local MODULE/BUILD, a static cc_library exposing
+include/, @rosdistro//cc:pybind11 and rules_python's current_py_cc_headers and
+current_py_cc_libs, plus a cc_test over the unchanged original test. The root
+selects the local package. Root //bazel/tests:with_python provides the declared
+Matplotlib wheel closure from the existing RCR pip hub and the selected Python
+runtime to native tests. Set PYTHONHOME from sys.base_prefix and PYTHONPATH from
+the launcher's declared import paths. Resolve runtime files with rules_python's
+repository-mapped runfiles API: run_under does not apply a py_binary's ordinary
+run environment. Keep this harness and its sitecustomize module under bazel/;
+components acquire no root-label dependencies.
+
+Runtime decisions and diagnosed failures:
+
+- Native embedding aborted on a font-load std::runtime_error; preparing a font
+  cache merely exposed a subsequent uncaught pybind11 attribute_error. A minimal
+  Python C-API executable reproduced the abort independently of Autoware, while
+  the same wheel rendered successfully in the standalone selected interpreter.
+  Set RTLD_DEEPBIND for extension imports through the launcher's sitecustomize
+  so wheel symbols resolve in their own dependency scope rather than the native
+  LLVM C++ runtime. The complete original test then passes. This is Linux-specific
+  runtime composition, not a production source change or general ABI guarantee.
+- The numerical wheels otherwise resolve GNU C++/unwind libraries from the host.
+  Declare SHA-256-pinned conda-forge Linux x86_64 archives for libstdcxx-ng
+  12.2.0 h46fd767_19 and libgcc-ng 12.2.0 h65d4601_19. Verify downloaded bytes
+  against the provider's published MD5 metadata, compute SHA-256 pins, and expose
+  their runtime libraries as data. Prepend their runfile directories to the
+  child's LD_LIBRARY_PATH. No apt/pip/rosdep installation supplies these inputs.
+- Select Agg, put MPLCONFIGDIR under TEST_TMPDIR, and run the native test in
+  TEST_UNDECLARED_OUTPUTS_DIR so plots remain inspectable without a display.
+  Preserve absolute resource/library paths when changing directory and forward
+  XML_OUTPUT_FILE through GTEST_OUTPUT. Preserve the native process exit status.
+
+Verification, sequentially with user.bazelrc resource limits:
+
+```bash
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --local_test_jobs=1 --nocache_test_results --test_output=errors \
+  --run_under=//bazel/tests:with_python @autoware_pyplot//...
+```
+
+Result: one original case passes, with two PNGs and one SVG in test.outputs;
+no failures, errors or skips. The successful runtime-pinned invocation takes
+5.065 seconds. Repeat with --test_env=LD_DEBUG=libs to inspect the native test
+PID's initialization records: both GNU libraries resolve to the pinned archive
+contents, not /lib. That complete-case diagnostic invocation passes in 3.380
+seconds. Bazel's own linux-sandbox host process is separate from the native
+consumer when interpreting the trace. No source patch, Fast DDS, container or
+CMake validation is included. Reuse this runtime composition for the two
+plotting consumers below; other architectures need their own runtime inputs.

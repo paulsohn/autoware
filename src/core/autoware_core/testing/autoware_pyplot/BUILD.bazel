@@ -1,0 +1,24 @@
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "autoware_pyplot",
+    srcs = glob(["src/*.cpp"]),
+    hdrs = glob(["include/**/*.hpp"]),
+    strip_include_prefix = "include",
+    deps = [
+        "@rosdistro//cc:pybind11",
+        "@rules_python//python/cc:current_py_cc_headers",
+        "@rules_python//python/cc:current_py_cc_libs",
+    ],
+)
+
+cc_test(
+    name = "test_autoware_pyplot",
+    srcs = glob(["test/*.cpp"]),
+    deps = [
+        ":autoware_pyplot",
+        "@googletest//:gtest_main",
+    ],
+)

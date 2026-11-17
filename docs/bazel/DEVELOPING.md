@@ -459,6 +459,27 @@ runtime; the Python peer stays unpreloaded. The matching `_rclcpp_test` target
 selects the RCLCPP backend. Check unittest logs for case totals; the acceleration
 targets each run two cases while Bazel's fallback XML records one invocation.
 
+## Embedded Python and plotting tests
+
+Build native embedding code against `@rules_python//python/cc:current_py_cc_headers`
+and `:current_py_cc_libs`. Use `@autoware_pyplot` for the C++ plotting API and
+`@autoware_test_utils//:visualization` for its optional plotting helpers.
+
+Run the original suites with the root runtime launcher:
+
+```bash
+bazel test --local_test_jobs=1 --nocache_test_results --test_output=errors \
+  --run_under=//bazel/tests:with_python \
+  @autoware_pyplot//... @autoware_trajectory//... @autoware_route_handler//...
+```
+
+The launcher supplies Bazel's Python and wheel paths, pinned GNU wheel runtimes,
+headless Agg rendering and a writable font cache. Its Linux extension-loader
+configuration isolates wheel symbols from the native LLVM C++ runtime. Figures
+are retained in each test's undeclared outputs; GTest writes the normal XML
+report. Keep PLOT enabled and trajectory's ENABLE_TEST_PLOT=1 setting. The original
+route-handler suite includes one upstream-disabled case, reported separately.
+
 ## Editing Python and launch packages
 
 Declare the Python library's complete source set and direct runtime imports in
