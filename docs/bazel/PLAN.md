@@ -909,7 +909,14 @@ registered only in the central declarations; AsyncParametersClient needs all
 six parameter services. The expanded manifest has 229 interfaces. Wrapper
 regressions pass (37 C++ cases per backend and 66 Python cases), along with all
 eleven bridge-plugin cases. No duplicate plugin dependency list is required.
-Map visualization is the next package boundary; Phase 5.2.4 remains in progress.
+Map visualization is complete: all seven existing C++ cases, the original
+launch suite, both executable publication/late-subscriber checks and eleven
+bridge-plugin cases pass. MarkerArray is selected centrally; the expanded
+manifest contains 234 interfaces (198 messages, 36 services). The original
+SingleThreadedExecutor fallback and full RCLCPP test contract are preserved.
+No production source compatibility patch is needed. NDT scan matching and pose
+initialization are next, starting with their concrete prerequisites. Phase 5.2.4
+remains in progress.
 Keep package commits separate and heavy builds sequential; routine Cyclone DDS
 only. Phase 5.3 system/API composition and Phase 6 GPU integration stay separate.
 

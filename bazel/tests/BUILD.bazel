@@ -667,3 +667,64 @@ py_test(
         ("partial", "agnocast", "1"),
     ]
 ]
+
+launch_test(
+    name = "lanelet2_map_visualizer_launch_test",
+    src = "@autoware_lanelet2_map_visualizer//:test/lanelet2_map_visualizer_launch.test.py",
+    data = [
+        "@autoware_lanelet2_map_visualizer//:ament_index",
+        "@autoware_map_loader//:ament_index",
+    ],
+    env = {
+        "ENABLE_AGNOCAST": "0",
+        "LD_LIBRARY_PATH": "lib",
+        "ROS_DOMAIN_ID": "95",
+    },
+    tags = [
+        "no-remote",
+        "no-sandbox",
+    ],
+    deps = [
+        "@ament_index_python",
+        "@launch_ros",
+    ],
+)
+
+[
+    py_test(
+        name = "lanelet2_map_visualizer_" + backend + "_test",
+        srcs = ["@autoware_lanelet2_map_visualizer//:test/test_standalone.py"],
+        args = [
+            "$(rootpath @autoware_lanelet2_map_visualizer//:autoware_lanelet2_map_visualizer)",
+            "$(rootpath @autoware_map_loader//:autoware_lanelet2_map_loader)",
+            "$(rootpath @autoware_map_loader//:test/data/test_map.osm)",
+        ],
+        data = [
+            "//bazel/agnocast:runtime_index",
+            "@agnocast_heaphook",
+            "@autoware_lanelet2_map_visualizer",
+            "@autoware_lanelet2_map_visualizer//:ament_index",
+            "@autoware_map_loader//:ament_index",
+            "@autoware_map_loader//:autoware_lanelet2_map_loader",
+            "@autoware_map_loader//:test/data/test_map.osm",
+        ],
+        env = {
+            "AGNOCAST_TEST_NO_PRELOAD": "1",
+            "AUTOWARE_TEST_AGNOCAST": enabled,
+        },
+        main = "@autoware_lanelet2_map_visualizer//:test/test_standalone.py",
+        tags = [
+            "no-remote",
+            "no-sandbox",
+        ] + (["requires-agnocast-kmod"] if enabled == "1" else []),
+        deps = [
+            "@autoware_map_msgs//:py",
+            "@rclpy",
+            "@visualization_msgs//:py",
+        ],
+    )
+    for backend, enabled in [
+        ("rclcpp", "0"),
+        ("agnocast", "1"),
+    ]
+]

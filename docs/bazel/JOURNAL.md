@@ -4661,3 +4661,94 @@ omission, skipped test group, deferred failure or source patch was necessary.
 No Fast DDS, pre-commit, container or full communication matrix was run. Height
 fitting's complete module gate is closed; map visualization is the next package
 boundary in Phase 5.2.4, which remains in progress.
+
+## 2026-11-17: Phase 5.2.4 — autoware_lanelet2_map_visualizer
+
+Purpose: turn the existing binary Lanelet2 map into visualization markers using
+its actual switchable component. Prerequisites are the validated map loader, local
+Lanelet2 extension/utilities and visualization utility. Inspected the manifest,
+CMake registration, both implementation/header pairs, launch XML, all three C++
+test files and the original launch test. There are seven C++ cases: five marker-
+construction cases, one node initialization and one map-publication case. Each
+file supplies its own GTest main. The original launch suite checks process exit;
+it does not publish projector information or assert marker delivery.
+
+Minimum pattern: add package-local MODULE/BUILD declarations, compile both
+sources into a library, link a shared component using existing dynamic providers,
+and register the standard launcher, executable index, component metadata and
+original launch XML. Keep the CMake executable name and SingleThreadedExecutor
+fallback. Declare all three existing test targets with ENABLE_AGNOCAST=0 to
+retain the complete original RCLCPP contract. No production source or existing
+test is modified. Root composition supplies the original launch test with both
+package indexes and the loader's existing map fixture. Component build support
+has no root labels.
+
+The ordinary rclpy behavior peer sends MGRS projector information to the real
+loader, which publishes the fixture map to the real visualizer. The visualizer
+input is remapped to /map/vector_map. Require nonempty map-frame markers,
+road-lanelet triangles with vertices, and a left-boundary marker. Stop the loader
+before adding a second transient-local marker subscriber, then require the
+retained output and clean SIGINT exits. Readiness and shutdown waits are bounded;
+child logs are included on failure. Both executable children use the chosen
+backend, with heap preload confined to enabled children. Root product assembly
+adds only the MarkerArray metadata root and its paired C++/shared providers to
+the existing central interface set; the plugin consumer needs no duplicate list.
+The generated dependency closure supplies referenced marker types.
+
+Verification, sequential from an unsourced caller environment:
+
+```bash
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --jobs=1 --local_resources=cpu=1 --local_test_jobs=1 \
+  --nocache_test_results --test_output=errors @autoware_lanelet2_map_visualizer//...
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --jobs=1 --local_resources=cpu=1 --local_test_jobs=1 \
+  --nocache_test_results --test_output=errors \
+  //bazel/tests:lanelet2_map_visualizer_launch_test
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --jobs=1 --local_resources=cpu=1 --local_test_jobs=1 \
+  --nocache_test_results --test_output=errors --strategy=TestRunner=local \
+  --run_under=//bazel/agnocast:with_runtime \
+  //bazel/tests:lanelet2_map_visualizer_rclcpp_test
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --jobs=1 --local_resources=cpu=1 --local_test_jobs=1 \
+  --nocache_test_results --test_output=errors --strategy=TestRunner=local \
+  --run_under=//bazel/agnocast:with_runtime \
+  //bazel/tests:lanelet2_map_visualizer_agnocast_test \
+  //bazel/agnocast:bridge_plugins_test
+```
+
+The enabled gate requires the built heap hook, loaded compatible Agnocast module
+and device, and product runtime index, as in the preceding module. Inspect test
+XML/logs for all seven original cases, the complete original launch suite, both
+behavior checks and eleven bridge cases with no skips. These commands also
+build the component, executable, indexes and expanded plugin library. Reuse
+passing wrapper results because its implementation/configuration is unchanged.
+
+Result: the component, executable and index build successfully. All seven
+original C++ cases pass across three targets (five construction, one node and
+one initialization), confirmed in GTest XML without failures/errors/skips.
+The module invocation takes 63.111 seconds; target times are 0.2/0.4/0.2 seconds.
+The unchanged original launch suite passes its single exit-code case in
+3.8 seconds (31.256-second invocation). It validates launcher/index composition,
+while actual map delivery is checked separately by the behavior probes.
+
+Both real loader-to-visualizer probes pass, including map-frame road triangles
+with vertices, left-boundary markers, retained output for a late subscriber
+after stopping the loader, and clean shutdown. RCLCPP takes 2.5 seconds;
+Agnocast takes 2.1 seconds. The RCLCPP invocation takes 1134.051 seconds including
+compiling/linking the bridge against its expanded interface-provider closure.
+The subsequent enabled/bridge invocation reuses that library and takes
+74.905 seconds. All eleven bridge-plugin regression cases pass in 7.6 seconds.
+Test XML confirms the original launch case, both behavior cases and eleven
+bridge cases without failures/errors/skips. The enabled tests use the built
+heap hook and loaded Agnocast 2.4.1 module/device. The sorted/unique manifest
+contains 234 interfaces: 198 messages and 36 services, including MarkerArray
+and its referenced Marker, MeshFile and UVCoordinate types.
+
+No production compatibility patch, existing-test modification, dependency skip
+or deferred failure was required. The existing lockfile remains unchanged after
+module resolution. Targeted buildifier, Python AST parsing and whitespace checks
+pass. No Fast DDS, pre-commit, container or full communication matrix was run.
+The complete module gate is closed; Phase 5.2.4 remains in progress. The next
+boundary is the NDT prerequisite inventory.

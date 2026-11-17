@@ -41,6 +41,11 @@ ros_interface_set(
                 "@sensor_msgs//msg:NavSatFix",
             ],
         ),
+        ros_interface_package(
+            "@visualization_msgs//:cc",
+            "@visualization_msgs//:cc_shared",
+            roots = ["@visualization_msgs//msg:MarkerArray"],
+        ),
         ros_interface_package("@std_msgs//:cc", "@std_msgs//:cc_shared"),
         ros_interface_package("@std_srvs//:cc", "@std_srvs//:cc_shared"),
     ],
