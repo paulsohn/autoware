@@ -37,6 +37,31 @@ For every slice:
 - UPSTREAM_RCR.md and UPSTREAM_AWF.md contain only demonstrated findings useful
   outside this repository.
 
+## Before starting your integration
+
+Use this checklist before the first BUILD file in a non-Bazel checkout. Follow
+[the working rules](../../AGENTS.md#working-rules) and the current decisions below;
+the linked journal entries explain their evidence without repeating it here.
+Historical entries describe the conventions used at the time. Apply current
+conventions from the outset, but introduce technical dependencies and patches
+only when your current target demonstrates the need.
+
+- [ ] Select local dependency snapshots and inventory missing Bazel support.
+  [Evidence: local interface adoption](JOURNAL.md#2026-11-17-local-interface-adoption--autoware_adapi_v1_msgs).
+- [ ] Establish source-preservation and added-test locations.
+  [Evidence: tests outside component packages](JOURNAL.md#2026-11-17-keep-added-integration-tests-outside-component-packages).
+- [ ] Separate component ownership from product-level composition.
+  [Evidence: root-owned interface consumers](JOURNAL.md#2026-11-15-build-root-owned-typed-agnocast-plugins-from-the-interface-graph).
+- [ ] Inventory complete module suites, runtime prerequisites and required
+  middleware configurations before implementing each task.
+  [Evidence: complete Agnocast test inventory](JOURNAL.md#2026-11-15-phase-41--adopt-the-complete-agnocast-library-test-inventory).
+- [ ] Choose validated package boundaries for commits, keeping source fixes
+  separate from build declarations.
+  [Evidence: first local package module](JOURNAL.md#2026-11-14-build-the-first-local-autoware-package-module).
+- [ ] Prepare a reproducible task record, including commands and observable
+  results, and maintain this checklist as lessons become general rules.
+  [Evidence: independently reproducible journal](JOURNAL.md#2026-11-14-make-the-experiment-journal-independently-reproducible).
+
 ## Current decisions
 
 - Keep existing source packages unchanged except for Bazel definitions and

@@ -1,5 +1,13 @@
 # Autoware + Bazel integration journal
 
+## Before starting your integration
+
+Complete the [adoption checklist](PLAN.md#before-starting-your-integration)
+before following the dated experiments. It points to the current rules and the
+entries that established them. Apply those conventions from the beginning;
+earlier entries retain historical layouts and decisions that later entries may
+supersede. Re-derive technical fixes for your current target and source snapshot.
+
 ## How to reproduce from this journal
 
 This is the adoption guide for bringing Bazel to a non-Bazel Autoware tree, not
@@ -5459,3 +5467,22 @@ conversion, pre-commit, container or colcon/ament/CMake check is run.
 All three native-control group gates are complete. Phase 5.2.5 remains in progress. Next inventory the trajectory,
 plotting and route-handler group together, preserving plotting consumers when
 their complete existing suites require them rather than omitting those checks.
+
+
+## 2026-11-17: Surface adoption rules before the chronological experiments
+
+Purpose: let a reader beginning a new integration use established conventions
+before encountering the experiments that motivated them. Inspected the current
+working rules, PLAN.md decisions and the journal's reproduction guidance.
+
+Changes: add one adoption checklist in PLAN.md, linking to the existing rules
+and supporting journal entries. The journal starts with a link to that checklist
+and explains how current conventions relate to historical entries. AGENTS.md
+requires updating the checklist in the same commit whenever an experiment
+establishes a generally applicable convention. Keep steady-state development
+instructions in DEVELOPING.md; no additional rule catalogue is added there.
+
+Verification: check the changed Markdown's local links and heading anchors and
+run git diff --check. Both pass. Documentation only; no build or runtime checks
+are required or run. Future tasks maintain the checklist and their own evidence
+entries together rather than duplicating experiment details in the checklist.

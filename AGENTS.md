@@ -92,6 +92,10 @@ experiments, and milestones belong in PLAN.md and JOURNAL.md.
   know-how and decisions, exact verification commands and observable results,
   diagnosed failures as symptom/cause/fix, and remaining limitations or next
   step. Do not rely on the diff alone to explain how the integration works.
+- When an experiment establishes a generally applicable convention, update the
+  [adoption checklist](docs/bazel/PLAN.md#before-starting-your-integration) and
+  its linked rule/evidence in the same commit. Keep the checklist concise;
+  link to the authoritative description rather than duplicate it.
 - Keep one journal entry per meaningful module task. Consolidate routine
   reruns into the final result and explain consequential failures through
   their symptom, cause, and fix. Update the same entry while the task remains
