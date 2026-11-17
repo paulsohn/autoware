@@ -95,6 +95,7 @@ register_ament_files(
         ":path_generator_node_exe",
     ],
     prefix = "lib/autoware_path_generator",
+    renames = {":path_generator_node_exe": "path_generator_node"},
     strip_prefix = "*",
 )
 

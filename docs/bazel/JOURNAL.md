@@ -6504,6 +6504,26 @@ planning launch resolves the indexed names and shuts down cleanly. Exact shared
 command, platform and aggregate results are recorded at that link; reuse results
 for unchanged binaries. No Fast DDS, CMake or container run was performed.
 
+## 2026-11-17: Phase 5.2.5 — path-generator executable index
+
+Purpose: make the existing executable(s) discoverable through the original core
+planning XML. Inspect the package's CMake executable declarations, native Bazel
+launcher targets and node_executables registration. Standalone rootpath checks
+use Bazel filenames directly and therefore do not prove ROS libexec discovery.
+The aggregate launch first fails to resolve its expected executable name.
+
+Preserve Bazel target labels/binaries and add register_ament_files(renames=...)
+under lib/autoware_path_generator. Map path_generator_node_exe to path_generator_node.
+This preserves the upstream runtime contract without aliases in original XML or
+convenience symlinks in the checkout. No original source or test changes.
+
+Verification: [the complete composed gate](#2026-11-17-phase-525--core-planning-launch-composition) runs @autoware_path_generator//...
+and its existing path generator runtime check(s), then starts the original XML.
+All 38 original C++ cases and those executable checks pass; the six-node
+planning launch resolves the indexed names and shuts down cleanly. Exact shared
+command, platform and aggregate results are recorded at that link; reuse results
+for unchanged binaries. No Fast DDS, CMake or container run was performed.
+
 ## 2026-11-17: Phase 5.2.5 — core planning launch composition
 
 The original XML starts behavior/motion planners with vehicle_param_file but
