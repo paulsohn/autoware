@@ -1,0 +1,100 @@
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "autoware_planning_test_manager",
+    srcs = [
+        "src/autoware_planning_test_manager.cpp",
+    ],
+    hdrs = [
+        "include/autoware/planning_test_manager/autoware_planning_test_manager.hpp",
+        "include/autoware/planning_test_manager/autoware_planning_test_manager_utils.hpp",
+    ],
+    includes = [
+        "include",
+        "src",
+    ],
+    deps = [
+        "@ament_index_cpp//:ament_index_cpp_library",
+        "@autoware_component_interface_specs",
+        "@autoware_internal_planning_msgs//:cc",
+        "@autoware_motion_utils",
+        "@autoware_planning_msgs//:cc",
+        "@autoware_route_handler",
+        "@autoware_test_utils",
+        "@autoware_utils_geometry",
+        "@geometry_msgs//:cc",
+        "@googletest//:gtest",
+        "@lanelet2_core//:lanelet2_core_library",
+        "@nav_msgs//:cc",
+        "@rclcpp//:rclcpp_library",
+        "@rosdistro//cc:boost.geometry",
+        "@rosdistro//cc:eigen",
+        "@rosdistro//cc:yaml-cpp_library",
+        "@rosidl_runtime_cpp//:rosidl_runtime_cpp_library",
+        "@tf2_msgs//:cc",
+        "@tf2_ros//:tf2_ros_library",
+        "@unique_identifier_msgs//:cc",
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = [
+        "@ament_index_cpp//:ament_index_cpp",
+        "@autoware_component_interface_specs//:runtime_dynamic_deps",
+        "@autoware_internal_planning_msgs//:cc_shared",
+        "@autoware_motion_utils//:runtime_dynamic_deps",
+        "@autoware_planning_msgs//:cc_shared",
+        "@autoware_route_handler//:runtime_dynamic_deps",
+        "@autoware_test_utils//:runtime_dynamic_deps",
+        "@geometry_msgs//:cc_shared",
+        "@nav_msgs//:cc_shared",
+        "@rclcpp//:rclcpp",
+        "@tf2_msgs//:cc_shared",
+        "@tf2_ros//:tf2_ros",
+        "@unique_identifier_msgs//:cc_shared",
+    ],
+)
+
+cc_test(
+    name = "test_planning_test_manager",
+    timeout = "long",
+    srcs = [
+        "test/test_planning_test_manager.cpp",
+    ],
+    data = [
+        "@autoware_route_handler//:ament_index",
+        "@autoware_test_utils//:ament_index",
+    ],
+    dynamic_deps = [
+        ":runtime_dynamic_deps",
+    ],
+    env = {"ROS_DOMAIN_ID": "65"},
+    deps = [
+        ":autoware_planning_test_manager",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "test_planning_test_manager_utils",
+    timeout = "long",
+    srcs = [
+        "test/test_planning_test_manager_utils.cpp",
+    ],
+    data = [
+        "@autoware_route_handler//:ament_index",
+        "@autoware_test_utils//:ament_index",
+    ],
+    dynamic_deps = [
+        ":runtime_dynamic_deps",
+    ],
+    env = {"ROS_DOMAIN_ID": "65"},
+    deps = [
+        ":autoware_planning_test_manager",
+        "@googletest//:gtest_main",
+    ],
+)

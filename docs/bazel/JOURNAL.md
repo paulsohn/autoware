@@ -5685,3 +5685,45 @@ excluded to make this gate pass. No Fast DDS, Agnocast conversion, container or
 colcon/ament/CMake check is included. This dependency group is complete; Phase
 5.2.5 remains in progress. Next inventory path generation, its local planning-
 test-manager prerequisite and generated-parameter support with their full gates.
+
+
+## 2026-11-17: Phase 5.2.5 — planning test manager
+
+Purpose: prepare reusable planning-node input/output and route helpers for path
+generation and later planners. Inspect the manifest, implementation, both
+public headers and both original test files. The public manager header contains
+GTest assertions, so GTest is a real compile dependency of the helper library,
+not just a dependency of its test executable.
+
+Pattern: package-local MODULE/BUILD with a compiled library and explicit
+component-interface specs, motion, route, test-helper, geometry and ROS compile
+providers. Pair their shared runtime providers; use rosidl_runtime_cpp_library
+for compile information rather than its shared target. Expose the original
+include tree and keep original resources in their owning packages. Manager
+tests declare route-handler/test-helper indexes; the manager itself has no
+resource tree requiring a new index. Split its two existing test files into
+their original separate targets, using gtest_main. Root selects the local module
+at version 0.0.0, adjacent to its local_path_override.
+
+Shared six-package verification command (Cyclone DDS, sequential tests and
+user.bazelrc build limits):
+
+```bash
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=no-agnocast --local_test_jobs=1 \
+  --nocache_test_results --test_output=errors \
+  @autoware_planning_test_manager//... @autoware_planning_factor_interface//... \
+  @autoware_objects_of_interest_marker_interface//... \
+  @autoware_planning_topic_converter//... @autoware_path_generator//... \
+  @autoware_mission_planner//...
+```
+
+Result: the shared invocation passes all 11 targets / 108 original cases and
+builds 39 non-test targets in 50.231 seconds, with no failures/errors/skips or
+disabled cases. Manager's four interface cases and nine utility cases pass in
+13.6 and 0.3 seconds. Subsequent planning-factor test-executor and test-only dependency-closure
+changes are validated by the focused gates below; unchanged module results
+are reused. For one package, use the same flags with only its @package//... label. The
+path-generator gate additionally consumes these helpers.
+No manager source change, Fast DDS, broad middleware matrix or CMake run is
+required. Larger groups retain separate package commits and complete gates.
