@@ -118,6 +118,10 @@ register_ament_files(
         ":mission_planner_exe",
     ],
     prefix = "lib/autoware_mission_planner",
+    renames = {
+        ":mission_planner_exe": "mission_planner",
+        ":goal_pose_visualizer_exe": "goal_pose_visualizer",
+    },
     strip_prefix = "*",
 )
 
