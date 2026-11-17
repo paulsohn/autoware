@@ -6705,3 +6705,38 @@ resource targets build with their full closures, with no source/test changes,
 failures or skips. This is a launch-assembly gate; it reuses earlier component
 tracking/mode behavior rather than claiming full driving simulation. No Fast
 DDS, CMake, container or enabled Agnocast gate was run.
+
+## 2026-11-18: Phase 5.3.1 — AD API adaptors
+
+Purpose: expose the two existing RViz-facing adaptors and their complete helper
+suite as the first system/API group. Inspect package.xml, both implementation
+sources, five private helper/node headers, initial-pose YAML, original XML and
+all of test_helpers.cpp. Its own main runs 13 cases covering covariance vector
+size validation, timer/request state decisions and route/waypoint construction.
+Prerequisites are the already integrated ADAPI specs/local messages, component
+interface utilities, wrapper and map-height fitter. No registry counterpart
+replaces a local dependency.
+
+Pattern: package-local MODULE and library over all original sources/headers,
+with explicit compile providers and paired shared-runtime collectors. Compile
+wrapper support unconditionally. Preserve the two original executable names,
+classes and ROS executor choices: initial_pose_adaptor_node uses MultiThreadedExecutor,
+routing_adaptor_node SingleThreadedExecutor; both use the existing Agnocast-only
+callback-isolated launcher when enabled. The shared component's physical name
+is package-qualified from the outset. Register node/plugin records, config,
+launch and executables in ament_index; compose the wrapper's ament_package for
+its launch extension and environment files. Keep components independent of root
+labels. The original test owns main, so use gtest rather than gtest_main.
+
+Verification: the complete native command and both assembled backend commands
+are recorded in the core API entry below. @autoware_adapi_adaptors//... builds
+its complete surface and all 13 original cases pass (0.6-second test action).
+The shared transaction driver additionally exercises both real executables:
+a fixed-goal pose crosses adaptor -> API -> internal waypoint service with goal
+and modification fields preserved, and an initial pose crosses adaptor -> API
+-> localization service with configured covariance. Both backends pass and every
+child exits cleanly. Vector-map mode is selected explicitly; no map is supplied,
+so the original position is preserved when height fitting reports no map. This
+checks the adaptor fallback and forwarding, not a new map-height algorithm gate;
+reuse the unchanged fitter's earlier complete tests. No source/original-test
+changes, skips or Fast DDS/CMake/container rerun were needed.

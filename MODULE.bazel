@@ -679,3 +679,9 @@ local_path_override(
     module_name = "autoware_core_control",
     path = "src/core/autoware_core/control/autoware_core_control",
 )
+
+bazel_dep(name = "autoware_adapi_adaptors", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_adapi_adaptors",
+    path = "src/core/autoware_core/api/autoware_adapi_adaptors",
+)
