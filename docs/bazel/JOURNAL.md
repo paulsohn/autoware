@@ -4752,3 +4752,37 @@ module resolution. Targeted buildifier, Python AST parsing and whitespace checks
 pass. No Fast DDS, pre-commit, container or full communication matrix was run.
 The complete module gate is closed; Phase 5.2.4 remains in progress. The next
 boundary is the NDT prerequisite inventory.
+
+## 2026-11-17: Phase 5.2.4 — autoware_utils_pcl in the NDT group
+
+Purpose: provide NDT's actual point-cloud transformation dependency. Work on
+this prerequisite and its NDT consumer is grouped to reduce handoffs, while
+completion and eventual commits remain package-scoped. Inspected both public
+headers, both existing test files, package manifest and CMake. The complete
+suite is seven cases: five conversion/layout/affine/organized/empty-cloud cases
+and two transformation/empty-cloud cases. No cases are omitted.
+
+Pattern: add a header-only package-local cc_library with a scoped include root.
+Use the existing pcl_conversions, sensor_msgs, RCLCPP and rosdistro PCL common
+providers referenced by the headers, with corresponding ROS dynamic providers
+on final tests. The two test sources have no main, so use gtest_main. Root
+selection pins the published 1.11.0-3.rcr.2 counterpart with a local override.
+The headers do not consume the manifest's pcl_ros/autoware_utils_tf packages;
+no extra build dependency is needed for an unused include. No source change is
+required. NDT's real consumer gate exercises the same header library.
+
+Verification, sequential builds and tests from an unsourced environment:
+
+```bash
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --jobs=1 --local_resources=cpu=1 --local_test_jobs=1 \
+  --nocache_test_results --test_output=errors \
+  @autoware_utils_pcl//... @autoware_ndt_scan_matcher//...
+```
+
+Result: all seven utility cases pass in 0.2 seconds with no failures/errors/
+skips in GTest XML. The final combined invocation takes 113.003 seconds and
+also passes all 52 NDT cases. The NDT entry records its linker diagnosis and
+full executable checks; no utility source correction was necessary. Targeted
+buildifier and whitespace checks pass. No Fast DDS, pre-commit or container
+rerun was performed. This package gate is complete.

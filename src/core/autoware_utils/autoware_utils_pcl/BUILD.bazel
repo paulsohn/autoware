@@ -1,0 +1,35 @@
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "autoware_utils_pcl",
+    hdrs = glob(["include/**/*.hpp"]),
+    strip_include_prefix = "include",
+    deps = [
+        "@pcl_conversions//:pcl_conversions_library",
+        "@rclcpp//:rclcpp_library",
+        "@rosdistro//cc:pcl_common",
+        "@sensor_msgs//:cc",
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = [
+        "@pcl_conversions//:pcl_conversions",
+        "@rclcpp//:rclcpp",
+        "@sensor_msgs//:cc_shared",
+    ],
+)
+
+cc_test(
+    name = "test_autoware_utils_pcl",
+    srcs = glob(["test/**/*.cpp"]),
+    dynamic_deps = [":runtime_dynamic_deps"],
+    deps = [
+        ":autoware_utils_pcl",
+        "@googletest//:gtest_main",
+    ],
+)

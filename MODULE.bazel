@@ -460,3 +460,9 @@ local_path_override(
     module_name = "autoware_lanelet2_map_visualizer",
     path = "src/core/autoware_core/map/autoware_lanelet2_map_visualizer",
 )
+
+bazel_dep(name = "autoware_utils_pcl", version = "1.11.0-3.rcr.2")
+local_path_override(
+    module_name = "autoware_utils_pcl",
+    path = "src/core/autoware_utils/autoware_utils_pcl",
+)
