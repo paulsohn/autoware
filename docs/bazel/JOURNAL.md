@@ -7049,3 +7049,31 @@ There are no registered existing runtime tests in this resource-only module.
 Unchanged component algorithm/backend results remain applicable. No source fix
 was needed. Simulated time is selected but not advanced; this does not establish
 simulation progression, URDF rendering or localization convergence.
+
+## 2026-11-18: Phase 5.3.2 — core map context
+
+Purpose: integrate autoware_core_map in its actual global/runtime context.
+
+Inspect original config substitutions and all four map-node declarations.
+Expose config/** and launch/** with the map-loader, projection-loader and
+visualizer resource indexes. Root-owned fixtures supply a tiny valid three-point
+PCD, MGRS 54SUE projector YAML and the existing local test-helper lanelet map.
+A single PCD legitimately synthesizes its metadata when the explicit metadata
+path is absent. Include the original XML and require latched projector, nonempty
+vector map and a three-point cloud plus the global clock setting. Do not inject
+map results from a fake publisher. There are no existing module runtime tests;
+reuse earlier complete component tests when their definitions stay unchanged.
+
+Pattern: retain original sources/configurations and add only package-local
+MODULE/BUILD resource definitions selected by adjacent root 0.0.0 dependency/
+local_path_override pairs. Added tests/fixtures live in bazel/tests/system_context.
+The shared original-launch gate uses Cyclone DDS, serialized tests and declared
+resources, with separate ROS domains for the two clock variants.
+
+Verification: the complete Phase 5.3.2 gate below passed with Cyclone DDS.
+Both original combined contexts passed (wall and simulated clock selection,
+3.3 seconds each), including this module's assertions and clean shutdown.
+There are no registered existing runtime tests in this resource-only module.
+Unchanged component algorithm/backend results remain applicable. No source fix
+was needed. Simulated time is selected but not advanced; this does not establish
+simulation progression, URDF rendering or localization convergence.

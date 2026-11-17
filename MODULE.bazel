@@ -721,3 +721,9 @@ local_path_override(
     module_name = "autoware_core_perception",
     path = "src/core/autoware_core/perception/autoware_core_perception",
 )
+
+bazel_dep(name = "autoware_core_map", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_core_map",
+    path = "src/core/autoware_core/map/autoware_core_map",
+)
