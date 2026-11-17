@@ -5793,3 +5793,25 @@ Verification: the shared six-package command above passes all six original
 cases in 0.2 seconds with Cyclone DDS, without failures/errors/skips/disabled
 cases. This is a library behavior gate; no standalone executable exists here.
 No source patch, Fast DDS, additional middleware matrix or CMake run is included.
+
+## 2026-11-17: Phase 5.2.5 — planning topic converter
+
+Purpose: expose native Path-to-Trajectory conversion and its ROS component.
+Inspect both implementation files, private headers, three conversion cases and
+one node-interface case. Preserve field copying, header forwarding and empty
+path behavior; retain the plain rclcpp::Node execution contract.
+
+Pattern: compile the source/header set into a package library, link a named
+shared component against collected ROS runtime providers, and use the existing
+rclcpp_components_register_node macro with plugin and node_name to produce
+path_to_trajectory_converter. Register its component record and executable in
+the package's ament index. Original tests use their existing fixtures plus
+gtest_main. The root composes the executable behavior check without a reverse
+dependency from this component into bazel/.
+
+Verification: all four original cases across two targets pass in the shared
+six-package invocation (0.2 seconds each), with no failures/errors/skips/disabled
+cases. The root executable gate below additionally sends nonempty and empty
+paths through the actual binary and checks header, pose, velocity and heading
+rate fields. No production/test source fix, Agnocast conversion, Fast DDS or
+CMake run is required.

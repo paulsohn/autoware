@@ -1011,3 +1011,41 @@ py_binary(
         "@rules_python//python/runfiles",
     ],
 )
+
+[
+    py_test(
+        name = "planning_" + mode + "_runtime_test",
+        srcs = ["planning/test_executables.py"],
+        args = [
+            mode,
+            "$(rootpath " + executable + ")",
+        ],
+        data = [executable] + indexes,
+        env = {
+            "ENABLE_AGNOCAST": "0",
+            "LD_LIBRARY_PATH": "lib",
+        },
+        main = "planning/test_executables.py",
+        precompile = "disabled",
+        tags = [
+            "no-remote",
+            "no-sandbox",
+        ],
+        deps = [
+            "@ament_index_python",
+            "@autoware_adapi_v1_msgs//:py",
+            "@autoware_internal_planning_msgs//:py",
+            "@autoware_planning_msgs//:py",
+            "@geometry_msgs//:py",
+            "@rcl_interfaces//:py",
+            "@rclpy",
+        ],
+    )
+    for mode, executable, indexes in [
+        (
+            "converter",
+            "@autoware_planning_topic_converter//:path_to_trajectory_converter_exe",
+            ["@autoware_planning_topic_converter//:ament_index"],
+        ),
+    ]
+]
