@@ -1,0 +1,134 @@
+load("@rosdistro//ament:defs.bzl", "ament_index")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "autoware_motion_velocity_planner_common",
+    srcs = [
+        "src/collision_checker.cpp",
+        "src/planner_data.cpp",
+        "src/polygon_utils.cpp",
+        "src/utils.cpp",
+    ],
+    hdrs = [
+        "include/autoware/motion_velocity_planner_common/collision_checker.hpp",
+        "include/autoware/motion_velocity_planner_common/planner_data.hpp",
+        "include/autoware/motion_velocity_planner_common/plugin_module_interface.hpp",
+        "include/autoware/motion_velocity_planner_common/polygon_utils.hpp",
+        "include/autoware/motion_velocity_planner_common/utils.hpp",
+        "include/autoware/motion_velocity_planner_common/velocity_planning_result.hpp",
+    ],
+    includes = [
+        "include",
+        "src",
+    ],
+    deps = [
+        "@ament_index_cpp//:ament_index_cpp_library",
+        "@autoware_behavior_velocity_planner_common",
+        "@autoware_internal_debug_msgs//:cc",
+        "@autoware_internal_planning_msgs//:cc",
+        "@autoware_lanelet2_extension//:autoware_lanelet2_extension_lib_library",
+        "@autoware_map_msgs//:cc",
+        "@autoware_motion_utils",
+        "@autoware_object_recognition_utils",
+        "@autoware_perception_msgs//:cc",
+        "@autoware_planning_factor_interface",
+        "@autoware_planning_msgs//:cc",
+        "@autoware_route_handler",
+        "@autoware_utils_debug",
+        "@autoware_utils_geometry",
+        "@autoware_utils_math",
+        "@autoware_utils_rclcpp",
+        "@autoware_utils_visualization",
+        "@autoware_vehicle_info_utils",
+        "@autoware_velocity_smoother",
+        "@builtin_interfaces//:cc",
+        "@geometry_msgs//:cc",
+        "@lanelet2_core//:lanelet2_core_library",
+        "@nav_msgs//:cc",
+        "@pcl_conversions//:pcl_conversions_library",
+        "@rclcpp//:rclcpp_library",
+        "@rosdistro//cc:boost.geometry",
+        "@rosdistro//cc:eigen",
+        "@rosdistro//cc:pcl_common",
+        "@sensor_msgs//:cc",
+        "@std_msgs//:cc",
+        "@tf2//:tf2_library",
+        "@tf2_ros//:tf2_ros_library",
+        "@visualization_msgs//:cc",
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = [
+        "@ament_index_cpp//:ament_index_cpp",
+        "@autoware_behavior_velocity_planner_common//:runtime_dynamic_deps",
+        "@autoware_internal_debug_msgs//:cc_shared",
+        "@autoware_internal_planning_msgs//:cc_shared",
+        "@autoware_lanelet2_extension//:autoware_lanelet2_extension_lib",
+        "@autoware_map_msgs//:cc_shared",
+        "@autoware_motion_utils//:runtime_dynamic_deps",
+        "@autoware_perception_msgs//:cc_shared",
+        "@autoware_planning_factor_interface//:runtime_dynamic_deps",
+        "@autoware_planning_msgs//:cc_shared",
+        "@autoware_route_handler//:runtime_dynamic_deps",
+        "@autoware_utils_debug//:runtime_dynamic_deps",
+        "@autoware_velocity_smoother//:runtime_dynamic_deps",
+        "@builtin_interfaces//:cc_shared",
+        "@geometry_msgs//:cc_shared",
+        "@lanelet2_core//:lanelet2_core",
+        "@nav_msgs//:cc_shared",
+        "@pcl_conversions//:pcl_conversions",
+        "@rclcpp//:rclcpp",
+        "@sensor_msgs//:cc_shared",
+        "@std_msgs//:cc_shared",
+        "@tf2//:tf2",
+        "@tf2_ros//:tf2_ros",
+        "@visualization_msgs//:cc_shared",
+    ],
+)
+
+ament_index(
+    data = glob(
+        ["config/**"],
+        allow_empty = True,
+    ),
+    package_xml = "package.xml",
+)
+
+collect_transitive_dynamic_deps(
+    name = "test_dynamic_deps",
+    dynamic_deps = [
+        ":runtime_dynamic_deps",
+    ],
+)
+
+cc_test(
+    name = "test_autoware_motion_velocity_planner_common",
+    timeout = "long",
+    srcs = [
+        "test/test_collision_checker.cpp",
+        "test/test_polygon_utils.cpp",
+        "test/test_utils.cpp",
+    ],
+    data = [
+        ":ament_index",
+        "@autoware_behavior_velocity_planner_common//:ament_index",
+        "@autoware_route_handler//:ament_index",
+        "@autoware_vehicle_info_utils//:ament_index",
+        "@autoware_velocity_smoother//:ament_index",
+    ],
+    dynamic_deps = [":test_dynamic_deps"],
+    env = {
+        "ENABLE_AGNOCAST": "0",
+        "ROS_DOMAIN_ID": "69",
+        "LD_LIBRARY_PATH": "lib",
+    },
+    deps = [
+        ":autoware_motion_velocity_planner_common",
+        "@googletest//:gtest_main",
+    ],
+)

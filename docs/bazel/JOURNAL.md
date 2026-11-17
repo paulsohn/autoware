@@ -6195,3 +6195,38 @@ module invocation builds ten non-test targets and passes all 105 active cases in
 16.498 seconds. Motion-common retains its one upstream-disabled benchmark.
 No Fast DDS, CMake or container check was run. Reuse these
 results for unchanged foundations in the downstream planner/plugin gate.
+
+
+## 2026-11-17: Phase 5.2.5 — motion-planner common library
+
+Purpose: provide collision checking, polygon and planner utilities for the next
+motion-planner group. Inspect all four implementation sources, public headers
+and CMake's three test sources. The local object-recognition dependency lacks
+Bazel definitions, so integrate it first with its complete suite (entry above).
+Behavior-planner common is also a local dependency; do not replace either with
+a registry counterpart. Remaining prerequisites are already integrated motion,
+route, marker/factor, geometry/vehicle and smoother libraries and ROS providers.
+
+Pattern: a package-local library exposes all four original implementations and
+public headers. Pair ROS compile/shared providers and local runtime collectors;
+keep the ament package index and a single cc_test over collision-checker,
+polygon and utility sources, matching CMake. Explicitly select RCLCPP/Cyclone DDS.
+This foundation has no executable or plugin factory of its own; behavior is
+validated through its full original suite, without a system-wide DDS matrix.
+
+Verification, sequential clean-environment foundation gate:
+
+```bash
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=no-agnocast --local_test_jobs=1 \
+  --nocache_test_results --test_output=errors \
+  @autoware_object_recognition_utils//... \
+  @autoware_behavior_velocity_planner_common//... \
+  @autoware_motion_velocity_planner_common//...
+```
+
+All 29 active existing cases pass with successful process exit and no failures,
+errors or skips; the original DISABLED_Benchmark remains disabled (test action 0.4 seconds). The complete three-
+module invocation builds ten non-test targets and passes all 105 active cases in
+16.498 seconds. No Fast DDS, CMake or container check was run. Reuse these
+results for unchanged foundations in the downstream planner/plugin gate.
