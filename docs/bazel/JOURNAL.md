@@ -6340,3 +6340,34 @@ and stop-line suites cover nominal/empty/off-track paths; the experimental
 executable gate establishes factory assembly/lifecycle, not full map/scenario
 parity. Next take motion planner and obstacle-stop plugin dependencies;
 Phase 5.2.5 remains open.
+
+## 2026-11-17: Phase 5.2.5 — motion velocity planner
+
+The actual executable loads ObstacleStopModule and unloads it successfully, but
+reload is rejected as already loaded. pluginlib's isClassLoaded reflects cached
+class/library availability, not the active loaded_plugins_ instance list.
+Check the latter with std::any_of and get_module_name() instead. Both node
+construction and the load service use this manager method; keep the duplicate
+warning and all other behavior. Include <algorithm> explicitly. No original test
+or unrelated production behavior is changed. UPSTREAM_AWF.md records the dated
+main/PR check and reproducible failure.
+
+The added root-owned driver starts the real executable with its original seven
+YAML fixtures, verifies mapped plugin/config values, rejects an active duplicate,
+unloads/reloads and checks clean shutdown. With prepared local Bazel definitions
+and the declared plugin index, run:
+
+```bash
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=no-agnocast --local_test_jobs=1 \
+  --nocache_test_results --test_output=errors \
+  @autoware_motion_velocity_planner//... \
+  @autoware_motion_velocity_obstacle_stop_module//... \
+  //bazel/tests:motion_velocity_planner_runtime_test
+```
+
+All 53 original cases and the executable regression pass in 23.321 seconds;
+the regression takes 1.4 seconds, versus a 25-second reload timeout before the
+fix. No failures/errors/skips/disabled cases. Build definitions/wiring follow in
+separate package commits; the complete module entry will consolidate their
+patterns and resources. No Fast DDS, CMake or Agnocast-enabled check was run.

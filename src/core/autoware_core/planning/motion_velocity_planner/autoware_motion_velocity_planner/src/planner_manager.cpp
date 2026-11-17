@@ -19,6 +19,7 @@
 
 #include <boost/format.hpp>
 
+#include <algorithm>
 #include <memory>
 #include <string>
 #include <vector>
@@ -34,8 +35,10 @@ MotionVelocityPlannerManager::MotionVelocityPlannerManager()
 
 void MotionVelocityPlannerManager::load_module_plugin(rclcpp::Node & node, const std::string & name)
 {
-  // Check if the plugin is already loaded.
-  if (plugin_loader_.isClassLoaded(name)) {
+  // A cached library can outlive its active module instance.
+  if (std::any_of(loaded_plugins_.begin(), loaded_plugins_.end(), [&](const auto & plugin) {
+        return plugin->get_module_name() == name;
+      })) {
     RCLCPP_WARN_STREAM(node.get_logger(), "The plugin '" << name << "' is already loaded.");
     return;
   }

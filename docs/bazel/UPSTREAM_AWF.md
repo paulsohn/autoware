@@ -773,3 +773,34 @@ not evidence of a production logger bug. See the module journal for the complete
 command and stack-capture environment. Both findings were verified on Ubuntu
 24.04, LLVM/libc++ 21.1.8 and RCR Lyrical/Cyclone DDS; upstream GCC/CMake and
 Humble/Jazzy were not run.
+
+## Motion planner cannot reload an unloaded plugin
+
+Local source correction: pending motion-plugin commit association.
+
+- [ ] Associate with a matching upstream PR. Checked 2026-11-17: repository
+  searches for motion_velocity_planner/reload and isClassLoaded found no match.
+  Upstream main
+  [planner_manager.cpp](https://github.com/autowarefoundation/autoware_core/blob/main/planning/motion_velocity_planner/autoware_motion_velocity_planner/src/planner_manager.cpp)
+  (blob 21ca3ddca6d157cb1ff833294141e205fdc45727) still uses
+  plugin_loader_.isClassLoaded to reject duplicate module loads.
+
+Reproduce with the actual planner and ObstacleStopModule: configure its original
+YAML inputs and class name, start the node, call unload_plugin with that name,
+then load_plugin with the same name. Unload logs success; reload warns "already
+loaded" and creates no new module. The services have empty responses, so a
+reply alone does not prove success. pluginlib retains class/library availability
+after the active instance is erased. Duplicate detection must inspect the
+manager's loaded_plugins_ instance list, not its loader cache. Use std::any_of
+with get_module_name(), retaining duplicate rejection and the rest of both
+service paths. This is a lifecycle bug rather than a Lyrical-only issue.
+
+The root-owned executable regression proves initial loading/mapped library,
+original parameter values, rejection of an active duplicate, unload, successful
+reload and clean shutdown. Before the correction it times out on the second
+successful-load log; afterward it passes in 1.4 seconds without relaxing its
+25-second bound. All 14 original planner and 39 obstacle-stop cases also pass,
+with no skips or assertion changes. See the motion-planner journal for exact
+commands and declared resources. Verified on Ubuntu 24.04, LLVM/libc++ 21.1.8,
+RCR Lyrical and Cyclone DDS; upstream CMake/GCC and other ROS releases were not
+run. No upstream submission has been made.
