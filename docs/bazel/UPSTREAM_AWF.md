@@ -807,7 +807,7 @@ run. No upstream submission has been made.
 
 ## Core planning launch omits vehicle parameters for three nodes
 
-Local source correction: pending core-planning commit association.
+Local source correction: `acf8878f`.
 
 - [x] Associate related upstream evidence: merged
   [core#1327](https://github.com/autowarefoundation/autoware_core/pull/1327)

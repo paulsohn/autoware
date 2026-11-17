@@ -667,3 +667,9 @@ local_path_override(
     module_name = "autoware_motion_velocity_planner",
     path = "src/core/autoware_core/planning/motion_velocity_planner/autoware_motion_velocity_planner",
 )
+
+bazel_dep(name = "autoware_core_planning", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_core_planning",
+    path = "src/core/autoware_core/planning/autoware_core_planning",
+)

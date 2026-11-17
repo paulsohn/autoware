@@ -1176,3 +1176,41 @@ py_test(
         "@rclpy",
     ],
 )
+
+[
+    launch_test(
+        name = "core_" + mode + "_launch_test",
+        src = "core_launch/test_launch.py",
+        data = [
+            "@autoware_core_planning//:ament_index" if mode == "planning" else "@autoware_core_control//:ament_index",
+            "@autoware_test_utils//:ament_index",
+        ],
+        env = {
+            "CORE_LAUNCH_MODE": mode,
+            "ENABLE_AGNOCAST": "0",
+            "LD_LIBRARY_PATH": "lib",
+            "ROS_DOMAIN_ID": {
+                "planning": "72",
+                "control": "73",
+                "control_gate": "74",
+            }[mode],
+        },
+        precompile = "disabled",
+        tags = [
+            "no-remote",
+            "no-sandbox",
+        ],
+        deps = [
+            "@ament_index_python",
+            "@launch_ros",
+            "@launch_xml",
+            "@rcl_interfaces//:py",
+            "@rclpy",
+        ],
+    )
+    for mode in [
+        "planning",
+        "control",
+        "control_gate",
+    ]
+]

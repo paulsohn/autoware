@@ -6588,19 +6588,51 @@ container check was run.
 
 ## 2026-11-17: Phase 5.2.5 — core planning launch composition
 
-The original XML starts behavior/motion planners with vehicle_param_file but
-omits it for mission planner, path generator and smoother. With a valid explicit
-vehicle file, the first two abort on uninitialized wheel_radius and smoother
-fails construction on an unset double. Add the same param-file input to those
-three missing consumers only; preserve defaults, values, node logic and remaps.
-UPSTREAM_AWF.md records the upstream-main blob and related PR #1327, whose diff
-does not fix these omissions. This is a launch configuration fix, not Lyrical-
-only compatibility. Keep it separate from Bazel build/resource corrections.
+Purpose: validate the actual planning launch/resource assembly after its
+component modules passed independently. Inspect autoware_core_planning's
+package.xml, source-less CMake resource install, all config files and original
+XML. It has no existing runtime tests; the declared module gate is resource
+resolution, all six original nodes reaching discovery, configured parameters,
+connecting remaps, and clean process exits. Full map/route driving simulation
+belongs to Phase 7. Prerequisites are the integrated eight runtime package
+indexes, launch_ros/XML/testing, rclpy and explicit vehicle parameters.
 
-The new root launch regression includes the original XML and verifies six node
-names, configured values, remapped endpoints and clean shutdown. With prepared
-local resource definitions and corrected executable/library indexes, the exact
-complete gate is:
+Pattern: package-local MODULE depends on the original exec dependencies.
+BUILD's ament_index exposes config/** and launch/** and composes each child's
+:ament_index through deps. These are real runtime resources, not an artificial
+source-less grouping target. Root MODULE selects the local package with a
+0.0.0 dependency/override pair after its consumers. Test through a root-owned
+launch_test in bazel/tests/core_launch/, including the original XML through
+AnyLaunchDescriptionSource. Supply vehicle_param_file explicitly from the
+existing test-helper vehicle YAML, so no vehicle_model description repository
+or host ROS installation is needed. This is an explicit test input, not a
+replacement vehicle default. Keep RCLCPP/Cyclone selection and a distinct ROS
+domain for each launch variant.
+
+Assembly failures and fixes are consolidated in the preceding five module
+entries: preserve ROS libexec names through register_ament_files renames and
+use distinct package-qualified physical component library names. The next
+failure is original XML configuration: mission planner and path generator
+abort on uninitialized wheel_radius, and smoother fails node construction with
+an unset double. The existing vehicle_param_file argument is passed to behavior
+and motion planners, but omitted for those other three consumers. Add exactly
+one param-file entry to each missing node. Do not inject hidden global test
+parameters or change defaults in VehicleInfoUtils. The fix is separate from
+Bazel declarations. Upstream main still has the omissions on 2026-11-17, blob
+381a878cc439d98a5af4aa53bf06ddf18950a875. Merged core PR #1327 documents the same
+failure but its inspected diff changes endpoint adaptation/remaps, not vehicle
+parameters. UPSTREAM_AWF.md distinguishes that related evidence from a fix.
+
+The active test waits up to 30 seconds for six fully-qualified node names and
+queries original values: path-generator 10 Hz, stop-line required duration 1 s,
+obstacle-stop margin 5 m and JerkFiltered smoothing. Check final trajectory and
+path/trajectory-chain pub/sub endpoints at the XML-remapped topics. A separate
+post-shutdown test asserts every launched process exits successfully. No timing
+sleep, source-test omission or relaxed parameter default satisfies the gate.
+The same driver tests the control launch variants described below.
+
+Verification, sequential clean-environment gate covering every changed module
+and its affected consumers:
 
 ```bash
 env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
@@ -6625,10 +6657,25 @@ env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
   //bazel/tests:core_control_gate_launch_test
 ```
 
-All 23 targets pass in 61.267 seconds: 167 selected existing C++ cases, seven
-existing standalone checks and six active/shutdown launch assertions. Planning
-starts all six nodes together and passes in 2.5 seconds. No failures or skips.
-Bazel declarations and resource corrections are separate package commits; the
-complete entry will consolidate their patterns and limitations. No Fast DDS,
-CMake, container or enabled Agnocast aggregate launch was run. Full driving
-simulation remains unverified.
+Result: 72 non-test targets build; all 23 test targets pass in 61.267 seconds.
+The selected original C++ suites contain 167 cases: mission 40, path generator
+38, converter four, behavior nine, stop-line 23, motion 14 and obstacle-stop 39.
+All pass without failures/errors/skips/disabled cases. All seven existing
+standalone executable checks pass. The three new launch targets each pass an
+active configuration/graph case and a post-shutdown case (six assertions total).
+Planning starts all six original nodes together and passes in 2.5 seconds;
+control default and gate-enabled pass in 0.8 and 1.0 seconds. Validate counts
+against current BUILD-selected test targets, excluding stale XML files left by
+older target names. Targeted buildifier, Python/XML parsing, resource/dependency
+inventories, component boundaries, local links and git diff checks supplement
+runtime evidence.
+
+This closes the planning/control adoption gate. All packages under core planning
+and control now have Bazel declarations, and original launch resources are
+usable. Reuse the unchanged complete module/backend results recorded earlier
+for the rest of Phase 5.2; this is not a rerun of every historical suite. No
+Fast DDS, CMake, container, whole-system matrix or Agnocast-enabled aggregate
+launch was run. The native nodes retain RCLCPP; earlier smoother backend
+validation remains the applicable unchanged evidence. No route/map inputs are
+injected here, so successful closed-loop driving is not established. Phase
+5.2.5 and Phase 5.2 are complete; Phase 5.3 system/API composition follows.
