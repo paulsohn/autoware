@@ -1,0 +1,14 @@
+load("@rosdistro//ament:defs.bzl", "ament_index")
+
+package(default_visibility = ["//visibility:public"])
+
+ament_index(
+    data = glob([
+        "launch/**",
+        "meshes/**",
+        "rviz/**",
+        "urdf/**",
+        "world/**",
+    ]),
+    package_xml = "package.xml",
+)

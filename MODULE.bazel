@@ -734,3 +734,9 @@ local_path_override(
     module_name = "autoware_core_localization",
     path = "src/core/autoware_core/localization/autoware_core_localization",
 )
+
+bazel_dep(name = "velodyne_description", version = "0.0.0")
+local_path_override(
+    module_name = "velodyne_description",
+    path = "src/sensor_component/external/sensor_component_description/velodyne_description",
+)

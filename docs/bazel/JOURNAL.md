@@ -6974,7 +6974,8 @@ The Python launch parent remains unpreloaded. The enabled test requires the
 matching host Agnocast kernel module and /dev/agnocast, plus the built hook and
 runtime index in data. Use the existing runtime launcher, preserving host PIDs.
 
-Verification: the complete native module/original-consumer gate above passed.
+Verification: the complete native module/original-consumer gate recorded with
+the core-localization entry passed.
 After adding the process/preload assertions, rerun each new API target:
 
 ```sh
@@ -7148,3 +7149,23 @@ No local topic_tools snapshot exists. Pin the exercised RCR release in the root,
 keep registry declarations before local pairs, and retain its lockfile hashes.
 The published ament_package supplies the original relay executable/launch files;
 no replacement executable or dependency patch was needed.
+
+## 2026-11-18: Phase 5.3.3 — Velodyne description resources
+
+Purpose: integrate velodyne_description for the original vehicle-description launch.
+
+Inspect the local sensor_component_description snapshot, package manifest and CMake resource install. Expose launch, meshes, rviz, urdf and world through a package-local ament_index; preserve the original files. The sensor macros are required by both local sensor kits, so select this local snapshot rather than a registry replacement. No original runtime suite is registered.
+
+Integration pattern: add package-local MODULE/BUILD definitions, select local
+sources with adjacent root dependency/override pairs, and put added tests under
+bazel/tests/vehicle_description. The complete group gate renders both sensor
+variants through the original XML, observes robot_description and tf_static,
+checks base_link to sensor_kit_base_link translation (0.9, 0, 2.0), resolves
+every rendered mesh URI in declared runfiles, and checks process shutdown.
+Cyclone DDS only; the robot publisher is not a switchable Agnocast component.
+
+Verification: the complete four-module gate recorded with the core-vehicle
+entry passed using Cyclone DDS. Both original vehicle launches passed all two
+cases each (behavior and shutdown), with zero failures, errors or skips.
+No source change, dependency patch or compatibility fix was needed. This
+checks descriptions and fixed transforms, not sensor drivers or simulation.
