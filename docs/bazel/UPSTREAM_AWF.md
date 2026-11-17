@@ -690,6 +690,8 @@ compiler/platform behavior.
 
 ## Mission-planner arrival test uses a removed TF header
 
+Local source correction: `b806740a`.
+
 - [ ] Associate with a matching upstream PR. Checked 2026-11-17: no matching
   arrival-checker/TF PR was found, and upstream main test_arrival_checker.cpp
   (blob 5fbf1d51f3fb914dab73550f598f43a83cb7c0e0) still includes

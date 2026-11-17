@@ -1048,10 +1048,23 @@ py_binary(
             ["@autoware_planning_topic_converter//:ament_index"],
         ),
         (
+            "goal_visualizer",
+            "@autoware_mission_planner//:goal_pose_visualizer_exe",
+            ["@autoware_mission_planner//:ament_index"],
+        ),
+        (
             "path_generator",
             "@autoware_path_generator//:path_generator_node_exe",
             [
                 "@autoware_path_generator//:ament_index",
+                "@autoware_test_utils//:ament_index",
+            ],
+        ),
+        (
+            "mission_planner",
+            "@autoware_mission_planner//:mission_planner_exe",
+            [
+                "@autoware_mission_planner//:ament_index",
                 "@autoware_test_utils//:ament_index",
             ],
         ),

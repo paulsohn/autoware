@@ -1029,11 +1029,32 @@ runtimes are pinned Bazel archives, with native loader tracing confirming their
 use. Trajectory keeps its upstream C++17 implementation contract and needs
 current-target expected/TF header fixes plus a four-ULP floating-point test
 comparison; the journal and UPSTREAM_AWF.md record scope and evidence.
-Next inventory autoware_path_generator with its local planning-test-manager
-prerequisite and generated-parameter support; retain its complete node-interface
-and geometry suites before advancing to later planner/solver groups. Later path generation, smoothing,
-solver and planner groups follow their actual dependencies. Phase 5.2.5 remains
-open; do not treat the two native control nodes as a complete planning stack.
+The next larger group covers six packages: autoware_planning_test_manager,
+autoware_planning_factor_interface, autoware_objects_of_interest_marker_interface,
+autoware_planning_topic_converter, autoware_path_generator and
+autoware_mission_planner. Inventory their complete existing suites together:
+two manager targets, one factor target, one marker target, two converter targets,
+one five-source path-generator target and four mission-planner targets. Preserve
+original test mains, assertions and resource/configuration inputs. Validate
+planning-factor in both wrapper backends; the other components retain native
+RCLCPP. Root-owned checks exercise all four produced executables. Select the
+RCR generated-parameter macro for the path generator's original YAML schema,
+using Bazel-resolved Python tools rather than host generation or a handwritten
+replacement header. The accepted input is generate_parameter_library
+1.3.0-1.rcr.0, matching the current RCR snapshot; its Python generator and native
+runtime helpers pass generation, compilation and executable parameter checks.
+All 108 original cases across 11 targets pass with Cyclone DDS. Planning-factor's
+seven cases additionally pass with ENABLE_AGNOCAST=1 and the built heap hook;
+its corrected test uses the actual backend executor. Four root-owned executable
+checks also pass. The group is complete, with no skipped/disabled cases. Source
+changes are limited to the demonstrated mission-planner TF include blocker,
+quaternion endpoint comparison and planning-factor callback dispatch in tests.
+Keep each package and source compatibility fix in separate commits.
+Next take the OSQP/QP and velocity-smoothing dependency group together, followed
+by behavior/motion planner foundations and plugins.
+
+Later smoothing, solver and planner groups follow their actual dependencies.
+Phase 5.2.5 remains open; these endpoints are not the complete planning stack.
 
 ## Later phases
 

@@ -5863,8 +5863,13 @@ Inspect seven implementation sources, private headers, original configuration/
 launch resources and all five original test sources. Complete suite: 14 plugin/
 utility, nine arrival, 11 reroute-safety and six real-node transaction cases.
 
-The package-local build definitions are prepared with this task and committed
-separately; verification below records that tested working tree.
+Pattern: package-local library and shared component containing both existing
+registered factories, with separate native launchers/records for mission_planner
+and goal_pose_visualizer. Preserve each original executable name. Register
+config, launch and executable resources. Pair ROS compile/shared providers,
+component-interface, lanelet/route, motion and vehicle dependencies. Tests keep
+their original four groups and main functions, plus test-helper/vehicle/lanelet/
+route resource indexes where used.
 
 Diagnosed failures: the arrival test includes removed
 tf2/LinearMath/Quaternion.h; change only that spelling to Quaternion.hpp.
@@ -5883,3 +5888,49 @@ closure. Only the
 one-line demonstrated test-header correction changes original package files;
 no production source is changed. UPSTREAM_AWF.md records its dated association
 status. No Agnocast conversion, Fast DDS or CMake build is included.
+
+## 2026-11-17: Phase 5.2.5 — composed planning executables
+
+Purpose: validate the produced native launchers and runtime/resource composition
+in addition to the component-class C++ suites. Put the shared driver in
+bazel/tests/planning/, outside every original package. Declare four py_test
+consumers over that source, with precompilation disabled as for other shared
+Python probes. Each explicitly selects ENABLE_AGNOCAST=0 and LD_LIBRARY_PATH=lib,
+and declares executables, package indexes and generated Python message providers.
+
+The driver uses ordinary rclpy peers, bounded readiness/response waits, captured
+child logs and SIGINT/clean-exit assertions. Check converter nonempty/empty paths
+with distinct stamps and all copied fields; durable route-to-goal-pose forwarding;
+path-generator's original parameter values (10 Hz, 300 m forward length) and
+missing-input gate; mission-planner clear-route NO_EFFECT and waypoint-route
+ERROR_INVALID_STATE before map/odometry initialization. Use declared API constants
+rather than expecting a particular error text. Full successful routing and path
+payload scenarios remain covered by the unchanged original C++ node suites.
+
+Verification:
+
+```bash
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=no-agnocast --local_test_jobs=1 \
+  --nocache_test_results --test_output=errors \
+  //bazel/tests:planning_converter_runtime_test \
+  //bazel/tests:planning_goal_visualizer_runtime_test \
+  //bazel/tests:planning_path_generator_runtime_test \
+  //bazel/tests:planning_mission_planner_runtime_test
+```
+
+The initial four-case invocation passes in 10.338 seconds. After narrowing
+production closures to exclude test helpers, repeat the same command with
+@autoware_path_generator//... and @autoware_mission_planner//... added: all nine
+targets pass in 120.625 seconds, including all 78 original cases for those two
+modules and all four executable cases. This verifies the complete module gates
+after that dependency change. Each executable target declares only its own
+required package indexes; the final four-target gate verifies this closure in
+10.706 seconds.
+Together with the complete 108-case existing module gate and both seven-case
+planning-factor backend gates, the six-package group is complete. Reuse unchanged
+results; no system-wide communication matrix or Fast DDS sweep is implied by
+this step. Targeted buildifier, Python parsing, changed-line C++ formatting,
+source/test inventories and XML/log case checks accompany the runtime gates.
+Phase 5.2.5 remains in progress; next take OSQP/QP and velocity smoothing together
+before the behavior/motion planner groups. No container or CMake run is included.

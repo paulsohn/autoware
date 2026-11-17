@@ -590,3 +590,9 @@ local_path_override(
     module_name = "autoware_path_generator",
     path = "src/core/autoware_core/planning/autoware_path_generator",
 )
+
+bazel_dep(name = "autoware_mission_planner", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_mission_planner",
+    path = "src/core/autoware_core/planning/autoware_mission_planner",
+)
