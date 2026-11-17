@@ -57,6 +57,8 @@ only when your current target demonstrates the need.
   middleware configurations before implementing each task.
   [Backend executor convention](DEVELOPING.md#switchable-standalone-nodes);
   [evidence: complete Agnocast test inventory](JOURNAL.md#2026-11-15-phase-41--adopt-the-complete-agnocast-library-test-inventory).
+- [ ] Check dependency API and header-layout compatibility before changing source.
+  [Evidence: solver input selection](JOURNAL.md#2026-11-17-phase-525--osqp-interface).
 - [ ] Choose validated package boundaries for commits, keeping source fixes
   separate from build declarations.
   [Evidence: first local package module](JOURNAL.md#2026-11-14-build-the-first-local-autoware-package-module).
@@ -1053,7 +1055,28 @@ Keep each package and source compatibility fix in separate commits.
 Next take the OSQP/QP and velocity-smoothing dependency group together, followed
 by behavior/motion planner foundations and plugins.
 
-Later smoothing, solver and planner groups follow their actual dependencies.
+The solver/smoothing group integrates autoware_osqp_interface,
+autoware_qp_interface and autoware_velocity_smoother together. Preserve the
+existing OSQP 0.6 API using BCR 0.6.3.bcr.3; multiple_version_override retains
+RCR's 1.0.0.bcr.3 selection for its separate consumers. Package-local generated
+forwarding headers supply the ROS vendor's osqp/ include namespace. This avoids
+source/API changes while the current solver tests validate the chosen inputs.
+Only the legacy ABI is linked into these consumers; combining both OSQP ABIs in
+one process is not a supported result of this experiment. ProxSuite
+0.7.3-1.rcr.0 supplies the QP interface's second backend.
+The complete gate is both solver suites, all five CMake-registered smoother
+targets plus its existing stop-velocity test file (omitted from CMake), and the
+actual smoother executable under JerkFiltered, L2, Linf and Analytical in both
+backends. Keep original C++ suites on RCLCPP, matching the upstream node-test
+contract; use the prepared heap hook, kernel module and bridge composition for
+the enabled executable gate. Do not omit original node-interface tests or turn
+their RCLCPP-only acceptance into a claim of enabled C++ suite coverage.
+This group is complete: eight OSQP-interface, 16 QP-interface and 67 smoother
+C++ cases pass without failures/errors/skips/disabled cases. Each of the four
+algorithms also passes through the actual executable in both RCLCPP and enabled
+Agnocast modes, including velocity-limit acknowledgement and clean shutdown.
+
+Next take behavior/motion planner foundations and plugins in dependency groups.
 Phase 5.2.5 remains open; these endpoints are not the complete planning stack.
 
 ## Later phases

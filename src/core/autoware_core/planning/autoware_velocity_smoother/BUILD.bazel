@@ -1,0 +1,273 @@
+load("@autoware_agnocast_wrapper//:defs.bzl", "autoware_agnocast_node")
+load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "smoother",
+    srcs = glob(
+        ["src/**/*.cpp"],
+        exclude = ["src/node.cpp"],
+    ),
+    hdrs = glob(
+        ["include/**/*.hpp"],
+        exclude = ["include/autoware/velocity_smoother/node.hpp"],
+    ),
+    strip_include_prefix = "include",
+    deps = [
+        "@autoware_adapi_v1_msgs//:cc",
+        "@autoware_agnocast_wrapper//:autoware_agnocast_wrapper_library",
+        "@autoware_internal_debug_msgs//:cc",
+        "@autoware_internal_planning_msgs//:cc",
+        "@autoware_interpolation",
+        "@autoware_motion_utils",
+        "@autoware_osqp_interface",
+        "@autoware_planning_msgs//:cc",
+        "@autoware_qp_interface",
+        "@autoware_trajectory",
+        "@autoware_utils_debug",
+        "@autoware_utils_diagnostics",
+        "@autoware_utils_geometry",
+        "@autoware_utils_logging",
+        "@autoware_utils_math",
+        "@autoware_utils_rclcpp",
+        "@autoware_utils_system",
+        "@autoware_vehicle_info_utils",
+        "@geometry_msgs//:cc",
+        "@nav_msgs//:cc",
+        "@rcl_interfaces//:cc",
+        "@rclcpp//:rclcpp_library",
+        "@rclcpp_components//:rclcpp_components_library",
+        "@rosdistro//cc:boost.geometry",
+        "@rosdistro//cc:eigen",
+        "@rosdistro//cc:range-v3",
+        "@std_msgs//:cc",
+        "@tf2//:tf2_library",
+        "@tf2_ros//:tf2_ros_library",
+        "@visualization_msgs//:cc",
+    ],
+)
+
+cc_library(
+    name = "autoware_velocity_smoother",
+    srcs = ["src/node.cpp"],
+    hdrs = ["include/autoware/velocity_smoother/node.hpp"],
+    strip_include_prefix = "include",
+    deps = [":smoother"],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = [
+        "@autoware_adapi_v1_msgs//:cc_shared",
+        "@autoware_agnocast_wrapper//:test_dynamic_deps",
+        "@autoware_internal_debug_msgs//:cc_shared",
+        "@autoware_internal_planning_msgs//:cc_shared",
+        "@autoware_motion_utils//:runtime_dynamic_deps",
+        "@autoware_osqp_interface//:runtime_dynamic_deps",
+        "@autoware_planning_msgs//:cc_shared",
+        "@autoware_qp_interface//:runtime_dynamic_deps",
+        "@autoware_trajectory//:runtime_dynamic_deps",
+        "@autoware_utils_debug//:runtime_dynamic_deps",
+        "@diagnostic_updater//:diagnostic_updater",
+        "@geometry_msgs//:cc_shared",
+        "@logging_demo//:cc_shared",
+        "@nav_msgs//:cc_shared",
+        "@rcl_interfaces//:cc_shared",
+        "@rclcpp//:rclcpp",
+        "@rclcpp_components//:rclcpp_components",
+        "@std_msgs//:cc_shared",
+        "@tf2//:tf2",
+        "@tf2_ros//:tf2_ros",
+        "@visualization_msgs//:cc_shared",
+    ],
+)
+
+cc_shared_library(
+    name = "velocity_smoother_component",
+    dynamic_deps = [":runtime_dynamic_deps"],
+    deps = [":autoware_velocity_smoother"],
+)
+
+autoware_agnocast_node(
+    name = "velocity_smoother_node",
+    package_name = "autoware_velocity_smoother",
+    component = ":velocity_smoother_component",
+    plugin = "autoware::velocity_smoother::VelocitySmootherNode",
+)
+
+register_ament_files(
+    name = "node_executables",
+    files = [":velocity_smoother_node"],
+    prefix = "lib/autoware_velocity_smoother",
+    strip_prefix = "*",
+)
+
+ament_index(
+    components = [":velocity_smoother_node_components"],
+    data = glob([
+        "config/*",
+        "launch/*",
+    ]) + [
+        ":node_executables",
+        ":velocity_smoother_node_plugin",
+    ],
+    package_xml = "package.xml",
+)
+
+collect_transitive_dynamic_deps(
+    name = "test_dynamic_deps",
+    dynamic_deps = [
+        ":runtime_dynamic_deps",
+        "@ament_index_cpp//:ament_index_cpp",
+        "@autoware_test_utils//:runtime_dynamic_deps",
+        "@autoware_planning_test_manager//:runtime_dynamic_deps",
+    ],
+)
+
+cc_test(
+    name = "test_smoother_base_functions",
+    timeout = "long",
+    srcs = [
+        "test/test_smoother_base_functions.cpp",
+    ],
+    data = [
+        ":ament_index",
+        "@autoware_test_utils//:ament_index",
+    ],
+    dynamic_deps = [":test_dynamic_deps"],
+    env = {
+        "ENABLE_AGNOCAST": "0",
+        "ROS_DOMAIN_ID": "67",
+    },
+    deps = [
+        ":autoware_velocity_smoother",
+        "@ament_index_cpp//:ament_index_cpp_library",
+        "@autoware_planning_test_manager",
+        "@autoware_test_utils",
+        "@googletest//:gtest",
+    ],
+)
+
+cc_test(
+    name = "test_smoother_functions",
+    timeout = "long",
+    srcs = [
+        "test/test_resample.cpp",
+        "test/test_smoother_functions.cpp",
+    ],
+    data = [
+        ":ament_index",
+        "@autoware_test_utils//:ament_index",
+    ],
+    dynamic_deps = [":test_dynamic_deps"],
+    env = {
+        "ENABLE_AGNOCAST": "0",
+        "ROS_DOMAIN_ID": "67",
+    },
+    deps = [
+        ":autoware_velocity_smoother",
+        "@ament_index_cpp//:ament_index_cpp_library",
+        "@autoware_planning_test_manager",
+        "@autoware_test_utils",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "test_trajectory_utils",
+    timeout = "long",
+    srcs = [
+        "test/test_trajectory_utils.cpp",
+    ],
+    data = [
+        ":ament_index",
+        "@autoware_test_utils//:ament_index",
+    ],
+    dynamic_deps = [":test_dynamic_deps"],
+    env = {
+        "ENABLE_AGNOCAST": "0",
+        "ROS_DOMAIN_ID": "67",
+    },
+    deps = [
+        ":autoware_velocity_smoother",
+        "@ament_index_cpp//:ament_index_cpp_library",
+        "@autoware_planning_test_manager",
+        "@autoware_test_utils",
+        "@googletest//:gtest",
+    ],
+)
+
+cc_test(
+    name = "test_pseudo_jerk_smoothers",
+    timeout = "long",
+    srcs = [
+        "test/test_pseudo_jerk_smoothers.cpp",
+    ],
+    data = [
+        ":ament_index",
+        "@autoware_test_utils//:ament_index",
+    ],
+    dynamic_deps = [":test_dynamic_deps"],
+    env = {
+        "ENABLE_AGNOCAST": "0",
+        "ROS_DOMAIN_ID": "67",
+    },
+    deps = [
+        ":autoware_velocity_smoother",
+        "@ament_index_cpp//:ament_index_cpp_library",
+        "@autoware_planning_test_manager",
+        "@autoware_test_utils",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "test_velocity_smoother_node_interface",
+    timeout = "long",
+    srcs = [
+        "test/test_velocity_smoother_node_interface.cpp",
+    ],
+    data = [
+        ":ament_index",
+        "@autoware_test_utils//:ament_index",
+    ],
+    dynamic_deps = [":test_dynamic_deps"],
+    env = {
+        "ENABLE_AGNOCAST": "0",
+        "ROS_DOMAIN_ID": "67",
+    },
+    deps = [
+        ":autoware_velocity_smoother",
+        "@ament_index_cpp//:ament_index_cpp_library",
+        "@autoware_planning_test_manager",
+        "@autoware_test_utils",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "test_stop_velocity_calculation",
+    timeout = "long",
+    srcs = [
+        "test/test_stop_velocity_calculation.cpp",
+    ],
+    data = [
+        ":ament_index",
+        "@autoware_test_utils//:ament_index",
+    ],
+    dynamic_deps = [":test_dynamic_deps"],
+    env = {
+        "ENABLE_AGNOCAST": "0",
+        "ROS_DOMAIN_ID": "67",
+    },
+    deps = [
+        ":autoware_velocity_smoother",
+        "@ament_index_cpp//:ament_index_cpp_library",
+        "@autoware_planning_test_manager",
+        "@autoware_test_utils",
+        "@googletest//:gtest",
+    ],
+)

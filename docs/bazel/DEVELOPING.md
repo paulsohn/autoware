@@ -598,3 +598,17 @@ not run pre-commit for this experiment.
 Use signed-off Conventional Commits. Keep source compatibility changes in a
 separate `fix(src/<repository>): ...` commit from Bazel build definitions. Do
 not commit `user.bazelrc`, Bazel output trees, or convenience symlinks.
+
+## Solver dependencies
+
+The current OSQP/QP interfaces use the OSQP 0.6 API. Their osqp_legacy repository
+alias selects BCR 0.6.3.bcr.3, while the root multiple_version_override preserves
+RCR's OSQP 1.x selection for separate consumers. Keep the package-owned forwarding
+headers for the osqp/ include namespace. Do not combine both ABIs in one process
+without a separate compatibility design and validation. ProxQP uses the pinned
+ProxSuite provider. Run each solver's full module suite after dependency changes;
+for smoother runtime changes run both velocity_smoother backend tests under
+//bazel/agnocast:with_runtime, with --config=no-agnocast for the RCLCPP target.
+The enabled target requires the kernel module/device and built heap hook. See
+[the solver/smoother experiment](JOURNAL.md#2026-11-17-phase-525--osqp-interface)
+for input rationale, complete commands and coverage limits.

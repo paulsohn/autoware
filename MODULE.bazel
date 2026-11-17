@@ -619,3 +619,9 @@ local_path_override(
     module_name = "autoware_qp_interface",
     path = "src/core/autoware_core/common/autoware_qp_interface",
 )
+
+bazel_dep(name = "autoware_velocity_smoother", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_velocity_smoother",
+    path = "src/core/autoware_core/planning/autoware_velocity_smoother",
+)

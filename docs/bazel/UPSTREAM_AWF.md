@@ -708,7 +708,7 @@ module journal contains exact commands. Verified on Ubuntu 24.04, LLVM/libc++
 
 ## Velocity-smoother tests: Lyrical TF headers and empty-input fixture
 
-Local source correction: pending commit association.
+Local source correction: `b1c0b446`.
 
 - [ ] Associate the two TF header corrections with a matching upstream PR.
   Checked 2026-11-17: no matching velocity_smoother/Quaternion.hpp PR found.

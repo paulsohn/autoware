@@ -6014,25 +6014,91 @@ container run is included. Next consume both interfaces in velocity smoothing.
 
 ## 2026-11-17: Phase 5.2.5 — velocity smoother
 
-Purpose: prepare the original smoother tests for the complete module gate.
-The prepared package-local Bazel rules expose all seven original test sources,
-including the stop-velocity file omitted from CMake. Two files cannot compile
-against Lyrical because Quaternion.h was removed: use Quaternion.hpp in
-resampling and pseudo-jerk tests. EmptyTrajectoryCase incorrectly inserts one
-point before expecting builder rejection; remove that push to exercise actual
-empty input. Keep every assertion and production implementation unchanged.
-UPSTREAM_AWF.md records the dated upstream-main checks and missing associations.
+Purpose: integrate the four existing smoothing algorithms and the real node
+on both wrapper backends. Prerequisites: both solver interfaces above, the
+existing trajectory/motion/vehicle/test-manager modules, Lyrical message
+providers and the prepared Agnocast 2.4.1 kernel module/device and built heap
+hook. Inspect all nine implementation sources, public headers, original YAML/
+launch files, seven existing test sources and CMake test registration before
+selecting the gate. Keep all five registered C++ targets and additionally expose
+the existing stop-velocity source omitted from CMake. Complete inventory:
+pseudo-jerk 12, base functions four, smoother/resampling 18, stop-velocity nine,
+trajectory utilities 22 and node interface two: 67 cases across six targets.
+Upstream's node-interface test is RCLCPP-only; run all C++ cases with
+ENABLE_AGNOCAST=0, then exercise the actual executable's four algorithms on
+both backends. This does not claim enabled coverage for the C++ suite.
 
-Verification with the prepared definitions and dependencies:
+Minimum pattern: separate the eight algorithm/helper sources into :smoother
+and node.cpp into :autoware_velocity_smoother, exposing the original public
+headers. Pair ROS compile/shared providers; use the wrapper's unconditional
+compile provider and runtime collector. Link a shared component and declare
+velocity_smoother_node through autoware_agnocast_node with the original plugin
+class and backend executor contracts. Register the executable, component/plugin,
+original config and launch resources in the ament index. Keep test-manager and
+test-helper dependencies in a separate test runtime collector. Preserve original
+test mains (use gtest_main only where needed) and original assertions. Each test
+explicitly selects RCLCPP and declares the package/test-helper resource indexes.
+Root MODULE selects the local source after both solver modules.
+
+Demonstrated original-test blockers, fixed separately from build definitions:
+
+- test_resample.cpp and test_pseudo_jerk_smoothers.cpp include the removed
+  tf2/LinearMath/Quaternion.h. Use the provider's Quaternion.hpp spelling only.
+- EmptyTrajectoryCase creates one point before asserting that construction fails.
+  The current trajectory builder accepts one point; eight other cases pass.
+  Remove the push so the case actually exercises empty input, preserving its
+  failure assertion. No production algorithm or builder change is required.
+
+UPSTREAM_AWF.md records dated upstream-main checks and association status.
+
+Put the added executable driver under bazel/tests/autoware_velocity_smoother/.
+Compose two root py_tests declaring the executable, original config indexes,
+generated Python messages and heap hook. The driver uses ordinary rclpy peers,
+spawns the actual executable with original vehicle/common/search/algorithm YAML,
+and runs Analytical, JerkFiltered, L2 and Linf independently. Publish odometry,
+acceleration, autonomous mode, a 101-point trajectory and an external 3 m/s limit.
+Wait for the limit's sender/value acknowledgement before sending a new stamped
+trajectory, then require matching output, finite nonnegative velocities, positive
+motion, maximum <=3.02 m/s, finite acceleration and terminal zero speed. Assert
+clean SIGINT exit. Check /proc/<child>/maps for the heap hook exactly when enabled
+and the absence of RCR's libosqp.so; only the legacy solver ABI is exercised.
+Keep the Python parent unpreloaded; preload only the enabled child through the
+existing with_runtime launcher and declared hook artifact.
+
+Diagnosed harness failure: reusing topic names let stale DDS discovery satisfy
+readiness for a later child before initialization, causing a missing-hook map
+assertion and premature SIGINT. Give each algorithm/PID its own namespace.
+Bounded endpoint/response waits and fresh output stamps then work without host
+network tuning or arbitrary sleeps. Interface selection/bridge definitions need
+no changes for this current target.
+
+Verification, sequentially in a clean caller environment:
 
 ```bash
 env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
   bazel test --config=no-agnocast --local_test_jobs=1 \
   --nocache_test_results --test_output=errors @autoware_velocity_smoother//...
+
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --local_test_jobs=1 --nocache_test_results --test_output=errors \
+  --strategy=TestRunner=local --run_under=//bazel/agnocast:with_runtime \
+  //bazel/tests:velocity_smoother_agnocast_test
+
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=no-agnocast --local_test_jobs=1 \
+  --nocache_test_results --test_output=errors --strategy=TestRunner=local \
+  --run_under=//bazel/agnocast:with_runtime \
+  //bazel/tests:velocity_smoother_rclcpp_test
 ```
 
-All 67 existing cases across six targets pass in 16.224 seconds, including all
-nine stop-velocity cases, without failures/errors/skips/disabled cases. These
-source corrections are separate from the package build definitions committed
-next. No Fast DDS or upstream CMake validation was run. The complete module
-entry will consolidate its build pattern and executable/backend gates.
+Results: 13 non-test targets build, all 67 original C++ cases pass in six targets
+(16.224 seconds total), and all four executable cases pass in each backend
+(enabled 5.241 seconds total/3.5-second action; RCLCPP 5.171/2.9 seconds).
+No final failures/errors/skips/disabled cases. With the two solver suites this
+completes 91 existing C++ cases and eight runtime case executions. Targeted
+buildifier, Python parsing, changed-line C++ formatting, declaration/source
+inventories and XML/log count checks supplement these gates. No Fast DDS,
+CMake/container or system-wide communication sweep is included. The runtime
+scenario is straight-line motion; it does not establish full scenario simulation
+or mixed OSQP-ABI safety. Next take behavior/motion planner foundations and
+plugins; Phase 5.2.5 remains open.
