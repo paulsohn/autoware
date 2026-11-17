@@ -596,3 +596,45 @@ pose initialization's 23 original C++ cases also pass with the corrected public
 header. Both actual pose-initializer executables and all eleven expanded bridge
 regression cases pass too. Humble/Jazzy, GCC/libstdc++ and upstream CMake builds
 were not rerun.
+
+## Trajectory headers and floating-point checks with Lyrical/LLVM
+
+Verified 2026-11-17 on Ubuntu 24.04 x86_64, Bazel 9.3.2, LLVM/libc++ 21.1.8
+and RCR Lyrical. The complete trajectory gate builds all 19 original examples
+and passes all 293 original cases with plotting enabled; route-handler's 158
+active cases also pass. Exact commands and setup are in the Phase 5.2.5 journal.
+
+- [x] Match the trajectory subset of merged
+  [core#1539](https://github.com/autowarefoundation/autoware_core/pull/1539),
+  merged 2026-11-13 as 0b817ca557ea7839d3f352c7b24b32ac0d55d829.
+  Compared the actual patch: four installed headers switch from
+  tl_expected/expected.hpp to tl/expected.hpp and package.xml switches to
+  libexpected-dev. The former include fails with the current Bazel provider;
+  use the existing pinned tl-expected 1.3.1 through rosdistro, without installing
+  an apt package. Other packages changed by that PR are outside this task.
+- [ ] Associate the TF header correction with a matching upstream PR. Searches
+  found no matching trajectory correction. Upstream main still has the doubled
+  tf2_geometry_msgs include in pose.cpp (blob
+  030020859c7ef8e3bd4bfdde50d87fde15e3d994) and removed .h TF includes in
+  add_offset.hpp (blob 448d851def01538b07a6edba347d304f621e43a5).
+  Use tf2_geometry_msgs/tf2_geometry_msgs.hpp in pose.cpp and the .hpp forms of
+  Quaternion, Vector3 and utils in add_offset.hpp and its existing test.
+  Each old spelling produces a missing-header error with the selected Lyrical
+  providers. This changes include spelling only; PR #1539 does not cover it.
+- [ ] Associate the lateral-distance test correction with an upstream PR.
+  Upstream main still uses EXPECT_EQ(result, check_distance), blob
+  7a11adb1e4cecd065713e1d31b2e667859e90475; a search for the named test found
+  no PR. ParabolicTrajectoryNotNearest compares a cross-product distance with
+  an independently projected Euclidean distance: 0.15676701343069127 versus
+  0.15676701343069119, three ULPs apart. EXPECT_DOUBLE_EQ uses GTest's four-ULP
+  comparison rather than requiring identical rounding. No production formula,
+  expected geometric result or test group is removed.
+
+The related Lyrical trackers are
+[autoware#7404](https://github.com/autowarefoundation/autoware/issues/7404) and
+[core#1538](https://github.com/autowarefoundation/autoware_core/issues/1538).
+Their Ubuntu 26.04/GCC work is not local test evidence. The implementation also
+uses deleted default constructors on aggregates in reference_path.cpp, valid
+under its upstream C++17 contract but not under the workspace's C++23 default.
+A package-local C++17 compilation setting resolves that issue without a source
+patch. Humble/Jazzy, GCC and colcon/ament/CMake were not run locally.

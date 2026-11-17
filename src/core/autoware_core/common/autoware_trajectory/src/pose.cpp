@@ -24,7 +24,7 @@
 #include <tf2/LinearMath/Vector3.hpp>
 #include <tf2/utils.hpp>
 
-#include <tf2_geometry_msgs/tf2_geometry_msgs/tf2_geometry_msgs.hpp>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 
 #include <cassert>
 #include <cmath>

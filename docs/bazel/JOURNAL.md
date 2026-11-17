@@ -5592,3 +5592,48 @@ helper cases without failures/errors/skips. The header is additionally compiled
 and exercised by trajectory and route-handler's complete plotted suites. The
 ordinary helper remains usable without depending on the optional target.
 No Fast DDS or broad communication sweep is required for this header export.
+
+
+## 2026-11-17: Phase 5.2.5 — autoware_trajectory
+
+Purpose: integrate the continuous spatial/temporal trajectory foundation before
+its route/path consumers. Inspect manifest and CMake source lists, all 20
+original test translation units, all 19 declared examples, test_data YAML files
+and their ament-index lookups. Required suites include interpolation, shifting,
+containers, reference-path valid/invalid map specifications, temporal behavior,
+footprints and lateral metrics. Preserve PLOT and ENABLE_TEST_PLOT=1.
+
+Current-target compatibility fixes, kept separate from build definitions:
+
+- tl_expected/expected.hpp is absent from the selected TL expected provider.
+  An initial forwarding-header experiment compiled that include but would
+  preserve the removed ROS spelling. Inspect AWF's Lyrical trackers and the
+  actual merged #1539 patch; align only this package's four affected headers
+  and manifest with its tl/expected.hpp/libexpected-dev change instead. The
+  temporary forwarding rule is removed. Bazel still supplies the library.
+- pose.cpp repeats tf2_geometry_msgs in its include path; add_offset.hpp and
+  its existing test use removed .h TF headers. Use the canonical geometry
+  include and .hpp TF forms. Original assertions and behavior are unchanged.
+- ParabolicTrajectoryNotNearest fails exact equality: cross-product distance
+  0.15676701343069127 versus independently projected distance
+  0.15676701343069119, a three-ULP difference. Use EXPECT_DOUBLE_EQ's four-ULP
+  comparison, retaining both calculations and the side-of-trajectory assertion.
+  UPSTREAM_AWF.md records matching/related PRs, current-main checks and limits.
+
+Verification against the package-local build definitions prepared with this
+task (committed separately):
+
+```bash
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --local_test_jobs=1 --nocache_test_results --test_output=errors \
+  --run_under=//bazel/tests:with_python @autoware_trajectory//...
+```
+
+Result: builds 22 non-test targets, including all 19 examples, and passes all
+293 original cases in 35.312 seconds (test action 13.3 seconds). XML reports no
+failures/errors/disabled cases/skips; 87 SVG figures are retained. Original
+fixtures and implementation formulas are unchanged. Targeted formatting,
+source-list checks, Python parsing and whitespace checks pass. No Fast DDS,
+Agnocast conversion, example runtime sweep or colcon/ament/CMake run is included.
+The route-handler gate below additionally consumes this library and its YAML
+resources. Compatibility changes are limited to the demonstrated blockers.
