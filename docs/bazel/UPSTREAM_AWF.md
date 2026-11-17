@@ -666,3 +666,22 @@ after the correction. A heap hook declaration/launch is a separate runtime
 prerequisite, not the fix for callback dispatch. No production behavior, timeout,
 assertion or test group is removed. See the planning-factor journal for exact
 commands; this is an executor-test correction rather than a Lyrical-only fix.
+
+## Path-generator endpoint comparison after quaternion interpolation
+
+- [ ] Associate with a matching upstream PR. Checked 2026-11-17: a search for
+  connectPathToGoal found no PR; main test_goal_connection.cpp, blob
+  731452d4d5b65044da6435bc09d536f469911cb8, still compares the whole interpolated
+  starting point with the raw fixture using ASSERT_EQ.
+
+Observed: UtilsTest.connectPathToGoal fails exact orientation equality after
+repeated trajectory interpolation. Position and other fields match; the largest
+quaternion-component difference is about 3.09e-13 (z:
+-0.9705764902527797 versus -0.9705764902524712). Compare the four orientation
+components with a 1e-12 absolute tolerance, then compare every remaining field
+exactly. Keep the original goal-position/orientation assertions and all test
+cases. No production interpolation or fixture changes are required.
+All 38 original path-generator cases and the executable's generated-parameter/
+readiness check pass with this correction on the same LLVM/Lyrical platform.
+The package journal records the complete gate; this does not establish other
+compiler/platform behavior.

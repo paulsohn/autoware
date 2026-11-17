@@ -5815,3 +5815,33 @@ cases. The root executable gate below additionally sends nonempty and empty
 paths through the actual binary and checks header, pose, velocity and heading
 rate fields. No production/test source fix, Agnocast conversion, Fast DDS or
 CMake run is required.
+
+## 2026-11-17: Phase 5.2.5 — path generator and generated parameters
+
+Purpose: integrate lanelet/route-based path generation with vehicle limits,
+goal connection, path cutting and turn signals. Inspect both implementations,
+public/private headers, original parameter schema/configuration, test_route
+fixtures and all five original test translation units (38 cases, including six
+real node-interface cases). Add the required local planning test manager before
+selecting a registry fallback. The parameter generator is absent locally.
+
+The package-local build definitions are prepared with this task and committed
+separately; verification below records that tested working tree.
+
+Diagnosed failure: UtilsTest.connectPathToGoal compares an interpolated start
+point against a raw fixture with exact whole-message equality. Quaternion
+interpolation changes a component by about 3.09e-13; position and all other
+fields match. Compare each quaternion component with 1e-12 absolute tolerance,
+then compare the remaining message fields exactly. Preserve the original goal
+assertions and every test case; no production interpolation or fixture changes
+are needed. UPSTREAM_AWF.md records the upstream-main check and scope.
+
+Verification: the shared six-package invocation passes all 38 original cases in
+2.1 seconds, without failures/errors/skips/disabled cases. The actual executable
+check below loads the original vehicle/nearest-search/generator configs, queries
+generated parameter values and verifies no path is fabricated before inputs
+arrive. This also validates generated-header compilation, runtime parameter construction,
+configuration lookup and clean shutdown. Keep manager/test-helper compile and
+shared dependencies on the test target through a separate test_dynamic_deps
+collector; neither belongs in the production component closure. No Agnocast conversion, Fast DDS or
+CMake test is included.
