@@ -6341,6 +6341,61 @@ executable gate establishes factory assembly/lifecycle, not full map/scenario
 parity. Next take motion planner and obstacle-stop plugin dependencies;
 Phase 5.2.5 remains open.
 
+## 2026-11-17: Phase 5.2.5 — motion obstacle-stop plugin
+
+Purpose: provide the current obstacle-stop plugin for the motion planner,
+using the already integrated motion-common, object-recognition, planning-factor,
+signal-processing and geometry/vehicle libraries. Inspect package.xml,
+CMakeLists.txt, plugins.xml, the single implementation source, private headers,
+original config and all seven test sources. Preserve all 39 original cases
+across decision helpers, outside/cut-in checks, parameter priority, path-length
+buffering, planning factors and classification. test_utils.cpp supplies the
+original fixture helpers and stays in the same test target. Declare its sibling
+test_utils.hpp in that target too: without it the sandboxed compile fails on
+the helper include even though the file is present in the source directory.
+
+Minimum pattern: a package-local module/library over src/**/*.cpp and private
+headers, preserving src include paths and explicit local/ROS compile providers.
+Compose runtime collectors and paired message shared providers. Create
+libautoware_motion_velocity_obstacle_stop_module.so to match plugins.xml and
+register its XML under autoware_motion_velocity_planner's pluginlib category
+with ament_index(plugin_categories={"plugins.xml":
+"autoware_motion_velocity_planner"}, libraries=[":obstacle_stop_plugin"]).
+Include original config, test-helper resources and full runtime closure in the
+single original cc_test. No component-to-root labels, host package discovery or
+post-build generation is required. grid_map_core appears in package.xml but is
+not referenced by these current implementation/headers; add dependencies for
+actual compile inputs rather than selecting unused manifest entries blindly.
+
+Verification:
+
+
+```bash
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=no-agnocast --local_test_jobs=1 \
+  --nocache_test_results --test_output=errors \
+  @autoware_motion_velocity_planner//... \
+  @autoware_motion_velocity_obstacle_stop_module//... \
+  //bazel/tests:motion_velocity_planner_runtime_test
+```
+
+The final complete invocation builds 15 non-test targets and passes all four
+test targets in 23.321 seconds. Planner node five cases pass in 1.0 seconds,
+node utilities nine in 0.5 seconds, obstacle-stop all 39 in 0.6 seconds, and the
+real executable lifecycle regression in 1.4 seconds. No failures/errors/skips/
+disabled cases remain. The planner node suite sees the valid obstacle-stop
+factory, while its intentional test_plugin requests remain unavailable; do not
+mistake those expected error logs for a missing real runtime dependency.
+
+Targeted buildifier, Python parsing, complete source/test/header inventories,
+component boundary checks, changed-line source formatting and XML/log counts
+also pass. Existing source changes are limited to the demonstrated duplicate-
+load guard; original tests are unchanged. No Fast DDS, CMake, container or
+Agnocast-enabled gate is claimed for this native node. The runtime regression
+checks assembly and lifecycle; full scenario simulation remains a later phase.
+Next inspect the core planning metapackage's launch/resource composition and
+remaining Phase 5.2.5 completion criteria before moving to Phase 5.3.
+
 ## 2026-11-17: Phase 5.2.5 — motion velocity planner
 
 The actual executable loads ObstacleStopModule and unloads it successfully, but
