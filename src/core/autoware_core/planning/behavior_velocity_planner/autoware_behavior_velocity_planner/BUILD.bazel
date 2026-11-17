@@ -119,6 +119,7 @@ cc_library(
 cc_shared_library(
     name = "planner_component",
     dynamic_deps = [":runtime_dynamic_deps"],
+    shared_lib_name = "libautoware_behavior_velocity_planner_component.so",
     deps = [":autoware_behavior_velocity_planner"],
 )
 
