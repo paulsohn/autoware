@@ -3,6 +3,7 @@ module(name = "autoware_bazel")
 # Registry dependencies, with prerequisites before consumers where known.
 bazel_dep(name = "platforms", version = "1.1.0")
 bazel_dep(name = "rules_cc", version = "0.2.26.rcr.0")
+bazel_dep(name = "rules_cuda", version = "0.4.0")
 bazel_dep(name = "googletest", version = "1.18.0.bcr.1")
 bazel_dep(name = "rules_python", version = "2.4.5")
 bazel_dep(name = "rules_shell", version = "0.6.1")
@@ -99,6 +100,8 @@ filegroup(name = "runtime", srcs = glob(["lib/libgcc_s.so*"]), visibility = ["//
     sha256 = "f3899c26824cee023f1e360bd0859b0e149e2b3e8b1668bc6dd04bfc70dcd659",
     urls = ["https://conda.anaconda.org/conda-forge/linux-64/libgcc-ng-12.2.0-h65d4601_19.tar.bz2"],
 )
+
+include("//:bazel/cuda.MODULE.bazel")
 
 # Local source dependencies, ordered by their package-local MODULE declarations.
 # Overrides select the source; root declarations need no registry release version.
@@ -796,4 +799,10 @@ bazel_dep(name = "autoware_core", version = "0.0.0")
 local_path_override(
     module_name = "autoware_core",
     path = "src/core/autoware_core/autoware_core",
+)
+
+bazel_dep(name = "autoware_cuda_utils", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_cuda_utils",
+    path = "src/core/cuda/autoware_cuda/autoware_cuda_utils",
 )

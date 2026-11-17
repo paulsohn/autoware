@@ -1,0 +1,26 @@
+load("@rules_cc//cc:defs.bzl", "cc_library")
+
+package(default_visibility = ["//visibility:public"])
+
+exports_files(glob(["crt/**"]))
+
+filegroup(
+    name = "crt_all_files",
+    srcs = glob(["crt/**"]),
+)
+
+filegroup(
+    name = "crt_license",
+    srcs = ["crt/LICENSE"],
+)
+
+cc_library(
+    name = "crt",
+    hdrs = glob(["crt/include/**"]),
+    includes = ["crt/include"],
+)
+
+alias(
+    name = "crt_headers",
+    actual = ":crt",
+)

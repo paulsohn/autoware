@@ -65,3 +65,36 @@ This verifies the published release, not unpublished upstream work. Suggested
 upstream action: fix the overlay and add a Python native-extension coexistence
 check that also requires clean interpreter exit. Other OSes, toolchains and
 ROS distributions have not been checked for this finding.
+
+### CUDA 13.2 CRT compatibility with the LLVM 21 libc++ toolchain
+
+- [ ] Associate a documentation/example proposal with upstream. This is a
+  tested unsupported-configuration workaround, not an RCR/NVIDIA support claim.
+
+Verified 2026-11-18: Bazel 9.3.2, Ubuntu 24.04 x86_64, hermetic LLVM/libc++
+21.1.8, upstream rules_cuda 0.4.0, CUDA 13.2.2 redist/CRT 13.2.86 and sm_120.
+RCR's available rule fork is 0.3.0.rcr.0; the exercised nvcc/shared-cudart
+consumer works with upstream 0.4.0 without carrying that rule fork's patches.
+No equivalence for untested static/multi-DSO, clang-CUDA or SBSA paths is claimed.
+
+Reproducer: the local autoware_cuda_utils package's complete original suite,
+`bazel test --config=no-agnocast --nocache_test_results --test_output=errors @autoware_cuda_utils//...`.
+Without the explicit policy override, CUDA rejects libc++ on x86. With
+_ALLOW_UNSUPPORTED_LIBCPP but unmodified CRT, pow refers to removed
+std::__promote. Subsequent diagnostics expose isnan's exception specification
+and classification definitions conflicting with libc++ using declarations.
+The pinned, unmodified vendor archive reproduces these failures; later CUDA
+versions and other standard-library versions were not tested.
+
+Local experiment: enable only the existing modern-libc++ math branches on
+Linux/libc++ >= 21. The two documented CRT patches are applied to a separately
+checksum-pinned http_archive component and substituted with standard Bazel
+override_repo; no custom component-patching API or rules_cuda fork is needed.
+All 17 original GPU cases pass with zero skips; the native full-core regression
+also passes. See the Phase 6.1 journal for pins, exact commands and action audit.
+
+Suggested upstream action: document the root component-override pattern and
+current compiler/standard-library support boundaries for RCR LLVM users. Do
+not apply these headers broadly or silently enable an unsupported combination;
+retain the policy choice and version-specific complete-suite evidence. This
+finding is not an Autoware implementation or Lyrical source correction.

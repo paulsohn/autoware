@@ -1,0 +1,44 @@
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_test")
+load("@rules_cuda//cuda:defs.bzl", "cuda_library")
+
+package(default_visibility = ["//visibility:public"])
+
+# The CMake dependency-meta package exports only flags, not headers or runtime data.
+cc_library(
+    name = "autoware_cuda_utils",
+    hdrs = glob(["include/**/*.hpp"]),
+    strip_include_prefix = "include",
+    deps = [
+        "@cuda//:cub",
+        "@cuda//:cuda_runtime",
+        "@cuda//:libcudacxx",
+        "@cuda//:thrust",
+    ],
+)
+
+cuda_library(
+    name = "test_kernels",
+    testonly = True,
+    srcs = glob(["test/*.cu"]),
+    copts = ["-std=c++17"],
+    deps = [
+        ":autoware_cuda_utils",
+        "@googletest//:gtest",
+    ],
+    alwayslink = True,
+)
+
+cc_test(
+    name = "test_autoware_cuda_utils",
+    srcs = ["test/test_main.cpp"],
+    tags = [
+        "no-remote",
+        "no-sandbox",
+        "requires-gpu",
+    ],
+    deps = [
+        ":autoware_cuda_utils",
+        ":test_kernels",
+        "@googletest//:gtest",
+    ],
+)

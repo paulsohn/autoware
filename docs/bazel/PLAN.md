@@ -71,7 +71,7 @@ only when your current target demonstrates the need.
   [evidence: complete Agnocast test inventory](JOURNAL.md#2026-11-15-phase-41--adopt-the-complete-agnocast-library-test-inventory).
 - [ ] Inspect build-system-only shims before creating empty Bazel modules.
   [Working rule](../../AGENTS.md#working-rules);
-  [planned experiment: CUDA foundation](#phase-61-cuda-foundation-and-direct-provider-experiment).
+  [evidence: CUDA foundation](JOURNAL.md#2026-11-18-phase-61--cuda-utils-and-pinned-toolkit).
 - [ ] Check dependency API and header-layout compatibility before changing source.
   [Evidence: solver input selection](JOURNAL.md#2026-11-17-phase-525--osqp-interface).
 - [ ] Choose validated package boundaries for commits, keeping source fixes
@@ -1247,12 +1247,12 @@ resources explicitly. No full driving behavior or GUI rendering is claimed.
 Prior unchanged Agnocast/module evidence remains applicable; no new middleware
 matrix is required to close this phase. Phase 6 is next.
 
-## Phase 6: CUDA and TensorRT on x86 (planned)
+## Phase 6: CUDA and TensorRT on x86 (in progress)
 
 Bring the required GPU SDK and local CUDA consumers into the Bazel graph,
 without host toolkit discovery or apt/pip installation. GPU drivers/devices
-remain execution prerequisites. These are agreed experiment choices, not
-validated build inputs. Pin accepted versions and patches only after current
+remain execution prerequisites. The CUDA foundation below is validated on x86; subsequent SDK/consumer choices
+remain experiments. Pin accepted versions and patches only after current
 consumers pass their complete suites.
 
 ### Initial decisions and validation boundaries
@@ -1292,7 +1292,7 @@ consumers pass their complete suites.
   Measure reproducibility before adding compiler wrappers or deterministic-output
   patches. CUDA/libc++ compatibility is an open experiment, not an accepted fix.
 
-### Phase 6.1: CUDA foundation and direct-provider experiment
+### Phase 6.1: CUDA foundation and direct-provider experiment (complete)
 
 Select the minimal pinned SDK/rules closure and integrate local
 autoware_cuda_utils, including every original CUDA test source and its existing
@@ -1307,7 +1307,26 @@ owning CUDA target/toolchain or add the smallest justified compatibility target.
 Preserve the original package/manifest; this is a Bazel mapping experiment, not
 permission to discard real local libraries, interfaces or package resources.
 
-### Phase 6.2: TensorRT foundation
+Accepted result: upstream rules_cuda 0.4.0, CUDA 13.2.2 redistributables and the
+existing LLVM/libc++ 21.1.8 toolchain pass all 17 original CUDA-utils cases on
+sm_120, with no skips. Only cccl, crt, cudart, nvcc and nvvm are needed here;
+use shared cudart. Keep the toolkit/root architecture settings in
+bazel/cuda.MODULE.bazel and .bazelrc, and the header library/tests package-local.
+No dependency-meta Bazel module is needed for this validated non-LTO build.
+The configured compile/link actions contain no LTO-enable flags; revalidate
+that conclusion if LTO or device-link settings change.
+
+CUDA 13.2 explicitly rejects libc++ on x86; the product CUDA flags acknowledge
+that unsupported combination. A pinned CRT 13.2.86 override applies narrow
+math-header compatibility patches after the observed pow/isnan/classification
+failures. Use standard http_archive plus override_repo rather than forking
+rules_cuda for a patch tag. The replacement exports only the required CRT
+component file/header interfaces and preserves its vendor payload/license.
+This is tested compatibility, not NVIDIA-supported libc++ or an SBSA result.
+No rule, architecture, culibos or nvcc reproducibility patch was required by
+this consumer. The complete native headless core regression also passed.
+
+### Phase 6.2: TensorRT foundation (next)
 
 Integrate local autoware_tensorrt_common against the selected binary SDK and
 explicit runtime closure. Expose the real ONNX fixture and run its complete

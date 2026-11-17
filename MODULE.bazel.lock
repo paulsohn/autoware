@@ -210,6 +210,7 @@
     "https://bazel.ros.org/modules/bazel_features/1.47.0/MODULE.bazel": "not found",
     "https://bazel.ros.org/modules/bazel_features/1.47.1/MODULE.bazel": "not found",
     "https://bazel.ros.org/modules/bazel_features/1.50.0/MODULE.bazel": "not found",
+    "https://bazel.ros.org/modules/bazel_features/1.54.1/MODULE.bazel": "not found",
     "https://bazel.ros.org/modules/bazel_features/1.9.0/MODULE.bazel": "not found",
     "https://bazel.ros.org/modules/bazel_features/1.9.1/MODULE.bazel": "not found",
     "https://bazel.ros.org/modules/bazel_lib/3.0.0/MODULE.bazel": "not found",
@@ -1530,8 +1531,8 @@
     "https://bazel.ros.org/modules/rules_cuda/0.2.4/MODULE.bazel": "not found",
     "https://bazel.ros.org/modules/rules_cuda/0.3.0-beta1/MODULE.bazel": "not found",
     "https://bazel.ros.org/modules/rules_cuda/0.3.0.rcr.0/MODULE.bazel": "3cb45f1d7106269997a87caf7ed4c4463bd90fed855598ad65d5feb1ea5e58be",
-    "https://bazel.ros.org/modules/rules_cuda/0.3.0.rcr.0/source.json": "4af31121c9e343b18ea50d3282c0d02f282594eb3d2e7ce3b4f4804dda725292",
     "https://bazel.ros.org/modules/rules_cuda/0.3.0/MODULE.bazel": "not found",
+    "https://bazel.ros.org/modules/rules_cuda/0.4.0/MODULE.bazel": "not found",
     "https://bazel.ros.org/modules/rules_foreign_cc/0.10.1/MODULE.bazel": "not found",
     "https://bazel.ros.org/modules/rules_foreign_cc/0.14.0/MODULE.bazel": "not found",
     "https://bazel.ros.org/modules/rules_foreign_cc/0.16.0/MODULE.bazel": "not found",
@@ -1994,7 +1995,8 @@
     "https://bcr.bazel.build/modules/bazel_features/1.47.0/MODULE.bazel": "e34df3cb35b1684cfa69923a61ae3803595babd3942cd306a488d51400886b30",
     "https://bcr.bazel.build/modules/bazel_features/1.47.1/MODULE.bazel": "e6be691539341681678a68c2076771f6a73fcdc9823c5b6bf280d2e916d1ad80",
     "https://bcr.bazel.build/modules/bazel_features/1.50.0/MODULE.bazel": "2083ef9c7a469f520890483ccf8e0189d6e71e2117e7752e15e6554433d5ae3e",
-    "https://bcr.bazel.build/modules/bazel_features/1.50.0/source.json": "e0ee3debde2789ff56e4452e612d126925ba9ab64d4bde79c67f099d2902df9b",
+    "https://bcr.bazel.build/modules/bazel_features/1.54.1/MODULE.bazel": "026b77134bd460e2ca0f44c57f4f3a3a8593f27a497b4ee98336e065047834f5",
+    "https://bcr.bazel.build/modules/bazel_features/1.54.1/source.json": "23ba6f9625d32f5f718393ae65f05ac70025448aed23543c238b1cffec08f28a",
     "https://bcr.bazel.build/modules/bazel_features/1.9.0/MODULE.bazel": "885151d58d90d8d9c811eb75e3288c11f850e1d6b481a8c9f766adee4712358b",
     "https://bcr.bazel.build/modules/bazel_features/1.9.1/MODULE.bazel": "8f679097876a9b609ad1f60249c49d68bfab783dd9be012faf9d82547b14815a",
     "https://bcr.bazel.build/modules/bazel_lib/3.0.0/MODULE.bazel": "22b70b80ac89ad3f3772526cd9feee2fa412c2b01933fea7ed13238a448d370d",
@@ -2965,6 +2967,8 @@
     "https://bcr.bazel.build/modules/rules_cuda/0.2.4/MODULE.bazel": "ec1eecf0d71ab10820459caf477978f6d07bdcb75eade496f4af4db0c00cd456",
     "https://bcr.bazel.build/modules/rules_cuda/0.3.0-beta1/MODULE.bazel": "6b9d138188cd53777963db7a0513655e0e4286e2624408d66280426a7fbf8528",
     "https://bcr.bazel.build/modules/rules_cuda/0.3.0/MODULE.bazel": "46123ed5d0133b178bba7dc3a338f4fc5f5aee501171ac72e36c5c8ec1f47b8a",
+    "https://bcr.bazel.build/modules/rules_cuda/0.4.0/MODULE.bazel": "1add3a738780daef06c8d0b2e769be8d32e873bc4924762d8da8c71cf7e928f5",
+    "https://bcr.bazel.build/modules/rules_cuda/0.4.0/source.json": "b2f3ff92e6aea97740ae52cbcc6c47065d5c200db3dbc6d4ad599a04a4de64dc",
     "https://bcr.bazel.build/modules/rules_foreign_cc/0.10.1/MODULE.bazel": "b9527010e5fef060af92b6724edb3691970a5b1f76f74b21d39f7d433641be60",
     "https://bcr.bazel.build/modules/rules_foreign_cc/0.14.0/MODULE.bazel": "56fb9a239503bab4183d06ba6cabb01cd73aae296ab499085b9193624a8a66e2",
     "https://bcr.bazel.build/modules/rules_foreign_cc/0.16.0/MODULE.bazel": "185eee33e2f9ac635ca24261dcab2659b6c890b11d737ec71cc68409b26c8017",
@@ -3536,7 +3540,7 @@
     },
     "@@rosdistro+//python:defs.bzl%pip_ros": {
       "general": {
-        "bzlTransitiveDigest": "Wf1bYPS+v1MXSxPm/3sa2yWsKIiJG8ikAIrD+e7Djmk=",
+        "bzlTransitiveDigest": "9KPSmaWfGTp6RN0By0DcuUgpR00WASpGuGN+q6IHLUY=",
         "usagesDigest": "ixD+KJrgofe+iNFEL7RoKGGr2rE092FP8Hcg8etYtNY=",
         "recordedInputs": [
           "REPO_MAPPING:bazel_features+,bazel_features_globals bazel_features++version_extension+bazel_features_globals",
@@ -3646,8 +3650,8 @@
     },
     "@@rules_cuda+//cuda:extensions.bzl%toolchain": {
       "general": {
-        "bzlTransitiveDigest": "OINfWsAoOjQTi0gG1QzsxDR8Od0uAhio1lTOFrrTURM=",
-        "usagesDigest": "OWU2toRTeJ0QCjC0ZAlZLAo+LJbqLpiW10kSfqi4JyU=",
+        "bzlTransitiveDigest": "ISt+9j9u05NPbX6oCauFQp6cb/XsWWfK2i6xIKXY8cA=",
+        "usagesDigest": "+FLYaeLjiXuIcXV8PH5Ff/ZXTjS7z2WgAL7inYQLG30=",
         "recordedInputs": [
           "REPO_MAPPING:bazel_features+,bazel_features_globals bazel_features++version_extension+bazel_features_globals",
           "REPO_MAPPING:bazel_features+,bazel_features_version bazel_features++version_extension+bazel_features_version",
@@ -3663,13 +3667,103 @@
           "REPO_MAPPING:rules_cuda+,rules_cc rules_cc+"
         ],
         "generatedRepoSpecs": {
+          "cuda_cccl_linux_x86_64_13_2_2": {
+            "repoRuleId": "@@rules_cuda+//cuda/private:repositories.bzl%cuda_component",
+            "attributes": {
+              "component_name": "cccl",
+              "descriptive_name": "CXX Core Compute Libraries",
+              "urls": [
+                "https://developer.download.nvidia.com/compute/cuda/redist/cuda_cccl/linux-x86_64/cuda_cccl-linux-x86_64-13.2.86-archive.tar.xz"
+              ],
+              "sha256": "a14f52d5cc8a00a22bccd6c0ab6b1427c7dde7e8251adf321e768a7fc47bb2a5",
+              "strip_prefix": "cuda_cccl-linux-x86_64-13.2.86-archive",
+              "version": "13.2.86",
+              "toolkit_version": "13.2.2"
+            }
+          },
+          "cuda_crt_linux_x86_64_13_2_2": {
+            "repoRuleId": "@@rules_cuda+//cuda/private:repositories.bzl%cuda_component",
+            "attributes": {
+              "component_name": "crt",
+              "descriptive_name": "CUDA CRT",
+              "urls": [
+                "https://developer.download.nvidia.com/compute/cuda/redist/cuda_crt/linux-x86_64/cuda_crt-linux-x86_64-13.2.86-archive.tar.xz"
+              ],
+              "sha256": "174ad29ab90c9301bd25f32f935345e65f19fbb0f39c15788daae25b0e924892",
+              "strip_prefix": "cuda_crt-linux-x86_64-13.2.86-archive",
+              "version": "13.2.86",
+              "toolkit_version": "13.2.2"
+            }
+          },
+          "cuda_cudart_linux_x86_64_13_2_2": {
+            "repoRuleId": "@@rules_cuda+//cuda/private:repositories.bzl%cuda_component",
+            "attributes": {
+              "component_name": "cudart",
+              "descriptive_name": "CUDA Runtime (cudart)",
+              "urls": [
+                "https://developer.download.nvidia.com/compute/cuda/redist/cuda_cudart/linux-x86_64/cuda_cudart-linux-x86_64-13.2.86-archive.tar.xz"
+              ],
+              "sha256": "d6be2b3546fa93e5dec9e3d118d31f9540d0b7af5319ee3c6726f202dfc5b5d4",
+              "strip_prefix": "cuda_cudart-linux-x86_64-13.2.86-archive",
+              "version": "13.2.86",
+              "toolkit_version": "13.2.2"
+            }
+          },
+          "cuda_nvcc_linux_x86_64_13_2_2": {
+            "repoRuleId": "@@rules_cuda+//cuda/private:repositories.bzl%cuda_component",
+            "attributes": {
+              "component_name": "nvcc",
+              "descriptive_name": "CUDA NVCC",
+              "urls": [
+                "https://developer.download.nvidia.com/compute/cuda/redist/cuda_nvcc/linux-x86_64/cuda_nvcc-linux-x86_64-13.2.86-archive.tar.xz"
+              ],
+              "sha256": "b04e5ca5b41f8b5629ce5f16930920e6af437f32c9777fcb67e0361f732b6f43",
+              "strip_prefix": "cuda_nvcc-linux-x86_64-13.2.86-archive",
+              "version": "13.2.86",
+              "toolkit_version": "13.2.2"
+            }
+          },
+          "cuda_nvvm_linux_x86_64_13_2_2": {
+            "repoRuleId": "@@rules_cuda+//cuda/private:repositories.bzl%cuda_component",
+            "attributes": {
+              "component_name": "nvvm",
+              "descriptive_name": "CUDA NVVM",
+              "urls": [
+                "https://developer.download.nvidia.com/compute/cuda/redist/libnvvm/linux-x86_64/libnvvm-linux-x86_64-13.2.86-archive.tar.xz"
+              ],
+              "sha256": "029fc2a43904a2208a83dfd5834c4c343394d1117279f849863ae94208a88b8a",
+              "strip_prefix": "libnvvm-linux-x86_64-13.2.86-archive",
+              "version": "13.2.86",
+              "toolkit_version": "13.2.2"
+            }
+          },
+          "cuda_toolchain_13_2_2": {
+            "repoRuleId": "@@rules_cuda+//cuda/private:repositories.bzl%cuda_toolkit",
+            "attributes": {
+              "components_mapping": {
+                "cccl": "@cuda_cccl_linux_x86_64_13_2_2",
+                "crt": "@cuda_crt_linux_x86_64_13_2_2",
+                "cudart": "@cuda_cudart_linux_x86_64_13_2_2",
+                "nvcc": "@cuda_nvcc_linux_x86_64_13_2_2",
+                "nvvm": "@cuda_nvvm_linux_x86_64_13_2_2"
+              },
+              "version": "13.2.2"
+            }
+          },
           "cuda": {
             "repoRuleId": "@@rules_cuda+//cuda/private:repositories.bzl%cuda_toolkit",
             "attributes": {
-              "components_mapping": {},
-              "nvcc_version": "",
-              "toolkit_path": "",
-              "version": ""
+              "components_mapping": {
+                "cccl": "@cuda_cccl_linux_x86_64_13_2_2",
+                "crt": "@cuda_crt_linux_x86_64_13_2_2",
+                "cudart": "@cuda_cudart_linux_x86_64_13_2_2",
+                "nvcc": "@cuda_nvcc_linux_x86_64_13_2_2",
+                "nvvm": "@cuda_nvvm_linux_x86_64_13_2_2"
+              },
+              "version": "13.2.2",
+              "toolchain_repositories": {
+                "13.2.2": "@cuda_toolchain_13_2_2"
+              }
             }
           }
         }

@@ -712,3 +712,30 @@ Validate aggregate startup, configuration, map/model publications, velocity rela
 API service and clean shutdown with
 `bazel test --config=no-agnocast //bazel/tests:core_system_headless_launch_test`.
 This gate does not assert a full driving scenario.
+
+## CUDA targets and tests
+
+The product root selects the pinned toolkit and GPU architecture in
+bazel/cuda.MODULE.bazel and .bazelrc. Consumer modules declare rules_cuda and
+use its toolchain extension's `cuda` repository; they must not auto-detect a host
+CUDA installation or depend on metarepository labels. The current toolkit is
+CUDA 13.2.2 with upstream rules_cuda 0.4.0, nvcc and hermetic Clang/libc++ 21.1.8.
+The default product GPU target is sm_120. This x86 libc++ configuration uses an
+explicit policy override and pinned CRT compatibility patches; it is tested
+here but not vendor-supported. Revalidate the patches when changing either SDK
+or standard library. ARM/SBSA has not been validated.
+
+For the existing CUDA-utils header target, depend on `@autoware_cuda_utils`.
+Its direct CUDA runtime/CCCL providers replace the CMake-only dependency-meta
+shim for the current non-LTO configuration. If LTO is introduced, inspect the
+actual compile/link actions and rerun the complete affected suite before
+assuming the original shim's -fno-lto effect is still satisfied.
+
+Compile CUDA test sources with cuda_library and retain static-initializer test
+registration with alwayslink. Keep the original test main in a cc_test and
+link gtest without a second main. Run the complete module gate with
+`bazel test --config=no-agnocast --nocache_test_results --test_output=errors @autoware_cuda_utils//...`.
+The GPU test runs locally with device access (no-remote/no-sandbox/requires-gpu).
+The host provides the compatible NVIDIA driver/device, not a build toolkit.
+Check its XML for all 17 cases and zero skips/errors/failures; a missing-device
+skip or zero registered cases is not a completed module gate.

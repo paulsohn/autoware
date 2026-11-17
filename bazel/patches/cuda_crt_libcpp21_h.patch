@@ -1,0 +1,34 @@
+CUDA CRT 13.2.86 (CUDA Toolkit 13.2.2), Linux x86_64, nvcc + libc++ 21.
+Observed failures: removed std::__promote in pow, mismatched isnan noexcept,
+and classification declarations conflicting with libc++ using declarations.
+Rationale/scope: enable the existing modern-libc++ math branches on Linux
+with libc++ >= 21. Do not enable Android C-library branches or alter other
+standard libraries, older libc++ versions or non-Linux platforms.
+Verification: all 17 original autoware_cuda_utils GPU cases passed with
+CUDA 13.2.2/nvcc, hermetic LLVM/libc++ 21.1.8 and sm_120 (2026-11-18).
+The native full-core startup/behavior/shutdown regression also passed.
+Upstream status: local compatibility experiment; CUDA 13.2 rejects libc++ on
+x86 by policy. No upstream fix or vendor support is claimed.
+
+--- a/crt/include/crt/math_functions.h
++++ b/crt/include/crt/math_functions.h
+@@ -4796,7 +4796,8 @@
+ #else /* !(__ANDROID__ || __HORIZON__) */
+ __forceinline__ __DEVICE_FUNCTIONS_DECL__ __cudart_builtin__ int isnan(double x) throw();
+ #endif /* __ANDROID__ */
+-#if (defined(__ANDROID__) || defined(__HORIZON__)) && _LIBCPP_VERSION >= 8000
++#if ((defined(__ANDROID__) || defined(__HORIZON__)) && _LIBCPP_VERSION >= 8000) || \
++    (defined(__linux__) && (_LIBCPP_VERSION >= 210000))
+ inline _LIBCPP_INLINE_VISIBILITY  __DEVICE_FUNCTIONS_DECL__ __cudart_builtin__ bool isnan(long double x) _NOEXCEPT;
+ #else /* !( (defined(__ANDROID__) || defined(__HORIZON__)) && _LIBCPP_VERSION >= 8000) */
+ __forceinline__ __DEVICE_FUNCTIONS_DECL__ __cudart_builtin__  NV_INT_OR_BOOL isnan(long double x);
+@@ -5395,7 +5396,8 @@
+ extern __DEVICE_FUNCTIONS_DECL__ __cudart_builtin__ float    __cdecl sqrt(float) NV_MATH_NOEXCEPT_OR_THROW;
+ extern __DEVICE_FUNCTIONS_DECL__ __cudart_builtin__ float    __cdecl pow(float, float) NV_MATH_NOEXCEPT_OR_THROW;
+ #if defined(_LIBCPP_VERSION)
+-#if (defined (__ANDROID__) || defined(__HORIZON__)) && (_LIBCPP_VERSION >= 9000)
++#if ((defined(__ANDROID__) || defined(__HORIZON__)) && (_LIBCPP_VERSION >= 9000)) || \
++    (defined(__linux__) && (_LIBCPP_VERSION >= 210000))
+ #if _LIBCPP_VERSION >= 210000
+ template <class _A1, class _A2,
+ 	  std::__enable_if_t<std::is_arithmetic<_A1>::value && std::is_arithmetic<_A2>::value, int>>

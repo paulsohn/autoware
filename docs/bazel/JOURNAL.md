@@ -7550,3 +7550,106 @@ This confirms device visibility, not successful CUDA execution. No SDK download/
 extraction, compiler probe, Bazel build/test, runtime integration or Fast DDS
 check was performed. All proposed technical inputs and shim omission remain
 unvalidated; Phase 6.1 is the next implementation task.
+
+## 2026-11-18: Phase 6.1 — CUDA utils and pinned toolkit
+
+Purpose: build and execute the complete local autoware_cuda_utils suite using
+Bazel-fetched SDK inputs, while testing whether its CMake-only dependency-meta
+package needs a separate Bazel representation.
+
+Inputs/prerequisites: inspect the package manifest/CMakeLists and all five
+original .cu test files plus test_main.cpp. The header library depends on CUDA
+runtime and CCCL (Thrust/CUB/libcudacxx). The meta package exports only -fno-lto
+through CMake extras, no implementation or runtime resources. Use the existing
+hermetic LLVM/libc++ 21.1.8, Bazel 9.3.2 and Ubuntu 24.04 x86_64. The host
+RTX 5070 Laptop GPU (sm_120) and NVIDIA driver 620.70.06 provide execution;
+there is no apt/pip toolkit prerequisite.
+
+Rule selection: inspect upstream rules_cuda 0.4.0 and RCR 0.3.0.rcr.0 source
+metadata and rule/templates. The RCR fork adds clang-host defines, static CUDA
+archive-sharing tags and multiplatform redist changes. Upstream 0.4.0 already
+handles this consumer's manifest/platform/architecture selection; its nvcc
+route and shared cudart do not expose a need for those fork patches. Select
+0.4.0 and retain the resulting lockfile, including its bazel_features 1.54.1
+analysis-helper dependency. Do not claim every future shared-library, platform
+or compiler route works merely because this one passes.
+
+Minimum integration pattern:
+
+1. Root MODULE declares rules_cuda, includes bazel/cuda.MODULE.bazel before
+   local dependency pairs, and selects the local CUDA-utils source with a 0.0.0
+   dependency/override pair. The included file pins CUDA 13.2.2 and manifest
+   SHA-256 89d93e6de640d47eb43c63437fe1be426ed21dd58cc79933a29acbca33c6eeb8.
+   Request only cccl/crt/cudart/nvcc/nvvm and linux-x86_64; archive hashes come
+   from that pinned manifest. No host /usr/local/cuda discovery is used.
+2. Set the product CUDA compiler to nvcc and architecture to sm_120 in .bazelrc;
+   keep the host C++23 toolchain unchanged. The original CUDA test sources use
+   a package-local C++17 flag, with the same hermetic Clang host compiler.
+3. Add a package-local module using the rules_cuda extension's cuda repository.
+   A cc_library exposes the scoped headers and direct CUDA runtime, Thrust,
+   CUB and libcudacxx dependencies. Compile all test/*.cu with cuda_library,
+   alwayslink=True; keep test_main.cpp in the cc_test and use gtest, not a
+   second main. No original source/test/configuration is modified.
+4. Omit autoware_cuda_dependency_meta from the Bazel graph. Validate the actual
+   actions and complete multi-source consumer, rather than translating an
+   empty CMake shim mechanically. This decision covers the current non-LTO
+   configuration; revisit it before enabling LTO/device-link variations.
+
+Observed failures and fixes, consolidated into the accepted result:
+
+- nvcc's host_defines.h rejects libc++ on x86. Acknowledge this unsupported
+  combination with the CUDA-only -D_ALLOW_UNSUPPORTED_LIBCPP product flag;
+  do not apply it to all ordinary C++ compilation or claim vendor support.
+- With that policy check overridden, math_functions.h uses removed
+  std::__promote in pow. Enabling its existing modern-libc++ declaration also
+  exposes an isnan(long double) noexcept mismatch and classification definitions
+  conflicting with libc++ using declarations. Restrict the relevant existing
+  modern-libc++ branches to Linux/libc++ >= 21; do not enable Android C-library
+  branches or alter other standard libraries. Keep a documented two-file CRT
+  patch; the native patch parser misattributes the second file's hunks when
+  both are in one patch, so apply separate .h and .hpp patches.
+- Upstream rules need no fork for component patching. Fetch the exact CRT
+  13.2.86 archive through http_archive (SHA-256
+  174ad29ab90c9301bd25f32f935345e65f19fbb0f39c15788daae25b0e924892),
+  preserving the crt/ layout. Its small root-owned BUILD exposes headers,
+  component files and license. Standard override_repo replaces only
+  cuda_crt_linux_x86_64_13_2_2 in the extension. This keeps all other manifest
+  components and rules_cuda source unchanged.
+
+Verification commands, from the repository root in a clean ROS environment,
+with access to the real host GPU and builds/tests serialized:
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=no-agnocast --local_test_jobs=1 \
+  --nocache_test_results --test_output=errors @autoware_cuda_utils//...
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel aquery --config=no-agnocast --output=jsonproto \
+  'mnemonic("CudaCompile|CppCompile|CppLink", deps(@autoware_cuda_utils//:test_autoware_cuda_utils))'
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=no-agnocast --local_test_jobs=1 \
+  --nocache_test_results --test_output=errors \
+  //bazel/tests:core_system_headless_launch_test
+```
+
+Result: the final CUDA gate passed in 5.917 seconds (2.9-second test action).
+XML records 17 cases: error checks 2, unique-pointer utilities 5, clear utility
+1, streams 5 and Thrust 4; zero failures/errors/disabled/skipped cases. All
+five original CUDA source files compile, and original test registration is
+retained. aquery contains ten configured CUDA compile actions (PIC/non-PIC),
+covering five unique original sources, with nvcc -ccbin pointing at the hermetic
+Clang and code generation compute_120/sm_120. Neither these nor the selected
+plain-C++ test compile/link actions contain LTO-enable flags; the meta shim's
+required current effect is satisfied without adding global -fno-lto. ELF NEEDED
+entries include libcudart.so.13 and hermetic libc++/libc++abi/libunwind, with
+runpaths to Bazel-provided libraries. The native full-core regression passed
+both behavior/shutdown cases in 48.956 seconds (4.3-second test action).
+
+Targeted buildifier, git diff --check and added local Markdown link/anchor
+checks passed. The current consumer needs no static culibos, architecture,
+rule-source or reproducibility patches. No TensorRT integration, SBSA/Thor
+cross-build, additional GPU architecture, Fast DDS check, upstream CMake build,
+LTO-enabled validation or bit-identical rebuild experiment was performed.
+The CRT compatibility workaround is useful toolchain feedback, recorded in
+UPSTREAM_RCR.md with its unsupported-configuration boundary. Phase 6.1 is
+complete; TensorRT foundation (6.2) is next.

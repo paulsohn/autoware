@@ -57,5 +57,11 @@ common --test_env=ENABLE_AGNOCAST=1
 common:no-agnocast --run_env=ENABLE_AGNOCAST=0
 common:no-agnocast --test_env=ENABLE_AGNOCAST=0
 
+# Product CUDA selection; packages consume the selected @cuda toolkit.
+build --@rules_cuda//cuda:compiler=nvcc
+# CUDA 13.2 rejects libc++ on x86 by policy; compatibility is checked by GPU suites.
+build --@rules_cuda//cuda:copts=-D_ALLOW_UNSUPPORTED_LIBCPP
+build --@rules_cuda//cuda:archs=sm_120
+
 # Machine-local resource limits belong here.
 try-import %workspace%/user.bazelrc
