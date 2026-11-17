@@ -681,3 +681,14 @@ which publishes `bin/xacro` for the original launch command substitution.
 Do not rely on a host-installed xacro. The sample and AWSIM description checks
 are `//bazel/tests:vehicle_description_sample_launch_test` and
 `//bazel/tests:vehicle_description_awsim_launch_test` with `--config=no-agnocast`.
+
+## Original test source layout
+
+Keep original tests in their source packages and expose their inputs through
+package-local rules. When a suite assumes sibling source directories, a root
+adapter may stage declared runfiles into a temporary directory with the original
+package names. Do not resolve that assumption through undeclared checkout paths
+or accept dependency-related skips. Supply real generator executables through
+runtime data/arguments. The interface-lint suite uses
+`//bazel/tests:interface_spec_lint_tests`; it includes all original cases and
+its committed-spec/manifest checks. Its original config determines active gates.

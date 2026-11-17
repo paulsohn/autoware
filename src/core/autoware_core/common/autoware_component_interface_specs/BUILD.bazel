@@ -104,3 +104,13 @@ cc_test(
         "@googletest//:gtest",
     ],
 )
+
+exports_files(["package.xml"])
+
+filegroup(
+    name = "lint_inputs",
+    srcs = glob(["include/**/*.hpp"]) + [
+        "interface_manifest.json",
+        "package.xml",
+    ],
+)

@@ -1,0 +1,46 @@
+load("@pip_ros//:requirements.bzl", "requirement")
+load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
+load("@rules_python//python:defs.bzl", "py_binary", "py_library")
+
+package(default_visibility = ["//visibility:public"])
+
+exports_files(["package.xml"])
+
+py_library(
+    name = "autoware_interface_spec_lint",
+    srcs = glob(["autoware_interface_spec_lint/*.py"]),
+    data = ["config/interface_gates.yaml"],
+    imports = ["."],
+    deps = [requirement("pyyaml")],
+)
+
+py_binary(
+    name = "ament_autoware_interface_spec_lint",
+    srcs = ["scripts/run_lint.py"],
+    main = "scripts/run_lint.py",
+    deps = [":autoware_interface_spec_lint"],
+)
+
+filegroup(
+    name = "test_files",
+    srcs = glob([
+        "test/*.py",
+        "config/*.yaml",
+        "autoware_interface_spec_lint/*.py",
+    ]) + ["package.xml"],
+)
+
+register_ament_files(
+    name = "cli",
+    files = [":ament_autoware_interface_spec_lint"],
+    prefix = "lib/autoware_interface_spec_lint",
+    strip_prefix = "*",
+)
+
+ament_index(
+    data = [
+        "config/interface_gates.yaml",
+        ":cli",
+    ],
+    package_xml = "package.xml",
+)

@@ -1401,3 +1401,26 @@ launch_test(
         ("awsim", "autoware_awsim_sensor_kit", "83"),
     ]
 ]
+
+py_test(
+    name = "interface_spec_lint_tests",
+    srcs = ["autoware_interface_spec_lint/run_tests.py"],
+    args = [
+        "$(rootpath @autoware_interface_spec_lint//:package.xml)",
+        "$(rootpath @autoware_component_interface_specs//:package.xml)",
+        "$(rootpath @autoware_component_interface_specs//:generate_interface_manifest)",
+    ],
+    data = [
+        "@autoware_component_interface_specs//:generate_interface_manifest",
+        "@autoware_component_interface_specs//:lint_inputs",
+        "@autoware_component_interface_specs//:package.xml",
+        "@autoware_interface_spec_lint//:package.xml",
+        "@autoware_interface_spec_lint//:test_files",
+    ],
+    main = "autoware_interface_spec_lint/run_tests.py",
+    deps = [
+        "@ament_copyright",
+        "@autoware_interface_spec_lint",
+        requirement("pytest"),
+    ],
+)

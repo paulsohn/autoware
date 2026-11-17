@@ -62,6 +62,9 @@ only when your current target demonstrates the need.
 - [ ] Declare caller-owned resources for dynamic runtime package selection.
   [Launch resource convention](DEVELOPING.md#launch-resource-composition);
   [evidence: global loader](JOURNAL.md#2026-11-18-phase-532--global-parameter-loader).
+- [ ] Preserve original suites' source-layout and tool prerequisites in declared fixtures.
+  [Test adapter convention](DEVELOPING.md#original-test-source-layout);
+  [evidence: interface lint](JOURNAL.md#2026-11-18-phase-534--interface-spec-lint).
 - [ ] Inventory complete module suites, runtime prerequisites and required
   middleware configurations before implementing each task.
   [Backend executor convention](DEVELOPING.md#switchable-standalone-nodes);

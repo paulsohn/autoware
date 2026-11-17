@@ -7346,3 +7346,45 @@ reported duplicate main because this test supplies its own rclcpp-initializing
 entry point; link gtest, not gtest_main. This is a Bazel declaration correction,
 not a source patch. The public target preserves scoped include paths and uses
 the existing local geometry/Lanelet/vehicle closure.
+
+## 2026-11-18: Phase 5.3.4 — interface-spec lint
+
+Purpose: close this remaining autoware_core package boundary. Inspect its
+manifest, original build/install declarations and all registered tests.
+
+All original pytest files, including copyright and committed-spec/manifest checks. Export source fixtures from the specs module and supply the real manifest generator. A root-owned adapter copies declared inputs into sibling package directories in a temporary workspace, preserving original relative-path expectations without depending on host source layout.
+
+Add package-local MODULE/BUILD rules selected with adjacent root 0.0.0
+dependency/local_path_override pairs. Added adapters/behavior tests belong under
+bazel/tests; original sources and tests remain in place. The complete module
+gate is declared in PLAN.md Phase 5.3.4. The final combined command recorded
+with the top-level composition entry passed, with no failures, errors,
+dependency-related skips or disabled tests. Reuse preceding unchanged
+component/backend results; this group uses Cyclone DDS/native RCLCPP.
+
+Result: all 65 original pytest cases passed, including the original copyright,
+real-header acceptance and generator-backed freshness checks; zero skips.
+The same gate reran all 30 component-interface-spec cases because its BUILD
+exports the lint fixtures. Preserve source-package names when staging inputs:
+canonical repository directory names end in `+`, which otherwise break the
+suite's sibling lookups and cause seven dependency-related skips. Parse the
+staged package.xml to choose each directory name. The RCR copyright adapter
+redirects `.` using TEST_TARGET; remove that target hint inside the temporary
+workspace so this original package check scans its intended declared sources.
+No original test or lint implementation was changed.
+
+The actual CLI also passed with the committed headers/config/manifest and the
+real generator, reporting zero findings and zero error findings. Reproduce:
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel run --config=no-agnocast \
+  @autoware_interface_spec_lint//:ament_autoware_interface_spec_lint -- \
+  --spec-dir "$PWD/src/core/autoware_core/common/autoware_component_interface_specs/include/autoware/component_interface_specs" \
+  --manifest "$PWD/src/core/autoware_core/common/autoware_component_interface_specs/interface_manifest.json" \
+  --generator "$PWD/bazel-bin/external/autoware_component_interface_specs+/generate_interface_manifest" \
+  --config "$PWD/src/core/autoware_core/common/autoware_interface_spec_lint/config/interface_gates.yaml"
+```
+
+The committed config itself leaves four unimplemented gates off; preserve that
+existing scope. This is a targeted module suite/CLI check, not pre-commit.
