@@ -7209,3 +7209,67 @@ entry passed using Cyclone DDS. Both original vehicle launches passed all two
 cases each (behavior and shutdown), with zero failures, errors or skips.
 No source change, dependency patch or compatibility fix was needed. This
 checks descriptions and fixed transforms, not sensor drivers or simulation.
+
+## 2026-11-18: Phase 5.3.3 — core vehicle description launch
+
+Purpose: integrate autoware_core_vehicle for the original vehicle-description launch.
+
+Inspect the original launch XML and vehicle.xacro. Expose launch and urdf, composing the published robot_state_publisher ament_package executable provider and xacro ament_index (its bin/xacro executable is needed on PATH). Neither provider exists locally. The original launch validates RCR versions 3.5.6-1.rcr.0 and 2.1.1-3.rcr.3
+respectively; pin those root inputs and the generated lockfile hashes. Keep model-specific resources in caller-owned test data, with vehicle_model and sensor_model passed explicitly. There are no original runtime tests; preserve all original launch/source files.
+
+Integration pattern: add package-local MODULE/BUILD definitions, select local
+sources with adjacent root dependency/override pairs, and put added tests under
+bazel/tests/vehicle_description. The complete group gate renders both sensor
+variants through the original XML, observes robot_description and tf_static,
+checks base_link to sensor_kit_base_link translation (0.9, 0, 2.0), resolves
+every rendered mesh URI in declared runfiles, and checks process shutdown.
+Cyclone DDS only; the robot publisher is not a switchable Agnocast component.
+
+Verification: the complete four-module gate recorded with the core-vehicle
+entry passed using Cyclone DDS. Both original vehicle launches passed all two
+cases each (behavior and shutdown), with zero failures, errors or skips.
+No source change, dependency patch or compatibility fix was needed. This
+checks descriptions and fixed transforms, not sensor drivers or simulation.
+
+### Phase 5.3.3 description gate
+
+Prerequisites: the earlier local sample-vehicle resource index, the root's
+Cyclone DDS configuration, and the four local module selections above. The
+original launch uses a command substitution invoking xacro by name. The registry
+xacro index publishes bin/xacro, so compose that index instead of relying on a
+host apt/pip executable. The robot publisher's ament_package exposes its ROS
+executable contract. Both dynamically selected descriptions must be in root test
+data; the generic vehicle module has no dependency on either concrete model.
+Resource-only descriptions need no C++/URDF parser at build time; rendering tools
+belong to the actual launch consumer. Gazebo plugin references in rendered XML
+are not executed by this gate and do not require simulator dependencies.
+
+Inspect registry module/source inputs at
+https://bazel.ros.org/modules/xacro/2.1.1-3.rcr.3/source.json and
+https://bazel.ros.org/modules/robot_state_publisher/3.5.6-1.rcr.0/source.json.
+The selected registry overlays already expose the needed runtime providers.
+Run from the repository root, with no sourced ROS installation:
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=no-agnocast --local_test_jobs=1 \
+  --nocache_test_results --test_output=errors \
+  @velodyne_description//... \
+  @autoware_sample_sensor_kit_description//... \
+  @autoware_awsim_sensor_kit_description//... @autoware_core_vehicle//... \
+  //bazel/tests:vehicle_description_sample_launch_test \
+  //bazel/tests:vehicle_description_awsim_launch_test
+```
+
+Result: four module targets and both test targets passed in 57.014 seconds,
+2.2 seconds per launch action. XML records two cases per sensor variant, zero
+failures/errors/skips. The tests receive the actual latched rendered URDF and
+static transforms, verify expected base/sensor/lidar links and calibration,
+and resolve every mesh URI from declared package resources. There was no failed
+trial requiring a source fix. Targeted buildifier, Python parsing and
+`git diff --check` passed. No Fast DDS check, upstream CMake build, hardware,
+sensor driver, Gazebo/AWSIM execution or driving simulation was performed.
+
+The model-resource group is complete. Inspection of the original top-level
+core launch found an unconditional RViz node; this separate headless-entry
+boundary is next, and no original launch has been modified to bypass it.

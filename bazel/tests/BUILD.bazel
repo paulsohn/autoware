@@ -1366,3 +1366,38 @@ launch_test(
         ("agnocast", "1", "81"),
     ]
 ]
+
+[
+    launch_test(
+        name = "vehicle_description_" + kit + "_launch_test",
+        src = "vehicle_description/test_launch.py",
+        data = [
+            "@autoware_core_vehicle//:ament_index",
+            "@autoware_sample_vehicle_description//:ament_index",
+            "@" + model + "_description//:ament_index",
+        ],
+        env = {
+            "SENSOR_MODEL": model,
+            "ENABLE_AGNOCAST": "0",
+            "LD_LIBRARY_PATH": "lib",
+            "ROS_DOMAIN_ID": domain,
+        },
+        precompile = "disabled",
+        tags = [
+            "no-remote",
+            "no-sandbox",
+        ],
+        deps = [
+            "@ament_index_python",
+            "@launch_ros",
+            "@launch_xml",
+            "@rclpy",
+            "@std_msgs//:py",
+            "@tf2_msgs//:py",
+        ],
+    )
+    for kit, model, domain in [
+        ("sample", "autoware_sample_sensor_kit", "82"),
+        ("awsim", "autoware_awsim_sensor_kit", "83"),
+    ]
+]

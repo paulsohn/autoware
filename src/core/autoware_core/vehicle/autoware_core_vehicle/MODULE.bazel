@@ -1,0 +1,8 @@
+module(
+    name = "autoware_core_vehicle",
+    version = "0.0.0",
+)
+
+bazel_dep(name = "robot_state_publisher", version = "0.0.0")
+bazel_dep(name = "rosdistro", version = "0.0.0")
+bazel_dep(name = "xacro", version = "0.0.0")

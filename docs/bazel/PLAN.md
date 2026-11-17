@@ -1187,14 +1187,30 @@ unimplemented option while the current loader accepts runtime model selection.
 Vehicle/sensor description rendering and the top-level GUI entry point remain
 separate investigation boundaries; this group does not assert full driving.
 
-#### Phase 5.3.3: Vehicle/sensor descriptions and headless launch boundary (next)
+#### Phase 5.3.3: Vehicle and sensor descriptions (complete)
 
 Inspect the remaining local core resource packages and original top-level launch
 includes. Identify the minimum vehicle/sensor description rendering consumer and
 its complete tests before introducing xacro providers. Keep dynamic model choices
 explicit in the product bundle and preserve original packages. Separate headless
-resource/launch closure from GUI execution and Phase 7 full simulation. Declare
-the exact module gate after inspection, then add only required dependencies.
+resource/launch closure from GUI execution and Phase 7 full simulation.
+
+The module group is local velodyne_description, both local sensor-kit
+descriptions and autoware_core_vehicle. Their original resource-only CMake
+packages register no runtime suites. The gate includes the original vehicle
+XML for each sensor kit, requiring rendered URDF, resolvable mesh resources,
+calibrated static transforms and clean shutdown. The original vehicle launches
+validate RCR xacro 2.1.1-3.rcr.3 and
+robot_state_publisher 3.5.6-1.rcr.0; pin both inputs. Both sensor-kit variants
+passed rendered URDF, mesh lookup, static transform and shutdown assertions.
+
+#### Phase 5.3.4: Top-level headless launch boundary (next)
+
+The root autoware_core launch unconditionally starts RViz. Inspect the intended
+headless consumer and declare a bounded acceptance gate before choosing how to
+expose the original launch resources. Preserve original packages; do not add a
+GUI bypass or substitute a root-owned driving scenario without a demonstrated
+integration need. Full driving simulation and image packaging remain Phase 7.
 
 ## Later phases
 

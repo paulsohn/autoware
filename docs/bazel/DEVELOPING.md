@@ -673,3 +673,11 @@ and select that module in its dependency graph. For example,
 `local_path_override` select the local source, but the runtime data edge is what
 makes its resources available to the launched process. Include all supported
 model descriptions when a bundle permits choosing among several models.
+
+Vehicle rendering uses `@autoware_core_vehicle//:ament_index` plus the selected
+vehicle and sensor-description indexes in the caller's runtime data. That
+index composes the robot-state-publisher runtime provider and the xacro index,
+which publishes `bin/xacro` for the original launch command substitution.
+Do not rely on a host-installed xacro. The sample and AWSIM description checks
+are `//bazel/tests:vehicle_description_sample_launch_test` and
+`//bazel/tests:vehicle_description_awsim_launch_test` with `--config=no-agnocast`.
