@@ -1,0 +1,191 @@
+load("@autoware_agnocast_wrapper//:defs.bzl", "autoware_agnocast_node")
+load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_import", "cc_library", "cc_shared_library", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+exports_files([
+    "test/test_ndt_scan_matcher_launch.py",
+    "test/test_standalone.py",
+    "config/ndt_scan_matcher.param.yaml",
+])
+
+# Keep the same Eigen/SIMD contract on the NDT kernel, node and their consumers.
+SIMD = select({
+    "@platforms//cpu:x86_64": ["-msse4.2"],
+    "//conditions:default": [],
+})
+
+cc_library(
+    name = "multigrid_ndt_omp",
+    srcs = glob([
+        "src/ndt_omp/*.cpp",
+        "src/ndt_omp/*.hpp",
+    ]),
+    hdrs = glob(["include/**/ndt_omp/*"]),
+    copts = SIMD + ["-fopenmp"],
+    includes = ["include"],
+    deps = [
+        ":openmp_runtime",
+        "@llvm-project//openmp:libomp",
+        "@rosdistro//cc:boost.optional",
+        "@rosdistro//cc:boost.smart_ptr",
+        "@rosdistro//cc:pcl_filters",
+        "@rosdistro//cc:pcl_io",
+        "@rosdistro//cc:pcl_registration",
+    ],
+)
+
+cc_library(
+    name = "autoware_ndt_scan_matcher",
+    srcs = glob([
+        "src/*.cpp",
+        "src/*.hpp",
+    ]),
+    hdrs = glob(
+        ["include/**/*.hpp"],
+        exclude = ["include/**/ndt_omp/*"],
+    ),
+    copts = SIMD,
+    includes = ["include"],
+    deps = [":multigrid_ndt_omp"] + [
+        "@autoware_agnocast_wrapper//:autoware_agnocast_wrapper_library",
+        "@autoware_internal_debug_msgs//:cc",
+        "@autoware_internal_localization_msgs//:cc",
+        "@autoware_localization_util",
+        "@autoware_map_msgs//:cc",
+        "@autoware_qos_utils",
+        "@autoware_utils_diagnostics",
+        "@autoware_utils_geometry",
+        "@autoware_utils_logging",
+        "@autoware_utils_pcl",
+        "@autoware_utils_visualization",
+        "@builtin_interfaces//:cc",
+        "@diagnostic_msgs//:cc",
+        "@geometry_msgs//:cc",
+        "@nav_msgs//:cc",
+        "@pcl_conversions//:pcl_conversions_library",
+        "@rclcpp//:rclcpp_library",
+        "@rclcpp_components//:rclcpp_components_library",
+        "@rosdistro//cc:boost.optional",
+        "@rosdistro//cc:boost.smart_ptr",
+        "@rosdistro//cc:eigen",
+        "@rosdistro//cc:fmt",
+        "@rosdistro//cc:pcl_common",
+        "@rosdistro//cc:pcl_filters",
+        "@rosdistro//cc:pcl_io",
+        "@rosdistro//cc:pcl_registration",
+        "@sensor_msgs//:cc",
+        "@std_msgs//:cc",
+        "@std_srvs//:cc",
+        "@tf2//:tf2_library",
+        "@tf2_eigen//:tf2_eigen_library",
+        "@tf2_geometry_msgs//:tf2_geometry_msgs_library",
+        "@tf2_ros//:tf2_ros_library",
+        "@tf2_sensor_msgs//:tf2_sensor_msgs_library",
+        "@visualization_msgs//:cc",
+    ],
+)
+
+# The transitioned LLVM target supplies headers but is opaque to the shared-link
+# graph aspect. Import its declared archive through a native provider for linking.
+cc_import(
+    name = "openmp_runtime",
+    static_library = "@llvm-project//openmp:libomp",
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = [
+        "@pcl_conversions//:pcl_conversions",
+        "@rclcpp_components//:rclcpp_components",
+        "@tf2_eigen//:tf2_eigen",
+        "@tf2_geometry_msgs//:tf2_geometry_msgs",
+        "@tf2_ros//:tf2_ros",
+        "@tf2_sensor_msgs//:tf2_sensor_msgs",
+        "@diagnostic_updater//:diagnostic_updater",
+        "@rcutils//:rcutils",
+        "@autoware_agnocast_wrapper//:autoware_agnocast_wrapper",
+        "@autoware_internal_debug_msgs//:cc_shared",
+        "@autoware_internal_localization_msgs//:cc_shared",
+        "@autoware_map_msgs//:cc_shared",
+        "@builtin_interfaces//:cc_shared",
+        "@diagnostic_msgs//:cc_shared",
+        "@geometry_msgs//:cc_shared",
+        "@logging_demo//:cc_shared",
+        "@nav_msgs//:cc_shared",
+        "@sensor_msgs//:cc_shared",
+        "@std_msgs//:cc_shared",
+        "@std_srvs//:cc_shared",
+        "@visualization_msgs//:cc_shared",
+    ],
+)
+
+cc_shared_library(
+    name = "ndt_component",
+    dynamic_deps = [":runtime_dynamic_deps"],
+    deps = [":autoware_ndt_scan_matcher"],
+)
+
+autoware_agnocast_node(
+    name = "autoware_ndt_scan_matcher_node",
+    package_name = "autoware_ndt_scan_matcher",
+    component = ":ndt_component",
+    plugin = "autoware::ndt_scan_matcher::NDTScanMatcher",
+    ros2_executor = "MultiThreadedExecutor",
+)
+
+register_ament_files(
+    name = "node_executables",
+    files = [":autoware_ndt_scan_matcher_node"],
+    prefix = "lib/autoware_ndt_scan_matcher",
+    strip_prefix = "*",
+)
+
+ament_index(
+    components = [":autoware_ndt_scan_matcher_node_components"],
+    data = glob([
+        "config/*",
+        "launch/*",
+    ]) + [
+        ":autoware_ndt_scan_matcher_node_plugin",
+        ":node_executables",
+    ],
+    package_xml = "package.xml",
+)
+
+[
+    cc_test(
+        name = name,
+        timeout = "long",
+        srcs = [source] + glob(["test/**/*.hpp"]),
+        copts = SIMD,
+        data = [":ament_index"],
+        dynamic_deps = [
+            ":runtime_dynamic_deps",
+            "@ament_index_cpp//:ament_index_cpp",
+            "@rcl_yaml_param_parser//:rcl_yaml_param_parser",
+        ],
+        env = {
+            "ENABLE_AGNOCAST": "0",
+            "ROS_DOMAIN_ID": "96",
+            "OMP_NUM_THREADS": "1",
+        },
+        deps = [
+            ":autoware_ndt_scan_matcher",
+            "@ament_index_cpp//:ament_index_cpp_library",
+            "@rcl_yaml_param_parser//:rcl_yaml_param_parser_library",
+            "@googletest//:gtest" if own_main else "@googletest//:gtest_main",
+        ],
+    )
+    for name, source, own_main in [
+        ("standard_sequence_for_initial_pose_estimation", "test/test_cases/standard_sequence_for_initial_pose_estimation.cpp", True),
+        ("once_initialize_at_out_of_map_then_initialize_correctly", "test/test_cases/once_initialize_at_out_of_map_then_initialize_correctly.cpp", True),
+        ("particles_num_less_than_publish_num", "test/test_cases/particles_num_less_than_publish_num.cpp", True),
+        ("test_ndt_scan_matcher_characteristics", "test/test_ndt_scan_matcher_characteristics.cpp", True),
+        ("test_estimate_covariance", "test/test_estimate_covariance.cpp", False),
+        ("test_ndt_scan_matcher_helper", "test/test_ndt_scan_matcher_helper.cpp", False),
+        ("test_map_update_module", "test/test_map_update_module.cpp", False),
+    ]
+]

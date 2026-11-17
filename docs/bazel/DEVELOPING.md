@@ -247,6 +247,12 @@ dependencies:
 
 This preserves the RCR shared-library layout required at runtime.
 
+NDT's kernel, node and C++ test consumers use the same SSE4.2 options on x86_64
+because Eigen/SIMD settings affect their shared data layout. Keep those options
+consistent when adding a direct C++ consumer. The OpenMP runtime is a Bazel-built
+LLVM archive, imported by the package-local `:openmp_runtime` target; do not add
+host `-lomp` search paths. Its kernel compiles with `-fopenmp`.
+
 ## Editing interface packages
 
 To add a message or service to a supported package:

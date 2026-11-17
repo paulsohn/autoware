@@ -4786,3 +4786,93 @@ also passes all 52 NDT cases. The NDT entry records its linker diagnosis and
 full executable checks; no utility source correction was necessary. Targeted
 buildifier and whitespace checks pass. No Fast DDS, pre-commit or container
 rerun was performed. This package gate is complete.
+
+## 2026-11-17: Phase 5.2.4 — autoware_ndt_scan_matcher in the NDT group
+
+Purpose: build and run the actual NDT registration kernel and switchable node,
+using the now-integrated point-cloud utility and existing localization, geometry,
+diagnostics, logging, QoS and visualization providers. Inspected CMake/manifest,
+all kernel/node sources and headers, deployment YAML/XML, original launch test,
+three initialization scenarios, characterization harness and three unit suites.
+Gate: 52 existing C++ cases across seven targets (3 initialization scenarios,
+25 characterization, 8 covariance, 8 helper and 8 map-update cases), both original
+launch cases, and real executable behavior with RCLCPP and Agnocast.
+
+Pattern: keep separate compiled kernel and node libraries, a shared component,
+standard switchable executable, component/plugin metadata and declared config/
+launch index. Preserve MultiThreadedExecutor for the ROS fallback. The kernel
+uses the same SSE4.2 instruction contract as CMake on x86_64; node/tests use the
+same setting to preserve Eigen data layout. Select libomp from the existing
+LLVM module extension pinned to LLVM 21.1.8 and enable -fopenmp on the kernel.
+All dependency targets are Bazel providers; no host ROS/PCL/OpenMP installation
+is used. Preserve every original C++ case under ENABLE_AGNOCAST=0, including
+CMake's conditionally excluded node tests. Own-main files use gtest; the three
+unit suites use gtest_main. Declare all harness headers and the YAML/index data.
+Keep tests sequential and retain their full long timeout.
+
+Diagnosed link failure: -fopenmp compilation succeeds, but final links report
+undefined omp_get_thread_num, omp_get_max_threads and __kmpc_* symbols. The
+transitioned LLVM libomp provider supplies compilation context, but does not
+participate correctly in the native cc_shared_library graph aspect. Attempting
+to make it a direct shared-library root also reports missing GraphNodeInfo.
+Fix: add a native cc_import whose static_library is the public libomp target's
+declared archive. Keep the original provider for generated omp.h/include paths,
+and use the native import for linker ownership. The archive still builds from
+pinned LLVM sources with the runtime's own configuration transition. No private
+LLVM label, library copy, system search path, new dependency patch or production
+source modification is needed. Full tests and both real executables below
+validate the fix. Initial label/mapping mistakes were corrected by declaring
+platforms explicitly, using the LLVM extension's actual path, generated :cc
+interface labels and the wrapper's :ament_package resource target.
+
+The original launch suite includes the unmodified deployment XML. Supply both
+NDT's index and the wrapper's package resources so find-pkg-share resolves the
+included Agnocast environment XML. The fallback launch verifies activation and
+clean exit. The separate behavior peer is ordinary rclpy; only an enabled child
+preloads the built heap hook. It provides a differential-map service with a
+three-plane half-cube (0.2 m samples, translated by 100 m in XY), publishes the
+matching 1 m scan and identity base_link-to-sensor static TF, and activates the
+node. Require a map request, successful initial alignment with finite XYZ within
+2 m of (100,100,0), successful deactivation and clean SIGINT exit. All waits are
+bounded and include child logs on failure. The probe uses 30 initial particles/
+trials and one NDT thread; original C++ test parameters remain unchanged.
+It checks synthetic-map initialization, not production-map accuracy/performance.
+
+Verification commands (sequential, unsourced caller environment):
+
+```bash
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --jobs=1 --local_resources=cpu=1 --local_test_jobs=1 \
+  --nocache_test_results --test_output=errors \
+  @autoware_utils_pcl//... @autoware_ndt_scan_matcher//...
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --jobs=1 --local_resources=cpu=1 --local_test_jobs=1 \
+  --nocache_test_results --test_output=errors //bazel/tests:ndt_scan_matcher_launch_test
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --jobs=1 --local_resources=cpu=1 --local_test_jobs=1 \
+  --nocache_test_results --test_output=errors --strategy=TestRunner=local \
+  --run_under=//bazel/agnocast:with_runtime \
+  //bazel/tests:ndt_scan_matcher_rclcpp_test \
+  //bazel/tests:ndt_scan_matcher_agnocast_test
+```
+
+Result: all 52 existing C++ cases pass with no failures/errors/skips in the seven
+declared GTest XML files. Combined module invocation 113.003 seconds; the three
+initialization targets take 0.8/0.8/0.5 seconds, covariance 0.5, helper 0.4,
+map update 0.4 and characterization 16.2 seconds. All seven utility cases also
+pass. Both original launch cases pass in 3.5 seconds (27.840-second invocation).
+Both real executable probes pass, RCLCPP in 5.1 and Agnocast in 6.4 seconds
+(56.912-second invocation), validating map-service replies, TF/scan inputs,
+alignment service, activation/deactivation and shutdown. XML confirms both
+launch cases and both standalone cases without failures/errors/skips.
+
+The enabled gate uses the built heap hook, loaded compatible Agnocast module/
+device and existing product runtime index. No new central-interface roots or
+plugin-source changes are required: all exercised service/message types are
+already selected. Reuse the preceding passing bridge/wrapper regressions for
+unchanged implementations and configuration; do not rebuild an unchanged full
+communication matrix. Targeted buildifier, Python AST and whitespace checks
+pass. Module resolution leaves the existing lockfile unchanged. No Fast DDS,
+pre-commit or container run was performed. The grouped package gates are
+complete, with no skipped group or deferred failure. Pose initialization is next
+within Phase 5.2.4.

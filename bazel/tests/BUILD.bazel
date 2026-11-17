@@ -728,3 +728,71 @@ launch_test(
         ("agnocast", "1"),
     ]
 ]
+
+launch_test(
+    name = "ndt_scan_matcher_launch_test",
+    src = "@autoware_ndt_scan_matcher//:test/test_ndt_scan_matcher_launch.py",
+    data = [
+        "@autoware_agnocast_wrapper//:ament_package",
+        "@autoware_ndt_scan_matcher//:ament_index",
+    ],
+    env = {
+        "ENABLE_AGNOCAST": "0",
+        "LD_LIBRARY_PATH": "lib",
+        "ROS_DOMAIN_ID": "97",
+        "OMP_NUM_THREADS": "1",
+    },
+    tags = [
+        "no-remote",
+        "no-sandbox",
+    ],
+    deps = [
+        "@ament_index_python",
+        "@launch_ros",
+        "@launch_xml",
+        "@rclpy",
+        "@std_srvs//:py",
+    ],
+)
+
+[
+    py_test(
+        name = "ndt_scan_matcher_" + backend + "_test",
+        timeout = "long",
+        srcs = ["@autoware_ndt_scan_matcher//:test/test_standalone.py"],
+        args = [
+            "$(rootpath @autoware_ndt_scan_matcher//:autoware_ndt_scan_matcher_node)",
+            "$(rootpath @autoware_ndt_scan_matcher//:config/ndt_scan_matcher.param.yaml)",
+        ],
+        data = [
+            "//bazel/agnocast:runtime_index",
+            "@agnocast_heaphook",
+            "@autoware_ndt_scan_matcher//:ament_index",
+            "@autoware_ndt_scan_matcher//:autoware_ndt_scan_matcher_node",
+            "@autoware_ndt_scan_matcher//:config/ndt_scan_matcher.param.yaml",
+        ],
+        env = {
+            "AGNOCAST_TEST_NO_PRELOAD": "1",
+            "AUTOWARE_TEST_AGNOCAST": enabled,
+            "OMP_NUM_THREADS": "1",
+        },
+        main = "@autoware_ndt_scan_matcher//:test/test_standalone.py",
+        tags = [
+            "no-remote",
+            "no-sandbox",
+        ] + (["requires-agnocast-kmod"] if enabled == "1" else []),
+        deps = [
+            "@autoware_internal_localization_msgs//:py",
+            "@autoware_map_msgs//:py",
+            "@geometry_msgs//:py",
+            "@rclpy",
+            "@sensor_msgs//:py",
+            "@std_srvs//:py",
+            "@tf2_msgs//:py",
+        ],
+    )
+    for backend, enabled in [
+        ("rclcpp", "0"),
+        ("agnocast", "1"),
+    ]
+]

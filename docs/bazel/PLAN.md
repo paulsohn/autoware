@@ -914,9 +914,21 @@ launch suite, both executable publication/late-subscriber checks and eleven
 bridge-plugin cases pass. MarkerArray is selected centrally; the expanded
 manifest contains 234 interfaces (198 messages, 36 services). The original
 SingleThreadedExecutor fallback and full RCLCPP test contract are preserved.
-No production source compatibility patch is needed. NDT scan matching and pose
-initialization are next, starting with their concrete prerequisites. Phase 5.2.4
-remains in progress.
+No production source compatibility patch is needed.
+
+Continue in dependency-related work groups, preparing and validating prerequisites
+and their consumer in one step. Retain package-scoped completion gates and
+separate eventual commits. The NDT group integrates autoware_utils_pcl
+and autoware_ndt_scan_matcher together. All seven PCL utility cases and all
+52 NDT C++ cases across seven targets pass, together with the original two-case
+NDT launch suite and actual activation/map-loading/alignment/shutdown in both
+backends. Use the pinned LLVM 21.1.8 OpenMP library and preserve the x86 SSE4.2
+contract on kernel/node/tests. The transitioned LLVM target supplies headers
+but its linker inputs are lost through the native shared-library graph aspect;
+a package-local cc_import of its declared archive restores native ownership and
+passes compilation, linking and both runtime gates. No host OpenMP dependency,
+production source patch or central-interface expansion is required.
+Pose initialization follows this group. Phase 5.2.4 remains in progress.
 Keep package commits separate and heavy builds sequential; routine Cyclone DDS
 only. Phase 5.3 system/API composition and Phase 6 GPU integration stay separate.
 
