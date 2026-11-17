@@ -6565,6 +6565,27 @@ consumer gates rather than treating the standalone result as sufficient.
 The linked entry gives exact commands and results. No Fast DDS, CMake or
 container check was run.
 
+## 2026-11-17: Phase 5.2.5 — autoware_motion_velocity_planner shared-library identity
+
+Purpose: let behavior and motion components coexist in one declared runtime
+index. Inspect both cc_shared_library rules and native launcher template inputs.
+Both targets used planner_component, producing libplanner_component.so. Each
+package-local run passes, but the aggregate lib index selects one basename;
+the other launcher cannot find its expected NodeFactory class and exits.
+
+Keep :planner_component labels stable and set the physical shared_lib_name to
+libautoware_motion_velocity_planner_component.so. The existing launcher/ament macros derive their
+load paths and component records from CcSharedLibraryInfo, so no handwritten
+record or source change is required. Package-qualified physical names prevent
+collisions when multiple resource indexes merge into a common lib directory.
+
+Verification: [the complete composed gate](#2026-11-17-phase-525--core-planning-launch-composition) runs the complete 14-case original module suite,
+the motion executable and the 39-case obstacle-stop suite, and original planning XML. All pass with clean exits. The composed
+launch proves both distinct factory libraries load together; retain the full
+consumer gates rather than treating the standalone result as sufficient.
+The linked entry gives exact commands and results. No Fast DDS, CMake or
+container check was run.
+
 ## 2026-11-17: Phase 5.2.5 — core planning launch composition
 
 The original XML starts behavior/motion planners with vehicle_param_file but
