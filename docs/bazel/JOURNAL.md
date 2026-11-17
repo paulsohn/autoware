@@ -5360,3 +5360,55 @@ these contracts. The final complete-group invocation takes 17.772 seconds.
 No source compatibility patch or generated interface change is required. The
 package gate is complete. Fast DDS,
 pre-commit, container and colcon/ament/CMake checks were not run.
+
+## 2026-11-17: Phase 5.2.5 — command gate in the native-control group
+
+Purpose: expose mode-change service transactions, state and gear outputs using
+the current native ROS component. Prerequisites are the ADAPI specifications
+above and already validated component-interface specs/utilities and message
+providers. Inspected both implementation sources, the mode-builder header,
+CMake/manifest, launch resources, fourteen unit cases and four original ROS
+integration cases. Complete original suite: 18 cases, including actual component
+discovery/loading through ComponentManager. The source derives from rclcpp::Node;
+this task preserves that backend rather than introducing an Agnocast conversion.
+
+Pattern: package-local compiled library, package-specific shared component,
+RCR rclcpp_components_register_node with plugin and node_name (which enables
+the generated native executable), <name>_record in ament_index, executable
+registration and original launch resources. Preserve the CMake executable name
+and SingleThreadedExecutor contract. The package has no config directory, so
+its resource glob includes launch files only. Keep the unit target on gtest_main;
+the integration file supplies its own ROS/GTest main.
+
+Diagnosed linker failure: ComponentManager constructor is undefined even though
+the test compiles against rclcpp_components headers. RCR exposes the manager
+separately from node-factory registration. Add component_manager_library to the
+integration test's deps and component_manager to dynamic_deps, alongside its
+existing class_loader pair. Keep the plugin-loading cases rather than replacing
+them with direct construction. No production source fix is required.
+
+The root-owned behavior target runs the actual executable with an ordinary
+rclpy peer. Call STOP/AUTONOMOUS/LOCAL/REMOTE on the system mode service and
+require matching API/system states and PARK/DRIVE/NONE/NONE gear commands, with
+matching state/gear timestamps. An unknown mode must return failure and publish
+no new state or gear output during the bounded observation. Require normal
+SIGINT exit. Service/output/shutdown waits are bounded and include child logs.
+
+Diagnosed runtime setup failure: Python can locate the top-level message type-
+support library but dlopen fails on dependent std_msgs introspection C support.
+The package indexes already supply the files; the native py_test environment
+did not contain LD_LIBRARY_PATH. common --run_env configures bazel run, not
+this test environment. Set LD_LIBRARY_PATH=lib in the root py_test env and
+keep the package index in data. A temporary additional C-shared runtime index
+was removed after the complete gate passed with existing package indexes alone.
+No extra runtime index, heap preload, kernel device or Agnocast bridge is needed
+for this native ROS contract. Explicitly select ENABLE_AGNOCAST=0 in the peer.
+
+Verification: use the complete-group command in the preceding ADAPI entry;
+for this module alone, bazel test @autoware_command_gate//... runs both original
+targets. Result: all 18 original cases pass without failures/errors/skips,
+14 unit cases in 0.1 seconds and 4 plugin-loading cases in 0.2 seconds. The real
+executable peer passes in 1.5 seconds. The successful final group invocation
+takes 17.772 seconds. This module gate is complete, without an omitted test
+group or deferred failure. No source patch, Fast DDS, Agnocast backend conversion,
+pre-commit, container or colcon/ament/CMake validation is included. Retain this validated module as a separate commit.

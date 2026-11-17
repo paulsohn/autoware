@@ -942,3 +942,29 @@ cc_test(
     dynamic_deps = ["@autoware_adapi_specs//:runtime_dynamic_deps"],
     deps = ["@autoware_adapi_specs"],
 )
+
+py_test(
+    name = "command_gate_rclcpp_test",
+    srcs = ["autoware_command_gate/test_standalone.py"],
+    args = ["$(rootpath @autoware_command_gate//:autoware_command_gate_exe)"],
+    data = [
+        "@autoware_command_gate//:ament_index",
+        "@autoware_command_gate//:autoware_command_gate_exe",
+    ],
+    env = {
+        "ENABLE_AGNOCAST": "0",
+        "LD_LIBRARY_PATH": "lib",
+    },
+    main = "autoware_command_gate/test_standalone.py",
+    precompile = "disabled",
+    tags = [
+        "no-remote",
+        "no-sandbox",
+    ],
+    deps = [
+        "@autoware_adapi_v1_msgs//:py",
+        "@autoware_system_msgs//:py",
+        "@autoware_vehicle_msgs//:py",
+        "@rclpy",
+    ],
+)
