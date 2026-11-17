@@ -389,7 +389,7 @@ local_path_override(
     path = "src/core/autoware_core/sensing/autoware_downsample_filters",
 )
 
-bazel_dep(name = "autoware_adapi_v1_msgs", version = "1.9.0-4.rcr.2")
+bazel_dep(name = "autoware_adapi_v1_msgs", version = "1.9.2")
 bazel_dep(name = "autoware_test_utils", version = "0.0.0")
 local_path_override(
     module_name = "autoware_test_utils",
@@ -489,4 +489,9 @@ bazel_dep(name = "autoware_pose_initializer", version = "0.0.0")
 local_path_override(
     module_name = "autoware_pose_initializer",
     path = "src/core/autoware_core/localization/autoware_pose_initializer",
+)
+
+local_path_override(
+    module_name = "autoware_adapi_v1_msgs",
+    path = "src/core/autoware_adapi_msgs/autoware_adapi_v1_msgs",
 )

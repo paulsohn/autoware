@@ -5054,3 +5054,60 @@ and fixtures under bazel/tests/<package>/ and expose original tests through
 component-owned Bazel rules. AGENTS.md, PLAN.md and DEVELOPING.md define these
 conventions. This documentation-only task has no runtime validation; subsequent
 module and test-layout entries record their complete acceptance gates.
+
+## 2026-11-17: Local interface adoption — autoware_adapi_v1_msgs
+
+Purpose: use the actual local ADAPI contracts required by specs, command gate,
+pose initialization, component-interface utilities and test helpers. Inspected
+all 79 registered CMake inputs and their definitions. The local family has no
+existing functional suite; its complete declared generation and real consumers
+form this gate. Keep domain-specific labels such as
+//localization/msg:LocalizationInitializationState and //operation_mode/msg:OperationModeState.
+Direct external field types come from builtin_interfaces, geographic_msgs,
+geometry_msgs, shape_msgs, std_msgs and unique_identifier_msgs; none has a local
+ROS package snapshot. Same-package references resolve to the unique local
+message definitions rather than registry-generated types.
+
+Snapshot 1.9.2 declares 61 messages and 18 services.
+
+Integration pattern: declare a package-local module at the snapshot's manifest
+version, retain its manifest-level interface dependencies, add explicit
+ros_message/ros_service targets in the existing interface directories and call
+default_generators at the package root. Each interface target names only its
+referenced message dependencies; same-package edges use their actual directory
+labels and external edges use the referenced package's message target. Root
+local_path_override selects the snapshot; consumers keep their existing labels.
+The BUILD declarations are the supported interface list. No source-completeness
+validator, generator verb or new message definition is introduced.
+
+Verification: the shared local-provider command below builds every declared
+surface in these five modules and runs complete existing consumer suites. The
+successful invocation takes 257.564 seconds, builds 217 non-test targets and
+passes 24 test targets / 185 XML cases, including unchanged interface manifest/
+type-hash freshness and C++17 checks, component-interface utilities, debug
+utilities, height fitting, NDT, pose initialization and both native control
+packages. No failures/errors/skips occur. Original message files are unchanged.
+The relocated root executable/bridge validation is recorded in the relocation
+entry. Standard ROS dependencies absent locally still come from pinned RCR.
+No Fast DDS, pre-commit, container or
+colcon/ament/CMake run was performed.
+
+Shared local-provider verification command (executed sequentially before the
+test-source relocation):
+
+```bash
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --local_test_jobs=1 --nocache_test_results --test_output=errors \
+  @autoware_adapi_v1_msgs//... @autoware_adapi_version_msgs//... \
+  @autoware_internal_debug_msgs//... @autoware_internal_localization_msgs//... \
+  @autoware_internal_msgs//... @autoware_adapi_specs//... \
+  @autoware_command_gate//... @autoware_simple_pure_pursuit//... \
+  @autoware_component_interface_specs//... @autoware_component_interface_utils//... \
+  @autoware_utils_debug//... @autoware_ndt_scan_matcher//... \
+  @autoware_pose_initializer//... @autoware_map_height_fitter//...
+```
+
+The header consumer is now //bazel/tests:adapi_specs_headers_test, replacing
+@autoware_adapi_specs//:test_headers from that invocation. Add the root label
+when repeating this gate after the relocation; the unchanged original module
+suites retain their labels.
