@@ -6954,3 +6954,45 @@ There are no registered existing runtime tests in this resource-only module.
 Unchanged component algorithm/backend results remain applicable. No source fix
 was needed. Simulated time is selected but not advanced; this does not establish
 simulation progression, URDF rendering or localization convergence.
+
+## 2026-11-18: Phase 5.3.2 — default API global-loader resource closure
+
+Purpose: expose the existing default-API loader-based test XML with the real
+local vehicle description, closing the deferred runtime-resource dependency.
+Inspect launch/test_default_adapi.launch.xml: it includes the global loader.
+Add that module to the default-API MODULE and its ament_index deps. The generic
+loader remains model-independent; root test data explicitly selects the sample
+description index and passes vehicle_model=autoware_sample_vehicle instead of
+the XML's sample_vehicle default. No original launch or source is changed.
+
+Add bazel/tests/system_context/test_api_loader.py and two root launch_test targets.
+They invoke the original XML with use_sim_time=true, query all three API nodes'
+clock selection, call the real interface-version service (1.9.1), and require
+clean shutdown. Assert one native container with no heap-hook mapping versus
+three enabled standalone processes with the heap hook mapped in every process.
+The Python launch parent remains unpreloaded. The enabled test requires the
+matching host Agnocast kernel module and /dev/agnocast, plus the built hook and
+runtime index in data. Use the existing runtime launcher, preserving host PIDs.
+
+Verification: the complete native module/original-consumer gate above passed.
+After adding the process/preload assertions, rerun each new API target:
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=no-agnocast --local_test_jobs=1 \
+  --nocache_test_results --test_output=errors \
+  //bazel/tests:default_adapi_global_context_launch_test
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --local_test_jobs=1 --nocache_test_results --test_output=errors \
+  --strategy=TestRunner=local --run_under=//bazel/agnocast:with_runtime \
+  //bazel/tests:default_adapi_global_context_agnocast_launch_test
+```
+
+Both passed: native 5.396 seconds total (3.1-second action), enabled 26.126
+seconds total (6.2-second action), two assertions/cases per launch including
+post-shutdown checks. No dependency-related skips or deferred failures remain
+in this module gate. No Fast DDS check, upstream CMake build, xacro rendering,
+full vehicle simulation or cross-platform validation was performed. The possible
+per-model static-loader design remains unimplemented; the current dynamic
+model selection is bundled explicitly. Phase 5.3.2 is complete; inspect vehicle/
+sensor description rendering and the top-level headless launch boundary next.

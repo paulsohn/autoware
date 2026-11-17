@@ -1281,3 +1281,40 @@ launch_test(
         ("agnocast", "1", "77"),
     ]
 ]
+
+[
+    launch_test(
+        name = "default_adapi_global_context_launch_test" if backend == "rclcpp" else "default_adapi_global_context_agnocast_launch_test",
+        src = "system_context/test_api_loader.py",
+        data = [
+            "//bazel/agnocast:runtime_index",
+            "@agnocast_heaphook",
+            "@autoware_default_adapi//:ament_index",
+            "@autoware_sample_vehicle_description//:ament_index",
+        ],
+        env = {
+            "ENABLE_AGNOCAST": enabled,
+            "AGNOCAST_TEST_NO_PRELOAD": "1",
+            "LD_LIBRARY_PATH": "lib",
+            "ROS_DOMAIN_ID": domain,
+        },
+        precompile = "disabled",
+        tags = [
+            "no-remote",
+            "no-sandbox",
+        ],
+        deps = [
+            "@ament_index_python",
+            "@autoware_adapi_version_msgs//:py",
+            "@autoware_agnocast_wrapper//:python",
+            "@launch_ros",
+            "@launch_xml",
+            "@rcl_interfaces//:py",
+            "@rclpy",
+        ],
+    )
+    for backend, enabled, domain in [
+        ("rclcpp", "0", "80"),
+        ("agnocast", "1", "81"),
+    ]
+]
