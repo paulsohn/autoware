@@ -709,3 +709,9 @@ local_path_override(
     module_name = "autoware_sample_vehicle_description",
     path = "src/core/autoware_core/description/autoware_sample_vehicle_description",
 )
+
+bazel_dep(name = "autoware_core_sensing", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_core_sensing",
+    path = "src/core/autoware_core/sensing/autoware_core_sensing",
+)

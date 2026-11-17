@@ -1,0 +1,8 @@
+module(
+    name = "autoware_core_sensing",
+    version = "0.0.0",
+)
+
+bazel_dep(name = "autoware_agnocast_wrapper", version = "0.0.0")
+bazel_dep(name = "autoware_vehicle_velocity_converter", version = "0.0.0")
+bazel_dep(name = "rosdistro", version = "0.0.0")

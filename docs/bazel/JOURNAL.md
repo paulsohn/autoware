@@ -6996,3 +6996,28 @@ full vehicle simulation or cross-platform validation was performed. The possible
 per-model static-loader design remains unimplemented; the current dynamic
 model selection is bundled explicitly. Phase 5.3.2 is complete; inspect vehicle/
 sensor description rendering and the top-level headless launch boundary next.
+## 2026-11-18: Phase 5.3.2 — core sensing context
+
+Purpose: integrate autoware_core_sensing in its actual global/runtime context.
+
+Inspect the original XML and its vehicle-velocity-converter include. Expose
+launch/** and compose the converter index plus the wrapper launch-support
+ament_package required by that include. The resource module has no existing
+runtime tests. Its gate publishes a real VelocityReport on the original vehicle
+input and checks transformed numeric twist fields after the localization relay.
+Use original parameters and remaps, under both global clock settings; reuse
+unchanged converter module/backend tests.
+
+Pattern: retain original sources/configurations and add only package-local
+MODULE/BUILD resource definitions selected by adjacent root 0.0.0 dependency/
+local_path_override pairs. Added tests/fixtures live in bazel/tests/system_context.
+The shared original-launch gate uses Cyclone DDS, serialized tests and declared
+resources, with separate ROS domains for the two clock variants.
+
+Verification: the complete Phase 5.3.2 gate below passed with Cyclone DDS.
+Both original combined contexts passed (wall and simulated clock selection,
+3.3 seconds each), including this module's assertions and clean shutdown.
+There are no registered existing runtime tests in this resource-only module.
+Unchanged component algorithm/backend results remain applicable. No source fix
+was needed. Simulated time is selected but not advanced; this does not establish
+simulation progression, URDF rendering or localization convergence.
