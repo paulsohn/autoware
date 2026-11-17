@@ -57,6 +57,7 @@ only when your current target demonstrates the need.
   [evidence: stop-line plugin](JOURNAL.md#2026-11-17-phase-525--stop-line-plugin).
 - [ ] Preserve executable contracts and unique library identities in composed indexes.
   [Runtime resource convention](DEVELOPING.md#launch-resource-composition);
+  [published container providers](JOURNAL.md#2026-11-18-phase-531--default-ad-api);
   [evidence: original core launches](JOURNAL.md#2026-11-17-phase-525--core-planning-launch-composition).
 - [ ] Inventory complete module suites, runtime prerequisites and required
   middleware configurations before implementing each task.
@@ -1123,7 +1124,7 @@ are complete, reusing prior unchanged module/backend evidence. This gate does
 not claim full scenario simulation, an Agnocast aggregate launch or a new
 Fast DDS compatibility run.
 
-### Phase 5.3: System and API composition (next)
+### Phase 5.3: System and API composition (in progress)
 
 Inventory the current system/API executable dependency graphs and existing
 suites, starting with local packages not yet exposed through Bazel. Introduce
@@ -1133,6 +1134,34 @@ packages when a runnable consumer needs them; do not create artificial targets
 for empty grouping metapackages. Keep system-designer packages out of scope.
 Phase 5 remains in progress; runtime images and full driving simulation are
 Phase 7, with GPU dependencies introduced separately in Phase 6.
+
+#### Phase 5.3.1: AD API and RViz adaptors (complete)
+
+Integrate local autoware_adapi_adaptors, autoware_default_adapi and the real
+core API launch/resource package together. Preserve all 13 adaptor-helper and
+15 API-conversion cases, both custom test mains and the original interface-
+version launch suite. Register the five original wrapper executables, with
+MultiThreadedExecutor fallbacks where CMake selects them, and package-qualified
+physical component names. Compose the published container runtime provider
+with wrapper launch support. Introduce no manifest-only Flask/global-parameter
+runtime when the selected source path does not use it.
+
+The complete native suites and original launch pass. The original core API XML
+also passes routing/localization/adaptor transactions and clean shutdown in
+both RCLCPP and enabled Agnocast configurations, with process/preload assertions
+proving the three-process container and five-process standalone paths. No
+source fix, new dependency version or product-interface selection was needed.
+Global/model context and the separate loader-based test XML remain next; full
+vehicle behavior is not established by controlled internal service fixtures.
+
+#### Phase 5.3.2: Global parameters and remaining core launch context (next)
+
+Select global-parameter/model resources and remaining real core launches from
+their executable/parameter dependencies. Prefer local descriptions and introduce
+xacro or other providers only when the selected launch actually needs them.
+Inventory complete existing suites and declare configuration/state gates before
+implementation. Keep empty grouping packages and system-designer out of scope;
+full vehicle simulation remains Phase 7.
 
 ## Later phases
 

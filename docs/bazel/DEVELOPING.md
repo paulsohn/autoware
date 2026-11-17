@@ -439,6 +439,12 @@ libraries. Set the test's `LD_LIBRARY_PATH` to `lib`; `--run_env` settings
 alone do not configure a native py_test environment. Native ROS-only nodes do
 not interpret ENABLE_AGNOCAST as a backend switch.
 
+When a launch starts an RCR component container, declare its executable-bearing
+runtime provider. For the selected RCR, @rclcpp_components//:ament_package
+supplies component_container_mt and its libexec layout; :ament_index contains
+only test component metadata. A package exporting such a launch should compose
+the runtime provider in its resource closure, so consumers need no host ROS.
+
 ## Switchable standalone nodes
 
 Tests of wrapper endpoints must dispatch callbacks with the selected backend's

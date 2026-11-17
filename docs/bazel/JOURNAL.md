@@ -6783,3 +6783,87 @@ backends. Native container resources, not host ROS tools, supply the launch.
 No tests are omitted or filtered; no production/original-test changes, new
 registry versions or interface-selection changes are required. No Fast DDS,
 CMake or container rebuild is part of this module gate.
+
+## 2026-11-18: Phase 5.3.1 — core API composition
+
+Purpose: validate the actual system boundary across the default API and both
+RViz adaptors, after inspecting the source-less core API CMake/manifest and
+original XML's default enabled branches. It has no existing runtime suite.
+Declare a package-local resource module with both original exec dependencies;
+ament_index exports launch/** and composes the two child indexes through deps.
+The root selects all three local packages with adjacent 0.0.0 dependency/override
+pairs after their prerequisites. There are no component-to-metarepository labels.
+
+Put the added launch driver under bazel/tests/api/. Include the original core
+API XML, with rviz_initial_pose_auto_fix_target=vector_map as an explicit test
+input so startup does not require a pointcloud-loader parameter service. Keep
+all default API/adaptor branches enabled. The ordinary rclpy peer supplies
+internal localization-initialize, waypoint-route and clear-route service
+fixtures and publishes internal localization/route state and RViz goal/pose
+inputs. It verifies:
+
+- exact interface version 1.9.1 through the public service;
+- localization state stamp/value forwarding;
+- public initialization converted to internal AUTO with the pose intact and
+  the internal response status returned through the API;
+- UNSET routing state conversion, waypoint goal/status forwarding, and a fixed
+  RViz goal passing through the adaptor/API to the internal route service;
+- initial-pose forwarding through both layers, preserving pose and applying the
+  configured covariance diagonal [4, 4, 0.01, 0.01, 0.01, 1] and zero off-diagonals.
+
+Use bounded 25-second readiness/response waits, with no fixed discovery sleeps.
+The active test also asserts three native launch processes (container plus two
+adaptors) without the heap hook, or five standalone processes all mapping the
+hook under ENABLE_AGNOCAST=1. A separate post-shutdown case asserts clean child
+exit codes. The parent Python peer is not preloaded; with_runtime exports the
+built hook path and the launch passes it only to enabled native children.
+Host validation confirms the matching loaded 2.4.1 module/device. Check device
+visibility in the host TestRunner context; a restricted tool view need not expose
+the host /dev entry. No new bridge/interface metadata was necessary: both real
+backend transactions pass using the unchanged product interface selection.
+
+Complete native module/original-launch gate:
+
+```bash
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=no-agnocast --local_test_jobs=1 \
+  --nocache_test_results --test_output=errors \
+  @autoware_adapi_adaptors//... @autoware_default_adapi//... \
+  @autoware_core_api//... \
+  //bazel/tests:default_adapi_original_launch_test \
+  //bazel/tests:core_api_rclcpp_launch_test
+```
+
+This builds 41 non-test targets and passes all four test targets in 44.416
+seconds: all 28 original C++ cases, the unchanged original launch case, and the
+assembled active/shutdown cases. After adding process-count/preload assertions
+only to the new driver, rerun its affected native target, then enabled target:
+
+```bash
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=no-agnocast --local_test_jobs=1 \
+  --nocache_test_results --test_output=errors \
+  //bazel/tests:core_api_rclcpp_launch_test
+
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --local_test_jobs=1 --nocache_test_results --test_output=errors \
+  --strategy=TestRunner=local --run_under=//bazel/agnocast:with_runtime \
+  //bazel/tests:core_api_agnocast_launch_test
+```
+
+The final native action passes in 2.5 seconds (22.826 seconds total); enabled
+passes in 3.2 seconds (30.193 seconds total). Both execute the transaction and
+shutdown cases. Reuse unchanged C++/original-launch evidence; final selected XML
+and logs show no failures/errors/skips/disabled cases. Exclude stale external
+XML artifacts from older target names when auditing counts. Targeted buildifier,
+Python parsing, source/test/dependency inventories, component boundaries, local
+links and diff checks supplement runtime verification.
+
+Phase 5.3.1 is complete. No original package source/test changes were needed.
+No Fast DDS, CMake, image rebuild or broad communication matrix was run. The
+services below the API are controlled fixtures, not a complete vehicle/system
+simulation; map fitting without a supplied map uses its existing fallback.
+Next take global-parameter/model context and remaining real core launch packages
+as Phase 5.3.2. The global-loader test XML, alternate disabled API branches,
+full system state transitions and closed-loop driving are not claimed here.
+Phase 5.3 and Phase 5 remain in progress.
