@@ -1199,6 +1199,74 @@ Potential topics such as OSQP compatibility, OpenMP, CMake parity,
 runtime-image deduplication, and remote caching will be evaluated when a current
 target requires them.
 
+## Deferred cross-platform and kernel-runtime options
+
+Recorded 2026-11-18 for later design work. These are options, not implemented
+rules or additional phase completion requirements. Revisit execution/packaging
+choices in Phases 7 and 8; preserve Phase 8's software-compatibility goal without
+requiring physical Thor hardware. Introduce each mechanism only when a selected
+target or test needs it.
+
+Separate the machine executing build tools, the CPU/OS targeted by their output,
+and the environment executing a test. Cross-compiling an application does not
+require loading its target kernel driver on the build host. Current wrapper
+binaries compile Agnocast support unconditionally; the loaded-module requirement
+belongs to ENABLE_AGNOCAST=1 execution, not the shared binary's compilation.
+
+| Option | What enters the build graph | What remains an execution prerequisite |
+| --- | --- | --- |
+| Existing host Linux | User-space binaries, heap hook, bridge resources and a runtime-check executable. | Compatible loaded host driver, accessible device and required permissions. |
+| Cross-compiled Linux user space | Target CPU/OS platform, cross toolchain, pinned sysroot/ABI inputs and target libraries, including selected JetPack inputs. | A matching execution environment for target behavior tests; building does not prove execution or GPU compatibility. |
+| Complete Linux system image | Pinned kernel/configuration, matching modules, application/root filesystem and image assembly. Existing kernel build machinery can be wrapped rather than rewritten. | Booting the generated kernel in a VM or device; driver built-in/autoload configuration must be designed and tested. |
+| Small OS/RTOS or bare-metal firmware | Kernel where applicable, drivers, application, startup code, linker script and freestanding cross toolchain, linked into an ELF/flashable image. | Emulator or board runner, device access and board-specific flashing/boot support. This is a separate portability investigation, not an Autoware/ROS/Agnocast support claim. |
+
+Suggested incremental path for the current host-kernel case:
+
+1. Consider a declared runtime bundle/provider consumed by enabled test/launch
+   macros, collecting the heap hook, bridge resources and prerequisite checker.
+   Make the checker run in the same host/device context immediately before the
+   actual test. Check device access and driver/userspace compatibility, with a
+   clear failure message; leave module installation/loading to host provisioning.
+2. Treat requires-agnocast-kmod as descriptive metadata. A test listed in deps
+   or data is not automatically executed first; invoke the checker through the
+   test launcher rather than depending on a separate *_test target.
+3. Prevent mutable host state from being hidden by a cached success. Consider
+   the external test tag (forces execution), alongside appropriate local/device
+   execution settings. Keep ordinary compilation cacheable. Confirm behavior
+   against the selected Bazel/test-rule implementation before adopting it.
+4. When multiple workers exist, consider an execution-platform capability or
+   dedicated runtime toolchain/provider to select provisioned Agnocast workers.
+   Platform declarations advertise a capability; they do not detect or load a
+   module. Retain the runtime check, since a worker can reboot or lose device
+   access after provisioning. Verify how the chosen rule schedules its test
+   action instead of assuming compilation constraints also govern execution.
+
+For target-owned kernels, a proposed test can depend on the generated bootable
+image plus emulator and launch that image to exercise kernel/driver/application
+behavior together. Producing a .ko alone does not establish compatibility with,
+or loading into, the currently running host kernel. An OCI container shares its
+host kernel; packaging a driver in its filesystem does not supply a running
+kernel. A VM/system-image test can instead boot the generated kernel. Hardware
+runners remain separate from build artifacts, with explicit board reservation,
+flash/boot and cleanup steps. Emulation does not establish physical GPU, driver,
+performance or real-time behavior.
+
+Before selecting an option, pin the target architecture/ABI and relevant kernel
+inputs, identify required privileges/devices, define build versus runtime gates,
+and decide how to keep environment-dependent results fresh. Validate one small
+boot/driver/application path before expanding scope.
+
+References reviewed during the discussion:
+
+- [Bazel platforms and toolchains](https://bazel.build/reference/be/platforms-and-toolchains)
+  model declared execution/target capabilities.
+- [Bazel common/test attributes](https://bazel.build/reference/be/common-definitions)
+  document execution tags and external test-result behavior.
+- [Kleaf](https://android.googlesource.com/kernel/build/+/refs/heads/main-kernel/kleaf/docs/kleaf.md)
+  demonstrates Linux/Android kernel builds under Bazel.
+- [Pigweed toolchain setup](https://pigweed.dev/toolchain/get_started.html)
+  demonstrates Bazel cross-toolchain/platform selection for embedded firmware.
+
 ## Commit and publication policy
 
 Use signed-off Conventional Commits and validate each task in proportion to its

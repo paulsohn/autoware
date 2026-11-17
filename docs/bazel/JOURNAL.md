@@ -6867,3 +6867,23 @@ Next take global-parameter/model context and remaining real core launch packages
 as Phase 5.3.2. The global-loader test XML, alternate disabled API branches,
 full system state transitions and closed-loop driving are not claimed here.
 Phase 5.3 and Phase 5 remain in progress.
+
+## 2026-11-18: Record deferred cross-platform and kernel-runtime options
+
+Purpose: preserve the design discussion for later execution-platform and image
+work without changing the current integration scope. The
+[deferred options](PLAN.md#deferred-cross-platform-and-kernel-runtime-options)
+are authoritative; this entry records the documentation task rather than
+repeating the proposal. Inputs are the current Agnocast runtime launcher/tag
+convention and the linked official Bazel, Kleaf and Pigweed documentation.
+
+The plan distinguishes host-kernel runtime prerequisites from target-owned
+kernel artifacts, user-space cross-compilation and OS/firmware image builds.
+It records the proposed runtime bundle/checker, cache and worker-capability
+options, VM/device validation boundaries and their unvalidated status. No new
+phase requirement, automatic module loading or portability claim is introduced.
+
+Verification: git diff --check and local Markdown file/anchor checks for the
+changed documents. Documentation only: no build, runtime test, kernel operation,
+Fast DDS check or cross-platform experiment was performed. Revisit the options
+when a concrete target requires them in the packaging/platform phases.
