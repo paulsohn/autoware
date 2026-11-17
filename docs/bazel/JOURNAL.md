@@ -5486,3 +5486,30 @@ Verification: check the changed Markdown's local links and heading anchors and
 run git diff --check. Both pass. Documentation only; no build or runtime checks
 are required or run. Future tasks maintain the checklist and their own evidence
 entries together rather than duplicating experiment details in the checklist.
+
+
+## 2026-11-17: Root dependency declarations and source selection
+
+Purpose: make root source selection readable before adding more planning
+packages. Registry dependencies come first; extensions, toolchains and pinned
+archives follow; local dependencies come last, with each bazel_dep immediately
+followed by its matching local_path_override. Root local declarations use
+version 0.0.0 regardless of package-local version metadata. Registry release
+versions remain pinned. DEVELOPING.md owns the layout convention; the adoption
+checklist links there rather than duplicating it.
+
+Method: collect existing declarations and overrides by module name, preserve
+all override paths and external versions, and order prerequisites before
+consumers using package-local MODULE dependencies and available registry module
+metadata. Module-level test dependencies contain cycles, so this is an
+approximate dependency order rather than a claim that the module graph is a
+DAG. Do not infer a target dependency or source-selection change from ordering.
+Verify unique names, adjacent matching pairs, root version 0.0.0 on every local
+entry, and no configuration statements after the local group. The current tree
+has 43 registry declarations and 79 local pairs, including the three planning
+modules below. Existing selections are unchanged.
+
+Verification: the trajectory and route-handler commands below successfully
+analyze, build and test against this layout and local version convention.
+Targeted buildifier and whitespace checks pass. No middleware matrix is needed
+for declaration organization; the affected module gates remain complete.

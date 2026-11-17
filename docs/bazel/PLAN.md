@@ -47,7 +47,8 @@ conventions from the outset, but introduce technical dependencies and patches
 only when your current target demonstrates the need.
 
 - [ ] Select local dependency snapshots and inventory missing Bazel support.
-  [Evidence: local interface adoption](JOURNAL.md#2026-11-17-local-interface-adoption--autoware_adapi_v1_msgs).
+  [Root declaration layout](DEVELOPING.md#dependency-conventions);
+  [evidence: local interface adoption](JOURNAL.md#2026-11-17-local-interface-adoption--autoware_adapi_v1_msgs).
 - [ ] Establish source-preservation and added-test locations.
   [Evidence: tests outside component packages](JOURNAL.md#2026-11-17-keep-added-integration-tests-outside-component-packages).
 - [ ] Separate component ownership from product-level composition.
@@ -128,7 +129,8 @@ only when your current target demonstrates the need.
   Registry sources supply dependencies absent locally; explicit source-selection
   comparisons are separate experiments requested by the user.
 - A local Autoware ROS package is a package-local Bazel module selected by a
-  root `local_path_override`, recording the local snapshot version.
+  root `local_path_override`; its root bazel_dep uses 0.0.0, with version
+  metadata retained in the package-local module.
   Registry comparisons require explicit user direction and compatible temporary
   version selection without changing consumer BUILD files.
 - An interface package retains its manifest-level package dependencies in its
@@ -284,9 +286,10 @@ Exit criteria:
 
 Answers from Phase 1:
 
-- Package source selection belongs in the root module. A concrete RCR version
-  plus `local_path_override` selects local development by default; removing the
-  override selects the published source without changing a consumer label.
+- Package source selection belongs in the root module. Phase 1 compared local
+  and registry sources through overrides. Current adoption uses root version
+  0.0.0 for local modules; registry comparisons require an explicit source and
+  version selection (see Current decisions).
 - Cross-package interfaces retain the RCR target convention. The consuming
   package needs a direct module dependency, the referenced message target on
   the individual interface rule, and the package repository in

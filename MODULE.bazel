@@ -1,41 +1,70 @@
 module(name = "autoware_bazel")
 
-bazel_dep(name = "ros2agnocast", version = "0.0.0")
-local_path_override(
-    module_name = "ros2agnocast",
-    path = "src/core/agnocast/src/ros2agnocast",
-)
-
-# Bazel rule and toolchain modules used directly by this workspace.
-bazel_dep(name = "googletest", version = "1.18.0.bcr.1")
-bazel_dep(name = "llvm", version = "0.8.25.rcr.0")
+# Registry dependencies, with prerequisites before consumers where known.
 bazel_dep(name = "platforms", version = "1.1.0")
 bazel_dep(name = "rules_cc", version = "0.2.26.rcr.0")
-
-# The core Lyrical release supplies rclcpp, rcutils, std_msgs and their
-# transitive ROS dependencies. Direct 0.0.0 deps expose the versions selected
-# by ros_core.
-bazel_dep(name = "ros_core", version = "lyrical.2026-10-05.rcr.0")
-bazel_dep(name = "geometry_msgs", version = "0.0.0")
-bazel_dep(name = "rclcpp", version = "0.0.0")
-bazel_dep(name = "rcutils", version = "0.0.0")
+bazel_dep(name = "googletest", version = "1.18.0.bcr.1")
+bazel_dep(name = "rules_python", version = "2.4.5")
+bazel_dep(name = "rules_shell", version = "0.6.1")
+bazel_dep(name = "llvm", version = "0.8.25.rcr.0")
+bazel_dep(name = "rosdistro", version = "lyrical.2026-10-05.rcr.3")
+bazel_dep(name = "ament_index_python", version = "0.0.0")
 bazel_dep(name = "rosidl_default_generators", version = "0.0.0")
 bazel_dep(name = "std_msgs", version = "0.0.0")
-bazel_dep(name = "std_srvs", version = "0.0.0")
-
-# ROS packages outside ros_core need an explicit concrete release selection.
+bazel_dep(name = "geometry_msgs", version = "0.0.0")
 bazel_dep(name = "diagnostic_msgs", version = "5.9.3-1.rcr.0")
+bazel_dep(name = "launch_xml", version = "0.0.0")
+bazel_dep(name = "launch_yaml", version = "0.0.0")
+bazel_dep(name = "launch", version = "0.0.0")
+bazel_dep(name = "launch_testing", version = "0.0.0")
+bazel_dep(name = "rcl_interfaces", version = "0.0.0")
+bazel_dep(name = "rcutils", version = "0.0.0")
+bazel_dep(name = "rosgraph_msgs", version = "0.0.0")
+bazel_dep(name = "rclcpp", version = "0.0.0")
+bazel_dep(name = "unique_identifier_msgs", version = "2.8.1-3.rcr.2")
+bazel_dep(name = "rclpy", version = "0.0.0")
 bazel_dep(name = "diagnostic_updater", version = "4.4.7-1.rcr.2")
 bazel_dep(name = "geographic_msgs", version = "1.0.6-3.rcr.2")
+bazel_dep(name = "launch_ros", version = "0.0.0")
+bazel_dep(name = "rclcpp_components", version = "0.0.0")
 bazel_dep(name = "logging_demo", version = "0.37.9-1.rcr.0")
+bazel_dep(name = "nav_msgs", version = "5.9.3-1.rcr.0")
+bazel_dep(name = "sensor_msgs", version = "5.9.3-1.rcr.0")
+bazel_dep(name = "pcl_conversions", version = "2.10.0-1.rcr.0")
 bazel_dep(name = "tf2", version = "0.45.10-1.rcr.0")
-bazel_dep(name = "tf2_geometry_msgs", version = "0.45.10-1.rcr.0")
+bazel_dep(name = "tf2_msgs", version = "0.0.0")
 bazel_dep(name = "tf2_ros", version = "0.45.10-1.rcr.0")
-bazel_dep(name = "unique_identifier_msgs", version = "2.8.1-3.rcr.2")
+bazel_dep(name = "tf2_eigen", version = "0.45.10-1.rcr.0")
+bazel_dep(name = "tf2_geometry_msgs", version = "0.45.10-1.rcr.0")
 bazel_dep(name = "visualization_msgs", version = "5.9.3-1.rcr.0")
+bazel_dep(name = "pcl_ros", version = "2.10.0-1.rcr.1")
+bazel_dep(name = "point_cloud_msg_wrapper", version = "1.0.7-6.rcr.2")
+bazel_dep(name = "rosbag2_py", version = "0.0.0")
+bazel_dep(name = "ros2bag", version = "0.33.4-1.rcr.0")
+bazel_dep(name = "ros_core", version = "lyrical.2026-10-05.rcr.0")
+bazel_dep(name = "std_srvs", version = "0.0.0")
+bazel_dep(name = "tf2_sensor_msgs", version = "0.45.10-1.rcr.0")
 
-# Local source package modules. Concrete versions identify RCR counterparts
-# where available; local-only packages use 0.0.0.
+# Keep ROS/DDS globals shared with other native Python extensions.
+single_version_override(
+    module_name = "rclpy",
+    patch_strip = 1,
+    patches = ["//bazel/patches:rclpy_shared_dependencies.patch"],
+    version = "10.0.11-1.rcr.0",
+)
+
+register_toolchains("@llvm//toolchain:all")
+
+llvm = use_extension("@llvm//extensions:llvm.bzl", "llvm")
+llvm.version(llvm_version = "21.1.8")
+llvm.configure(targets = ["X86"])
+use_repo(llvm, "llvm-project")
+
+pip_ros = use_extension("@rosdistro//python:defs.bzl", "pip_ros")
+use_repo(pip_ros, "pip_ros")
+
+# Local source dependencies, ordered by their package-local MODULE declarations.
+# Overrides select the source; root declarations need no registry release version.
 bazel_dep(name = "agnocast_cie_config_msgs", version = "0.0.0")
 local_path_override(
     module_name = "agnocast_cie_config_msgs",
@@ -48,187 +77,16 @@ local_path_override(
     path = "src/core/agnocast/src/agnocast_cie_thread_configurator",
 )
 
-bazel_dep(name = "agnocastlib", version = "0.0.0")
-local_path_override(
-    module_name = "agnocastlib",
-    path = "src/core/agnocast/src/agnocastlib",
-)
-
-bazel_dep(name = "autoware_utils_math", version = "1.11.0-3.rcr.2")
-local_path_override(
-    module_name = "autoware_utils_math",
-    path = "src/core/autoware_utils/autoware_utils_math",
-)
-
-bazel_dep(name = "autoware_utils_diagnostics", version = "1.11.0-3.rcr.2")
-local_path_override(
-    module_name = "autoware_utils_diagnostics",
-    path = "src/core/autoware_utils/autoware_utils_diagnostics",
-)
-
-bazel_dep(name = "autoware_utils_logging", version = "1.11.0-3.rcr.2")
-local_path_override(
-    module_name = "autoware_utils_logging",
-    path = "src/core/autoware_utils/autoware_utils_logging",
-)
-
-bazel_dep(name = "autoware_utils_geometry", version = "1.11.0-3.rcr.2")
-local_path_override(
-    module_name = "autoware_utils_geometry",
-    path = "src/core/autoware_utils/autoware_utils_geometry",
-)
-
-bazel_dep(name = "autoware_utils_rclcpp", version = "1.11.0-3.rcr.2")
-local_path_override(
-    module_name = "autoware_utils_rclcpp",
-    path = "src/core/autoware_utils/autoware_utils_rclcpp",
-)
-
-bazel_dep(name = "autoware_utils_tf", version = "1.11.0-3.rcr.2")
-local_path_override(
-    module_name = "autoware_utils_tf",
-    path = "src/core/autoware_utils/autoware_utils_tf",
-)
-
-bazel_dep(name = "autoware_utils_system", version = "1.11.0-3.rcr.2")
-local_path_override(
-    module_name = "autoware_utils_system",
-    path = "src/core/autoware_utils/autoware_utils_system",
-)
-
-bazel_dep(name = "autoware_utils_uuid", version = "1.11.0-3.rcr.2")
-local_path_override(
-    module_name = "autoware_utils_uuid",
-    path = "src/core/autoware_utils/autoware_utils_uuid",
-)
-
-bazel_dep(name = "autoware_utils_visualization", version = "1.11.0-3.rcr.2")
-local_path_override(
-    module_name = "autoware_utils_visualization",
-    path = "src/core/autoware_utils/autoware_utils_visualization",
-)
-
-# This core package is not published in the Lyrical RCR. The local module is
-# selected explicitly as the first runnable core slice.
-bazel_dep(name = "autoware_node", version = "0.0.0")
-local_path_override(
-    module_name = "autoware_node",
-    path = "src/core/autoware_core/common/autoware_node",
-)
-
-bazel_dep(name = "autoware_agnocast_wrapper", version = "1.10.0")
-local_path_override(
-    module_name = "autoware_agnocast_wrapper",
-    path = "src/core/autoware_core/common/autoware_agnocast_wrapper",
-)
-
-bazel_dep(name = "autoware_common_msgs", version = "1.11.0-3.rcr.2")
-local_path_override(
-    module_name = "autoware_common_msgs",
-    path = "src/core/autoware_msgs/autoware_common_msgs",
-)
-
-bazel_dep(name = "autoware_control_msgs", version = "1.11.0-3.rcr.2")
-local_path_override(
-    module_name = "autoware_control_msgs",
-    path = "src/core/autoware_msgs/autoware_control_msgs",
-)
-
-bazel_dep(name = "autoware_localization_msgs", version = "1.11.0-3.rcr.2")
-local_path_override(
-    module_name = "autoware_localization_msgs",
-    path = "src/core/autoware_msgs/autoware_localization_msgs",
-)
-
-bazel_dep(name = "autoware_map_msgs", version = "1.11.0-3.rcr.2")
-local_path_override(
-    module_name = "autoware_map_msgs",
-    path = "src/core/autoware_msgs/autoware_map_msgs",
-)
-
-bazel_dep(name = "autoware_perception_msgs", version = "1.11.0-3.rcr.2")
-local_path_override(
-    module_name = "autoware_perception_msgs",
-    path = "src/core/autoware_msgs/autoware_perception_msgs",
-)
-
-bazel_dep(name = "autoware_planning_msgs", version = "1.11.0-3.rcr.2")
-local_path_override(
-    module_name = "autoware_planning_msgs",
-    path = "src/core/autoware_msgs/autoware_planning_msgs",
-)
-
-bazel_dep(name = "autoware_sensing_msgs", version = "1.11.0-3.rcr.2")
-local_path_override(
-    module_name = "autoware_sensing_msgs",
-    path = "src/core/autoware_msgs/autoware_sensing_msgs",
-)
-
-bazel_dep(name = "autoware_system_msgs", version = "1.11.0-3.rcr.2")
-local_path_override(
-    module_name = "autoware_system_msgs",
-    path = "src/core/autoware_msgs/autoware_system_msgs",
-)
-
-bazel_dep(name = "autoware_v2x_msgs", version = "1.11.0-3.rcr.2")
-local_path_override(
-    module_name = "autoware_v2x_msgs",
-    path = "src/core/autoware_msgs/autoware_v2x_msgs",
-)
-
-bazel_dep(name = "autoware_vehicle_msgs", version = "1.11.0-3.rcr.2")
-local_path_override(
-    module_name = "autoware_vehicle_msgs",
-    path = "src/core/autoware_msgs/autoware_vehicle_msgs",
-)
-
-bazel_dep(name = "autoware_internal_planning_msgs", version = "1.16.0-1.rcr.0")
-local_path_override(
-    module_name = "autoware_internal_planning_msgs",
-    path = "src/core/autoware_internal_msgs/autoware_internal_planning_msgs",
-)
-
-# No Lyrical RCR release exists for this package yet. The local module is the
-# only selected source, so its dependency version remains intentionally local.
-bazel_dep(name = "autoware_simulation_msgs", version = "0.0.0")
-local_path_override(
-    module_name = "autoware_simulation_msgs",
-    path = "src/core/autoware_msgs/autoware_simulation_msgs",
-)
-
-# Use the latest published patch of the matching rosdistro snapshot.
-bazel_dep(name = "rosdistro", version = "lyrical.2026-10-05.rcr.3")
-
-register_toolchains("@llvm//toolchain:all")
-
-bazel_dep(name = "rules_shell", version = "0.6.1")
 bazel_dep(name = "agnocast_heaphook", version = "0.0.0")
 local_path_override(
     module_name = "agnocast_heaphook",
     path = "src/core/agnocast/agnocast_heaphook",
 )
 
-llvm = use_extension("@llvm//extensions:llvm.bzl", "llvm")
-llvm.version(llvm_version = "21.1.8")
-llvm.configure(targets = ["X86"])
-use_repo(llvm, "llvm-project")
-
-bazel_dep(name = "ros2agnocast_discovery_msgs", version = "0.0.0")
+bazel_dep(name = "agnocastlib", version = "0.0.0")
 local_path_override(
-    module_name = "ros2agnocast_discovery_msgs",
-    path = "src/core/agnocast/src/ros2agnocast_discovery_msgs",
-)
-
-bazel_dep(name = "agnocast_ioctl_wrapper", version = "0.0.0")
-local_path_override(
-    module_name = "agnocast_ioctl_wrapper",
-    path = "src/core/agnocast/src/agnocast_ioctl_wrapper",
-)
-
-bazel_dep(name = "ros2agnocast_discovery_agent", version = "0.0.0")
-local_path_override(
-    module_name = "ros2agnocast_discovery_agent",
-    path = "src/core/agnocast/src/ros2agnocast_discovery_agent",
+    module_name = "agnocastlib",
+    path = "src/core/agnocast/src/agnocastlib",
 )
 
 bazel_dep(name = "agnocast_components", version = "0.0.0")
@@ -237,17 +95,10 @@ local_path_override(
     path = "src/core/agnocast/src/agnocast_components",
 )
 
-bazel_dep(name = "ros2bag", version = "0.33.4-1.rcr.0")
 bazel_dep(name = "agnocast_sample_interfaces", version = "0.0.0")
 local_path_override(
     module_name = "agnocast_sample_interfaces",
     path = "src/core/agnocast/src/agnocast_sample_interfaces",
-)
-
-bazel_dep(name = "agnocast_sample_application", version = "0.0.0")
-local_path_override(
-    module_name = "agnocast_sample_application",
-    path = "src/core/agnocast/src/agnocast_sample_application",
 )
 
 bazel_dep(name = "agnocast_e2e_test", version = "0.0.0")
@@ -256,47 +107,250 @@ local_path_override(
     path = "src/core/agnocast/src/agnocast_e2e_test",
 )
 
-bazel_dep(name = "launch_testing", version = "0.0.0")
-bazel_dep(name = "launch_ros", version = "0.0.0")
-bazel_dep(name = "rclpy", version = "0.0.0")
-bazel_dep(name = "rules_python", version = "2.4.5")
-bazel_dep(name = "launch", version = "0.0.0")
-bazel_dep(name = "launch_xml", version = "0.0.0")
-bazel_dep(name = "launch_yaml", version = "0.0.0")
-bazel_dep(name = "rclcpp_components", version = "0.0.0")
-bazel_dep(name = "rosbag2_py", version = "0.0.0")
-
-# Keep ROS/DDS globals shared with other native Python extensions.
-single_version_override(
-    module_name = "rclpy",
-    patch_strip = 1,
-    patches = ["//bazel/patches:rclpy_shared_dependencies.patch"],
-    version = "10.0.11-1.rcr.0",
+bazel_dep(name = "agnocast_ioctl_wrapper", version = "0.0.0")
+local_path_override(
+    module_name = "agnocast_ioctl_wrapper",
+    path = "src/core/agnocast/src/agnocast_ioctl_wrapper",
 )
 
-# Phase 5.1 local core foundation packages.
+bazel_dep(name = "agnocast_sample_application", version = "0.0.0")
+local_path_override(
+    module_name = "agnocast_sample_application",
+    path = "src/core/agnocast/src/agnocast_sample_application",
+)
+
+bazel_dep(name = "autoware_adapi_v1_msgs", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_adapi_v1_msgs",
+    path = "src/core/autoware_adapi_msgs/autoware_adapi_v1_msgs",
+)
+
+bazel_dep(name = "autoware_adapi_version_msgs", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_adapi_version_msgs",
+    path = "src/core/autoware_adapi_msgs/autoware_adapi_version_msgs",
+)
+
+bazel_dep(name = "autoware_adapi_specs", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_adapi_specs",
+    path = "src/core/autoware_core/api/autoware_adapi_specs",
+)
+
+bazel_dep(name = "autoware_utils_rclcpp", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_utils_rclcpp",
+    path = "src/core/autoware_utils/autoware_utils_rclcpp",
+)
+
+bazel_dep(name = "autoware_agnocast_wrapper", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_agnocast_wrapper",
+    path = "src/core/autoware_core/common/autoware_agnocast_wrapper",
+)
+
+bazel_dep(name = "autoware_common_msgs", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_common_msgs",
+    path = "src/core/autoware_msgs/autoware_common_msgs",
+)
+
+bazel_dep(name = "autoware_control_msgs", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_control_msgs",
+    path = "src/core/autoware_msgs/autoware_control_msgs",
+)
+
+bazel_dep(name = "autoware_localization_msgs", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_localization_msgs",
+    path = "src/core/autoware_msgs/autoware_localization_msgs",
+)
+
+bazel_dep(name = "autoware_map_msgs", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_map_msgs",
+    path = "src/core/autoware_msgs/autoware_map_msgs",
+)
+
+bazel_dep(name = "autoware_perception_msgs", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_perception_msgs",
+    path = "src/core/autoware_msgs/autoware_perception_msgs",
+)
+
+bazel_dep(name = "autoware_planning_msgs", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_planning_msgs",
+    path = "src/core/autoware_msgs/autoware_planning_msgs",
+)
+
+bazel_dep(name = "autoware_system_msgs", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_system_msgs",
+    path = "src/core/autoware_msgs/autoware_system_msgs",
+)
+
+bazel_dep(name = "autoware_vehicle_msgs", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_vehicle_msgs",
+    path = "src/core/autoware_msgs/autoware_vehicle_msgs",
+)
+
+bazel_dep(name = "autoware_component_interface_specs", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_component_interface_specs",
+    path = "src/core/autoware_core/common/autoware_component_interface_specs",
+)
+
+bazel_dep(name = "autoware_component_interface_utils", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_component_interface_utils",
+    path = "src/core/autoware_core/common/autoware_component_interface_utils",
+)
+
+bazel_dep(name = "autoware_command_gate", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_command_gate",
+    path = "src/core/autoware_core/control/autoware_command_gate",
+)
+
+bazel_dep(name = "autoware_internal_planning_msgs", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_internal_planning_msgs",
+    path = "src/core/autoware_internal_msgs/autoware_internal_planning_msgs",
+)
+
+bazel_dep(name = "autoware_internal_debug_msgs", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_internal_debug_msgs",
+    path = "src/core/autoware_internal_msgs/autoware_internal_debug_msgs",
+)
+
+bazel_dep(name = "autoware_internal_localization_msgs", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_internal_localization_msgs",
+    path = "src/core/autoware_internal_msgs/autoware_internal_localization_msgs",
+)
+
+bazel_dep(name = "autoware_internal_msgs", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_internal_msgs",
+    path = "src/core/autoware_internal_msgs/autoware_internal_msgs",
+)
+
+bazel_dep(name = "autoware_utils_system", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_utils_system",
+    path = "src/core/autoware_utils/autoware_utils_system",
+)
+
+bazel_dep(name = "autoware_utils_debug", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_utils_debug",
+    path = "src/core/autoware_utils/autoware_utils_debug",
+)
+
+bazel_dep(name = "autoware_utils_math", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_utils_math",
+    path = "src/core/autoware_utils/autoware_utils_math",
+)
+
+bazel_dep(name = "autoware_utils_geometry", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_utils_geometry",
+    path = "src/core/autoware_utils/autoware_utils_geometry",
+)
+
+bazel_dep(name = "autoware_utils_tf", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_utils_tf",
+    path = "src/core/autoware_utils/autoware_utils_tf",
+)
+
+bazel_dep(name = "autoware_crop_box_filter", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_crop_box_filter",
+    path = "src/core/autoware_core/sensing/autoware_crop_box_filter",
+)
+
+bazel_dep(name = "autoware_downsample_filters", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_downsample_filters",
+    path = "src/core/autoware_core/sensing/autoware_downsample_filters",
+)
+
 bazel_dep(name = "autoware_kalman_filter", version = "0.0.0")
 local_path_override(
     module_name = "autoware_kalman_filter",
     path = "src/core/autoware_core/common/autoware_kalman_filter",
 )
 
-bazel_dep(name = "autoware_qos_utils", version = "0.0.0")
+bazel_dep(name = "autoware_localization_util", version = "0.0.0")
 local_path_override(
-    module_name = "autoware_qos_utils",
-    path = "src/core/autoware_core/common/autoware_qos_utils",
+    module_name = "autoware_localization_util",
+    path = "src/core/autoware_core/localization/autoware_localization_util",
 )
 
-bazel_dep(name = "autoware_signal_processing", version = "0.0.0")
+bazel_dep(name = "autoware_utils_logging", version = "0.0.0")
 local_path_override(
-    module_name = "autoware_signal_processing",
-    path = "src/core/autoware_core/common/autoware_signal_processing",
+    module_name = "autoware_utils_logging",
+    path = "src/core/autoware_utils/autoware_utils_logging",
 )
 
-bazel_dep(name = "autoware_interpolation", version = "0.0.0")
+bazel_dep(name = "autoware_ekf_localizer", version = "0.0.0")
 local_path_override(
-    module_name = "autoware_interpolation",
-    path = "src/core/autoware_core/common/autoware_interpolation",
+    module_name = "autoware_ekf_localizer",
+    path = "src/core/autoware_core/localization/autoware_ekf_localizer",
+)
+
+bazel_dep(name = "autoware_point_types", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_point_types",
+    path = "src/core/autoware_core/common/autoware_point_types",
+)
+
+bazel_dep(name = "autoware_utils_diagnostics", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_utils_diagnostics",
+    path = "src/core/autoware_utils/autoware_utils_diagnostics",
+)
+
+bazel_dep(name = "autoware_euclidean_cluster_object_detector", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_euclidean_cluster_object_detector",
+    path = "src/core/autoware_core/perception/autoware_euclidean_cluster_object_detector",
+)
+
+bazel_dep(name = "autoware_lanelet2_extension", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_lanelet2_extension",
+    path = "src/core/autoware_lanelet2_extension/autoware_lanelet2_extension",
+)
+
+bazel_dep(name = "autoware_geography_utils", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_geography_utils",
+    path = "src/core/autoware_core/common/autoware_geography_utils",
+)
+
+bazel_dep(name = "autoware_sensing_msgs", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_sensing_msgs",
+    path = "src/core/autoware_msgs/autoware_sensing_msgs",
+)
+
+bazel_dep(name = "autoware_gnss_poser", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_gnss_poser",
+    path = "src/core/autoware_core/sensing/autoware_gnss_poser",
+)
+
+bazel_dep(name = "autoware_test_utils", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_test_utils",
+    path = "src/core/autoware_core/testing/autoware_test_utils",
 )
 
 bazel_dep(name = "autoware_vehicle_info_utils", version = "0.0.0")
@@ -305,14 +359,126 @@ local_path_override(
     path = "src/core/autoware_core/common/autoware_vehicle_info_utils",
 )
 
-bazel_dep(name = "autoware_vehicle_velocity_converter", version = "0.0.0")
+bazel_dep(name = "autoware_ground_filter", version = "0.0.0")
 local_path_override(
-    module_name = "autoware_vehicle_velocity_converter",
-    path = "src/core/autoware_core/sensing/autoware_vehicle_velocity_converter",
+    module_name = "autoware_ground_filter",
+    path = "src/core/autoware_core/perception/autoware_ground_filter",
 )
 
-bazel_dep(name = "autoware_internal_debug_msgs", version = "1.16.0")
-bazel_dep(name = "nav_msgs", version = "5.9.3-1.rcr.0")
+bazel_dep(name = "autoware_gyro_odometer", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_gyro_odometer",
+    path = "src/core/autoware_core/localization/autoware_gyro_odometer",
+)
+
+bazel_dep(name = "autoware_interpolation", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_interpolation",
+    path = "src/core/autoware_core/common/autoware_interpolation",
+)
+
+bazel_dep(name = "autoware_lanelet2_utils", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_lanelet2_utils",
+    path = "src/core/autoware_core/common/autoware_lanelet2_utils",
+)
+
+bazel_dep(name = "autoware_utils_visualization", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_utils_visualization",
+    path = "src/core/autoware_utils/autoware_utils_visualization",
+)
+
+bazel_dep(name = "autoware_lanelet2_map_visualizer", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_lanelet2_map_visualizer",
+    path = "src/core/autoware_core/map/autoware_lanelet2_map_visualizer",
+)
+
+bazel_dep(name = "autoware_qos_utils", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_qos_utils",
+    path = "src/core/autoware_core/common/autoware_qos_utils",
+)
+
+bazel_dep(name = "autoware_map_height_fitter", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_map_height_fitter",
+    path = "src/core/autoware_core/map/autoware_map_height_fitter",
+)
+
+bazel_dep(name = "autoware_map_loader", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_map_loader",
+    path = "src/core/autoware_core/map/autoware_map_loader",
+)
+
+bazel_dep(name = "autoware_map_projection_loader", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_map_projection_loader",
+    path = "src/core/autoware_core/map/autoware_map_projection_loader",
+)
+
+bazel_dep(name = "autoware_motion_utils", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_motion_utils",
+    path = "src/core/autoware_core/common/autoware_motion_utils",
+)
+
+bazel_dep(name = "autoware_utils_pcl", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_utils_pcl",
+    path = "src/core/autoware_utils/autoware_utils_pcl",
+)
+
+bazel_dep(name = "autoware_ndt_scan_matcher", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_ndt_scan_matcher",
+    path = "src/core/autoware_core/localization/autoware_ndt_scan_matcher",
+)
+
+bazel_dep(name = "autoware_node", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_node",
+    path = "src/core/autoware_core/common/autoware_node",
+)
+
+bazel_dep(name = "autoware_utils_uuid", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_utils_uuid",
+    path = "src/core/autoware_utils/autoware_utils_uuid",
+)
+
+bazel_dep(name = "autoware_perception_objects_converter", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_perception_objects_converter",
+    path = "src/core/autoware_core/perception/autoware_perception_objects_converter",
+)
+
+bazel_dep(name = "autoware_pose_initializer", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_pose_initializer",
+    path = "src/core/autoware_core/localization/autoware_pose_initializer",
+)
+
+bazel_dep(name = "autoware_signal_processing", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_signal_processing",
+    path = "src/core/autoware_core/common/autoware_signal_processing",
+)
+
+bazel_dep(name = "autoware_simple_pure_pursuit", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_simple_pure_pursuit",
+    path = "src/core/autoware_core/control/autoware_simple_pure_pursuit",
+)
+
+bazel_dep(name = "autoware_simulation_msgs", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_simulation_msgs",
+    path = "src/core/autoware_msgs/autoware_simulation_msgs",
+)
+
 bazel_dep(name = "autoware_stop_filter", version = "0.0.0")
 local_path_override(
     module_name = "autoware_stop_filter",
@@ -325,212 +491,32 @@ local_path_override(
     path = "src/core/autoware_core/localization/autoware_twist2accel",
 )
 
-bazel_dep(name = "tf2_eigen", version = "0.45.10-1.rcr.0")
-bazel_dep(name = "autoware_localization_util", version = "0.0.0")
+bazel_dep(name = "autoware_v2x_msgs", version = "0.0.0")
 local_path_override(
-    module_name = "autoware_localization_util",
-    path = "src/core/autoware_core/localization/autoware_localization_util",
+    module_name = "autoware_v2x_msgs",
+    path = "src/core/autoware_msgs/autoware_v2x_msgs",
 )
 
-bazel_dep(name = "sensor_msgs", version = "5.9.3-1.rcr.0")
-bazel_dep(name = "rosgraph_msgs", version = "0.0.0")
-bazel_dep(name = "autoware_gyro_odometer", version = "0.0.0")
+bazel_dep(name = "autoware_vehicle_velocity_converter", version = "0.0.0")
 local_path_override(
-    module_name = "autoware_gyro_odometer",
-    path = "src/core/autoware_core/localization/autoware_gyro_odometer",
+    module_name = "autoware_vehicle_velocity_converter",
+    path = "src/core/autoware_core/sensing/autoware_vehicle_velocity_converter",
 )
 
-bazel_dep(name = "ament_index_python", version = "0.0.0")
-bazel_dep(name = "autoware_ekf_localizer", version = "0.0.0")
+bazel_dep(name = "ros2agnocast_discovery_msgs", version = "0.0.0")
 local_path_override(
-    module_name = "autoware_ekf_localizer",
-    path = "src/core/autoware_core/localization/autoware_ekf_localizer",
+    module_name = "ros2agnocast_discovery_msgs",
+    path = "src/core/agnocast/src/ros2agnocast_discovery_msgs",
 )
 
-bazel_dep(name = "autoware_lanelet2_extension", version = "0.7.2-3.rcr.2")
-bazel_dep(name = "autoware_geography_utils", version = "0.0.0")
+bazel_dep(name = "ros2agnocast_discovery_agent", version = "0.0.0")
 local_path_override(
-    module_name = "autoware_geography_utils",
-    path = "src/core/autoware_core/common/autoware_geography_utils",
+    module_name = "ros2agnocast_discovery_agent",
+    path = "src/core/agnocast/src/ros2agnocast_discovery_agent",
 )
 
-bazel_dep(name = "tf2_msgs", version = "0.0.0")
-bazel_dep(name = "autoware_gnss_poser", version = "0.0.0")
+bazel_dep(name = "ros2agnocast", version = "0.0.0")
 local_path_override(
-    module_name = "autoware_gnss_poser",
-    path = "src/core/autoware_core/sensing/autoware_gnss_poser",
-)
-
-bazel_dep(name = "point_cloud_msg_wrapper", version = "1.0.7-6.rcr.2")
-bazel_dep(name = "autoware_point_types", version = "0.0.0")
-local_path_override(
-    module_name = "autoware_point_types",
-    path = "src/core/autoware_core/common/autoware_point_types",
-)
-
-bazel_dep(name = "autoware_internal_msgs", version = "1.16.0")
-bazel_dep(name = "autoware_utils_debug", version = "1.4.2-4.rcr.2")
-local_path_override(
-    module_name = "autoware_utils_debug",
-    path = "src/core/autoware_utils/autoware_utils_debug",
-)
-
-bazel_dep(name = "autoware_crop_box_filter", version = "0.0.0")
-local_path_override(
-    module_name = "autoware_crop_box_filter",
-    path = "src/core/autoware_core/sensing/autoware_crop_box_filter",
-)
-
-bazel_dep(name = "pcl_conversions", version = "2.10.0-1.rcr.0")
-bazel_dep(name = "pcl_ros", version = "2.10.0-1.rcr.1")
-bazel_dep(name = "autoware_downsample_filters", version = "0.0.0")
-local_path_override(
-    module_name = "autoware_downsample_filters",
-    path = "src/core/autoware_core/sensing/autoware_downsample_filters",
-)
-
-bazel_dep(name = "autoware_adapi_v1_msgs", version = "1.9.2")
-bazel_dep(name = "autoware_test_utils", version = "0.0.0")
-local_path_override(
-    module_name = "autoware_test_utils",
-    path = "src/core/autoware_core/testing/autoware_test_utils",
-)
-
-pip_ros = use_extension("@rosdistro//python:defs.bzl", "pip_ros")
-use_repo(pip_ros, "pip_ros")
-
-bazel_dep(name = "tf2_sensor_msgs", version = "0.45.10-1.rcr.0")
-bazel_dep(name = "autoware_ground_filter", version = "0.0.0")
-local_path_override(
-    module_name = "autoware_ground_filter",
-    path = "src/core/autoware_core/perception/autoware_ground_filter",
-)
-
-bazel_dep(name = "autoware_euclidean_cluster_object_detector", version = "0.0.0")
-local_path_override(
-    module_name = "autoware_euclidean_cluster_object_detector",
-    path = "src/core/autoware_core/perception/autoware_euclidean_cluster_object_detector",
-)
-
-bazel_dep(name = "autoware_perception_objects_converter", version = "0.0.0")
-local_path_override(
-    module_name = "autoware_perception_objects_converter",
-    path = "src/core/autoware_core/perception/autoware_perception_objects_converter",
-)
-
-bazel_dep(name = "autoware_component_interface_specs", version = "0.0.0")
-local_path_override(
-    module_name = "autoware_component_interface_specs",
-    path = "src/core/autoware_core/common/autoware_component_interface_specs",
-)
-
-bazel_dep(name = "autoware_map_projection_loader", version = "0.0.0")
-local_path_override(
-    module_name = "autoware_map_projection_loader",
-    path = "src/core/autoware_core/map/autoware_map_projection_loader",
-)
-
-local_path_override(
-    module_name = "autoware_lanelet2_extension",
-    path = "src/core/autoware_lanelet2_extension/autoware_lanelet2_extension",
-)
-
-bazel_dep(name = "autoware_lanelet2_utils", version = "0.0.0")
-local_path_override(
-    module_name = "autoware_lanelet2_utils",
-    path = "src/core/autoware_core/common/autoware_lanelet2_utils",
-)
-
-bazel_dep(name = "autoware_map_loader", version = "0.0.0")
-local_path_override(
-    module_name = "autoware_map_loader",
-    path = "src/core/autoware_core/map/autoware_map_loader",
-)
-
-bazel_dep(name = "autoware_internal_localization_msgs", version = "1.16.0")
-bazel_dep(name = "rcl_interfaces", version = "0.0.0")
-bazel_dep(name = "autoware_map_height_fitter", version = "0.0.0")
-local_path_override(
-    module_name = "autoware_map_height_fitter",
-    path = "src/core/autoware_core/map/autoware_map_height_fitter",
-)
-
-bazel_dep(name = "autoware_lanelet2_map_visualizer", version = "0.0.0")
-local_path_override(
-    module_name = "autoware_lanelet2_map_visualizer",
-    path = "src/core/autoware_core/map/autoware_lanelet2_map_visualizer",
-)
-
-bazel_dep(name = "autoware_utils_pcl", version = "1.11.0-3.rcr.2")
-local_path_override(
-    module_name = "autoware_utils_pcl",
-    path = "src/core/autoware_utils/autoware_utils_pcl",
-)
-
-bazel_dep(name = "autoware_ndt_scan_matcher", version = "0.0.0")
-local_path_override(
-    module_name = "autoware_ndt_scan_matcher",
-    path = "src/core/autoware_core/localization/autoware_ndt_scan_matcher",
-)
-
-bazel_dep(name = "autoware_motion_utils", version = "0.0.0")
-local_path_override(
-    module_name = "autoware_motion_utils",
-    path = "src/core/autoware_core/common/autoware_motion_utils",
-)
-
-bazel_dep(name = "autoware_component_interface_utils", version = "0.0.0")
-local_path_override(
-    module_name = "autoware_component_interface_utils",
-    path = "src/core/autoware_core/common/autoware_component_interface_utils",
-)
-
-bazel_dep(name = "autoware_pose_initializer", version = "0.0.0")
-local_path_override(
-    module_name = "autoware_pose_initializer",
-    path = "src/core/autoware_core/localization/autoware_pose_initializer",
-)
-
-bazel_dep(name = "autoware_adapi_version_msgs", version = "1.9.2")
-bazel_dep(name = "autoware_adapi_specs", version = "0.0.0")
-local_path_override(
-    module_name = "autoware_adapi_specs",
-    path = "src/core/autoware_core/api/autoware_adapi_specs",
-)
-
-bazel_dep(name = "autoware_command_gate", version = "0.0.0")
-local_path_override(
-    module_name = "autoware_command_gate",
-    path = "src/core/autoware_core/control/autoware_command_gate",
-)
-
-bazel_dep(name = "autoware_simple_pure_pursuit", version = "0.0.0")
-local_path_override(
-    module_name = "autoware_simple_pure_pursuit",
-    path = "src/core/autoware_core/control/autoware_simple_pure_pursuit",
-)
-
-local_path_override(
-    module_name = "autoware_adapi_v1_msgs",
-    path = "src/core/autoware_adapi_msgs/autoware_adapi_v1_msgs",
-)
-
-local_path_override(
-    module_name = "autoware_adapi_version_msgs",
-    path = "src/core/autoware_adapi_msgs/autoware_adapi_version_msgs",
-)
-
-local_path_override(
-    module_name = "autoware_internal_debug_msgs",
-    path = "src/core/autoware_internal_msgs/autoware_internal_debug_msgs",
-)
-
-local_path_override(
-    module_name = "autoware_internal_localization_msgs",
-    path = "src/core/autoware_internal_msgs/autoware_internal_localization_msgs",
-)
-
-local_path_override(
-    module_name = "autoware_internal_msgs",
-    path = "src/core/autoware_internal_msgs/autoware_internal_msgs",
+    module_name = "ros2agnocast",
+    path = "src/core/agnocast/src/ros2agnocast",
 )

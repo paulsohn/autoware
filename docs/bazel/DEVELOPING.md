@@ -228,12 +228,18 @@ reference implementations for the existing build and deployment.
 
 ## Dependency conventions
 
+In the root MODULE.bazel, list registry dependencies first and keep local modules
+at the end, after extension and toolchain configuration. Within each dependency
+group, place prerequisites before consumers where possible. Each local bazel_dep uses version
+0.0.0 and is immediately followed by its matching local_path_override.
+
 Use the local source snapshot for every supported package present under src/.
 Use the ROS Central Registry for dependencies absent from the source checkout.
 A local Autoware package owns a package-local Bazel module. The root module
-selects the local snapshot with `local_path_override` and records its version.
-Package-local dependency versions remain `0.0.0` so the root release selection supplies concrete ROS
-versions.
+selects the local snapshot with `local_path_override`; version metadata lives in
+the package-local module.
+Package-local dependency versions remain `0.0.0`; the root selects registry
+releases for external dependencies and source overrides for local ones.
 
 Removing a local override requires an explicitly requested source-selection
 comparison and a compatible registry version. It is not part of the normal
