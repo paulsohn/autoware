@@ -5603,6 +5603,18 @@ and their ament-index lookups. Required suites include interpolation, shifting,
 containers, reference-path valid/invalid map specifications, temporal behavior,
 footprints and lateral metrics. Preserve PLOT and ENABLE_TEST_PLOT=1.
 
+Pattern: package-local library with explicit ROS compile providers, lanelet and
+geometry/math dependencies, Boost.Geometry and Boost.ScopeExit, fmt and
+TL expected. Pair generated ROS libraries with shared runtime providers through
+collect_transitive_dynamic_deps. Register original test_data in ament_index;
+tests/examples also declare the existing lanelet/test-helper indexes. Compile
+the complete original test source list with its original main, not gtest_main,
+and declare every CMake example as a cc_binary. Tests consume the optional
+visualization helper and root embedded-Python composition from the preceding
+entries. Keep the implementation library on its upstream C++17 standard:
+reference_path.cpp's deleted default constructors remain aggregates there,
+while C++23 rejects their brace initializers. No constructor rewrite is needed.
+
 Current-target compatibility fixes, kept separate from build definitions:
 
 - tl_expected/expected.hpp is absent from the selected TL expected provider.
@@ -5620,8 +5632,7 @@ Current-target compatibility fixes, kept separate from build definitions:
   comparison, retaining both calculations and the side-of-trajectory assertion.
   UPSTREAM_AWF.md records matching/related PRs, current-main checks and limits.
 
-Verification against the package-local build definitions prepared with this
-task (committed separately):
+Verification:
 
 ```bash
 env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \

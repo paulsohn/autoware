@@ -599,6 +599,8 @@ were not rerun.
 
 ## Trajectory headers and floating-point checks with Lyrical/LLVM
 
+Local source correction: `a6a8f7ae`.
+
 Verified 2026-11-17 on Ubuntu 24.04 x86_64, Bazel 9.3.2, LLVM/libc++ 21.1.8
 and RCR Lyrical. The complete trajectory gate builds all 19 original examples
 and passes all 293 original cases with plotting enabled; route-handler's 158
