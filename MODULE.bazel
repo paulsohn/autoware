@@ -631,3 +631,9 @@ local_path_override(
     module_name = "autoware_object_recognition_utils",
     path = "src/core/autoware_core/common/autoware_object_recognition_utils",
 )
+
+bazel_dep(name = "autoware_behavior_velocity_planner_common", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_behavior_velocity_planner_common",
+    path = "src/core/autoware_core/planning/behavior_velocity_planner/autoware_behavior_velocity_planner_common",
+)

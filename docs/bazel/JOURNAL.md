@@ -6145,19 +6145,53 @@ module invocation builds ten non-test targets and passes all 105 active cases in
 No Fast DDS, CMake or container check was run. Reuse these
 results for unchanged foundations in the downstream planner/plugin gate.
 
+
 ## 2026-11-17: Phase 5.2.5 — behavior-planner common library
 
-The full prepared suite passes all 43 assertions but segfaults at process exit.
-Gdb traces spdlog registry access from the global ROS context destructor;
-smoothPath.nominal initializes RCLCPP without shutdown. Add a local shutdown
-guard before node/planner locals, preserving every assertion and test name.
-The complete suite then passes with successful exit in the 16.498-second
-foundation invocation. UPSTREAM_AWF.md records the dated upstream association
-check. The complete integration entry consolidates commands and build pattern;
-Bazel declarations are committed separately. No Fast DDS or CMake run is included.
+Purpose: expose both original and experimental scene-module interfaces and
+shared planner data/utilities. Inspect all nine implementation sources, installed
+headers, the src/utilization/util_internal.hpp private header, original common
+YAML, and six original test sources. CMake glob-selects all test/src/*.cpp into
+one suite; preserve its helper utils.hpp and all assertions. Dependencies are
+already integrated motion/trajectory/route/solver, planning-factor/marker and
+vehicle libraries plus local messages, PCL, TF and lanelet providers.
 
-Verification command (prepared module definitions):
+Pattern: a package-local module/library includes all nine implementations and
+public/private headers. Preserve include/ and the private directory-qualified
+src/ paths. Pair ROS generated and native compile/shared providers, and compose
+local dependency runtime collectors. Keep the original common YAML in the ament
+index. The single full-suite cc_test declares test-helper, smoother, route,
+lanelet and vehicle indexes and explicit RCLCPP/Cyclone DDS selection; no
+Agnocast-enabled suite is claimed for these native nodes. Component rules use
+only their own paths and dependency labels.
+
+Diagnosed exit failure: all 43 assertions pass, but the process segfaults during
+static destruction. A gdb backtrace shows spdlog registry lookup/drop from
+rcl_logging_external_shutdown via the global RCLCPP context destructor.
+smoothPath.nominal calls rclcpp::init without shutdown. Add a local ShutdownGuard
+immediately after init; its destructor runs after the node/planner locals and
+before process teardown, including early assertion returns. Keep every test and
+assertion. Upstream main still lacks cleanup on 2026-11-17 (blob
+c43a390befa3df5ba5acecab482cbadcccf941b6); a smoothPath/shutdown PR search found no
+match. This is an original-test lifecycle correction, not a production fix.
+Capture the stack by running the unmodified test binary under gdb -batch -ex run
+-ex bt from its runfiles directory with ENABLE_AGNOCAST=0,
+RMW_IMPLEMENTATION=rmw_cyclonedds_cpp and LD_LIBRARY_PATH=lib.
+
+Verification, sequential clean-environment foundation gate:
 
 ```bash
-env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" bazel test --config=no-agnocast --local_test_jobs=1 --nocache_test_results --test_output=errors @autoware_object_recognition_utils//... @autoware_behavior_velocity_planner_common//... @autoware_motion_velocity_planner_common//...
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=no-agnocast --local_test_jobs=1 \
+  --nocache_test_results --test_output=errors \
+  @autoware_object_recognition_utils//... \
+  @autoware_behavior_velocity_planner_common//... \
+  @autoware_motion_velocity_planner_common//...
 ```
+
+All 43 existing cases pass with successful process exit and no failures,
+errors, skips or disabled cases (test action 0.7 seconds). The complete three-
+module invocation builds ten non-test targets and passes all 105 active cases in
+16.498 seconds. Motion-common retains its one upstream-disabled benchmark.
+No Fast DDS, CMake or container check was run. Reuse these
+results for unchanged foundations in the downstream planner/plugin gate.

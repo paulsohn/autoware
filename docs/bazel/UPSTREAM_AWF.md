@@ -754,7 +754,7 @@ already identified above, not a new solver/API transition.
 
 ## Behavior-common smoothing test needs explicit ROS shutdown
 
-Local source correction: pending behavior-common commit association.
+Local source correction: `20950a32`.
 
 - [ ] Associate with a matching upstream PR. Checked 2026-11-17: a
   smoothPath/shutdown PR search found no match. Main
