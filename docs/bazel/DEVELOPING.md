@@ -638,3 +638,21 @@ module name: use it for both load and unload. Run
 after changing its obstacle-stop plugin assembly. Declare the real plugin index
 on node tests that request it, alongside any intentionally unavailable plugin
 names used to check error handling.
+
+## Launch resource composition
+
+Keep ROS executable names stable even when Bazel target labels differ. Use
+register_ament_files renames under lib/<package> to expose the names declared by
+original launch files/CMake. Rootpath-based binary checks do not verify this
+contract. Give component shared libraries package-qualified shared_lib_name
+values: resource indexes share one lib directory, so generic physical names
+can select a different package's factory. Existing launcher/component macros
+consume the actual shared-library provider; preserve their stable target labels.
+
+For a package containing real launch/config resources, expose them through
+ament_index and compose its runtime dependencies' indexes through deps. Declare
+vehicle/model parameter inputs at launch boundaries. Run the original XML
+through launch_test, checking configuration/remaps and clean exits. Core planning
+uses //bazel/tests:core_planning_launch_test; core control uses
+//bazel/tests:core_control_launch_test and
+//bazel/tests:core_control_gate_launch_test, all with --config=no-agnocast.

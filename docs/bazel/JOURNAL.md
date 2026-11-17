@@ -6679,3 +6679,29 @@ launch was run. The native nodes retain RCLCPP; earlier smoother backend
 validation remains the applicable unchanged evidence. No route/map inputs are
 injected here, so successful closed-loop driving is not established. Phase
 5.2.5 and Phase 5.2 are complete; Phase 5.3 system/API composition follows.
+
+## 2026-11-17: Phase 5.2.5 — core control launch composition
+
+Purpose: expose and validate autoware_core_control's real launch/config resources.
+Inspect its package manifest, source-less CMake install, pure-pursuit YAML and
+XML's optional launch_command_gate branch. There are no existing runtime tests
+in this package. Reuse the previously validated command-gate and pure-pursuit
+module suites/behavior; no implementation changes are needed here.
+
+Pattern: package-local MODULE declares both original exec dependencies and
+rosdistro; ament_index(data=config/launch, deps=both child indexes) supplies the
+complete runtime resource/executable closure without component-to-root labels.
+The root-owned shared launch driver includes the original XML and supplies its
+vehicle_info_param_file from the declared test-helper fixture. Test the default
+branch and launch_command_gate=true separately in isolated ROS domains. Require
+/control/simple_pure_pursuit, conditional /control/autoware_command_gate,
+lookahead_gain=1.0, odometry/trajectory subscriptions and the remapped control
+command publisher. Verify every child exits cleanly after launch shutdown.
+
+Verification: the exact complete command and platform are in
+[the complete composed gate](#2026-11-17-phase-525--core-planning-launch-composition). Both original XML variants pass their active and shutdown cases
+(four assertions total, 0.8 seconds default and 1.0 seconds enabled). The root
+resource targets build with their full closures, with no source/test changes,
+failures or skips. This is a launch-assembly gate; it reuses earlier component
+tracking/mode behavior rather than claiming full driving simulation. No Fast
+DDS, CMake, container or enabled Agnocast gate was run.

@@ -55,6 +55,9 @@ only when your current target demonstrates the need.
   [Evidence: root-owned interface consumers](JOURNAL.md#2026-11-15-build-root-owned-typed-agnocast-plugins-from-the-interface-graph).
   [Native plugin registration](DEVELOPING.md#native-plugin-libraries);
   [evidence: stop-line plugin](JOURNAL.md#2026-11-17-phase-525--stop-line-plugin).
+- [ ] Preserve executable contracts and unique library identities in composed indexes.
+  [Runtime resource convention](DEVELOPING.md#launch-resource-composition);
+  [evidence: original core launches](JOURNAL.md#2026-11-17-phase-525--core-planning-launch-composition).
 - [ ] Inventory complete module suites, runtime prerequisites and required
   middleware configurations before implementing each task.
   [Backend executor convention](DEVELOPING.md#switchable-standalone-nodes);
@@ -728,7 +731,7 @@ packages belong to their selected Phase 5.2 runnable slices. Component-interface
 and global-parameter/API composition belongs to Phase 5.3; CUDA/TensorRT remains
 Phase 6. Additional common packages are not implicit Phase 5.1 scope.
 
-### Phase 5.2: Runnable dependency slices (in progress)
+### Phase 5.2: Runnable dependency slices (complete)
 
 Split by executable dependency groups, keeping the package as the validation
 and commit boundary. The groups below order investigation; they do not authorize
@@ -992,7 +995,7 @@ Keep package commits separate and heavy builds sequential; routine Cyclone DDS
 only. Phase 5.3 system/API composition and Phase 6 GPU integration stay separate.
 
 
-#### Phase 5.2.5: Planning and control (in progress)
+#### Phase 5.2.5: Planning and control (complete)
 
 The first related group integrates native control endpoints using the already
 validated motion and component-interface utilities: autoware_adapi_specs,
@@ -1107,7 +1110,29 @@ needed one production correction: detect active module instances rather than
 cached pluginlib classes. Source and build definitions remain separate commits.
 Next inspect core planning launch/resource composition and the remaining
 Phase 5.2.5 completion criteria; full scenario simulation remains Phase 7.
-Phase 5.2.5 remains open; these endpoints are not the complete planning stack.
+The final adoption gate composes autoware_core_planning and autoware_core_control
+through their original XML and config resources. All six planning nodes start
+together; control's default and command-gate-enabled branches pass separately.
+The affected complete suites pass all 167 original C++ cases, seven existing
+standalone checks and six new active/shutdown launch assertions. Original XML
+needed the existing vehicle parameter file passed to three omitted consumers;
+Bazel resource fixes preserve libexec names and unique component library names.
+The journal records exact commands, failures, fixes and the related AWF PR.
+All planning/control packages now have Bazel support. Phase 5.2.5 and Phase 5.2
+are complete, reusing prior unchanged module/backend evidence. This gate does
+not claim full scenario simulation, an Agnocast aggregate launch or a new
+Fast DDS compatibility run.
+
+### Phase 5.3: System and API composition (next)
+
+Inventory the current system/API executable dependency graphs and existing
+suites, starting with local packages not yet exposed through Bazel. Introduce
+only the selected runtime closure and validate complete package suites plus
+relevant API/state transactions. Compose remaining real launch/resource
+packages when a runnable consumer needs them; do not create artificial targets
+for empty grouping metapackages. Keep system-designer packages out of scope.
+Phase 5 remains in progress; runtime images and full driving simulation are
+Phase 7, with GPU dependencies introduced separately in Phase 6.
 
 ## Later phases
 

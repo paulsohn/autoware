@@ -673,3 +673,9 @@ local_path_override(
     module_name = "autoware_core_planning",
     path = "src/core/autoware_core/planning/autoware_core_planning",
 )
+
+bazel_dep(name = "autoware_core_control", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_core_control",
+    path = "src/core/autoware_core/control/autoware_core_control",
+)
