@@ -687,3 +687,19 @@ All 38 original path-generator cases and the executable's generated-parameter/
 readiness check pass with this correction on the same LLVM/Lyrical platform.
 The package journal records the complete gate; this does not establish other
 compiler/platform behavior.
+
+## Mission-planner arrival test uses a removed TF header
+
+- [ ] Associate with a matching upstream PR. Checked 2026-11-17: no matching
+  arrival-checker/TF PR was found, and upstream main test_arrival_checker.cpp
+  (blob 5fbf1d51f3fb914dab73550f598f43a83cb7c0e0) still includes
+  tf2/LinearMath/Quaternion.h. Use Quaternion.hpp, as supplied by the selected
+  Lyrical TF package. This is the same header-removal category as the trajectory
+  finding above, not part of expected-header PR #1539.
+
+Observed: the arrival test cannot compile with the old spelling. The one-line
+correction preserves every assertion. All 40 original mission-planner cases
+then pass across plugin geometry, arrival checks, reroute safety and node API
+transactions; both actual executables pass their root behavior checks. The
+module journal contains exact commands. Verified on Ubuntu 24.04, LLVM/libc++
+21.1.8 and RCR Lyrical; upstream GCC/CMake and Humble/Jazzy were not run.

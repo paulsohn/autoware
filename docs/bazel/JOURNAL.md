@@ -5854,3 +5854,32 @@ configuration lookup and clean shutdown. Keep manager/test-helper compile and
 shared dependencies on the test target through a separate test_dynamic_deps
 collector; neither belongs in the production component closure. No Agnocast conversion, Fast DDS or
 CMake test is included.
+
+## 2026-11-17: Phase 5.2.5 — mission planner
+
+Purpose: expose lanelet route planning, arrival/reroute checks, route service
+transactions and goal-pose visualization using the integrated route foundation.
+Inspect seven implementation sources, private headers, original configuration/
+launch resources and all five original test sources. Complete suite: 14 plugin/
+utility, nine arrival, 11 reroute-safety and six real-node transaction cases.
+
+The package-local build definitions are prepared with this task and committed
+separately; verification below records that tested working tree.
+
+Diagnosed failures: the arrival test includes removed
+tf2/LinearMath/Quaternion.h; change only that spelling to Quaternion.hpp.
+After compilation, all six node cases fail to construct a logging service:
+logging_demo introspection C++ dlopen cannot find its generator-C dependency.
+LoggerLevelConfigure needs logging_demo's complete shared provider, so add
+@logging_demo//:cc_shared to the component runtime collector and a direct module
+dependency. Do not replace the node API tests or alter service behavior.
+
+Verification: all 40 original cases pass across four targets in the shared
+six-package invocation (plugin 0.3 seconds, arrival/reroute 0.2 seconds each,
+node transactions 2.3 seconds), without failures/errors/skips/disabled cases.
+Both actual executables additionally pass the root gate below. Keep test-helper
+compile/shared providers in test targets, outside the production component
+closure. Only the
+one-line demonstrated test-header correction changes original package files;
+no production source is changed. UPSTREAM_AWF.md records its dated association
+status. No Agnocast conversion, Fast DDS or CMake build is included.
