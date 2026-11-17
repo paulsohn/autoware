@@ -1095,6 +1095,18 @@ recognition-test TF include and behavior-common test shutdown corrections.
 The experimental planner gate validates assembly/lifecycle; full experimental
 scenario parity remains outside this gate. Next take the motion planner and
 obstacle-stop plugin group with their actual dependencies.
+The next group integrates motion velocity planner and its obstacle-stop plugin.
+Keep the node's actual native RCLCPP contract despite its CMake wrapper macro.
+The complete gate is both original planner targets (14 cases), all seven plugin
+test sources (39 cases), and the real executable loading/unloading/reloading the
+plugin with original config values and clean shutdown. Register original maps
+and YAML fixtures, and expose the plugin index to the node suite. This group is
+complete: all 53 original cases and the executable's active-duplicate rejection,
+unload/reload, parameter and clean-shutdown check pass on Cyclone DDS. Reloading
+needed one production correction: detect active module instances rather than
+cached pluginlib classes. Source and build definitions remain separate commits.
+Next inspect core planning launch/resource composition and the remaining
+Phase 5.2.5 completion criteria; full scenario simulation remains Phase 7.
 Phase 5.2.5 remains open; these endpoints are not the complete planning stack.
 
 ## Later phases

@@ -631,3 +631,10 @@ unloading uses the module name (stop_line). Run
 --config=no-agnocast after changing their plugin assembly.
 Keep existing test helper sources in testonly libraries rather than linking
 planning test managers into production components.
+
+For the motion planner, the configured fully-qualified class name is also its
+module name: use it for both load and unload. Run
+//bazel/tests:motion_velocity_planner_runtime_test with --config=no-agnocast
+after changing its obstacle-stop plugin assembly. Declare the real plugin index
+on node tests that request it, alongside any intentionally unavailable plugin
+names used to check error handling.

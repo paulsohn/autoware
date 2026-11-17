@@ -1150,3 +1150,29 @@ py_binary(
         ("experimental", "experimental_autoware_behavior_velocity_planner_node", "1"),
     ]
 ]
+
+py_test(
+    name = "motion_velocity_planner_runtime_test",
+    srcs = ["motion_velocity_planner/test_runtime.py"],
+    args = ["$(rootpath @autoware_motion_velocity_planner//:autoware_motion_velocity_planner_node)"],
+    data = [
+        "@autoware_motion_velocity_obstacle_stop_module//:ament_index",
+        "@autoware_motion_velocity_planner//:ament_index",
+        "@autoware_motion_velocity_planner//:autoware_motion_velocity_planner_node",
+    ],
+    env = {
+        "ENABLE_AGNOCAST": "0",
+        "LD_LIBRARY_PATH": "lib",
+    },
+    main = "motion_velocity_planner/test_runtime.py",
+    tags = [
+        "no-remote",
+        "no-sandbox",
+    ],
+    deps = [
+        "@ament_index_python",
+        "@autoware_internal_planning_msgs//:py",
+        "@rcl_interfaces//:py",
+        "@rclpy",
+    ],
+)

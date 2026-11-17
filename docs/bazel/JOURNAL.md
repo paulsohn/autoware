@@ -6398,19 +6398,65 @@ remaining Phase 5.2.5 completion criteria before moving to Phase 5.3.
 
 ## 2026-11-17: Phase 5.2.5 — motion velocity planner
 
-The actual executable loads ObstacleStopModule and unloads it successfully, but
-reload is rejected as already loaded. pluginlib's isClassLoaded reflects cached
-class/library availability, not the active loaded_plugins_ instance list.
-Check the latter with std::any_of and get_module_name() instead. Both node
-construction and the load service use this manager method; keep the duplicate
-warning and all other behavior. Include <algorithm> explicitly. No original test
-or unrelated production behavior is changed. UPSTREAM_AWF.md records the dated
-main/PR check and reproducible failure.
+Purpose: expose the actual motion planner and its obstacle-stop plugin consumer
+against the integrated foundations. Inspect all three implementation sources,
+private headers, both original test sources, seven test-config inputs, YAML
+message fixtures and lanelet maps. Complete suite: five node cases and nine
+node-utility cases in CMake's two targets; preserve the original custom node-test
+main, all topic/service assertions and traffic-light scenario. Prepare the real
+obstacle-stop plugin's index even though the original test also intentionally
+requests an unavailable test_plugin name.
 
-The added root-owned driver starts the real executable with its original seven
-YAML fixtures, verifies mapped plugin/config values, rejects an active duplicate,
-unloads/reloads and checks clean shutdown. With prepared local Bazel definitions
-and the declared plugin index, run:
+The current class derives directly from rclcpp::Node and uses native RCLCPP
+subscriptions. CMake's wrapper registration macro does not establish an
+Agnocast node contract. Preserve this implementation with the RCR native
+component launcher and select RCLCPP/Cyclone DDS for the whole module gate,
+without changing source inheritance or claiming enabled Agnocast coverage.
+Similarly, grid_map_core and the wrapper appear in the manifest but are not
+current C++ input providers; no speculative registry input or middleware change
+is needed just to mirror those declarations.
+
+Pattern: package-local library over the three sources/private headers, shared
+component and rclcpp_components_register_node with the original class and
+executable name. Pair local and ROS compile/shared dependencies, including
+logging_demo's service typesupport used by LoggerLevelConfigure. Register
+config, launch, test_config, test_data, test_map and executable/component records
+in the ament index. Keep test-helper and YAML parser dependencies on tests.
+Declare the obstacle plugin as test data and a direct module dependency, while
+the plugin's production API depends on motion-common rather than the node.
+This avoids a build-target cycle and tests actual discovery.
+
+Put the added driver in bazel/tests/motion_velocity_planner/. The root py_test
+starts the real executable with its original seven test YAML files, a unique
+PID-derived ROS namespace and the fully-qualified ObstacleStopModule class.
+Enable debug logging because successful plugin loading uses a debug log.
+Require service readiness, the successful load log and the mapped plugin shared
+library; check smoother enablement and the 5 m stop margin through GetParameters.
+Reject a duplicate active load, then unload/reload by the full module name.
+Verify lifecycle logs beyond empty service
+responses, and require clean SIGINT exit without a heap hook. Original C++ node
+scenarios cover trajectory/traffic-light inputs and output; this extra driver
+checks component/resource/plugin assembly.
+
+Diagnosed production failure: startup successfully loads ObstacleStopModule,
+unload reports success, but reloading reports "already loaded" and the lifecycle
+check times out. load_module_plugin uses plugin_loader_.isClassLoaded, which
+checks class/library availability rather than membership in loaded_plugins_.
+The cached library survives instance removal. Check loaded_plugins_ with
+std::any_of and get_module_name() instead; keep the duplicate warning and every
+other loading/unloading behavior. Include <algorithm> explicitly. Both node
+construction and the load service call this manager method, so one correction
+covers both paths. The added root regression verifies active duplicate rejection
+before unload and successful creation after unload, preserving its original
+25-second response bound. No timeout increase or omission satisfies the gate.
+Upstream main still contains the same check on 2026-11-17 (blob
+21ca3ddca6d157cb1ff833294141e205fdc45727); repository PR searches for motion
+planner reload and isClassLoaded found no match. This is a general lifecycle bug,
+not a Lyrical API correction. Keep the source fix separate from module rules;
+UPSTREAM_AWF.md records its association status.
+
+Verification:
+
 
 ```bash
 env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
@@ -6421,8 +6467,19 @@ env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
   //bazel/tests:motion_velocity_planner_runtime_test
 ```
 
-All 53 original cases and the executable regression pass in 23.321 seconds;
-the regression takes 1.4 seconds, versus a 25-second reload timeout before the
-fix. No failures/errors/skips/disabled cases. Build definitions/wiring follow in
-separate package commits; the complete module entry will consolidate their
-patterns and resources. No Fast DDS, CMake or Agnocast-enabled check was run.
+The final complete invocation builds 15 non-test targets and passes all four
+test targets in 23.321 seconds. Planner node five cases pass in 1.0 seconds,
+node utilities nine in 0.5 seconds, obstacle-stop all 39 in 0.6 seconds, and the
+real executable lifecycle regression in 1.4 seconds. No failures/errors/skips/
+disabled cases remain. The planner node suite sees the valid obstacle-stop
+factory, while its intentional test_plugin requests remain unavailable; do not
+mistake those expected error logs for a missing real runtime dependency.
+
+Targeted buildifier, Python parsing, complete source/test/header inventories,
+component boundary checks, changed-line source formatting and XML/log counts
+also pass. Existing source changes are limited to the demonstrated duplicate-
+load guard; original tests are unchanged. No Fast DDS, CMake, container or
+Agnocast-enabled gate is claimed for this native node. The runtime regression
+checks assembly and lifecycle; full scenario simulation remains a later phase.
+Next inspect the core planning metapackage's launch/resource composition and
+remaining Phase 5.2.5 completion criteria before moving to Phase 5.3.

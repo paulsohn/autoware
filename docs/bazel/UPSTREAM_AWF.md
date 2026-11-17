@@ -776,7 +776,7 @@ Humble/Jazzy were not run.
 
 ## Motion planner cannot reload an unloaded plugin
 
-Local source correction: pending motion-plugin commit association.
+Local source correction: `c8a3e8fe`.
 
 - [ ] Associate with a matching upstream PR. Checked 2026-11-17: repository
   searches for motion_velocity_planner/reload and isClassLoaded found no match.
