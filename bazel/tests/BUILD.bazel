@@ -1214,3 +1214,30 @@ py_test(
         "control_gate",
     ]
 ]
+
+launch_test(
+    name = "default_adapi_original_launch_test",
+    src = "@autoware_default_adapi//:test/main.test.py",
+    data = [
+        "@autoware_default_adapi//:ament_index",
+        "@rclcpp_components//:ament_index",
+    ],
+    env = {
+        "ENABLE_AGNOCAST": "0",
+        "LD_LIBRARY_PATH": "lib",
+        "ROS_DOMAIN_ID": "75",
+    },
+    precompile = "disabled",
+    tags = [
+        "no-remote",
+        "no-sandbox",
+    ],
+    deps = [
+        "@ament_index_python",
+        "@autoware_adapi_version_msgs//:py",
+        "@autoware_agnocast_wrapper//:python",
+        "@launch_ros",
+        "@launch_xml",
+        "@rclpy",
+    ],
+)

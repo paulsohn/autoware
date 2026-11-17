@@ -6740,3 +6740,46 @@ so the original position is preserved when height fitting reports no map. This
 checks the adaptor fallback and forwarding, not a new map-height algorithm gate;
 reuse the unchanged fitter's earlier complete tests. No source/original-test
 changes, skips or Fast DDS/CMake/container rerun were needed.
+
+## 2026-11-18: Phase 5.3.1 — default AD API
+
+Purpose: expose the existing interface-version, localization and routing nodes,
+including their complete original suite. Inspect all five implementation sources,
+private headers, configuration/launch files, test_conversion.cpp and registered
+main.test.py with its interface_version.py child. Preserve all 15 conversion
+cases and the original launch test, including its existing three-second child
+shutdown bound and expected 1.9.1 response. The local version-message provider
+is already selected; the protocol response is the existing source constant,
+not a new version inferred from package metadata.
+
+Pattern: package-local module/library, package-qualified shared component and
+three autoware_agnocast_node launchers with MultiThreadedExecutor fallback,
+matching CMake. Register every original executable/component/plugin record and
+config/launch/test resource. Compose wrapper launch support and the published
+@rclcpp_components//:ament_package runtime provider. Its smaller :ament_index
+contains test component metadata but not component_container_mt; initially using
+only that index causes original launch discovery to fail before tests run.
+Selecting the executable-bearing provider fixes the setup without changing the
+original launch suite. The test's own main similarly requires gtest rather than
+gtest_main; otherwise the first link reports duplicate main. No source patch or
+test adapter is necessary: the original Python child runs in the declared Bazel
+test environment and finds its generated messages/RCLPY dependencies.
+
+The original launch uses its RCLCPP multi-threaded container. The enabled branch
+of its existing Python launch instead starts all three nodes independently with
+their Agnocast-only executors and declared heap hook. Add no source inheritance
+or executor changes. Keep native C++ and original launch suites under RCLCPP;
+validate the enabled public behavior separately through the assembled API gate.
+The selected source/runtime path does not use Flask or global vehicle parameters.
+The separate test_default_adapi.launch.xml/global-parameter-loader path remains
+for the next system-context slice, rather than a claimed result of this gate.
+
+Verification: the complete commands are in the core API entry below. All 15
+original conversion cases pass (0.2 seconds), and the unchanged original
+interface-version launch test passes in a 3.1-second action. Assembled tests
+add exact version, localization-state forwarding, localization request AUTO/
+pose/status conversion and routing state/request/status conversion on both
+backends. Native container resources, not host ROS tools, supply the launch.
+No tests are omitted or filtered; no production/original-test changes, new
+registry versions or interface-selection changes are required. No Fast DDS,
+CMake or container rebuild is part of this module gate.
