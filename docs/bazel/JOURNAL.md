@@ -6011,3 +6011,28 @@ errors, skips or disabled cases (26.265 seconds total; test 0.1 seconds).
 Both solver backends are covered on the selected Cyclone/LLVM platform. The
 preceding entry's dual-OSQP-ABI limitation still applies. No Fast DDS, CMake or
 container run is included. Next consume both interfaces in velocity smoothing.
+
+## 2026-11-17: Phase 5.2.5 — velocity smoother
+
+Purpose: prepare the original smoother tests for the complete module gate.
+The prepared package-local Bazel rules expose all seven original test sources,
+including the stop-velocity file omitted from CMake. Two files cannot compile
+against Lyrical because Quaternion.h was removed: use Quaternion.hpp in
+resampling and pseudo-jerk tests. EmptyTrajectoryCase incorrectly inserts one
+point before expecting builder rejection; remove that push to exercise actual
+empty input. Keep every assertion and production implementation unchanged.
+UPSTREAM_AWF.md records the dated upstream-main checks and missing associations.
+
+Verification with the prepared definitions and dependencies:
+
+```bash
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=no-agnocast --local_test_jobs=1 \
+  --nocache_test_results --test_output=errors @autoware_velocity_smoother//...
+```
+
+All 67 existing cases across six targets pass in 16.224 seconds, including all
+nine stop-velocity cases, without failures/errors/skips/disabled cases. These
+source corrections are separate from the package build definitions committed
+next. No Fast DDS or upstream CMake validation was run. The complete module
+entry will consolidate its build pattern and executable/backend gates.

@@ -705,3 +705,33 @@ then pass across plugin geometry, arrival checks, reroute safety and node API
 transactions; both actual executables pass their root behavior checks. The
 module journal contains exact commands. Verified on Ubuntu 24.04, LLVM/libc++
 21.1.8 and RCR Lyrical; upstream GCC/CMake and Humble/Jazzy were not run.
+
+## Velocity-smoother tests: Lyrical TF headers and empty-input fixture
+
+Local source correction: pending commit association.
+
+- [ ] Associate the two TF header corrections with a matching upstream PR.
+  Checked 2026-11-17: no matching velocity_smoother/Quaternion.hpp PR found.
+  Upstream main still uses Quaternion.h in
+  [test_resample.cpp](https://github.com/autowarefoundation/autoware_core/blob/main/planning/autoware_velocity_smoother/test/test_resample.cpp)
+  (blob 0e066d206aa1f3b30c178fa8158d8736a60eb3d7) and
+  [test_pseudo_jerk_smoothers.cpp](https://github.com/autowarefoundation/autoware_core/blob/main/planning/autoware_velocity_smoother/test/test_pseudo_jerk_smoothers.cpp)
+  (42b267ea35a01a1b0fd9cbc03bda8e0ee2d61996). The selected Lyrical TF provider
+  removes that spelling; use Quaternion.hpp without changing assertions. This
+  matches the removed-header category above, rather than an OSQP API migration.
+- [ ] Associate the empty-input fixture correction with a matching upstream PR.
+  Checked 2026-11-17: no EmptyTrajectoryCase PR found. Main
+  [test_stop_velocity_calculation.cpp](https://github.com/autowarefoundation/autoware_core/blob/main/planning/autoware_velocity_smoother/test/test_stop_velocity_calculation.cpp)
+  (blob 12d1d65676eb3e48d11dde7710e3be92bf5ff890) still pushes one point into its
+  supposedly empty trajectory. The current builder legitimately accepts that
+  singleton, so the assertion fails. Remove that push to test empty input as
+  named; keep the rejection assertion. This is a fixture bug, not Lyrical-only
+  compatibility. The file exists upstream but is omitted from CMake registration;
+  exposing it in Bazel revealed the failure.
+
+Evidence: the corrected complete smoother suite passes all 67 cases across six
+Bazel targets, including all nine stop-velocity cases. All four actual smoother
+algorithms additionally pass in both RCLCPP and enabled Agnocast configurations.
+No production code changed. The package journal gives exact commands and
+symptom/cause/fix details. Verified with Ubuntu 24.04, LLVM/libc++ 21.1.8 and RCR
+Lyrical; upstream GCC/CMake and Humble/Jazzy were not tested.

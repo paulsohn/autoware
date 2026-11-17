@@ -193,7 +193,6 @@ TEST_F(StopVelocityCalculationTest, DiscreteAndContinuousHelpersMatch)
 TEST_F(StopVelocityCalculationTest, EmptyTrajectoryCase)
 {
   TrajectoryPoints points;
-  points.push_back(TrajectoryPoint());
   auto maybe_trajectory = Trajectory::Builder().build(points);
   // New trajectory cannot build empty trajectory
   ASSERT_FALSE(maybe_trajectory);
