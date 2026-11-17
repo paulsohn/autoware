@@ -1,0 +1,51 @@
+load("@rclcpp_components//:defs.bzl", "rclcpp_components_register_node")
+load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "node_library",
+    srcs = ["src/test_node.cpp"],
+    hdrs = ["src/include/test_node.hpp"],
+    deps = [
+        "@autoware_node",
+        "@rclcpp//:rclcpp_library",
+        "@rclcpp_components//:rclcpp_components_library",
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = [
+        "@rclcpp//:rclcpp",
+        "@rclcpp_components//:rclcpp_components",
+    ],
+)
+
+cc_shared_library(
+    name = "autoware_test_node",
+    dynamic_deps = [":runtime_dynamic_deps"],
+    deps = [":node_library"],
+)
+
+rclcpp_components_register_node(
+    name = "autoware_test_node_node",
+    component = ":autoware_test_node",
+    node_name = "autoware_test_node_node",
+    plugin = "autoware::test_node::TestNode",
+)
+
+register_ament_files(
+    name = "node_executable",
+    files = [":autoware_test_node_node"],
+    prefix = "lib/autoware_test_node",
+    strip_prefix = "*",
+)
+
+ament_index(
+    components = [":autoware_test_node_node_record"],
+    data = glob(["launch/**"]) + [":node_executable"],
+    package_xml = "package.xml",
+)

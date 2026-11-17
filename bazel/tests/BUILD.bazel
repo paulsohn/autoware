@@ -1424,3 +1424,29 @@ py_test(
         requirement("pytest"),
     ],
 )
+
+launch_test(
+    name = "autoware_test_node_launch_test",
+    src = "autoware_test_node/test_launch.py",
+    data = [
+        "@autoware_test_node//:ament_index",
+        "@rclcpp_components//:ament_package",
+    ],
+    env = {
+        "ENABLE_AGNOCAST": "0",
+        "LD_LIBRARY_PATH": "lib",
+        "ROS_DOMAIN_ID": "84",
+    },
+    precompile = "disabled",
+    tags = [
+        "no-remote",
+        "no-sandbox",
+    ],
+    deps = [
+        "@ament_index_python",
+        "@launch_ros",
+        "@launch_xml",
+        "@rcl_interfaces//:py",
+        "@rclpy",
+    ],
+)

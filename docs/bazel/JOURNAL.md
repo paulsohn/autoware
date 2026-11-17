@@ -7388,3 +7388,26 @@ env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
 
 The committed config itself leaves four unimplemented gates off; preserve that
 existing scope. This is a targeted module suite/CLI check, not pre-commit.
+
+## 2026-11-18: Phase 5.3.4 — example test node
+
+Purpose: close this remaining autoware_core package boundary. Inspect its
+manifest, original build/install declarations and all registered tests.
+
+Original standalone XML, native component plugin and executable. The package derives from autoware::node::Node, not the switchable wrapper; use the published native component registration macro and check real parameter services in standalone and container-loaded instances.
+
+Add package-local MODULE/BUILD rules selected with adjacent root 0.0.0
+dependency/local_path_override pairs. Added adapters/behavior tests belong under
+bazel/tests; original sources and tests remain in place. The complete module
+gate is declared in PLAN.md Phase 5.3.4. The final combined command recorded
+with the top-level composition entry passed, with no failures, errors,
+dependency-related skips or disabled tests. Reuse preceding unchanged
+component/backend results; this group uses Cyclone DDS/native RCLCPP.
+
+Result: both added launch cases passed: real standalone XML plus container-
+loaded native component parameter services, followed by clean exits. Initial
+startup failed because a component record alone does not install a libexec
+binary. Register autoware_test_node_node under lib/autoware_test_node and include
+that registration in the index. Keep the indexed executable free of a reverse
+data edge to that same index, which would create an index/executable cycle.
+The caller includes the index in runtime data. No source change was needed.

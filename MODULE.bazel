@@ -779,3 +779,9 @@ local_path_override(
     module_name = "autoware_interface_spec_lint",
     path = "src/core/autoware_core/common/autoware_interface_spec_lint",
 )
+
+bazel_dep(name = "autoware_test_node", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_test_node",
+    path = "src/core/autoware_core/testing/autoware_test_node",
+)
