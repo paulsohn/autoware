@@ -5775,3 +5775,21 @@ errors, skips or disabled cases. The enabled gate uses the installed matching
 Agnocast 2.4.1 module/device and built hook. No product bridge, full DDS matrix,
 Fast DDS or CMake test is involved. The executor convention is linked from the
 adoption checklist and explained in DEVELOPING.md for future test authors.
+
+## 2026-11-17: Phase 5.2.5 — objects-of-interest markers
+
+Purpose: expose coloring, geometry marker construction and marker accumulation
+for later planning consumers. Inspect all three implementation files, public
+headers and the original six-case test. Existing perception, geometry/math,
+visualization utility and standard ROS interface providers cover the closure.
+
+Pattern: package-local library and shared runtime collector, one original test
+with gtest_main and its original ROS initialization fixture. Declare direct
+compile providers and corresponding generated shared libraries; avoid an empty
+ament index for a package without resources. Keep source and test files intact.
+The root's local 0.0.0 declaration/override pair follows its prerequisites.
+
+Verification: the shared six-package command above passes all six original
+cases in 0.2 seconds with Cyclone DDS, without failures/errors/skips/disabled
+cases. This is a library behavior gate; no standalone executable exists here.
+No source patch, Fast DDS, additional middleware matrix or CMake run is included.

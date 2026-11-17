@@ -571,3 +571,9 @@ local_path_override(
     module_name = "autoware_planning_factor_interface",
     path = "src/core/autoware_core/planning/autoware_planning_factor_interface",
 )
+
+bazel_dep(name = "autoware_objects_of_interest_marker_interface", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_objects_of_interest_marker_interface",
+    path = "src/core/autoware_core/planning/autoware_objects_of_interest_marker_interface",
+)

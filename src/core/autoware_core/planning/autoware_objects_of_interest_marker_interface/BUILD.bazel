@@ -1,0 +1,60 @@
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "autoware_objects_of_interest_marker_interface",
+    srcs = [
+        "src/coloring.cpp",
+        "src/marker_utils.cpp",
+        "src/objects_of_interest_marker_interface.cpp",
+    ],
+    hdrs = [
+        "include/autoware/objects_of_interest_marker_interface/coloring.hpp",
+        "include/autoware/objects_of_interest_marker_interface/marker_data.hpp",
+        "include/autoware/objects_of_interest_marker_interface/marker_utils.hpp",
+        "include/autoware/objects_of_interest_marker_interface/objects_of_interest_marker_interface.hpp",
+    ],
+    includes = [
+        "include",
+        "src",
+    ],
+    deps = [
+        "@autoware_perception_msgs//:cc",
+        "@autoware_utils_geometry",
+        "@autoware_utils_math",
+        "@autoware_utils_visualization",
+        "@geometry_msgs//:cc",
+        "@rclcpp//:rclcpp_library",
+        "@std_msgs//:cc",
+        "@visualization_msgs//:cc",
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = [
+        "@autoware_perception_msgs//:cc_shared",
+        "@geometry_msgs//:cc_shared",
+        "@rclcpp//:rclcpp",
+        "@std_msgs//:cc_shared",
+        "@visualization_msgs//:cc_shared",
+    ],
+)
+
+cc_test(
+    name = "test_objects_of_interest_marker_interface",
+    timeout = "long",
+    srcs = [
+        "test/test_objects_of_interest_marker_interface.cpp",
+    ],
+    dynamic_deps = [
+        ":runtime_dynamic_deps",
+    ],
+    env = {"ROS_DOMAIN_ID": "65"},
+    deps = [
+        ":autoware_objects_of_interest_marker_interface",
+        "@googletest//:gtest_main",
+    ],
+)
