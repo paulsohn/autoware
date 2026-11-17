@@ -23,9 +23,15 @@
 #include <autoware_planning_msgs/msg/trajectory_point.hpp>
 #include <geometry_msgs/msg/pose.hpp>
 
+#ifdef USE_AGNOCAST_ENABLED
+#include <agnocast/agnocast_single_threaded_executor.hpp>
+#endif
+
 #include <gtest/gtest.h>
 
+#include <atomic>
 #include <chrono>
+#include <future>
 #include <memory>
 #include <thread>
 #include <vector>
@@ -216,7 +222,7 @@ TEST_F(PlanningFactorInterfaceTest, PublishStampsAndForwardsFactors)
   interface_->add(7.0, make_pose(7.0, 0.0), PlanningFactor::STOP, safety_factors, true, 1.0, 0.0);
 
   PlanningFactorArray received;
-  bool got_msg = false;
+  std::atomic<bool> got_msg{false};
   auto sub = node_->create_subscription<PlanningFactorArray>(
     "/planning/planning_factors/test_module", rclcpp::QoS{1},
     [&](const PlanningFactorArray::ConstSharedPtr msg) {
@@ -226,14 +232,27 @@ TEST_F(PlanningFactorInterfaceTest, PublishStampsAndForwardsFactors)
 
   interface_->publish();
 
-  // Spin until the subscription receives the published message (bounded wait).
-  const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(5);
-  while (!got_msg && std::chrono::steady_clock::now() < deadline) {
-    rclcpp::spin_some(node_->get_node_base_interface());
-    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  std::unique_ptr<rclcpp::Executor> executor =
+    std::make_unique<rclcpp::executors::SingleThreadedExecutor>();
+#ifdef USE_AGNOCAST_ENABLED
+  if (autoware::agnocast_wrapper::use_agnocast()) {
+    executor = std::make_unique<agnocast::SingleThreadedAgnocastExecutor>();
   }
+#endif
+  executor->add_node(node_->get_node_base_interface());
+  // Agnocast dispatches in spin(), not the inherited RCLCPP spin_some().
+  auto spinning = std::async(std::launch::async, [&] { executor->spin(); });
+  const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(5);
+  while (!got_msg.load() && std::chrono::steady_clock::now() < deadline &&
+         spinning.wait_for(std::chrono::milliseconds(10)) != std::future_status::ready) {
+  }
+  // Repeat cancellation to cover cancel-before-spin, then join before assertions.
+  do {
+    executor->cancel();
+  } while (spinning.wait_for(std::chrono::milliseconds(10)) != std::future_status::ready);
+  spinning.get();
 
-  ASSERT_TRUE(got_msg);
+  ASSERT_TRUE(got_msg.load());
   EXPECT_EQ(received.header.frame_id, "map");
   ASSERT_EQ(received.factors.size(), 1u);
   EXPECT_EQ(received.factors.front().behavior, PlanningFactor::STOP);

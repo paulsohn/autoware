@@ -640,3 +640,27 @@ uses deleted default constructors on aggregates in reference_path.cpp, valid
 under its upstream C++17 contract but not under the workspace's C++23 default.
 A package-local C++17 compilation setting resolves that issue without a source
 patch. Humble/Jazzy, GCC and colcon/ament/CMake were not run locally.
+
+
+## Planning-factor test must dispatch the selected backend
+
+- [ ] Associate with a matching upstream PR. Checked 2026-11-17: no matching
+  planning-factor executor PR was found. Main test_planning_factor_interface.cpp
+  (blob 578b369eefb5ea0f3441289d30c43f1d793c132c) spins a wrapper Node through
+  rclcpp::spin_some, regardless of the runtime backend.
+
+With ENABLE_AGNOCAST=1, a built/preloaded heap hook and matching 2.4.1 kernel
+module/device, six cases pass but PublishStampsAndForwardsFactors times out
+without receiving its message. RCLCPP spin_some does not dispatch Agnocast's
+callback queue. Select SingleThreadedAgnocastExecutor when use_agnocast() is true,
+otherwise the ordinary RCLCPP executor. Run spin asynchronously, use an atomic
+receive flag, cancel/join before assertions and endpoint destruction, and
+propagate executor exceptions through the future. Keep the five-second receive
+deadline and every payload assertion. Conditional compilation retains builds
+without USE_AGNOCAST_ENABLED.
+
+All seven original cases pass in both RCLCPP and enabled Agnocast configurations
+after the correction. A heap hook declaration/launch is a separate runtime
+prerequisite, not the fix for callback dispatch. No production behavior, timeout,
+assertion or test group is removed. See the planning-factor journal for exact
+commands; this is an executor-test correction rather than a Lyrical-only fix.

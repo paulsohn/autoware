@@ -430,6 +430,12 @@ not interpret ENABLE_AGNOCAST as a backend switch.
 
 ## Switchable standalone nodes
 
+Tests of wrapper endpoints must dispatch callbacks with the selected backend's
+executor. Agnocast dispatches in spin(), not inherited RCLCPP spin_some(). For
+bounded tests, spin asynchronously, cancel and join before inspecting received
+data or destroying endpoints, and synchronize callback-written state.
+
+
 For a wrapper-derived node using AgnocastOnlyCallbackIsolatedExecutor and a
 SingleThreadedExecutor fallback, load `autoware_agnocast_node` from
 `@autoware_agnocast_wrapper//:defs.bzl`. Supply the shared component, plugin class,

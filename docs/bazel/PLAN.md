@@ -55,7 +55,8 @@ only when your current target demonstrates the need.
   [Evidence: root-owned interface consumers](JOURNAL.md#2026-11-15-build-root-owned-typed-agnocast-plugins-from-the-interface-graph).
 - [ ] Inventory complete module suites, runtime prerequisites and required
   middleware configurations before implementing each task.
-  [Evidence: complete Agnocast test inventory](JOURNAL.md#2026-11-15-phase-41--adopt-the-complete-agnocast-library-test-inventory).
+  [Backend executor convention](DEVELOPING.md#switchable-standalone-nodes);
+  [evidence: complete Agnocast test inventory](JOURNAL.md#2026-11-15-phase-41--adopt-the-complete-agnocast-library-test-inventory).
 - [ ] Choose validated package boundaries for commits, keeping source fixes
   separate from build declarations.
   [Evidence: first local package module](JOURNAL.md#2026-11-14-build-the-first-local-autoware-package-module).

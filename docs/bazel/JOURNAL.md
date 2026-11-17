@@ -5727,3 +5727,47 @@ are reused. For one package, use the same flags with only its @package//... labe
 path-generator gate additionally consumes these helpers.
 No manager source change, Fast DDS, broad middleware matrix or CMake run is
 required. Larger groups retain separate package commits and complete gates.
+
+## 2026-11-17: Phase 5.2.5 — planning factor interface
+
+Purpose: expose planning-factor accumulation, arc-length forwarding and stamped
+publication, including its templated wrapper consumer. Inspect the implementation,
+public header and all seven cases in the existing test. The ordinary library
+uses native ROS providers; only its test needs the wrapper library, its shared
+runtime collector and the heap hook. Do not turn a test dependency into a
+production backend conversion. The existing all-interface selection already
+contains PlanningFactorArray and its dependencies; no bridge expansion is needed.
+
+The package-local build definitions are prepared with this task and committed
+separately; verification below records that tested working tree.
+
+Diagnosed failure: enabling the backend first exits without the undeclared heap
+hook. Declare it and preload only the native process. With this fixed, six cases
+pass but publication times out: rclcpp::spin_some never dispatches Agnocast's
+queue. Correct the existing test to select its backend executor and call spin()
+asynchronously. Synchronize the receive flag, retain the five-second wait,
+repeat cancellation for the cancel-before-spin race, join before inspecting
+payloads or destroying nodes, and propagate executor errors. Preserve every
+case and assertion. UPSTREAM_AWF.md records the current-main comparison.
+
+Verification after the executor correction:
+
+```bash
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=no-agnocast --local_test_jobs=1 \
+  --nocache_test_results --test_output=errors \
+  @autoware_planning_factor_interface//:test_planning_factor_interface
+
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=no-agnocast --test_env=ENABLE_AGNOCAST=1 \
+  --local_test_jobs=1 --nocache_test_results --test_output=errors \
+  --strategy=TestRunner=local --run_under=//bazel/agnocast:with_heaphook \
+  @autoware_planning_factor_interface//:test_planning_factor_interface
+```
+
+Both complete seven-case suites pass (2.512 seconds for RCLCPP, 15.873 seconds
+including enabled rebuild; each test action takes 0.3 seconds), with no failures,
+errors, skips or disabled cases. The enabled gate uses the installed matching
+Agnocast 2.4.1 module/device and built hook. No product bridge, full DDS matrix,
+Fast DDS or CMake test is involved. The executor convention is linked from the
+adoption checklist and explained in DEVELOPING.md for future test authors.
