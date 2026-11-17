@@ -697,3 +697,9 @@ local_path_override(
     module_name = "autoware_core_api",
     path = "src/core/autoware_core/api/autoware_core_api",
 )
+
+bazel_dep(name = "autoware_sample_vehicle_description", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_sample_vehicle_description",
+    path = "src/core/autoware_core/description/autoware_sample_vehicle_description",
+)

@@ -6887,3 +6887,31 @@ Verification: git diff --check and local Markdown file/anchor checks for the
 changed documents. Documentation only: no build, runtime test, kernel operation,
 Fast DDS check or cross-platform experiment was performed. Revisit the options
 when a concrete target requires them in the packaging/platform phases.
+
+## 2026-11-18: Phase 5.3.2 — sample vehicle resources
+
+Purpose: integrate autoware_sample_vehicle_description in its actual global/runtime context.
+
+Inspect the original resource-only CMake install and vehicle YAML, URDF and
+mesh files. Expose config/**, urdf/** and mesh/** with a package-local ament_index
+and rosdistro dependency. Root source selection uses the local snapshot. The
+current consumer reads vehicle parameters, so xacro compilation/rendering is
+not introduced. No existing runtime suite is registered. Acceptance is real
+package lookup and a launched consumer receiving wheel_base=2.79,
+wheel_radius=0.383 and vehicle_height=2.5 through the global loader, in both
+wall-time and simulated-time contexts. Rendering the vehicle/sensor URDF remains
+an explicit later task.
+
+Pattern: retain original sources/configurations and add only package-local
+MODULE/BUILD resource definitions selected by adjacent root 0.0.0 dependency/
+local_path_override pairs. Added tests/fixtures live in bazel/tests/system_context.
+The shared original-launch gate uses Cyclone DDS, serialized tests and declared
+resources, with separate ROS domains for the two clock variants.
+
+Verification: the complete Phase 5.3.2 gate below passed with Cyclone DDS.
+Both original combined contexts passed (wall and simulated clock selection,
+3.3 seconds each), including this module's assertions and clean shutdown.
+There are no registered existing runtime tests in this resource-only module.
+Unchanged component algorithm/backend results remain applicable. No source fix
+was needed. Simulated time is selected but not advanced; this does not establish
+simulation progression, URDF rendering or localization convergence.
