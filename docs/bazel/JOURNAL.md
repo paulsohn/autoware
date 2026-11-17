@@ -4876,3 +4876,52 @@ pass. Module resolution leaves the existing lockfile unchanged. No Fast DDS,
 pre-commit or container run was performed. The grouped package gates are
 complete, with no skipped group or deferred failure. Pose initialization is next
 within Phase 5.2.4.
+
+## 2026-11-17: Phase 5.2.4 — component-interface utilities in the pose group
+
+Purpose: supply PoseInitializer's typed NodeAdaptor and its service/state
+registration. Group this header-only prerequisite with motion utilities and
+pose initialization, retaining full module gates and separate eventual commits.
+Inspected CMake/manifest, all public headers and all four tests plus both
+committed manifest fragments. Complete suite: 25 cases (12 wrapper/callback/
+introspection, 6 registration, 5 JSON mapping and 2 manifest drift). Preserve
+both matching and divergent fragments without refreshing them.
+
+Pattern: package-local header library with scoped includes, existing specs,
+ADAPI, RCL/RMW/RCLCPP/component/runtime providers and pinned nlohmann_json.
+Declare four cc_tests with gtest_main. Use the specs' existing runtime provider
+alongside direct shared dependencies: these tests create ChangeOperationMode
+services whose generated type support must actually be available to dlopen.
+The initial incomplete closure reported missing system_msgs generator_c/type-
+support libraries, then subsequent tests reported context already initialized.
+Adding that declared runtime closure fixes the first exception and the cascade;
+do not remove the service tests. Manifest fixtures are declared data, passed
+through rootpath string macros with the escaping already used by the specs
+package. Incorrect macro quoting was a build-definition error, not fixture drift.
+
+Current source fix: six member callback adapters pass a named rvalue-reference
+member pointer to std::bind as an lvalue. Under Clang 21.1.8/libc++, RCLCPP traits
+cannot match the resulting binder member-pointer-reference type; compiling
+member callback tests reports an overloaded operator() trait error. Move the
+member pointer into bind in legacy and returning subscription/service forms.
+The existing utility include already provides std::move. This does not change
+callback signatures, object ownership or pointer invocation semantics. The
+complete existing suite verifies pointer/reference subscriptions, service
+callbacks, registration and introspection. UPSTREAM_AWF records the dated
+tracker/main comparison; keep the eventual source fix commit separate from
+Bazel definitions. No other source compatibility change is introduced.
+
+Verification, unsourced environment, sequential tests and configured build limits:
+
+```bash
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --local_test_jobs=1 --nocache_test_results --test_output=errors \
+  @autoware_component_interface_utils//... @autoware_motion_utils//... \
+  @autoware_pose_initializer//...
+```
+
+Result: all 25 cases pass without failures/errors/skips in the four declared
+XML files, target times 0.3/0.1/0.1/0.2 seconds. The final grouped invocation
+takes 16.632 seconds and also passes all 118 motion and 23 pose cases. This
+module gate is complete; executable enabled behavior remains the pose module's
+separate gate below. No Fast DDS, pre-commit, container or colcon/ament/CMake build-path check.

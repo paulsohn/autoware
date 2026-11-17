@@ -1,0 +1,57 @@
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "autoware_component_interface_utils",
+    hdrs = glob(["include/**/*.hpp"]),
+    strip_include_prefix = "include",
+    deps = [
+        "@autoware_adapi_v1_msgs//:cc",
+        "@autoware_component_interface_specs",
+        "@nlohmann_json//:json",
+        "@rcl//:rcl_library",
+        "@rclcpp//:rclcpp_library",
+        "@rclcpp_components//:rclcpp_components_library",
+        "@rmw//:rmw_library",
+        "@rosidl_runtime_cpp//:rosidl_runtime_cpp_library",
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = [
+        "@autoware_component_interface_specs//:runtime_dynamic_deps",
+        "@autoware_adapi_v1_msgs//:cc_shared",
+        "@rcl//:rcl",
+        "@rclcpp//:rclcpp",
+        "@rclcpp_components//:rclcpp_components",
+        "@rmw//:rmw",
+        "@rosidl_runtime_cpp//:rosidl_runtime_cpp",
+    ],
+)
+
+[
+    cc_test(
+        name = name,
+        srcs = [source],
+        data = glob(["test/data/*"]),
+        dynamic_deps = [":runtime_dynamic_deps"],
+        env = {"ROS_DOMAIN_ID": "100"},
+        local_defines = [
+            'MATCHING_FRAGMENT=\\"$(rootpath test/data/matching_fragment.json)\\"',
+            'DIVERGENT_FRAGMENT=\\"$(rootpath test/data/divergent_fragment.json)\\"',
+        ] if name == "test_manifest_drift" else [],
+        deps = [
+            ":autoware_component_interface_utils",
+            "@googletest//:gtest_main",
+        ],
+    )
+    for name, source in [
+        ("test_component_interface_utils", "test/test_component_interface_utils.cpp"),
+        ("test_component_interface_registration", "test/test_registration.cpp"),
+        ("test_manifest_json", "test/test_manifest_json.cpp"),
+        ("test_manifest_drift", "test/test_manifest_drift.cpp"),
+    ]
+]

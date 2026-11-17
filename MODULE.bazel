@@ -472,3 +472,9 @@ local_path_override(
     module_name = "autoware_ndt_scan_matcher",
     path = "src/core/autoware_core/localization/autoware_ndt_scan_matcher",
 )
+
+bazel_dep(name = "autoware_component_interface_utils", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_component_interface_utils",
+    path = "src/core/autoware_core/common/autoware_component_interface_utils",
+)

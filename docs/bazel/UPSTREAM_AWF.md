@@ -568,7 +568,7 @@ contains the exact two launch commands and full-module gate.
   and target-export discussion/PR #1540 concern broader/GCC/CMake compatibility,
   rather than this demonstrated member-pointer trait failure.
 
-Local source fix: decay member-pointer arguments before binding. Package:
+Local source fix: `5b15d677`, decay member-pointer arguments before binding. Package:
 common/autoware_component_interface_utils, rclcpp.hpp. Upstream main checked
 2026-11-17, file blob ae900b8fb2895f8da558049c836587a5cf85edbc; all six
 member callback adapters still use std::bind(callback, instance, ...).
