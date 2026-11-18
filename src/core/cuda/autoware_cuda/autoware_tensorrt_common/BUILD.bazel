@@ -1,0 +1,55 @@
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library")
+load("@tensorrt//:defs.bzl", "TENSORRT_VERSION_MAJOR", "tensorrt_cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "autoware_tensorrt_common_library",
+    srcs = [
+        "src/profiler.cpp",
+        "src/tensorrt_common.cpp",
+    ],
+    hdrs = glob(["include/**/*.hpp"]),
+    copts = [
+        "-Wall",
+        "-Wextra",
+        "-Wpedantic",
+        "-Werror",
+        "-Wno-deprecated-declarations",
+    ],
+    local_defines = ["TENSORRT_VERSION_MAJOR=" + TENSORRT_VERSION_MAJOR],
+    strip_include_prefix = "include",
+    deps = [
+        "@cuda//:cuda_runtime",
+        "@rclcpp//:rclcpp_library",
+        "@tensorrt",
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = ["@rclcpp//:rclcpp"],
+)
+
+cc_shared_library(
+    name = "autoware_tensorrt_common",
+    dynamic_deps = [":runtime_dynamic_deps"],
+    deps = [":autoware_tensorrt_common_library"],
+)
+
+tensorrt_cc_test(
+    name = "test_autoware_tensorrt_common",
+    srcs = ["test/tensorrt_common_test.cpp"],
+    data = ["test/data/dummy_network.onnx"],
+    dynamic_deps = [
+        ":autoware_tensorrt_common",
+        ":runtime_dynamic_deps",
+    ],
+    local_defines = ['DUMMY_ONNX_PATH=\\"$(rootpath test/data/dummy_network.onnx)\\"'],
+    deps = [
+        ":autoware_tensorrt_common_library",
+        "@autoware_cuda_utils",
+        "@googletest//:gtest_main",
+    ],
+)

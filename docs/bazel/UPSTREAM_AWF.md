@@ -881,8 +881,8 @@ both patterns in
 [utils.hpp](https://github.com/autowarefoundation/autoware_cuda/blob/a5929dde0bacecae60c5f32dc34416f784a60cb4/autoware_tensorrt_common/include/autoware/tensorrt_common/utils.hpp)
 and
 [profiler.cpp](https://github.com/autowarefoundation/autoware_cuda/blob/a5929dde0bacecae60c5f32dc34416f784a60cb4/autoware_tensorrt_common/src/profiler.cpp).
-The local pre-fix branch revision is 7eac2d98; the source correction is committed
-separately from SDK/Bazel definitions.
+Local source correction: `5b78266c1158f7731a77423b701f5eee4ecef675` (pre-fix branch revision 7eac2d98).
+It is separate from SDK/Bazel definitions.
 
 Reproducer: build the two-source library and its complete original native test
 using LLVM/libc++ 21.1.8, Ubuntu 24.04 and the declared TensorRT 10.16.1.11 /
@@ -890,7 +890,7 @@ CUDA 13.2.2 SDK. profiler.cpp instantiates std::ostringstream without including
 `<sstream>`; libc++ supplies only a forward declaration through its other headers.
 Add the direct include. Compiling the real test consumer then fails because
 utils.hpp selects experimental/filesystem. Its compiler check references
-nonexistent __GNUC_MAJOR__, and Clang's GCC compatibility version would be a
+nonexistent `__GNUC_MAJOR__`, and Clang's GCC compatibility version would be a
 poor standard-library capability check even with a corrected spelling. Use
 `__has_include(<filesystem>)` and retain the existing experimental fallback.
 Neither fix changes inference or tensor-reconciliation behavior.

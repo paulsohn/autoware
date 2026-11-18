@@ -7745,7 +7745,7 @@ local autoware_cuda snapshot, separately from build/SDK definitions. The first
 library compile instantiates an incomplete std::basic_ostringstream in
 src/profiler.cpp; add its direct `<sstream>` include. After that blocker is fixed,
 compiling the real consumer fails on experimental/filesystem in public utils.hpp.
-The existing compiler test uses nonexistent __GNUC_MAJOR__ and also mistakes
+The existing compiler test uses nonexistent `__GNUC_MAJOR__` and also mistakes
 Clang's compatibility version for library capability. Select `<filesystem>` with
 __has_include, retaining the existing experimental fallback where unavailable.
 Do not inject compiler-version macros, globally force headers or modify tests.
@@ -7838,3 +7838,54 @@ Verification: the complete command and case counts in the following package
 entry passed, including the public shared export and all SDK/runtime targets.
 The candidate version is now validated for this x86 consumer. JetPack's 10.16.2
 remains a distinct Phase 8 target; no patch-version equivalence is assumed.
+
+## 2026-11-18: Phase 6.2 — TensorRT common
+
+Purpose: adopt the current local autoware_tensorrt_common library and complete
+original suite against declared SDK providers. Inspect CMakeLists.txt,
+package.xml, public headers, both .cpp files and test/tensorrt_common_test.cpp.
+Its 13 cases comprise three tensor-metadata cases and ten IO-reconciliation
+cases using the real checked-in dummy ONNX and GPU engine building. Preserve
+those original assertions, without metadata-only filtering or missing-model/
+GPU skips. The ONNX fixture is 256 bytes and needs no model-repository download.
+
+Minimum integration: add package-local MODULE/BUILD declarations and a root
+local override. Export a cc_library with scoped headers, the SDK major define,
+direct CUDA runtime/SDK/RCLCPP dependencies and the original library warning
+policy. Export a shared library with the existing RCLCPP dynamic-dependency
+provider. The native test links that actual shared export, not only a static
+copy; use gtest_main, with no added source main. Declare the ONNX file in data
+and supply DUMMY_ONNX_PATH with its rootpath. The SDK-owned test helper supplies
+portable builder/GNU runtime loading and records all native cases in XML.
+
+Inspect the current RCR tensorrt_cmake_module finder: it discovers headers,
+three libraries and version values. Direct providers preserve these effects;
+no separate Bazel finder/meta module, stdc++fs link or empty CUDA dependency-meta
+module is required for this LLVM configuration. The two demonstrated source
+fixes are documented separately above. New runtime/test support stays under
+bazel/; original tests and model fixture remain unchanged.
+
+Run from the repository root with the Phase 6.1 SDK/toolchain configuration,
+actual GPU/driver access, no sourced ROS environment and serialized tests:
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=no-agnocast --local_test_jobs=1 \
+  --nocache_test_results --test_output=errors \
+  @tensorrt//... @autoware_tensorrt_common//... @autoware_cuda_utils//...
+```
+
+Final result: eight non-test targets and both test targets pass in 21.959
+seconds. TensorRT's action takes 21.1 seconds, CUDA-utils 0.4 seconds. XML
+records all 13 TensorRT cases (3 metadata + 10 IO) and 17 CUDA cases, zero
+failures/errors/skips/disabled cases. Actual model parsing and fresh per-case
+GPU engine builds execute; native shared-library loading and the declared
+runtime mappings are verified as above. No failures or dependencies are left
+for a later session within this module gate. Targeted buildifier, Python syntax,
+source include/guard review, added Markdown links and git diff --check pass.
+
+No full-system DDS rerun is needed for this isolated library/SDK addition; the
+previous unchanged core/backend evidence remains applicable. No Fast DDS,
+upstream CMake/GCC, ARM/SBSA, JetPack 10.16.2, runtime image, real model import,
+LTO or cross-machine engine-portability check was run. Phase 6.2 is complete;
+local negotiated interfaces/library/examples and CUDA transport (6.3) are next.

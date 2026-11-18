@@ -1331,7 +1331,7 @@ This is tested compatibility, not NVIDIA-supported libc++ or an SBSA result.
 No rule, architecture, culibos or nvcc reproducibility patch was required by
 this consumer. The complete native headless core regression also passed.
 
-### Phase 6.2: TensorRT foundation (in progress)
+### Phase 6.2: TensorRT foundation (complete)
 
 Integrate local autoware_tensorrt_common against the selected binary SDK and
 explicit runtime closure. Expose the real ONNX fixture and run its complete
@@ -1350,7 +1350,23 @@ out of the graph only if direct providers preserve their required effects.
 New SDK/test support stays with its module; no model-repository import or DDS
 matrix is part of this foundation gate.
 
-### Phase 6.3: CUDA transport
+Accepted result: the pinned x86 TensorRT 10.16.1.11-1+cuda13.2 SDK passes the
+complete 13-case original suite through the real shared export, plus all 17
+CUDA-utils cases. The SDK module owns six NVIDIA package URL/hash inputs,
+shared imports, system header classification and runtime-only builder data.
+The native test launcher uses resolved runfiles and pinned GNU 12.2 runtimes;
+an engine-build process snapshot confirms those mappings. Inspected imported
+libraries require at most GLIBC 2.27/GLIBCXX 3.4.22/CXXABI 1.3.11. Keep the
+NVIDIA driver host-provided and leave runtime-image/platform validation later.
+
+Two source corrections are required: profiler's direct `<sstream>` include and
+filesystem-header availability detection. Record them separately from Bazel
+rules and associate the useful findings in UPSTREAM_AWF.md. The CMake finder
+and CUDA meta shim need no separate module for this direct-provider closure.
+The 256-byte ONNX test fixture remains local; model-repository adoption is not
+part of this gate. JetPack's 10.16.2 and SBSA are still unvalidated targets.
+
+### Phase 6.3: CUDA transport (next)
 
 Integrate local negotiated interfaces/library/examples and cuda_blackboard in
 dependency order, at package commit boundaries. Inventory all current original

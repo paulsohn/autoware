@@ -1,0 +1,15 @@
+module(
+    name = "autoware_tensorrt_common",
+    version = "0.0.0",
+)
+
+bazel_dep(name = "autoware_cuda_utils", version = "0.0.0")
+bazel_dep(name = "googletest", version = "1.18.0.bcr.1")
+bazel_dep(name = "rclcpp", version = "0.0.0")
+bazel_dep(name = "rosdistro", version = "0.0.0")
+bazel_dep(name = "rules_cc", version = "0.2.26.rcr.0")
+bazel_dep(name = "rules_cuda", version = "0.4.0")
+bazel_dep(name = "tensorrt", version = "0.0.0")
+
+cuda = use_extension("@rules_cuda//cuda:extensions.bzl", "toolchain")
+use_repo(cuda, "cuda")

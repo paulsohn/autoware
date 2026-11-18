@@ -3651,7 +3651,7 @@
     "@@rules_cuda+//cuda:extensions.bzl%toolchain": {
       "general": {
         "bzlTransitiveDigest": "ISt+9j9u05NPbX6oCauFQp6cb/XsWWfK2i6xIKXY8cA=",
-        "usagesDigest": "+FLYaeLjiXuIcXV8PH5Ff/ZXTjS7z2WgAL7inYQLG30=",
+        "usagesDigest": "fA57vyu/80Vl8ItdKapg4Wfu4y+K9BJ42PUn4EDpLf8=",
         "recordedInputs": [
           "REPO_MAPPING:bazel_features+,bazel_features_globals bazel_features++version_extension+bazel_features_globals",
           "REPO_MAPPING:bazel_features+,bazel_features_version bazel_features++version_extension+bazel_features_version",
@@ -4319,6 +4319,19 @@
           "explicitRootModuleDirectDevDeps": [],
           "useAllRepos": "NO",
           "reproducible": false
+        }
+      }
+    },
+    "@@tensorrt+//:repositories.bzl%sdk": {
+      "general": {
+        "bzlTransitiveDigest": "az7ZpZs6NyYq3z6YixI6DJaDUhXglVEn1zk/6sejOOA=",
+        "usagesDigest": "7purMKVCQYDGa/KdnE1dg9USqswqpx4psJYsOMjJLuo=",
+        "recordedInputs": [],
+        "generatedRepoSpecs": {
+          "tensorrt_artifacts": {
+            "repoRuleId": "@@tensorrt+//:repositories.bzl%_artifacts",
+            "attributes": {}
+          }
         }
       }
     },
