@@ -787,3 +787,11 @@ remains all 17 cases. Root SDK selection, GPU code generation and driver
 prerequisites follow the preceding CUDA convention. Ordinary applications need
 the equivalent declared runtime/resource loading contract; a successful link
 alone does not prove engine-building runtime closure.
+
+## Negotiated and CUDA blackboard transport
+
+The negotiated library and examples use native rclcpp and need no GPU. Run all
+library cases with @negotiated//... and all original example launch/standalone
+contracts with //bazel/tests:negotiated_examples_tests, using --config=no-agnocast
+and serialized tests. The example module owns its executable/ament records;
+added behavior adapters remain under bazel/tests/negotiated_examples/.

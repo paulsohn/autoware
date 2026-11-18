@@ -1401,7 +1401,7 @@ Package boundaries and gates:
   76 existing cases (12 combinations, 32 publisher, 32 subscription) with
   Cyclone DDS. Preserve actual negotiation/renegotiation and callback behavior.
   These are native rclcpp nodes, not Agnocast-switchable nodes.
-- **6.3.3 — negotiated_examples (next):** eight original component executables and
+- **6.3.3 — negotiated_examples (complete):** eight original component executables and
   the lifecycle publisher, original launch resources and representative
   standalone/composed, remapping, type-adapted and lifecycle behavior. There
   are no original runtime test targets; define added behavior gates before

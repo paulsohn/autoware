@@ -30,6 +30,7 @@ bazel_dep(name = "launch_ros", version = "0.0.0")
 bazel_dep(name = "rclcpp_components", version = "0.0.0")
 bazel_dep(name = "logging_demo", version = "0.37.9-1.rcr.0")
 bazel_dep(name = "nav_msgs", version = "5.9.3-1.rcr.0")
+bazel_dep(name = "lifecycle_msgs", version = "0.0.0")
 bazel_dep(name = "sensor_msgs", version = "5.9.3-1.rcr.0")
 bazel_dep(name = "pcl_conversions", version = "2.10.0-1.rcr.0")
 bazel_dep(name = "tf2", version = "0.45.10-1.rcr.0")
@@ -829,4 +830,10 @@ bazel_dep(name = "negotiated", version = "0.0.0")
 local_path_override(
     module_name = "negotiated",
     path = "src/core/cuda/negotiated/negotiated",
+)
+
+bazel_dep(name = "negotiated_examples", version = "0.0.0")
+local_path_override(
+    module_name = "negotiated_examples",
+    path = "src/core/cuda/negotiated/negotiated_examples",
 )

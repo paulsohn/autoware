@@ -1508,3 +1508,47 @@ launch_test(
         "@std_msgs//:py",
     ],
 )
+
+_NEGOTIATED_EXAMPLE_CASES = [
+    "negotiated_composed-launch.py",
+    "negotiated_pub_sub_pair-launch.py",
+    "negotiated_pub_sub_pair_remap-launch.py",
+    "negotiated_pub_sub_pair_remap2-launch.py",
+    "standalone",
+    "string_b",
+    "compatible_sub",
+    "compatible_pub",
+    "adapted",
+    "lifecycle",
+]
+
+[
+    launch_test(
+        name = "negotiated_examples_" + case.replace(".py", "").replace("-", "_") + "_test",
+        src = "negotiated_examples/test_launch.py",
+        data = ["@negotiated_examples//:ament_index"],
+        env = {
+            "NEGOTIATED_CASE": case,
+            "ENABLE_AGNOCAST": "0",
+            "LD_LIBRARY_PATH": "lib",
+            "ROS_DOMAIN_ID": "88",
+        },
+        precompile = "disabled",
+        tags = [
+            "no-remote",
+            "no-sandbox",
+        ],
+        deps = [
+            "@ament_index_python",
+            "@launch_ros",
+            "@lifecycle_msgs//:py",
+            "@rclpy",
+        ],
+    )
+    for case in _NEGOTIATED_EXAMPLE_CASES
+]
+
+test_suite(
+    name = "negotiated_examples_tests",
+    tests = [":negotiated_examples_" + case.replace(".py", "").replace("-", "_") + "_test" for case in _NEGOTIATED_EXAMPLE_CASES],
+)

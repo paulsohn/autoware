@@ -8071,3 +8071,49 @@ confirmed available outside the restricted tool sandbox; sandbox-local absence
 must not be diagnosed as a host driver failure. No examples/component behavior
 or CUDA transport completion is claimed. Next are the original example
 executables and launches, then cuda_blackboard with its full prerequisites.
+
+## 2026-11-19: Phase 6.3.3 — Negotiated example executables and launches
+
+Purpose: expose the entire original negotiated_examples package, not just its
+library dependency. Inspect its CMakeLists.txt, package.xml, eight component
+sources, lifecycle publisher, common type-info header and four launch files.
+No original runtime tests are registered. Acceptance: build all nine original
+executables/shared components and run all four original composed/remapped
+launches plus standalone, string-b, compatible publisher/subscriber, type-adapted
+and lifecycle scenarios, asserting actual downstream delivery and clean exits.
+Lifecycle coverage configures, activates, delivers and deactivates the publisher.
+These are CPU/native-rclcpp examples; a GPU test would not exercise their code.
+
+Integration pattern: package-local MODULE/BUILD definitions expose scoped source
+libraries, uniquely named component shared libraries, native RCR component
+executables/registration records and ament-indexed launch files. Keep lifecycle
+as its original plain executable. Use the negotiated shared export plus its
+transitive runtime provider, std_msgs, native components and lifecycle runtime
+providers to preserve shared ownership. Register executable files under the
+package's libexec directory and compose the component-container runtime provider.
+No source changes or root-label dependencies are added to the source module.
+
+Added behavior tests live under bazel/tests/negotiated_examples/. The adapter
+includes the original launch files unchanged; standalone pairs use their indexed
+executables. Select scenarios through declared test environment variables and
+serialize the suite in one ROS domain. Assert receiver-specific callback logs,
+including the downstream namespace in the unremapped pair. ROS console output
+is stderr: checking stdout falsely reports timeouts despite successful delivery.
+The lifecycle peer uses the actual change-state/get-state services.
+
+Commands (repository root, no sourced ROS):
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel build --config=no-agnocast @negotiated_examples//...
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=no-agnocast --local_test_jobs=1 \
+  --nocache_test_results --test_output=errors //bazel/tests:negotiated_examples_tests
+```
+
+Result: all 52 package targets build in 84.318 seconds. All ten scenarios
+pass both delivery and shutdown checks (20 XML cases, no failures/errors/skips).
+Their final run is included in the 54.958-second combined launch gate; the
+separate image-pipeline failure from that run is diagnosed and fixed below.
+Targeted buildifier, Python syntax and whitespace checks pass. No source changes
+were needed. No Fast DDS or GPU behavior claim applies to this CPU package.
