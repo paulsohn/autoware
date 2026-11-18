@@ -1384,7 +1384,7 @@ and CUDA meta shim need no separate module for this direct-provider closure.
 The 256-byte ONNX test fixture remains local; model-repository adoption is not
 part of this gate. JetPack's 10.16.2 and SBSA are still unvalidated targets.
 
-### Phase 6.3: CUDA transport (in progress)
+### Phase 6.3: CUDA transport (complete)
 
 Integrate local negotiated interfaces/library/examples and cuda_blackboard in
 dependency order, at package commit boundaries. Inventory all current original
@@ -1406,13 +1406,23 @@ Package boundaries and gates:
   standalone/composed, remapping, type-adapted and lifecycle behavior. There
   are no original runtime test targets; define added behavior gates before
   implementation and keep their adapters under bazel/tests/.
-- **6.3.4 — cuda_blackboard:** library, publisher/subscriber components and all
+- **6.3.4 — cuda_blackboard (complete):** library, publisher/subscriber components and all
   eight original cases (four mailbox, two publisher, one async publisher and
   one worker announcement). Require real GPU execution with no device skips;
   the worker-announcement case explicitly selects ENABLE_AGNOCAST=1 and needs
   its IPC listener available. Scope backend and component behavior checks
   before implementation; enabled kernel-backed execution needs its actual
   module/device and heap hook. Runtime prerequisites are not build prerequisites.
+
+Accepted results: all 52 example targets and ten delivery/shutdown scenarios
+pass. Blackboard's eight original cases, enabled publisher/async repeats, exact
+GPU image/point-cloud round trips and cross-process compatible image delivery
+pass in both backends. The original composed image pipeline preserves pixels
+and metadata after a separately validated demo-header fix. CUDA-utils' 17 and
+TensorRT's 13 original GPU cases pass on NVIDIA 595.99.02. Direct Agnocast tests
+use the declared heap hook with the bridge off; no bridge matrix is claimed.
+Select cv_bridge 4.1.0-3.rcr.2 at root: its 0.0.0 placeholder has no BUILD rules.
+The library/examples remain CPU-only; real GPU gates belong to CUDA consumers.
 
 Keep each validated package boundary and its evidence in a separate commit.
 No Fast DDS compatibility check is part of these routine gates.

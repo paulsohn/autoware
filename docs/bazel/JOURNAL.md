@@ -8143,3 +8143,118 @@ allocation/Agnocast changes, not a matching fix. The Lyrical tracker is likewise
 not evidence of a metadata correction. UPSTREAM_AWF.md records the useful
 finding; no upstream submission was made. Keep the source correction in a
 separate fix commit from package build definitions.
+
+## 2026-11-19: Phase 6.3.4 — CUDA blackboard transport
+
+Purpose: integrate the full local cuda_blackboard package, including its eight
+original cases and image publisher/subscriber components. Inspect CMakeLists.txt,
+package.xml, all headers/sources, original tests/fixtures and example.launch.py.
+Gate: real GPU execution without skips, original mailbox/publisher/async/worker
+suites, enabled publisher/async variants, exact image/point-cloud device round
+trips and cross-process compatible payload delivery in both backends, plus the
+original composed image pipeline's payload and shutdown behavior. Revalidate
+CUDA-utils/TensorRT execution on the restored NVIDIA 595.99.02 driver. Driver
+and Agnocast devices must be checked outside sandbox restrictions.
+
+Package-local definitions compile Agnocast support unconditionally through the
+wrapper and configurator providers. The shared blackboard owns process-wide GPU
+state; components/tests link its actual shared export. Original ROS nodes remain
+native components; only the compatible publisher/async worker use backend
+selection. Use pinned CUDA runtime directly rather than host CUDA discovery.
+New payload and launch adapters/fixtures live under bazel/tests/cuda_blackboard/.
+Keep the original mailbox test header-only and CUDA-free, as its CMake target
+specifies; the subscriber component needs no direct cv_bridge/OpenCV edge.
+
+The cv_bridge dependency is absent locally. Its registry 0.0.0 placeholder has
+no BUILD file; select the published 4.1.0-3.rcr.2 release at root, not a source
+implementation substitution. Reuse its ROS/OpenCV shared provider closure for
+components. Runtime GPU access requires NVIDIA driver/device visibility; enabled
+Agnocast transport requires the module/device and built heap hook. The worker
+announcement original case needs an unused IPC listener endpoint. The initial full package/GPU gate builds 24 non-test and six test targets in
+105.922 seconds. XML confirms all eight original blackboard cases, 17 CUDA-utils
+cases and 13 TensorRT cases pass with no failures/errors/skips. The later
+enabled variants use separate suite targets; reproduce the baseline tests
+with the explicit original target list below. TensorRT actually
+builds engines (21.6 seconds); CUDA-utils takes 0.6 seconds. Run:
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=no-agnocast --local_test_jobs=1 \
+  --nocache_test_results --test_output=errors \
+  @cuda_blackboard//:test_publish_mailbox \
+  @cuda_blackboard//:test_cuda_blackboard_publisher \
+  @cuda_blackboard//:test_cuda_blackboard_async_publisher \
+  @cuda_blackboard//:test_start_worker_thread \
+  @autoware_cuda_utils//... @autoware_tensorrt_common//...
+```
+
+The original worker target explicitly sets ENABLE_AGNOCAST=1, even with the
+RCLCPP configuration selected for the other original cases. For direct enabled
+transport, test the two added variants with the built heap hook; the exact
+payload binary is exercised in RCLCPP mode in the same serialized gate:
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=no-agnocast --local_test_jobs=1 \
+  --nocache_test_results --test_output=errors \
+  --run_under=//bazel/agnocast:with_heaphook \
+  --test_env=AGNOCAST_BRIDGE_MODE=off \
+  @cuda_blackboard//:test_cuda_blackboard_publisher_agnocast \
+  @cuda_blackboard//:test_cuda_blackboard_async_publisher_agnocast \
+  //bazel/tests:cuda_blackboard_payload_test
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --local_test_jobs=1 --nocache_test_results --test_output=errors \
+  --run_under=//bazel/agnocast:with_heaphook \
+  --test_env=AGNOCAST_BRIDGE_MODE=off //bazel/tests:cuda_blackboard_payload_test
+```
+
+These pass in 10.401 and 3.139 seconds respectively: three original cases repeat
+with ENABLE_AGNOCAST=1, and three added payload cases pass in each backend, zero
+failures/errors/skips. The payload test verifies actual device allocations,
+full image/point-cloud data and metadata round trips, and an async publisher
+sending an exact GPU-derived image to a polling peer in a separate exec'd
+process. posix_spawn avoids inheriting a live CUDA context through fork. Use
+polling depth 1 for Latest; SensorDataQoS's default depth 5 correctly throws.
+The bridge is deliberately off for this direct transport test; no new bridge
+coverage is claimed. Only targets declaring heap-hook data can use this runner;
+applying it to baseline targets without that data fails before test startup.
+Run those baseline targets normally as above.
+
+Original composed image example gate:
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=no-agnocast --local_test_jobs=1 \
+  --nocache_test_results --test_output=errors //bazel/tests:cuda_blackboard_component_test
+```
+
+The adapter creates a temporary PPM fixture, invokes the original example.launch.py unchanged, and checks indexed
+component loading, exact BGR pixels/dimensions/encoding, frame/timestamp and clean
+shutdown. It exposed the subscriber dropping the original image header; the
+separate source-fix entry records the one-line correction. Both final
+cases pass in 3.5 seconds (11.641-second build/test invocation). Other package
+results remain applicable: only the demo subscriber source changed, not the
+library, original unit tests, payload binary or negotiated examples.
+
+Final supported workflow uses package test suites to avoid applying the heap
+hook to targets without its data. The following complete RCLCPP gate passes all
+six targets in 39.622 seconds, including the final demo fix and minimal
+dependency declarations (component 4.5 seconds, payload 0.7 seconds). The enabled suite also passes all three targets in
+11.566 seconds (1.5-second payload, 1.5-second async and 0.5-second publisher),
+with zero failures/errors/skips. The paired commands are:
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=no-agnocast --local_test_jobs=1 --nocache_test_results \
+  --test_output=errors @cuda_blackboard//:unit_tests \
+  //bazel/tests:cuda_blackboard_payload_test //bazel/tests:cuda_blackboard_component_test
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --local_test_jobs=1 --nocache_test_results --test_output=errors \
+  --run_under=//bazel/agnocast:with_heaphook --test_env=AGNOCAST_BRIDGE_MODE=off \
+  @cuda_blackboard//:agnocast_tests //bazel/tests:cuda_blackboard_payload_test
+```
+
+Targeted buildifier, clang-format, Python syntax, Markdown links and whitespace
+checks pass. No source changes beyond that demonstrated metadata bug are needed.
+Phase 6.3 is complete. No Fast DDS, bridge matrix, performance, ARM/Thor or
+runtime-bundle/OCI test was run. Phase 6.4's representative GPU consumer is next.

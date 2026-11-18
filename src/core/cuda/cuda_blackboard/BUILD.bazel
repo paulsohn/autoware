@@ -1,0 +1,278 @@
+load("@rclcpp_components//:defs.bzl", "rclcpp_components_register_node")
+load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "cuda_blackboard",
+    srcs = [
+        "src/cuda_blackboard.cpp",
+        "src/cuda_blackboard_async_publisher.cpp",
+        "src/cuda_blackboard_publisher.cpp",
+        "src/cuda_blackboard_subscriber.cpp",
+        "src/cuda_image.cpp",
+        "src/cuda_mem_pool_context.cpp",
+        "src/cuda_message_impl_detail.cpp",
+        "src/cuda_pointcloud2.cpp",
+    ],
+    hdrs = glob(["include/**/*.hpp"]),
+    copts = [
+        "-Wall",
+        "-Wextra",
+        "-Wpedantic",
+        "-Wunused-function",
+    ],
+    strip_include_prefix = "include",
+    textual_hdrs = ["src/cuda_message_impl_detail.hpp"],
+    deps = [
+        "@agnocast_cie_thread_configurator",
+        "@autoware_agnocast_wrapper//:autoware_agnocast_wrapper_library",
+        "@cuda//:cuda_runtime",
+        "@negotiated",
+        "@negotiated_interfaces//:cc",
+        "@rclcpp//:rclcpp_library",
+        "@sensor_msgs//:cc",
+        "@std_msgs//:cc",
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = [
+        "@agnocast_cie_thread_configurator//:agnocast_thread_configurator",
+        "@autoware_agnocast_wrapper//:autoware_agnocast_wrapper",
+        "@negotiated//:negotiated_shared",
+        "@negotiated//:runtime_dynamic_deps",
+        "@sensor_msgs//:cc_shared",
+        "@std_msgs//:cc_shared",
+        "@rclcpp_components//:rclcpp_components",
+    ],
+)
+
+cc_shared_library(
+    name = "cuda_blackboard_shared",
+    dynamic_deps = [":runtime_dynamic_deps"],
+    shared_lib_name = "libcuda_blackboard.so",
+    deps = [":cuda_blackboard"],
+)
+
+cc_test(
+    name = "test_publish_mailbox",
+    srcs = [
+        "include/cuda_blackboard/publish_mailbox.hpp",
+        "test/test_publish_mailbox.cpp",
+    ],
+    includes = ["include"],
+    deps = ["@googletest//:gtest_main"],
+)
+
+cc_test(
+    name = "test_cuda_blackboard_publisher",
+    srcs = ["test/test_cuda_blackboard_publisher.cpp"] + glob(["test/*.hpp"]),
+    dynamic_deps = [
+        ":cuda_blackboard_shared",
+        ":runtime_dynamic_deps",
+    ],
+    env = {
+        "ROS_DOMAIN_ID": "89",
+        "ENABLE_AGNOCAST": "0",
+    },
+    tags = [
+        "no-remote",
+        "no-sandbox",
+        "requires-gpu",
+    ],
+    deps = [
+        ":cuda_blackboard",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "test_cuda_blackboard_async_publisher",
+    srcs = ["test/test_cuda_blackboard_async_publisher.cpp"] + glob(["test/*.hpp"]),
+    dynamic_deps = [
+        ":cuda_blackboard_shared",
+        ":runtime_dynamic_deps",
+    ],
+    env = {
+        "ROS_DOMAIN_ID": "89",
+        "ENABLE_AGNOCAST": "0",
+    },
+    tags = [
+        "no-remote",
+        "no-sandbox",
+        "requires-gpu",
+    ],
+    deps = [
+        ":cuda_blackboard",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "test_start_worker_thread",
+    srcs = ["test/test_start_worker_thread.cpp"] + glob(["test/*.hpp"]),
+    dynamic_deps = [
+        ":cuda_blackboard_shared",
+        ":runtime_dynamic_deps",
+    ],
+    env = {
+        "ROS_DOMAIN_ID": "89",
+        "ENABLE_AGNOCAST": "1",
+    },
+    tags = [
+        "no-remote",
+        "no-sandbox",
+    ],
+    deps = [
+        ":cuda_blackboard",
+        "@googletest//:gtest_main",
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "component_dynamic_deps",
+    dynamic_deps = [
+        ":runtime_dynamic_deps",
+        ":cuda_blackboard_shared",
+        "@cv_bridge//:cv_bridge",
+    ],
+)
+
+cc_library(
+    name = "cuda_blackboard_publisher_node_library",
+    srcs = ["src/cuda_blackboard_publisher_node.cpp"],
+    deps = [
+        ":cuda_blackboard",
+        "@cv_bridge//:cv_bridge_library",
+        "@rclcpp_components//:rclcpp_components_library",
+        "@rosdistro//cc:opencv_library",
+    ],
+)
+
+cc_shared_library(
+    name = "cuda_blackboard_publisher_node_component",
+    dynamic_deps = [":component_dynamic_deps"],
+    shared_lib_name = "libcuda_blackboard_publisher_node.so",
+    deps = [":cuda_blackboard_publisher_node_library"],
+)
+
+rclcpp_components_register_node(
+    name = "cuda_blackboard_publisher_node",
+    component = ":cuda_blackboard_publisher_node_component",
+    node_name = "cuda_blackboard_publisher_node",
+    plugin = "cuda_blackboard::CudaBlackboardPublisherNode",
+)
+
+cc_library(
+    name = "cuda_blackboard_subscriber_node_library",
+    srcs = ["src/cuda_blackboard_subscriber_node.cpp"],
+    deps = [
+        ":cuda_blackboard",
+        "@rclcpp_components//:rclcpp_components_library",
+    ],
+)
+
+cc_shared_library(
+    name = "cuda_blackboard_subscriber_node_component",
+    dynamic_deps = [
+        ":runtime_dynamic_deps",
+        ":cuda_blackboard_shared",
+    ],
+    shared_lib_name = "libcuda_blackboard_subscriber_node.so",
+    deps = [":cuda_blackboard_subscriber_node_library"],
+)
+
+rclcpp_components_register_node(
+    name = "cuda_blackboard_subscriber_node",
+    component = ":cuda_blackboard_subscriber_node_component",
+    node_name = "cuda_blackboard_subscriber_node",
+    plugin = "cuda_blackboard::CudaBlackboardSubscriberNode",
+)
+
+register_ament_files(
+    name = "executables",
+    files = [
+        ":cuda_blackboard_publisher_node",
+        ":cuda_blackboard_subscriber_node",
+    ],
+    prefix = "lib/cuda_blackboard",
+    strip_prefix = "*",
+)
+
+ament_index(
+    components = [
+        ":cuda_blackboard_publisher_node_record",
+        ":cuda_blackboard_subscriber_node_record",
+    ],
+    data = glob(["launch/*.py"]) + [":executables"],
+    package_xml = "package.xml",
+    deps = ["@rclcpp_components//:ament_package"],
+)
+
+cc_test(
+    name = "test_cuda_blackboard_publisher_agnocast",
+    srcs = ["test/test_cuda_blackboard_publisher.cpp"] + glob(["test/*.hpp"]),
+    data = ["@agnocast_heaphook"],
+    dynamic_deps = [
+        ":cuda_blackboard_shared",
+        ":runtime_dynamic_deps",
+    ],
+    env = {
+        "ENABLE_AGNOCAST": "1",
+        "ROS_DOMAIN_ID": "89",
+    },
+    tags = [
+        "no-remote",
+        "no-sandbox",
+        "requires-gpu",
+    ],
+    deps = [
+        ":cuda_blackboard",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "test_cuda_blackboard_async_publisher_agnocast",
+    srcs = ["test/test_cuda_blackboard_async_publisher.cpp"] + glob(["test/*.hpp"]),
+    data = ["@agnocast_heaphook"],
+    dynamic_deps = [
+        ":cuda_blackboard_shared",
+        ":runtime_dynamic_deps",
+    ],
+    env = {
+        "ENABLE_AGNOCAST": "1",
+        "ROS_DOMAIN_ID": "89",
+    },
+    tags = [
+        "no-remote",
+        "no-sandbox",
+        "requires-gpu",
+    ],
+    deps = [
+        ":cuda_blackboard",
+        "@googletest//:gtest_main",
+    ],
+)
+
+test_suite(
+    name = "unit_tests",
+    tests = [
+        ":test_cuda_blackboard_async_publisher",
+        ":test_cuda_blackboard_publisher",
+        ":test_publish_mailbox",
+        ":test_start_worker_thread",
+    ],
+)
+
+test_suite(
+    name = "agnocast_tests",
+    tests = [
+        ":test_cuda_blackboard_async_publisher_agnocast",
+        ":test_cuda_blackboard_publisher_agnocast",
+    ],
+)

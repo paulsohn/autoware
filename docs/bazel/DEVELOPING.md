@@ -795,3 +795,30 @@ library cases with @negotiated//... and all original example launch/standalone
 contracts with //bazel/tests:negotiated_examples_tests, using --config=no-agnocast
 and serialized tests. The example module owns its executable/ament records;
 added behavior adapters remain under bazel/tests/negotiated_examples/.
+
+CUDA blackboard requires an actual compatible GPU/driver for its GPU cases.
+It compiles Agnocast support unconditionally; the compatible publisher and async
+worker select their backend at runtime. Its original demo components remain
+native rclcpp components. Preserve the single shared blackboard library so
+components in the same process see the same GPU buffer registry.
+
+Run the complete module and added payload/component checks sequentially:
+
+```sh
+bazel test --config=no-agnocast --local_test_jobs=1 --nocache_test_results \
+  --test_output=errors @cuda_blackboard//:unit_tests \
+  //bazel/tests:cuda_blackboard_payload_test //bazel/tests:cuda_blackboard_component_test
+bazel test --local_test_jobs=1 --nocache_test_results --test_output=errors \
+  --run_under=//bazel/agnocast:with_heaphook --test_env=AGNOCAST_BRIDGE_MODE=off \
+  @cuda_blackboard//:agnocast_tests //bazel/tests:cuda_blackboard_payload_test
+```
+
+The worker-announcement unit case explicitly sets ENABLE_AGNOCAST=1. Enabled
+transport needs the loaded compatible module/device and heap hook; these direct
+transport tests disable the bridge, so they do not establish bridge behavior.
+Do not apply the heap-hook runner to targets without its declared runtime data.
+Check XML for all eight original cases, three enabled repeats, three added
+payload cases per backend and two component cases, without skips. The component
+test invokes the original image launch and validates exact pixels, frame and
+stamp. The payload test checks image/cloud device round trips and a separate
+process receiving the async publisher's image through the selected backend.

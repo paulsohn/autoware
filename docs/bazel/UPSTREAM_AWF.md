@@ -914,6 +914,8 @@ provide incidental transitive includes. No upstream PR is currently associated.
 - [ ] Associate with a matching upstream PR. Reviewed 2026-11-19; no matching
   correction found in the related PRs inspected below. Not submitted upstream.
 
+Local source correction: `8c5dc049d5f93d5de384c6e811622db13220f6c8` (separate from Bazel definitions).
+
 Repository/package: autowarefoundation/cuda_blackboard. The original example
 subscriber manually reconstructs output_image from a CudaImage but omits its
 header. The actual GPU pipeline produces correct image bytes with an empty
