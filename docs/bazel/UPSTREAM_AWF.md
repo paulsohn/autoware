@@ -908,3 +908,34 @@ not Lyrical-only behavior changes. Upstream CMake/GCC, Humble/Jazzy, other SDK
 versions and ARM were not tested. Suggested upstream action: the two small
 source corrections and compilation with a standard library that does not
 provide incidental transitive includes. No upstream PR is currently associated.
+
+## CUDA blackboard example drops image headers
+
+- [ ] Associate with a matching upstream PR. Reviewed 2026-11-19; no matching
+  correction found in the related PRs inspected below. Not submitted upstream.
+
+Repository/package: autowarefoundation/cuda_blackboard. The original example
+subscriber manually reconstructs output_image from a CudaImage but omits its
+header. The actual GPU pipeline produces correct image bytes with an empty
+frame and zero timestamp, losing the publisher's camera_frame and acquisition
+stamp. Copy ros_image->header = cuda_msg->header before publishing; no transport
+or GPU allocation changes are required. This is a general metadata bug, not a
+Lyrical-specific compatibility change.
+
+[Inspected upstream source](https://github.com/autowarefoundation/cuda_blackboard/blob/a4f330e5c228d713774450b0331b83b94c55a466/src/cuda_blackboard_subscriber_node.cpp)
+still lacks the assignment. Compared the actual subscriber-file patches in
+PRs [14](https://github.com/autowarefoundation/cuda_blackboard/pull/14),
+[21](https://github.com/autowarefoundation/cuda_blackboard/pull/21),
+[22](https://github.com/autowarefoundation/cuda_blackboard/pull/22),
+[27](https://github.com/autowarefoundation/cuda_blackboard/pull/27) and
+[29](https://github.com/autowarefoundation/cuda_blackboard/pull/29); none adds it.
+The [Lyrical tracker](https://github.com/autowarefoundation/autoware/issues/7404)
+is related platform work, not a matching metadata fix.
+
+Reproducer: bazel test --config=no-agnocast --nocache_test_results
+//bazel/tests:cuda_blackboard_component_test. The added test runs the original
+example.launch.py with a tiny PPM, checks exact output pixels and image metadata,
+and asserts clean shutdown. It fails on the unmodified source (empty frame),
+then passes both cases after the one-line copy on CUDA 13.2.2 / NVIDIA 595.99.02.
+The Phase 6.3.4 and source-fix journal entries record the full commands and
+prerequisites. Upstream CMake and other platforms were not tested.

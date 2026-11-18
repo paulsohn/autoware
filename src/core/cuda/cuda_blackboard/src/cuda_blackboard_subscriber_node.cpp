@@ -30,6 +30,7 @@ public:
         cuda_msg->width);
 
       auto ros_image = std::make_unique<sensor_msgs::msg::Image>();
+      ros_image->header = cuda_msg->header;
       ros_image->encoding = cuda_msg->encoding;
       ros_image->height = cuda_msg->height;
       ros_image->width = cuda_msg->width;

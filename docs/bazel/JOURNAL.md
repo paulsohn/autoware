@@ -8117,3 +8117,29 @@ Their final run is included in the 54.958-second combined launch gate; the
 separate image-pipeline failure from that run is diagnosed and fixed below.
 Targeted buildifier, Python syntax and whitespace checks pass. No source changes
 were needed. No Fast DDS or GPU behavior claim applies to this CPU package.
+
+## 2026-11-19: Preserve CUDA example image metadata
+
+Purpose: preserve image identity when the original cuda_blackboard example
+subscriber converts a GPU image back to a ROS image. Before the fix, the real
+component pipeline delivers pixels but output_image.header.frame_id is empty
+instead of camera_frame, and the timestamp is zero. This is a source behavior
+bug, independent of Bazel, ROS distribution or CUDA version.
+
+In src/core/cuda/cuda_blackboard/src/cuda_blackboard_subscriber_node.cpp, copy
+cuda_msg->header to ros_image->header alongside the existing encoding/dimension
+copies. Do not change the launch, transport selection or GPU-copy behavior.
+The integration test is kept outside the original package, under
+bazel/tests/cuda_blackboard/test_launch.py. Reproduce with the component-test
+command in the Phase 6.3.4 entry: before the fix it fails the frame assertion;
+afterward both payload/metadata delivery and clean shutdown pass (3.5 seconds).
+The native GPU round-trip tests separately confirm metadata survives the library
+conversion; the loss occurs only in the demo subscriber's manual reconstruction.
+
+Upstream main a4f330e5c228d713774450b0331b83b94c55a466 still omits the copy
+(reviewed 2026-11-19). Inspected subscriber-file changes for PRs 14, 21, 22, 27
+and 29; none adds this header assignment. These are related include/stream/
+allocation/Agnocast changes, not a matching fix. The Lyrical tracker is likewise
+not evidence of a metadata correction. UPSTREAM_AWF.md records the useful
+finding; no upstream submission was made. Keep the source correction in a
+separate fix commit from package build definitions.
