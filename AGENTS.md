@@ -13,6 +13,23 @@ experiments, and milestones belong in PLAN.md and JOURNAL.md.
 
 - `src/` contains source snapshots imported as squashed git subtrees. Edit these
   files in place. Do not run `vcs import` or `vcs pull` into `src/`.
+- Import model repositories as squashed git subtrees under `src/models/`,
+  preserving their existing model-data-directory-relative subpaths where
+  practical. Each model repository owns one Bazel module, one ament package
+  index and its model/metadata targets; keep MODULE.bazel, BUILD.bazel,
+  package.xml and minimal colcon/ament_cmake build support inside that boundary.
+  Do not replace these indexes with a metarepository-owned aggregate package.
+  For diffusion_planner, import only the current autoware_launch-selected
+  revision into `src/models/diffusion_planner`, with no version subdirectory.
+  Record immutable upstream provenance and validate LFS/Xet materialization.
+- Update every affected autoware_launch model-path parameter together with its
+  provider. Resolve model paths exclusively through each repository's indexed
+  resources; remove the common model `data_path` argument and its propagation.
+  Do not retain HOME/external-directory fallbacks or inject absolute workspace
+  paths. Colcon users must obtain and build the required model packages and
+  source the resulting environment; Ansible downloads into HOME alone no longer
+  satisfy launcher dependencies. Validate per-repository lookup, dependency
+  declarations and colcon --symlink-install behavior, including flat diffusion.
 - `repositories/`, `docker/`, and `ansible/` are reference implementations for
   the existing build and deployment. Do not extend them for Bazel integration.
 - Put Bazel workspace support under `bazel/`, container definitions under

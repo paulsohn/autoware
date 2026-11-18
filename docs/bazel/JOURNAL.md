@@ -7655,3 +7655,85 @@ LTO-enabled validation or bit-identical rebuild experiment was performed.
 The CRT compatibility workaround is useful toolchain feedback, recorded in
 UPSTREAM_RCR.md with its unsupported-configuration boundary. Phase 6.1 is
 complete; TensorRT foundation (6.2) is next.
+
+## 2026-11-18: Model subtree layout and portable launch-path requirements
+
+Purpose: agree the model repository/build/runtime contract before integrating
+the first real-model consumer. PLAN.md owns the detailed design and experiment
+gates; AGENTS.md applies the ownership/path rules. No model targets are supported
+yet, so this does not establish a steady-state DEVELOPING.md procedure.
+
+Inspected inputs: ansible/roles/artifacts/tasks/main.yaml downloads versioned
+Hugging Face bundles under the model data directory. Its variable is data_dir;
+autoware_launch already calls the launch argument data_path. The current
+planning-config diffusion_planner.param.yaml selects
+$(var data_path)/diffusion_planner/v5.0, although Ansible lists several versions.
+The launch source inventory found 26 files with HOME/autoware_data/ml_models
+defaults. Confirm these inputs and the actual active consumer again at import.
+
+Decisions: use squashed model subtrees under src/models/, generally matching
+existing bundle subpaths. Import only the selected diffusion revision under
+src/models/diffusion_planner, without a version subdirectory. Record immutable
+upstream provenance. Each model repository owns one Bazel module, one ament
+package index and its metadata/resources; add MODULE.bazel, BUILD.bazel,
+package.xml and minimal ament_cmake CMakeLists.txt there. A root-owned aggregate
+model index is not the selected design. This permits local build support and
+model edits without upstream forks, while preserving independent repository
+boundaries for future independent submodule or models.repos checkouts.
+
+Keep weights and associated metadata in declared model bundle targets. Inspect
+upstream LFS/Xet attributes and materialize actual bytes; validate retrievable
+large-file objects and a fresh-checkout build before claiming reproducibility.
+A subtree alone does not establish that materialization or object availability.
+
+Launch paths must exclusively use the model repository's own indexed resources,
+not a source/workspace path or HOME model directory. Remove the common model
+data_path argument and its propagation; no external-directory override or legacy
+versioned diffusion branch is retained. The source tree's data_dir/data_path
+names and HOME paths above describe the inspected implementation, not the new
+contract. Diffusion uses its single flat indexed bundle.
+
+Consequence: colcon users must obtain the required model repositories,
+materialize their weights, build the model packages and source the resulting
+environment. Ansible hf downloads into HOME alone no longer satisfy launcher
+dependencies. Missing model indexes mean required packages are absent; do not
+silently resolve downloaded HOME files. Update launcher model-package runtime
+dependencies with the indexed paths. External-directory-only launching is not
+promised to remain compatible.
+
+Keep repositories/ and ansible/ reference-only. There is no mandatory
+per-migration models.repos update, Ansible entry removal or empty-role deletion.
+Retain models.repos as a future collaborative/colcon checkout option with a
+caveat: upstream HF revisions lack our added package.xml/CMake/build metadata.
+Raw checkouts must receive that support and materialize the actual payloads
+before they can be called colcon-compatible. A checkout manifest is not a build
+support marker; MODULE.bazel marks Bazel adoption. Any future manifest workflow
+needs its own validation rather than being assumed to work from a list of refs.
+
+Colcon requires package.xml plus a supported build definition; Bazel-only ament
+index construction does not intrinsically require package.xml. Shared metadata
+is nevertheless the chosen per-repository contract. Verify colcon discovery,
+resource installation/lookup and --symlink-install handling of large files;
+no assertion that model payloads are never copied is accepted without testing.
+
+Required first model gate: complete consumer suite/behavior with real indexed
+model resources, relocation/materialization and fresh-checkout checks, flat
+diffusion lookup, launcher runtime dependency declarations and colcon build/
+symlink-install/environment sourcing. A future manifest workflow is separate.
+Pin revisions and document exact
+import/build/test commands and outcomes when that experiment begins.
+
+Inspection commands:
+
+```sh
+rg -n 'diffusion_planner/(v|\$)|diffusion_planner.*v[0-9]' src/launcher/autoware_launch
+rg -l 'autoware_data/ml_models' src/launcher/autoware_launch
+rg -n 'data_path' src/launcher/autoware_launch/autoware_launch/launch/autoware.launch.xml
+```
+
+Verification: documentation/rule updates only; git diff --check and added local
+Markdown links/anchors. No model imported, large-file object fetched, Ansible
+role altered, launch parameter converted, package.xml/CMake support added or
+Bazel/colcon/runtime test run. All proposed model support remains unvalidated;
+Phase 6.2's existing local ONNX fixture is unchanged. The consolidated design
+is recorded in a documentation-only commit; no runtime validation is claimed.

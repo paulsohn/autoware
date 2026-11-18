@@ -69,6 +69,9 @@ only when your current target demonstrates the need.
   middleware configurations before implementing each task.
   [Backend executor convention](DEVELOPING.md#switchable-standalone-nodes);
   [evidence: complete Agnocast test inventory](JOURNAL.md#2026-11-15-phase-41--adopt-the-complete-agnocast-library-test-inventory).
+- [ ] Define editable model modules and portable runtime resource paths together.
+  [Model repository/path convention](#model-repository-and-runtime-path-convention);
+  [evidence and required experiment](JOURNAL.md#2026-11-18-model-subtree-layout-and-portable-launch-path-requirements).
 - [ ] Inspect build-system-only shims before creating empty Bazel modules.
   [Working rule](../../AGENTS.md#working-rules);
   [evidence: CUDA foundation](JOURNAL.md#2026-11-18-phase-61--cuda-utils-and-pinned-toolkit).
@@ -1342,12 +1345,92 @@ suites and example/component behavior before implementation. Preserve native
 versus switchable node contracts and require the specified Agnocast worker/
 backend checks with their actual runtime prerequisites.
 
+### Model repository and runtime-path convention
+
+Import model repositories as squashed Git subtrees under src/models/, retaining
+upstream URL and immutable revision. Each repository owns one Bazel module,
+one ament package index, its weights and associated metadata, and its own
+MODULE.bazel/BUILD.bazel definitions. Package metadata and resource registration
+stay inside that repository boundary; do not introduce a root-owned aggregate
+model-data package. The root selects local modules and composes concrete bundle
+targets as runtime dependencies. This exercises editable model-engineering
+inputs without maintaining upstream forks. The same repository boundaries can
+later be checked out independently through submodules or a hypothetical pinned
+models.repos manifest. Keep that manifest idea as an option, not a mandatory
+per-model Bazel adoption step; no model imports or manifest are implemented yet.
+
+Add one package.xml and minimal ament_cmake CMakeLists.txt per imported model
+repository, alongside its Bazel files, so both build paths share a package name
+and metadata. package.xml enables colcon package discovery; Bazel can create an
+ament-index marker without it, but shared metadata is the chosen convention.
+The model repository need not already be a ROS package upstream. Validate
+colcon discovery/build and indexed resource lookup with --symlink-install before
+claiming support or that large model payloads are not copied. Colcon users must
+obtain and build the model packages needed by their selected launch and source
+the resulting environment. A future models.repos could select those checkouts;
+Ansible hf downloads into HOME alone no longer supply the required indexes.
+These are required experiments, not current supported model packages.
+
+Choose subtree subpaths from existing model-data-directory-relative paths where
+practical; decide remaining subpaths with each consumer. Special case: use
+src/models/diffusion_planner without a version directory, importing only the
+revision selected by autoware_launch. The inspected diffusion_planner.param.yaml
+selects v5.0; confirm the active consumer when importing, pin its exact commit,
+and omit unused per-version imports. Version identity belongs in provenance,
+not this subtree's directory name. Preserve the upstream LFS/Xet storage format,
+materialize actual model bytes and prove a fresh-checkout/build cycle, including
+retrievable payloads for locally changed weights; importing pointers is insufficient.
+
+Update every affected autoware_launch model-path argument/parameter with its
+resource provider. Resolve each bundle exclusively through its own indexed
+share directory, e.g. $(find-pkg-share <model_package>); source checkout paths
+are not runtime paths. Remove the common model data_path argument and its
+forwarding/defaults rather than maintaining a second external-directory branch.
+Do not inject absolute workspace paths, retain HOME defaults or provide an
+Ansible-directory fallback. Keep model files and associated metadata addressable
+as one declared bundle, updating root and independently invoked nested launch
+entry points. Diffusion resolves its single flat indexed bundle; no legacy
+version-directory branch is required.
+
+Consequence: this changes the existing Ansible hf-download-to-HOME plus colcon
+workflow. Developers must also obtain the model repositories, materialize their
+large files, colcon-build the packages and source their installation before
+launching consumers. Missing model package indexes are missing required
+dependencies, not a reason to fall back to HOME or reintroduce data_path. Declare
+the corresponding model-package runtime dependencies in launcher packages.
+Keep repositories/ and ansible/ reference-only: do not add mandatory
+repositories/models.repos entries, remove artifact downloads or delete the role
+as part of each Bazel model integration. Those roles remain unchanged, but their
+HOME downloads alone do not satisfy the new index-only launcher contract.
+
+A future models.repos must carry an explicit caveat: current upstream Hugging
+Face refs do not contain the package.xml/CMake/build support added to our
+subtrees. A raw checkout is therefore not automatically colcon-buildable; it
+needs the corresponding metadata/support and validation. MODULE.bazel marks
+Bazel adoption independently of that manifest. package.xml and a supported build
+definition enable colcon discovery/build; successful validation establishes
+compatibility. If a manifest is later introduced, test its checkout/materialized
+payload/build-support procedure before claiming a working collaborative setup.
+
+The first model task must test indexed lookup from a relocated/materialized
+bundle, complete consumer behavior, the flat diffusion path, launcher runtime
+dependency declarations and colcon build/symlink-install/environment sourcing.
+A hypothetical manifest checkout is a separate future compatibility experiment,
+not a required marker of Bazel adoption.
+Initial inspection found 26 launch files with HOME model-root defaults and one
+active diffusion version suffix. This is not a completed conversion: model
+imports, resource providers, launch argument removal/path changes and their gates
+must land together. Phase 6.2 keeps its existing dummy ONNX fixture; introduce
+real model repositories when the selected consumer requires them.
+
 ### Phase 6.4: Representative GPU consumer
 
 Select a useful real consumer and validate its complete dependency closure and
 existing suite. Kernel-only reference checks may be an intermediate experiment,
 but cannot close an otherwise partially integrated plugin package. Introduce
-additional vendor/model dependencies only when that consumer needs them.
+additional vendor/model dependencies only when that consumer needs them. Apply
+the model repository/runtime-path convention above to the complete selected
+consumer closure.
 
 Phase 6 closes when its selected module boundaries pass complete declared
 build/test/behavior gates and the SDK inputs/runtime requirements are pinned
