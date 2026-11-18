@@ -868,3 +868,43 @@ The final Phase 5.3.4 journal records the complete ten-target/204-case gate.
 Upstream CMake/GCC, other ROS releases and default-on GUI rendering were not
 run. Local source fix: `01f30be24d7bcea96d4059ea937e67159288ddef`. No corresponding upstream PR is currently
 associated.
+
+## TensorRT common standard-library header compatibility
+
+- [ ] Associate with matching upstream fixes. Reviewed 2026-11-18; searches for
+  filesystem/profiler PRs in autoware_cuda found none. These findings have not
+  been submitted. The Lyrical tracker is related, not a matching fix.
+
+Repository/package: autowarefoundation/autoware_cuda, autoware_tensorrt_common.
+Inspected upstream main a5929dde0bacecae60c5f32dc34416f784a60cb4 still contains
+both patterns in
+[utils.hpp](https://github.com/autowarefoundation/autoware_cuda/blob/a5929dde0bacecae60c5f32dc34416f784a60cb4/autoware_tensorrt_common/include/autoware/tensorrt_common/utils.hpp)
+and
+[profiler.cpp](https://github.com/autowarefoundation/autoware_cuda/blob/a5929dde0bacecae60c5f32dc34416f784a60cb4/autoware_tensorrt_common/src/profiler.cpp).
+The local pre-fix branch revision is 7eac2d98; the source correction is committed
+separately from SDK/Bazel definitions.
+
+Reproducer: build the two-source library and its complete original native test
+using LLVM/libc++ 21.1.8, Ubuntu 24.04 and the declared TensorRT 10.16.1.11 /
+CUDA 13.2.2 SDK. profiler.cpp instantiates std::ostringstream without including
+`<sstream>`; libc++ supplies only a forward declaration through its other headers.
+Add the direct include. Compiling the real test consumer then fails because
+utils.hpp selects experimental/filesystem. Its compiler check references
+nonexistent __GNUC_MAJOR__, and Clang's GCC compatibility version would be a
+poor standard-library capability check even with a corrected spelling. Use
+`__has_include(<filesystem>)` and retain the existing experimental fallback.
+Neither fix changes inference or tensor-reconciliation behavior.
+
+Validation: the actual shared-library export and all 13 original TensorRT tests
+pass, including ONNX parsing/GPU engine builds; all 17 CUDA-utils cases also
+pass, with no skips/failures. Reproduce with
+`bazel test --config=no-agnocast --nocache_test_results --test_output=errors @autoware_tensorrt_common//... @autoware_cuda_utils//...`.
+The Phase 6.2 journal records complete inputs, SDK/runtime audit and commands.
+
+[AWF's Lyrical tracker](https://github.com/autowarefoundation/autoware/issues/7404)
+reported a core build excluding CUDA, so it does not establish these fixes or
+our validation. These are compiler/standard-library compatibility findings,
+not Lyrical-only behavior changes. Upstream CMake/GCC, Humble/Jazzy, other SDK
+versions and ARM were not tested. Suggested upstream action: the two small
+source corrections and compilation with a standard library that does not
+provide incidental transitive includes. No upstream PR is currently associated.

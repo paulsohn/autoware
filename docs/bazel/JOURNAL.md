@@ -7737,3 +7737,31 @@ role altered, launch parameter converted, package.xml/CMake support added or
 Bazel/colcon/runtime test run. All proposed model support remains unvalidated;
 Phase 6.2's existing local ONNX fixture is unchanged. The consolidated design
 is recorded in a documentation-only commit; no runtime validation is claimed.
+
+## 2026-11-18: Phase 6.2 — TensorRT common source compatibility
+
+Purpose: fix two demonstrated standard-library compatibility blockers in the
+local autoware_cuda snapshot, separately from build/SDK definitions. The first
+library compile instantiates an incomplete std::basic_ostringstream in
+src/profiler.cpp; add its direct `<sstream>` include. After that blocker is fixed,
+compiling the real consumer fails on experimental/filesystem in public utils.hpp.
+The existing compiler test uses nonexistent __GNUC_MAJOR__ and also mistakes
+Clang's compatibility version for library capability. Select `<filesystem>` with
+__has_include, retaining the existing experimental fallback where unavailable.
+Do not inject compiler-version macros, globally force headers or modify tests.
+
+Inspect the original two-source library/CMake/test inventory and the current
+upstream files before patching. Upstream autoware_cuda main
+a5929dde0bacecae60c5f32dc34416f784a60cb4 still contains both patterns. Reviewed
+2026-11-18: searches for filesystem/profiler PRs found no matching change.
+AWF's Lyrical tracker #7404 is related platform work; its reported core build
+explicitly excluded CUDA, so it is not matching fix/test evidence. Details and
+review links belong in UPSTREAM_AWF.md.
+
+Verification: the final native shared-library consumer gate below passes all
+13 original TensorRT cases, including GPU engine builds, with no failures or
+skips; the affected CUDA-utils suite passes all 17 cases. The public shared
+library and original tests compile with hermetic LLVM/libc++ 21.1.8 and the
+pinned TensorRT 10.16.1.11/CUDA 13.2.2 inputs. Source and definitions are separate
+commits. No upstream CMake/GCC, Humble/Jazzy, ARM or GUI build was run. These are
+header/feature-detection corrections, not TensorRT behavior or model changes.

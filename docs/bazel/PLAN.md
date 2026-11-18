@@ -1329,13 +1329,24 @@ This is tested compatibility, not NVIDIA-supported libc++ or an SBSA result.
 No rule, architecture, culibos or nvcc reproducibility patch was required by
 this consumer. The complete native headless core regression also passed.
 
-### Phase 6.2: TensorRT foundation (next)
+### Phase 6.2: TensorRT foundation (in progress)
 
 Integrate local autoware_tensorrt_common against the selected binary SDK and
 explicit runtime closure. Expose the real ONNX fixture and run its complete
 original suite, including engine builds on the GPU. Inspect any CMake-only
 find-module/meta dependency for required effects before creating Bazel modules;
 validate concrete headers, definitions, linkage and runtime behavior directly.
+
+The declared gate is all 13 original TensorRT-common cases, using the real
+checked-in dummy ONNX fixture and GPU engine builds, plus the complete unchanged
+CUDA-utils suite as the affected SDK regression. Build the public shared-library
+export, not only the static library. SDK inputs are the six pinned x86 NVIDIA
+10.16.1.11-1+cuda13.2 header/runtime payloads, with declared builder-resource and
+GNU runtime libraries; audit ELF ABI/dependency requirements. Try the existing
+pinned GNU 12.2 runtime before changing it. Keep CMake-only finder/meta packages
+out of the graph only if direct providers preserve their required effects.
+New SDK/test support stays with its module; no model-repository import or DDS
+matrix is part of this foundation gate.
 
 ### Phase 6.3: CUDA transport
 
