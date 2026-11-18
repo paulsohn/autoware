@@ -7998,3 +7998,32 @@ container, GPU or middleware rerun is required for unchanged code. No runtime
 portability or OTA success is claimed. Next: continue Phase 6.3; execute the
 specified export/relocation/OCI behavior gates when Phase 7 begins. DEVELOPING.md
 remains unchanged because packaging is not yet a supported developer workflow.
+
+## 2026-11-19: Phase 6.3.1 — Negotiated interfaces
+
+Purpose: supply the local negotiation protocol without selecting a registry
+implementation. Inspect src/core/cuda/negotiated/negotiated_interfaces/package.xml,
+CMakeLists.txt and all four msg files. They declare no external message-package
+dependencies: NegotiatedTopicsInfo references NegotiatedTopicInfo, and
+SupportedTypes references SupportedType. No original runtime suite is registered.
+
+Add package-local MODULE/BUILD files using rosidl_default_generators and four
+explicit ros_message targets under msg/. Declare the two internal edges, then
+pass all four roots and package.xml to default_generators. Root selects the
+local module with version 0.0.0 and local_path_override; retain 0.1.0 inside
+the source module. Existing sources/manifest/CMake remain unchanged. The pattern
+is the existing message convention; no source-completeness validator is needed.
+
+Verification command from the repository root, without a sourced ROS setup:
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel build --config=no-agnocast @negotiated_interfaces//...
+```
+
+Result: all 15 generated targets build in 52.925 seconds (76 sandboxed actions,
+10 internal actions, 3264 cache hits). Targeted buildifier and whitespace checks
+pass. The next negotiated-library gate exercises these types in real
+publisher/subscription behavior. Cyclone DDS is selected;
+no Fast DDS compatibility run is scoped. Runtime GPU/kernel devices are not
+needed for this package.

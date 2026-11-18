@@ -1384,13 +1384,38 @@ and CUDA meta shim need no separate module for this direct-provider closure.
 The 256-byte ONNX test fixture remains local; model-repository adoption is not
 part of this gate. JetPack's 10.16.2 and SBSA are still unvalidated targets.
 
-### Phase 6.3: CUDA transport (next)
+### Phase 6.3: CUDA transport (in progress)
 
 Integrate local negotiated interfaces/library/examples and cuda_blackboard in
 dependency order, at package commit boundaries. Inventory all current original
 suites and example/component behavior before implementation. Preserve native
 versus switchable node contracts and require the specified Agnocast worker/
 backend checks with their actual runtime prerequisites.
+
+Package boundaries and gates:
+
+- **6.3.1 — negotiated_interfaces (complete):** all four original messages, their nested
+  dependencies and complete generated target surface; no original runtime
+  tests are registered. Validate consumers in the negotiation-library gate.
+- **6.3.2 — negotiated:** both original sources, public/shared exports and all
+  76 existing cases (12 combinations, 32 publisher, 32 subscription) with
+  Cyclone DDS. Preserve actual negotiation/renegotiation and callback behavior.
+  These are native rclcpp nodes, not Agnocast-switchable nodes.
+- **6.3.3 — negotiated_examples:** eight original component executables and
+  the lifecycle publisher, original launch resources and representative
+  standalone/composed, remapping, type-adapted and lifecycle behavior. There
+  are no original runtime test targets; define added behavior gates before
+  implementation and keep their adapters under bazel/tests/.
+- **6.3.4 — cuda_blackboard:** library, publisher/subscriber components and all
+  eight original cases (four mailbox, two publisher, one async publisher and
+  one worker announcement). Require real GPU execution with no device skips;
+  the worker-announcement case explicitly selects ENABLE_AGNOCAST=1 and needs
+  its IPC listener available. Scope backend and component behavior checks
+  before implementation; enabled kernel-backed execution needs its actual
+  module/device and heap hook. Runtime prerequisites are not build prerequisites.
+
+Keep each validated package boundary and its evidence in a separate commit.
+No Fast DDS compatibility check is part of these routine gates.
 
 ### Model repository and runtime-path convention
 

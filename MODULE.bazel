@@ -818,3 +818,9 @@ local_path_override(
     module_name = "autoware_tensorrt_common",
     path = "src/core/cuda/autoware_cuda/autoware_tensorrt_common",
 )
+
+bazel_dep(name = "negotiated_interfaces", version = "0.0.0")
+local_path_override(
+    module_name = "negotiated_interfaces",
+    path = "src/core/cuda/negotiated/negotiated_interfaces",
+)
