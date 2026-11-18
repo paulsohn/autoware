@@ -1,0 +1,39 @@
+load("@rules_cc//cc:defs.bzl", "cc_import", "cc_library")
+load("@tensorrt//:headers.bzl", "tensorrt_headers")
+
+package(default_visibility = ["//visibility:public"])
+
+tensorrt_headers(
+    name = "headers",
+    hdrs = glob(["usr/include/x86_64-linux-gnu/*.h"]),
+)
+
+[cc_import(
+    name = name,
+    shared_library = "usr/lib/x86_64-linux-gnu/lib" + name + ".so.10",
+) for name in [
+    "nvinfer",
+    "nvinfer_plugin",
+    "nvonnxparser",
+]]
+
+cc_library(
+    name = "tensorrt",
+    target_compatible_with = [
+        "@platforms//cpu:x86_64",
+        "@platforms//os:linux",
+    ],
+    deps = [
+        ":headers",
+        ":nvinfer",
+        ":nvinfer_plugin",
+        ":nvonnxparser",
+    ],
+)
+
+filegroup(
+    name = "runtime_libs",
+    srcs = glob(["usr/lib/x86_64-linux-gnu/*.so*"]),
+)
+
+exports_files(["usr/lib/x86_64-linux-gnu/libnvinfer.so.10"])

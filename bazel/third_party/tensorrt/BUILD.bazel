@@ -1,0 +1,21 @@
+package(default_visibility = ["//visibility:public"])
+
+exports_files([
+    "BUILD.sdk.bazel",
+    "test_runner.py",
+])
+
+alias(
+    name = "tensorrt",
+    actual = "@tensorrt_artifacts//:tensorrt",
+)
+
+filegroup(
+    name = "runtime_libs",
+    srcs = [
+        "@tensorrt_artifacts//:runtime_libs",
+        "@tensorrt_libgcc//:lib/libgcc_s.so.1",
+        "@tensorrt_libstdcxx//:lib/libstdc++.so.6",
+        "@tensorrt_libstdcxx//:lib/libstdc++.so.6.0.30",
+    ],
+)

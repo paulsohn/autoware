@@ -1,0 +1,27 @@
+module(
+    name = "tensorrt",
+    version = "0.0.0",
+)
+
+bazel_dep(name = "platforms", version = "1.1.0")
+bazel_dep(name = "rules_cc", version = "0.2.26.rcr.0")
+bazel_dep(name = "rules_python", version = "2.4.5")
+
+sdk = use_extension("//:repositories.bzl", "sdk")
+use_repo(sdk, "tensorrt_artifacts")
+
+http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
+http_archive(
+    name = "tensorrt_libstdcxx",
+    build_file_content = "exports_files(glob([\"lib/libstdc++.so*\"]))\n",
+    sha256 = "0289e6a7b9a5249161a3967909e12dcfb4ab4475cdede984635d3fb65c606f08",
+    urls = ["https://conda.anaconda.org/conda-forge/linux-64/libstdcxx-ng-12.2.0-h46fd767_19.tar.bz2"],
+)
+
+http_archive(
+    name = "tensorrt_libgcc",
+    build_file_content = "exports_files(glob([\"lib/libgcc_s.so*\"]))\n",
+    sha256 = "f3899c26824cee023f1e360bd0859b0e149e2b3e8b1668bc6dd04bfc70dcd659",
+    urls = ["https://conda.anaconda.org/conda-forge/linux-64/libgcc-ng-12.2.0-h65d4601_19.tar.bz2"],
+)

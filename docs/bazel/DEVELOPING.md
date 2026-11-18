@@ -739,3 +739,29 @@ The GPU test runs locally with device access (no-remote/no-sandbox/requires-gpu)
 The host provides the compatible NVIDIA driver/device, not a build toolkit.
 Check its XML for all 17 cases and zero skips/errors/failures; a missing-device
 skip or zero registered cases is not a completed module gate.
+
+## TensorRT SDK and native tests
+
+Consumers declare `@tensorrt` for the selected headers/shared libraries and the
+CUDA runtime explicitly. The current local SDK module pins TensorRT
+10.16.1.11-1+cuda13.2 on Linux x86_64; it has no ARM or JetPack 10.16.2 support
+claim. Vendor headers are system includes, leaving package warnings intact.
+Keep CMake-only finder logic out of Bazel when direct headers/libraries/version
+providers satisfy the actual consumer.
+
+For native GTest targets that build engines, load `tensorrt_cc_test` and
+`TENSORRT_VERSION_MAJOR` from `@tensorrt//:defs.bzl`. The helper supports source,
+dependency/dynamic-dependency, data and local-definition inputs; its native
+binary uses the SDK-owned runtime launcher. Declare model fixtures with data and
+rootpath definitions. The launcher resolves runtime anchors through runfiles,
+adds the SDK/GNU directories for bare-name builder dlopen, and preserves native
+GTest XML/exit status. Never link the builder-resource libraries directly; their
+SONAMEs intentionally prohibit that use. The helper's runtime data includes
+pinned GNU runtimes and the builder resources, not incidental host SDK installs.
+
+Run `bazel test --config=no-agnocast --nocache_test_results --test_output=errors @autoware_tensorrt_common//...` on a provisioned GPU host.
+Check XML for all 13 cases with no skips. The separate CUDA-utils regression
+remains all 17 cases. Root SDK selection, GPU code generation and driver
+prerequisites follow the preceding CUDA convention. Ordinary applications need
+the equivalent declared runtime/resource loading contract; a successful link
+alone does not prove engine-building runtime closure.

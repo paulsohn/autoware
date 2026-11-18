@@ -7765,3 +7765,76 @@ library and original tests compile with hermetic LLVM/libc++ 21.1.8 and the
 pinned TensorRT 10.16.1.11/CUDA 13.2.2 inputs. Source and definitions are separate
 commits. No upstream CMake/GCC, Humble/Jazzy, ARM or GUI build was run. These are
 header/feature-detection corrections, not TensorRT behavior or model changes.
+
+## 2026-11-18: Phase 6.2 — TensorRT binary SDK
+
+Purpose: make TensorRT's compile/link and engine-building runtime dependencies
+explicit Bazel inputs, without apt installation or host GNU-library fallback
+for the native inference process. There is no local TensorRT implementation or
+RCR TensorRT SDK module. Inspect NVIDIA's Ubuntu 24.04 x86_64
+[package index](https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2404/x86_64/Packages.gz)
+for version 10.16.1.11-1+cuda13.2, then retain exact URL/SHA-256 tuples in
+bazel/third_party/tensorrt/pins.bzl. The six selected packages are libnvinfer10,
+libnvinfer-plugin10, libnvonnxparsers10, libnvinfer-headers-dev,
+libnvinfer-headers-plugin-dev and libnvonnxparsers-dev. The main runtime download
+is about 1.85 GB; initial fetching/extraction is substantially slower than cached
+build/test. No full static-library development payload is needed by this target.
+
+Add an independent local tensorrt module under bazel/third_party/tensorrt and
+select it with the root's adjacent dependency/override pair. Its extension
+extracts each .deb as an ar archive into a separate temporary directory and then
+extracts its single data.tar.* into the SDK repository. Keep license/document
+payloads in that extraction. This is direct binary acquisition, not apt. Only
+x86/Linux is declared; do not fetch unselected SBSA SDK payloads or claim ARM
+compatibility. Expose scoped headers, three cc_import shared libraries and a
+separate runtime file set including the builder resources. Use the version pin
+to derive TENSORRT_VERSION_MAJOR instead of duplicating the selected major.
+
+The imported vendor headers contain unused parameters. Plain includes in this
+toolchain emitted -I, making these third-party warnings fail the original
+Autoware library's -Werror policy. A small SDK-owned header rule exports CcInfo
+system_includes, so NVIDIA headers use -isystem without weakening Autoware source
+warnings or changing vendor headers. No global warning suppression is added.
+
+Runtime closure: reuse the already pinned GNU 12.2 library archive inputs as
+SDK-owned repositories. Inputs are conda-forge linux-64 archives
+libstdcxx-ng-12.2.0-h46fd767_19.tar.bz2 (SHA-256
+0289e6a7b9a5249161a3967909e12dcfb4ab4475cdede984635d3fb65c606f08)
+and libgcc-ng-12.2.0-h65d4601_19.tar.bz2 (SHA-256
+f3899c26824cee023f1e360bd0859b0e149e2b3e8b1668bc6dd04bfc70dcd659),
+both under https://conda.anaconda.org/conda-forge/linux-64/.
+Declare both libstdc++.so.6 and
+its real versioned file, plus libgcc_s.so.1, as runtime data. A file containing
+only the versioned bytes is insufficient for bare SONAME discovery. The SDK's
+tensorrt_cc_test helper builds a native cc_binary, then a thin py_test launcher
+resolves its executable and runtime anchors using Bazel rlocationpath/runfiles,
+sets LD_LIBRARY_PATH to the declared SDK/GNU directories while retaining existing
+paths, forwards native GTest XML through GTEST_OUTPUT, and execs the binary.
+This keeps the normal bazel test command self-contained. Label-bind SDK-owned
+helper dependencies to avoid caller-repository mappings; disable precompilation
+of the shared Python entry source because its output cannot be declared in a
+different consumer package. The timeout is 300 seconds, matching original CMake.
+No metarepository label is needed inside the Autoware source module.
+
+ABI/runtime audit: readelf -d and --version-info on the three imported libraries
+show maximum requirements GLIBC_2.27, GLIBCXX_3.4.22 and CXXABI_1.3.11. The sm120
+and PTX builder resources require at most GLIBC_2.14/GLIBCXX_3.4.18/CXXABI_1.3.9.
+The selected GNU 12.2 providers cover those requirements. Builder ELF SONAMEs
+are intentionally do_not_link_against_nvinfer_builder_resource_*; keep them as
+data for TensorRT's bare-name dlopen, never link them as ordinary SDK libraries.
+These inspected requirements do not raise the existing 2.34 ABI floor, but
+execution was on Ubuntu 24.04, not a separate 2.34 runtime image.
+
+While the full native suite runs, inspect `/proc/<native-test-pid>/maps` after
+libnvinfer_builder_resource_sm120 appears. Compare paths with the resolved
+SDK/GNU runfiles, not just apparent repository-name substrings: Bazel may resolve
+them into its content-addressed repository cache. The engine-building snapshot
+mapped the pinned libstdc++.so.6.0.30 and libgcc_s.so.1 and the extracted SDK's
+sm120 builder library, without system GNU copies in that snapshot. Host NVIDIA
+driver/device support remains an execution prerequisite. This is not runtime
+image/driver provisioning validation.
+
+Verification: the complete command and case counts in the following package
+entry passed, including the public shared export and all SDK/runtime targets.
+The candidate version is now validated for this x86 consumer. JetPack's 10.16.2
+remains a distinct Phase 8 target; no patch-version equivalence is assumed.
