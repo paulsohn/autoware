@@ -7945,3 +7945,56 @@ buildifier, Python syntax, Markdown links and whitespace checks pass.
 
 No Fast DDS, ARM or cross-platform validation was run; the gate establishes the
 existing x86_64/Cyclone DDS configuration only.
+
+## 2026-11-19: Runtime packaging and deployment requirements
+
+Purpose: make minimal host setup and container-optional execution explicit, and
+prevent a second manual package inventory from becoming a deployment convention.
+The authoritative requirements and planned gates are in
+[PLAN.md](PLAN.md#runtime-packaging-and-deployment-requirements); this entry
+records the inspected baseline and how to repeat the assessment.
+
+Inspected inputs: images/dev.Dockerfile, bazel/tests/BUILD.bazel and
+bazel/tests/core_system/test_launch.py, bazel/agnocast/with_runtime.sh,
+third_party/tensorrt/test_runner.py, the existing Phase 7 scope, model-resource
+convention and deferred kernel/platform discussion. Reproduce this inspection
+by following the headless target's data/deps into its composed ament indexes,
+reviewing both runtime launchers' environment setup, and comparing those inputs
+with the proposed exported application closure.
+
+Current evidence: the headless test launches the original autoware_core launch
+with GUI disabled and checks behavior/shutdown through Bazel runfiles. Existing
+runtime launchers extend inherited library paths; the TensorRT launcher is a
+test entry point. The development Dockerfile provides bootstrap tooling rather
+than runtime packaging. Existing passing tests establish supported target
+execution, not standalone distribution, relocation or OTA. No export rule,
+relocated bundle test, application OCI image or update agent is introduced here.
+
+Decision: separate builder-host, build-environment and runtime responsibilities.
+Reuse package-local runtime declarations in root-owned product packaging; verify
+provider coverage before implementing automatic collection. Prefer a relocatable
+native bundle, with thin OCI assembly from the same application closure and an
+explicit OS/ABI baseline. Keep image paths/mounts product-owned. Kernel drivers
+remain execution prerequisites; future OTA must coordinate application and host
+compatibility, retain rollback and test failure/recovery. OTA implementation is
+deferred and does not enlarge the current integration gate.
+
+Milestone clarification: Phase 7 must demonstrate AWF's documented planning
+simulator, beyond the current core launch test. Reviewed the
+[versioned official tutorial](https://docs.autoware.org/1.4.0/tutorials/ad-hoc-simulation/planning-simulation/)
+on 2026-11-19: its lane-driving flow supplies the initial user-facing reference.
+Record source/tutorial alignment and exact scenario inputs when implementing;
+retain RViz demonstration plus equivalent headless checks. Packaging can be
+checked in a clean QEMU guest using only delivered artifacts and declared inputs.
+[QEMU system-emulation documentation](https://www.qemu.org/docs/master/system/introduction.html)
+confirms that this is a guest-OS environment; OCI execution needs a container
+runtime there. Functional/resource/shutdown checks apply, while emulated
+real-time performance does not gate success. Guest hardware coverage must be
+stated separately; neither a VM runner nor simulator validation is implemented.
+
+Verification: documentation-only change; review the source/target references,
+check local Markdown links/anchors and run git diff --check. No build, runtime,
+container, GPU or middleware rerun is required for unchanged code. No runtime
+portability or OTA success is claimed. Next: continue Phase 6.3; execute the
+specified export/relocation/OCI behavior gates when Phase 7 begins. DEVELOPING.md
+remains unchanged because packaging is not yet a supported developer workflow.

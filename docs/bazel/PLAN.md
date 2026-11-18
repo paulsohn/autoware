@@ -4,8 +4,11 @@
 
 Build a useful Autoware subset with Bazel on Ubuntu 24.04 x86_64, using ROS 2
 Lyrical packages from the ROS Central Registry where practical. The experiment
-should produce pinned, repeatable builds and eventually a headless planning
-simulation in an OCI image. After the x86 experiment, target software build
+should produce pinned, repeatable builds and a relocatable native runtime
+bundle, with thin OCI packaging of the same application closure, and eventually
+a planning simulator working through AWF's documented user workflow, backed
+by repeatable headless behavior checks. Native building and execution should
+not require a container. After the x86 experiment, target software build
 compatibility with JetPack 7.2.1, a release supporting Jetson Thor. Physical
 Thor hardware is not required to complete this experiment.
 
@@ -73,6 +76,10 @@ only when your current target demonstrates the need.
   middleware configurations before implementing each task.
   [Backend executor convention](DEVELOPING.md#switchable-standalone-nodes);
   [evidence: complete Agnocast test inventory](JOURNAL.md#2026-11-15-phase-41--adopt-the-complete-agnocast-library-test-inventory).
+- [ ] Separate builder-host, build-environment and runtime prerequisites; declare
+  runtime resources once and reuse them for packaging.
+  [Packaging and deployment requirements](#runtime-packaging-and-deployment-requirements);
+  [current evidence and planned gates](JOURNAL.md#2026-11-19-runtime-packaging-and-deployment-requirements).
 - [ ] Define editable model modules and portable runtime resource paths together.
   [Model repository/path convention](#model-repository-and-runtime-path-convention);
   [evidence and required experiment](JOURNAL.md#2026-11-18-model-subtree-layout-and-portable-launch-path-requirements).
@@ -1483,7 +1490,10 @@ uses Cyclone DDS; any Fast DDS check still requires explicit approval.
 ### Incoming phase identifiers
 
 - **Phase 7 — Runtime packaging and headless planning simulation.** Complete
-  install/resource closure and exercise the packaged scenario.
+  install/resource closure, validate native and thin OCI distributions of the
+  same application bundle, and demonstrate the AWF planning-simulator workflow
+  with repeatable headless coverage. Follow the
+  [packaging and deployment requirements](#runtime-packaging-and-deployment-requirements).
 - **Phase 8 — JetPack 7.2.1 software compatibility (Thor-supported release).**
   Cross-build the selected aarch64 targets against a pinned JetPack-compatible
   user-space dependency set and check binary architecture, link/resource
@@ -1511,6 +1521,178 @@ criteria pass; run them only after explicit user approval.
 Potential topics such as OSQP compatibility, OpenMP, CMake parity,
 runtime-image deduplication, and remote caching will be evaluated when a current
 target requires them.
+
+## Runtime packaging and deployment requirements
+
+These are design requirements and planned experiments, not implemented packaging
+or deployment support. Phase 6 continues its selected module integrations;
+Phase 7 establishes the runtime distribution gates below. OTA is a deferred
+extension, not an added Phase 6 or Phase 7 completion requirement.
+
+### Environment responsibilities
+
+| Environment | Responsibility |
+| --- | --- |
+| Builder host | Kernel, hardware/device access and optional container engine. GPU/kernel-backed tests need their execution prerequisites here. |
+| Build environment, native or containerized | Minimal audited bootstrap tools to start Bazel; target toolchains, generators, libraries and SDKs come from pinned Bazel inputs. |
+| Runtime, native or containerized | Application bundle plus an explicit OS/ABI baseline, configuration, device access and required host services/drivers. No Bazel installation or source workspace is required on the deployed device. |
+
+Prefer native builds and native execution. Keep build containers and runtime
+containers independently optional; use containers for isolation and distribution
+without duplicating dependency resolution through rosdep, apt or pip. Audit the
+remaining bootstrap and system dependencies rather than claiming that pinned
+SDK archives alone establish hermetic execution. images/dev.Dockerfile is a
+build-validation environment, not a runtime image or deployment prerequisite.
+For existing kernel/runtime alternatives, see
+[the deferred platform options](#deferred-cross-platform-and-kernel-runtime-options).
+
+### Declare once, package from the runtime closure
+
+Component-local targets own executables, shared libraries, plugins, Python
+modules and ament resources, including launch/configuration files. Product
+composition under bazel/ selects entry points and concrete runtime resources
+such as vehicle/sensor descriptions, maps and model modules. Package that
+selected declared closure; do not require a second handwritten inventory of
+every package's files in a product packaging target. Retain component-to-root
+independence and the [model resource convention](#model-repository-and-runtime-path-convention).
+
+Investigate collecting existing runfiles/ament/runtime providers transitively.
+Compilation dependencies alone are insufficient for dlopen, plugin discovery,
+Python imports or dynamically selected package resources. Developers must
+explicitly declare these runtime edges; undeclared dynamically constructed
+filenames cannot be inferred reliably. Do not scan entire source directories
+to conceal missing declarations. Fail packaging on conflicting destination
+paths and unresolved declared inputs. Verify provider coverage before choosing
+a packaging rule or introducing a new provider.
+
+Start by preserving the working runfiles/index structure, materializing its
+files and symlinks into a self-contained bundle. Preserve repository mappings,
+executable permissions, shared-library identities and resource lookup. A
+bundle-relative launcher must work without absolute build/cache paths or an
+inherited ROS/Python/library search environment. Audit the ELF interpreter,
+shared libraries (including dynamically loaded libraries) and Python runtime;
+document what is bundled versus supplied by the supported OS baseline.
+
+### Native bundle and OCI filesystem layout
+
+The bundle is the primary deployable application artifact. A native installer
+or unpack operation chooses its device directory; the launcher resolves paths
+relative to the bundle. OCI assembly places the same application closure at a
+chosen image prefix, for example /opt/autoware, on a digest-pinned compatible
+base containing only required OS dependencies. A minimal base is a goal, not
+a claim that the current binaries can run in an empty image.
+
+Use packaging mappings for destination prefixes, preserved relative paths and
+necessary explicit renames. Image workdir/entrypoint settings do not copy files
+or discover their runtime closure. rules_pkg and rules_oci are candidate tools,
+not yet selected or validated dependencies. Keep image prefixes, entry points
+and device-side bind mounts in product/deployment configuration, outside
+component BUILD definitions. Separate immutable application/model resources
+from writable state, logs and device-specific configuration; mount persistent
+state explicitly and make its compatibility part of release/rollback design.
+
+### Phase 7 packaging validation
+
+1. Inventory existing runtime providers and remaining system/ABI prerequisites.
+   Export one native bundle for the original headless core launch, selecting
+   sample vehicle/sensors and declared map fixtures.
+2. Extract/materialize it at a different path. Execute with no source workspace,
+   Bazel cache or host ROS installation available and without inherited
+   AMENT_PREFIX_PATH, PYTHONPATH, LD_LIBRARY_PATH or LD_PRELOAD. The launcher
+   establishes only the bundle's required paths. Run from outside the bundle
+   directory as well. No build-tree symlinks may be needed.
+3. Reuse the behavior and shutdown assertions of
+   [the current headless core test](../../bazel/tests/core_system/test_launch.py),
+   declared by //bazel/tests:core_system_headless_launch_test in
+   [the root test BUILD](../../bazel/tests/BUILD.bazel). Check nodes, parameters,
+   map delivery, robot description, velocity relay, version API, graph endpoints
+   and process exit. The existing test is a Bazel-runfiles gate, not evidence
+   of a deployed artifact or full driving simulation.
+4. Run the same application bundle and behavior gate inside its OCI image with
+   only declared mounts/devices and the documented OS baseline. Inspect loaded
+   libraries and indexed resources to detect accidental host dependencies.
+5. For GPU/Agnocast-enabled products, additionally verify their actual device,
+   driver/module and permission prerequisites plus selected behavior. An image
+   cannot supply a running host kernel or make incompatible drivers compatible.
+   Keep routine middleware Cyclone DDS; Fast DDS still needs explicit approval.
+
+Repeat extraction and behavior checks when runtime packaging changes. Missing
+runtime registrations must fail the relevant packaged behavior gate; passing
+bazel test or successfully building a tar/image alone does not close this gate.
+The AWF simulator milestone below remains a separate Phase 7 behavior goal.
+
+### AWF planning-simulator milestone
+
+A clear Phase 7 milestone is a working planning simulator following AWF's
+[official planning-simulation tutorial, version 1.4.0](https://docs.autoware.org/1.4.0/tutorials/ad-hoc-simulation/planning-simulation/),
+reviewed 2026-11-19. Use its lane-driving workflow as the initial acceptance
+scenario: load the sample map and vehicle/sensor configuration, initialize the
+ego pose, choose a goal, obtain a route/trajectory, enter autonomous mode and
+observe simulated vehicle motion. Require goal completion within recorded
+functional tolerances and clean shutdown as our additional assertions.
+
+Demonstrate the documented RViz interactions on a suitable native or graphical
+runtime; add repeatable headless checks through the corresponding ROS interfaces
+against the same launch/configuration. Preserve the original
+planning_simulator.launch.xml entry point's behavior. Replace installation and
+artifact provisioning with our declared Bazel/runtime resources, including the
+existing indexed-model convention; do not reintroduce Ansible or HOME paths.
+The earlier core headless test is a packaging stepping stone, not this milestone.
+
+Before implementing the scenario, reconcile that versioned tutorial with the
+local source snapshots and current AWF documentation. Record the exact tutorial
+revision, launch arguments, map/model identities, route/poses and observable
+pass criteria. Do not claim support for every tutorial scenario from one
+lane-driving result; enumerate additional scenarios separately when scoped.
+
+### QEMU packaging check
+
+Consider a clean QEMU system-emulation guest as the isolated runtime for the
+Phase 7 packaging gate. Pin the guest OS/kernel/image and QEMU configuration,
+including CPU architecture/features, accelerator, devices, memory and networking.
+Supply only the built bundle and declared test inputs, without workspace/cache
+mounts or guest-side package installs that repair missing application resources.
+Run a native bundle directly in the guest; to check an OCI artifact, use an
+explicitly provisioned container runtime inside the guest. An OCI image is not
+itself a bootable VM disk. See [QEMU system emulation](https://www.qemu.org/docs/master/system/introduction.html).
+
+Check loading, resource discovery, startup, functional behavior and shutdown.
+Real-time factor, latency, throughput, jitter and meeting control deadlines are
+not acceptance gates under emulation. Allow bounded test timeouts appropriate
+to the guest, use simulation time where the selected simulator supports it,
+and record any timing/configuration changes; do not silently suppress functional
+failures. The initial CPU/native-ROS gate can use Cyclone DDS with Agnocast
+disabled, explicitly without establishing enabled-backend or GPU coverage.
+
+The full AWF simulator demonstration need not run inside QEMU when its selected
+closure needs unavailable hardware. Keep that milestone separate from the
+applicable guest packaging tests. GPU and kernel-backed paths require separately
+provisioned guest devices/drivers or native tests; CPU guest success does not
+establish NVIDIA, Agnocast, Thor or real-time compatibility. This is a proposed
+validation environment, not a claim of an existing QEMU runner.
+
+### Deferred OTA deployment
+
+An OCI release is delivered by immutable image digest, with authenticated release
+metadata identifying application/configuration/model versions, target hardware
+and required host ABI/driver/module compatibility. Separately delivered models
+must also have exact identities pinned by the release. Select signing and update
+tooling when an OTA experiment is authorized; no updater exists in this branch.
+
+A host-side agent/supervisor, independent of the application container, would
+verify the release, download/stage it while retaining the working version,
+check storage and compatibility, and activate it at a safe operational boundary
+(for a vehicle, parked with operation inhibited). Health checks must establish
+required functional readiness before accepting the release; failure restores
+the previous image and compatible configuration/state. Design interruption and
+power-loss recovery, rollback-compatible persistent data and release status
+reporting before claiming OTA support.
+
+Application OCI updates and host OS/kernel/NVIDIA-driver/Agnocast-module updates
+are separate coordinated release paths. Images do not update the running host
+kernel. A first OTA PoC can use one device, a registry, a supervisor and retained
+current/previous releases, demonstrating authenticated staging, activation,
+health failure and rollback. Fleet orchestration is later scope.
 
 ## Deferred cross-platform and kernel-runtime options
 
