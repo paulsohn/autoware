@@ -1397,11 +1397,11 @@ Package boundaries and gates:
 - **6.3.1 — negotiated_interfaces (complete):** all four original messages, their nested
   dependencies and complete generated target surface; no original runtime
   tests are registered. Validate consumers in the negotiation-library gate.
-- **6.3.2 — negotiated:** both original sources, public/shared exports and all
+- **6.3.2 — negotiated (complete):** both original sources, public/shared exports and all
   76 existing cases (12 combinations, 32 publisher, 32 subscription) with
   Cyclone DDS. Preserve actual negotiation/renegotiation and callback behavior.
   These are native rclcpp nodes, not Agnocast-switchable nodes.
-- **6.3.3 — negotiated_examples:** eight original component executables and
+- **6.3.3 — negotiated_examples (next):** eight original component executables and
   the lifecycle publisher, original launch resources and representative
   standalone/composed, remapping, type-adapted and lifecycle behavior. There
   are no original runtime test targets; define added behavior gates before

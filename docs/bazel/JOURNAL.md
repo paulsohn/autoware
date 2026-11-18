@@ -8027,3 +8027,47 @@ pass. The next negotiated-library gate exercises these types in real
 publisher/subscription behavior. Cyclone DDS is selected;
 no Fast DDS compatibility run is scoped. Runtime GPU/kernel devices are not
 needed for this package.
+
+## 2026-11-19: Phase 6.3.2 — Negotiated publisher/subscription library
+
+Purpose: validate the actual negotiation protocol and provide a shared library
+for its examples and CUDA transport consumers. Inspect the local negotiated
+package's CMakeLists.txt, package.xml, both src files, public include tree and
+all three original test files. Inventory: 12 combinations, 32 publisher and 32
+subscription cases; no disabled/skip cases. These native rclcpp tests exercise
+negotiation, renegotiation, supported/compatible types and callbacks. They do
+not require GPU access or the Agnocast kernel module.
+
+Minimum pattern: package-local MODULE/BUILD declarations depend on the local
+negotiated_interfaces module and RCLCPP; root chooses its local override. Export
+a cc_library with scoped headers and the original warning flags, a shared
+libnegotiated.so with ROS/message shared providers, and ament metadata. Expose
+all original tests through cc_test/gtest_main, dynamically linking the actual
+shared export and std_msgs support. Serialize tests because they use common
+ROS node/topic names; select a dedicated ROS domain and Cyclone DDS. No source
+or original test changes are made by these definitions.
+
+Verification command:
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=no-agnocast --local_test_jobs=1 \
+  --nocache_test_results --test_output=errors @negotiated//...
+```
+
+Result: all four non-test and three test targets pass in 7.882 seconds; XML
+records all 76 cases, zero failures/errors/skips or disabled cases (0.1 seconds
+combinations, 3.8 publisher, 3.2 subscription). Targeted buildifier and whitespace
+checks pass. No source changes were needed.
+
+Diagnosed failure: the first test link reported undefined rclcpp symbols.
+Linking only negotiated_shared does not place its transitive ROS shared exports
+on the test link line. Add runtime_dynamic_deps explicitly to each test's
+dynamic_deps, retaining shared ownership rather than linking duplicate static
+ROS implementations. The complete suite above passes after that correction.
+
+No GPU or Agnocast test is part of this native package gate. Their devices were
+confirmed available outside the restricted tool sandbox; sandbox-local absence
+must not be diagnosed as a host driver failure. No examples/component behavior
+or CUDA transport completion is claimed. Next are the original example
+executables and launches, then cuda_blackboard with its full prerequisites.

@@ -824,3 +824,9 @@ local_path_override(
     module_name = "negotiated_interfaces",
     path = "src/core/cuda/negotiated/negotiated_interfaces",
 )
+
+bazel_dep(name = "negotiated", version = "0.0.0")
+local_path_override(
+    module_name = "negotiated",
+    path = "src/core/cuda/negotiated/negotiated",
+)

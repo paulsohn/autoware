@@ -1,0 +1,68 @@
+load("@rosdistro//ament:defs.bzl", "ament_index")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "negotiated",
+    srcs = [
+        "src/negotiated_publisher.cpp",
+        "src/negotiated_subscription.cpp",
+    ],
+    hdrs = glob(["include/**/*.hpp"]),
+    copts = [
+        "-Wall",
+        "-Wextra",
+        "-Wpedantic",
+    ],
+    strip_include_prefix = "include",
+    deps = [
+        "@negotiated_interfaces//:cc",
+        "@rclcpp//:rclcpp_library",
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = [
+        "@negotiated_interfaces//:cc_shared",
+        "@rclcpp//:rclcpp",
+    ],
+)
+
+cc_shared_library(
+    name = "negotiated_shared",
+    dynamic_deps = [":runtime_dynamic_deps"],
+    shared_lib_name = "libnegotiated.so",
+    deps = [":negotiated"],
+)
+
+ament_index(package_xml = "package.xml")
+
+[
+    cc_test(
+        name = name,
+        srcs = ["test/" + name + ".cpp"],
+        dynamic_deps = [
+            ":negotiated_shared",
+            ":runtime_dynamic_deps",
+            "@std_msgs//:cc_shared",
+        ],
+        env = {"ROS_DOMAIN_ID": "87"},
+        tags = [
+            "no-remote",
+            "no-sandbox",
+        ],
+        deps = [
+            ":negotiated",
+            "@googletest//:gtest_main",
+            "@std_msgs//:cc",
+        ],
+    )
+    for name in [
+        "test_combinations",
+        "test_negotiated_publisher",
+        "test_negotiated_subscription",
+    ]
+]
