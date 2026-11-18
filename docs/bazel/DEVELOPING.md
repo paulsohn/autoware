@@ -228,6 +228,26 @@ reference implementations for the existing build and deployment.
 
 ## Dependency conventions
 
+### Repository dependency layers
+
+| Location | Owns | May depend on |
+| --- | --- | --- |
+| bazel/ | Product composition, interface collections and standalone integration tests | src/ component modules and third_party/ providers |
+| src/ | Component-specific source/build definitions and original upstream tests | Other component modules and reusable third-party providers |
+| third_party/ | Independent SDK/dependency definitions, generic runtime/test helpers and dependency patches | Registry/toolchain dependencies and other reusable providers |
+
+The root owns version selection from third_party/, registry releases and local
+overrides. Consumers use logical module targets, not paths into their parent's
+bazel/ directory. Root selects the CUDA fragment from
+third_party/cuda/cuda.MODULE.bazel and the local TensorRT module from
+third_party/tensorrt; .bazelrc keeps product/compiler/architecture selection.
+Reusable pins and compatibility support live with the dependency they describe;
+this does not transfer product selection to components or SDK consumers.
+TensorRT is a standalone module; CUDA remains a root-included configuration
+fragment with reusable build/patch support, without an artificial facade module.
+Generic SDK test launchers belong with the SDK; Autoware-specific integration
+adapters and fixtures remain under bazel/tests/.
+
 In the root MODULE.bazel, list registry dependencies first and keep local modules
 at the end, after extension and toolchain configuration. Within each dependency
 group, place prerequisites before consumers where possible. Each local bazel_dep uses version
@@ -570,8 +590,9 @@ Add `--config=fastdds` to the Bazel command for the compatibility gate.
 
 ## Dependency patches
 
-Keep dependency patches under `bazel/patches/` and apply them through a pinned
-module override. Before the diff in each patch file, document the affected
+Keep dependency patches with their owner under `third_party/<dependency>/`
+(optionally in a `patches/` subdirectory) and apply them through a pinned module
+or repository override. Before the diff in each patch file, document the affected
 module/version and target, observed failure, why the change fixes it, its scope,
 verification commands/results or their journal reference, and upstream status
 or tracking reference. Update this preface when the patch or its validation
@@ -715,8 +736,9 @@ This gate does not assert a full driving scenario.
 
 ## CUDA targets and tests
 
-The product root selects the pinned toolkit and GPU architecture in
-bazel/cuda.MODULE.bazel and .bazelrc. Consumer modules declare rules_cuda and
+The product root owns version selection from third_party/: it includes the
+pinned CUDA configuration in third_party/cuda/cuda.MODULE.bazel, while .bazelrc
+selects the product GPU architecture and compiler. Consumer modules declare rules_cuda and
 use its toolchain extension's `cuda` repository; they must not auto-detect a host
 CUDA installation or depend on metarepository labels. The current toolkit is
 CUDA 13.2.2 with upstream rules_cuda 0.4.0, nvcc and hermetic Clang/libc++ 21.1.8.

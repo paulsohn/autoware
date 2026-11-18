@@ -1,4 +1,4 @@
-# CUDA inputs are selected by the product root; component modules only use @cuda.
+# CUDA inputs are selected by the product root from third_party/; component modules only use @cuda.
 cuda = use_extension("@rules_cuda//cuda:extensions.bzl", "toolchain")
 cuda.redist_json(
     name = "cuda_redist",
@@ -22,11 +22,11 @@ http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "ht
 http_archive(
     name = "cuda_crt_compat",
     add_prefix = "crt",
-    build_file = "//:bazel/cuda/BUILD.crt.bazel",
+    build_file = "//third_party/cuda:BUILD.crt.bazel",
     patch_args = ["-p1"],
     patches = [
-        "//bazel/patches:cuda_crt_libcpp21_h.patch",
-        "//bazel/patches:cuda_crt_libcpp21_hpp.patch",
+        "//third_party/cuda:patches/cuda_crt_libcpp21_h.patch",
+        "//third_party/cuda:patches/cuda_crt_libcpp21_hpp.patch",
     ],
     sha256 = "174ad29ab90c9301bd25f32f935345e65f19fbb0f39c15788daae25b0e924892",
     strip_prefix = "cuda_crt-linux-x86_64-13.2.86-archive",

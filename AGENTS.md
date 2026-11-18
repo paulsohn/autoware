@@ -32,8 +32,17 @@ experiments, and milestones belong in PLAN.md and JOURNAL.md.
   declarations and colcon --symlink-install behavior, including flat diffusion.
 - `repositories/`, `docker/`, and `ansible/` are reference implementations for
   the existing build and deployment. Do not extend them for Bazel integration.
-- Put Bazel workspace support under `bazel/`, container definitions under
-  `images/`, and integration documentation under `docs/bazel/`.
+- Keep dependency direction `bazel/` -> `src/` -> `third_party/`.
+  `bazel/` owns product composition, standalone integration tests and interface
+  collections; it may also consume third-party providers directly. `src/`
+  components own their build definitions. Reusable SDK/dependency definitions,
+  generic dependency helpers and dependency patches live under `third_party/`
+  and must not depend on Autoware components or product labels.
+  The root owns version selection from `third_party/`, registry releases and
+  local overrides; architecture/product settings also remain root-owned.
+  Directory placement alone does not require a new facade Bazel module.
+- Keep container definitions under `images/` and integration documentation under
+  `docs/bazel/`.
 - Keep interface collection and product-level plugin assembly under `bazel/`.
   Defer a separate `autoware_bazel` source repository until a concrete
   cross-repository need requires it. Keep component-specific build support with
@@ -45,10 +54,11 @@ experiments, and milestones belong in PLAN.md and JOURNAL.md.
   demonstrated issue blocks Bazel integration/testing (including ROS/toolchain
   compatibility) or the implementation is genuinely incorrect; document and
   validate the fix separately.
-- Put all newly added integration tests, adapters and fixtures under `bazel/`
-  (normally `bazel/tests/<package>/`), not inside original source packages.
+- Put newly added Autoware-specific integration tests, adapters and fixtures
+  under `bazel/` (normally `bazel/tests/<package>/`), not inside original source packages.
   Keep original upstream tests in place and expose them through package-local
   Bazel rules. Compose added tests at the root without component-to-root labels.
+  Generic dependency test/runtime helpers belong with their third-party owner.
 - BUILD declarations define supported interfaces; registering interfaces and
   their dependencies is the developer's responsibility. Undeclared interface
   sources remain outside the Bazel graph. Validate generated targets and

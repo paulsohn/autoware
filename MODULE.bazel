@@ -66,7 +66,7 @@ multiple_version_override(
 single_version_override(
     module_name = "rclpy",
     patch_strip = 1,
-    patches = ["//bazel/patches:rclpy_shared_dependencies.patch"],
+    patches = ["//third_party/rclpy:rclpy_shared_dependencies.patch"],
     version = "10.0.11-1.rcr.0",
 )
 
@@ -101,7 +101,7 @@ filegroup(name = "runtime", srcs = glob(["lib/libgcc_s.so*"]), visibility = ["//
     urls = ["https://conda.anaconda.org/conda-forge/linux-64/libgcc-ng-12.2.0-h65d4601_19.tar.bz2"],
 )
 
-include("//:bazel/cuda.MODULE.bazel")
+include("//third_party/cuda:cuda.MODULE.bazel")
 
 # Local source dependencies, ordered by their package-local MODULE declarations.
 # Overrides select the source; root declarations need no registry release version.
@@ -810,7 +810,7 @@ local_path_override(
 bazel_dep(name = "tensorrt", version = "0.0.0")
 local_path_override(
     module_name = "tensorrt",
-    path = "bazel/third_party/tensorrt",
+    path = "third_party/tensorrt",
 )
 
 bazel_dep(name = "autoware_tensorrt_common", version = "0.0.0")

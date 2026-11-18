@@ -7576,7 +7576,7 @@ or compiler route works merely because this one passes.
 
 Minimum integration pattern:
 
-1. Root MODULE declares rules_cuda, includes bazel/cuda.MODULE.bazel before
+1. Root MODULE declares rules_cuda, includes third_party/cuda/cuda.MODULE.bazel before
    local dependency pairs, and selects the local CUDA-utils source with a 0.0.0
    dependency/override pair. The included file pins CUDA 13.2.2 and manifest
    SHA-256 89d93e6de640d47eb43c63437fe1be426ed21dd58cc79933a29acbca33c6eeb8.
@@ -7774,13 +7774,13 @@ for the native inference process. There is no local TensorRT implementation or
 RCR TensorRT SDK module. Inspect NVIDIA's Ubuntu 24.04 x86_64
 [package index](https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2404/x86_64/Packages.gz)
 for version 10.16.1.11-1+cuda13.2, then retain exact URL/SHA-256 tuples in
-bazel/third_party/tensorrt/pins.bzl. The six selected packages are libnvinfer10,
+third_party/tensorrt/pins.bzl. The six selected packages are libnvinfer10,
 libnvinfer-plugin10, libnvonnxparsers10, libnvinfer-headers-dev,
 libnvinfer-headers-plugin-dev and libnvonnxparsers-dev. The main runtime download
 is about 1.85 GB; initial fetching/extraction is substantially slower than cached
 build/test. No full static-library development payload is needed by this target.
 
-Add an independent local tensorrt module under bazel/third_party/tensorrt and
+Add an independent local tensorrt module under third_party/tensorrt and
 select it with the root's adjacent dependency/override pair. Its extension
 extracts each .deb as an ar archive into a separate temporary directory and then
 extracts its single data.tar.* into the SDK repository. Keep license/document
@@ -7862,8 +7862,8 @@ Inspect the current RCR tensorrt_cmake_module finder: it discovers headers,
 three libraries and version values. Direct providers preserve these effects;
 no separate Bazel finder/meta module, stdc++fs link or empty CUDA dependency-meta
 module is required for this LLVM configuration. The two demonstrated source
-fixes are documented separately above. New runtime/test support stays under
-bazel/; original tests and model fixture remain unchanged.
+fixes are documented separately above. Reusable SDK runtime/test support stays
+with the third-party SDK; original tests and model fixture remain unchanged.
 
 Run from the repository root with the Phase 6.1 SDK/toolchain configuration,
 actual GPU/driver access, no sourced ROS environment and serialized tests:
@@ -7889,3 +7889,59 @@ previous unchanged core/backend evidence remains applicable. No Fast DDS,
 upstream CMake/GCC, ARM/SBSA, JetPack 10.16.2, runtime image, real model import,
 LTO or cross-machine engine-portability check was run. Phase 6.2 is complete;
 local negotiated interfaces/library/examples and CUDA transport (6.3) are next.
+
+## 2026-11-18: Reusable dependency layers under third_party
+
+Purpose: separate product composition from independent dependency support while
+keeping the contract that root owns version selection from third_party/.
+The dependency direction is bazel/ -> src/ -> third_party/, with direct product
+dependencies on third-party providers allowed and no upward dependencies.
+Component sources and package-local definitions remain unchanged. Directory
+placement does not require inventing a facade module for an included fragment.
+
+Inspected inputs: root MODULE overrides/includes, the CUDA fragment and CRT
+build/patch definitions, TensorRT's standalone module and generic runtime/test
+helpers, and the remaining rclpy dependency patch. Move reusable support as
+follows (earlier journal path references are normalized to the new paths so
+readers can repeat those experiments using the current layout):
+
+| Previous location | Current location |
+| --- | --- |
+| bazel/cuda.MODULE.bazel | third_party/cuda/cuda.MODULE.bazel |
+| bazel/cuda/BUILD.crt.bazel | third_party/cuda/BUILD.crt.bazel |
+| bazel/patches/cuda_crt_libcpp21_*.patch | third_party/cuda/patches/ |
+| bazel/third_party/tensorrt/ | third_party/tensorrt/ |
+| bazel/patches/rclpy_shared_dependencies.patch | third_party/rclpy/rclpy_shared_dependencies.patch |
+
+Root MODULE now includes //third_party/cuda:cuda.MODULE.bazel, points the
+TensorRT local override at third_party/tensorrt and selects the rclpy patch from
+its dependency-owned package. CUDA's package exports its fragment/CRT BUILD and
+patches. The fragment uses same-owner labels for the CRT override; no version,
+archive hash, compiler flag, GPU architecture or patch content is changed.
+TensorRT retains its independent module/API and same local module name, so
+source consumers require no label changes. Generic dependencies/helpers contain
+no Autoware-specific source or product-label dependencies. Architecture and
+product selections remain in root configuration, not in component modules.
+
+The agreed full relocation gate is the complete 13-case TensorRT-common and
+17-case CUDA-utils suites plus the existing native full-core behavior/shutdown
+test, which checks the relocated rclpy patch path in a real ROS Python consumer.
+Run sequentially with the Phase 6 GPU/driver prerequisites and Cyclone DDS:
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=no-agnocast --local_test_jobs=1 \
+  --nocache_test_results --test_output=errors \
+  @tensorrt//... @autoware_tensorrt_common//... @autoware_cuda_utils//... \
+  //bazel/tests:core_system_headless_launch_test
+```
+
+Result: all eight non-test targets and three test targets pass in 67.812
+seconds. The uncached test actions take 22.3 seconds (TensorRT), 0.4 seconds
+(CUDA-utils) and 4.6 seconds (core behavior/shutdown). XML records 13 + 17 + 2
+cases, with no failures, errors or skips. Moved SDK files, CRT BUILD and patch
+contents are byte-identical; source packages require no changes. Targeted
+buildifier, Python syntax, Markdown links and whitespace checks pass.
+
+No Fast DDS, ARM or cross-platform validation was run; the gate establishes the
+existing x86_64/Cyclone DDS configuration only.

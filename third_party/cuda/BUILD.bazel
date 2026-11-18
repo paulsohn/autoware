@@ -1,0 +1,8 @@
+package(default_visibility = ["//visibility:public"])
+
+exports_files([
+    "cuda.MODULE.bazel",
+    "BUILD.crt.bazel",
+    "patches/cuda_crt_libcpp21_h.patch",
+    "patches/cuda_crt_libcpp21_hpp.patch",
+])

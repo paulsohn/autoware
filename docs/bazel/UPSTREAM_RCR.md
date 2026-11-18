@@ -48,7 +48,7 @@ Other loaded native extensions use shared ROS dependencies, duplicating DDS
 global state in one process. Add `dynamic_deps = DEPENDENCIES.keys()` to
 `rclpy_bindings`, matching the established RCR shared-library pattern. The
 local single_version_override pins that module and applies only this BUILD
-change through `bazel/patches/rclpy_shared_dependencies.patch`.
+change through `third_party/rclpy/rclpy_shared_dependencies.patch`.
 
 After the correction, the complete 95-case suite exits successfully. The
 extension has DT_NEEDED entries for librcl.so and librmw_fastrtps_cpp.so and

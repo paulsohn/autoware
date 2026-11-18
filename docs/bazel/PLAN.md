@@ -52,6 +52,8 @@ only when your current target demonstrates the need.
 - [ ] Establish source-preservation and added-test locations.
   [Evidence: tests outside component packages](JOURNAL.md#2026-11-17-keep-added-integration-tests-outside-component-packages).
 - [ ] Separate component ownership from product-level composition.
+  [Dependency layers and root selection](DEVELOPING.md#repository-dependency-layers);
+  [evidence: reusable dependency relocation](JOURNAL.md#2026-11-18-reusable-dependency-layers-under-third_party).
   [Evidence: root-owned interface consumers](JOURNAL.md#2026-11-15-build-root-owned-typed-agnocast-plugins-from-the-interface-graph).
   [Native plugin registration](DEVELOPING.md#native-plugin-libraries);
   [evidence: stop-line plugin](JOURNAL.md#2026-11-17-phase-525--stop-line-plugin).
@@ -87,6 +89,15 @@ only when your current target demonstrates the need.
   [Evidence: independently reproducible journal](JOURNAL.md#2026-11-14-make-the-experiment-journal-independently-reproducible).
 
 ## Current decisions
+
+- Keep dependency direction bazel/ -> src/ -> third_party/. Product composition,
+  standalone integration tests and interface collection belong to bazel/;
+  component definitions remain in src/; reusable dependency/SDK support and
+  patches belong to third_party/. Direct product-to-third-party dependencies
+  are allowed; reverse dependencies are not. The root owns version selection
+  from third_party/, registry releases and local source overrides. Preserve
+  root-owned architecture/product configuration. See
+  [dependency layers](DEVELOPING.md#repository-dependency-layers).
 
 - Keep existing source packages unchanged except for Bazel definitions and
   required build support. Source/original-test changes need a demonstrated
@@ -140,7 +151,7 @@ only when your current target demonstrates the need.
 - The loopback smoke behavior needs no custom Cyclone DDS XML or host network
   tuning. Add either only when a later network topology demonstrates the need.
 - Pin rclpy 10.0.11-1.rcr.0 with the small shared-dependency BUILD correction
-  under `bazel/patches/`. Its extension must use the existing ROS/DDS shared
+  under `third_party/rclpy/`. Its extension must use the existing ROS/DDS shared
   targets, so importing rclpy alongside rosbag does not duplicate DDS globals
   and corrupt interpreter shutdown. The CLI suite verifies normal exit;
   UPSTREAM_RCR.md records the published overlay and reproducible evidence.
@@ -1316,7 +1327,7 @@ Accepted result: upstream rules_cuda 0.4.0, CUDA 13.2.2 redistributables and the
 existing LLVM/libc++ 21.1.8 toolchain pass all 17 original CUDA-utils cases on
 sm_120, with no skips. Only cccl, crt, cudart, nvcc and nvvm are needed here;
 use shared cudart. Keep the toolkit/root architecture settings in
-bazel/cuda.MODULE.bazel and .bazelrc, and the header library/tests package-local.
+third_party/cuda/cuda.MODULE.bazel and .bazelrc, and the header library/tests package-local.
 No dependency-meta Bazel module is needed for this validated non-LTO build.
 The configured compile/link actions contain no LTO-enable flags; revalidate
 that conclusion if LTO or device-link settings change.
