@@ -2,6 +2,8 @@
 # SPDX-License-Identifier: Apache-2.0
 """Launch every original core group together without a graphical display."""
 from pathlib import Path
+import os
+import re
 import shutil
 import tempfile
 import time
@@ -14,11 +16,12 @@ from autoware_map_msgs.msg import LaneletMapBin
 from autoware_vehicle_msgs.msg import VelocityReport
 from geometry_msgs.msg import TwistWithCovarianceStamped
 import launch
-from launch.actions import IncludeLaunchDescription
+from launch.actions import ExecuteProcess, IncludeLaunchDescription
 from launch.launch_description_sources import AnyLaunchDescriptionSource
 import launch_testing
 import launch_testing.actions
 import launch_testing.asserts
+import psutil
 import pytest
 from rcl_interfaces.srv import GetParameters
 import rclpy
@@ -26,6 +29,7 @@ from rclpy.qos import DurabilityPolicy, QoSProfile
 from std_msgs.msg import String
 
 _MAP = None
+_BUNDLE_CHILDREN = []
 
 
 @pytest.mark.launch_test
@@ -41,17 +45,20 @@ def generate_test_description():
     source = Path(get_package_share_directory('autoware_core')) / 'launch/autoware_core.launch.xml'
     # Preserve the default GUI contract while explicitly exercising headless mode.
     assert ET.parse(source).find("arg[@name='launch_rviz']").get('default') == 'true'
-    return launch.LaunchDescription([
+    launcher = os.environ.get('CORE_SYSTEM_BUNDLE_LAUNCHER')
+    system = ExecuteProcess(cmd=[launcher, 'map_path:=' + str(directory)], output='screen') if launcher else (
         IncludeLaunchDescription(AnyLaunchDescriptionSource(str(source)), launch_arguments={
             'map_path': str(directory), 'vehicle_model': 'autoware_sample_vehicle',
             'sensor_model': 'autoware_sample_sensor_kit', 'launch_rviz': 'false',
-        }.items()),
+        }.items()))
+    return launch.LaunchDescription([
+        system,
         launch_testing.actions.ReadyToTest(),
-    ])
+    ]), {'bundle_process': system if launcher else None}
 
 
 class TestCoreSystem(unittest.TestCase):
-    def test_all_groups_maps_parameters_relay_and_api(self):
+    def test_all_groups_maps_parameters_relay_and_api(self, bundle_process):
         rclpy.init()
         node = rclpy.create_node('core_system_peer')
         try:
@@ -111,6 +118,29 @@ class TestCoreSystem(unittest.TestCase):
             wait(lambda: node.count_publishers('/planning/trajectory') > 0 and
                  node.count_subscribers('/planning/trajectory') > 0 and
                  node.count_publishers('/control/command/control_cmd') > 0)
+            if bundle_process is not None:
+                bundle = Path(os.environ['CORE_SYSTEM_BUNDLE_LAUNCHER']).resolve().parent
+                baseline = {'ld-linux-x86-64.so.2', 'libc.so.6', 'libm.so.6', 'libdl.so.2',
+                            'libpthread.so.0', 'librt.so.1', 'libresolv.so.2', 'libutil.so.1'}
+                system_libraries = set()
+                parent = psutil.Process(bundle_process.process_details['pid'])
+                processes = parent.children(recursive=True)
+                self.assertTrue(processes, 'No packaged application processes to audit')
+                for process in [parent] + processes:
+                    _BUNDLE_CHILDREN.append((process.pid, process.create_time()))
+                    executable = Path(process.exe()).resolve()
+                    self.assertTrue(executable.is_relative_to(bundle), str(executable))
+                    for mapping in process.memory_maps():
+                        library = Path(mapping.path)
+                        if '.so' not in library.name:
+                            continue
+                        library = library.resolve()
+                        if library.is_relative_to(bundle):
+                            continue
+                        self.assertEqual(library.parent, Path('/usr/lib/x86_64-linux-gnu'))
+                        self.assertIn(library.name, baseline, str(library))
+                        system_libraries.add(str(library))
+                print('Runtime OS libraries:', sorted(system_libraries), flush=True)
         finally:
             node.destroy_node()
             rclpy.shutdown()
@@ -118,5 +148,21 @@ class TestCoreSystem(unittest.TestCase):
 
 @launch_testing.post_shutdown_test()
 class TestShutdown(unittest.TestCase):
-    def test_exit_codes(self, proc_info):
+    def test_exit_codes(self, proc_info, proc_output, bundle_process):
         launch_testing.asserts.assertExitCodes(proc_info)
+        if bundle_process is not None:
+            # The outer launch sees one process; inspect the nested launch's
+            # reports too, so a successful parent cannot hide a failed child.
+            output = ''.join(event.text.decode() for event in proc_output[bundle_process])
+            self.assertNotIn('process has died', output)
+            self.assertNotIn('failed to terminate', output)
+            started = set(re.findall(r'\[([^\[\]]+)\]: process started with pid', output))
+            stopped = set(re.findall(r'\[([^\[\]]+)\]: process has finished cleanly', output))
+            self.assertTrue(started, 'No packaged child startup reports')
+            self.assertEqual(started, stopped, 'Packaged children did not all exit cleanly')
+            for pid, created in _BUNDLE_CHILDREN:
+                try:
+                    process = psutil.Process(pid)
+                    self.assertNotEqual(process.create_time(), created, 'Packaged child survived shutdown')
+                except psutil.NoSuchProcess:
+                    pass

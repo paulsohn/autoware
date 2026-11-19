@@ -1,0 +1,62 @@
+load("@launch_ros//:defs.bzl", "launch_ros_binary")
+load("@rules_pkg//pkg:tar.bzl", "pkg_tar")
+load("//third_party/runtime:defs.bzl", "runtime_libraries")
+
+package(default_visibility = ["//visibility:public"])
+
+runtime_libraries(
+    name = "native_runtime",
+    libraries = [
+        "//third_party/graphics_runtime:runtime",
+        "@python_libgcc_linux_x86_64//:runtime",
+        "@python_libstdcxx_linux_x86_64//:runtime",
+        "@rosdistro//cc:zlib",
+    ],
+    sonames = {"libzlib_shared.so": ["libz.so.1"]},
+)
+
+launch_ros_binary(
+    name = "core_headless",
+    src = "@autoware_core//:launch/autoware_core.launch.xml",
+    data = [
+        ":native_runtime",
+        "@autoware_core//:ament_index",
+        "@autoware_sample_sensor_kit_description//:ament_index",
+        "@autoware_sample_vehicle_description//:ament_index",
+        "@graphics_runtime//:copyrights",
+    ],
+    precompile = "disabled",
+    deps = ["@autoware_agnocast_wrapper//:python"],
+)
+
+pkg_tar(
+    name = "core_bundle",
+    srcs = [
+        "run",
+        ":core_headless",
+    ],
+    allow_duplicates_with_different_content = False,
+    compression_level = 1,
+    extension = "tar.gz",
+    include_runfiles = True,
+    preserve_mode = True,
+    stamp = 0,
+    strip_prefix = ".",
+)
+
+# Verification peers/fixtures are separate from the application distribution.
+pkg_tar(
+    name = "core_bundle_tests",
+    testonly = True,
+    srcs = [
+        "//bazel/tests:core_system_headless_launch_test",
+        "//bazel/tests:runtime/verify",
+    ],
+    allow_duplicates_with_different_content = False,
+    compression_level = 1,
+    extension = "tar.gz",
+    include_runfiles = True,
+    preserve_mode = True,
+    stamp = 0,
+    strip_prefix = "/bazel/tests",
+)

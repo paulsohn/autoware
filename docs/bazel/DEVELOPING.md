@@ -734,6 +734,61 @@ API service and clean shutdown with
 `bazel test --config=no-agnocast //bazel/tests:core_system_headless_launch_test`.
 This gate does not assert a full driving scenario.
 
+## Native core distribution
+
+Build the application and its separate verification companion with the bundled
+Python bootstrap configuration:
+
+```sh
+bazel build --config=runtime --config=no-agnocast \
+  //bazel/runtime:core_bundle //bazel/runtime:core_bundle_tests
+bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_output=errors //bazel/tests:core_system_headless_launch_test \
+  //bazel/tests:core_bundle_structure_test
+```
+
+The application archive contains the headless original core launch and sample
+vehicle/sensor providers. Its executable-adjacent runfiles preserve the declared
+ament indexes, libraries, Python and resource closure. Add component runtime
+edges to the owning component's index/data; select concrete product resources
+in bazel/runtime/BUILD.bazel. Do not add a second package-by-package file list.
+Conflicting archive destinations fail. Build distributions with --config=runtime;
+ordinary Python bootstraps otherwise require python3 before reaching their
+declared interpreter.
+
+Keep generated standalone mains' runtime providers in their helper package's
+index too. A dependency used by a main can be absent from its component library's
+closure; a working build-tree RPATH or an installed host library can hide that
+omission. The wrapper index exports its shared logging provider for this reason.
+
+The root native_runtime target composes real GLVND dispatch libraries and their
+X11 load dependencies with the existing pinned GNU C++/GCC runtimes and the
+registry's source-built zlib. Its libz.so.1 alias serves native Python extensions.
+The [graphics provider](../../third_party/graphics_runtime/README.md) locks binary
+payloads by SHA-256; Bazel extracts them without a host package manager. Registry
+GL stubs are link inputs and cannot substitute for runtime implementations.
+The supported runtime baseline is Ubuntu 24.04 x86_64, rather than a claim that
+the compiler's lower glibc floor covers every runtime input. A graphics vendor
+backend/display stack is outside this headless product's support.
+
+Extract at any directory and invoke its run executable from another working
+directory, passing map_path:=/absolute/path/to/map. The map directory must contain
+the three files described above. The launcher establishes its own runtime paths
+and fixes the headless sample product to Cyclone DDS with Agnocast disabled.
+Supply writable HOME/ROS_LOG_DIR state separately from the read-only application.
+This product does not contain RViz, GPU execution, a simulator or an Agnocast
+kernel/runtime setup.
+
+Extract core_bundle_tests.tar.gz separately to run runtime/verify with the
+application's absolute run path as its first argument. Set TEST_TMPDIR to an
+existing writable state directory. The companion owns its peer/fixture runtime;
+the product resolves its own independent index. The same two core test cases
+check behavior and shutdown, including nested child exits, loaded library paths
+and surviving processes when testing an external bundle. Keep this companion
+out of the deployed application. See the
+[Phase 7.1 journal](JOURNAL.md#2026-11-20-phase-71--native-headless-core-distribution)
+for the recorded relocation/isolation commands and supported OS baseline.
+
 ## CUDA targets and tests
 
 The product root owns version selection from third_party/: it includes the

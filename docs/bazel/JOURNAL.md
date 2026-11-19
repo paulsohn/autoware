@@ -8934,7 +8934,7 @@ env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
 ```
 
 Pass: 0.3 seconds (4.311-second invocation), no omitted cases. The stricter
-product relocation gate
+[product relocation gate](#2026-11-20-phase-71--native-headless-core-distribution)
 additionally proves actual application use of these files without host graphics
 libraries. This binary-provider gate does not establish rendering, complete
 upstream graphics conformance, a display/vendor backend, or ARM support. No
@@ -8956,7 +8956,7 @@ ament_package libraries list. No C++ implementation, original test, root-owned
 file inventory or runtime fallback is needed. Transferable rule: include a
 standalone main's helper-owned shared providers even when the component library
 itself does not depend on them. The
-[runtime resource convention](DEVELOPING.md#launch-resource-composition) records that rule;
+[developer convention](DEVELOPING.md#native-core-distribution) records that rule;
 the product's own strict runtime audit verifies the exported provider in use.
 
 Complete wrapper gate for this metadata change: all existing C++ and Python
@@ -8976,3 +8976,163 @@ All 37 C++ and 66 Python cases pass, zero skips (0.4 and 1.6 seconds respectivel
 whitespace checks pass. The metadata correction is complete; the subsequent
 native-product gate demonstrates that no host glog/gflags/libunwind.so.8 is
 loaded. Existing enabled-backend implementation evidence is unchanged.
+
+## 2026-11-20: Phase 7.1 — Native headless core distribution
+
+Purpose: distribute the already validated original core launch without Bazel,
+a checkout, build-cache symlinks, host ROS or host Python. Work began November 19;
+the final gates passed November 20. The boundary is root product composition,
+its native runtime providers and the existing core behavior suite. Scope is
+Ubuntu 24.04 x86_64, CPU/Cyclone DDS, ENABLE_AGNOCAST=0, sample vehicle/sensor
+indexes and declared small map fixtures. This is not closed-loop driving.
+
+Inspected inputs: the core ament_index closure and original XML launch,
+launch_ros_binary/launch_test entry points, rules_python 2.4.5 bootstraps,
+rules_pkg 1.3.0's include_runfiles implementation, generated wrapper mains and
+RCR libglvnd 1.7.0.rcr.0. The complete module gate consists of the original two
+core cases, archive structure, the real graphics-dispatch check and the complete
+affected wrapper suites (37 C++ and 66 Python cases, disabled backend). Repeat
+the same core cases against a relocated application, both natively and inside
+a minimal isolated filesystem, with library and process-lifecycle assertions.
+
+Minimum integration pattern:
+
+- Root bazel/runtime selects launch_ros_binary with the original exported core
+  XML, its index and concrete sample vehicle/sensor indexes. The source package
+  only gains a BUILD export; it acquires no metarepository dependency. Keep
+  map_path caller-supplied. Package a separate verification companion from the
+  existing launch_test, its peer dependencies and declared map fixtures.
+- Use pkg_tar(include_runfiles=True, preserve_mode=True, stamp=0,
+  allow_duplicates_with_different_content=False). It consumes DefaultInfo files,
+  runfiles files/symlinks/root symlinks and repository mappings. Preserve the
+  executable-adjacent runfiles layout and materialize its declared closure;
+  do not add a second per-package install inventory or scan source directories.
+- Build with --config=runtime: bootstrap_impl=script starts through Bash and
+  reaches declared Python before importing application code. The ordinary
+  /usr/bin/env python3 bootstrap otherwise requires host Python first. Initial
+  generator reruns made this first configuration build take 3178.127 seconds;
+  subsequent archive work reused the unchanged native build outputs.
+- The bundle-relative run launcher establishes its own index/library/runfiles
+  paths, clears inherited ROS/Python/library discovery variables, disables user
+  Python packages and selects headless sample models, Cyclone DDS and no
+  Agnocast. Supply writable state separately from the read-only application.
+  A standalone Python binary's Bazel args are not embedded into its raw
+  executable; the wrapper supplies the actual launch file and arguments.
+- Root composition selects native_runtime. A generic third_party/runtime helper
+  publishes declared library basenames/explicit SONAME aliases into lib/ and
+  rejects conflicting mappings. It composes the existing pinned GNU 12.2
+  runtimes, RCR's source-built zlib 1.3.2 (including libz.so.1) and real graphics
+  dispatch. Keep reusable providers below src/, and product choices above it.
+
+Diagnosed omissions and their fixes are recorded at the owning boundaries:
+[real graphics dispatch](#2026-11-20-phase-71--native-graphics-runtime-provider)
+and [standalone logging](#2026-11-20-phase-71--wrapper-standalone-logging-runtime).
+A full process-map inspection also exposed Python's host GNU/zlib libraries;
+root composition supplies the existing pinned GNU archives and source-built zlib
+through its own lib prefix. Keep only loader/glibc in the runtime OS allowlist.
+Audit the Python launcher itself as well as every native child. Check nested
+startup/clean-exit pairs and surviving PIDs after shutdown; an outer launcher
+returning zero alone cannot establish its children's exit status.
+
+Build the two archives, then run the complete root suite sequentially from an
+unsourced shell. The separate provider/wrapper entries give their full gates;
+reuse those passing results for unchanged code and configuration.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel build --config=runtime --config=no-agnocast \
+  //bazel/runtime:core_bundle //bazel/runtime:core_bundle_tests
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --nocache_test_results --test_output=errors \
+  //bazel/tests:core_bundle_structure_test \
+  //bazel/tests:core_system_headless_launch_test
+```
+
+Both root targets pass with the final parent-process audit (27.9 seconds
+structure, 4.9 seconds core; 69.113-second invocation). Analysis-only build of
+both archives and dispatch_test also accepts the final platform guard. No
+original implementation or original test is modified.
+
+Reproduce extraction and the final native gate as follows. Staging directory
+names are arbitrary; the application has no build-time install prefix. The
+map is assembled from companion-owned fixtures by the test itself.
+
+```sh
+runtime_dir=$(mktemp -d)
+mkdir "$runtime_dir/app" "$runtime_dir/checks_final" "$runtime_dir/state" "$runtime_dir/results"
+tar -xf bazel-bin/bazel/runtime/core_bundle.tar.gz -C "$runtime_dir/app"
+tar -xf bazel-bin/bazel/runtime/core_bundle_tests.tar.gz -C "$runtime_dir/checks_final"
+(
+  cd /
+  env -i HOME="$runtime_dir/state" PATH=/usr/bin:/bin \
+    TEST_TMPDIR="$runtime_dir/state" XML_OUTPUT_FILE="$runtime_dir/state/native-final.xml" \
+    "$runtime_dir/checks_final/runtime/verify" "$runtime_dir/app/run"
+)
+```
+
+Both cases pass: nodes, wheelbase/use_sim_time parameters, nonempty latched map,
+sensor-bearing robot description, velocity relay, version API, graph endpoints
+and clean shutdown. The final native functional case takes 3.416 seconds. Archive
+structure checks both distributions for duplicate/escaping paths, closed links,
+executable Bash bootstraps, repository mappings and the core index. All indexed
+resources come from the extracted application; the test peer has its separate
+index. No inherited AMENT_PREFIX_PATH, PYTHONPATH, LD_LIBRARY_PATH or LD_PRELOAD
+is used. DDS execution needs network-interface access, including loopback.
+
+The isolated OS baseline is Ubuntu 24.04, glibc 2.39, image digest below. Docker
+is an isolation harness for this native artifact, not a native runtime requirement
+or the Phase 7.2 OCI product. No build workspace/cache, ROS installation, Python
+installation or GPU/Agnocast device is mounted. Only the two extracted trees and
+an initially empty results directory enter the container; /tmp is fresh writable
+state. Run unprivileged, without network access, from / and with read-only roots:
+
+```sh
+docker run --rm --network=none --read-only --cap-drop=ALL \
+  --security-opt=no-new-privileges --user "$(id -u):$(id -g)" \
+  --tmpfs /tmp:rw,exec,nosuid,nodev \
+  --mount "type=bind,src=$runtime_dir/app,dst=/validation/app,readonly" \
+  --mount "type=bind,src=$runtime_dir/checks_final,dst=/validation/checks,readonly" \
+  --mount "type=bind,src=$runtime_dir/results,dst=/results" \
+  ubuntu@sha256:73b999393d07f2bf65a40373778a44dc9a6d54ad7718d29247d8ff9413c4d6a8 \
+  /bin/sh -ec 'if command -v python3; then exit 1; fi; test ! -d /opt/ros; \
+    mkdir /tmp/home /tmp/state; cd /; exec env -i HOME=/tmp/home LOGNAME=runtime \
+    PATH=/usr/bin:/bin TEST_TMPDIR=/tmp/state XML_OUTPUT_FILE=/results/isolated-final.xml \
+    /validation/checks/runtime/verify /validation/app/run'
+```
+
+The final isolated gate also passes both cases, zero failures/errors/skips.
+Both native and isolated logs record matching startup/clean-exit reports for
+all 27 processes including the outer launcher, with no surviving recorded PIDs.
+The only loaded application libraries outside its tree are the Linux loader and
+glibc's libc, libm, libdl, libpthread, librt and libutil; parent Python and all
+native children use the declared runtime providers. This establishes Ubuntu
+24.04 x86_64 support, not a whole-bundle glibc-2.34 compatibility claim.
+Both the indexed interface_node and the bundled Python interpreter request
+/lib64/ld-linux-x86-64.so.2. These static ELF checks and dependency inspection
+complement the actual loaded-library audit:
+
+```sh
+readelf -l "$runtime_dir/app/core_headless.runfiles/_main/lib/autoware_default_adapi/interface_node"
+readelf -l "$runtime_dir/app/core_headless.runfiles/_main/bazel/runtime/_core_headless.venv/bin/python3"
+LD_LIBRARY_PATH="$runtime_dir/app/core_headless.runfiles/_main/lib" \
+  ldd "$runtime_dir/app/core_headless.runfiles/_main/lib/autoware_default_adapi/interface_node"
+```
+
+ldd reports no unresolved dependency; libglog.so resolves inside the bundle.
+Targeted buildifier, clang-format, shell/Python/JSON syntax, Markdown link and
+whitespace checks pass. No pre-commit or Fast DDS run is performed.
+
+Phase 7.1 is complete. Next: 7.2 packages this same native closure into a thin
+OCI artifact. A vendor graphics backend/display server, RViz, GPU/Agnocast
+execution, ARM, QEMU, OTA and a driving scenario are not established here.
+Native distributions still contain duplicated runfiles paths; size optimization
+must preserve resource/library identity and the existing behavior gate.
+
+For 7.3, preserve the agreed sequence: reconcile the exact AWF tutorial and
+integrate its selected Universe planning/launch closure before demonstrating
+planning_simulator.launch.xml. A core-only simulator experiment remains plausible
+from the inspected standalone simulator manifests but has no runtime proof and
+does not satisfy that original workflow's milestone. See the
+[phase plan](PLAN.md#phase-7--runtime-packaging-and-headless-planning-simulation-in-progress)
+for source references and the separate acceptance boundary.

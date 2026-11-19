@@ -1,0 +1,24 @@
+#!/bin/bash
+# Copyright 2026 Taeseung Sohn
+# SPDX-License-Identifier: Apache-2.0
+set -eu
+
+bundle=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)
+runfiles="$bundle/core_headless.runfiles"
+prefix="$runfiles/_main"
+
+# Do not inherit a builder's ROS/Python/library discovery environment.
+unset AMENT_PREFIX_PATH COLCON_PREFIX_PATH CMAKE_PREFIX_PATH PYTHONPATH PYTHONHOME
+unset LD_LIBRARY_PATH LD_PRELOAD RUNFILES_DIR RUNFILES_MANIFEST_FILE JAVA_RUNFILES
+export PATH=/usr/bin:/bin
+export RUNFILES_DIR="$runfiles"
+export AMENT_PREFIX_PATH="$prefix"
+export LD_LIBRARY_PATH="$prefix/lib"
+export PYTHONNOUSERSITE=1
+export ENABLE_AGNOCAST=0 RMW_IMPLEMENTATION=rmw_cyclonedds_cpp ROS_DISTRO=lyrical
+export OMP_NUM_THREADS=1
+
+exec "$bundle/core_headless" \
+  "$prefix/share/autoware_core/launch/autoware_core.launch.xml" \
+  "$@" vehicle_model:=autoware_sample_vehicle \
+  sensor_model:=autoware_sample_sensor_kit launch_rviz:=false

@@ -62,7 +62,6 @@ only when your current target demonstrates the need.
   [evidence: stop-line plugin](JOURNAL.md#2026-11-17-phase-525--stop-line-plugin).
 - [ ] Preserve executable contracts and unique library identities in composed indexes.
   [Runtime resource convention](DEVELOPING.md#launch-resource-composition);
-  [evidence: standalone-main runtime providers](JOURNAL.md#2026-11-20-phase-71--wrapper-standalone-logging-runtime);
   [published container providers](JOURNAL.md#2026-11-18-phase-531--default-ad-api);
   [evidence: original core launches](JOURNAL.md#2026-11-17-phase-525--core-planning-launch-composition).
   [Runtime-only dlopen resources and ABI closure](DEVELOPING.md#tensorrt-sdk-and-native-tests);
@@ -82,8 +81,8 @@ only when your current target demonstrates the need.
 - [ ] Separate builder-host, build-environment and runtime prerequisites; declare
   runtime resources once and reuse them for packaging.
   [Packaging and deployment requirements](#runtime-packaging-and-deployment-requirements);
-  [pinned graphics runtime](../../third_party/graphics_runtime/README.md);
-  [evidence: declared graphics runtime](JOURNAL.md#2026-11-20-phase-71--native-graphics-runtime-provider).
+  [distribution convention](DEVELOPING.md#native-core-distribution);
+  [evidence: native runtime closure](JOURNAL.md#2026-11-20-phase-71--native-headless-core-distribution).
 - [ ] Define editable model modules and portable runtime resource paths together.
   [Model repository/path convention](#model-repository-and-runtime-path-convention);
   [evidence and required experiment](JOURNAL.md#2026-11-18-model-subtree-layout-and-portable-launch-path-requirements);
@@ -1586,15 +1585,48 @@ Phase 8. No new Fast DDS acceptance run was performed; it still requires
 explicit approval. The x86 TensorRT 10.16.1 versus JetPack 7.2.1's 10.16.2 gap
 remains explicit for Phase 8.
 
+## Phase 7 — Runtime packaging and headless planning simulation (in progress)
+
+Follow the [packaging and deployment requirements](#runtime-packaging-and-deployment-requirements).
+Complete each distribution boundary before expanding the application closure.
+
+1. **7.1 — Native headless core bundle (complete, 2026-11-20).** The original core
+   launch and selected sample indexes are exported through rules_pkg 1.3.0's
+   runfiles support, with a separate verification companion. Both original cases
+   pass natively after relocation and in a read-only, unprivileged, network-
+   isolated Ubuntu 24.04 filesystem without ROS/Python installs or source/cache
+   mounts. Parent/child executable and loaded-library audits allow only the
+   loader/glibc outside the application. The owning wrapper exports its mains'
+   logging provider; root composition selects real GL dispatch, pinned GNU and
+   source-built zlib runtime providers. Scope is x86_64 CPU/Cyclone DDS with
+   Agnocast disabled. See the [reproducible gate](JOURNAL.md#2026-11-20-phase-71--native-headless-core-distribution).
+2. **7.2 — Thin OCI distribution.** Install the same native bundle under a fixed
+   prefix in a pinned minimal compatible base. Repeat the same behavior gate;
+   do not resolve application dependencies through image-side apt/pip/rosdep.
+   Consider a pinned QEMU guest as an additional CPU packaging check, without
+   real-time or GPU acceptance claims.
+3. **7.3 — AWF planning simulation.** Establish the exact tutorial/source/input
+   contract, then demonstrate the original planning_simulator.launch.xml
+   workflow and repeatable headless functional assertions. Integrate the
+   selected autoware_universe planning/launch dependency closure first where
+   required by that workflow. A smaller core-only experiment is optional and
+   does not satisfy the AWF workflow gate by itself.
+
+The local standalone autoware_simple_planning_simulator manifests do not require
+Universe planning implementations. Its
+[standalone repository](https://github.com/autowarefoundation/autoware_simple_planning_simulator)
+and AWF's [extraction discussion](https://github.com/orgs/autowarefoundation/discussions/6892)
+support investigating a core-only closed loop with that simulator and explicit
+simulation inputs. This is source-level feasibility, not runtime evidence.
+The current autoware_launch/planning_simulator.launch.xml selects the Universe
+launch stack; preserving that exact workflow requires its actual dependency
+closure. Review that boundary before implementing 7.3, rather than substituting
+a core-only launch and declaring the documented simulator milestone complete.
+
 ## Later phases
 
 ### Incoming phase identifiers
 
-- **Phase 7 — Runtime packaging and headless planning simulation.** Complete
-  install/resource closure, validate native and thin OCI distributions of the
-  same application bundle, and demonstrate the AWF planning-simulator workflow
-  with repeatable headless coverage. Follow the
-  [packaging and deployment requirements](#runtime-packaging-and-deployment-requirements).
 - **Phase 8 — JetPack 7.2.1 software compatibility (Thor-supported release).**
   Cross-build the selected aarch64 targets against a pinned JetPack-compatible
   user-space dependency set and check binary architecture, link/resource
@@ -1625,10 +1657,9 @@ target requires them.
 
 ## Runtime packaging and deployment requirements
 
-These are design requirements and planned experiments, not implemented packaging
-or deployment support. Phase 6 continues its selected module integrations;
-Phase 7 establishes the runtime distribution gates below. OTA is a deferred
-extension, not an added Phase 6 or Phase 7 completion requirement.
+Phase 7 establishes the runtime distribution gates below; incomplete experiments
+do not establish deployment support. OTA is a deferred extension, not an added
+Phase 7 completion requirement.
 
 ### Environment responsibilities
 

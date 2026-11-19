@@ -9,6 +9,22 @@ load("@tensorrt//:defs.bzl", "tensorrt_cc_test")
 
 package(default_visibility = ["//visibility:public"])
 
+exports_files(["runtime/verify"])
+
+py_test(
+    name = "core_bundle_structure_test",
+    srcs = ["runtime/test_bundle.py"],
+    args = [
+        "$(rootpath //bazel/runtime:core_bundle)",
+        "$(rootpath //bazel/runtime:core_bundle_tests)",
+    ],
+    data = [
+        "//bazel/runtime:core_bundle",
+        "//bazel/runtime:core_bundle_tests",
+    ],
+    main = "runtime/test_bundle.py",
+)
+
 DEPS = {
     "@rclcpp//:rclcpp": "@rclcpp//:rclcpp_library",
     "@std_msgs//:cc_shared": "@std_msgs//:cc",
@@ -1479,10 +1495,12 @@ launch_test(
     data = [
         "system_context/projector.yaml",
         "system_context/single.pcd",
+        "//bazel/runtime:native_runtime",
         "@autoware_core//:ament_index",
         "@autoware_sample_sensor_kit_description//:ament_index",
         "@autoware_sample_vehicle_description//:ament_index",
         "@autoware_test_utils//:ament_index",
+        "@graphics_runtime//:copyrights",
     ],
     env = {
         "ENABLE_AGNOCAST": "0",
@@ -1496,6 +1514,7 @@ launch_test(
         "no-sandbox",
     ],
     deps = [
+        requirement("psutil"),
         "@ament_index_python",
         "@autoware_adapi_version_msgs//:py",
         "@autoware_agnocast_wrapper//:python",
