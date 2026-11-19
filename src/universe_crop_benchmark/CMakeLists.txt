@@ -16,12 +16,21 @@ target_include_directories(universe_crop PRIVATE "${pre}/include"
 foreach(pkg IN ITEMS autoware_utils autoware_utils_debug autoware_utils_diagnostics autoware_utils_system)
   target_include_directories(universe_crop PRIVATE "${aw}/core/autoware_utils/${pkg}/include")
 endforeach()
-ament_target_dependencies(universe_crop ${deps})
+foreach(pkg IN LISTS deps)
+  target_include_directories(universe_crop SYSTEM PRIVATE ${${pkg}_INCLUDE_DIRS})
+  if(${pkg}_TARGETS)
+    target_link_libraries(universe_crop ${${pkg}_TARGETS})
+  else()
+    target_link_libraries(universe_crop ${${pkg}_LIBRARIES})
+  endif()
+endforeach()
 autoware_agnocast_wrapper_register_node(universe_crop
   PLUGIN "autoware::pointcloud_preprocessor::CropBoxFilterComponent" EXECUTABLE crop
   AGNOCAST_EXECUTOR AgnocastOnlyCallbackIsolatedExecutor ROS2_EXECUTOR SingleThreadedExecutor)
 add_library(universe_endpoint SHARED endpoint.cpp)
-ament_target_dependencies(universe_endpoint rclcpp rclcpp_components sensor_msgs agnocastlib autoware_agnocast_wrapper)
+target_link_libraries(universe_endpoint ${rclcpp_TARGETS} ${rclcpp_components_TARGETS}
+  ${sensor_msgs_TARGETS} ${agnocastlib_TARGETS} ${autoware_agnocast_wrapper_LIBRARIES})
+target_include_directories(universe_endpoint PRIVATE ${autoware_agnocast_wrapper_INCLUDE_DIRS})
 autoware_agnocast_wrapper_register_node(universe_endpoint
   PLUGIN "benchmark::Endpoint" EXECUTABLE endpoint
   AGNOCAST_EXECUTOR AgnocastOnlySingleThreadedExecutor ROS2_EXECUTOR SingleThreadedExecutor)

@@ -294,3 +294,48 @@ header explicitly names pcl/common/io.h as its replacement. AWF Universe main
 still had the old filter includes when checked. The selected crop component
 built and all three Cyclone runs verified its output. This validation is
 scoped to the selected crop pipeline; other Universe filters were not built.
+
+### Lyrical Universe reference: Cyclone passes, native Agnocast fails
+
+Use a separate exported Lyrical root with ros-lyrical-pcl-ros,
+ros-lyrical-pcl-conversions and clang-21 installed and the same host device.
+Create the writable-workspace mount destination /ws and CUDA bind destinations
+in that root as for the original exported Lyrical environment. Build the
+enabled wrapper against the runtime overlay first. For the point_cloud_msg_wrapper
+header dependency, extract the ROS Lyrical release 1.0.7-6 to
+build/agnocast-lyrical/point_cloud_msg_wrapper (strip one archive component).
+The release archive matched the [RCR source checksum](https://bazel.ros.org/modules/point_cloud_msg_wrapper/1.0.7-6.rcr.2/source.json).
+No RCR source patch was applied to it.
+
+With LYRICAL_ROOT set to the new root, run experiments/buffer/run-lyrical.sh
+bash experiments/buffer/build-universe-lyrical.sh, then run the guarded
+bench-universe-lyrical.sh with BUFFER_RUNTIME_ONLY=1 and a fresh output
+directory. The benchmark selects the local Agnocast library prefix for the
+source-built hook and keeps the ROS prefix fallback for Jazzy. Source, filter,
+and sink are separate processes running the same executables across both
+modes. The existing harness disables bridging and discovery in both modes.
+
+The Cyclone control verified all 60 frames in each of three runs. Discarding
+the first ten per group, pooled median/p95 were 1.514/1.745 ms. Each resource
+CSV reports child user/system CPU seconds over startup, workload and teardown,
+and the largest individual child's peak RSS in KiB. RSS is not summed across
+processes. The benchmark stopped at the first native Agnocast failure. The
+two outstanding Cyclone groups were collected independently with run_case.py.
+
+The Agnocast crop process exited on signal 11 in FilterBase::is_valid, called
+by faster_input_indices_callback on the Agnocast executor. No complete
+Agnocast run exists. The installed sensor_msgs/PointCloud2 C++ struct uses
+rosidl::Buffer for data even with ordinary CPU storage. Input validation calls
+cloud->data.size(); the installed rosidl_buffer/buffer.hpp implements size()
+through a virtual call on impl_. Sharing the heap allocation does not provide
+the receiving process with the publisher's C++ virtual dispatch addresses.
+This is the likely cause from the stack and source inspection. The successful
+upstream library tests and wrapper tests do not cover this cross-process
+PointCloud2 representation. The kernel module required no change.
+
+A replacement must arrange receiver-local buffer state or use a separately
+identified transport representation. Keep any copy/translation costs in the
+measurement. A vector-backed compatibility message would answer a different
+benchmark question. Changing the ROS buffer implementation remains a separate
+planned experiment. The matched native Agnocast baseline and the migration
+performance decision are open.

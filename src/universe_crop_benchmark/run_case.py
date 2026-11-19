@@ -4,6 +4,7 @@ import argparse
 import csv
 import os
 from pathlib import Path
+import resource
 import signal
 import subprocess
 import tempfile
@@ -14,6 +15,7 @@ from ament_index_python.packages import get_package_prefix
 parser = argparse.ArgumentParser()
 parser.add_argument("transport", choices=["cyclone", "agnocast"])
 parser.add_argument("csv", type=Path)
+parser.add_argument("--resources", type=Path)
 args = parser.parse_args()
 out = args.csv.resolve()
 if out.exists():
@@ -23,7 +25,13 @@ env = dict(os.environ, RMW_IMPLEMENTATION="rmw_cyclonedds_cpp",
            ENABLE_AGNOCAST=str(int(args.transport == "agnocast")), AGNOCAST_BRIDGE_MODE="OFF",
            AGNOCAST_NO_DISCOVERY_AGENT="1")
 if args.transport == "agnocast":
-    env["LD_PRELOAD"] = str(Path(get_package_prefix("rclcpp")) / "lib/libagnocast_heaphook.so")
+    for prefix in (get_package_prefix("agnocastlib"), get_package_prefix("rclcpp")):
+        hook = Path(prefix) / "lib/libagnocast_heaphook.so"
+        if hook.is_file():
+            env["LD_PRELOAD"] = str(hook)
+            break
+    else:
+        raise FileNotFoundError("libagnocast_heaphook.so in Agnocast or ROS install prefix")
 config = (Path(__file__).resolve().parents[1] / "universe/autoware_universe/sensing/"
           "autoware_pointcloud_preprocessor/config/crop_box_filter_node.param.yaml")
 children = []
@@ -63,3 +71,10 @@ with tempfile.TemporaryDirectory() as tmp:
             except subprocess.TimeoutExpired:
                 child.kill()
                 child.wait()
+
+if args.resources:
+    usage = resource.getrusage(resource.RUSAGE_CHILDREN)
+    with args.resources.open("x") as f:
+        writer = csv.writer(f, lineterminator="\n")
+        writer.writerow(("verified_frames", "child_user_s", "child_system_s", "largest_child_maxrss_kib"))
+        writer.writerow((60, usage.ru_utime, usage.ru_stime, usage.ru_maxrss))

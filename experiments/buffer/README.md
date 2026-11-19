@@ -80,3 +80,14 @@ attributing a difference to transport.
 Executor isolation, mixed and remote readers, bridging and restart behavior
 remain open migration decisions. The previous [migration roadmap](https://github.com/paulsohn/autoware/blob/0693fc37/src/buffer_pointcloud_probe/MIGRATION.md)
 describes the conditions for revisiting the default backend and Bazel adoption.
+
+### Lyrical reference status
+
+On the laptop, Agnocast 2.4.1 passed its Lyrical library and heap-hook suites
+with the existing kernel module. The enabled wrapper also passed its C++ suite.
+The three-process Universe crop is a separate gate. Its unchanged Lyrical
+PointCloud2 message reached the crop callback over native Agnocast, where the
+process exited with SIGSEGV during input validation. No Agnocast timing or
+1.20× threshold is available for this pipeline. The same binaries with Cyclone
+verified 180 frames, with a pooled median of 1.514 ms and p95 of 1.745 ms.
+[Raw Cyclone samples and resource usage](../../src/universe_crop_benchmark/results-lyrical/)
