@@ -85,9 +85,21 @@ describes the conditions for revisiting the default backend and Bazel adoption.
 
 On the laptop, Agnocast 2.4.1 passed its Lyrical library and heap-hook suites
 with the existing kernel module. The enabled wrapper also passed its C++ suite.
-The three-process Universe crop is a separate gate. Its unchanged Lyrical
-PointCloud2 message reached the crop callback over native Agnocast, where the
-process exited with SIGSEGV during input validation. No Agnocast timing or
-1.20× threshold is available for this pipeline. The same binaries with Cyclone
-verified 180 frames, with a pooled median of 1.514 ms and p95 of 1.745 ms.
-[Raw Cyclone samples and resource usage](../../src/universe_crop_benchmark/results-lyrical/)
+The three-process Universe CPU crop now passes with native Agnocast and
+Cyclone. The CPU readers take a const reference to the vector in the generated
+PointCloud2 buffer. This avoids calling a virtual method through a foreign
+process's backend. The unmodified ROS libraries and kernel module were used.
+
+| Lyrical Universe pipeline | Verified frames | Median (ms) | p95 (ms) | Child CPU (s/run) | Largest child peak RSS (MiB) |
+|---|---:|---:|---:|---:|---:|
+| Native Agnocast | 180/180 | 0.375 | 0.632 | 0.604 | 134.3 |
+| Cyclone DDS | 180/180 | 1.232 | 1.565 | 0.685 | 130.0 |
+
+The 1.20× candidate ceilings on this laptop are 0.450 ms median and
+0.758 ms p95 (rounded). Latencies pool the last 50 of 60 frames per process
+group. Resource columns give medians across three complete runs. Each group's
+CPU total includes child user and system time through teardown. Both modes
+requested SensorDataQoS; native Agnocast reports it ignores best-effort
+reliability. The crop uses the production Agnocast CIE or the ROS single-threaded
+executor respectively. A matched buffer-backend comparison remains open.
+[Samples and resource usage](../../src/universe_crop_benchmark/results-lyrical-cpu-view/)

@@ -339,3 +339,39 @@ measurement. A vector-backed compatibility message would answer a different
 benchmark question. Changing the ROS buffer implementation remains a separate
 planned experiment. The matched native Agnocast baseline and the migration
 performance decision are open.
+
+### Fix CPU PointCloud2 reads on the Lyrical Universe Agnocast pipeline
+
+The Lyrical 5.2.1 rosidl_buffer header implements Buffer::size() through a
+virtual backend call. Its public conversion to const std::vector<uint8_t> &
+uses the cached CPU implementation's nonvirtual get_storage(). A reference
+to that vector lets the consumer read the shared payload while its incoming
+Agnocast message is alive. Use the view for native Agnocast size validation,
+CPU cropping and sink verification. The ordinary validation path retains its
+backend-aware size query. Keep independent height/stride/length checks and
+the point-by-point sink verifier. No schema change, ROS patch, payload copy
+for the view or kernel change is required. The crop still copies selected
+points into its output as before.
+
+This fix covers the measured native CPU allocation and CPU-only consumers.
+General virtual backend operations, foreign GPU backends and mixed/bridged
+readers require their own handling. AWF tracks the broader buffer integration
+in [Agnocast issue 1187](https://github.com/autowarefoundation/agnocast/issues/1187).
+
+With LYRICAL_ROOT pointing at the PCL-enabled Lyrical root from the preceding
+entry, repeat from the worktree root:
+
+```sh
+experiments/buffer/run-lyrical.sh bash experiments/buffer/build-universe-lyrical.sh
+BUFFER_RUNTIME_ONLY=1 experiments/buffer/run-lyrical.sh bash \
+  experiments/buffer/bench-universe-lyrical.sh build/agnocast-lyrical/cpu-view-results
+```
+
+Use a fresh results directory for each repetition. The harness now records
+a successful CSV only after verifying all frames and checking child exit
+statuses at teardown. Three fresh process groups per transport verified all
+360 frames. For 150 post-warmup samples per transport, native Agnocast
+median/p95 were 0.375/0.632 ms and Cyclone 1.232/1.565 ms. No buffer-backend
+candidate ran in this gate. Minimum host MemAvailable was 6,245 MiB during
+the serial build and 6,873 MiB during the runs. The earlier failed run and
+its Cyclone samples remain independently documented.

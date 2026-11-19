@@ -141,17 +141,18 @@ void CropBoxFilterComponent::faster_filter(
   int y_offset = input->fields[pcl::getFieldIndex(*input, "y")].offset;
   int z_offset = input->fields[pcl::getFieldIndex(*input, "z")].offset;
 
-  output.data.resize(input->data.size());
+  const std::vector<uint8_t> & input_data = input->data;
+  output.data.resize(input_data.size());
   size_t output_size = 0;
 
   int skipped_count = 0;
 
-  for (size_t global_offset = 0; global_offset + input->point_step <= input->data.size();
+  for (size_t global_offset = 0; global_offset + input->point_step <= input_data.size();
        global_offset += input->point_step) {
     Eigen::Vector4f point;
-    std::memcpy(&point[0], &input->data[global_offset + x_offset], sizeof(float));
-    std::memcpy(&point[1], &input->data[global_offset + y_offset], sizeof(float));
-    std::memcpy(&point[2], &input->data[global_offset + z_offset], sizeof(float));
+    std::memcpy(&point[0], &input_data[global_offset + x_offset], sizeof(float));
+    std::memcpy(&point[1], &input_data[global_offset + y_offset], sizeof(float));
+    std::memcpy(&point[2], &input_data[global_offset + z_offset], sizeof(float));
     point[3] = 1;
 
     if (!std::isfinite(point[0]) || !std::isfinite(point[1]) || !std::isfinite(point[2])) {
@@ -167,7 +168,7 @@ void CropBoxFilterComponent::faster_filter(
                            point[1] > param_.min_y && point[1] < param_.max_y &&
                            point[0] > param_.min_x && point[0] < param_.max_x;
     if ((!param_.negative && point_is_inside) || (param_.negative && !point_is_inside)) {
-      memcpy(&output.data[output_size], &input->data[global_offset], input->point_step);
+      memcpy(&output.data[output_size], &input_data[global_offset], input->point_step);
 
       if (transform_info.need_transform) {
         std::memcpy(&output.data[output_size + x_offset], &point[0], sizeof(float));

@@ -56,7 +56,6 @@ with tempfile.TemporaryDirectory() as tmp:
                 with samples.open() as f:
                     rows = list(csv.reader(f))
                 if len(rows) == 60 and [int(r[0]) for r in rows] == list(range(60)):
-                    out.write_bytes(samples.read_bytes())
                     break
             time.sleep(0.1)
         else:
@@ -71,6 +70,12 @@ with tempfile.TemporaryDirectory() as tmp:
             except subprocess.TimeoutExpired:
                 child.kill()
                 child.wait()
+
+    for child in children:
+        if child.returncode not in (0, -signal.SIGINT):
+            raise RuntimeError(f"{child.args} exited {child.returncode} during shutdown")
+    with out.open("xb") as f:
+        f.write(samples.read_bytes())
 
 if args.resources:
     usage = resource.getrusage(resource.RUSAGE_CHILDREN)

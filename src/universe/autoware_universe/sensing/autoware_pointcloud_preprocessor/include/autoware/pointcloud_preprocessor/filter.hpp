@@ -426,13 +426,18 @@ protected:
     std::uint64_t expected_data_size =
       static_cast<std::uint64_t>(cloud->height) * expected_row_step;
 
-    if (expected_data_size != cloud->data.size()) {
+    // Native Agnocast shares the publisher's CPU allocation. Read the vector itself
+    // so validation does not dispatch through a publisher-local Buffer backend.
+    const auto actual_data_size = kIsAgnocastNode && autoware::agnocast_wrapper::use_agnocast()
+                                    ? static_cast<const std::vector<uint8_t> &>(cloud->data).size()
+                                    : cloud->data.size();
+    if (expected_data_size != actual_data_size) {
       RCLCPP_WARN_THROTTLE(
         logger, clock, throttle_duration_ms,
         "Invalid PointCloud: data size mismatch. "
         "Expected: %zu (height %u * row_step %u), Got: %zu. "
         "Frame: '%s', Stamp: %d.%09u",
-        expected_data_size, cloud->height, cloud->row_step, cloud->data.size(),
+        expected_data_size, cloud->height, cloud->row_step, actual_data_size,
         cloud->header.frame_id.c_str(), cloud->header.stamp.sec, cloud->header.stamp.nanosec);
       return false;
     }

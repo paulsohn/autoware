@@ -7,6 +7,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <fstream>
+#include <vector>
 
 namespace benchmark {
 using Cloud = sensor_msgs::msg::PointCloud2;
@@ -72,13 +73,14 @@ private:
 
   void receive(const Cloud &msg) {
     const auto latency = (now() - rclcpp::Time(msg.header.stamp)).nanoseconds();
+    const std::vector<uint8_t> & data = msg.data;
     if (latency <= 0 || msg.header.frame_id != "base_link" || msg.width != points / 2 ||
       msg.point_step != sizeof(Point) || msg.height != 1 || msg.fields.size() != 6 ||
-      msg.row_step != msg.width * sizeof(Point) || msg.data.size() != msg.row_step)
+      msg.row_step != msg.width * sizeof(Point) || data.size() != msg.row_step)
       throw std::runtime_error("invalid crop output");
     for (unsigned i = 0; i < msg.width; ++i) {
       const auto point = sample(i * 2, frame_);
-      if (std::memcmp(msg.data.data() + i * sizeof(Point), &point, sizeof(Point)))
+      if (std::memcmp(data.data() + i * sizeof(Point), &point, sizeof(Point)))
         throw std::runtime_error("point, order, or frame mismatch");
     }
     csv_ << frame_++ << ',' << latency << std::endl;
