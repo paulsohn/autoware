@@ -1,0 +1,11 @@
+<package format="3">
+  <name>buffer_pointcloud_probe</name><version>0.1.0</version>
+  <description>Two-process Lyrical PointCloud2 buffer experiment.</description>
+  <maintainer email="paulsohn@users.noreply.github.com">Paul Sohn</maintainer>
+  <license>Apache-2.0</license>
+  <buildtool_depend>ament_cmake</buildtool_depend>
+  <depend>rclcpp</depend><depend>sensor_msgs</depend><depend>cuda_buffer</depend>
+  <depend>shmem_buffer</depend><exec_depend>cuda_buffer_backend</exec_depend>
+  <exec_depend>shmem_buffer_backend</exec_depend><exec_depend>rmw_zenoh_cpp</exec_depend>
+  <export><build_type>ament_cmake</build_type></export>
+</package>

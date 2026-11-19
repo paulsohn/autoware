@@ -42,3 +42,14 @@ colcon build --base-paths src/core/autoware_core/common/autoware_agnocast_wrappe
    the guarded environment. It supplies the rclcpp version header and the
    packaged GoogleTest model to one cppcheck worker. The baseline generic
    pub/sub test executor setup required no patch for the disabled build.
+
+## Fresh Lyrical backend probes
+
+Built the CUDA backend, POSIX shared-memory backend and their two message
+packages from the pins in a6e04807. Built buffer_pointcloud_probe from its
+historical source fixture. No old install prefix or samples were imported.
+In order, run run-case.sh with cuda/native, cuda/mixed, shmem/native and
+shmem/mixed (the backend and mode are separate arguments). All six
+subscriber processes checked 12 ordered frames and re-read the first after
+the last. In each mixed run an ordinary CPU reader received the same stream.
+The wrapper-disabled test and probes shared a Lyrical overlay built here.

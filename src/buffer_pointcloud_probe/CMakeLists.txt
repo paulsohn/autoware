@@ -1,0 +1,13 @@
+cmake_minimum_required(VERSION 3.20)
+project(buffer_pointcloud_probe)
+find_package(ament_cmake REQUIRED)
+find_package(sensor_msgs REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(cuda_buffer REQUIRED)
+find_package(shmem_buffer REQUIRED)
+find_package(CUDAToolkit REQUIRED)
+add_executable(probe probe.cpp)
+target_link_libraries(probe PRIVATE rclcpp::rclcpp ${sensor_msgs_TARGETS}
+  cuda_buffer::cuda_buffer shmem_buffer::shmem_buffer CUDA::cudart)
+install(TARGETS probe DESTINATION lib/${PROJECT_NAME})
+ament_package()
