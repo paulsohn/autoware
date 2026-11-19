@@ -31,7 +31,7 @@ add_library(agnocast_thread_configurator SHARED
   src/non_ros_thread_ipc.cpp
   src/announcement_sources.cpp
 )
-ament_target_dependencies(agnocast_thread_configurator rclcpp agnocast_cie_config_msgs)
+target_link_libraries(agnocast_thread_configurator PUBLIC rclcpp::rclcpp ${agnocast_cie_config_msgs_TARGETS})
 
 add_executable(
   thread_configurator_node
@@ -39,7 +39,6 @@ add_executable(
   src/thread_configurator_node.cpp
   src/prerun_node.cpp
 )
-ament_target_dependencies(thread_configurator_node rclcpp agnocast_cie_config_msgs)
 target_link_libraries(thread_configurator_node
   yaml-cpp agnocast_thread_configurator agnocast_thread_configurator_core
 )
@@ -53,7 +52,6 @@ add_executable(
   src/prerun_node_main.cpp
   src/prerun_node.cpp
 )
-ament_target_dependencies(prerun_node rclcpp agnocast_cie_config_msgs)
 target_link_libraries(prerun_node
   yaml-cpp agnocast_thread_configurator agnocast_thread_configurator_core
 )

@@ -196,3 +196,25 @@ The guard measured a minimum of 9,458 MiB of available host memory. This
 failure precedes kernel access and timing. Next, check upstream for the
 target-linking migration, rebuild serially, then validate the library, heap
 hook and Universe pipeline together before collecting latency samples.
+
+### Validate the CIE prerequisite on Lyrical
+
+AWF Agnocast main still called ament_target_dependencies for the configurator
+library and both consumers on inspection. An AWF Agnocast issue/PR search for
+“Lyrical” returned no match. Following the exported-target pattern of AWF
+autoware_core PR 1540, link rclcpp::rclcpp and the generated message targets
+publicly on the configurator. Both executables inherit those dependencies.
+This is a local Agnocast patch. The existing kernel module is unchanged.
+
+Repeat the preceding guarded build with BUILD_TESTING=ON and only the two
+CIE package paths. Source build/agnocast-lyrical/install/local_setup.bash.
+In the offline namespace, set XML_CATALOG_FILES to a libxml catalog mapping
+http://download.ros.org/schema/package_format3.xsd to a local copy of
+package_format3.xsd with package_common.xsd alongside it, both from
+ros-infrastructure/rep's xsd directory. With the same build and install bases
+run colcon test for those two packages with --executor sequential
+--return-code-on-test-failure, then colcon test-result --test-result-base
+build/agnocast-lyrical/obj. Both packages passed (three message-package
+checks and five configurator test executables). Colcon reported 147 tests,
+zero errors, failures or skips. Minimum host MemAvailable during the build
+was 7,877 MiB. No Agnocast transport timing is implied by these tests.
