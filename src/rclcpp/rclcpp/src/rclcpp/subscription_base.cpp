@@ -54,7 +54,9 @@ SubscriptionBase::SubscriptionBase(
   type_support_(type_support_handle),
   delivered_message_kind_(delivered_message_kind)
 {
-  auto custom_deletor = [node_handle = this->node_handle_](rcl_subscription_t * rcl_subs)
+  auto custom_deletor =
+    [node_handle = this->node_handle_, context = node_base_->get_context()](
+    rcl_subscription_t * rcl_subs) mutable
     {
       if (rcl_subscription_fini(rcl_subs, node_handle.get()) != RCL_RET_OK) {
         RCLCPP_ERROR(
@@ -64,6 +66,10 @@ SubscriptionBase::SubscriptionBase(
         rcl_reset_error();
       }
       delete rcl_subs;
+      // A retained subscription loan may outlive the C++ node and executor.
+      // Finalize the node handle before releasing its context.
+      node_handle.reset();
+      context.reset();
     };
 
   subscription_handle_ = std::shared_ptr<rcl_subscription_t>(
@@ -332,16 +338,10 @@ SubscriptionBase::can_loan_messages() const
 {
   bool retval = rcl_subscription_can_loan_messages(subscription_handle_.get());
   if (retval) {
-    // TODO(clalancette): The loaned message interface is currently not safe to use with
-    // shared_ptr callbacks.  If a user takes a copy of the shared_ptr, it can get freed from
-    // underneath them via rcl_return_loaned_message_from_subscription().  The correct solution is
-    // to return the loaned message in a custom deleter, but that needs to be carefully handled
-    // with locking.  Warn the user about this until we fix it.
     RCLCPP_WARN_ONCE(
       this->node_logger_,
-      "Loaned messages are only safe with const ref subscription callbacks. "
-      "If you are using any other kind of subscriptions, "
-      "set the ROS_DISABLE_LOANED_MESSAGES environment variable to 1 (the default).");
+      "Retaining subscription loans requires typed subscriptions built with shared loan ownership. "
+      "Legacy raw loan handlers must finish using the sample before returning.");
   }
   return retval;
 }

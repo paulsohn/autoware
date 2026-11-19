@@ -45,6 +45,20 @@ using namespace std::chrono_literals;
 
 using rclcpp::Executor;
 
+// The virtual loaned handler accepts a raw pointer. Carry its owner through
+// synchronous dispatch without changing that interface or SubscriptionBase's layout.
+static thread_local const std::shared_ptr<void> * dispatched_loan = nullptr;
+
+std::shared_ptr<void>
+rclcpp::SubscriptionBase::share_dispatched_loan(void * message)
+{
+  if (dispatched_loan && dispatched_loan->get() == message) {
+    return *dispatched_loan;
+  }
+  // A direct caller of the raw handler remains responsible for its storage.
+  return std::shared_ptr<void>(message, [](void *) {});
+}
+
 /// Mask to indicate to the waitset to only add the subscription.
 /// The events and intraprocess waitable are already added via the callback group.
 static constexpr rclcpp::SubscriptionWaitSetMask kDefaultSubscriptionMask = {true, false, false};
@@ -564,19 +578,15 @@ Executor::execute_subscription(const rclcpp::SubscriptionBase::SharedPtr & subsc
     case rclcpp::DeliveredMessageKind::ROS_MESSAGE:
       {
         if (subscription->can_loan_messages()) {
-          // This is the case where a loaned message is taken from the middleware via
-          // inter-process communication, given to the user for their callback,
-          // and then returned.
+          auto handle = subscription->get_subscription_handle();
           void * loaned_msg = nullptr;
-          // TODO(wjwwood): refactor this into methods on subscription when LoanedMessage
-          //   is extened to support subscriptions as well.
           take_and_do_error_handling(
             "taking a loaned message from topic",
             subscription->get_topic_name(),
             [&]()
             {
               rcl_ret_t ret = rcl_take_loaned_message(
-                subscription->get_subscription_handle().get(),
+                handle.get(),
                 &loaned_msg,
                 &message_info.get_rmw_message_info(),
                 nullptr);
@@ -588,20 +598,19 @@ Executor::execute_subscription(const rclcpp::SubscriptionBase::SharedPtr & subsc
               }
               return true;
             },
-            [&]() {subscription->handle_loaned_message(loaned_msg, message_info);});
-          if (nullptr != loaned_msg) {
-            rcl_ret_t ret = rcl_return_loaned_message_from_subscription(
-              subscription->get_subscription_handle().get(), loaned_msg);
-            if (RCL_RET_OK != ret) {
-              RCLCPP_ERROR(
-                rclcpp::get_logger("rclcpp"),
-                "rcl_return_loaned_message_from_subscription() failed for subscription on topic "
-                "'%s': %s",
-                subscription->get_topic_name(), rcl_get_error_string().str);
-              rcl_reset_error();
-            }
-            loaned_msg = nullptr;
-          }
+            [&]() {
+              std::shared_ptr<void> owner(loaned_msg, [handle](void * msg) {
+                if (rcl_return_loaned_message_from_subscription(handle.get(), msg) != RCL_RET_OK) {
+                  RCLCPP_ERROR(
+                    rclcpp::get_logger("rclcpp"), "Failed to return subscription loan: %s",
+                    rcl_get_error_string().str);
+                  rcl_reset_error();
+                }
+              });
+              auto previous = std::exchange(dispatched_loan, &owner);
+              RCPPUTILS_SCOPE_EXIT(dispatched_loan = previous;);
+              subscription->handle_loaned_message(loaned_msg, message_info);
+            });
         } else {
           // This case is taking a copy of the message data from the middleware via
           // inter-process communication.

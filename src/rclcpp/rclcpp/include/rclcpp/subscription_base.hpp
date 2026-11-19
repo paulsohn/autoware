@@ -638,6 +638,11 @@ public:
   // ===============================================================================================
 
 protected:
+  /// Share the executor's return-on-last-release owner during loaned dispatch.
+  RCLCPP_PUBLIC
+  static std::shared_ptr<void>
+  share_dispatched_loan(void * message);
+
   template<typename EventCallbackT>
   void
   add_event_handler(
