@@ -868,3 +868,9 @@ local_path_override(
     module_name = "autoware_utils",
     path = "src/core/autoware_utils/autoware_utils",
 )
+
+bazel_dep(name = "perception_utils", version = "0.0.0")
+local_path_override(
+    module_name = "perception_utils",
+    path = "src/universe/autoware_universe/perception/perception_utils",
+)

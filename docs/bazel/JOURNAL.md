@@ -8498,3 +8498,34 @@ failures/skips; no implementation or original test changes. Targeted buildifier,
 clang-format and whitespace checks pass. This facade introduces no new utility
 algorithm or middleware behavior, so no transport matrix or Fast DDS check is
 required. Perception utilities, messages and the model/YOLOX boundaries follow.
+
+## 2026-11-19: Phase 6.4.4 — Perception utilities
+
+Purpose: prepare YOLOX's local run-length mask encoder without omitting the
+rest of perception_utils. Inspect its CMake/package, all three implementations
+and the complete existing suite: IoU BEV suppression (five cases), class
+remapping (two) and run-length encode/decode (one). The package also exports the
+existing prime_synchronizer.hpp header. Reuse the accepted local object-
+recognition, message and geometry providers and registry OpenCV/RCLCPP inputs.
+
+Add local MODULE/BUILD/root override, a header/source library and shared export.
+Collect the complete transitive dynamic providers, including OpenCV itself.
+Expose each original test unchanged. test_utils.cpp supplies main and therefore
+links gtest, while the other two link gtest_main. Initial setup failures were a
+duplicate main and then missing cv::Mat::zeros: allowing the utility shared
+library to own OpenCV statically pruned methods not referenced by that library.
+Declaring @rosdistro//cc:opencv as a separate dynamic provider preserves its
+complete export for both library and test consumers.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=no-agnocast --local_test_jobs=1 \
+  --nocache_test_results --test_output=errors @perception_utils//...
+```
+
+Final combined utility invocation completes in 4.195 seconds; all eight original
+cases pass across three targets (0.3/0.4/0.3 seconds), no failures/errors/skips.
+No original source/test changes are required. Targeted buildifier and whitespace
+checks pass. This adds no changed DDS behavior or Agnocast backend; no Fast DDS
+check or broad communication matrix was run. Next: local Tier 4 interfaces and
+real model resources before the whole YOLOX gate.

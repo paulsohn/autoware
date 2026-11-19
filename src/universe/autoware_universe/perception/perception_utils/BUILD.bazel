@@ -1,0 +1,91 @@
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "perception_utils_library",
+    srcs = [
+        "src/detection_class_remapper.cpp",
+        "src/iou_bev_nms.cpp",
+        "src/run_length_encoder.cpp",
+    ],
+    hdrs = glob(["include/**/*.hpp"]),
+    strip_include_prefix = "include",
+    deps = [
+        "@autoware_object_recognition_utils",
+        "@autoware_perception_msgs//:cc",
+        "@autoware_utils_geometry",
+        "@rclcpp//:rclcpp_library",
+        "@rosdistro//cc:opencv_library",
+        "@std_msgs//:cc",
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = [
+        "@rosdistro//cc:opencv",
+        "@autoware_object_recognition_utils//:runtime_dynamic_deps",
+        "@autoware_perception_msgs//:cc_shared",
+        "@rclcpp//:rclcpp",
+        "@std_msgs//:cc_shared",
+    ],
+)
+
+cc_shared_library(
+    name = "perception_utils",
+    dynamic_deps = [":runtime_dynamic_deps"],
+    deps = [":perception_utils_library"],
+)
+
+cc_test(
+    name = "test_iou_bev_nms",
+    srcs = [
+        "test/detection_test_utils.hpp",
+        "test/test_iou_bev_nms.cpp",
+    ],
+    dynamic_deps = [
+        ":perception_utils",
+        ":runtime_dynamic_deps",
+    ],
+    env = {"ENABLE_AGNOCAST": "0"},
+    deps = [
+        ":perception_utils_library",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "test_detection_class_remapper",
+    srcs = [
+        "test/detection_test_utils.hpp",
+        "test/test_detection_class_remapper.cpp",
+    ],
+    dynamic_deps = [
+        ":perception_utils",
+        ":runtime_dynamic_deps",
+    ],
+    env = {"ENABLE_AGNOCAST": "0"},
+    deps = [
+        ":perception_utils_library",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "test_utils",
+    srcs = [
+        "test/detection_test_utils.hpp",
+        "test/test_utils.cpp",
+    ],
+    dynamic_deps = [
+        ":perception_utils",
+        ":runtime_dynamic_deps",
+    ],
+    env = {"ENABLE_AGNOCAST": "0"},
+    deps = [
+        ":perception_utils_library",
+        "@googletest//:gtest",
+    ],
+)
