@@ -17,7 +17,7 @@
 
 #include <vector>
 
-#if (defined(_MSC_VER) or (defined(__GNUC__) and (7 <= __GNUC_MAJOR__)))
+#if __has_include(<filesystem>)
 #include <filesystem>
 namespace fs = ::std::filesystem;
 #else

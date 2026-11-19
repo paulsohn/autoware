@@ -8722,3 +8722,39 @@ Model storage/index/build gates are complete. YOLOX inference and affected
 launcher path/dependency changes belong to the following consumer task. Other model repos,
 the global model data_path removal and flat diffusion validation remain their
 own consumer migrations; no HOME fallback is allowed for this adopted model.
+
+## 2026-11-19: YOLOX dependency-header and filesystem compatibility
+
+The complete local YOLOX build exposes three compiler/dependency blockers:
+experimental/filesystem is absent from libc++21; the single-image node selects
+that header through nonexistent __GNUC_MAJOR__; and label.cpp instantiates
+stringstream without including sstream. Use the C++17 filesystem header/namespace,
+select the single-image node's existing fallback with __has_include, and add the
+direct sstream include. No inference, decoder or original test behavior changes.
+
+A further detector-header failure is a dependency-layout mismatch: the selected
+RCR provider exposes TartanLlama expected under tl/expected.hpp, while the local
+snapshot expects the ROS tl_expected wrapper. Inspect the current AWF header
+history and PR #13622's actual patch. Match its already merged correction:
+include tl/expected.hpp and replace package.xml's tl_expected dependency with
+libexpected-dev. Bazel consumes the pinned @rosdistro//cc:tl_expected alias to
+BCR tl-expected 1.3.1, never an apt installation. Record matching and unmatched
+upstream work separately in UPSTREAM_AWF.md.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel build --config=no-agnocast @autoware_tensorrt_yolox//...
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=no-agnocast --local_test_jobs=1 \
+  --nocache_test_results --test_output=errors @autoware_tensorrt_yolox//... \
+  //bazel/tests:yolox_detector_test //bazel/tests:yolox_node_test
+```
+
+All twenty-two initial package targets build in 24.168 seconds. With the complete
+runtime declarations from the following integration entry, all fourteen original
+cases pass: ten labels (0.2 seconds), three real GPU detector cases (38.8 seconds)
+and one GPU/ROS-node case (22.1 seconds), zero failures/errors/skips. Both ONNX
+models build actual FP16 engines; real-image detection, segmentation and ROS
+outputs are checked. Source corrections remain separate from Bazel definitions.
+Targeted clang-format/whitespace checks pass. Older ROS/CMake builds, INT8
+calibration, other SDK versions and ARM are not tested.

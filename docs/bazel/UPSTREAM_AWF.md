@@ -988,3 +988,39 @@ PRs 13167, 11222 and 8165 for other camera consumers; those search matches do
 not establish a decompressor fix or local validation. Reproduce with the
 Phase 6.4.4 complete module command in the journal. The source fix is committed
 separately; older ROS/CMake and ARM have not been tested.
+
+## YOLOX standard dependency and filesystem headers
+
+- [x] Associate the expected header/manifest correction with matching merged
+  [AWF PR #13622](https://github.com/autowarefoundation/autoware_universe/pull/13622)
+  ([commit c992af10](https://github.com/autowarefoundation/autoware_universe/commit/c992af10f4c463fda78a06348c139357b9f195ad)).
+  Reviewed 2026-11-19; merged 2026-11-13. Its actual YOLOX changes use
+  tl/expected.hpp and libexpected-dev, replacing the ROS tl_expected wrapper.
+- [ ] Associate the filesystem/sstream corrections with a matching PR. No
+  matching correction is associated; not submitted upstream.
+
+Local experiment: Clang/libc++21 cannot find experimental/filesystem; the
+single-image node selects it through nonexistent __GNUC_MAJOR__. label.cpp
+also lacks the direct sstream include needed to instantiate stringstream.
+Use std::filesystem, __has_include for the existing conditional fallback and
+the direct standard header. Separately align the expected include/package.xml
+with #13622 after the actual build exposes the missing wrapper header. The
+Bazel provider is pinned tl-expected 1.3.1, not a host libexpected-dev install.
+
+Checked upstream main 3f14a7bbba980fb6c337f4c55608f6b9ea81c88c:
+[label.cpp](https://github.com/autowarefoundation/autoware_universe/blob/3f14a7bbba980fb6c337f4c55608f6b9ea81c88c/perception/autoware_tensorrt_yolox/src/label.cpp),
+[tensorrt_yolox.cpp](https://github.com/autowarefoundation/autoware_universe/blob/3f14a7bbba980fb6c337f4c55608f6b9ea81c88c/perception/autoware_tensorrt_yolox/src/tensorrt_yolox.cpp)
+and the
+[single-image node](https://github.com/autowarefoundation/autoware_universe/blob/3f14a7bbba980fb6c337f4c55608f6b9ea81c88c/perception/autoware_tensorrt_yolox/src/yolox_single_image_inference_node.cpp)
+still have the filesystem/direct-header patterns. #13622 fixes the expected
+layout; it is not evidence for those other corrections. The
+[Lyrical tracker](https://github.com/autowarefoundation/autoware/issues/7404)
+and related [toolchain tracker](https://github.com/autowarefoundation/autoware_universe/issues/13590)
+are broader platform work. These are dependency/standard-library compatibility
+changes, not Lyrical-only algorithm changes.
+
+Validation: the entire package builds and all fourteen original cases pass,
+including real GPU detection/segmentation and ROS-node delivery, with zero skips.
+The Phase 6.4.4 journal records the complete inputs, runtime fixes and commands.
+Upstream CMake/GCC, older ROS, INT8 calibration and ARM are not tested. The local
+source correction is committed separately from the build definitions.

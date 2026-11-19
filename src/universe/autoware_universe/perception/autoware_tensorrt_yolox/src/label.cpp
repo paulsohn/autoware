@@ -14,14 +14,14 @@
 
 #include "autoware/tensorrt_yolox/label.hpp"
 
-#include <experimental/filesystem>
-
 #include <assert.h>
 
 #include <algorithm>
+#include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <optional>
+#include <sstream>
 #include <string>
 #include <unordered_map>
 #include <utility>
@@ -104,7 +104,7 @@ std::optional<std::vector<std::vector<std::string>>> read_csv(const std::string 
 
 bool file_exists(const std::string & file_name, bool verbose)
 {
-  if (!std::experimental::filesystem::exists(std::experimental::filesystem::path(file_name))) {
+  if (!std::filesystem::exists(std::filesystem::path(file_name))) {
     if (verbose) {
       std::cout << "File does not exist : " << file_name << std::endl;
     }
