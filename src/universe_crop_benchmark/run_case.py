@@ -13,7 +13,7 @@ import time
 from ament_index_python.packages import get_package_prefix
 
 parser = argparse.ArgumentParser()
-parser.add_argument("transport", choices=["cyclone", "agnocast"])
+parser.add_argument("transport", choices=["cyclone", "agnocast", "zenoh"])
 parser.add_argument("csv", type=Path)
 parser.add_argument("--resources", type=Path)
 args = parser.parse_args()
@@ -21,7 +21,8 @@ out = args.csv.resolve()
 if out.exists():
     raise FileExistsError(out)
 bin_dir = Path(get_package_prefix("universe_crop_benchmark")) / "lib/universe_crop_benchmark"
-env = dict(os.environ, RMW_IMPLEMENTATION="rmw_cyclonedds_cpp",
+rmw = "rmw_zenoh_cpp" if args.transport == "zenoh" else "rmw_cyclonedds_cpp"
+env = dict(os.environ, RMW_IMPLEMENTATION=rmw,
            ENABLE_AGNOCAST=str(int(args.transport == "agnocast")), AGNOCAST_BRIDGE_MODE="OFF",
            AGNOCAST_NO_DISCOVERY_AGENT="1")
 if args.transport == "agnocast":
@@ -42,6 +43,11 @@ with tempfile.TemporaryDirectory() as tmp:
         children.append(proc)
 
     try:
+        if args.transport == "zenoh":
+            launch([Path(get_package_prefix(rmw)) / "lib/rmw_zenoh_cpp/rmw_zenohd"], "router")
+            time.sleep(0.6)
+            if children[-1].poll() is not None:
+                raise RuntimeError("Zenoh router startup failed")
         launch([bin_dir / "endpoint"], "sub")
         launch([bin_dir / "crop", "--ros-args", "--params-file", config,
                 "-p", "input_frame:=base_link", "-p", "output_frame:=base_link"], "filter")

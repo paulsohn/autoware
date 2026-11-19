@@ -375,3 +375,20 @@ median/p95 were 0.375/0.632 ms and Cyclone 1.232/1.565 ms. No buffer-backend
 candidate ran in this gate. Minimum host MemAvailable was 6,245 MiB during
 the serial build and 6,873 MiB during the runs. The earlier failed run and
 its Cyclone samples remain independently documented.
+
+### Add the ordinary Zenoh CPU control to the Lyrical Universe reference
+
+With the same installed binaries and CPU-backed PointCloud2, select
+rmw_zenoh_cpp with ENABLE_AGNOCAST=0. Start a fresh rmw_zenohd for each
+group. Child CPU time includes the router, and the RSS statistic is the
+largest peak among the router, source, filter and sink. No explicit rosidl
+shared-memory buffer backend was selected.
+
+For this addition, source build/agnocast-lyrical/install/local_setup.bash in
+the guarded Lyrical runtime and invoke src/universe_crop_benchmark/run_case.py
+zenoh with a fresh latency CSV and --resources CSV three times. All 180 frames
+passed content and order checks. Across 150 post-warmup samples, median/p95
+were 0.981/1.218 ms. Minimum host MemAvailable was 6,566 MiB. The table
+retains the existing Agnocast and Cyclone measurements from the same build.
+For future full comparisons, bench-universe-lyrical.sh includes all three
+modes and rotates their order across rounds.

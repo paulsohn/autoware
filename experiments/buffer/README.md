@@ -64,7 +64,9 @@ nearest-rank p95 over 150 samples.
 
 Build and validate the existing Universe Agnocast path on Lyrical first. Use
 the laptop as the reference host and report additional hosts independently.
-For a matched Lyrical target-pipeline comparison, divide each candidate latency
+Include the ordinary Zenoh CPU control alongside Cyclone DDS and native Agnocast
+in pipeline comparison tables. Label explicit shared-memory and CUDA buffer
+backends separately. For a matched Lyrical target-pipeline comparison, divide each candidate latency
 statistic by the corresponding Agnocast statistic. Both the median ratio and
 the p95 ratio must be at most 1.20. Report the absolute values and the ratios.
 Report other metrics directly alongside Agnocast, including CPU usage, memory
@@ -85,8 +87,8 @@ describes the conditions for revisiting the default backend and Bazel adoption.
 
 On the laptop, Agnocast 2.4.1 passed its Lyrical library and heap-hook suites
 with the existing kernel module. The enabled wrapper also passed its C++ suite.
-The three-process Universe CPU crop now passes with native Agnocast and
-Cyclone. The CPU readers take a const reference to the vector in the generated
+The three-process Universe CPU crop now passes with native Agnocast, Cyclone DDS and
+Zenoh. The CPU readers take a const reference to the vector in the generated
 PointCloud2 buffer. This avoids calling a virtual method through a foreign
 process's backend. The unmodified ROS libraries and kernel module were used.
 
@@ -94,12 +96,13 @@ process's backend. The unmodified ROS libraries and kernel module were used.
 |---|---:|---:|---:|---:|---:|
 | Native Agnocast | 180/180 | 0.375 | 0.632 | 0.604 | 134.3 |
 | Cyclone DDS | 180/180 | 1.232 | 1.565 | 0.685 | 130.0 |
+| Zenoh (CPU buffer) | 180/180 | 0.981 | 1.218 | 1.391 | 290.2 |
 
 The 1.20× candidate ceilings on this laptop are 0.450 ms median and
 0.758 ms p95 (rounded). Latencies pool the last 50 of 60 frames per process
 group. Resource columns give medians across three complete runs. Each group's
-CPU total includes child user and system time through teardown. Both modes
-requested SensorDataQoS; native Agnocast reports it ignores best-effort
-reliability. The crop uses the production Agnocast CIE or the ROS single-threaded
-executor respectively. A matched buffer-backend comparison remains open.
+CPU total includes child user and system time through teardown, including the router for Zenoh. The Zenoh row was
+collected separately on the same binaries. All modes requested SensorDataQoS; native Agnocast reports it ignores best-effort
+reliability. The crop uses the production CIE for Agnocast and the ROS single-threaded
+executor for Cyclone and Zenoh. A matched buffer-backend comparison remains open.
 [Samples and resource usage](../../src/universe_crop_benchmark/results-lyrical-cpu-view/)

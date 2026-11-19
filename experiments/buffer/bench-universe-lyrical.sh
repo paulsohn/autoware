@@ -7,10 +7,13 @@ p=src/universe_crop_benchmark
 out=${1:?supply a new results directory}
 mkdir "$out"
 for round in 1 2 3; do
-  modes=(cyclone agnocast)
-  if (( round == 2 )); then modes=(agnocast cyclone); fi
+  case "$round" in
+    1) modes=(cyclone agnocast zenoh) ;;
+    2) modes=(agnocast zenoh cyclone) ;;
+    3) modes=(zenoh cyclone agnocast) ;;
+  esac
   for mode in "${modes[@]}"; do
     python3 "$p/run_case.py" "$mode" "$out/$mode-$round.csv" --resources "$out/$mode-$round-resources.csv"
   done
 done
-python3 src/crop_pipeline_benchmark/summarize.py "$out" cyclone agnocast
+python3 src/crop_pipeline_benchmark/summarize.py "$out" cyclone agnocast zenoh
