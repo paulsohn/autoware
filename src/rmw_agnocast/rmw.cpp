@@ -1,7 +1,7 @@
 #include <agnocast/node/agnocast_node.hpp>
 #include <agnocast/node/agnocast_only_single_threaded_executor.hpp>
-
-#include <autoware_planning_msgs/msg/trajectory.hpp>
+#include <rclcpp/serialized_message.hpp>
+#include <rosidl_typesupport_introspection_cpp/field_types.hpp>
 
 #include <dlfcn.h>
 #include <rmw/error_handling.h>
@@ -13,8 +13,8 @@
 
 namespace
 {
-using Message = autoware_planning_msgs::msg::Trajectory;
-using Loan = agnocast::ipc_shared_ptr<const Message>;
+using Members = rosidl_typesupport_introspection_cpp::MessageMembers;
+using Loan = agnocast::ipc_shared_ptr<const void>;
 template <class F>
 F cyclone(const char * symbol)
 {
@@ -24,12 +24,52 @@ F cyclone(const char * symbol)
   return fn;
 }
 #define CYCLONE(name) cyclone<decltype(&name)>(#name)
-bool selected(const rosidl_message_type_support_t * ts, const char * topic)
+bool selected(const char * topic)
 {
   const char * enabled = std::getenv("AGNOCAST_RMW_TOPIC");
-  return enabled && std::strcmp(enabled, topic) == 0 &&
-         ts == rosidl_typesupport_cpp::get_message_type_support_handle<Message>();
+  return enabled && topic && std::strcmp(enabled, topic) == 0;
 }
+bool contains_buffer(const Members & members)
+{
+  for (size_t i = 0; i < members.member_count_; ++i) {
+    const auto & field = members.members_[i];
+    if (field.is_rosidl_buffer_) return true;
+    if (
+      field.type_id_ == rosidl_typesupport_introspection_cpp::ROS_TYPE_MESSAGE &&
+      contains_buffer(*static_cast<const Members *>(field.members_->data)))
+      return true;
+  }
+  return false;
+}
+struct Type
+{
+  const rosidl_message_type_support_t * ts;
+  const Members * members;
+  std::string name;
+  explicit Type(const rosidl_message_type_support_t * handle) : ts(handle)
+  {
+    auto intro = get_message_typesupport_handle(handle, "rosidl_typesupport_introspection_cpp");
+    if (!intro) throw std::runtime_error("native topics require C++ introspection");
+    members = static_cast<const Members *>(intro->data);
+    if (contains_buffer(*members))
+      throw std::runtime_error("native object loans cannot expose a foreign Buffer implementation");
+    name = members->message_namespace_;
+    for (size_t pos; (pos = name.find("::")) != std::string::npos;) name.replace(pos, 2, "/");
+    name += "/" + std::string(members->message_name_);
+  }
+  void destroy(void * p) const
+  {
+    members->fini_function(p);
+    ::operator delete(p);
+  }
+  rmw_ret_t copy(const void * from, void * to) const
+  {
+    rclcpp::SerializedMessage bytes;
+    auto & raw = bytes.get_rcl_serialized_message();
+    auto ret = CYCLONE(rmw_serialize)(from, ts, &raw);
+    return ret == RMW_RET_OK ? CYCLONE(rmw_deserialize)(&raw, ts, to) : ret;
+  }
+};
 rmw_ret_t error(const char * message)
 {
   RMW_SET_ERROR_MSG(message);
@@ -47,35 +87,62 @@ auto native_node(const rmw_node_t * owner)
 struct Writer
 {
   std::shared_ptr<agnocast::Node> node;
-  agnocast::Publisher<Message> pub;
+  Type type;
+  agnocast::TypeErasedPublisher pub;
   std::mutex mutex;
-  std::map<void *, agnocast::ipc_shared_ptr<Message>> borrowed;
-  Writer(const rmw_node_t * owner, const char * topic, const rmw_qos_profile_t & qos)
+  std::map<void *, agnocast::ipc_shared_ptr<void>> borrowed;
+  Writer(
+    const rmw_node_t * owner, const char * topic, const rmw_qos_profile_t & qos,
+    const rosidl_message_type_support_t * ts)
   : node(native_node(owner)),
+    type(ts),
     pub(
-      node.get(), topic, rclcpp::QoS(rclcpp::QoSInitialization::from_rmw(qos), qos), {},
+      node.get(), topic, type.name, rclcpp::QoS(rclcpp::QoSInitialization::from_rmw(qos), qos), {},
       agnocast::PublisherRole::AgnocastOnly)
   {
+  }
+  auto borrow()
+  {
+    auto loan = pub.borrow_loaned_message(type.members->size_of_);
+    try {
+      type.members->init_function(loan.get(), rosidl_runtime_cpp::MessageInitialization::ALL);
+    } catch (...) {
+      pub.cancel_message(std::move(loan), [](void * p) { ::operator delete(p); });
+      throw;
+    }
+    return loan;
+  }
+  void publish(agnocast::ipc_shared_ptr<void> && loan)
+  {
+    pub.publish(std::move(loan), [this](void * p) { type.destroy(p); });
+  }
+  void cancel(agnocast::ipc_shared_ptr<void> && loan)
+  {
+    pub.cancel_message(std::move(loan), [this](void * p) { type.destroy(p); });
   }
 };
 struct Reader
 {
   std::shared_ptr<agnocast::Node> node;
   using Guard = std::unique_ptr<rmw_guard_condition_t, decltype(&rmw_destroy_guard_condition)>;
+  Type type;
   Guard guard;
   std::mutex mutex;
   std::deque<Loan> pending;
   std::map<void *, Loan> held;
-  agnocast::Subscription<Message>::SharedPtr sub;
+  agnocast::Subscription<void>::SharedPtr sub;
   agnocast::AgnocastOnlySingleThreadedExecutor exec;
   std::thread thread;
-  Reader(const rmw_node_t * owner, const char * topic, const rmw_qos_profile_t & qos)
+  Reader(
+    const rmw_node_t * owner, const char * topic, const rmw_qos_profile_t & qos,
+    const rosidl_message_type_support_t * ts)
   : node(native_node(owner)),
+    type(ts),
     guard(CYCLONE(rmw_create_guard_condition)(owner->context), CYCLONE(rmw_destroy_guard_condition))
   {
     if (!guard) throw std::runtime_error("native wait guard creation failed");
-    sub = std::make_shared<agnocast::Subscription<Message>>(
-      node.get(), topic, rclcpp::QoS(rclcpp::QoSInitialization::from_rmw(qos), qos),
+    sub = std::make_shared<agnocast::Subscription<void>>(
+      node.get(), topic, type.name, rclcpp::QoS(rclcpp::QoSInitialization::from_rmw(qos), qos),
       [this, depth = qos.depth](Loan sample) {
         std::lock_guard lock(mutex);
         if (pending.size() == depth) pending.pop_front();
@@ -125,13 +192,13 @@ extern "C" rmw_publisher_t * rmw_create_publisher(
   const rmw_qos_profile_t * qos, const rmw_publisher_options_t * options)
 {
   auto fn = CYCLONE(rmw_create_publisher);
-  if (!selected(ts, topic)) return fn(node, ts, topic, qos, options);
+  if (!selected(topic)) return fn(node, ts, topic, qos, options);
   if (!supported(qos)) {
-    error("native trajectory requires volatile KeepLast");
+    error("native topic requires volatile KeepLast");
     return nullptr;
   }
   try {
-    auto state = std::make_shared<Writer>(node, topic, *qos);
+    auto state = std::make_shared<Writer>(node, topic, *qos, ts);
     auto pub = fn(node, ts, topic, qos, options);
     if (!pub) return nullptr;
     pub->can_loan_messages = true;
@@ -148,13 +215,13 @@ extern "C" rmw_subscription_t * rmw_create_subscription(
   const rmw_qos_profile_t * qos, const rmw_subscription_options_t * options)
 {
   auto fn = CYCLONE(rmw_create_subscription);
-  if (!selected(ts, topic)) return fn(node, ts, topic, qos, options);
+  if (!selected(topic)) return fn(node, ts, topic, qos, options);
   if (!supported(qos)) {
-    error("native trajectory requires volatile KeepLast");
+    error("native topic requires volatile KeepLast");
     return nullptr;
   }
   try {
-    auto state = std::make_shared<Reader>(node, topic, *qos);
+    auto state = std::make_shared<Reader>(node, topic, *qos, ts);
     auto sub = fn(node, ts, topic, qos, options);
     if (!sub) return nullptr;
     sub->can_loan_messages = true;
@@ -188,7 +255,7 @@ extern "C" rmw_ret_t rmw_borrow_loaned_message(
   auto w = lookup(writers, pub->data);
   if (!w) return CYCLONE(rmw_borrow_loaned_message)(pub, ts, msg);
   std::lock_guard lock(w->mutex);
-  auto loan = w->pub.borrow_loaned_message();
+  auto loan = w->borrow();
   *msg = loan.get();
   w->borrowed.emplace(*msg, std::move(loan));
   return RMW_RET_OK;
@@ -201,7 +268,7 @@ extern "C" rmw_ret_t rmw_publish_loaned_message(
   std::lock_guard lock(w->mutex);
   auto it = w->borrowed.find(msg);
   if (it == w->borrowed.end()) return error("unknown publisher loan");
-  w->pub.publish(std::move(it->second));
+  w->publish(std::move(it->second));
   w->borrowed.erase(it);
   return RMW_RET_OK;
 }
@@ -211,16 +278,24 @@ extern "C" rmw_ret_t rmw_return_loaned_message_from_publisher(
   auto w = lookup(writers, pub->data);
   if (!w) return CYCLONE(rmw_return_loaned_message_from_publisher)(pub, msg);
   std::lock_guard lock(w->mutex);
-  return w->borrowed.erase(msg) ? RMW_RET_OK : error("unknown publisher loan");
+  auto it = w->borrowed.find(msg);
+  if (it == w->borrowed.end()) return error("unknown publisher loan");
+  w->cancel(std::move(it->second));
+  w->borrowed.erase(it);
+  return RMW_RET_OK;
 }
 extern "C" rmw_ret_t rmw_publish(
   const rmw_publisher_t * pub, const void * msg, rmw_publisher_allocation_t * a)
 {
   auto w = lookup(writers, pub->data);
   if (!w) return CYCLONE(rmw_publish)(pub, msg, a);
-  auto loan = w->pub.borrow_loaned_message();
-  *loan = *static_cast<const Message *>(msg);
-  w->pub.publish(std::move(loan));
+  auto loan = w->borrow();
+  auto ret = w->type.copy(msg, loan.get());
+  if (ret != RMW_RET_OK) {
+    w->cancel(std::move(loan));
+    return ret;
+  }
+  w->publish(std::move(loan));
   return RMW_RET_OK;
 }
 namespace
@@ -233,10 +308,15 @@ rmw_ret_t take(Reader & r, void * copy, void ** loan, bool * taken, rmw_message_
   if (info) *info = {};
   auto & sample = r.pending.front();
   if (loan) {
-    *loan = const_cast<Message *>(sample.get());
+    *loan = const_cast<void *>(sample.get());
     r.held.emplace(*loan, std::move(sample));
-  } else
-    *static_cast<Message *>(copy) = *sample;
+  } else {
+    auto ret = r.type.copy(sample.get(), copy);
+    if (ret != RMW_RET_OK) {
+      *taken = false;
+      return ret;
+    }
+  }
   r.pending.pop_front();
   return RMW_RET_OK;
 }

@@ -37,10 +37,10 @@ for mode in loan copy; do
  cd "$(mktemp -d)"
  disabled=0
  if [[ $mode == copy ]]; then disabled=1; fi
- ROS_DISABLE_LOANED_MESSAGES=$disabled LD_PRELOAD="$hook" "$probe" reader "$mode" &
+ ROS_DISABLE_LOANED_MESSAGES=$disabled LD_PRELOAD="$hook" "$probe" reader "$mode" "${1:-trajectory}" &
  reader=$!
  trap 'kill "$reader" 2>/dev/null || true' EXIT
- ROS_DISABLE_LOANED_MESSAGES=0 LD_PRELOAD="$hook" "$probe" writer "$mode"
+ ROS_DISABLE_LOANED_MESSAGES=0 LD_PRELOAD="$hook" "$probe" writer "$mode" "${1:-trajectory}"
  wait "$reader"
  trap - EXIT
 done

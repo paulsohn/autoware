@@ -671,3 +671,21 @@ loan and copy checks passed again. The final build and validation used one
 build job, a 1,200 MiB build cap and a 512 MiB runtime cap. Minimum sampled
 host MemAvailable was 5,439 MiB in that series. Only the fixture changed.
 [Reproduction, kernel evidence and limits](../rmw-agnocast/README.md#two-reader-pressure-and-restart)
+
+### Generalize the native object loan
+
+The middleware now uses Agnocast TypeErasedPublisher and Subscription<void>
+with installed rosidl_typesupport_introspection_cpp. Message packages supply
+their normal generated C++ type support. The shared library has no Autoware
+message dependency. The introspection size, init and fini callbacks provide
+object lifetime. Its missing whole-object assignment is handled by Cyclone
+serialization/deserialization on ordinary copy calls only. Buffer members
+are detected recursively before sharing any object with foreign virtual state.
+
+In the same exported root as the pressure experiment, run build-loadable.sh
+via run-lyrical.sh, then run run-loadable.sh with point, path, trajectory and
+pressure in separate guarded runtime invocations. Each type passed four
+publications in each reader mode. The Path check included five PoseStamped
+elements with heap-backed frame IDs, retained ownership, cross-process
+addresses and ordinary publish/take. The earlier pressure case also passed.
+Minimum sampled host MemAvailable over build and runs was 4,805 MiB.

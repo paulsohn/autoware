@@ -1,6 +1,8 @@
 #include <rclcpp/rclcpp.hpp>
 
 #include <autoware_planning_msgs/msg/trajectory.hpp>
+#include <geometry_msgs/msg/point.hpp>
+#include <nav_msgs/msg/path.hpp>
 
 #include <rmw/rmw.h>
 
@@ -56,17 +58,60 @@ void verify(const Message & msg, int seq, bool same_address)
       "copied loan");
   }
 }
-void publish_trajectory(rclcpp::Publisher<Message> & pub, int seq)
+using Path = nav_msgs::msg::Path;
+using Point = geometry_msgs::msg::Point;
+void fill(Point & p, int seq)
+{
+  p.x = seq;
+  p.y = 2 * seq;
+  p.z = -seq;
+}
+void fill(Path & path, int seq)
+{
+  path.poses.resize(5);
+  for (size_t i = 0; i < path.poses.size(); ++i) {
+    path.poses[i].header.frame_id.assign(80 + i, 'a' + seq);
+    fill(path.poses[i].pose.position, seq + i);
+  }
+}
+template <class T>
+std::array<uintptr_t, 3> addresses(const T & msg)
+{
+  std::array<uintptr_t, 3> a{reinterpret_cast<uintptr_t>(&msg), 0, 0};
+  if constexpr (std::is_same_v<T, Path>) {
+    a[1] = reinterpret_cast<uintptr_t>(msg.poses.data());
+    a[2] = reinterpret_cast<uintptr_t>(msg.poses.back().header.frame_id.data());
+  } else if constexpr (std::is_same_v<T, Message>) {
+    a[1] = reinterpret_cast<uintptr_t>(msg.points.data());
+    a[2] = reinterpret_cast<uintptr_t>(msg.header.frame_id.data());
+  }
+  return a;
+}
+template <class T>
+void verify(const T & msg, int seq, bool loan)
+{
+  T expected;
+  fill(expected, seq);
+  check(msg == expected, "incorrect payload");
+  if (loan) {
+    auto a = addresses(msg);
+    std::array<uintptr_t, 3> source{};
+    check(
+      bool(
+        std::ifstream("addresses" + std::to_string(seq)) >> source[0] >> source[1] >> source[2]) &&
+        a == source,
+      "incorrect loan addresses");
+  }
+}
+template <class T>
+void publish_trajectory(rclcpp::Publisher<T> & pub, int seq)
 {
   auto loan = pub.borrow_loaned_message();
-  auto & msg = loan.get();
-  fill(msg, seq);
-  std::ofstream("addresses" + std::to_string(seq))
-    << reinterpret_cast<uintptr_t>(&msg) << ' ' << reinterpret_cast<uintptr_t>(msg.points.data())
-    << ' ' << reinterpret_cast<uintptr_t>(msg.header.frame_id.data());
+  fill(loan.get(), seq);
+  auto a = addresses(loan.get());
+  std::ofstream("addresses" + std::to_string(seq)) << a[0] << ' ' << a[1] << ' ' << a[2];
   pub.publish(std::move(loan));
 }
-
 void pressure_writer(rclcpp::Node & node)
 {
   auto pub = node.create_publisher<Message>("trajectory_loan_probe", 2);
@@ -165,10 +210,80 @@ void pressure_reader(rclcpp::Node::SharedPtr node, const std::string & role)
 struct CallbackError
 {
 };
+template <class T>
+void simple(bool writer, bool use_loan)
+{
+  auto node = std::make_shared<rclcpp::Node>(writer ? "trajectory_writer" : "trajectory_reader");
+  if (writer) {
+    auto pub = node->create_publisher<T>("trajectory_loan_probe", 4);
+    check(pub->can_loan_messages(), "missing publisher loan");
+    auto deadline = std::chrono::steady_clock::now() + 10s;
+    while (pub->get_subscription_count() != 1) {
+      check(std::chrono::steady_clock::now() < deadline, "no matched subscription");
+      std::this_thread::sleep_for(10ms);
+    }
+    for (int seq = 1; seq <= 4; ++seq) {
+      wait_file("waiting" + std::to_string(seq));
+      std::this_thread::sleep_for(100ms);
+      if (seq == 4) {
+        T msg;
+        fill(msg, seq);
+        pub->publish(msg);
+        msg = T{};
+      } else {
+        publish_trajectory(*pub, seq);
+      }
+      wait_file("done" + std::to_string(seq));
+    }
+  } else {
+    typename T::ConstSharedPtr held;
+    int calls = 0;
+    auto sub =
+      node->create_subscription<T>("trajectory_loan_probe", 4, [&](typename T::ConstSharedPtr m) {
+        ++calls;
+        verify(*m, calls, use_loan && calls < 4);
+        if (calls == 1) held = m;
+        if (calls == 3) throw CallbackError{};
+      });
+    check(sub->can_loan_messages() == use_loan, "unexpected subscriber loan mode");
+    rclcpp::executors::SingleThreadedExecutor exec;
+    exec.add_node(node);
+    for (int seq = 1; seq <= 4; ++seq) {
+      mark("waiting" + std::to_string(seq));
+      bool threw = false;
+      auto deadline = std::chrono::steady_clock::now() + 2s;
+      while (calls < seq) {
+        check(std::chrono::steady_clock::now() < deadline, "blocking executor timed out");
+        try {
+          exec.spin_once(3s);
+        } catch (const CallbackError &) {
+          threw = true;
+        }
+      }
+      check(
+        std::chrono::steady_clock::now() < deadline, "sample arrived only after executor timeout");
+      check(threw == (seq == 3), "exception path mismatch");
+      verify(*held, 1, use_loan);
+      mark("done" + std::to_string(seq));
+    }
+    auto handle = std::weak_ptr<rcl_subscription_t>(sub->get_subscription_handle());
+    exec.remove_node(node);
+    sub.reset();
+    node.reset();
+    check(!use_loan || !handle.expired(), "premature subscription destruction");
+    std::thread release([&] { held.reset(); });
+    release.join();
+    check(handle.expired(), "late subscription destruction");
+    std::cout << "rmw_agnocast " << rosidl_generator_traits::name<T>()
+              << (use_loan ? " loan" : " copy")
+              << ": verified four samples, retained A, throwing C and copied publish D"
+              << std::endl;
+  }
+}
 int main(int argc, char ** argv)
 {
   try {
-    check(argc == 3, "expected role and loan/copy mode");
+    check((argc == 3 || argc == 4), "expected role and loan/copy mode");
     bool writer = std::string(argv[1]) == "writer", use_loan = std::string(argv[2]) == "loan";
     rclcpp::init(argc, argv);
     check(
@@ -185,72 +300,13 @@ int main(int argc, char ** argv)
       if (rclcpp::ok()) rclcpp::shutdown();
       return 0;
     }
-    auto node = std::make_shared<rclcpp::Node>(writer ? "trajectory_writer" : "trajectory_reader");
-    if (writer) {
-      auto pub = node->create_publisher<Message>("trajectory_loan_probe", 4);
-      check(pub->can_loan_messages(), "missing publisher loan");
-      auto deadline = std::chrono::steady_clock::now() + 10s;
-      while (pub->get_subscription_count() != 1) {
-        check(std::chrono::steady_clock::now() < deadline, "no matched subscription");
-        std::this_thread::sleep_for(10ms);
-      }
-      for (int seq = 1; seq <= 4; ++seq) {
-        wait_file("waiting" + std::to_string(seq));
-        std::this_thread::sleep_for(100ms);
-        if (seq == 4) {
-          Message msg;
-          fill(msg, seq);
-          pub->publish(msg);
-          msg.points.clear();
-        } else {
-          publish_trajectory(*pub, seq);
-        }
-        wait_file("done" + std::to_string(seq));
-      }
-    } else {
-      Message::ConstSharedPtr held;
-      int calls = 0;
-      auto sub = node->create_subscription<Message>(
-        "trajectory_loan_probe", 4, [&](Message::ConstSharedPtr m) {
-          ++calls;
-          verify(*m, calls, use_loan && calls < 4);
-          if (calls == 1) held = m;
-          if (calls == 3) throw CallbackError{};
-        });
-      check(sub->can_loan_messages() == use_loan, "unexpected subscriber loan mode");
-      rclcpp::executors::SingleThreadedExecutor exec;
-      exec.add_node(node);
-      for (int seq = 1; seq <= 4; ++seq) {
-        mark("waiting" + std::to_string(seq));
-        bool threw = false;
-        auto deadline = std::chrono::steady_clock::now() + 2s;
-        while (calls < seq) {
-          check(std::chrono::steady_clock::now() < deadline, "blocking executor timed out");
-          try {
-            exec.spin_once(3s);
-          } catch (const CallbackError &) {
-            threw = true;
-          }
-        }
-        check(
-          std::chrono::steady_clock::now() < deadline,
-          "sample arrived only after executor timeout");
-        check(threw == (seq == 3), "exception path mismatch");
-        verify(*held, 1, use_loan);
-        mark("done" + std::to_string(seq));
-      }
-      auto handle = std::weak_ptr<rcl_subscription_t>(sub->get_subscription_handle());
-      exec.remove_node(node);
-      sub.reset();
-      node.reset();
-      check(!use_loan || !handle.expired(), "premature subscription destruction");
-      std::thread release([&] { held.reset(); });
-      release.join();
-      check(handle.expired(), "late subscription destruction");
-      std::cout << "rmw_agnocast " << argv[2]
-                << ": verified four trajectories, retained A, throwing C and copied publish D"
-                << std::endl;
-    }
+    const std::string type = argc == 4 ? argv[3] : "trajectory";
+    if (type == "point")
+      simple<Point>(writer, use_loan);
+    else if (type == "path")
+      simple<Path>(writer, use_loan);
+    else
+      simple<Message>(writer, use_loan);
     rclcpp::shutdown();
   } catch (const std::exception & error) {
     std::cerr << error.what() << std::endl;

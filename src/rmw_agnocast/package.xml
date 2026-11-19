@@ -1,9 +1,9 @@
 <package format="3">
   <name>rmw_agnocast</name><version>0.1.0</version>
-  <description>Experimental Lyrical whole-trajectory RMW with native IPC and Cyclone graph support.</description>
+  <description>Experimental Lyrical whole-message RMW with native IPC and Cyclone graph support.</description>
   <maintainer email="paulsohn@users.noreply.github.com">Paul Sohn</maintainer>
   <license>Apache-2.0</license><buildtool_depend>ament_cmake</buildtool_depend>
-  <depend>agnocastlib</depend><depend>autoware_planning_msgs</depend>
+  <depend>agnocastlib</depend><depend>rosidl_typesupport_introspection_cpp</depend>
   <depend>rclcpp</depend><depend>rmw</depend><depend>rmw_cyclonedds_cpp</depend>
   <member_of_group>rmw_implementation_packages</member_of_group>
   <export><build_type>ament_cmake</build_type></export>
