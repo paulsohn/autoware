@@ -19,6 +19,7 @@
 #include <omp.h>
 
 #include <algorithm>
+#include <filesystem>
 #include <functional>
 #include <iostream>
 #include <memory>
@@ -47,7 +48,7 @@ std::string trim(std::string & s)
 
 bool fileExists(const std::string & file_name, bool verbose)
 {
-  if (!std::experimental::filesystem::exists(std::experimental::filesystem::path(file_name))) {
+  if (!std::filesystem::exists(std::filesystem::path(file_name))) {
     if (verbose) {
       std::cout << "File does not exist : " << file_name << std::endl;
     }

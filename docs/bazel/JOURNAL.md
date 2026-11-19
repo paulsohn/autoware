@@ -8394,3 +8394,22 @@ performance or deployment-bundle claim is made. Sparse creators are compiled
 and loaded; individual sparse-convolution numerical inference is not covered
 by the package's original suite. Phase 6.4 remains in progress: classifier and
 YOLOX are separate package gates.
+
+## 2026-11-19: Classifier filesystem compatibility
+
+The complete classifier C++ build fails under Clang/libc++ 21.1.8 because
+fileExists hard-codes std::experimental::filesystem. The selected standard
+library provides C++17 std::filesystem. Add its direct header and use that
+namespace; no calibration, inference or original test logic changes. This
+source compatibility correction is committed separately from Bazel definitions.
+
+Reproduce the failure with the uncorrected source and the package-local rules
+from Phase 6.4.3: bazel build --config=no-agnocast
+@autoware_tensorrt_classifier//.... The compiler reports no member experimental
+in namespace std at both references on the file-existence condition. With the
+correction, all seven public package targets build in 5.455 seconds. The five
+added inference/preprocessing cases then pass in 21.2 seconds (27.215-second
+invocation), including fresh engine builds and cached loads. See the following
+entry for exact commands/fixtures. No original runtime tests exist in this
+package. Upstream source/related tracker association is recorded in
+UPSTREAM_AWF.md; upstream CMake/GCC and other platforms are not validated.

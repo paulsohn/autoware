@@ -941,3 +941,26 @@ and asserts clean shutdown. It fails on the unmodified source (empty frame),
 then passes both cases after the one-line copy on CUDA 13.2.2 / NVIDIA 595.99.02.
 The Phase 6.3.4 and source-fix journal entries record the full commands and
 prerequisites. Upstream CMake and other platforms were not tested.
+
+## TensorRT classifier uses experimental filesystem
+
+- [ ] Associate with a matching upstream PR. Reviewed 2026-11-19; none found
+  in the filesystem/TensorRT search and related tracker inspected. Not submitted.
+
+Repository/package: autowarefoundation/autoware_universe,
+autoware_tensorrt_classifier. fileExists explicitly uses
+std::experimental::filesystem even though the package compiles as C++17.
+Clang/libc++ 21.1.8 rejects both references: no member experimental in std.
+Include <filesystem> directly and use std::filesystem. The full package build
+and all five added GPU inference/preprocessing cases pass with this correction;
+the journal records the reproducible build and behavior gate.
+
+[Inspected upstream source](https://github.com/autowarefoundation/autoware_universe/blob/3f14a7bbba980fb6c337f4c55608f6b9ea81c88c/perception/autoware_tensorrt_classifier/src/tensorrt_classifier.cpp)
+still contains the experimental namespace. The
+[Lyrical tracker](https://github.com/autowarefoundation/autoware/issues/7404)
+and its related [toolchain tracker](https://github.com/autowarefoundation/autoware_universe/issues/13590)
+cover broader platform/compiler work, not a matching classifier correction.
+This is standard-library compatibility, not a Lyrical-only behavior change.
+Upstream CMake/GCC, older ROS distributions, INT8 calibration and ARM remain
+untested. Suggested action: the two-line correction plus a libc++ compilation
+check. Local source correction is separate from the Bazel integration commit.
