@@ -1,0 +1,27 @@
+load("@rules_cc//cc:defs.bzl", "cc_test")
+load("//third_party/runtime:defs.bzl", "runtime_libraries")
+
+package(default_visibility = ["//visibility:public"])
+
+exports_files([
+    "archives.json",
+    "graphics_runtime.MODULE.bazel",
+    "repositories.bzl",
+])
+
+runtime_libraries(
+    name = "runtime",
+    libraries = ["@graphics_runtime//:runtime"],
+    target_compatible_with = [
+        "@platforms//cpu:x86_64",
+        "@platforms//os:linux",
+    ],
+)
+
+cc_test(
+    name = "dispatch_test",
+    srcs = ["dispatch_test.c"],
+    data = [":runtime"],
+    env = {"LD_LIBRARY_PATH": "lib"},
+    linkopts = ["-ldl"],
+)

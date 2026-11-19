@@ -8892,3 +8892,51 @@ launch check was run. Other model families and the common data_path removal
 remain later consumer work; the next numbered phase is Phase 7's native runtime
 packaging and planning-simulator milestone. The x86 TensorRT/JetPack version
 gap and the need for actual host GPU/kernel drivers remain documented limits.
+
+## 2026-11-20: Phase 7.1 — Native graphics runtime provider
+
+Purpose: supply real GL dispatch implementations for a native headless product
+whose PCL/VTK/OpenCV closure links GL/EGL/GLX/OpenGL. Inspect the pinned registry
+libglvnd BUILD and generated stubs before selecting a provider: version
+1.7.0.rcr.0 exports link-time stubs with production SONAMEs, not usable runtime
+implementations. Host process maps showed installed graphics/X11 libraries and
+libbsd/libmd concealing this runtime edge. A static SONAME-presence audit alone
+cannot distinguish a stub from an implementation.
+
+Pattern: root-select a generic repository under third_party/graphics_runtime,
+without adding an Autoware-dependent facade module. Record eleven Ubuntu noble
+amd64 package versions, immutable payload paths and SHA-256 values in
+archives.json, obtained from official metadata. Bazel natively extracts each
+.deb and its nested data archive; no apt/dpkg resolver, maintainer script, host
+installation or copied host library is used. The payloads supply GLVND 1.7.0
+and its X11/XCB/BSD load closure. Keep copyright files as declared resources.
+Constrain this provider to Linux x86_64. The
+[provider README](../../third_party/graphics_runtime/README.md) owns input-source,
+API-gate and unsupported-graphics details.
+
+The reusable third_party/runtime helper maps declared library basenames and
+explicit aliases into the runfiles lib prefix, rejecting conflicting mappings.
+It is independent of Autoware labels. Root composition subsequently combines
+this provider with its existing GNU and source-built zlib providers; do not add
+those product choices to the dependency helper. Introduce the optional root
+--config=runtime Bash/Python bootstrap selection for distributions, preserving
+normal developer build configuration.
+
+The complete binary-provider suite is its display-independent dispatch_test:
+dlopen all five real dispatch DSOs and query EGL client extensions with no
+display, vendor backend or GPU context. Reproduce its standalone gate:
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --nocache_test_results --test_output=errors \
+  //third_party/graphics_runtime:dispatch_test
+```
+
+Pass: 0.3 seconds (4.311-second invocation), no omitted cases. The stricter
+product relocation gate
+additionally proves actual application use of these files without host graphics
+libraries. This binary-provider gate does not establish rendering, complete
+upstream graphics conformance, a display/vendor backend, or ARM support. No
+existing source package is edited; buildifier, clang-format, JSON and whitespace
+checks pass. The provider task is complete for the selected headless load scope.

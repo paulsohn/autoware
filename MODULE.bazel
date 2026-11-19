@@ -106,6 +106,7 @@ filegroup(name = "runtime", srcs = glob(["lib/libgcc_s.so*"]), visibility = ["//
 )
 
 include("//third_party/cuda:cuda.MODULE.bazel")
+include("//third_party/graphics_runtime:graphics_runtime.MODULE.bazel")
 
 # Local source dependencies, ordered by their package-local MODULE declarations.
 # Overrides select the source; root declarations need no registry release version.

@@ -42,6 +42,9 @@ build:fastdds --@rosdistro//:rmw=rmw_fastrtps_cpp
 # Generated ROS Python interfaces use namespace packages.
 build --incompatible_default_to_explicit_init_py
 
+# Native distributions start with the bundled Python, without host Python.
+build:runtime --@rules_python//python/config_settings:bootstrap_impl=script
+
 # Runtime environment for ROS nodes using the RCR shared-library layout.
 common --run_env=ROS_DISTRO=lyrical
 common --run_env=ROS_HOME=/tmp/autoware-bazel-ros-home

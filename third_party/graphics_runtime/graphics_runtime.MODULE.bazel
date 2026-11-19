@@ -1,0 +1,4 @@
+# Real GLVND dispatch DSOs for Linux x86_64; no display/vendor driver is selected.
+graphics_runtime = use_repo_rule("//third_party/graphics_runtime:repositories.bzl", "graphics_runtime")
+
+graphics_runtime(name = "graphics_runtime")

@@ -81,7 +81,8 @@ only when your current target demonstrates the need.
 - [ ] Separate builder-host, build-environment and runtime prerequisites; declare
   runtime resources once and reuse them for packaging.
   [Packaging and deployment requirements](#runtime-packaging-and-deployment-requirements);
-  [current evidence and planned gates](JOURNAL.md#2026-11-19-runtime-packaging-and-deployment-requirements).
+  [pinned graphics runtime](../../third_party/graphics_runtime/README.md);
+  [evidence: declared graphics runtime](JOURNAL.md#2026-11-20-phase-71--native-graphics-runtime-provider).
 - [ ] Define editable model modules and portable runtime resource paths together.
   [Model repository/path convention](#model-repository-and-runtime-path-convention);
   [evidence and required experiment](JOURNAL.md#2026-11-18-model-subtree-layout-and-portable-launch-path-requirements);
