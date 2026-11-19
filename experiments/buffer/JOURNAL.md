@@ -247,3 +247,21 @@ starts (AWF Agnocast issue 1263). Minimum available host memory was
 7,577 MiB during compilation and 8,701 MiB during library tests. The discovery
 agent was absent in this local-library configuration. This run validates the
 kernel-backed library suites, not automatic discovery or remote bridging.
+
+### Validate the enabled Autoware wrapper in both runtime modes
+
+Build src/core/autoware_core/common/autoware_agnocast_wrapper against the
+sourced Agnocast overlay, using the same colcon build/install bases and
+BUILD_TESTING=ON, with ENABLE_AGNOCAST=1. Use the cppcheck configuration from
+experiments/buffer/test-wrapper.sh. With that same binary use ENABLE_AGNOCAST=0
+for the complete colcon wrapper suite. Then set ENABLE_AGNOCAST=1 and preload
+the absolute path to install/agnocastlib/lib/libagnocast_heaphook.so into
+obj/autoware_agnocast_wrapper/test_autoware_agnocast_wrapper.
+
+Four generic pub/sub tests initially failed only in enabled mode. Two spun a
+plain rclcpp executor which never dispatched their Agnocast callbacks, and two
+requested an rclcpp node from an Agnocast-owned wrapper. The test-only patch
+from bazel commit 1d0cd537 selects the corresponding executor and initializes
+the required contexts. After rebuilding, the complete colcon wrapper suite
+passed in fallback mode and all 37 C++ cases passed with the real heap hook in
+enabled mode. Minimum available host memory for the rerun was 7,942 MiB.

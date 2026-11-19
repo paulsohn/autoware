@@ -13,6 +13,11 @@
 // limitations under the License.
 
 #include "autoware/agnocast_wrapper/runtime.hpp"
+#include "heaphook_probe.hpp"
+
+#ifdef USE_AGNOCAST_ENABLED
+#include <agnocast/agnocast.hpp>
+#endif
 
 #include <rclcpp/rclcpp.hpp>
 
@@ -21,18 +26,39 @@
 namespace
 {
 
-/// @brief This binary spins no Agnocast executor, so agnocast_only stays at its default.
+/// @brief Method 1 uses ROS nodes; Method 2 also needs the Agnocast context.
 class ContextEnvironment : public testing::Environment
 {
 public:
   ContextEnvironment(int argc, char ** argv) : argc_(argc), argv_(argv) {}
 
-  void SetUp() override { autoware::agnocast_wrapper::init(argc_, argv_); }
-  void TearDown() override { autoware::agnocast_wrapper::shutdown(); }
+  void SetUp() override
+  {
+    autoware::agnocast_wrapper::init(argc_, argv_);
+#ifdef USE_AGNOCAST_ENABLED
+    agnocast_initialized_ = autoware::agnocast_wrapper::use_agnocast() &&
+                            autoware::agnocast_wrapper::test::agnocast_heaphook_loaded();
+    if (agnocast_initialized_) {
+      agnocast::init(argc_, argv_);
+    }
+#endif
+  }
+  void TearDown() override
+  {
+#ifdef USE_AGNOCAST_ENABLED
+    if (agnocast_initialized_) {
+      agnocast::shutdown();
+    }
+#endif
+    autoware::agnocast_wrapper::shutdown();
+  }
 
 private:
   int argc_;
   char ** argv_;
+#ifdef USE_AGNOCAST_ENABLED
+  bool agnocast_initialized_ = false;
+#endif
 };
 
 }  // namespace
