@@ -1,0 +1,144 @@
+load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
+load("@rules_cc//cc:defs.bzl", "cc_library")
+load("@rules_cuda//cuda:defs.bzl", "cuda_library")
+load("@spconv//:defs.bzl", "spconv_cc_shared_library", "spconv_cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+cuda_library(
+    name = "cuda_ops_library",
+    srcs = [
+        "src/argsort_ops/argsort.cu",
+        "src/bev_ops/bev_pool_cuda.cu",
+        "src/multi_scale_deform_attn_ops/ms_deform_attn_kernel.cu",
+        "src/rotate_ops/rotate_kernel.cu",
+        "src/scatter_ops/segment_csr.cu",
+        "src/select_and_pad_ops/select_and_pad_kernel.cu",
+        "src/unique_ops/unique.cu",
+    ],
+    hdrs = glob([
+        "include/autoware/*_ops/*.h",
+        "include/autoware/*_ops/*.hpp",
+        "include/autoware/*_ops/*.cuh",
+        "src/*_ops/*.cuh",
+    ]) + [
+        "include/autoware/tensorrt_plugins/kernel_utils.hpp",
+        "include/autoware/tensorrt_plugins/plugin_utils.hpp",
+    ],
+    copts = [
+        "-std=c++17",
+        "--expt-relaxed-constexpr",
+        "--extended-lambda",
+        "-diag-suppress",
+        "1675",
+    ],
+    includes = ["include"],
+    tags = ["manual"],
+    deps = [
+        "@cuda//:cub",
+        "@cuda//:cublas",
+        "@cuda//:cuda_runtime",
+        "@cuda//:thrust",
+        "@tensorrt",
+    ],
+)
+
+spconv_cc_shared_library(
+    name = "cuda_ops",
+    features = ["-static_link_cpp_runtimes"],
+    shared_lib_name = "libcuda_ops.so",
+    deps = [":cuda_ops_library"],
+)
+
+cc_library(
+    name = "plugins_library",
+    srcs = [
+        "src/argsort_plugin.cpp",
+        "src/argsort_plugin_creator.cpp",
+        "src/get_indices_pairs_implicit_gemm_plugin.cpp",
+        "src/get_indices_pairs_implicit_gemm_plugin_creator.cpp",
+        "src/get_indices_pairs_plugin.cpp",
+        "src/get_indices_pairs_plugin_creator.cpp",
+        "src/implicit_gemm_plugin.cpp",
+        "src/implicit_gemm_plugin_creator.cpp",
+        "src/indice_conv_plugin.cpp",
+        "src/indice_conv_plugin_creator.cpp",
+        "src/multi_scale_deformable_attention_plugin.cpp",
+        "src/multi_scale_deformable_attention_plugin_creator.cpp",
+        "src/plugin_registration.cpp",
+        "src/plugin_utils.cpp",
+        "src/quick_cumsum_cuda_plugin.cpp",
+        "src/quick_cumsum_cuda_plugin_creator.cpp",
+        "src/rotate_plugin.cpp",
+        "src/rotate_plugin_creator.cpp",
+        "src/segment_csr_plugin.cpp",
+        "src/segment_csr_plugin_creator.cpp",
+        "src/select_and_pad_plugin.cpp",
+        "src/select_and_pad_plugin_creator.cpp",
+        "src/unique_plugin.cpp",
+        "src/unique_plugin_creator.cpp",
+    ],
+    hdrs = glob(["include/autoware/tensorrt_plugins/*.hpp"]),
+    copts = [
+        "-Wall",
+        "-Wextra",
+        "-Wpedantic",
+        "-Werror",
+        "-Wno-deprecated-declarations",
+    ],
+    includes = ["include"],
+    tags = ["manual"],
+    deps = [
+        ":cuda_ops_library",
+        "@spconv",
+        "@tensorrt",
+    ],
+    alwayslink = True,
+)
+
+spconv_cc_shared_library(
+    name = "plugins",
+    dynamic_deps = [":cuda_ops"],
+    features = ["-static_link_cpp_runtimes"],
+    shared_lib_name = "libautoware_tensorrt_plugins.so",
+    deps = [":plugins_library"],
+)
+
+register_ament_files(
+    name = "plugin_files",
+    files = [":plugins"],
+    prefix = "share/autoware_tensorrt_plugins/plugins",
+    strip_prefix = "*",
+)
+
+ament_index(
+    data = [":plugin_files"],
+    libraries = [":cuda_ops"],
+    package_xml = "package.xml",
+)
+
+spconv_cc_test(
+    name = "reference_kernels_test",
+    srcs = [
+        "test/argsort_kernel_test.cpp",
+        "test/segment_csr_kernel_test.cpp",
+        "test/test_utils.hpp",
+        "test/unique_kernel_test.cpp",
+    ],
+    dynamic_deps = [":cuda_ops"],
+    tags = [
+        "no-remote",
+        "no-sandbox",
+        "requires-gpu",
+    ],
+    deps = [
+        ":cuda_ops_library",
+        "@autoware_cuda_utils",
+        "@googletest//:gtest_main",
+    ],
+)
+
+alias(
+    name = "autoware_tensorrt_plugins",
+    actual = ":plugins",
+)

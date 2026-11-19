@@ -6,7 +6,7 @@ load("//:pins.bzl", "TENSORRT_VERSION")
 
 TENSORRT_VERSION_MAJOR = TENSORRT_VERSION.split(".")[0]
 
-def tensorrt_cc_test(name, srcs, deps, data = [], local_defines = [], dynamic_deps = []):
+def tensorrt_cc_test(name, srcs, deps, data = [], local_defines = [], dynamic_deps = [], libstdcxx_runtime = None):
     """Keep native GTest cases while making bare-name builder dlopen portable."""
     binary = name + "_binary"
     cc_binary(
@@ -20,7 +20,7 @@ def tensorrt_cc_test(name, srcs, deps, data = [], local_defines = [], dynamic_de
     )
     runtime_files = [
         Label("@tensorrt_artifacts//:usr/lib/x86_64-linux-gnu/libnvinfer.so.10"),
-        Label("@tensorrt_libstdcxx//:lib/libstdc++.so.6.0.30"),
+        libstdcxx_runtime or Label("@tensorrt_libstdcxx//:lib/libstdc++.so.6.0.30"),
         Label("@tensorrt_libgcc//:lib/libgcc_s.so.1"),
     ]
     py_test(

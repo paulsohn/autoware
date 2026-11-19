@@ -797,12 +797,27 @@ its C++ headers/container API into libc++ code. Keep ordinary implementation
 cc_library targets beneath the configured shared target, with dynamic C++
 runtimes and explicit dynamic_deps for separately exported libraries.
 
-Validate the SDK's container/allocator API, TensorView conversion policy and
-actual GPU sorting with:
+Native libc++ consumers load @autoware_tensorrt_plugins//:plugins as runtime data
+through dlopen, as TrtCommon does, and exchange only TensorRT's versioned opaque
+interfaces. Check getInterfaceInfo rather than using cross-runtime RTTI. Do not
+call the registry's loadLibrary API on this self-registering plugin DLL. No
+STL/container ownership crosses the standard-library boundary.
+
+For a native TensorRT test requiring this plugin, supply
+libstdcxx_runtime="@spconv//:gnu_runtime" to tensorrt_cc_test and declare the DLL
+in data. The helper resolves that source-built runtime before the vendor SDK's
+bare-name builder loads; it does not search a host GCC installation. Other
+TensorRT tests retain the default runtime. Run the complete package and added
+interop gates sequentially on a supported GPU:
 
 ```sh
-bazel test --config=no-agnocast --nocache_test_results --test_output=errors @spconv//:abi_test
+bazel test --config=no-agnocast --nocache_test_results --test_output=errors @spconv//:abi_test @autoware_tensorrt_plugins//...
+bazel test --config=no-agnocast --nocache_test_results --test_output=errors //bazel/tests:tensorrt_plugins_test
 ```
+
+The original suite has eighteen cases; the added suite has two, covering all
+eleven creator names and an actual serialized Argsort engine. These do not
+establish numerical coverage for every sparse plugin or ARM compatibility.
 
 ## Negotiated and CUDA blackboard transport
 

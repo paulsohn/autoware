@@ -5,6 +5,7 @@ load("@rosdistro//python:defs.bzl", "py_pytest")
 load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_test")
 load("@rules_python//python:defs.bzl", "py_binary", "py_test")
 load("@rules_shell//shell:sh_test.bzl", "sh_test")
+load("@tensorrt//:defs.bzl", "tensorrt_cc_test")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -1593,5 +1594,18 @@ launch_test(
         "@launch_ros",
         "@rclpy",
         "@sensor_msgs//:py",
+    ],
+)
+
+tensorrt_cc_test(
+    name = "tensorrt_plugins_test",
+    srcs = ["autoware_tensorrt_plugins/test_plugins.cpp"],
+    data = ["@autoware_tensorrt_plugins//:plugins"],
+    libstdcxx_runtime = "@spconv//:gnu_runtime",
+    local_defines = ['PLUGIN_TEST_LIBRARY=\\\"$(rootpath @autoware_tensorrt_plugins//:plugins)\\\"'],
+    deps = [
+        "@cuda//:cuda_runtime",
+        "@googletest//:gtest_main",
+        "@tensorrt",
     ],
 )

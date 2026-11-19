@@ -1524,7 +1524,7 @@ Package boundaries:
   device support before accepting inputs. Keep reusable providers under
   third_party/ and root-owned version selection. A vendor download is not
   proof that its C++ API can be linked safely with this toolchain.
-- **6.4.2 — autoware_tensorrt_plugins:** build the entire seven-kernel cuda_ops
+- **6.4.2 — autoware_tensorrt_plugins (complete):** build the entire seven-kernel cuda_ops
   library and all eleven plugin creators, including sparse-convolution plugins.
   Run all original parameterized reference-kernel cases on the GPU, plus added
   library loading/creator and real TensorRT execution/serialization checks.

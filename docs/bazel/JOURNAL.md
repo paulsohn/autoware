@@ -8331,3 +8331,66 @@ minutes; subsequent runs reuse declared build outputs. Module inputs are pinned;
 no host compiler/runtime search fallback was added. Validated on x86_64,
 CUDA 13.2.2, sm_120 and NVIDIA 595.99.02. ARM/JetPack, other vendor SDK releases
 and numerical/performance coverage of every sparse operation remain untested.
+
+## 2026-11-19: Phase 6.4.2 — Complete TensorRT plugin library
+
+Purpose: expose the whole local autoware_tensorrt_plugins package, not just its
+reference kernels. Inventory the original CMake lists, plugin_registration.cpp,
+eleven creator implementations and all three original test sources. The gate
+is seven CUDA sources, twenty-four C++ sources, eighteen original parameterized
+cases and an added native consumer loading/serialization/GPU check. Reuse the
+accepted sparse SDK from Phase 6.4.1; no model download is required.
+
+Add package-local MODULE/BUILD definitions and a root local override. Build
+cuda_ops with nvcc/C++17, relaxed constexpr, extended lambdas and the existing
+1675 diagnostic suppression. Build all plugin C++ implementations/creators with
+the spconv-owned GNU platform and alwayslink to preserve static registration.
+Export libcuda_ops.so and libautoware_tensorrt_plugins.so through configured
+cc_shared_library targets; use dynamic_deps to avoid duplicate kernel linkage.
+Keep their underlying implementation libraries manual: public targets build
+them in the matching GNU configuration. Register the plugin under the package's
+share/.../plugins directory and cuda_ops in its ament index. Do not change the
+original CMake, implementation or tests.
+
+Add the interoperability test under bazel/tests/autoware_tensorrt_plugins.
+It deliberately compiles with libc++ and loads the opaque DLL with dlopen,
+matching autoware_tensorrt_common. Enumerate all eleven creators, build an Argsort
+engine through TensorRT, serialize/deserialize it, execute on the GPU and assert
+exact output indices. Do not pass STL values or use RTTI across the GNU/libc++
+boundary. Query TensorRT's versioned interface metadata before its ABI-defined
+cast. The SDK/plugin contract here is the TensorRT interface, not the concrete
+spconv C++ API.
+
+Two test-adapter failures clarify this contract: dynamic_cast across these
+standard-library runtimes returns null despite a valid versioned creator;
+TensorRT's loadLibrary API rejects duplicate creator names because these sources
+already self-register during dlopen. Use the existing Autoware dlopen path and
+getInterfaceInfo checks. Neither requires changing the original implementation.
+The SDK-owned tensorrt_cc_test helper gains an optional libstdcxx_runtime anchor
+so this test can select the declared GNU 13 runtime; existing consumers keep
+their default runtime and receive a regression run.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=no-agnocast --local_test_jobs=1 \
+  --nocache_test_results --test_output=errors \
+  @spconv//:abi_test @autoware_tensorrt_plugins//...
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=no-agnocast --local_test_jobs=1 \
+  --nocache_test_results --test_output=errors @autoware_tensorrt_common//...
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=no-agnocast --local_test_jobs=1 \
+  --nocache_test_results --test_output=errors //bazel/tests:tensorrt_plugins_test
+```
+
+Results: the full SDK/plugin invocation completes in 77.220 seconds, builds
+five public non-test targets and passes the SDK probe plus all eighteen original
+reference cases. The unchanged TensorRT-common suite passes all thirteen cases
+in 21.0 seconds during the subsequent combined gate. After correcting only the
+interop adapter, its final invocation completes in 4.643 seconds and passes
+both cases. Native XML reports zero failures, errors and skips. Targeted
+buildifier, clang-format and whitespace checks pass. No Fast DDS, ARM/Thor,
+performance or deployment-bundle claim is made. Sparse creators are compiled
+and loaded; individual sparse-convolution numerical inference is not covered
+by the package's original suite. Phase 6.4 remains in progress: classifier and
+YOLOX are separate package gates.
