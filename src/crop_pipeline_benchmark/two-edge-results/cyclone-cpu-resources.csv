@@ -1,0 +1,4 @@
+role,pid,user_s,system_s,peak_rss_kib
+publisher,564685,0.04,0.04,22512
+filter,564683,0.05,0.03,29640
+sink,564684,0.03,0.02,25712

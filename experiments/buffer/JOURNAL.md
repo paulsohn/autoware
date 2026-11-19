@@ -75,3 +75,37 @@ Recompute with src/crop_pipeline_benchmark/summarize.py and the corresponding
 results or two-edge-results directory. The two variants use different output
 allocation/packing. Within each column, each transport uses the same filter
 binary. Host kernel 7.0.0-43-generic, NVIDIA driver 595.99.02.
+
+## Cyclone native shmem, iceoryx and resource profiles
+
+Tested rmw_cyclonedds_cpp 4.1.5 and Cyclone DDS 11.0.1 against the freshly
+built two-edge wrapper on the same domain, QoS, ordinary PointCloud2 and
+fixture. Both receivers check the requested memory domain. Each failed
+delivery row has no usable timing statistic.
+
+| Cyclone configuration | Payload backend | Result |
+| --- | --- | --- |
+| Loopback | CPU | 60/60 and the retained first frame passed |
+| Loopback | Native rosidl shmem | 0/60, malformed 56-byte RTPS packets |
+| Loopback plus iceoryx PSMX and RouDi | CPU | 0/60, sink timeout |
+| Loopback plus iceoryx PSMX and RouDi | Native rosidl shmem | 0/60, publisher reported CPU-backend requirement at serdata.cpp:714 |
+
+[Machine-readable results and fresh diagnostics](../../src/crop_pipeline_benchmark/two-edge-results/cyclone-matrix.tsv).
+The earlier sender trace established that the default Cyclone RMW recorded a
+serialization exception and passed an empty DATA payload downstream. A fix to
+propagate the error would improve diagnostics. A CPU-copy fallback would still
+leave the native allocation-sharing requirement open. A working native
+descriptor path must verify receiver storage and lifetime. The iceoryx
+control timeout remains undiagnosed. The documented iceoryx shared-memory
+exchange requires fixed-size types and reliable QoS; the target cloud contains
+variable-size fields and the target QoS is best effort.
+[Historical sender trace](https://github.com/paulsohn/autoware/blob/0693fc37/src/buffer_pointcloud_probe/JOURNAL.md#why-default-cyclone-emitted-malformed-packets)
+and [Cyclone iceoryx limitations](https://cyclonedds.io/docs/cyclonedds/latest/shared_memory/limitations.html).
+
+Four separate profiles exercised the two-edge paths again. The fresh CUDA
+trace recorded 60 downloads of 512 KiB and 60 uploads of 256 KiB inside the
+filter. The sink performed 61 readbacks including the held first frame.
+Host memory fell below the 3 GiB build admission threshold before these
+runtime-only checks. Their scopes used a smaller 512 MiB cap, a 2,816 MiB
+start threshold and the same 2,048 MiB stop threshold. Minimum available
+host memory was 2,848 MiB during the matrix and 3,105 MiB during profiling.

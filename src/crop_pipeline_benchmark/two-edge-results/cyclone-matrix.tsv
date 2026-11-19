@@ -1,0 +1,5 @@
+transport	buffer	exit	verified_frames	diagnostic
+loopback	cpu	0	60	passed
+loopback	shmem	1	0	1795060630.230466 [194]       recv: malformed packet received from vendor 1.16 length 56 state parse:shortmsg <52545053 02050110 3e291001 cf3e8df9 c1cb2a2a 09010800 9673fe6a 328ef83a @56 > (note: maybe partially bswap'd)
+iceoryx	cpu	1	0	output timeout
+iceoryx	shmem	1	0	  'Operation requires CPU backend. Current backend: shmem. Use to_vector() for explicit conversion to CPU., at ./src/serdata.cpp:714'

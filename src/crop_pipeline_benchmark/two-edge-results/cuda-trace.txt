@@ -1,0 +1,9 @@
+      4 VMM export pid=563919
+      1 VMM export pid=563920
+      3 VMM export pid=563921
+      2 VMM import pid=563919
+      3 VMM import pid=563920
+     60 copy pid=563919 kind=1 bytes=262144
+     60 copy pid=563919 kind=2 bytes=524288
+     61 copy pid=563920 kind=2 bytes=262144
+     60 copy pid=563921 kind=1 bytes=524288
