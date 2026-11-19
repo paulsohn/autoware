@@ -642,3 +642,19 @@ The first whole-message experiment is in [experiments/rmw-agnocast](../rmw-agnoc
 It pins the matching Lyrical rclcpp subtree, records the stock lifetime failure,
 and tests retained dynamic trajectories with the heap hook and native kernel
 module. Its ROS transport entry points differ from the Buffer descriptor path.
+
+### Loadable same-host RMW
+
+Built the two colcon packages and selected rmw_agnocast from two standard
+rclcpp processes in the exported Lyrical userspace on the laptop. The native
+executor signalled a guard in the ROS wait set. Each writer waited 100 ms
+after reader readiness before sending, and the reader checked callback arrival
+within two seconds with a three-second spin timeout. Three repetitions passed
+in each of two modes (loan and copy), four trajectories per pair. Loans
+preserved the object, vector and string addresses for the three borrowed
+publications. Both modes validated retained A, callback exception C and
+ordinary copy publication D. The build used one job and minimum sampled host
+MemAvailable was 5,582 MiB over this build and the three runs. These are
+functional results for one type and one reader. Cross-host reachability,
+bridge policy and pipeline performance are open.
+[Setup, reproduction commands and migration gates](../rmw-agnocast/README.md#loadable-local-transport-and-migration-plan)

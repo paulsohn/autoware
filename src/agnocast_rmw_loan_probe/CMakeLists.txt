@@ -9,4 +9,7 @@ set_target_properties(loan_probe PROPERTIES ENABLE_EXPORTS ON)
 target_link_libraries(loan_probe ${agnocastlib_TARGETS} ${autoware_planning_msgs_TARGETS}
   rclcpp::rclcpp rmw::rmw ${CMAKE_DL_LIBS})
 install(TARGETS loan_probe DESTINATION lib/${PROJECT_NAME})
+add_executable(loadable_probe loadable_probe.cpp)
+target_link_libraries(loadable_probe ${autoware_planning_msgs_TARGETS} rclcpp::rclcpp rmw::rmw)
+install(TARGETS loadable_probe DESTINATION lib/${PROJECT_NAME})
 ament_package()

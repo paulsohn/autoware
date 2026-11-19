@@ -106,3 +106,52 @@ shared library at runtime and failed symbol resolution for share_dispatched_loan
 The runner now puts the built library first in LD_LIBRARY_PATH. Full upstream
 suite qualification, other RMWs and performance remain outside this first
 ownership result.
+
+## Loadable local transport and migration plan
+
+The second experiment adds a selectable rmw_agnocast shared library. Select
+the exact resolved topic with AGNOCAST_RMW_TOPIC. Its native path currently
+recognizes the C++ Trajectory type support handle and volatile KeepLast QoS.
+Each native subscriber runs an Agnocast executor thread that queues loans and
+signals a Cyclone guard condition. Cyclone supplies graph handles, the
+underlying wait set and delegated RMW operations. The client uses standard
+rclcpp calls, and only the Agnocast heaphook is explicitly preloaded.
+
+Native payload delivery requires both endpoints to run on the same host with
+access to the same /dev/agnocast device instance and compatible userspace.
+This is also the requirement for containers. A remote or ordinary DDS peer
+requires a bridge for a native topic. The prototype creates DDS graph entities
+for native endpoints, so a match count can include an unreachable peer.
+Automatic versus operator-managed bridge creation remains an open decision.
+All native baseline runs explicitly disable the bridge.
+
+Using the exported Lyrical root and the message, Agnocast and patched rclcpp
+overlays from the first experiment, reproduce the loadable probe with:
+
+```bash
+export LYRICAL_ROOT=$(cat build/agnocast-lyrical/universe-root)
+experiments/buffer/run-lyrical.sh bash experiments/rmw-agnocast/build-loadable.sh
+for n in 1 2 3; do
+  BUFFER_RUNTIME_ONLY=1 experiments/buffer/run-lyrical.sh timeout 50s bash experiments/rmw-agnocast/run-loadable.sh
+done
+```
+
+Remaining work, in order:
+
+1. Exercise two readers including a slow reader, KeepLast pressure, outstanding
+   loans at shutdown, endpoint restart and mixed native/DDS waits. Record
+   deliveries, drops, final loan returns and teardown hangs. Validate metadata,
+   error paths and unsupported RMW operations before advertising capabilities.
+2. Replace the Trajectory specialization with a type support mechanism. Test
+   flat and nested dynamic messages first. Qualify types containing Buffer
+   separately. Verify QoS matching and graph counts against actual delivery.
+3. Test the boundary with separate processes sharing the device, an isolated
+   device environment and a second host. Verify actual callbacks with bridging
+   disabled, then exercise an explicitly launched bridge in both directions.
+   Evaluate automatic startup against manual startup for duplicate delivery,
+   bridge restart, discovery and cost. Decide the default from that evidence.
+4. Benchmark the existing Universe pipeline against native Lyrical Agnocast.
+   Retain Cyclone DDS, Zenoh and applicable Buffer rows, including the documented
+   Cyclone shared-memory caveat. Separate CIE and bridge configurations.
+   Require both median and p95 within 1.20 times native and compare CPU, memory
+   and drops directly before considering a Bazel milestone.
