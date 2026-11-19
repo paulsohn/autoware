@@ -8529,3 +8529,40 @@ No original source/test changes are required. Targeted buildifier and whitespace
 checks pass. This adds no changed DDS behavior or Agnocast backend; no Fast DDS
 check or broad communication matrix was run. Next: local Tier 4 interfaces and
 real model resources before the whole YOLOX gate.
+
+## 2026-11-19: Phase 6.4.4 — Tier 4 perception interfaces
+
+Purpose: provide YOLOX's feature-bearing detection messages from the local
+Tier 4 snapshot. Inventory package.xml and the fourteen interface sources
+explicitly registered in CMake (nine object-recognition and five traffic-light
+messages). Preserve those declarations; two other undeclared source files do
+not enter the Bazel graph merely because they exist.
+
+Add package-local MODULE/BUILD files and ros_message declarations beside the
+original sources, with exact referenced-type dependencies. Root default_generators
+composes those fourteen targets and existing local Autoware/standard ROS message
+providers. Register the new package once in bazel/interfaces:all_interfaces;
+consumer-specific lists remain unnecessary. Add a standalone root serialization
+test for DetectedObjectsWithFeature, including nested ROI, object classification,
+probability and header fields. No original runtime suite is registered.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel build --config=no-agnocast @tier4_perception_msgs//:c \
+  @tier4_perception_msgs//:cc @tier4_perception_msgs//:py \
+  @tier4_perception_msgs//:ament_index //bazel/interfaces:all_interfaces
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=no-agnocast --local_test_jobs=1 \
+  --nocache_test_results --test_output=errors //bazel/tests:tier4_perception_roundtrip_test
+```
+
+All selected language/index/collection providers build in 197.131 seconds;
+the serialization case passes in 0.1 seconds (4.373-second invocation), zero
+failures/errors/skips. RCR's standard interface exports generate both FastRTPS
+and introspection typesupport even with Cyclone selected. This is dependency
+code generation, not a Fast DDS middleware/configuration acceptance run. An
+initial broad wildcard invocation was interrupted; use explicit supported
+providers for this gate. No --config=fastdds test or runtime check was run.
+Targeted buildifier, clang-format and whitespace checks pass. Agnocast plugin
+assembly can consume the expanded collection, but no new bridge/runtime matrix
+is claimed by this message-only task. Model and full YOLOX gates follow.

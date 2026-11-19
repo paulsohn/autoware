@@ -1,0 +1,39 @@
+load("@rosidl_default_generators//:defs.bzl", "ros_message")
+
+package(default_visibility = ["//visibility:public"])
+
+ros_message(
+    name = "TrafficLightElement",
+    src = "TrafficLightElement.msg",
+    deps = [],
+)
+
+ros_message(
+    name = "TrafficLightRoi",
+    src = "TrafficLightRoi.msg",
+    deps = ["@sensor_msgs//msg:RegionOfInterest"],
+)
+
+ros_message(
+    name = "TrafficLightRoiArray",
+    src = "TrafficLightRoiArray.msg",
+    deps = [
+        ":TrafficLightRoi",
+        "@std_msgs//msg:Header",
+    ],
+)
+
+ros_message(
+    name = "TrafficLight",
+    src = "TrafficLight.msg",
+    deps = [":TrafficLightElement"],
+)
+
+ros_message(
+    name = "TrafficLightArray",
+    src = "TrafficLightArray.msg",
+    deps = [
+        ":TrafficLight",
+        "@std_msgs//msg:Header",
+    ],
+)

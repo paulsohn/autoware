@@ -1,0 +1,82 @@
+load("@rosidl_default_generators//:defs.bzl", "ros_message")
+
+package(default_visibility = ["//visibility:public"])
+
+ros_message(
+    name = "DetectedObjectWithFeature",
+    src = "DetectedObjectWithFeature.msg",
+    deps = [
+        ":Feature",
+        "@autoware_perception_msgs//msg:DetectedObject",
+    ],
+)
+
+ros_message(
+    name = "DetectedObjectsWithFeature",
+    src = "DetectedObjectsWithFeature.msg",
+    deps = [
+        ":DetectedObjectWithFeature",
+        "@std_msgs//msg:Header",
+    ],
+)
+
+ros_message(
+    name = "DynamicObject",
+    src = "DynamicObject.msg",
+    deps = [
+        ":Semantic",
+        ":Shape",
+        ":State",
+        "@unique_identifier_msgs//msg:UUID",
+    ],
+)
+
+ros_message(
+    name = "DynamicObjectArray",
+    src = "DynamicObjectArray.msg",
+    deps = [
+        ":DynamicObject",
+        "@std_msgs//msg:Header",
+    ],
+)
+
+ros_message(
+    name = "Feature",
+    src = "Feature.msg",
+    deps = [
+        "@sensor_msgs//msg:PointCloud2",
+        "@sensor_msgs//msg:RegionOfInterest",
+    ],
+)
+
+ros_message(
+    name = "PredictedPath",
+    src = "PredictedPath.msg",
+    deps = ["@geometry_msgs//msg:PoseWithCovarianceStamped"],
+)
+
+ros_message(
+    name = "Semantic",
+    src = "Semantic.msg",
+    deps = [],
+)
+
+ros_message(
+    name = "Shape",
+    src = "Shape.msg",
+    deps = [
+        "@geometry_msgs//msg:Polygon",
+        "@geometry_msgs//msg:Vector3",
+    ],
+)
+
+ros_message(
+    name = "State",
+    src = "State.msg",
+    deps = [
+        ":PredictedPath",
+        "@geometry_msgs//msg:AccelWithCovariance",
+        "@geometry_msgs//msg:PoseWithCovariance",
+        "@geometry_msgs//msg:TwistWithCovariance",
+    ],
+)

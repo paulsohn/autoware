@@ -1631,3 +1631,22 @@ cc_test(
     srcs = ["autoware_utils/test_facade.cpp"],
     deps = ["@autoware_utils"],
 )
+
+collect_transitive_dynamic_deps(
+    name = "tier4_perception_dynamic_deps",
+    dynamic_deps = [
+        "@tier4_perception_msgs//:cc_shared",
+        "@rclcpp//:rclcpp",
+    ],
+)
+
+cc_test(
+    name = "tier4_perception_roundtrip_test",
+    srcs = ["tier4_perception_msgs/test_roundtrip.cpp"],
+    dynamic_deps = [":tier4_perception_dynamic_deps"],
+    deps = [
+        "@googletest//:gtest_main",
+        "@rclcpp//:rclcpp_library",
+        "@tier4_perception_msgs//:cc",
+    ],
+)
