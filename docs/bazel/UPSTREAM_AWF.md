@@ -999,6 +999,8 @@ separately; older ROS/CMake and ARM have not been tested.
 - [ ] Associate the filesystem/sstream corrections with a matching PR. No
   matching correction is associated; not submitted upstream.
 
+Local source correction: `1b2f9a6679152fb3dcdf61476064d035f0f5c447`.
+
 Local experiment: Clang/libc++21 cannot find experimental/filesystem; the
 single-image node selects it through nonexistent __GNUC_MAJOR__. label.cpp
 also lacks the direct sstream include needed to instantiate stringstream.

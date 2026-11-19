@@ -6,7 +6,7 @@ load("//:pins.bzl", "TENSORRT_VERSION")
 
 TENSORRT_VERSION_MAJOR = TENSORRT_VERSION.split(".")[0]
 
-def tensorrt_cc_test(name, srcs, deps, data = [], local_defines = [], dynamic_deps = [], libstdcxx_runtime = None):
+def tensorrt_cc_test(name, srcs, deps, data = [], local_defines = [], dynamic_deps = [], libstdcxx_runtime = None, run_under = None, timeout = "moderate"):
     """Keep native GTest cases while making bare-name builder dlopen portable."""
     binary = name + "_binary"
     cc_binary(
@@ -23,14 +23,16 @@ def tensorrt_cc_test(name, srcs, deps, data = [], local_defines = [], dynamic_de
         libstdcxx_runtime or Label("@tensorrt_libstdcxx//:lib/libstdc++.so.6.0.30"),
         Label("@tensorrt_libgcc//:lib/libgcc_s.so.1"),
     ]
+    runner_args = ["--run-under", "$(rlocationpath " + str(run_under) + ")"] if run_under else []
+    runner_data = [run_under] if run_under else []
     py_test(
         name = name,
         srcs = [Label("//:test_runner.py")],
         main = Label("//:test_runner.py"),
-        args = ["$(rlocationpath :" + binary + ")"] + ["$(rlocationpath " + str(p) + ")" for p in runtime_files],
-        data = [":" + binary, Label("//:runtime_libs")] + runtime_files,
+        args = ["$(rlocationpath :" + binary + ")"] + ["$(rlocationpath " + str(p) + ")" for p in runtime_files] + runner_args,
+        data = [":" + binary, Label("//:runtime_libs")] + runtime_files + runner_data,
         deps = [Label("@rules_python//python/runfiles")],
         tags = ["no-remote", "no-sandbox", "requires-gpu"],
-        timeout = "moderate",
+        timeout = timeout,
         precompile = "disabled",
     )

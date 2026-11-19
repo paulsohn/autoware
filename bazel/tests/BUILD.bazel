@@ -1659,3 +1659,51 @@ py_test(
     precompile = "disabled",
     deps = ["@ament_index_python"],
 )
+
+py_binary(
+    name = "yolox_fixture_runner",
+    testonly = True,
+    srcs = ["autoware_tensorrt_yolox/with_models.py"],
+    data = [
+        "@autoware_tensorrt_yolox//:ament_index",
+        "@autoware_tensorrt_yolox_models//:ament_index",
+    ],
+    main = "autoware_tensorrt_yolox/with_models.py",
+    precompile = "disabled",
+    deps = ["@ament_index_python"],
+)
+
+[
+    tensorrt_cc_test(
+        name = "yolox_" + kind + "_test",
+        timeout = "long",
+        srcs = ["@autoware_tensorrt_yolox//:test/test_tensorrt_yolox_" + kind + ".cpp"],
+        dynamic_deps = [
+            "@autoware_tensorrt_yolox",
+            "@autoware_tensorrt_yolox//:node_component",
+            "@autoware_tensorrt_yolox//:gpu_preprocess",
+            "@autoware_tensorrt_yolox//:runtime_dynamic_deps",
+        ],
+        run_under = ":yolox_fixture_runner",
+        deps = [
+            "@ament_index_cpp//:ament_index_cpp_library",
+            "@autoware_tensorrt_yolox//:node_library",
+            "@googletest//:gtest",
+        ],
+    )
+    for kind in [
+        "detector",
+        "node",
+    ]
+]
+
+
+py_test(
+    name = "yolox_fixture_adapter_test",
+    srcs = ["autoware_tensorrt_yolox/test_fixture_adapter.py"],
+    args = ["$(rlocationpath :yolox_fixture_runner)"],
+    data = [":yolox_fixture_runner"],
+    main = "autoware_tensorrt_yolox/test_fixture_adapter.py",
+    precompile = "disabled",
+    deps = ["@rules_python//python/runfiles"],
+)

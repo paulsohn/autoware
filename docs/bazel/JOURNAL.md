@@ -8758,3 +8758,89 @@ models build actual FP16 engines; real-image detection, segmentation and ROS
 outputs are checked. Source corrections remain separate from Bazel definitions.
 Targeted clang-format/whitespace checks pass. Older ROS/CMake builds, INT8
 calibration, other SDK versions and ARM are not tested.
+
+## 2026-11-19: Phase 6.4.4 — Complete YOLOX GPU consumer
+
+Purpose: expose the full local autoware_tensorrt_yolox package with all existing
+behavior tests. Inspect its five C++ sources, one CUDA preprocessing source,
+two component/executable contracts, original resources and three original test
+files. Gate: all ten label cases, three real-model detector cases and the
+original ROS-node case, with no GPU/model skips. Reuse the preceding local
+utility, Tier 4 message, decompressor and model integrations. The separately
+committed source correction is 1b2f9a66; it does not alter inference behavior.
+
+Add local MODULE/BUILD/root override. Use registry image_transport 6.4.10-1.rcr.0
+because no local implementation exists. Compile preprocessing with nvcc/C++17;
+compile the full library and both original node sources with the existing
+libc++ toolchain and pinned OpenMP support. Reuse the source-built LLVM libomp
+header/archive pattern. Export the processing library, preprocessing shared
+provider, both components, generated executables, original launch/config files
+and test_image.jpg through the package-owned ament index. Preserve test mains:
+all three original files supply main, so link gtest rather than gtest_main.
+
+Use perception_utils' dedicated run_length_encoder_library/shared target,
+not its full geometry/remapping closure. Keep shared providers explicit. The
+ROS-node test exposed a runtime-only failure after successful linking: its
+DebugPublisher could not load autoware_internal_debug_msgs' introspection
+support because the generator-C shared library was absent. Declare the actual
+debug-message module and :cc_shared provider in the component's collected
+runtime closure. Merely embedding generated code statically does not satisfy
+ROS's runtime typesupport loading contract.
+
+The label suite initially aborted before executing because the linked
+image_transport library initializes a plugin loader and needs its package
+index. Put the component's own :ament_index in that test's data; it composes
+the image_transport provider. The detector/node adapters already declare this
+index. Neither failure requires changing an original test or deferring cases.
+
+Keep added adapters under bazel/tests/autoware_tensorrt_yolox. The fixture runner
+resolves the model's indexed share, copies exactly the two required ONNX files
+and labels/color map into TEST_TMPDIR, supplies the original tests'
+YOLOX_TEST_DATA_DIR override and an explicit runtime index prefix, then preserves
+native exit/XML results. Engine files remain writable temporary outputs.
+Reject skipped or empty native suites; two added negative adapter cases verify
+that those zero-exit native results still fail the integration gate.
+
+Extend the generic third_party/tensorrt test helper with optional run_under and
+timeout inputs. Its existing SDK/GNU runtime resolution happens before invoking
+the caller-owned fixture command, so the Autoware adapter need not duplicate SDK
+paths or depend on host libraries. The helper has no Autoware labels. Native
+TensorRT-common's full thirteen-case suite passes with the default path after
+this change (22.2 seconds), and both YOLOX suites exercise the fixture path.
+Use a long timeout for these model-building suites, matching their original
+multi-minute allowance instead of treating engine construction as a unit test. The
+remaining shared-launcher consumers are also rerun after the helper change:
+all five classifier and both GNU-runtime plugin-interop cases pass in a
+27.245-second invocation (22.1 and 1.4 seconds respectively), zero skips.
+Reproduce with bazel test --config=no-agnocast --local_test_jobs=1
+--nocache_test_results --test_output=errors //bazel/tests:tensorrt_classifier_test
+//bazel/tests:tensorrt_plugins_test.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=no-agnocast --local_test_jobs=1 \
+  --nocache_test_results --test_output=errors @autoware_tensorrt_yolox//... \
+  //bazel/tests:yolox_detector_test //bazel/tests:yolox_node_test
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=no-agnocast --local_test_jobs=1 \
+  --nocache_test_results --test_output=errors @autoware_tensorrt_common//...
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=no-agnocast --local_test_jobs=1 \
+  --nocache_test_results --test_output=errors //bazel/tests:yolox_fixture_adapter_test
+```
+
+Results: all twenty-one package non-test targets build; all fourteen original
+cases pass, zero failures/errors/skips/disabled. Final native target times are
+0.2 seconds (labels), 38.8 (detector), 22.1 (ROS node); the combined invocation
+also included a separately corrected launcher-adapter check and took 101.536
+seconds. The detector verifies blank-image rejection, traffic-light detection
+in the real original image, bounded/remapped ROIs and semantic/color masks.
+The ROS test publishes real images through Cyclone DDS and verifies object and
+mask outputs after actual FP16 GPU inference. The fixture rejection target
+passes both added checks in 0.7 seconds. Targeted buildifier, clang-format,
+Python syntax and whitespace checks pass.
+
+No original test is edited or omitted. INT8 calibration accuracy, GUI/single-
+image interactive behavior, performance, ARM/Thor and Fast DDS are not claimed.
+The separate launcher boundary finishes indexed defaults/dependencies; full
+perception launch composition and deployable runtime bundles remain later work.

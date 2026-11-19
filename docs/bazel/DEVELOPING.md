@@ -779,7 +779,12 @@ rootpath definitions. The launcher resolves runtime anchors through runfiles,
 adds the SDK/GNU directories for bare-name builder dlopen, and preserves native
 GTest XML/exit status. Never link the builder-resource libraries directly; their
 SONAMEs intentionally prohibit that use. The helper's runtime data includes
-pinned GNU runtimes and the builder resources, not incidental host SDK installs.
+pinned GNU runtimes and the builder resources, not incidental host SDK installs. A
+caller-owned fixture executable can be supplied through run_under; it receives
+the native command after SDK runtime setup. Keep application fixture preparation
+under bazel/tests/, and set timeout="long" for genuine multi-minute model builds.
+The wrapper must preserve native exit/XML results and keep engine-cache outputs
+in writable temporary storage.
 
 Run `bazel test --config=no-agnocast --nocache_test_results --test_output=errors @autoware_tensorrt_common//...` on a provisioned GPU host.
 Check XML for all 13 cases with no skips. The separate CUDA-utils regression
@@ -866,6 +871,29 @@ the tiny checked-in ONNX model. doInference currently always selects CPU
 preprocessing, including with cuda=true; direct CUDA preprocessing is a separate
 entry point with RGB/default-normalization behavior. The test checks both
 contracts independently, not parity or INT8 accuracy.
+
+## YOLOX inference
+
+Use @autoware_tensorrt_yolox//:autoware_tensorrt_yolox_library and its matching
+shared provider; node_library/node_component own the ROS component. The package
+index registers both original executables/components, configuration, launch
+files and the original test image. Declare the debug-message :cc_shared provider
+when using its debug publishers: static generated code alone does not supply
+ROS's dlopen typesupport closure. Tests linking image_transport also need its
+indexed plugin resources, composed by the YOLOX package index.
+
+Run the whole original suite on a supported GPU with materialized model data:
+
+```sh
+bazel test --config=no-agnocast --local_test_jobs=1 --nocache_test_results --test_output=errors @autoware_tensorrt_yolox//... //bazel/tests:yolox_detector_test //bazel/tests:yolox_node_test
+bazel test --config=no-agnocast --nocache_test_results --test_output=errors //bazel/tests:yolox_fixture_adapter_test
+```
+
+Expect ten label cases, three detector cases and one ROS-node case with zero
+skips. The root fixture adapter copies declared ONNX/metadata resources into
+temporary storage and sets the original suites' model-directory override. The
+separate adapter test ensures skipped/empty native results fail the gate. The
+real-model tests use FP16; they do not establish INT8 calibration accuracy.
 
 ## Negotiated and CUDA blackboard transport
 

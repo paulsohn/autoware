@@ -10,6 +10,7 @@ bazel_dep(name = "rules_shell", version = "0.6.1")
 bazel_dep(name = "llvm", version = "0.8.25.rcr.0")
 bazel_dep(name = "rosdistro", version = "lyrical.2026-10-05.rcr.3")
 bazel_dep(name = "ament_index_python", version = "0.0.0")
+bazel_dep(name = "ament_index_cpp", version = "0.0.0")
 bazel_dep(name = "rosidl_default_generators", version = "0.0.0")
 bazel_dep(name = "std_msgs", version = "0.0.0")
 bazel_dep(name = "geometry_msgs", version = "0.0.0")
@@ -33,6 +34,7 @@ bazel_dep(name = "nav_msgs", version = "5.9.3-1.rcr.0")
 bazel_dep(name = "lifecycle_msgs", version = "0.0.0")
 bazel_dep(name = "sensor_msgs", version = "5.9.3-1.rcr.0")
 bazel_dep(name = "cv_bridge", version = "4.1.0-3.rcr.2")
+bazel_dep(name = "image_transport", version = "6.4.10-1.rcr.0")
 bazel_dep(name = "pcl_conversions", version = "2.10.0-1.rcr.0")
 bazel_dep(name = "tf2", version = "0.45.10-1.rcr.0")
 bazel_dep(name = "tf2_msgs", version = "0.0.0")
@@ -891,4 +893,10 @@ bazel_dep(name = "autoware_tensorrt_yolox_models", version = "0.0.0")
 local_path_override(
     module_name = "autoware_tensorrt_yolox_models",
     path = "src/models/tensorrt_yolox",
+)
+
+bazel_dep(name = "autoware_tensorrt_yolox", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_tensorrt_yolox",
+    path = "src/universe/autoware_universe/perception/autoware_tensorrt_yolox",
 )

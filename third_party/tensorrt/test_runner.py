@@ -15,4 +15,11 @@ env = os.environ.copy()
 directories = [str(Path(path).parent) for path in paths[1:]]
 env['LD_LIBRARY_PATH'] = ':'.join(directories + [env.get('LD_LIBRARY_PATH', '')])
 env['GTEST_OUTPUT'] = 'xml:' + env['XML_OUTPUT_FILE']
-os.execve(paths[0], [paths[0], *sys.argv[5:]], env)
+arguments = sys.argv[5:]
+command = [paths[0], *arguments]
+if arguments[:1] == ['--run-under']:
+    wrapper = r.Rlocation(arguments[1])
+    if not wrapper:
+        raise RuntimeError('TensorRT test fixture runner is missing')
+    command = [wrapper, paths[0], *arguments[2:]]
+os.execve(command[0], command, env)

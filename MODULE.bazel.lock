@@ -743,6 +743,8 @@
     "https://bazel.ros.org/modules/icu/76.1.bcr.4/MODULE.bazel": "not found",
     "https://bazel.ros.org/modules/icu/78.2.bcr.2/MODULE.bazel": "not found",
     "https://bazel.ros.org/modules/icu/78.2.bcr.3/MODULE.bazel": "not found",
+    "https://bazel.ros.org/modules/image_transport/6.4.10-1.rcr.0/MODULE.bazel": "d660f68c8b61a378101b89fad555fe1cf1bacfbe4e6640c07a7b2d3fcc3a06a6",
+    "https://bazel.ros.org/modules/image_transport/6.4.10-1.rcr.0/source.json": "72cb4fde7aa6e557b387d3c8c50d5243beecd2abc6dbac282948540099e56b15",
     "https://bazel.ros.org/modules/imath/3.2.2.bcr.1/MODULE.bazel": "not found",
     "https://bazel.ros.org/modules/imath/3.2.3/MODULE.bazel": "not found",
     "https://bazel.ros.org/modules/imgui/1.79.rcr.0/MODULE.bazel": "8aad3118571a6f27245b661f002551f8e7f379c6b73ceff686c2a609a79ed087",
@@ -3548,7 +3550,7 @@
     "@@rosdistro+//python:defs.bzl%pip_ros": {
       "general": {
         "bzlTransitiveDigest": "9KPSmaWfGTp6RN0By0DcuUgpR00WASpGuGN+q6IHLUY=",
-        "usagesDigest": "yWUvSoyXc/w0uu++t/nXgj+dVADMFuwvlasELWfAF9s=",
+        "usagesDigest": "VyI7GeynB+mQ6/o0SCTX3b8PqB9ZcPK4XvHiMOhgSGU=",
         "recordedInputs": [
           "REPO_MAPPING:bazel_features+,bazel_features_globals bazel_features++version_extension+bazel_features_globals",
           "REPO_MAPPING:bazel_features+,bazel_features_version bazel_features++version_extension+bazel_features_version",
@@ -3658,7 +3660,7 @@
     "@@rules_cuda+//cuda:extensions.bzl%toolchain": {
       "general": {
         "bzlTransitiveDigest": "ISt+9j9u05NPbX6oCauFQp6cb/XsWWfK2i6xIKXY8cA=",
-        "usagesDigest": "J51d2GLU/K8Rb0Xg+UII1Ef+z4ryH9+P9AxU4TjeWR4=",
+        "usagesDigest": "8PdFArBwsP+YdYrGu5j89acLLXUVOb8f5m8wWl4wOcY=",
         "recordedInputs": [
           "REPO_MAPPING:bazel_features+,bazel_features_globals bazel_features++version_extension+bazel_features_globals",
           "REPO_MAPPING:bazel_features+,bazel_features_version bazel_features++version_extension+bazel_features_version",

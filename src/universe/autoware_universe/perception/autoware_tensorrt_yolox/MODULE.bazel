@@ -1,0 +1,29 @@
+module(
+    name = "autoware_tensorrt_yolox",
+    version = "0.53.0",
+)
+
+bazel_dep(name = "ament_index_cpp", version = "0.0.0")
+bazel_dep(name = "autoware_cuda_utils", version = "0.0.0")
+bazel_dep(name = "autoware_internal_debug_msgs", version = "0.0.0")
+bazel_dep(name = "autoware_tensorrt_common", version = "0.0.0")
+bazel_dep(name = "autoware_utils", version = "0.0.0")
+bazel_dep(name = "cv_bridge", version = "4.1.0-3.rcr.2")
+bazel_dep(name = "image_transport", version = "6.4.10-1.rcr.0")
+bazel_dep(name = "perception_utils", version = "0.0.0")
+bazel_dep(name = "rclcpp", version = "0.0.0")
+bazel_dep(name = "rclcpp_components", version = "0.0.0")
+bazel_dep(name = "sensor_msgs", version = "0.0.0")
+bazel_dep(name = "tier4_perception_msgs", version = "0.0.0")
+bazel_dep(name = "rosdistro", version = "0.0.0")
+bazel_dep(name = "rules_cc", version = "0.2.26.rcr.0")
+bazel_dep(name = "rules_cuda", version = "0.4.0")
+bazel_dep(name = "tensorrt", version = "0.0.0")
+bazel_dep(name = "googletest", version = "1.18.0.bcr.1")
+bazel_dep(name = "llvm", version = "0.8.25.rcr.0")
+
+llvm = use_extension("@llvm//extensions:llvm.bzl", "llvm")
+use_repo(llvm, "llvm-project")
+
+cuda = use_extension("@rules_cuda//cuda:extensions.bzl", "toolchain")
+use_repo(cuda, "cuda")

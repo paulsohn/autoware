@@ -1,0 +1,203 @@
+load("@rclcpp_components//:defs.bzl", "rclcpp_components_register_node")
+load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_import", "cc_library", "cc_shared_library", "cc_test")
+load("@rules_cuda//cuda:defs.bzl", "cuda_library")
+load("@tensorrt//:defs.bzl", "TENSORRT_VERSION_MAJOR")
+
+package(default_visibility = ["//visibility:public"])
+
+cuda_library(
+    name = "gpu_preprocess_library",
+    srcs = ["src/preprocess.cu"],
+    hdrs = ["include/autoware/tensorrt_yolox/preprocess.hpp"],
+    copts = ["-std=c++17"],
+    includes = ["include"],
+    deps = ["@cuda//:cuda_runtime"],
+)
+
+cc_shared_library(
+    name = "gpu_preprocess",
+    deps = [":gpu_preprocess_library"],
+)
+
+cc_import(
+    name = "openmp_runtime",
+    static_library = "@llvm-project//openmp:libomp",
+)
+
+cc_library(
+    name = "autoware_tensorrt_yolox_library",
+    srcs = [
+        "src/label.cpp",
+        "src/tensorrt_yolox.cpp",
+        "src/tensorrt_yolox_detector.cpp",
+    ],
+    hdrs = glob(
+        ["include/**/*.hpp"],
+        exclude = ["include/**/tensorrt_yolox_node.hpp"],
+    ),
+    copts = [
+        "-fopenmp",
+        "-Wno-deprecated-declarations",
+    ],
+    includes = ["include"],
+    local_defines = ["TENSORRT_VERSION_MAJOR=" + TENSORRT_VERSION_MAJOR],
+    deps = [
+        ":gpu_preprocess_library",
+        ":openmp_runtime",
+        "@autoware_cuda_utils",
+        "@autoware_tensorrt_common//:autoware_tensorrt_common_library",
+        "@cv_bridge//:cv_bridge_library",
+        "@llvm-project//openmp:libomp",
+        "@perception_utils//:run_length_encoder_library",
+        "@rclcpp//:rclcpp_library",
+        "@rosdistro//cc:opencv_library",
+        "@rosdistro//cc:tl_expected",
+        "@sensor_msgs//:cc",
+        "@tier4_perception_msgs//:cc",
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = [
+        "@autoware_internal_debug_msgs//:cc_shared",
+        "@autoware_tensorrt_common",
+        "@cv_bridge//:cv_bridge",
+        "@image_transport//:image_transport",
+        "@perception_utils//:run_length_encoder",
+        "@rosdistro//cc:opencv",
+        "@rclcpp_components//:rclcpp_components",
+        "@tier4_perception_msgs//:cc_shared",
+        "@ament_index_cpp//:ament_index_cpp",
+    ],
+)
+
+cc_shared_library(
+    name = "autoware_tensorrt_yolox",
+    dynamic_deps = [
+        ":gpu_preprocess",
+        ":runtime_dynamic_deps",
+    ],
+    deps = [":autoware_tensorrt_yolox_library"],
+)
+
+cc_library(
+    name = "node_library",
+    srcs = ["src/tensorrt_yolox_node.cpp"],
+    hdrs = ["include/autoware/tensorrt_yolox/tensorrt_yolox_node.hpp"],
+    copts = ["-Wno-deprecated-declarations"],
+    includes = ["include"],
+    local_defines = ["TENSORRT_VERSION_MAJOR=" + TENSORRT_VERSION_MAJOR],
+    deps = [
+        ":autoware_tensorrt_yolox_library",
+        "@autoware_utils",
+        "@image_transport//:image_transport_library",
+        "@rclcpp_components//:rclcpp_components_library",
+    ],
+)
+
+cc_shared_library(
+    name = "node_component",
+    dynamic_deps = [
+        ":autoware_tensorrt_yolox",
+        ":runtime_dynamic_deps",
+    ],
+    shared_lib_name = "libautoware_tensorrt_yolox_node.so",
+    deps = [":node_library"],
+)
+
+rclcpp_components_register_node(
+    name = "autoware_tensorrt_yolox_node_exe",
+    component = ":node_component",
+    node_name = "autoware_tensorrt_yolox_node_exe",
+    plugin = "autoware::tensorrt_yolox::TrtYoloXNode",
+)
+
+cc_library(
+    name = "single_image_library",
+    srcs = ["src/yolox_single_image_inference_node.cpp"],
+    copts = ["-Wno-deprecated-declarations"],
+    local_defines = ["TENSORRT_VERSION_MAJOR=" + TENSORRT_VERSION_MAJOR],
+    deps = [
+        ":autoware_tensorrt_yolox_library",
+        "@rclcpp_components//:rclcpp_components_library",
+    ],
+)
+
+cc_shared_library(
+    name = "single_image_component",
+    dynamic_deps = [
+        ":autoware_tensorrt_yolox",
+        ":runtime_dynamic_deps",
+    ],
+    shared_lib_name = "libyolox_single_image_inference_node.so",
+    deps = [":single_image_library"],
+)
+
+rclcpp_components_register_node(
+    name = "yolox_single_image_inference",
+    component = ":single_image_component",
+    node_name = "yolox_single_image_inference",
+    plugin = "autoware::tensorrt_yolox::YoloXSingleImageInferenceNode",
+)
+
+register_ament_files(
+    name = "resources",
+    files = glob([
+        "launch/**",
+        "config/**",
+    ]) + ["test/test_image.jpg"],
+    prefix = "share/autoware_tensorrt_yolox",
+)
+
+register_ament_files(
+    name = "executables",
+    files = [
+        ":autoware_tensorrt_yolox_node_exe",
+        ":yolox_single_image_inference",
+    ],
+    prefix = "lib/autoware_tensorrt_yolox",
+    strip_prefix = "*",
+)
+
+ament_index(
+    components = [
+        ":autoware_tensorrt_yolox_node_exe_record",
+        ":yolox_single_image_inference_record",
+    ],
+    data = [
+        ":executables",
+        ":resources",
+    ],
+    libraries = [
+        ":autoware_tensorrt_yolox",
+        ":gpu_preprocess",
+    ],
+    package_xml = "package.xml",
+    deps = [
+        "@image_transport//:ament_index",
+        "@rclcpp_components//:ament_package",
+    ],
+)
+
+cc_test(
+    name = "test_label",
+    srcs = ["test/test_label.cpp"],
+    data = [":ament_index"],
+    dynamic_deps = [
+        ":autoware_tensorrt_yolox",
+        ":gpu_preprocess",
+        ":runtime_dynamic_deps",
+    ],
+    deps = [
+        ":autoware_tensorrt_yolox_library",
+        "@googletest//:gtest",
+    ],
+)
+
+exports_files([
+    "test/test_tensorrt_yolox_detector.cpp",
+    "test/test_tensorrt_yolox_node.cpp",
+])
