@@ -265,3 +265,10 @@ from bazel commit 1d0cd537 selects the corresponding executor and initializes
 the required contexts. After rebuilding, the complete colcon wrapper suite
 passed in fallback mode and all 37 C++ cases passed with the real heap hook in
 enabled mode. Minimum available host memory for the rerun was 7,942 MiB.
+
+### Port the Universe crop pipeline dependencies to Lyrical
+
+The enabled node-registration macro from AWF autoware_core PR 1540 applies
+directly. The old macro called the removed ament_target_dependencies in the
+generated executable path. The enabled Universe crop and endpoint executables
+both configured and linked against the patched installed macro.
