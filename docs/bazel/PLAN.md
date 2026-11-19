@@ -1441,7 +1441,8 @@ targets as runtime dependencies. This exercises editable model-engineering
 inputs without maintaining upstream forks. The same repository boundaries can
 later be checked out independently through submodules or a hypothetical pinned
 models.repos manifest. Keep that manifest idea as an option, not a mandatory
-per-model Bazel adoption step; no model imports or manifest are implemented yet.
+per-model Bazel adoption step. The first supported repository is tensorrt_yolox;
+no models.repos manifest is implemented.
 
 Add one package.xml and minimal ament_cmake CMakeLists.txt per imported model
 repository, alongside its Bazel files, so both build paths share a package name
@@ -1453,7 +1454,8 @@ claiming support or that large model payloads are not copied. Colcon users must
 obtain and build the model packages needed by their selected launch and source
 the resulting environment. A future models.repos could select those checkouts;
 Ansible hf downloads into HOME alone no longer supply the required indexes.
-These are required experiments, not current supported model packages.
+The tensorrt_yolox package validates this build/index pattern; apply it to each
+subsequently selected model repository.
 
 Choose subtree subpaths from existing model-data-directory-relative paths where
 practical; decide remaining subpaths with each consumer. Special case: use
@@ -1496,14 +1498,15 @@ definition enable colcon discovery/build; successful validation establishes
 compatibility. If a manifest is later introduced, test its checkout/materialized
 payload/build-support procedure before claiming a working collaborative setup.
 
-The first model task must test indexed lookup from a relocated/materialized
-bundle, complete consumer behavior, the flat diffusion path, launcher runtime
-dependency declarations and colcon build/symlink-install/environment sourcing.
+Each model task must test indexed lookup from a relocated/materialized
+bundle, its complete consumer behavior, launcher runtime dependency declarations
+and colcon build/symlink-install/environment sourcing. The diffusion migration
+must additionally validate its flat single-revision layout.
 A hypothetical manifest checkout is a separate future compatibility experiment,
 not a required marker of Bazel adoption.
 Initial inspection found 26 launch files with HOME model-root defaults and one
 active diffusion version suffix. This is not a completed conversion: model
-imports, resource providers, launch argument removal/path changes and their gates
+remaining imports, resource providers, launch argument removal/path changes and their gates
 must land together. Phase 6.2 keeps its existing dummy ONNX fixture; introduce
 real model repositories when the selected consumer requires them.
 

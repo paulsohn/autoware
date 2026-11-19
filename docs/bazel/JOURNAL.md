@@ -8618,3 +8618,95 @@ buildifier, clang-format and whitespace checks pass. These are native rclcpp
 nodes with Cyclone DDS; no Agnocast rewrite, Fast DDS or separate component
 runtime matrix is claimed. Continue with repository-owned model resources and
 YOLOX's complete GPU suite.
+
+## 2026-11-19: Phase 6.4.4 — Repository-owned YOLOX models
+
+Purpose: supply the real ONNX detection/segmentation inputs required by all
+existing YOLOX tests, while exercising editable repository-owned model modules.
+Inspect the reference artifact task, actual tests and launch defaults. All
+required detection and segmentation weights/labels/color maps are in the single
+AutowareFoundation/tensorrt_yolox repository; importing the separate fine-
+detector repository is unnecessary for this consumer. Use tag v1.0, immutable
+commit 424d6b9cb94c939ae9ce6a22380e46c13f76b1da, from
+https://huggingface.co/AutowareFoundation/tensorrt_yolox. Its README declares
+Apache-2.0; retain that model documentation/license metadata.
+
+Clone into an isolated temporary directory with GIT_LFS_SKIP_SMUDGE=1, run git
+lfs pull there, and compare all five payload SHA256/size pairs against the HF
+revision API's LFS metadata. Keep full immutable inputs in MODEL_PROVENANCE.md
+and SHA256SUMS inside the repository boundary. Import as a squashed subtree at
+src/models/tensorrt_yolox. Direct HF fetch negotiation with the large parent
+repository failed with expected acknowledgments; fetching/unshallowing the
+isolated model clone and importing that local Git revision succeeds. The
+recorded upstream URL/revision remain unchanged.
+
+Preserve the original nested .gitattributes and LFS pointers, materializing
+actual bytes in the working tree. Run git lfs install --local in the parent;
+normal pushes must mirror those objects to the parent repository's own LFS
+remote. Do not configure one HF endpoint for the whole metarepository: it would
+break independently edited weights and other model repositories. SHA256SUMS
+represents current checked-in payloads; model edits update it alongside related
+metadata, while the immutable import provenance remains recorded separately.
+
+Add one repository-owned autoware_tensorrt_yolox_models MODULE/BUILD/package.xml
+and minimal ament_cmake CMakeLists. :models exposes weights/metadata; register
+original filenames into share/autoware_tensorrt_yolox_models with its own ament
+index. CMake installs that same set; remove CMakeLists.txt from the *.txt glob.
+No aggregate model package or Ansible/repositories reference change is needed.
+Root selects the local module; consumers own model/runtime choices outside it.
+
+```sh
+# In an isolated model checkout at the recorded revision:
+git lfs pull
+sha256sum -c SHA256SUMS
+# From the Bazel product root:
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=no-agnocast --local_test_jobs=1 \
+  --nocache_test_results --test_output=errors //bazel/tests:yolox_model_resources_test
+# Separately, in an existing sourced colcon/ROS development environment:
+colcon build --base-paths src/models/tensorrt_yolox --symlink-install
+. install/setup.bash
+python3 -c 'from ament_index_python.packages import get_package_share_directory; print(get_package_share_directory("autoware_tensorrt_yolox_models"))'
+```
+
+Initial results: all five HF hashes/sizes match; both added model checks pass
+(0.7-second test, 2.388-second invocation), including a materialized standalone
+relocated prefix with no source-path lookup. A separate existing Jazzy/colcon
+environment discovers/builds this model-only package in 0.77 seconds; after
+sourcing its install, all five indexed ONNX paths are symlinks to matching real
+payloads. This host ROS installation is used only for the requested colcon
+compatibility experiment, never as a Bazel dependency provider.
+
+Storage gate: git lfs push paulsohn bazel uploads all five objects (238 MB) to
+the project remote. Create a fresh clone with --no-local --depth=1 --no-checkout,
+sparse-check out src/models/tensorrt_yolox with GIT_LFS_SKIP_SMUDGE=1, select the
+project remote as origin, then git lfs install --local and git lfs pull. Verify
+its independent .git/lfs/objects is initially empty: a --shared clone reuses
+local LFS objects and does not establish remote retrieval. All five fresh
+payloads match SHA256SUMS after downloading from the project remote. These are
+newly stored project objects, not an HF-only fallback; normal Git LFS storage
+also accepts subsequent edited weights. No synthetic weight change is committed.
+
+The fresh checkout's colcon build passes in 0.85 seconds, and indexed lookup
+again confirms all five weight symlinks and hashes. Repeat the Bazel model test
+against the fresh module:
+
+```sh
+bazel test --config=no-agnocast \
+  --override_module=autoware_tensorrt_yolox_models="$model_fresh/src/models/tensorrt_yolox" \
+  --sandbox_add_mount_pair="$model_fresh" --nocache_test_results \
+  --test_output=errors //bazel/tests:yolox_model_resources_test
+```
+
+Both cases pass in 0.7 seconds (1.946-second invocation). The temporary checkout
+is inside /tmp; Bazel's private test /tmp initially hides the ultimate targets
+of its external-repository runfile symlinks. Mounting exactly that selected
+checkout into the test namespace fixes the missing-file failure. This is a
+local experiment invocation, not a committed absolute model path or a host
+model-directory fallback. The test also materializes an independent relocated
+runtime prefix and resolves its own package index.
+
+Model storage/index/build gates are complete. YOLOX inference and affected
+launcher path/dependency changes belong to the following consumer task. Other model repos,
+the global model data_path removal and flat diffusion validation remain their
+own consumer migrations; no HOME fallback is allowed for this adopted model.

@@ -819,6 +819,29 @@ The original suite has eighteen cases; the added suite has two, covering all
 eleven creator names and an actual serialized Argsort engine. These do not
 establish numerical coverage for every sparse plugin or ARM compatibility.
 
+## Model resources
+
+src/models/tensorrt_yolox owns module/package autoware_tensorrt_yolox_models.
+Its :models filegroup exposes weights/metadata and :ament_index registers their
+original filenames in its own share directory. Runtime consumers declare that
+index and resolve it through ament_index or $(find-pkg-share autoware_tensorrt_yolox_models); do not construct source-checkout or HOME paths.
+Test consumers copy ONNX files to writable temporary storage for engine caches.
+
+Install Git LFS before checkout and materialize its objects before building.
+The parent repository uses its own normal remote LFS storage, retaining the
+upstream nested .gitattributes. Model edits require updated SHA256SUMS and
+associated metadata; push LFS objects together with the Git changes. Do not
+redirect the whole repository to the upstream Hugging Face LFS endpoint, which
+cannot receive this project's edited weights. MODEL_PROVENANCE.md inside the
+model repository records its immutable import revision.
+
+Run //bazel/tests:yolox_model_resources_test to check all five payload hashes and
+a relocated standalone index. Colcon users build the model package with
+--symlink-install and source its install/setup.bash; the model files remain
+symlinks. Upstream HF refs alone lack the added package/build metadata.
+Repositories/Ansible reference downloads are not runtime resource providers.
+Other model repositories are adopted at their actual consumer boundaries.
+
 ## TensorRT classifier
 
 Use @autoware_tensorrt_classifier//:autoware_tensorrt_classifier_library for C++

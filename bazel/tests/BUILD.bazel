@@ -1650,3 +1650,12 @@ cc_test(
         "@tier4_perception_msgs//:cc",
     ],
 )
+
+py_test(
+    name = "yolox_model_resources_test",
+    srcs = ["models/test_yolox_resources.py"],
+    data = ["@autoware_tensorrt_yolox_models//:ament_index"],
+    main = "models/test_yolox_resources.py",
+    precompile = "disabled",
+    deps = ["@ament_index_python"],
+)

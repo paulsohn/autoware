@@ -1,0 +1,7 @@
+cmake_minimum_required(VERSION 3.16)
+project(autoware_tensorrt_yolox_models NONE)
+find_package(ament_cmake REQUIRED)
+file(GLOB model_files CONFIGURE_DEPENDS "*.onnx" "*.txt" "*.csv" "*.yaml" "*.table")
+list(REMOVE_ITEM model_files "${CMAKE_CURRENT_SOURCE_DIR}/CMakeLists.txt")
+install(FILES ${model_files} SHA256SUMS MODEL_PROVENANCE.md DESTINATION share/${PROJECT_NAME})
+ament_package()

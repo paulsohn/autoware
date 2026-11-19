@@ -886,3 +886,9 @@ local_path_override(
     module_name = "autoware_image_transport_decompressor",
     path = "src/universe/autoware_universe/sensing/autoware_image_transport_decompressor",
 )
+
+bazel_dep(name = "autoware_tensorrt_yolox_models", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_tensorrt_yolox_models",
+    path = "src/models/tensorrt_yolox",
+)
