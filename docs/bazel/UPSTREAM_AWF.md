@@ -1026,3 +1026,33 @@ including real GPU detection/segmentation and ROS-node delivery, with zero skips
 The Phase 6.4.4 journal records the complete inputs, runtime fixes and commands.
 Upstream CMake/GCC, older ROS, INT8 calibration and ARM are not tested. The local
 source correction is committed separately from the build definitions.
+
+## Packaged cumm TensorView conditional instantiation with Clang
+
+- [ ] Associate with a matching upstream PR. Reviewed 2026-11-19; no matching
+  fix is associated or submission made. Related reports are
+  [cumm #23](https://github.com/FindDefinition/cumm/issues/23) and
+  [spconv #658](https://github.com/traveller59/spconv/issues/658), not matching
+  fix/test evidence.
+
+Affected input: AWF spconv_cpp's spconv2.3.8/cumm0.5.3 cu130-rev1 amd64 SDK,
+used by the complete local TensorRT plugin library. Clang21 instantiates invalid
+std::copy conversions while forming Tensor::astype's callback-based conditional,
+even for forbidden integer/half and half/bfloat pairs. The build fails before
+plugin linking. The
+[local dependency patch](../../third_party/spconv/patches/tensorview_clang_lambda.patch)
+uses C++17 if constexpr with the same conversion predicate, preserving rejection
+and the vendor binary API. The Phase 6.4.1 journal records exact artifacts,
+checksums, compiler errors, GNU ABI selection and commands.
+
+[Inspected cumm main](https://github.com/FindDefinition/cumm/blob/d971d02a0b29b7e6da46186564f37bde77b99dcc/include/tensorview/tensor.h)
+still uses callback dispatch. This is Clang/header compatibility, not a
+Lyrical-only algorithm issue. The SDK probe passes float/half round trips,
+rejected int64-to-half conversion and actual allocator/container/GPU sorting;
+all eighteen original plugin cases and both opaque TensorRT interop cases pass.
+No vendor library binary is modified.
+
+Suggested upstream action: avoid instantiating the discarded conversion branch
+under Clang while preserving supported language versions. This local patch
+requires C++17 or newer; do not assume it is suitable unchanged for upstream
+C++14 consumers. Source-built spconv/cumm, upstream CMake and ARM are untested.

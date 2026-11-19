@@ -36,6 +36,7 @@
   <exec_depend>autoware_pose_covariance_modifier</exec_depend>
   <exec_depend>autoware_pose_estimator_arbiter</exec_depend>
   <exec_depend>autoware_probabilistic_occupancy_grid_map</exec_depend>
+  <exec_depend>autoware_tensorrt_yolox_models</exec_depend>
   <exec_depend>python3-bson</exec_depend>
   <exec_depend>python3-tornado</exec_depend>
   <exec_depend>rviz2</exec_depend>

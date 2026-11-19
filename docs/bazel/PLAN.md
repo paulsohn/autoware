@@ -84,7 +84,8 @@ only when your current target demonstrates the need.
   [current evidence and planned gates](JOURNAL.md#2026-11-19-runtime-packaging-and-deployment-requirements).
 - [ ] Define editable model modules and portable runtime resource paths together.
   [Model repository/path convention](#model-repository-and-runtime-path-convention);
-  [evidence and required experiment](JOURNAL.md#2026-11-18-model-subtree-layout-and-portable-launch-path-requirements).
+  [evidence and required experiment](JOURNAL.md#2026-11-18-model-subtree-layout-and-portable-launch-path-requirements);
+  [validated model storage/index pattern](JOURNAL.md#2026-11-19-phase-644--repository-owned-yolox-models).
 - [ ] Inspect build-system-only shims before creating empty Bazel modules.
   [Working rule](../../AGENTS.md#working-rules);
   [evidence: CUDA foundation](JOURNAL.md#2026-11-18-phase-61--cuda-utils-and-pinned-toolkit).
@@ -1272,19 +1273,22 @@ resources explicitly. No full driving behavior or GUI rendering is claimed.
 Prior unchanged Agnocast/module evidence remains applicable; no new middleware
 matrix is required to close this phase. Phase 6 is next.
 
-## Phase 6: CUDA and TensorRT on x86 (in progress)
+## Phase 6: CUDA and TensorRT on x86 (complete)
 
 Bring the required GPU SDK and local CUDA consumers into the Bazel graph,
 without host toolkit discovery or apt/pip installation. GPU drivers/devices
-remain execution prerequisites. The CUDA foundation below is validated on x86; subsequent SDK/consumer choices
-remain experiments. Pin accepted versions and patches only after current
-consumers pass their complete suites.
+remain execution prerequisites. The foundations, CUDA transport and selected
+consumer group below are validated on x86. Additional consumers and target
+architectures remain separate experiments. Pin accepted versions and patches
+only after current consumers pass their complete suites.
 
 ### Initial decisions and validation boundaries
 
 - Keep the current LLVM/libc++ 21.1.8 C++ toolchain. First try nvcc with that
   hermetic host compiler; do not bundle a project-wide LLVM upgrade into CUDA
   adoption. Keep CUDA language flags local to the targets that require them.
+  The accepted vendor spconv C++ ABI closure uses GNU 13.3.0 through a configured
+  shared-library boundary; application code remains on libc++.
 - Try CUDA 13.2.2, matching the JetPack 7.2.1 planning baseline. Fetch the NVIDIA
   [redistributable manifest](https://developer.download.nvidia.com/compute/cuda/redist/redistrib_13.2.2.json)
   and required component archives with checksums. Add SDK components when an
@@ -1315,7 +1319,8 @@ consumers pass their complete suites.
   test mains and any CUDA test-object registration needed by the linker.
   Separate successful compilation, GPU execution and reproducibility claims.
   Measure reproducibility before adding compiler wrappers or deterministic-output
-  patches. CUDA/libc++ compatibility is an open experiment, not an accepted fix.
+  patches. The accepted CUDA/libc++ header corrections and their actual gates
+  are recorded in Phase 6.1; later consumers establish additional needs separately.
 
 ### Phase 6.1: CUDA foundation and direct-provider experiment (complete)
 
@@ -1505,12 +1510,12 @@ must additionally validate its flat single-revision layout.
 A hypothetical manifest checkout is a separate future compatibility experiment,
 not a required marker of Bazel adoption.
 Initial inspection found 26 launch files with HOME model-root defaults and one
-active diffusion version suffix. This is not a completed conversion: model
-remaining imports, resource providers, launch argument removal/path changes and their gates
-must land together. Phase 6.2 keeps its existing dummy ONNX fixture; introduce
-real model repositories when the selected consumer requires them.
+active diffusion version suffix. Adopt remaining model providers and their
+affected launcher paths together; do not claim global argument removal before
+all corresponding providers land. Phase 6.2 keeps its dummy ONNX fixture;
+introduce pretrained model repositories when a selected consumer requires them.
 
-### Phase 6.4: Representative GPU consumers (in progress)
+### Phase 6.4: Representative GPU consumers (complete)
 
 Select autoware_tensorrt_plugins, autoware_tensorrt_classifier and
 autoware_tensorrt_yolox as a related GPU/inference group. Validate each complete
@@ -1536,21 +1541,48 @@ Package boundaries:
   and CPU/GPU preprocessing behavior checks with explicit expected results.
   The deterministic test-only ONNX fixture needs no pretrained model module;
   introduce production model resources only at their real consumer boundary.
-- **6.4.4 — autoware_tensorrt_yolox:** integrate its required local utility and
+- **6.4.4 — autoware_tensorrt_yolox (complete):** integrate its required local utility and
   interface closure, real model bundles and launcher paths. Preserve all label,
   detector and ROS node tests, including GPU/model-dependent cases without
   skips. Check actual detection/segmentation outputs and node resources.
 
 Dependencies and model imports remain separate validated package/repository
 commit boundaries. Refine exact behavior fixtures before each implementation;
-these gates are planned work, not accepted results. Do not widen into unrelated
-perception packages or alter the existing runtime/backend contract.
+the accepted results follow. Do not widen into unrelated perception packages
+or alter the existing runtime/backend contract.
 
-Phase 6 closes when its selected module boundaries pass complete declared
-build/test/behavior gates and the SDK inputs/runtime requirements are pinned
-and reproducible from the journals. Runtime images/full driving remain Phase 7;
-Thor-compatible software builds remain Phase 8. Routine middleware validation
-uses Cyclone DDS; any Fast DDS check still requires explicit approval.
+Accepted results: the complete plugin library (seven CUDA/twenty-four C++
+sources, eleven creators) passes all eighteen original cases and two added
+libc++/TensorRT loading/serialized-engine checks. The classifier passes five
+added inference/preprocessing cases; YOLOX passes all fourteen original cases,
+including real FP16 detection, segmentation and Cyclone ROS delivery. Its local
+utility/interface/decompressor closure passes complete suites. Launcher tests
+resolve twelve YOLOX model/metadata paths in five files through the repository's
+own index and check both affected manifests. No dependency-related skips remain.
+
+Accepted sparse SDK inputs: spconv 2.3.8/cumm 0.5.3, cu130-rev1 amd64 release,
+checksum-pinned under third_party/spconv. Its container API requires GNU C++ ABI
+and GLIBCXX 3.4.32; build the pinned GNU 13.3.0 runtime and isolate that consumer
+closure behind TensorRT's versioned interfaces. A narrow C++17 TensorView
+conditional patch permits Clang 21 compilation, with positive/rejected conversion
+and real SDK GPU-sort checks. Keep the default application toolchain unchanged.
+The full patch/provenance/commands are in the Phase 6.4.1 journal.
+
+The first model subtree, tensorrt_yolox v1.0 at
+424d6b9cb94c939ae9ce6a22380e46c13f76b1da, owns its module/ament/colcon metadata.
+All five LFS payload hashes match; a fresh independent checkout retrieves them
+from the project remote and passes Bazel resource/relocation and colcon symlink
+checks. YOLOX consumers have no HOME-model fallback. Other model repositories
+and removal of the remaining shared data_path plumbing are future consumer
+migrations, not a completed whole-launcher conversion.
+
+Phase 6's selected boundaries are complete. Individual sparse-plugin numerical
+accuracy, INT8 calibration, performance, full perception/GUI launches and bit-
+identical application binaries are not established by these gates. Runtime
+bundles/full driving remain Phase 7; Thor-compatible software builds remain
+Phase 8. No new Fast DDS acceptance run was performed; it still requires
+explicit approval. The x86 TensorRT 10.16.1 versus JetPack 7.2.1's 10.16.2 gap
+remains explicit for Phase 8.
 
 ## Later phases
 

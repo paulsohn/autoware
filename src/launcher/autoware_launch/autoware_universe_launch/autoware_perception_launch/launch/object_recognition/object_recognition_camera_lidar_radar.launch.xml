@@ -23,9 +23,9 @@
   <arg name="data_path" default="$(env HOME)/autoware_data/ml_models" description="packages data and artifacts directory path"/>
   <arg name="bevfusion_model_path" default="$(var data_path)/bevfusion"/>
   <arg name="pointpainting_model_path" default="$(var data_path)/image_projection_based_fusion"/>
-  <arg name="camera_2d_detector/model_path" default="$(var data_path)/tensorrt_yolox/yolox-sPlus-opt-pseudoV2-T4-960x960-T4-seg16cls.onnx"/>
-  <arg name="camera_2d_detector/label_path" default="$(var data_path)/tensorrt_yolox/label.txt"/>
-  <arg name="camera_2d_detector/color_map_path" default="$(var data_path)/tensorrt_yolox/semseg_color_map.csv"/>
+  <arg name="camera_2d_detector/model_path" default="$(find-pkg-share autoware_tensorrt_yolox_models)/yolox-sPlus-opt-pseudoV2-T4-960x960-T4-seg16cls.onnx"/>
+  <arg name="camera_2d_detector/label_path" default="$(find-pkg-share autoware_tensorrt_yolox_models)/label.txt"/>
+  <arg name="camera_2d_detector/color_map_path" default="$(find-pkg-share autoware_tensorrt_yolox_models)/semseg_color_map.csv"/>
   <arg name="camera_2d_detector/roi_remap_path" default="$(var perception_config_dir)/traffic_light_recognition/tensorrt_yolox/roi_label_remap.csv"/>
   <arg name="camera_2d_detector/roi_to_semseg_remap_path" default="$(var perception_config_dir)/traffic_light_recognition/tensorrt_yolox/roi_to_semseg_label_remap.csv"/>
 

@@ -8844,3 +8844,51 @@ No original test is edited or omitted. INT8 calibration accuracy, GUI/single-
 image interactive behavior, performance, ARM/Thor and Fast DDS are not claimed.
 The separate launcher boundary finishes indexed defaults/dependencies; full
 perception launch composition and deployable runtime bundles remain later work.
+
+## 2026-11-19: Phase 6.4.4 — Indexed YOLOX launcher defaults
+
+Purpose: complete the model provider's actual launcher adoption alongside the
+validated GPU consumer. Inspect every current autoware_launch reference to
+$(var data_path)/tensorrt_yolox in active XML files. There are twelve model/label/
+color-map paths across component_traffic_light, both camera/lidar/radar launch
+variants and the two whole-image traffic-light entry points. Changelog prose
+is historical and is not a runtime parameter. The files belong to
+autoware_launch and autoware_perception_launch.
+
+Replace those twelve prefixes with
+$(find-pkg-share autoware_tensorrt_yolox_models), preserving original filenames
+and argument override behavior. Declare the model package as exec_depend in
+both launcher manifests. No workspace absolute path, HOME fallback, aggregate
+model package or Ansible/reference-manifest edit is introduced. The remaining
+data_path arguments still serve other, unadopted model families; this task
+removes their use for YOLOX, not the outstanding global conversion.
+
+Root BUILD exports only the five affected XML files and two manifests as a
+standalone-test input group. The root-owned Python test parses those original
+files, registers ROS frontend substitutions, evaluates their actual indexed
+path expressions with LaunchContext, checks real model/metadata files and
+verifies the runtime dependencies. Direct substitution parsing without loading
+ROS substitutions reports Unknown substitution: find-pkg-share; a normal XML
+parser loads those extensions, while this focused adapter imports them
+explicitly. This checks resource resolution, not full perception launch startup.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=no-agnocast --local_test_jobs=1 \
+  --nocache_test_results --test_output=errors //bazel/tests:yolox_launch_paths_test
+```
+
+Both launcher checks pass in 1.1 seconds (3.757-second invocation). All twelve
+selected expressions resolve to existing files in the model's own indexed share;
+both manifests declare that package. Earlier passing real-model detector/node
+and fresh LFS/Bazel/colcon gates remain applicable: these edits change only
+launcher defaults/dependencies and the focused test. Targeted XML/Python syntax,
+buildifier, Markdown links and whitespace checks pass.
+
+Phase 6.4 and Phase 6 are complete for the selected x86 scope: full plugins,
+classifier and YOLOX, with actual GPU execution and complete module suites.
+No new Fast DDS, ARM/JetPack, INT8 accuracy, performance or full perception/GUI
+launch check was run. Other model families and the common data_path removal
+remain later consumer work; the next numbered phase is Phase 7's native runtime
+packaging and planning-simulator milestone. The x86 TensorRT/JetPack version
+gap and the need for actual host GPU/kernel drivers remain documented limits.

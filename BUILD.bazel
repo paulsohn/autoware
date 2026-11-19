@@ -1,1 +1,15 @@
 # Root package required by some external module extensions.
+
+filegroup(
+    name = "yolox_launch_inputs",
+    srcs = [
+        "src/launcher/autoware_launch/autoware_launch/launch/components/component_traffic_light.launch.xml",
+        "src/launcher/autoware_launch/autoware_launch/package.xml",
+        "src/launcher/autoware_launch/autoware_universe_launch/autoware_perception_launch/launch/object_recognition/object_recognition_camera_lidar_radar.launch.xml",
+        "src/launcher/autoware_launch/autoware_universe_launch/autoware_perception_launch/launch/object_recognition/object_recognition_camera_lidar_radar_serial.launch.xml",
+        "src/launcher/autoware_launch/autoware_universe_launch/autoware_perception_launch/launch/traffic_light_recognition/traffic_light_detector_whole_image.launch.xml",
+        "src/launcher/autoware_launch/autoware_universe_launch/autoware_perception_launch/launch/traffic_light_recognition/traffic_light_recognition_whole_image.launch.xml",
+        "src/launcher/autoware_launch/autoware_universe_launch/autoware_perception_launch/package.xml",
+    ],
+    visibility = ["//visibility:public"],
+)

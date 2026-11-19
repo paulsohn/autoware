@@ -854,8 +854,13 @@ Run //bazel/tests:yolox_model_resources_test to check all five payload hashes an
 a relocated standalone index. Colcon users build the model package with
 --symlink-install and source its install/setup.bash; the model files remain
 symlinks. Upstream HF refs alone lack the added package/build metadata.
-Repositories/Ansible reference downloads are not runtime resource providers.
+The repositories/ and ansible/ reference downloads are not runtime resource providers.
 Other model repositories are adopted at their actual consumer boundaries.
+The five affected YOLOX launcher files use the indexed package exclusively;
+run //bazel/tests:yolox_launch_paths_test after changing their defaults or
+runtime dependencies. It resolves actual launch substitutions and checks the
+two launcher manifests. Remaining model families retain their migration work;
+this test does not launch the full perception stack.
 
 ## TensorRT classifier
 

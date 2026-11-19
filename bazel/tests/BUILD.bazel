@@ -1697,6 +1697,24 @@ py_binary(
     ]
 ]
 
+py_test(
+    name = "yolox_launch_paths_test",
+    srcs = ["autoware_tensorrt_yolox/test_launch_paths.py"],
+    args = ["$(rlocationpaths //:yolox_launch_inputs)"],
+    data = [
+        "//:yolox_launch_inputs",
+        "@autoware_tensorrt_yolox_models//:ament_index",
+    ],
+    main = "autoware_tensorrt_yolox/test_launch_paths.py",
+    precompile = "disabled",
+    deps = [
+        "@ament_index_python",
+        "@launch",
+        "@launch_ros",
+        "@launch_xml",
+        "@rules_python//python/runfiles",
+    ],
+)
 
 py_test(
     name = "yolox_fixture_adapter_test",

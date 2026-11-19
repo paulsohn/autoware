@@ -82,8 +82,8 @@
           <arg name="external/traffic_signals" value="$(var external/traffic_signals)"/>
           <arg name="output/traffic_signals" value="$(var output/traffic_signals)"/>
           <arg name="data_path" value="$(var data_path)"/>
-          <arg name="whole_image_detector_model_path" value="$(var data_path)/tensorrt_yolox/yolox_s_car_ped_tl_detector_960_960_batch_1.onnx"/>
-          <arg name="whole_image_detector_label_path" value="$(var data_path)/tensorrt_yolox/car_ped_tl_detector_labels.txt"/>
+          <arg name="whole_image_detector_model_path" value="$(find-pkg-share autoware_tensorrt_yolox_models)/yolox_s_car_ped_tl_detector_960_960_batch_1.onnx"/>
+          <arg name="whole_image_detector_label_path" value="$(find-pkg-share autoware_tensorrt_yolox_models)/car_ped_tl_detector_labels.txt"/>
           <arg name="car_classifier_model_path" value="$(var traffic_light_recognition/classification/car/model_path)"/>
           <arg name="car_classifier_label_path" value="$(var traffic_light_recognition/classification/car/label_path)"/>
           <arg name="pedestrian_classifier_model_path" value="$(var traffic_light_recognition/classification/pedestrian/model_path)"/>
