@@ -11,6 +11,43 @@ export AGNOCAST_BRIDGE_MODE=OFF AGNOCAST_NO_DISCOVERY_AGENT=1
 export CYCLONEDDS_URI='<CycloneDDS><Domain><General><Interfaces><NetworkInterface name="lo"/></Interfaces><AllowMulticast>false</AllowMulticast></General><Discovery><ParticipantIndex>auto</ParticipantIndex><Peers><Peer Address="127.0.0.1"/></Peers></Discovery></Domain></CycloneDDS>'
 hook=/ws/build/agnocast-lyrical/install/agnocastlib/lib/libagnocast_heaphook.so
 
+if [[ ${1:-} == bridge ]]; then
+  for direction in a2r r2a; do
+    for active in off on; do
+      cd "$(mktemp -d)"
+      reader_env=(env RMW_IMPLEMENTATION=rmw_cyclonedds_cpp)
+      writer_env=(env LD_PRELOAD="$hook")
+      if [[ $direction == r2a ]]; then
+        reader_env=(env LD_PRELOAD="$hook")
+        writer_env=(env RMW_IMPLEMENTATION=rmw_cyclonedds_cpp)
+      fi
+      pids=()
+      trap 'for pid in "${pids[@]}"; do kill -INT "$pid" 2>/dev/null || true; done' EXIT
+      if [[ $active == on ]]; then
+        RMW_IMPLEMENTATION=rmw_cyclonedds_cpp LD_PRELOAD="$hook" "$(dirname "$probe")/manual_bridge" "$direction" &
+        pids+=("$!")
+        for ((i=0;i<80;i++)); do
+          [[ -f bridge_ready ]] && break
+          sleep 0.1
+        done
+        [[ -f bridge_ready ]]
+      fi
+      "${reader_env[@]}" "$probe" reader boundary "$active" &
+      reader=$!
+      pids+=("$reader")
+      "${writer_env[@]}" "$probe" writer boundary "$active"
+      wait "$reader"
+      if [[ $active == on ]]; then
+        kill -INT "${pids[0]}"
+        wait "${pids[0]}"
+      fi
+      trap - EXIT
+      echo "$direction $active passed"
+    done
+  done
+  exit 0
+fi
+
 if [[ ${1:-} == contract ]]; then
   cd "$(mktemp -d)"
   ROS_DISABLE_LOANED_MESSAGES=0 LD_PRELOAD="$hook" "$probe" writer contract &

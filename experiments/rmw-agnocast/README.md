@@ -258,3 +258,21 @@ executors and copies. They do not isolate zero-copy RMW overhead for Path or
 Trajectory. A useful next control would hold message representation constant
 and compare native and RMW object loans on a non-Buffer payload.
 [Per-frame samples and per-process-group resource records](../../src/universe_crop_benchmark/results-rmw-agnocast/).
+
+## Explicit bridge boundary on the laptop
+
+After build-loadable.sh, use the same guarded run-loadable.sh invocation with
+the bridge argument. The reader and writer share a ROS domain and use the same
+resolved topic. One uses rmw_agnocast, the other ordinary rmw_cyclonedds_cpp
+without the hook. Test both directions. Each time verify graph discovery before
+publishing and check the nested Path in the receiver. With automatic bridging
+disabled, both directions had zero callbacks during the one-second window.
+Explicitly launching the tracked manual_bridge runner produced exactly one
+callback in each direction during the two-second observation window.
+
+The runner calls the Agnocast library's BridgeLoader with the requested
+direction and adds its callback group to the library CIE. This exercises the
+upstream bridge for the native Path object layout. It does not establish
+compatibility with the private PointCloud2 CDR layout. Automatic startup
+policy, bridge restart and concurrent bidirectional forwarding remain open.
+Second-container and cross-host experiments are deferred by the operator.

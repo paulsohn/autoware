@@ -207,6 +207,46 @@ void pressure_reader(rclcpp::Node::SharedPtr node, const std::string & role)
   mark("slow_released");
 }
 
+void bridge_peer(bool writer, bool active, bool dds)
+{
+  auto node = std::make_shared<rclcpp::Node>(writer ? "boundary_writer" : "boundary_reader");
+  constexpr auto topic = "trajectory_loan_probe";
+  auto deadline = std::chrono::steady_clock::now() + 8s;
+  auto wait_matches = [&](auto count) {
+    const size_t target = active && dds ? 2 : 1;
+    while (count() < target) {
+      check(std::chrono::steady_clock::now() < deadline, "missing graph match at boundary");
+      std::this_thread::sleep_for(10ms);
+    }
+  };
+  if (writer) {
+    auto pub = node->create_publisher<Path>(topic, 4);
+    wait_matches([&] { return pub->get_subscription_count(); });
+    wait_file("discovered");
+    Path msg;
+    fill(msg, 3);
+    pub->publish(msg);
+    mark("sent");
+    wait_file("checked");
+    return;
+  }
+  size_t calls = 0;
+  auto sub = node->create_subscription<Path>(topic, 4, [&](Path::ConstSharedPtr msg) {
+    verify(*msg, 3, false);
+    ++calls;
+  });
+  wait_matches([&] { return sub->get_publisher_count(); });
+  mark("discovered");
+  wait_file("sent");
+  rclcpp::executors::SingleThreadedExecutor exec;
+  exec.add_node(node);
+  deadline = std::chrono::steady_clock::now() + (active ? 2s : 1s);
+  while (std::chrono::steady_clock::now() < deadline) exec.spin_once(20ms);
+  check(calls == (active ? 1U : 0U), "unexpected boundary delivery count");
+  std::cout << "Path boundary callbacks=" << calls << std::endl;
+  mark("checked");
+}
+
 void contract(rclcpp::Node & node, const std::string & role)
 {
   constexpr auto topic = "trajectory_loan_probe";
@@ -352,6 +392,12 @@ int main(int argc, char ** argv)
     check((argc == 3 || argc == 4), "expected role and loan/copy mode");
     bool writer = std::string(argv[1]) == "writer", use_loan = std::string(argv[2]) == "loan";
     rclcpp::init(argc, argv);
+    if (std::string(argv[2]) == "boundary" && argc == 4) {
+      bool dds = std::string(rmw_get_implementation_identifier()) == "rmw_cyclonedds_cpp";
+      bridge_peer(writer, std::string(argv[3]) == "on", dds);
+      rclcpp::shutdown();
+      return 0;
+    }
     check(
       std::string(rmw_get_implementation_identifier()) == "rmw_agnocast", "wrong implementation");
     if (std::string(argv[2]) == "contract") {

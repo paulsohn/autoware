@@ -720,3 +720,14 @@ frames. The rmw_agnocast median/p95 measured a factor
 of 2.61/2.04 relative to native itself, missing both 1.20× gates. Retain the
 native reference and defer the Bazel migration milestone.
 [Method, complete comparison and reproduction](../rmw-agnocast/README.md#type-support-and-the-universe-decision)
+
+### Launch the upstream bridge explicitly on the laptop
+
+Ran the guarded loadable build and run-loadable.sh bridge. An ordinary
+Cyclone peer and a native RMW peer matched through the graph in each
+direction. Both bridge-off controls delivered zero Path callbacks. Launching
+the upstream generic bridge with BridgeLoader delivered exactly one verified
+Path in each direction. Only the native peer and bridge preloaded the
+Agnocast hook. The bridge runtime minimum sampled host MemAvailable was
+5,637 MiB. The second host and second container were explicitly deferred.
+[Fixture scope and verification](../rmw-agnocast/README.md#explicit-bridge-boundary-on-the-laptop)
