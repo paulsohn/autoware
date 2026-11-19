@@ -284,3 +284,13 @@ library. The complete colcon suite passed with ENABLE_AGNOCAST=0 at runtime
 (6.68 seconds). The original fixture publishes its TF data through rclcpp.
 The serial GCC build approached the 1,200 MiB scope cap while compiling PCL
 headers. Switching the PCL consumers to Clang kept the original cap.
+
+In the original Universe filter, Lyrical removes the .h message_filters
+forwarders, the second Subscriber template parameter and the raw RMW QoS
+overload for plain ROS subscribers. Both explicit FilterBase instantiations
+must compile. Retain the wrapper's RMW QoS input and the pre-Lyrical subscriber
+signature. PCL 1.15 also removes pcl/io/io.h; PCL's previous forwarding
+header explicitly names pcl/common/io.h as its replacement. AWF Universe main
+still had the old filter includes when checked. The selected crop component
+built and all three Cyclone runs verified its output. This validation is
+scoped to the selected crop pipeline; other Universe filters were not built.

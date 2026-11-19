@@ -57,16 +57,17 @@
 
 #include <boost/thread/mutex.hpp>
 
-#include <message_filters/subscriber.h>
-#include <message_filters/sync_policies/approximate_time.h>
-#include <message_filters/sync_policies/exact_time.h>
-#include <message_filters/synchronizer.h>
+#include <message_filters/subscriber.hpp>
+#include <message_filters/sync_policies/approximate_time.hpp>
+#include <message_filters/sync_policies/exact_time.hpp>
+#include <message_filters/synchronizer.hpp>
 #include <pcl/filters/filter.h>
 #include <pcl/pcl_base.h>
 #include <pcl/point_types.h>
 #include <pcl_conversions/pcl_conversions.h>
 #include <pcl_msgs/msg/model_coefficients.h>
 #include <pcl_msgs/msg/point_indices.h>
+#include <rclcpp/version.h>
 #include <sensor_msgs/msg/point_cloud2.h>
 
 #include <cstdint>
@@ -143,7 +144,11 @@ public:
   template <typename MessageT>
   using MessageFiltersSubscriber = std::conditional_t<
     kIsAgnocastNode, agnocast_mf::Subscriber<MessageT>,
+#if RCLCPP_VERSION_MAJOR >= 32
+    message_filters::Subscriber<MessageT>>;
+#else
     message_filters::Subscriber<MessageT, NodeT>>;
+#endif
 
   template <template <typename...> class Policy, template <typename...> class AgnocastPolicy>
   using SyncPolicy = std::conditional_t<

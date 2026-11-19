@@ -55,7 +55,7 @@
 
 #include <pcl_ros/transforms.hpp>
 
-#include <pcl/io/io.h>
+#include <pcl/common/io.h>
 
 #include <memory>
 #include <set>
@@ -159,10 +159,17 @@ void autoware::pointcloud_preprocessor::FilterBase<NodeT>::subscribe(
 
   if (use_indices_) {
     // Subscribe to the input using a filter
-    sub_input_filter_.subscribe(
-      this, "input", rclcpp::SensorDataQoS().keep_last(max_queue_size_).get_rmw_qos_profile());
-    sub_indices_filter_.subscribe(
-      this, "indices", rclcpp::SensorDataQoS().keep_last(max_queue_size_).get_rmw_qos_profile());
+    const auto qos = rclcpp::SensorDataQoS().keep_last(max_queue_size_);
+#if RCLCPP_VERSION_MAJOR >= 32
+    if constexpr (!kIsAgnocastNode) {
+      sub_input_filter_.subscribe(this, "input", qos);
+      sub_indices_filter_.subscribe(this, "indices", qos);
+    } else
+#endif
+    {
+      sub_input_filter_.subscribe(this, "input", qos.get_rmw_qos_profile());
+      sub_indices_filter_.subscribe(this, "indices", qos.get_rmw_qos_profile());
+    }
 
     if (approximate_sync_) {
       sync_input_indices_a_ =
