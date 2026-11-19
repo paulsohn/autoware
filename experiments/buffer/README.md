@@ -60,8 +60,23 @@ on the rclcpp path. All timing cases use 60 frames in three fresh process
 groups. Per case, drop the first ten in each group and report median and
 nearest-rank p95 over 150 samples.
 
-The remaining migration decisions concern executor isolation, mixed/remote
-readers, bridges, restart behavior, and what performance difference is
-material for the target workload. Keep the laptop as the reference host and
-record other hosts independently. The previous [migration roadmap](https://github.com/paulsohn/autoware/blob/0693fc37/src/buffer_pointcloud_probe/MIGRATION.md)
+## Migration decision
+
+Build and validate the existing Universe Agnocast path on Lyrical first. Use
+the laptop as the reference host and report additional hosts independently.
+For a matched Lyrical target-pipeline comparison, divide each candidate latency
+statistic by the corresponding Agnocast statistic. Both the median ratio and
+the p95 ratio must be at most 1.20. Report the absolute values and the ratios.
+Report other metrics directly alongside Agnocast, including CPU usage, memory
+and frame loss, without assigning additional thresholds.
+
+Keep the separate Universe production-pipeline measurement. The current Jazzy
+Universe and Lyrical Core results differ in filter, input schema and executor.
+They provide context only. For the decision, match the filter workload, input,
+QoS, process topology and sampling protocol, and record executor settings.
+Where executor behavior differs, measure its contribution separately before
+attributing a difference to transport.
+
+Executor isolation, mixed and remote readers, bridging and restart behavior
+remain open migration decisions. The previous [migration roadmap](https://github.com/paulsohn/autoware/blob/0693fc37/src/buffer_pointcloud_probe/MIGRATION.md)
 describes the conditions for revisiting the default backend and Bazel adoption.

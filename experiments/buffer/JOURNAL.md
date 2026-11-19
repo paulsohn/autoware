@@ -167,3 +167,32 @@ with that directory as its argument. Selecting the RMW after importing rclpy
 initially produced a successful pipeline and zero timer samples. The profiling
 runs with the correct RMW used a 512 MiB cap and retained at least 4,642 MiB
 of available host memory. [Pooled input samples](shmem-crop-timer.csv)
+
+## Start the Lyrical Agnocast reference build
+
+The latency decision requires both median and p95 to fall within 1.20 times
+their corresponding matched Lyrical Agnocast measurements. Other metrics get
+side-by-side comparisons. The existing Jazzy timings remain historical.
+
+On the reference laptop, used the exported Lyrical userspace at
+`/tmp/aw-twoedge-root` and the branch's Agnocast 2.4.1 source. To reproduce
+the initial production-library build from the experiment worktree:
+
+```bash
+LYRICAL_ROOT=/tmp/aw-twoedge-root experiments/buffer/run-lyrical.sh bash -ec '
+  export ENABLE_AGNOCAST=1
+  w=build/agnocast-lyrical
+  colcon --log-base "$w/log" build \
+    --base-paths src/core/agnocast/src/{agnocast_cie_config_msgs,agnocast_cie_thread_configurator,agnocastlib} \
+    --build-base "$w/obj" --install-base "$w/install" --executor sequential \
+    --cmake-args -DBUILD_TESTING=OFF -DCMAKE_BUILD_TYPE=Release \
+    "-DCMAKE_CXX_FLAGS_RELEASE=-O2 -DNDEBUG --param=ggc-min-expand=20 --param=ggc-min-heapsize=32768"'
+```
+
+The CIE configuration messages built in 15.4 seconds. CMake stopped at line
+34 of the CIE thread configurator because Lyrical did not provide
+`ament_target_dependencies`. Colcon therefore never compiled agnocastlib.
+The guard measured a minimum of 9,458 MiB of available host memory. This
+failure precedes kernel access and timing. Next, check upstream for the
+target-linking migration, rebuild serially, then validate the library, heap
+hook and Universe pipeline together before collecting latency samples.
