@@ -121,3 +121,29 @@ dedicated signal group. On timeout the fixture cleans up that group.
 Reran experiments/buffer/test-stop.sh. All 27 checks passed again. Both
 the stock standalone launch and the component loaded via ComponentManager
 zeroed 0.05 m/s, preserved 0.2 m/s and exited cleanly on SIGINT.
+
+## Existing Universe pipeline, Jazzy Agnocast versus Cyclone
+
+Built ten dependencies in a fresh host Jazzy overlay with Clang 18 -O1, then
+built the existing Universe crop and benchmark endpoints. The package cache
+resolved agnocastlib and the wrapper from this checkout's build/universe-jazzy
+install tree. The kernel device and heap hook were the installed 2.4.1
+versions. The base's Agnocast sources built successfully on Jazzy. Run
+experiments/buffer/build-jazzy.sh under run-limited.sh as in the README.
+Both transports delivered all 60 frames each round (360 total). The same
+binaries ran three rounds in alternating order.
+
+| Universe configuration | Median ms | p95 ms | Maximum ms |
+| --- | ---: | ---: | ---: |
+| Cyclone DDS, ordinary rclcpp executor | 1.259 | 1.575 | 1.787 |
+| Agnocast IPC, production CIE | 0.317 | 0.518 | 0.762 |
+
+Agnocast measured about 75% lower median and 67% lower p95 on this graph.
+It also reported that its publishers do not honor best-effort reliability
+semantics. The transport and executor both change. A direct comparison with
+Lyrical Core also changes the filter, schema and distribution. Minimum host
+MemAvailable for the Jazzy build and runs was 3,404 MiB.
+
+The complete timed rerun covers 1,800 verified frames across Core and
+Universe. Probe, profiling, launch and expected-failure runs are additional.
+Recovery reference experiment/rosidl-buffer-colcon remains at 0693fc37.
