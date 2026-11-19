@@ -448,3 +448,52 @@ backends have no measured Universe rows. Minimum host MemAvailable was
 6,762 MiB during compilation and 7,312 MiB during the 512 MiB runtime scope.
 [All samples](../../src/universe_crop_benchmark/results-lyrical-buffer-matrix/)
 and [matrix with CPU, RSS and Agnocast ratios](README.md#lyrical-reference-status).
+
+### Isolate the crop executor in the Lyrical Universe Buffer matrix
+
+The preceding matrix used AgnocastOnlyCallbackIsolatedExecutor for the
+native crop and SingleThreadedExecutor for every ROS crop. To test callback
+isolation on the ordinary ROS path, register the same crop component a second
+time with rclcpp_components_register_node, selecting the mixed-capable
+agnocast::CallbackIsolatedAgnocastExecutor from the pinned Agnocast library.
+Its child executor for an ordinary ROS callback group uses rclcpp.
+This second launcher uses the rclcpp component main. All ROS cases run with
+ENABLE_AGNOCAST=0 and the runner only preloads the heap hook for the native
+Agnocast reference. This tests the linked Agnocast CIE implementation in the
+existing enabled build. A standalone-CIE build and a kernel-module-free host
+are independent deployment checks.
+
+Use the same exported PCL-enabled Lyrical userspace, GPU and colcon overlays
+as the preceding experiment. Use a fresh output directory:
+
+```bash
+export LYRICAL_ROOT=$(cat build/agnocast-lyrical/universe-root)
+experiments/buffer/run-lyrical.sh bash experiments/buffer/build-universe-lyrical.sh
+BUFFER_RUNTIME_ONLY=1 experiments/buffer/run-lyrical.sh bash \
+  experiments/buffer/bench-universe-lyrical.sh build/agnocast-lyrical/universe-cie --compare-cie
+```
+
+Each ROS pair runs adjacently with the same endpoint binaries and crop library.
+The script varies the order across the matrix. Three rounds include a fresh
+native reference in each. Every run requires 60 validated frames and successful
+teardown. Pool the last 50 per round for latency. CPU seconds include all child
+processes and teardown. RSS is the largest individual child's peak. The runner
+applies the default scheduling policy and launches no thread configurator or
+competing callback workload. Native Agnocast retains its existing best-effort
+QoS warning. Cyclone native shmem retains the earlier expected-failure result.
+
+All 27 runs passed, covering 1,620 verified frames. Build and runtime minimum
+host MemAvailable were 5,688 and 6,519 MiB respectively. The 1.20× native
+ceilings were about 0.425/0.688 ms. POSIX shmem with CIE reached 0.774/1.003 ms
+median/p95. The single-threaded pair reached 0.739/1.040 ms. CUDA plus CIE
+round medians varied from 1.141 to 4.402 ms. The run supplies no attribution
+for that variation. [All nine rows and samples](README.md#crop-executor-comparison-on-lyrical).
+
+For the next buffer experiment, instrument crop output packing, promotion to
+shared storage, descriptor export/import and callback entry separately. Try
+writing surviving points directly into a shared allocation and committing the
+actual length. The current ShmemBufferImpl resize copies on a size change.
+Check empty, partial and full crops, descriptor length on both hops and
+outstanding reader lifetime before timing. Keep the executor fixed while
+testing that change. The executor result alone gives no estimate of the
+latency recoverable by removing the copy.

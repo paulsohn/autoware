@@ -122,3 +122,31 @@ Agnocast carries the CPU reference; using a foreign polymorphic buffer
 backend directly in an Agnocast-shared message remains unvalidated.
 [Universe matrix samples](../../src/universe_crop_benchmark/results-lyrical-buffer-matrix/)
 and [Cyclone compatibility evidence](../../src/crop_pipeline_benchmark/two-edge-results/cyclone-matrix.tsv).
+
+### Crop executor comparison on Lyrical
+
+Each row delivered 180/180 verified frames. The suffix `-cie` selects the
+Agnocast library's mixed-capable callback-isolated executor on the ordinary
+ROS crop. The native reference uses the Agnocast-only CIE. Other rows use
+the ordinary single-threaded crop executor. Endpoint executors stay fixed
+within each pair. Native Agnocast and Cyclone use CPU storage. Plain Zenoh
+uses CPU storage, zenoh-shmem uses POSIX shared memory, and zenoh-cuda stages
+device buffers through the CPU crop.
+
+| Mode | Median ms | p95 ms | Median / Agnocast | p95 / Agnocast | CPU s/run | Peak RSS MiB |
+|---|---:|---:|---:|---:|---:|---:|
+| agnocast | 0.354 | 0.574 | 1.00× | 1.00× | 0.557 | 139.8 |
+| cyclone | 1.224 | 1.570 | 3.46× | 2.74× | 0.739 | 134.4 |
+| cyclone-cie | 1.303 | 1.577 | 3.68× | 2.75× | 0.757 | 129.4 |
+| zenoh | 1.034 | 1.493 | 2.92× | 2.60× | 1.454 | 290.5 |
+| zenoh-cie | 1.059 | 1.628 | 2.99× | 2.84× | 1.516 | 303.4 |
+| zenoh-shmem | 0.739 | 1.040 | 2.09× | 1.81× | 1.432 | 288.2 |
+| zenoh-shmem-cie | 0.774 | 1.003 | 2.19× | 1.75× | 1.378 | 287.2 |
+| zenoh-cuda | 1.164 | 4.853 | 3.29× | 8.46× | 1.600 | 287.4 |
+| zenoh-cuda-cie | 3.531 | 5.007 | 9.97× | 8.73× | 1.647 | 304.5 |
+
+With default scheduling, shared memory plus CIE remains above both 1.20×
+ceilings. Three rounds give limited resolution for the small differences
+between the two shared-memory rows. A competing callback group and a deliberate
+priority policy are needed to evaluate isolation under load. The standalone
+AWF CIE remains untested. [Measurements](../../src/universe_crop_benchmark/results-lyrical-cie/)

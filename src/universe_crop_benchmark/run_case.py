@@ -17,7 +17,10 @@ parser.add_argument("transport", choices=["cyclone", "agnocast", "zenoh"])
 parser.add_argument("csv", type=Path)
 parser.add_argument("--resources", type=Path)
 parser.add_argument("--buffer", choices=["cpu", "shmem", "cuda"], default="cpu")
+parser.add_argument("--ros-cie", action="store_true", help="use the mixed-capable CIE for the ROS crop")
 args = parser.parse_args()
+if args.ros_cie and args.transport == "agnocast":
+    parser.error("native Agnocast already uses its Agnocast-only CIE")
 if args.buffer != "cpu" and args.transport != "zenoh":
     parser.error("the explicit buffer matrix uses the Zenoh descriptor transport")
 out = args.csv.resolve()
@@ -52,7 +55,7 @@ with tempfile.TemporaryDirectory() as tmp:
             if children[-1].poll() is not None:
                 raise RuntimeError("Zenoh router startup failed")
         launch([bin_dir / "endpoint"], "sub")
-        launch([bin_dir / "crop", "--ros-args", "--params-file", config,
+        launch([bin_dir / ("crop_cie" if args.ros_cie else "crop"), "--ros-args", "--params-file", config,
                 "-p", "input_frame:=base_link", "-p", "output_frame:=base_link"], "filter")
         time.sleep(2)
         launch([bin_dir / "endpoint"], "pub")

@@ -51,6 +51,12 @@ autoware_agnocast_wrapper_register_node(universe_endpoint
   PLUGIN "benchmark::Endpoint" EXECUTABLE endpoint
   AGNOCAST_EXECUTOR AgnocastOnlySingleThreadedExecutor ROS2_EXECUTOR SingleThreadedExecutor)
 if(UNIVERSE_BUFFER_MATRIX)
+  # ROS-only crop process using the CIE shipped with our pinned Agnocast.
+  rclcpp_components_register_node(universe_crop
+    PLUGIN "autoware::pointcloud_preprocessor::CropBoxFilterComponent" EXECUTABLE crop_cie
+    EXECUTOR agnocast::CallbackIsolatedAgnocastExecutor RESOURCE_INDEX universe_crop_benchmark_cie)
+  target_link_libraries(crop_cie ${agnocastlib_TARGETS})
+  target_compile_options(crop_cie PRIVATE -include agnocast/agnocast_callback_isolated_executor.hpp)
   foreach(target IN ITEMS universe_crop universe_endpoint)
     target_link_libraries(${target} shmem_buffer::shmem_buffer cuda_buffer::cuda_buffer CUDA::cudart)
     target_compile_features(${target} PRIVATE cxx_std_20)
