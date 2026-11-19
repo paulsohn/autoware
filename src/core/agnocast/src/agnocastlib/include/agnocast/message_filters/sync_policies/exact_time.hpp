@@ -4,11 +4,10 @@
 #include "agnocast/message_filters/signal9.hpp"
 #include "agnocast/message_filters/synchronizer.hpp"
 
+#include <message_filters/connection.hpp>
+#include <message_filters/message_traits.hpp>
+#include <message_filters/null_types.hpp>
 #include <rclcpp/rclcpp.hpp>
-
-#include <message_filters/connection.h>
-#include <message_filters/message_traits.h>
-#include <message_filters/null_types.h>
 
 #include <cassert>
 #include <map>

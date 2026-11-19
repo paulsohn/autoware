@@ -2,6 +2,7 @@
 #include "agnocast/node/agnocast_node.hpp"
 
 #include <gtest/gtest.h>
+#include <rclcpp/version.h>
 
 class CallbackIsolatedAgnocastExecutorTest : public ::testing::Test
 {
@@ -83,7 +84,11 @@ TEST_F(CallbackIsolatedAgnocastExecutorTest, agnocast_node_add_to_executor)
   auto node = std::make_shared<agnocast::Node>("test_agnocast_node", options);
   auto node_base = node->get_node_base_interface();
 
+#if RCLCPP_VERSION_MAJOR >= 32
+  EXPECT_NO_THROW(node_base->get_shared_notify_guard_condition());
+#else
   EXPECT_NO_THROW(node_base->get_notify_guard_condition());
+#endif
   EXPECT_NO_THROW(executor->add_node(node_base));
 
   auto groups = executor->get_automatically_added_callback_groups_from_nodes();

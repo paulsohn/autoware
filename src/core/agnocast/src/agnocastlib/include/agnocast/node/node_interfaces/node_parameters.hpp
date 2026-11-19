@@ -124,6 +124,10 @@ public:
     const rclcpp::node_interfaces::PostSetParametersCallbackHandle * const handler) override;
 #endif
 
+#if RCLCPP_VERSION_MAJOR >= 32
+  void enable_parameter_modification() override;
+#endif
+
   const std::map<std::string, rclcpp::ParameterValue> & get_parameter_overrides() const override;
 
 protected:

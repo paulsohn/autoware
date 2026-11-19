@@ -71,6 +71,13 @@ public:
   size_t count_services(const std::string & service_name) const override;
 #endif
 
+#if RCLCPP_VERSION_MAJOR >= 32
+  std::vector<rclcpp::ServiceEndpointInfo> get_clients_info_by_service(
+    const std::string & service_name, bool no_mangle = false) const override;
+  std::vector<rclcpp::ServiceEndpointInfo> get_servers_info_by_service(
+    const std::string & service_name, bool no_mangle = false) const override;
+#endif
+
 private:
   NodeBase::SharedPtr node_base_;
 };

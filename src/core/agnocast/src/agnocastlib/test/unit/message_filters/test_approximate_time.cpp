@@ -21,11 +21,11 @@ struct Msg
   int data;
 };
 
-// Test helper to create ipc_shared_ptr for testing without kernel support
+// Test helper to create a subscriber-side ipc_shared_ptr without kernel support.
 template <typename T>
 agnocast::ipc_shared_ptr<T> make_test_ipc_shared_ptr(T * ptr)
 {
-  return agnocast::ipc_shared_ptr<T>(ptr, "test_topic", 0, -1);
+  return agnocast::ipc_shared_ptr<T>(ptr, "test_topic", 0, 0);
 }
 
 namespace message_filters
@@ -42,7 +42,7 @@ struct TimeStamp<Msg>
 
 using MsgConstPtr = agnocast::ipc_shared_ptr<Msg const>;
 
-// Helper class to manage test messages (prevents memory leaks with ipc_shared_ptr fd=-1)
+// Helper class to manage test messages; the mocked ioctl handles reference release.
 class TestMsgManager
 {
 public:

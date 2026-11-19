@@ -6,9 +6,9 @@
 #include "agnocast/node/agnocast_node.hpp"
 #include "agnocast/node/tf2/transform_listener.hpp"
 #include "rclcpp/rclcpp.hpp"
-#include "tf2/buffer_core.h"
-#include "tf2/time.h"
-#include "tf2_ros/buffer_interface.h"
+#include "tf2/buffer_core.hpp"
+#include "tf2/time.hpp"
+#include "tf2_ros/buffer_interface.hpp"
 
 #include "geometry_msgs/msg/transform_stamped.hpp"
 #include "tf2_msgs/msg/tf_message.hpp"

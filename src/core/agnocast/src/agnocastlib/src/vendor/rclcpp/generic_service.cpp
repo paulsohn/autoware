@@ -39,7 +39,8 @@ std::shared_ptr<rmw_request_id_t> GenericService::create_request_header()
 }
 
 void GenericService::handle_request(
-  std::shared_ptr<rmw_request_id_t> request_header, std::shared_ptr<void> request)
+  AGNOCAST_RCLCPP_SHARED_PTR_PARAM(std::shared_ptr<rmw_request_id_t>) request_header,
+  AGNOCAST_RCLCPP_SHARED_PTR_PARAM(std::shared_ptr<void>) request)
 {
   std::shared_ptr<void> response = any_callback_.dispatch(
     this->shared_from_this(), request_header, std::move(request),

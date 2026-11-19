@@ -1,6 +1,11 @@
 #pragma once
 #include "tracetools/tracetools.h"
 
+// Lyrical exposes the distribution-prefixed spelling only.
+#if !defined(TRACEPOINT) && defined(TRACETOOLS_TRACEPOINT)
+#define TRACEPOINT(...) TRACETOOLS_TRACEPOINT(__VA_ARGS__)
+#endif
+
 // Compatibility: Jazzy uses _DECLARE_TRACEPOINT, Humble uses DECLARE_TRACEPOINT
 #ifndef DECLARE_TRACEPOINT
 #define DECLARE_TRACEPOINT(...) _DECLARE_TRACEPOINT(__VA_ARGS__)

@@ -218,3 +218,32 @@ build/agnocast-lyrical/obj. Both packages passed (three message-package
 checks and five configurator test executables). Colcon reported 147 tests,
 zero errors, failures or skips. Minimum host MemAvailable during the build
 was 7,877 MiB. No Agnocast transport timing is implied by these tests.
+
+### Build and test Agnocast 2.4.1 with Lyrical colcon
+
+The production source and unit-test changes come from bazel commits c9051afc
+and cd9f0479. They adapt rclcpp node interfaces, CIE executor overrides,
+message_filters and tf2. AWF callback_isolated_executor issue 64 discusses
+the executor override transition. It does not supply these Agnocast patches.
+For colcon, link the exported package targets for the library, containers
+and upstream tests and export the corresponding dependencies to consumers.
+For upstream context see [AWF CIE issue 64](https://github.com/autowarefoundation/callback_isolated_executor/issues/64)
+and [AWF Core PR 1540](https://github.com/autowarefoundation/autoware_core/pull/1540).
+
+Use the preceding exported-root setup with the 2.4.1 host kernel module and
+device, the offline XML catalog for the message package and a native Rust
+toolchain on PATH. The heap hook uses the same Cargo.lock as the bazel branch.
+Run experiments/buffer/build-agnocast-lyrical.sh through the guarded Lyrical
+runner. In this offline root we staged rustc/cargo 1.99 and used cargo vendor
+--locked before building. Neither the Jazzy ROS overlay nor a prebuilt Jazzy
+heap hook was used. ldd resolved the heap hook to the colcon-built libagnocast
+and the Lyrical rclcpp and tf2 libraries.
+
+The library and three containers built in 8m13s. All 26 heap-hook Rust tests
+passed. With the Cyclone RMW and upstream CMake preload settings, all 20
+agnocastlib test executables passed in 1m43s. Their gtest XML contains 672
+cases, 667 passed and five upstream skips for adding timers after a CIE
+starts (AWF Agnocast issue 1263). Minimum available host memory was
+7,577 MiB during compilation and 8,701 MiB during library tests. The discovery
+agent was absent in this local-library configuration. This run validates the
+kernel-backed library suites, not automatic discovery or remote bridging.

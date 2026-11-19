@@ -4,9 +4,9 @@
 #include "agnocast/message_filters/message_event.hpp"
 #include "agnocast/message_filters/signal9.hpp"
 
-#include <message_filters/connection.h>
-#include <message_filters/null_types.h>
-#include <message_filters/synchronizer.h>
+#include <message_filters/connection.hpp>
+#include <message_filters/null_types.hpp>
+#include <message_filters/synchronizer.hpp>
 
 #include <cstdint>
 #include <string>
@@ -266,24 +266,33 @@ public:
   {
     disconnectAll();
 
-    input_connections_[0] = f0.registerCallback(std::function<void(const M0Event &)>(
-      std::bind(&Synchronizer::template cb<0>, this, std::placeholders::_1)));
-    input_connections_[1] = f1.registerCallback(std::function<void(const M1Event &)>(
-      std::bind(&Synchronizer::template cb<1>, this, std::placeholders::_1)));
-    input_connections_[2] = f2.registerCallback(std::function<void(const M2Event &)>(
-      std::bind(&Synchronizer::template cb<2>, this, std::placeholders::_1)));
-    input_connections_[3] = f3.registerCallback(std::function<void(const M3Event &)>(
-      std::bind(&Synchronizer::template cb<3>, this, std::placeholders::_1)));
-    input_connections_[4] = f4.registerCallback(std::function<void(const M4Event &)>(
-      std::bind(&Synchronizer::template cb<4>, this, std::placeholders::_1)));
-    input_connections_[5] = f5.registerCallback(std::function<void(const M5Event &)>(
-      std::bind(&Synchronizer::template cb<5>, this, std::placeholders::_1)));
-    input_connections_[6] = f6.registerCallback(std::function<void(const M6Event &)>(
-      std::bind(&Synchronizer::template cb<6>, this, std::placeholders::_1)));
-    input_connections_[7] = f7.registerCallback(std::function<void(const M7Event &)>(
-      std::bind(&Synchronizer::template cb<7>, this, std::placeholders::_1)));
-    input_connections_[8] = f8.registerCallback(std::function<void(const M8Event &)>(
-      std::bind(&Synchronizer::template cb<8>, this, std::placeholders::_1)));
+    input_connections_[0] = f0.registerCallback(
+      std::function<void(const M0Event &)>(
+        std::bind(&Synchronizer::template cb<0>, this, std::placeholders::_1)));
+    input_connections_[1] = f1.registerCallback(
+      std::function<void(const M1Event &)>(
+        std::bind(&Synchronizer::template cb<1>, this, std::placeholders::_1)));
+    input_connections_[2] = f2.registerCallback(
+      std::function<void(const M2Event &)>(
+        std::bind(&Synchronizer::template cb<2>, this, std::placeholders::_1)));
+    input_connections_[3] = f3.registerCallback(
+      std::function<void(const M3Event &)>(
+        std::bind(&Synchronizer::template cb<3>, this, std::placeholders::_1)));
+    input_connections_[4] = f4.registerCallback(
+      std::function<void(const M4Event &)>(
+        std::bind(&Synchronizer::template cb<4>, this, std::placeholders::_1)));
+    input_connections_[5] = f5.registerCallback(
+      std::function<void(const M5Event &)>(
+        std::bind(&Synchronizer::template cb<5>, this, std::placeholders::_1)));
+    input_connections_[6] = f6.registerCallback(
+      std::function<void(const M6Event &)>(
+        std::bind(&Synchronizer::template cb<6>, this, std::placeholders::_1)));
+    input_connections_[7] = f7.registerCallback(
+      std::function<void(const M7Event &)>(
+        std::bind(&Synchronizer::template cb<7>, this, std::placeholders::_1)));
+    input_connections_[8] = f8.registerCallback(
+      std::function<void(const M8Event &)>(
+        std::bind(&Synchronizer::template cb<8>, this, std::placeholders::_1)));
   }
 
   /// Register a callback invoked when matching messages are found.
@@ -374,13 +383,23 @@ private:
   std::string name_;
 };
 
+template <class ListT, class ValueT>
+struct RealTypeCountOf;
+
+template <template <class...> class ListT, class... ElementT, class ValueT>
+struct RealTypeCountOf<ListT<ElementT...>, ValueT>
+{
+  using type =
+    std::integral_constant<int, (0 + ... + static_cast<int>(!std::is_same_v<ElementT, ValueT>))>;
+};
+
 template <
   typename M0, typename M1, typename M2, typename M3, typename M4, typename M5, typename M6,
   typename M7, typename M8>
 struct PolicyBase
 {
-  using RealTypeCount = typename ::message_filters::mp_count<
-    std::tuple<M0, M1, M2, M3, M4, M5, M6, M7, M8>, NullType>::type;
+  using RealTypeCount =
+    typename RealTypeCountOf<std::tuple<M0, M1, M2, M3, M4, M5, M6, M7, M8>, NullType>::type;
   using Messages = std::tuple<M0, M1, M2, M3, M4, M5, M6, M7, M8>;
   using Signal = Signal9<M0, M1, M2, M3, M4, M5, M6, M7, M8>;
   using Events = std::tuple<

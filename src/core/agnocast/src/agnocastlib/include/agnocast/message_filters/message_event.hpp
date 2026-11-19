@@ -3,9 +3,8 @@
 #include "agnocast/agnocast_public_api.hpp"
 #include "agnocast/agnocast_smart_pointer.hpp"
 
+#include <message_filters/message_event.hpp>
 #include <rclcpp/rclcpp.hpp>
-
-#include <message_filters/message_event.h>
 
 #include <memory>
 #include <type_traits>
