@@ -11,4 +11,4 @@ colcon --log-base "$w/log" build --base-paths "$w/point_cloud_msg_wrapper" "${op
 source "$w/install/local_setup.bash"
 colcon --log-base "$w/log" build --base-paths src/universe/external/managed_transform_buffer/managed_transform_buffer "${opts[@]}" -DBUILD_TESTING=ON
 source "$w/install/local_setup.bash"
-colcon --log-base "$w/log" build --base-paths src/universe_crop_benchmark "${opts[@]}" -DBUILD_TESTING=OFF
+colcon --log-base "$w/log" build --base-paths src/universe_crop_benchmark "${opts[@]}" -DBUILD_TESTING=OFF -DUNIVERSE_BUFFER_MATRIX=ON

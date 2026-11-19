@@ -8,12 +8,14 @@ out=${1:?supply a new results directory}
 mkdir "$out"
 for round in 1 2 3; do
   case "$round" in
-    1) modes=(cyclone agnocast zenoh) ;;
-    2) modes=(agnocast zenoh cyclone) ;;
-    3) modes=(zenoh cyclone agnocast) ;;
+    1) modes=(cyclone zenoh-shmem agnocast zenoh-cuda zenoh) ;;
+    2) modes=(agnocast zenoh zenoh-cuda cyclone zenoh-shmem) ;;
+    3) modes=(zenoh-cuda zenoh-shmem zenoh agnocast cyclone) ;;
   esac
   for mode in "${modes[@]}"; do
-    python3 "$p/run_case.py" "$mode" "$out/$mode-$round.csv" --resources "$out/$mode-$round-resources.csv"
+    backend=cpu
+    if [[ $mode == zenoh-* ]]; then backend=${mode#zenoh-}; fi
+    python3 "$p/run_case.py" "${mode%%-*}" --buffer "$backend" "$out/$mode-$round.csv" --resources "$out/$mode-$round-resources.csv"
   done
 done
-python3 src/crop_pipeline_benchmark/summarize.py "$out" cyclone agnocast zenoh
+python3 src/crop_pipeline_benchmark/summarize.py "$out" cyclone agnocast zenoh zenoh-shmem zenoh-cuda

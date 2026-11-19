@@ -16,13 +16,16 @@ parser = argparse.ArgumentParser()
 parser.add_argument("transport", choices=["cyclone", "agnocast", "zenoh"])
 parser.add_argument("csv", type=Path)
 parser.add_argument("--resources", type=Path)
+parser.add_argument("--buffer", choices=["cpu", "shmem", "cuda"], default="cpu")
 args = parser.parse_args()
+if args.buffer != "cpu" and args.transport != "zenoh":
+    parser.error("the explicit buffer matrix uses the Zenoh descriptor transport")
 out = args.csv.resolve()
 if out.exists():
     raise FileExistsError(out)
 bin_dir = Path(get_package_prefix("universe_crop_benchmark")) / "lib/universe_crop_benchmark"
 rmw = "rmw_zenoh_cpp" if args.transport == "zenoh" else "rmw_cyclonedds_cpp"
-env = dict(os.environ, RMW_IMPLEMENTATION=rmw,
+env = dict(os.environ, RMW_IMPLEMENTATION=rmw, BENCH_BUFFER=args.buffer,
            ENABLE_AGNOCAST=str(int(args.transport == "agnocast")), AGNOCAST_BRIDGE_MODE="OFF",
            AGNOCAST_NO_DISCOVERY_AGENT="1")
 if args.transport == "agnocast":

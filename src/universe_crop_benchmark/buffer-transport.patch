@@ -1,0 +1,72 @@
+--- a/include/autoware/pointcloud_preprocessor/filter.hpp
++++ b/include/autoware/pointcloud_preprocessor/filter.hpp
+@@ -181,6 +181,7 @@
+
+   /** \brief The input PointCloud2 subscriber. */
+   SubscriptionPtr sub_input_;
++  rclcpp::Subscription<PointCloud2>::SharedPtr buffer_input_;
+
+   /** \brief The output PointCloud2 publisher. */
+   PublisherPtr pub_output_;
+--- a/src/filter.cpp
++++ b/src/filter.cpp
+@@ -50,6 +50,7 @@
+  */
+
+ #include "autoware/pointcloud_preprocessor/filter.hpp"
++#include "buffer_io.hpp"
+
+ #include "autoware/pointcloud_preprocessor/utility/memory.hpp"
+
+@@ -184,6 +185,15 @@
+     // CAN'T use auto-type here.
+     std::function<void(const PointCloud2ConstPtr)> cb =
+       std::bind(callback, this, std::placeholders::_1, PointIndicesConstPtr());
++    if constexpr (kIsAgnocastNode) {
++      if (benchmark::buffer_backend() != "cpu") {
++        rclcpp::SubscriptionOptions options;
++        options.acceptable_buffer_backends = benchmark::buffer_backend();
++        buffer_input_ = this->get_rclcpp_node()->template create_subscription<PointCloud2>(
++          "input", rclcpp::SensorDataQoS().keep_last(max_queue_size_), cb, options);
++        return;
++      }
++    }
+     sub_input_ = this->template create_subscription<PointCloud2>(
+       "input", rclcpp::SensorDataQoS().keep_last(max_queue_size_), cb);
+   }
+@@ -202,6 +212,7 @@
+       sync_input_indices_e_.reset();
+     }
+   } else {
++    buffer_input_.reset();
+     sub_input_.reset();
+   }
+ }
+--- a/src/crop_box_filter/crop_box_filter_node.cpp
++++ b/src/crop_box_filter/crop_box_filter_node.cpp
+@@ -50,6 +50,7 @@
+  */
+
+ #include "autoware/pointcloud_preprocessor/crop_box_filter/crop_box_filter_node.hpp"
++#include "buffer_io.hpp"
+
+ #include "autoware/pointcloud_preprocessor/diagnostics/crop_box_diagnostics.hpp"
+ #include "autoware/pointcloud_preprocessor/diagnostics/latency_diagnostics.hpp"
+@@ -141,7 +142,8 @@
+   int y_offset = input->fields[pcl::getFieldIndex(*input, "y")].offset;
+   int z_offset = input->fields[pcl::getFieldIndex(*input, "z")].offset;
+
+-  const std::vector<uint8_t> & input_data = input->data;
++  benchmark::InputBytes view(input->data);
++  const auto input_data = view.bytes;
+   output.data.resize(input_data.size());
+   size_t output_size = 0;
+
+@@ -187,6 +189,7 @@
+   }
+
+   output.data.resize(output_size);
++  benchmark::prepare_output(output.data);
+
+   // Note that tf_input_orig_frame_ is the input frame, while tf_input_frame_ is the frame of the
+   // crop box

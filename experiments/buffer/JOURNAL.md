@@ -392,3 +392,59 @@ were 0.981/1.218 ms. Minimum host MemAvailable was 6,566 MiB. The table
 retains the existing Agnocast and Cyclone measurements from the same build.
 For future full comparisons, bench-universe-lyrical.sh includes all three
 modes and rotates their order across rounds.
+
+### Compare explicit host shared memory and CUDA on both Universe crop hops
+
+On the same Ryzen 9 8940HX / RTX 5070 laptop, the Lyrical colcon fixture
+applies buffer-transport.patch to build-directory copies of the Universe
+filter. All five cases use the same enabled wrapper binary, original crop
+algorithm, 512 KiB PointXYZIRC input at 10 Hz and 256 KiB retained output.
+The two explicit cases construct the rclcpp subscriptions with
+acceptable_buffer_backends set on both the filter and the verifier. The
+Agnocast wrapper's ordinary subscription options do not expose that field.
+Native Agnocast retains its production CIE; the RMW paths use the ROS
+single-threaded executor. The fixture separately selects the source buffer,
+checks the received backend at each hop, and verifies every output point and
+frame in order. Incoming native Agnocast CPU bytes use the existing const
+vector view.
+
+The shared-memory case holds a read handle while the CPU filter reads the
+mapped input. It verifies an IPC descriptor with a foreign publisher PID at
+both subscribers. The filter packs retained points in CPU storage and copies
+the exact output size into the outgoing shared-memory allocation. For CUDA,
+the CPU filter downloads the input and uploads the packed output, synchronizing
+the selected CUDA stream. The timed interval starts after source preparation
+and ends at sink callback entry. Filter staging is included; source upload
+and sink verification/readback are outside that interval. Child CPU and RSS
+cover the complete run, including the Zenoh router.
+
+To repeat, use the exported PCL-enabled Lyrical userspace from the preceding
+Universe experiments, with the local shmem_buffer, cuda_buffer and corresponding
+RMW backend plugins built in the sourced colcon overlay. From the worktree:
+
+```bash
+export LYRICAL_ROOT=$(cat build/agnocast-lyrical/universe-root)
+experiments/buffer/run-lyrical.sh bash experiments/buffer/build-universe-lyrical.sh
+BUFFER_RUNTIME_ONLY=1 experiments/buffer/run-lyrical.sh bash \
+  experiments/buffer/bench-universe-lyrical.sh build/agnocast-lyrical/universe-buffer-matrix
+```
+
+Supply a fresh output directory for another run. The runtime script rotates
+five cases over three rounds and launches one pipeline at a time. For each
+case pool the final 50 of 60 frames per round. Report the median and
+nearest-rank p95, plus median run-level child user+system CPU seconds and
+median largest-child peak RSS. RSS excludes GPU VRAM.
+
+All 15 process groups passed the payload and shutdown checks (900/900 verified
+frames). Using the Agnocast baseline from this interleaved run, the 1.20×
+limits were 0.424 ms median and 0.752 ms p95. Zenoh shared memory reached
+0.751/0.930 ms and CUDA 1.594/5.807 ms. Shared memory improved on the Zenoh
+CPU control, but both explicit backends exceeded both limits. CUDA's three
+round medians varied from 1.444 to 4.655 ms. No clock/power or per-operation
+trace was collected in this timing run to explain that variation. The known
+Cyclone native-shmem incompatibility remains in the comparison notes with
+its earlier diagnostics. Cyclone CUDA and Agnocast with explicit Buffer
+backends have no measured Universe rows. Minimum host MemAvailable was
+6,762 MiB during compilation and 7,312 MiB during the 512 MiB runtime scope.
+[All samples](../../src/universe_crop_benchmark/results-lyrical-buffer-matrix/)
+and [matrix with CPU, RSS and Agnocast ratios](README.md#lyrical-reference-status).

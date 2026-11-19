@@ -92,17 +92,33 @@ Zenoh. The CPU readers take a const reference to the vector in the generated
 PointCloud2 buffer. This avoids calling a virtual method through a foreign
 process's backend. The unmodified ROS libraries and kernel module were used.
 
-| Lyrical Universe pipeline | Verified frames | Median (ms) | p95 (ms) | Child CPU (s/run) | Largest child peak RSS (MiB) |
-|---|---:|---:|---:|---:|---:|
-| Native Agnocast | 180/180 | 0.375 | 0.632 | 0.604 | 134.3 |
-| Cyclone DDS | 180/180 | 1.232 | 1.565 | 0.685 | 130.0 |
-| Zenoh (CPU buffer) | 180/180 | 0.981 | 1.218 | 1.391 | 290.2 |
+The matched matrix uses one build for all rows. Every row delivered and
+verified 180/180 frames. Latencies pool the last 50 of 60 frames per round.
+Ratios use this run's native Agnocast measurements.
 
-The 1.20× candidate ceilings on this laptop are 0.450 ms median and
-0.758 ms p95 (rounded). Latencies pool the last 50 of 60 frames per process
-group. Resource columns give medians across three complete runs. Each group's
-CPU total includes child user and system time through teardown, including the router for Zenoh. The Zenoh row was
-collected separately on the same binaries. All modes requested SensorDataQoS; native Agnocast reports it ignores best-effort
-reliability. The crop uses the production CIE for Agnocast and the ROS single-threaded
-executor for Cyclone and Zenoh. A matched buffer-backend comparison remains open.
-[Samples and resource usage](../../src/universe_crop_benchmark/results-lyrical-cpu-view/)
+| Transport | Payload on both hops | Median ms | p95 ms | Median / Agnocast | p95 / Agnocast | CPU s/run | Peak RSS MiB |
+|---|---|---:|---:|---:|---:|---:|---:|
+| Native Agnocast | CPU | 0.353 | 0.626 | 1.00× | 1.00× | 0.560 | 139.8 |
+| Cyclone DDS | CPU | 1.180 | 1.461 | 3.34× | 2.33× | 0.682 | 135.2 |
+| Zenoh | CPU | 1.006 | 1.389 | 2.85× | 2.22× | 1.429 | 290.0 |
+| Zenoh | POSIX shared memory | 0.751 | 0.930 | 2.12× | 1.48× | 1.371 | 288.7 |
+| Zenoh | CUDA device memory | 1.594 | 5.807 | 4.51× | 9.27× | 1.531 | 288.7 |
+
+The candidate ceilings were 0.424 ms median and 0.752 ms p95. Both explicit
+buffer candidates exceeded both ceilings. CUDA round medians were 1.444,
+4.655 and 4.533 ms. The CPU crop stages its CUDA input and output. This run
+did not isolate the source of the round-to-round variation.
+
+CPU time sums child user and system time through teardown, including the
+Zenoh router. RSS is the largest individual child's peak. Both figures are
+medians over three groups. Native Agnocast uses CIE and reports that it
+ignores the requested best-effort reliability. The ROS modes use a
+single-threaded crop executor. These measurements compare the deployed paths.
+
+Cyclone plus native shmem remains a caveated cell: the earlier Core control
+delivered 0/60 with loopback and 0/60 with iceoryx PSMX. Cyclone plus CUDA
+has no verified native descriptor path or timing in this matrix. Native
+Agnocast carries the CPU reference; using a foreign polymorphic buffer
+backend directly in an Agnocast-shared message remains unvalidated.
+[Universe matrix samples](../../src/universe_crop_benchmark/results-lyrical-buffer-matrix/)
+and [Cyclone compatibility evidence](../../src/crop_pipeline_benchmark/two-edge-results/cyclone-matrix.tsv).

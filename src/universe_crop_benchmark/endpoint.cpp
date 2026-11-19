@@ -2,6 +2,10 @@
 #include <rclcpp_components/register_node_macro.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
 
+#ifdef UNIVERSE_BUFFER_MATRIX
+#include "buffer_io.hpp"
+#endif
+
 #include <array>
 #include <chrono>
 #include <cstdlib>
@@ -30,12 +34,26 @@ class Endpoint : public autoware::agnocast_wrapper::Node {
 public:
   explicit Endpoint(const rclcpp::NodeOptions &options)
   : Node(std::string("bench_") + std::getenv("BENCH_ROLE"), options) {
+#ifndef UNIVERSE_BUFFER_MATRIX
+    const char * backend = std::getenv("BENCH_BUFFER");
+    if (backend && std::string(backend) != "cpu")
+      throw std::runtime_error("explicit buffer case requires UNIVERSE_BUFFER_MATRIX");
+#endif
     if (std::string(std::getenv("BENCH_ROLE")) == "pub") {
       pub_ = create_publisher<Cloud>("input", rclcpp::SensorDataQoS());
       timer_ = create_wall_timer(std::chrono::milliseconds(100), [this] { send(); });
     } else {
       csv_.open(std::getenv("BENCH_CSV"));
       if (!csv_) throw std::runtime_error("could not open sample log");
+#ifdef UNIVERSE_BUFFER_MATRIX
+      if (buffer_backend() != "cpu") {
+        rclcpp::SubscriptionOptions options;
+        options.acceptable_buffer_backends = buffer_backend();
+        buffer_sub_ = get_rclcpp_node()->create_subscription<Cloud>("output", rclcpp::SensorDataQoS(),
+          [this](const Cloud &msg) { receive(msg); }, options);
+        return;
+      }
+#endif
       sub_ = create_subscription<Cloud>("output", rclcpp::SensorDataQoS(),
         [this](const Cloud &msg) { receive(msg); });
     }
@@ -66,6 +84,9 @@ private:
       const auto point = sample(i, frame_);
       std::memcpy(msg->data.data() + i * sizeof(Point), &point, sizeof(Point));
     }
+#ifdef UNIVERSE_BUFFER_MATRIX
+    prepare_output(msg->data);
+#endif
     msg->header.stamp = now();
     pub_->publish(std::move(msg));
     ++frame_;
@@ -73,7 +94,12 @@ private:
 
   void receive(const Cloud &msg) {
     const auto latency = (now() - rclcpp::Time(msg.header.stamp)).nanoseconds();
+#ifdef UNIVERSE_BUFFER_MATRIX
+    InputBytes view(msg.data);
+    const auto data = view.bytes;
+#else
     const std::vector<uint8_t> & data = msg.data;
+#endif
     if (latency <= 0 || msg.header.frame_id != "base_link" || msg.width != points / 2 ||
       msg.point_step != sizeof(Point) || msg.height != 1 || msg.fields.size() != 6 ||
       msg.row_step != msg.width * sizeof(Point) || data.size() != msg.row_step)
@@ -90,6 +116,9 @@ private:
   AUTOWARE_PUBLISHER_PTR(Cloud) pub_;
   AUTOWARE_SUBSCRIPTION_PTR(Cloud) sub_;
   AUTOWARE_TIMER_PTR timer_;
+#ifdef UNIVERSE_BUFFER_MATRIX
+  rclcpp::Subscription<Cloud>::SharedPtr buffer_sub_;
+#endif
   std::ofstream csv_;
 };
 }  // namespace benchmark

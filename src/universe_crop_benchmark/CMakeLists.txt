@@ -9,8 +9,24 @@ foreach(pkg IN LISTS deps)
 endforeach()
 set(aw "${CMAKE_CURRENT_SOURCE_DIR}/..")
 set(pre "${aw}/universe/autoware_universe/sensing/autoware_pointcloud_preprocessor")
-add_library(universe_crop SHARED "${pre}/src/filter.cpp" "${pre}/src/utility/memory.cpp"
-  "${pre}/src/crop_box_filter/crop_box_filter_node.cpp")
+option(UNIVERSE_BUFFER_MATRIX "Build explicit Lyrical buffer cases" OFF)
+set(crop_src "${pre}")
+if(UNIVERSE_BUFFER_MATRIX)
+  find_package(shmem_buffer REQUIRED)
+  find_package(cuda_buffer REQUIRED)
+  find_package(CUDAToolkit REQUIRED)
+  set(crop_src "${CMAKE_CURRENT_BINARY_DIR}/buffer_crop")
+  foreach(file IN ITEMS include/autoware/pointcloud_preprocessor/filter.hpp
+      src/filter.cpp src/crop_box_filter/crop_box_filter_node.cpp)
+    configure_file("${pre}/${file}" "${crop_src}/${file}" COPYONLY)
+  endforeach()
+  set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS buffer-transport.patch)
+  execute_process(COMMAND patch -p1 -i "${CMAKE_CURRENT_SOURCE_DIR}/buffer-transport.patch"
+    WORKING_DIRECTORY "${crop_src}" COMMAND_ERROR_IS_FATAL ANY)
+endif()
+add_library(universe_crop SHARED "${crop_src}/src/filter.cpp" "${pre}/src/utility/memory.cpp"
+  "${crop_src}/src/crop_box_filter/crop_box_filter_node.cpp")
+target_include_directories(universe_crop PRIVATE "${crop_src}/include" "${CMAKE_CURRENT_SOURCE_DIR}")
 target_include_directories(universe_crop PRIVATE "${pre}/include"
   "${aw}/core/autoware_core/common/autoware_point_types/include")
 foreach(pkg IN ITEMS autoware_utils autoware_utils_debug autoware_utils_diagnostics autoware_utils_system)
@@ -34,5 +50,12 @@ target_include_directories(universe_endpoint PRIVATE ${autoware_agnocast_wrapper
 autoware_agnocast_wrapper_register_node(universe_endpoint
   PLUGIN "benchmark::Endpoint" EXECUTABLE endpoint
   AGNOCAST_EXECUTOR AgnocastOnlySingleThreadedExecutor ROS2_EXECUTOR SingleThreadedExecutor)
+if(UNIVERSE_BUFFER_MATRIX)
+  foreach(target IN ITEMS universe_crop universe_endpoint)
+    target_link_libraries(${target} shmem_buffer::shmem_buffer cuda_buffer::cuda_buffer CUDA::cudart)
+    target_compile_features(${target} PRIVATE cxx_std_20)
+  endforeach()
+  target_compile_definitions(universe_endpoint PRIVATE UNIVERSE_BUFFER_MATRIX)
+endif()
 install(TARGETS universe_crop universe_endpoint DESTINATION lib)
 ament_package()
