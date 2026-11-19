@@ -1,0 +1,5 @@
+<library path="agnocast_buffer_probe_plugin">
+  <class name="agnocast_probe" type="probe::Backend" base_class_type="rosidl::BufferBackend">
+    <description>Single-writer Agnocast lifetime probe.</description>
+  </class>
+</library>

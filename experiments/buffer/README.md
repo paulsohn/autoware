@@ -150,3 +150,17 @@ ceilings. Three rounds give limited resolution for the small differences
 between the two shared-memory rows. A competing callback group and a deliberate
 priority policy are needed to evaluate isolation under load. The standalone
 AWF CIE remains untested. [Measurements](../../src/universe_crop_benchmark/results-lyrical-cie/)
+
+### Agnocast-backed Buffer ownership result
+
+An experimental Lyrical plugin delivered ordinary PointCloud2 messages over
+Zenoh with Agnocast-backed bytes, using the existing heap hook and kernel
+module. In three repetitions two readers verified the original bytes after
+the publisher released its ROS message. An ordinary CPU reader also received
+correct bytes. A delayed reader with an older descriptor still queued in ROS
+lost that sample when the depth-one Agnocast history advanced. The backend
+detected the wrong entry ID during deserialization. Acquisition by descriptor
+identity and retention across the two queues are the next Agnocast-backend
+milestone. The latency comparison requires that ownership gate first.
+[Fixture](../../src/agnocast_buffer_probe/) and
+[reproduction and observed failure](JOURNAL.md#agnocast-backed-buffer-ownership-on-lyrical).

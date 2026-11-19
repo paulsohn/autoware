@@ -497,3 +497,73 @@ Check empty, partial and full crops, descriptor length on both hops and
 outstanding reader lifetime before timing. Keep the executor fixed while
 testing that change. The executor result alone gives no estimate of the
 latency recoverable by removing the copy.
+
+### Agnocast-backed Buffer ownership on Lyrical
+
+Test the smallest adaptation of the existing Agnocast APIs before measuring
+the Universe pipeline. The new colcon package registers a real
+rosidl::BufferBackend plugin in a separate, opt-in overlay. A single writer
+fills a 65,536-byte vector directly inside an Agnocast publisher loan, publishes
+it on a private native topic, and takes a local reference for its PointCloud2
+data field. Zenoh transports the ordinary ROS message with a UInt64 native
+entry ID for each compatible reader. Each importing process wraps its native
+ipc_shared_ptr in a local BufferImpl. The plugin checks the entry ID before
+exposing the read-only view. CPU conversion copies bytes using to_cpu().
+The private topic is unique to each invocation. The fixture assumes one writer
+and one native reader per process. Normal applications would need endpoint
+discovery and allocation integrated into the backend. Native participants
+use the existing matched kmod and heaphook with bridging disabled.
+
+Use the PCL-enabled exported Lyrical userspace and the Agnocast install from
+the Universe comparison. Source the probe prefix only inside this experiment.
+From the colcon worktree:
+
+```bash
+export LYRICAL_ROOT=$(cat build/agnocast-lyrical/universe-root)
+experiments/buffer/run-lyrical.sh bash src/agnocast_buffer_probe/build.sh
+for run in 1 2 3; do
+  BUFFER_RUNTIME_ONLY=1 experiments/buffer/run-lyrical.sh bash -ec '
+    source build/agnocast-lyrical/install/local_setup.bash
+    source build/agnocast-lyrical/probe-install/local_setup.bash
+    python3 src/agnocast_buffer_probe/run.py'
+done
+```
+
+All three repetitions reproduced the following outcomes:
+
+- Both native-backed ROS readers waited for the publisher to destroy its ROS
+  message before spinning. The second waited until the first held its loan.
+  Both verified every byte again after a new native publication displaced
+  the original history entry.
+- A CPU-only ROS subscription verified the serialized fallback with no heap
+  hook preloaded in that process. The Agnocast library was linked in the
+  common probe executable.
+- A depth-one ROS reader waited for two middleware arrivals before taking.
+  It verified the replacement sample after the earlier descriptor was dropped.
+- A depth-four ROS reader delayed taking the first descriptor until the second
+  native publication. Its depth-one native reader could no longer take the
+  matching generation. Zenoh reported a deserialization exception, and the
+  probe verified that the stale descriptor never reached the ROS callback.
+  An acquired reference to the original bytes was still live in another
+  reader. The failure is in obtaining that specific reference.
+- One holder released normally and the harness killed the other with SIGKILL.
+  The publisher observed the original native payload destructor during
+  subsequent native publishing. This checks reclamation of that allocation.
+  It does not establish reclamation for exports in a future reservation protocol.
+
+The harness succeeds when it observes the expected rejection. The migration
+gate for valid queued ROS samples remains **failed**. A larger native history
+moves the overrun point. Public TakeSubscription::take() advances a subscriber
+watermark and supplies the entry ID after selecting a sample. The Lyrical
+BufferBackend interface has export and import hooks and no per-sample
+queue-discard notification. For the next experiment, reserve a specific
+allocation for the destination before exposing its descriptor, acquire by
+identifier at import, and release abandoned reservations on drop, disconnect,
+or process death. Evaluate a bounded userspace protocol and identify any
+required RMW queue-lifecycle support before changing the installed kernel
+module. Repeat the delayed and dropped cases before collecting target latency.
+Separate that work from direct-write POSIX and the Bazel integration.
+
+The build ran sequentially with a 1,200 MiB cap, and runtime groups used the
+512 MiB guard. Minimum host MemAvailable was 7,082 MiB at build and 6,901 MiB
+across the three runs. [Recorded output](../../src/agnocast_buffer_probe/ownership-results.txt)

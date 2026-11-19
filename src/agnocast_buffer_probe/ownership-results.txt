@@ -1,0 +1,24 @@
+Run 1
+cpu: verified all payload bytes
+[ERROR] [1795078906.770079219] [rmw_zenoh_cpp]: [Subscription] EXCEPTION during deserialization: descriptor generation unavailable
+drop: KeepLast(1) received and verified the replacement sample
+fast: verified all payload bytes
+stale: delayed ROS import rejected after native history advanced
+publisher: original allocation reclaimed after both readers released or exited
+Minimum host MemAvailable: 6998 MiB
+Run 2
+cpu: verified all payload bytes
+fast: verified all payload bytes
+[ERROR] [1795078908.974505882] [rmw_zenoh_cpp]: [Subscription] EXCEPTION during deserialization: descriptor generation unavailable
+drop: KeepLast(1) received and verified the replacement sample
+stale: delayed ROS import rejected after native history advanced
+publisher: original allocation reclaimed after both readers released or exited
+Minimum host MemAvailable: 6936 MiB
+Run 3
+cpu: verified all payload bytes
+fast: verified all payload bytes
+[ERROR] [1795078911.050687971] [rmw_zenoh_cpp]: [Subscription] EXCEPTION during deserialization: descriptor generation unavailable
+stale: delayed ROS import rejected after native history advanced
+drop: KeepLast(1) received and verified the replacement sample
+publisher: original allocation reclaimed after both readers released or exited
+Minimum host MemAvailable: 6901 MiB
