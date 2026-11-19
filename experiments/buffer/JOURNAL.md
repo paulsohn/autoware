@@ -147,3 +147,23 @@ MemAvailable for the Jazzy build and runs was 3,404 MiB.
 The complete timed rerun covers 1,800 verified frames across Core and
 Universe. Probe, profiling, launch and expected-failure runs are additional.
 Recovery reference experiment/rosidl-buffer-colcon remains at 0693fc37.
+
+## Estimate the Core crop's share of two-edge mapped-memory latency
+
+Launched the unmodified two-edge Zenoh shmem pipeline three times with an
+extra subscriber to the existing processing_time_ms diagnostic. All 180
+output frames passed. The timer begins inside the callback before filtering
+and ends before output publication, after the polygon-subscriber check.
+Each observer discovered the timer after startup and received 59 consecutive
+samples (largest adjacent stamp interval 100.26 ms). Use the final 50 per run
+for each distribution. Pooled median/p95 was 0.242/0.351 ms inside that
+interval and 0.744/0.909 ms end to end. Time outside it includes both hops,
+scheduling and work outside the timer; this run cannot apportion those costs.
+
+To repeat in the guarded Lyrical environment, source build/two/install/local_setup.bash
+and export RMW_IMPLEMENTATION=rmw_zenoh_cpp before starting Python. Create a
+fresh output directory per group and run python3 experiments/buffer/observe-crop.py
+with that directory as its argument. Selecting the RMW after importing rclpy
+initially produced a successful pipeline and zero timer samples. The profiling
+runs with the correct RMW used a 512 MiB cap and retained at least 4,642 MiB
+of available host memory. [Pooled input samples](shmem-crop-timer.csv)
