@@ -11,6 +11,20 @@ export AGNOCAST_BRIDGE_MODE=OFF AGNOCAST_NO_DISCOVERY_AGENT=1
 export CYCLONEDDS_URI='<CycloneDDS><Domain><General><Interfaces><NetworkInterface name="lo"/></Interfaces><AllowMulticast>false</AllowMulticast></General><Discovery><ParticipantIndex>auto</ParticipantIndex><Peers><Peer Address="127.0.0.1"/></Peers></Discovery></Domain></CycloneDDS>'
 hook=/ws/build/agnocast-lyrical/install/agnocastlib/lib/libagnocast_heaphook.so
 
+if [[ ${1:-} == contract ]]; then
+  cd "$(mktemp -d)"
+  ROS_DISABLE_LOANED_MESSAGES=0 LD_PRELOAD="$hook" "$probe" writer contract &
+  writer=$!
+  trap 'kill "$writer" 2>/dev/null || true' EXIT
+  status=0
+  ROS_DISABLE_LOANED_MESSAGES=0 LD_PRELOAD="$hook" "$probe" reader contract || status=$?
+  [[ $status == 137 && -f kill_ready ]]
+  touch kill_confirmed
+  wait "$writer"
+  trap - EXIT
+  exit 0
+fi
+
 if [[ ${1:-} == pressure ]]; then
   cd "$(mktemp -d)"
   pids=()

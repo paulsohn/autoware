@@ -207,6 +207,72 @@ void pressure_reader(rclcpp::Node::SharedPtr node, const std::string & role)
   mark("slow_released");
 }
 
+void contract(rclcpp::Node & node, const std::string & role)
+{
+  constexpr auto topic = "trajectory_loan_probe";
+  if (role == "writer") {
+    auto pub = node.create_publisher<Point>(topic, rclcpp::QoS(2).best_effort());
+    wait_file("attached");
+    auto deadline = std::chrono::steady_clock::now() + 8s;
+    while (pub->get_subscription_count() != 2) {
+      check(std::chrono::steady_clock::now() < deadline, "expected two compatible DDS endpoints");
+      std::this_thread::sleep_for(10ms);
+    }
+    auto loan = pub->borrow_loaned_message();
+    fill(loan.get(), 1);
+    auto first = reinterpret_cast<uintptr_t>(&loan.get());
+    pub->publish(std::move(loan));
+    wait_file("kill_confirmed");
+    bool reused = false;
+    for (int i = 0; i < 512; ++i) {
+      auto next = pub->borrow_loaned_message();
+      reused |= reinterpret_cast<uintptr_t>(&next.get()) == first;
+      fill(next.get(), i);
+      pub->publish(std::move(next));
+    }
+    check(reused, "publisher did not reuse killed reader's sample address");
+    std::cout << "writer reused held sample address after SIGKILL" << std::endl;
+    return;
+  }
+  Point::ConstSharedPtr held;
+  bool serialized = false, mismatch = false;
+  auto sub = node.create_subscription<Point>(
+    topic, rclcpp::QoS(2).best_effort(),
+    [&](Point::ConstSharedPtr msg, const rclcpp::MessageInfo & mi) {
+      held = msg;
+      auto & info = mi.get_rmw_message_info();
+      std::cout << "typed x=" << msg->x << " source_ns=" << info.source_timestamp
+                << " receive_ns=" << info.received_timestamp << " gid_identifier="
+                << (info.publisher_gid.implementation_identifier
+                      ? info.publisher_gid.implementation_identifier
+                      : "(null)")
+                << std::endl;
+    });
+  auto incompatible = node.create_subscription<Point>(
+    topic, rclcpp::QoS(2).reliable(), [&](Point::ConstSharedPtr) { mismatch = true; });
+  auto generic = node.create_generic_subscription(
+    topic, "geometry_msgs/msg/Point", rclcpp::QoS(2).best_effort(),
+    [&](std::shared_ptr<rclcpp::SerializedMessage> bytes) {
+      Point p;
+      rclcpp::Serialization<Point>().deserialize_message(bytes.get(), &p);
+      verify(p, 1, false);
+      serialized = true;
+    });
+  rclcpp::executors::SingleThreadedExecutor exec;
+  exec.add_node(node.get_node_base_interface());
+  mark("attached");
+  auto deadline = std::chrono::steady_clock::now() + 8s;
+  while (std::chrono::steady_clock::now() < deadline && (!held || !serialized))
+    exec.spin_once(100ms);
+  check(held && serialized, "missing typed or serialized sample");
+  verify(*held, 1, false);
+  for (int i = 0; i < 10; ++i) exec.spin_once(25ms);
+  std::cout << "serialized callback verified; incompatible reliable callback=" << mismatch
+            << std::endl;
+  mark("kill_ready");
+  std::raise(SIGKILL);
+}
+
 struct CallbackError
 {
 };
@@ -288,6 +354,12 @@ int main(int argc, char ** argv)
     rclcpp::init(argc, argv);
     check(
       std::string(rmw_get_implementation_identifier()) == "rmw_agnocast", "wrong implementation");
+    if (std::string(argv[2]) == "contract") {
+      auto n = std::make_shared<rclcpp::Node>(writer ? "contract_writer" : "contract_reader");
+      contract(*n, argv[1]);
+      rclcpp::shutdown();
+      return 0;
+    }
     if (std::string(argv[2]) == "pressure") {
       const std::string role = argv[1];
       auto pressure_node =

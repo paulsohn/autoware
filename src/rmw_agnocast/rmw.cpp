@@ -300,7 +300,9 @@ extern "C" rmw_ret_t rmw_publish(
 }
 namespace
 {
-rmw_ret_t take(Reader & r, void * copy, void ** loan, bool * taken, rmw_message_info_t * info)
+rmw_ret_t take(
+  Reader & r, void * copy, void ** loan, bool * taken, rmw_message_info_t * info,
+  rmw_serialized_message_t * serialized = nullptr)
 {
   std::lock_guard lock(r.mutex);
   *taken = !r.pending.empty();
@@ -311,7 +313,8 @@ rmw_ret_t take(Reader & r, void * copy, void ** loan, bool * taken, rmw_message_
     *loan = const_cast<void *>(sample.get());
     r.held.emplace(*loan, std::move(sample));
   } else {
-    auto ret = r.type.copy(sample.get(), copy);
+    auto ret = serialized ? CYCLONE(rmw_serialize)(sample.get(), r.type.ts, serialized)
+                          : r.type.copy(sample.get(), copy);
     if (ret != RMW_RET_OK) {
       *taken = false;
       return ret;
@@ -321,6 +324,22 @@ rmw_ret_t take(Reader & r, void * copy, void ** loan, bool * taken, rmw_message_
   return RMW_RET_OK;
 }
 }  // namespace
+extern "C" rmw_ret_t rmw_take_serialized_message_with_info(
+  const rmw_subscription_t * sub, rmw_serialized_message_t * msg, bool * taken,
+  rmw_message_info_t * info, rmw_subscription_allocation_t * a)
+{
+  auto r = lookup(readers, sub->data);
+  return r ? take(*r, nullptr, nullptr, taken, info, msg)
+           : CYCLONE(rmw_take_serialized_message_with_info)(sub, msg, taken, info, a);
+}
+extern "C" rmw_ret_t rmw_take_serialized_message(
+  const rmw_subscription_t * sub, rmw_serialized_message_t * msg, bool * taken,
+  rmw_subscription_allocation_t * a)
+{
+  auto r = lookup(readers, sub->data);
+  return r ? take(*r, nullptr, nullptr, taken, nullptr, msg)
+           : CYCLONE(rmw_take_serialized_message)(sub, msg, taken, a);
+}
 extern "C" rmw_ret_t rmw_take_loaned_message_with_info(
   const rmw_subscription_t * sub, void ** msg, bool * taken, rmw_message_info_t * info,
   rmw_subscription_allocation_t * a)

@@ -689,3 +689,22 @@ publications in each reader mode. The Path check included five PoseStamped
 elements with heap-backed frame IDs, retained ownership, cross-process
 addresses and ordinary publish/take. The earlier pressure case also passed.
 Minimum sampled host MemAvailable over build and runs was 4,805 MiB.
+
+### Check recorder delivery, QoS, metadata and abrupt reader exit
+
+Run run-loadable.sh contract after the guarded loadable build. The writer
+offers best effort. One process holds a typed Point loan, deserializes another
+subscription's recorder-style sample and requests a third, reliable
+subscription. Implemented both serialized take entry points on the native
+queue; a delegated Cyclone reader has no native payload. The writer's graph
+count reached two. The reliable reader received an incompatibility warning
+and nevertheless got a native callback. The typed callback's source and
+receive timestamps were zero and its GID implementation identifier was null.
+Treat both as open RMW contract failures. Do not infer reliability matching
+from DDS discovery.
+
+The reader sent SIGKILL to itself with the first sample retained. Only after
+the shell verified its exit status and checkpoint did the surviving publisher
+send 512 more loans. It reused the original object address. This establishes
+recovery of that allocation on this run; it is not a heap-wide leak test.
+Guarded build/run minimum MemAvailable was 4,830 MiB. The bridge was disabled.
