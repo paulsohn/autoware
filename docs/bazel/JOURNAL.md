@@ -8583,3 +8583,38 @@ correction. Upstream current source still has the vector-specific construction;
 UPSTREAM_AWF.md records the inspection and related tracker. This source fix is
 separate from Bazel definitions. Older ROS/CMake builds are not tested; the
 contiguous view supports both the old vector and new Buffer API.
+
+## 2026-11-19: Phase 6.4.4 — Image transport decompressor
+
+Purpose: satisfy the existing YOLOX launcher's optional compressed-image input
+chain with the local package. Inventory its two implementation libraries,
+component/executable, launch/config files and both complete existing suites:
+forty-one decoder parameter/edge cases and three ROS-node delivery cases.
+The malformed-encoding cases characterize existing behavior, including known
+inconsistent metadata; preserving their passing expectations is not a claim
+that those upstream behaviors are corrected.
+
+Add package-local MODULE/BUILD and root override. Build the decoder, its ROS
+component and generated standalone executable. Export RCLCPP/CV-bridge/OpenCV/
+sensor-message dynamic providers, the component record and original launch/
+configuration/executable resources through the package-owned index. Existing
+node tests include the original src/ header: declare it in the node library,
+without moving or editing those tests. Register the component record with
+ament_index.components; rclcpp_components_register_node does not create a
+separate *_ament_index target. The byte-buffer compile blocker is fixed in the
+preceding independent source commit.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=no-agnocast --local_test_jobs=1 \
+  --nocache_test_results --test_output=errors @autoware_image_transport_decompressor//...
+```
+
+All twelve non-test targets build; all forty-four original cases pass across
+two targets (decoder 0.1 seconds, node 1.1 seconds; 22.562-second invocation),
+zero failures/errors/skips. The node tests exercise actual compressed-to-raw
+ROS delivery, requested encoding and rejection of undecodable data. Targeted
+buildifier, clang-format and whitespace checks pass. These are native rclcpp
+nodes with Cyclone DDS; no Agnocast rewrite, Fast DDS or separate component
+runtime matrix is claimed. Continue with repository-owned model resources and
+YOLOX's complete GPU suite.

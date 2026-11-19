@@ -1,0 +1,126 @@
+load("@rclcpp_components//:defs.bzl", "rclcpp_components_register_node")
+load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "autoware_image_transport_decompressor_library",
+    srcs = ["src/image_transport_decompressor.cpp"],
+    hdrs = glob(["include/**/*.hpp"]),
+    strip_include_prefix = "include",
+    deps = [
+        "@cv_bridge//:cv_bridge_library",
+        "@rclcpp//:rclcpp_library",
+        "@rosdistro//cc:opencv_library",
+        "@sensor_msgs//:cc",
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = [
+        "@cv_bridge//:cv_bridge",
+        "@sensor_msgs//:cc_shared",
+        "@rclcpp//:rclcpp",
+        "@rclcpp_components//:rclcpp_components",
+        "@rosdistro//cc:opencv",
+    ],
+)
+
+cc_shared_library(
+    name = "autoware_image_transport_decompressor",
+    dynamic_deps = [":runtime_dynamic_deps"],
+    deps = [":autoware_image_transport_decompressor_library"],
+)
+
+cc_library(
+    name = "node_library",
+    srcs = ["src/image_transport_decompressor_node.cpp"],
+    hdrs = ["src/image_transport_decompressor_node.hpp"],
+    deps = [
+        ":autoware_image_transport_decompressor_library",
+        "@rclcpp_components//:rclcpp_components_library",
+    ],
+)
+
+cc_shared_library(
+    name = "node_component",
+    dynamic_deps = [
+        ":autoware_image_transport_decompressor",
+        ":runtime_dynamic_deps",
+    ],
+    shared_lib_name = "libautoware_image_transport_decompressor_ros.so",
+    deps = [":node_library"],
+)
+
+rclcpp_components_register_node(
+    name = "image_transport_decompressor_node",
+    component = ":node_component",
+    node_name = "image_transport_decompressor_node",
+    plugin = "autoware::image_preprocessor::ImageTransportDecompressor",
+)
+
+register_ament_files(
+    name = "resources",
+    files = glob([
+        "launch/**",
+        "config/**",
+    ]),
+    prefix = "share/autoware_image_transport_decompressor",
+)
+
+register_ament_files(
+    name = "executables",
+    files = [":image_transport_decompressor_node"],
+    prefix = "lib/autoware_image_transport_decompressor",
+    strip_prefix = "*",
+)
+
+ament_index(
+    components = [":image_transport_decompressor_node_record"],
+    data = [
+        ":executables",
+        ":resources",
+    ],
+    libraries = [":autoware_image_transport_decompressor"],
+    package_xml = "package.xml",
+    deps = ["@rclcpp_components//:ament_package"],
+)
+
+cc_test(
+    name = "test_image_transport_decompressor",
+    srcs = ["test/test_image_transport_decompressor.cpp"],
+    dynamic_deps = [
+        ":autoware_image_transport_decompressor",
+        ":node_component",
+        ":runtime_dynamic_deps",
+    ],
+    env = {
+        "ENABLE_AGNOCAST": "0",
+        "ROS_DOMAIN_ID": "73",
+    },
+    deps = [
+        ":autoware_image_transport_decompressor_library",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "test_image_transport_decompressor_node",
+    srcs = ["test/test_image_transport_decompressor_node.cpp"],
+    dynamic_deps = [
+        ":autoware_image_transport_decompressor",
+        ":node_component",
+        ":runtime_dynamic_deps",
+    ],
+    env = {
+        "ENABLE_AGNOCAST": "0",
+        "ROS_DOMAIN_ID": "73",
+    },
+    deps = [
+        ":node_library",
+        "@googletest//:gtest_main",
+    ],
+)

@@ -880,3 +880,9 @@ local_path_override(
     module_name = "tier4_perception_msgs",
     path = "src/universe/external/tier4_autoware_msgs/tier4_perception_msgs",
 )
+
+bazel_dep(name = "autoware_image_transport_decompressor", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_image_transport_decompressor",
+    path = "src/universe/autoware_universe/sensing/autoware_image_transport_decompressor",
+)
