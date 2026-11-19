@@ -1,0 +1,9 @@
+<package format="3">
+  <name>agnocast_rmw_loan_probe</name><version>0.1.0</version>
+  <description>Exercise rclcpp whole-message loan ownership with Agnocast storage.</description>
+  <maintainer email="paulsohn@users.noreply.github.com">Paul Sohn</maintainer>
+  <license>Apache-2.0</license><buildtool_depend>ament_cmake</buildtool_depend>
+  <depend>agnocastlib</depend><depend>autoware_planning_msgs</depend>
+  <depend>rclcpp</depend><depend>rmw</depend>
+  <export><build_type>ament_cmake</build_type></export>
+</package>

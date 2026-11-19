@@ -635,3 +635,10 @@ are fixture setup. A general implementation needs per-endpoint stream identity,
 restart handling, and recovery from that saturation case. The synchronous
 per-peer socket exchange also needs a cost measurement on the Universe path
 before considering the 1.20× native target. No latency figures were collected.
+
+### Whole-message RMW loan experiment
+
+The first whole-message experiment is in [experiments/rmw-agnocast](../rmw-agnocast/README.md).
+It pins the matching Lyrical rclcpp subtree, records the stock lifetime failure,
+and tests retained dynamic trajectories with the heap hook and native kernel
+module. Its ROS transport entry points differ from the Buffer descriptor path.

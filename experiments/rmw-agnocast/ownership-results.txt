@@ -1,0 +1,15 @@
+build/rmw-agnocast/final-patched-3.log:patched: A survived B and throwing C; final release returned A once after subscription teardown
+build/rmw-agnocast/final-patched-3.log:Minimum host MemAvailable: 5364 MiB
+build/rmw-agnocast/final-stock-3.log:stock: A returned at callback exit while still retained
+build/rmw-agnocast/final-stock-3.log:Minimum host MemAvailable: 5726 MiB
+build/rmw-agnocast/final-patched-2.log:patched: A survived B and throwing C; final release returned A once after subscription teardown
+build/rmw-agnocast/final-patched-2.log:Minimum host MemAvailable: 5383 MiB
+build/rmw-agnocast/final-stock-2.log:stock: A returned at callback exit while still retained
+build/rmw-agnocast/final-stock-2.log:Minimum host MemAvailable: 5727 MiB
+build/rmw-agnocast/final-stock-1.log:stock: A returned at callback exit while still retained
+build/rmw-agnocast/final-stock-1.log:Minimum host MemAvailable: 5717 MiB
+build/rmw-agnocast/final-patched-1.log:patched: A survived B and throwing C; final release returned A once after subscription teardown
+build/rmw-agnocast/final-patched-1.log:Minimum host MemAvailable: 5396 MiB
+test_loaned_message: 4 cases, 0 failures, 0 errors, 0 skipped
+test_subscription: 21 cases, 0 failures, 0 errors, 0 skipped
+test_executor: 28 cases, 0 failures, 0 errors, 0 skipped
