@@ -8566,3 +8566,20 @@ providers for this gate. No --config=fastdds test or runtime check was run.
 Targeted buildifier, clang-format and whitespace checks pass. Agnocast plugin
 assembly can consume the expanded collection, but no new bridge/runtime matrix
 is claimed by this message-only task. Model and full YOLOX gates follow.
+
+## 2026-11-19: Decompressor Lyrical Buffer compatibility
+
+The actual decompressor build fails at cv::Mat(compressed_image.data): Lyrical's
+message byte sequence is rosidl Buffer, not std::vector, so OpenCV's vector-only
+constructor is inapplicable. Replace that construction with a one-row CV_8UC1
+view over data()/size(). cv::imdecode reads the view while the original message
+remains alive; the const_cast satisfies OpenCV's non-const Mat view API without
+changing input ownership or adding a payload copy. Add the direct cstdint
+include. Preserve all decode, encoding and exception behavior.
+
+Validate with the entire @autoware_image_transport_decompressor//... test/build
+gate described below; both original suites pass on Lyrical/libc++ after the
+correction. Upstream current source still has the vector-specific construction;
+UPSTREAM_AWF.md records the inspection and related tracker. This source fix is
+separate from Bazel definitions. Older ROS/CMake builds are not tested; the
+contiguous view supports both the old vector and new Buffer API.

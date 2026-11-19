@@ -964,3 +964,27 @@ This is standard-library compatibility, not a Lyrical-only behavior change.
 Upstream CMake/GCC, older ROS distributions, INT8 calibration and ARM remain
 untested. Suggested action: the two-line correction plus a libc++ compilation
 check. Local source correction is separate from the Bazel integration commit.
+
+## Image decompressor assumes std::vector message storage
+
+- [ ] Associate with a matching upstream PR. Reviewed 2026-11-19; none found
+  by the decompressor/Buffer and decompressor/Lyrical searches. Not submitted.
+
+Repository/package: autowarefoundation/autoware_universe,
+autoware_image_transport_decompressor. The expression
+cv::Mat(compressed_image.data) requires a std::vector-specific OpenCV overload;
+Lyrical message data is rosidl Buffer. The real module compilation fails with
+no matching conversion. Use a contiguous one-row CV_8UC1 data()/size() view as
+cv::imdecode input, retaining the source message's ownership and lifetime.
+The decoder reads the input; no vector copy or encoding behavior change is
+needed. The complete original decoder and ROS-node suites pass after the fix.
+
+[Inspected upstream source](https://github.com/autowarefoundation/autoware_universe/blob/3f14a7bbba980fb6c337f4c55608f6b9ea81c88c/sensing/autoware_image_transport_decompressor/src/image_transport_decompressor.cpp)
+still contains the vector-specific construction. The
+[Lyrical tracker](https://github.com/autowarefoundation/autoware/issues/7404)
+and [toolchain tracker](https://github.com/autowarefoundation/autoware_universe/issues/13590)
+are related platform work, not matching corrections. Searches also returned
+PRs 13167, 11222 and 8165 for other camera consumers; those search matches do
+not establish a decompressor fix or local validation. Reproduce with the
+Phase 6.4.4 complete module command in the journal. The source fix is committed
+separately; older ROS/CMake and ARM have not been tested.

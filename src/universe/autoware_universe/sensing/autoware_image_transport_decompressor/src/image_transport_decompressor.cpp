@@ -61,6 +61,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cstdint>
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -82,7 +83,11 @@ sensor_msgs::msg::Image decompress(
   // Decode the image. cv::IMREAD_COLOR makes it 8-bit with three channels in BGR order, whatever
   // the depth and the channel count of the compressed stream are.
   try {
-    cv_image.image = cv::imdecode(cv::Mat(compressed_image.data), cv::IMREAD_COLOR);
+    cv_image.image = cv::imdecode(
+      cv::Mat(
+        1, static_cast<int>(compressed_image.data.size()), CV_8UC1,
+        const_cast<std::uint8_t *>(compressed_image.data.data())),
+      cv::IMREAD_COLOR);
   } catch (const cv::Exception & e) {
     // Reported the same way as the empty image below, keeping the decoder's own message.
     throw std::runtime_error(e.what());
