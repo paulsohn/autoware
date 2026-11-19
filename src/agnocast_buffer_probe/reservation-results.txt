@@ -1,0 +1,36 @@
+Run 1
+decline: verified all payload bytes
+cpu: verified all payload bytes
+fast: verified all payload bytes
+shmem: verified Agnocast-to-POSIX-only subscription via CPU and issued POSIX reply
+shmem: verified all payload bytes
+drop: KeepLast(1) received and verified the replacement sample
+stale: verified both native generations after history advanced
+capacity: verified 16 native reservations, CPU overflow and native recovery
+publisher: verified POSIX-to-Agnocast-only subscription CPU fallback
+publisher: reclaimed acquired and pending loans after reader death
+Minimum host MemAvailable: 6703 MiB
+Run 2
+cpu: verified all payload bytes
+decline: verified all payload bytes
+shmem: verified Agnocast-to-POSIX-only subscription via CPU and issued POSIX reply
+shmem: verified all payload bytes
+fast: verified all payload bytes
+drop: KeepLast(1) received and verified the replacement sample
+stale: verified both native generations after history advanced
+capacity: verified 16 native reservations, CPU overflow and native recovery
+publisher: verified POSIX-to-Agnocast-only subscription CPU fallback
+publisher: reclaimed acquired and pending loans after reader death
+Minimum host MemAvailable: 6546 MiB
+Run 3
+decline: verified all payload bytes
+cpu: verified all payload bytes
+drop: KeepLast(1) received and verified the replacement sample
+shmem: verified Agnocast-to-POSIX-only subscription via CPU and issued POSIX reply
+shmem: verified all payload bytes
+fast: verified all payload bytes
+stale: verified both native generations after history advanced
+capacity: verified 16 native reservations, CPU overflow and native recovery
+publisher: verified POSIX-to-Agnocast-only subscription CPU fallback
+publisher: reclaimed acquired and pending loans after reader death
+Minimum host MemAvailable: 6416 MiB

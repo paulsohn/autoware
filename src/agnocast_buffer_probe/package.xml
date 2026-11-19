@@ -3,7 +3,7 @@
   <description>Lyrical endpoint descriptor lifetime experiment with native Agnocast storage.</description>
   <maintainer email="paulsohn@users.noreply.github.com">Paul Sohn</maintainer>
   <license>Apache-2.0</license><buildtool_depend>ament_cmake</buildtool_depend>
-  <depend>agnocastlib</depend><depend>rclcpp</depend><depend>rosidl_buffer</depend>
+  <depend>shmem_buffer</depend><depend>agnocastlib</depend><depend>rclcpp</depend><depend>rosidl_buffer</depend>
   <depend>rosidl_buffer_backend</depend><depend>pluginlib</depend>
   <depend>std_msgs</depend><depend>sensor_msgs</depend><depend>rosidl_typesupport_cpp</depend>
   <exec_depend>rmw_zenoh_cpp</exec_depend>

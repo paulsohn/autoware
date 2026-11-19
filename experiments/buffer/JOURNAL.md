@@ -500,6 +500,8 @@ latency recoverable by removing the copy.
 
 ### Agnocast-backed Buffer ownership on Lyrical
 
+The original failing fixture is preserved at commit `c1680efb`.
+
 Test the smallest adaptation of the existing Agnocast APIs before measuring
 the Universe pipeline. The new colcon package registers a real
 rosidl::BufferBackend plugin in a separate, opt-in overlay. A single writer
@@ -567,3 +569,69 @@ Separate that work from direct-write POSIX and the Bazel integration.
 The build ran sequentially with a 1,200 MiB cap, and runtime groups used the
 512 MiB guard. Minimum host MemAvailable was 7,082 MiB at build and 6,901 MiB
 across the three runs. [Recorded output](../../src/agnocast_buffer_probe/ownership-results.txt)
+
+### Reserve the destination loan before descriptor publication
+
+Test whether Lyrical's existing endpoint-aware Buffer hooks can close the
+gap between Agnocast publication and ROS subscription take. The starting
+case at c1680efb acquired the native loan during deserialization. Its delayed
+depth-four ROS reader lost sample A when the depth-one native history moved
+to B, even though A remained alive in another process.
+
+In the revised plugin the destination advertises its process in backend
+discovery metadata. For each compatible destination the publisher uses the
+endpoint GID to find a private Unix socket. During descriptor creation it
+sends the native entry ID and waits for confirmation. A receiver thread takes
+the native loan, verifies the ID, and stores the loan before acknowledging.
+On import the plugin transfers the matching reservation to the process-local
+Buffer object. Only the ID and acknowledgement travel over the socket. An
+unavailable peer, mismatched entry or exhausted budget can decline the
+descriptor so the serializer sends CPU bytes. The test runs with
+AGNOCAST_BRIDGE_MODE=OFF, stock Lyrical ROS libraries and the existing
+Agnocast kernel module. The writer and native readers use the heap hook.
+
+Repeat using the exported Lyrical root, native Agnocast install, and existing
+POSIX Buffer overlay from the Universe experiment. From the experiment tree:
+
+```bash
+export LYRICAL_ROOT=$(cat build/agnocast-lyrical/universe-root)
+experiments/buffer/run-lyrical.sh bash src/agnocast_buffer_probe/build.sh
+for run in 1 2 3; do
+  BUFFER_RUNTIME_ONLY=1 experiments/buffer/run-lyrical.sh bash -ec '
+    source build/agnocast-lyrical/install/local_setup.bash
+    source build/agnocast-lyrical/probe-install/local_setup.bash
+    python3 src/agnocast_buffer_probe/run.py'
+done
+```
+
+All three runs verified:
+
+- The delayed ROS reader consumed A and B in order as Agnocast-backed Buffers
+  after the native history advanced. The depth-one ROS reader verified B after
+  two arrivals. The fast reader held A across replacement.
+- CPU readers verified all 65,536 bytes, including a receiver advertising
+  Agnocast support with no running reservation service. The POSIX-only
+  subscriber received CPU bytes, promoted them to POSIX storage, and published
+  a POSIX-backed reply. The Agnocast-only ROS subscription received that reply
+  as CPU bytes. These cross-backend transfers include copying.
+- A receiver acquired A and was killed with B still pending. Subsequent native
+  publishes triggered destruction of both original allocations after the other
+  readers finished. The bounded receiver accepted 16 queued native loans, read
+  the seventeenth payload via CPU fallback, then accepted native storage on the
+  following publication after draining. The pending limit is 16 entries and
+  4 MiB per receiver. Each run exercised the entry limit.
+- Minimum host MemAvailable was 7,020 MiB during the sequential build and
+  6,416 MiB over the three 512 MiB runtime scopes.
+  [Captured observations](../../src/agnocast_buffer_probe/reservation-results.txt)
+
+The probe assumes one ordered writer and one subscription per destination
+process. Taking a newer native descriptor retires older unconsumed reservations
+for that stream. ROS exposes no per-descriptor queue-discard notification in
+this backend API. A final dropped frame or lost acknowledgement can therefore
+hold a bounded reservation until later native progress or teardown. If all
+reserved descriptors are dropped at saturation, subsequent CPU fallback can
+persist until teardown. The private socket directory and run-specific metadata
+are fixture setup. A general implementation needs per-endpoint stream identity,
+restart handling, and recovery from that saturation case. The synchronous
+per-peer socket exchange also needs a cost measurement on the Universe path
+before considering the 1.20× native target. No latency figures were collected.

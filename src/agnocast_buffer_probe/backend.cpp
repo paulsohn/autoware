@@ -1,17 +1,19 @@
-#include "probe.hpp"
+#include "reservations.hpp"
 
 #include <pluginlib/class_list_macros.hpp>
 #include <rosidl_buffer_backend/buffer_backend.hpp>
 
 #include <std_msgs/msg/u_int64.hpp>
 
+#include <array>
+#include <charconv>
+
 namespace probe
 {
 namespace
 {
-std::atomic_bool reclaimed{false};
-std::atomic_bool rejected{false};
-Reader * local_reader = nullptr;  // Set before spinning, cleared after shutdown.
+std::atomic_bool released[3]{};
+std::atomic<std::shared_ptr<Reservations>> local;
 class Storage final : public rosidl::BufferImplBase<uint8_t>
 {
 public:
@@ -30,20 +32,20 @@ public:
 }  // namespace
 Bytes::~Bytes()
 {
-  if (!empty() && front() == 1) reclaimed.store(true);
+  if (!empty() && front() < 3) released[front()].store(true);
 }
-bool first_reclaimed()
+bool reclaimed(unsigned seed)
 {
-  return reclaimed.load();
+  return released[seed].load();
 }
 std::string topic()
 {
   auto name = std::getenv("AGNOCAST_BUFFER_PROBE_TOPIC");
   return name ? name : "";
 }
-void attach(Reader * reader)
+void attach(std::shared_ptr<Reader> reader)
 {
-  local_reader = reader;
+  local.store(reader ? std::make_shared<Reservations>(std::move(reader)) : nullptr);
 }
 Buffer wrap(agnocast::ipc_shared_ptr<const Bytes> loan)
 {
@@ -54,34 +56,45 @@ std::span<const uint8_t> view(const Buffer & buffer)
 {
   return *dynamic_cast<const Storage &>(*buffer.get_impl()).loan;
 }
-static std::unique_ptr<Storage> import(int64_t expected)
-{
-  if (!local_reader) throw std::runtime_error("no native probe reader");
-  auto loan = local_reader->take();
-  if (!loan || loan.get_entry_id() != expected) {
-    rejected.store(true);
-    throw std::runtime_error("descriptor generation unavailable");
-  }
-  return std::make_unique<Storage>(std::move(loan));
-}
-bool stale_rejected()
-{
-  return rejected.load();
-}
-
 class Backend final : public rosidl::BufferBackend
 {
   using Descriptor = std_msgs::msg::UInt64;
 
+  using Gid = std::array<uint8_t, RMW_GID_STORAGE_SIZE>;
+  static Gid gid(const rmw_topic_endpoint_info_t & endpoint)
+  {
+    Gid result;
+    std::copy_n(endpoint.endpoint_gid, result.size(), result.begin());
+    return result;
+  }
+  mutable std::mutex mutex_;
+  std::map<Gid, pid_t> peers_;
+
 public:
   std::string get_backend_type() const override { return "agnocast_probe"; }
-  std::string get_backend_metadata() const override { return topic(); }
+  std::string get_backend_metadata() const override
+  {
+    return topic() + ":" + std::to_string(getpid());
+  }
   std::pair<bool, std::vector<std::set<uint32_t>>> on_discovering_endpoint(
-    const rmw_topic_endpoint_info_t &, const std::vector<rmw_topic_endpoint_info_t> &,
+    const rmw_topic_endpoint_info_t & endpoint, const std::vector<rmw_topic_endpoint_info_t> &,
     const std::unordered_map<std::string, std::string> & backends) override
   {
     auto it = backends.find(get_backend_type());
-    return {it != backends.end() && !topic().empty() && it->second == topic(), {}};
+    std::string prefix = topic() + ":";
+    pid_t pid{};
+    bool compatible = false;
+    if (it != backends.end() && !topic().empty() && it->second.starts_with(prefix)) {
+      const char * end = it->second.data() + it->second.size();
+      auto parsed = std::from_chars(it->second.data() + prefix.size(), end, pid);
+      compatible = parsed.ec == std::errc{} && parsed.ptr == end && pid > 0;
+    }
+    std::lock_guard lock(mutex_);
+    if (compatible)
+      peers_[gid(endpoint)] = pid;
+    else
+      peers_.erase(gid(endpoint));
+    return {compatible, {}};
   }
   const rosidl_message_type_support_t * get_descriptor_type_support() const override
   {
@@ -92,19 +105,29 @@ public:
     return std::make_shared<Descriptor>();
   }
   std::shared_ptr<void> create_descriptor_with_endpoint(
-    const void * impl, const rmw_topic_endpoint_info_t &) const override
+    const void * impl, const rmw_topic_endpoint_info_t & endpoint) const override
   {
     auto storage =
       dynamic_cast<const Storage *>(static_cast<const rosidl::BufferImplBase<uint8_t> *>(impl));
     if (!storage) return nullptr;
     auto desc = std::make_shared<Descriptor>();
     desc->data = storage->loan.get_entry_id();
-    return desc;
+    pid_t peer;
+    {
+      std::lock_guard lock(mutex_);
+      auto it = peers_.find(gid(endpoint));
+      if (it == peers_.end()) return nullptr;
+      peer = it->second;
+    }
+    return Reservations::request(peer, desc->data) ? desc : nullptr;
   }
   std::unique_ptr<void, void (*)(void *)> from_descriptor_with_endpoint(
     const void * descriptor, const rmw_topic_endpoint_info_t &) const override
   {
-    auto storage = import(static_cast<const Descriptor *>(descriptor)->data);
+    auto receiver = local.load();
+    if (!receiver) throw std::runtime_error("no local reservation service");
+    auto storage = std::make_unique<Storage>(
+      receiver->consume(static_cast<const Descriptor *>(descriptor)->data));
     return {storage.release(), [](void * p) { delete static_cast<Storage *>(p); }};
   }
 };

@@ -153,14 +153,18 @@ AWF CIE remains untested. [Measurements](../../src/universe_crop_benchmark/resul
 
 ### Agnocast-backed Buffer ownership result
 
-An experimental Lyrical plugin delivered ordinary PointCloud2 messages over
-Zenoh with Agnocast-backed bytes, using the existing heap hook and kernel
-module. In three repetitions two readers verified the original bytes after
-the publisher released its ROS message. An ordinary CPU reader also received
-correct bytes. A delayed reader with an older descriptor still queued in ROS
-lost that sample when the depth-one Agnocast history advanced. The backend
-detected the wrong entry ID during deserialization. Acquisition by descriptor
-identity and retention across the two queues are the next Agnocast-backend
-milestone. The latency comparison requires that ownership gate first.
-[Fixture](../../src/agnocast_buffer_probe/) and
-[reproduction and observed failure](JOURNAL.md#agnocast-backed-buffer-ownership-on-lyrical).
+A receiver-side reservation fixed the delayed-import failure from the
+[original experiment](JOURNAL.md#agnocast-backed-buffer-ownership-on-lyrical).
+Before Zenoh queues a descriptor, the plugin asks the destination to take the
+matching Agnocast loan. Three Lyrical runs verified both queued payloads after
+native history advanced. ROS PointCloud2, rclcpp, Zenoh and the Agnocast kernel
+module required no patches. Agnocast and POSIX-only Buffer participants also
+exchanged verified data in both directions through CPU fallback with the
+Agnocast bridge disabled.
+
+The probe uses one ordered writer, one subscription per receiving process,
+a private shared socket directory and bounded reservations. Concurrent streams,
+endpoint restarts, prompt release of a final dropped descriptor, and the
+Universe latency/CPU cost of the per-peer handshake remain open.
+[Reproduction and limits](JOURNAL.md#reserve-the-destination-loan-before-descriptor-publication)
+and [results](../../src/agnocast_buffer_probe/reservation-results.txt).

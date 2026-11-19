@@ -11,13 +11,12 @@ struct Bytes : std::vector<uint8_t>
 {
   ~Bytes();
 };
-bool first_reclaimed();
+bool reclaimed(unsigned seed);
 using Buffer = rosidl::Buffer<uint8_t>;
 using Publisher = agnocast::Publisher<Bytes>;
 using Reader = agnocast::TakeSubscription<Bytes>;
 std::string topic();
-void attach(Reader * reader);
-bool stale_rejected();
+void attach(std::shared_ptr<Reader> reader);
 Buffer wrap(agnocast::ipc_shared_ptr<const Bytes> loan);
 std::span<const uint8_t> view(const Buffer & buffer);
 }  // namespace probe

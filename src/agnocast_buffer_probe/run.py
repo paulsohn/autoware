@@ -17,8 +17,8 @@ with tempfile.TemporaryDirectory() as tmp:
     try:
         children["router"] = subprocess.Popen([router], cwd=tmp, env=env)
         time.sleep(0.6)
-        for role in ("fast", "delayed", "cpu", "stale", "drop", "publisher"):
-            children[role] = subprocess.Popen([exe, role], cwd=tmp, env=env if role == "cpu" else dict(env, LD_PRELOAD=str(hook)))
+        for role in ("fast", "delayed", "cpu", "stale", "drop", "shmem", "decline", "capacity", "publisher"):
+            children[role] = subprocess.Popen([exe, role], cwd=tmp, env=env if role in ("cpu", "shmem", "decline") else dict(env, LD_PRELOAD=str(hook)))
         deadline = time.monotonic() + 35
         while not (Path(tmp) / "kill_ready").exists():
             for role, child in children.items():
@@ -30,7 +30,7 @@ with tempfile.TemporaryDirectory() as tmp:
         children["delayed"].kill()
         assert children["delayed"].wait(timeout=3) == -9
         (Path(tmp) / "reader_killed").touch()
-        for role in ("publisher", "fast", "cpu", "stale", "drop"):
+        for role in ("publisher", "fast", "cpu", "stale", "drop", "shmem", "decline", "capacity"):
             if children[role].wait(timeout=25):
                 raise RuntimeError(f"{role} failed")
     finally:
