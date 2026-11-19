@@ -8940,3 +8940,39 @@ libraries. This binary-provider gate does not establish rendering, complete
 upstream graphics conformance, a display/vendor backend, or ARM support. No
 existing source package is edited; buildifier, clang-format, JSON and whitespace
 checks pass. The provider task is complete for the selected headless load scope.
+
+## 2026-11-20: Phase 7.1 — Wrapper standalone logging runtime
+
+Purpose: preserve the generated standalone mains' logging dependency in deployed
+package indexes. The core build-tree launch passed, while an extracted
+interface_node resolved libglog.so from /lib with LD_LIBRARY_PATH set only to
+the extracted lib prefix, also loading host gflags and libunwind.so.8. Inspect
+autoware_agnocast_wrapper/defs.bzl: its generated mains explicitly link
+@rosdistro//cc:glog, while its ament_package exported only its component library.
+That main-only dependency therefore lacked an indexed runtime provider.
+
+Add the existing @rosdistro//cc:glog shared provider to the wrapper's package-local
+ament_package libraries list. No C++ implementation, original test, root-owned
+file inventory or runtime fallback is needed. Transferable rule: include a
+standalone main's helper-owned shared providers even when the component library
+itself does not depend on them. The
+[runtime resource convention](DEVELOPING.md#launch-resource-composition) records that rule;
+the product's own strict runtime audit verifies the exported provider in use.
+
+Complete wrapper gate for this metadata change: all existing C++ and Python
+cases with ENABLE_AGNOCAST=0 and Cyclone DDS. The binary/algorithm implementation
+is unchanged; no new enabled-backend or Fast DDS claim is made.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --nocache_test_results --test_output=errors \
+  @autoware_agnocast_wrapper//:launch_tests \
+  @autoware_agnocast_wrapper//:unit_tests
+```
+
+All 37 C++ and 66 Python cases pass, zero skips (0.4 and 1.6 seconds respectively;
+27.316-second invocation). Targeted buildifier and
+whitespace checks pass. The metadata correction is complete; the subsequent
+native-product gate demonstrates that no host glog/gflags/libunwind.so.8 is
+loaded. Existing enabled-backend implementation evidence is unchanged.

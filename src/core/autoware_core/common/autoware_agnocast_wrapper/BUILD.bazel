@@ -134,7 +134,11 @@ ament_package(
         "cmake/*",
     ]),
     headers = glob(["include/**/*.hpp"]),
-    libraries = [":autoware_agnocast_wrapper"],
+    # Standalone mains emitted by defs.bzl link this shared logging provider.
+    libraries = [
+        ":autoware_agnocast_wrapper",
+        "@rosdistro//cc:glog",
+    ],
     python = [":python"],
     setup_cfg = "setup.cfg",
 )
