@@ -27,7 +27,15 @@ F cyclone(const char * symbol)
 bool selected(const char * topic)
 {
   const char * enabled = std::getenv("AGNOCAST_RMW_TOPIC");
-  return enabled && topic && std::strcmp(enabled, topic) == 0;
+  if (!enabled || !topic) return false;
+  std::string_view names(enabled);
+  while (!names.empty()) {
+    auto sep = names.find(':');
+    if (names.substr(0, sep) == topic) return true;
+    if (sep == names.npos) break;
+    names.remove_prefix(sep + 1);
+  }
+  return false;
 }
 bool contains_buffer(const Members & members)
 {
@@ -45,13 +53,20 @@ struct Type
 {
   const rosidl_message_type_support_t * ts;
   const Members * members;
+  bool cdr;
   std::string name;
+  std::string native_topic(const char * topic) const
+  {
+    if (!cdr) return topic;
+    return std::string(topic) + "/_rmw_agnocast_cdr/" + name;
+  }
   explicit Type(const rosidl_message_type_support_t * handle) : ts(handle)
   {
     auto intro = get_message_typesupport_handle(handle, "rosidl_typesupport_introspection_cpp");
     if (!intro) throw std::runtime_error("native topics require C++ introspection");
     members = static_cast<const Members *>(intro->data);
-    if (contains_buffer(*members))
+    cdr = contains_buffer(*members);
+    if (cdr && !std::getenv("AGNOCAST_RMW_BUFFER_CDR"))
       throw std::runtime_error("native object loans cannot expose a foreign Buffer implementation");
     name = members->message_namespace_;
     for (size_t pos; (pos = name.find("::")) != std::string::npos;) name.replace(pos, 2, "/");
@@ -97,7 +112,8 @@ struct Writer
   : node(native_node(owner)),
     type(ts),
     pub(
-      node.get(), topic, type.name, rclcpp::QoS(rclcpp::QoSInitialization::from_rmw(qos), qos), {},
+      node.get(), type.native_topic(topic), type.name,
+      rclcpp::QoS(rclcpp::QoSInitialization::from_rmw(qos), qos), {},
       agnocast::PublisherRole::AgnocastOnly)
   {
   }
@@ -142,7 +158,8 @@ struct Reader
   {
     if (!guard) throw std::runtime_error("native wait guard creation failed");
     sub = std::make_shared<agnocast::Subscription<void>>(
-      node.get(), topic, type.name, rclcpp::QoS(rclcpp::QoSInitialization::from_rmw(qos), qos),
+      node.get(), type.native_topic(topic), type.name,
+      rclcpp::QoS(rclcpp::QoSInitialization::from_rmw(qos), qos),
       [this, depth = qos.depth](Loan sample) {
         std::lock_guard lock(mutex);
         if (pending.size() == depth) pending.pop_front();
@@ -201,7 +218,8 @@ extern "C" rmw_publisher_t * rmw_create_publisher(
     auto state = std::make_shared<Writer>(node, topic, *qos, ts);
     auto pub = fn(node, ts, topic, qos, options);
     if (!pub) return nullptr;
-    pub->can_loan_messages = true;
+    pub->can_loan_messages = !state->type.cdr;
+    if (state->type.cdr) std::fprintf(stderr, "rmw_agnocast CDR writer %s\n", topic);
     std::lock_guard lock(registry);
     writers.emplace(pub->data, std::move(state));
     return pub;
@@ -224,7 +242,8 @@ extern "C" rmw_subscription_t * rmw_create_subscription(
     auto state = std::make_shared<Reader>(node, topic, *qos, ts);
     auto sub = fn(node, ts, topic, qos, options);
     if (!sub) return nullptr;
-    sub->can_loan_messages = true;
+    sub->can_loan_messages = !state->type.cdr;
+    if (state->type.cdr) std::fprintf(stderr, "rmw_agnocast CDR reader %s\n", topic);
     std::lock_guard lock(registry);
     readers.emplace(sub->data, std::move(state));
     return sub;
@@ -255,6 +274,7 @@ extern "C" rmw_ret_t rmw_borrow_loaned_message(
   auto w = lookup(writers, pub->data);
   if (!w) return CYCLONE(rmw_borrow_loaned_message)(pub, ts, msg);
   std::lock_guard lock(w->mutex);
+  if (w->type.cdr) return RMW_RET_UNSUPPORTED;
   auto loan = w->borrow();
   *msg = loan.get();
   w->borrowed.emplace(*msg, std::move(loan));
@@ -289,6 +309,17 @@ extern "C" rmw_ret_t rmw_publish(
 {
   auto w = lookup(writers, pub->data);
   if (!w) return CYCLONE(rmw_publish)(pub, msg, a);
+  if (w->type.cdr) {
+    rclcpp::SerializedMessage bytes;
+    auto & raw = bytes.get_rcl_serialized_message();
+    auto ret = CYCLONE(rmw_serialize)(msg, w->type.ts, &raw);
+    if (ret != RMW_RET_OK) return ret;
+    auto loan = w->pub.borrow_loaned_message(sizeof(size_t) + raw.buffer_length);
+    auto length = new (loan.get()) size_t(raw.buffer_length);
+    std::memcpy(length + 1, raw.buffer, *length);
+    w->pub.publish(std::move(loan), [](void * p) { ::operator delete(p); });
+    return RMW_RET_OK;
+  }
   auto loan = w->borrow();
   auto ret = w->type.copy(msg, loan.get());
   if (ret != RMW_RET_OK) {
@@ -309,6 +340,33 @@ rmw_ret_t take(
   if (!*taken) return RMW_RET_OK;
   if (info) *info = {};
   auto & sample = r.pending.front();
+  if (r.type.cdr) {
+    if (loan) {
+      *taken = false;
+      return RMW_RET_UNSUPPORTED;
+    }
+    const auto length = static_cast<const size_t *>(sample.get());
+    auto payload = reinterpret_cast<const uint8_t *>(length + 1);
+    rmw_ret_t ret = RMW_RET_OK;
+    if (serialized) {
+      if (
+        serialized->buffer_capacity < *length &&
+        rmw_serialized_message_resize(serialized, *length) != RCUTILS_RET_OK)
+        ret = error("unable to resize serialized sample");
+      if (ret == RMW_RET_OK) {
+        std::memcpy(serialized->buffer, payload, *length);
+        serialized->buffer_length = *length;
+      }
+    } else {
+      auto raw = rmw_get_zero_initialized_serialized_message();
+      raw.buffer = const_cast<uint8_t *>(payload);
+      raw.buffer_capacity = raw.buffer_length = *length;
+      ret = CYCLONE(rmw_deserialize)(&raw, r.type.ts, copy);
+    }
+    if (ret != RMW_RET_OK) *taken = false;
+    r.pending.pop_front();
+    return ret;
+  }
   if (loan) {
     *loan = const_cast<void *>(sample.get());
     r.held.emplace(*loan, std::move(sample));

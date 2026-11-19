@@ -201,3 +201,60 @@ ioctls, in order. Command 0x06 released the subscriber reference and command
 0x11 removed the subscriber (Agnocast ioctl group 0xa6). This observes the
 subscriber reference return directly. Publisher-side heap reclamation timing
 is a separate measurement.
+
+## Type support and the Universe decision
+
+The current shared library accepts an exact colon-separated list of resolved
+topic names in AGNOCAST_RMW_TOPIC. Point, Path and Trajectory use the installed
+C++ introspection callbacks with Agnocast's type-erased publisher and reader.
+An application builds its usual C++ message and introspection support and uses
+standard rclcpp calls. Applications retaining a received loan still need the
+patched rclcpp headers. The ordinary-copy and recorder paths use Cyclone's CDR
+serializer. Generic serialized publication, batch take and native message
+metadata remain unqualified. The contract probe found a reliable subscriber
+receiving a best-effort publication despite an incompatible DDS graph match.
+
+The opt-in AGNOCAST_RMW_BUFFER_CDR=1 path handles Buffer-containing types
+by serializing at the writer, copying the bytes into one Agnocast allocation
+on a private topic, and deserializing into a local object at the reader.
+It disables object loans on these entities. The source/crop/sink binaries use
+their existing ROS path. Both input and output were selected. Each candidate
+round logged one CDR reader and writer per topic. Only CPU PointCloud2 was
+qualified with this representation. The ordinary native Agnocast reference
+uses its existing CPU-vector view and Agnocast-only CIE.
+
+With the Lyrical root and overlays above, run the sequential benchmark:
+
+```bash
+BUFFER_RUNTIME_ONLY=1 experiments/buffer/run-lyrical.sh bash \
+  experiments/buffer/bench-universe-lyrical.sh build/rmw-agnocast/fresh-matrix --compare-rmw
+```
+
+Three process groups per timed row sent 60 frames each at 10 Hz. All 180
+frames per row passed the sink's point/order/frame checks. Latency pools the
+last 50 frames per group. CPU is median aggregate child user plus system
+seconds per run, including startup and teardown. RSS is the median largest
+child peak, in MiB. Zenoh includes its router. All bridges were disabled.
+
+| Universe path | Median ms | p95 ms | CPU s | Peak RSS MiB |
+|---|---:|---:|---:|---:|
+| Native Agnocast | 0.372 | 0.633 | 0.550 | 138.2 |
+| rmw_agnocast, CDR over Agnocast | 0.972 | 1.293 | 0.683 | 137.2 |
+| Cyclone DDS | 1.281 | 1.819 | 0.718 | 132.8 |
+| Zenoh | 1.114 | 1.783 | 1.481 | 288.3 |
+| Zenoh + shmem Buffer | 0.823 | 1.204 | 1.446 | 287.7 |
+| Zenoh + CUDA Buffer | 1.225 | 1.543 | 1.449 | 287.9 |
+| Cyclone DDS + shmem Buffer | — | — | — | — |
+
+The final row retains the earlier incompatible Core result with loopback
+and iceoryx PSMX (0/60 in each). It has no Universe timing.
+[Previous compatibility evidence](../../src/crop_pipeline_benchmark/two-edge-results/cyclone-matrix.tsv).
+
+The limits derived from unrounded native latencies were 0.447 ms median and
+0.760 ms p95. The serialized candidate measured 2.61× and 2.04× native with
+about 24% more child CPU. Keep the Bazel migration milestone closed. These
+results measure the cost of the entire deployed paths, including different
+executors and copies. They do not isolate zero-copy RMW overhead for Path or
+Trajectory. A useful next control would hold message representation constant
+and compare native and RMW object loans on a non-Buffer payload.
+[Per-frame samples and per-process-group resource records](../../src/universe_crop_benchmark/results-rmw-agnocast/).

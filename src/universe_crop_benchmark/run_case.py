@@ -13,7 +13,7 @@ import time
 from ament_index_python.packages import get_package_prefix
 
 parser = argparse.ArgumentParser()
-parser.add_argument("transport", choices=["cyclone", "agnocast", "zenoh"])
+parser.add_argument("transport", choices=["cyclone", "agnocast", "zenoh", "rmw-agnocast"])
 parser.add_argument("csv", type=Path)
 parser.add_argument("--resources", type=Path)
 parser.add_argument("--buffer", choices=["cpu", "shmem", "cuda"], default="cpu")
@@ -28,10 +28,14 @@ if out.exists():
     raise FileExistsError(out)
 bin_dir = Path(get_package_prefix("universe_crop_benchmark")) / "lib/universe_crop_benchmark"
 rmw = "rmw_zenoh_cpp" if args.transport == "zenoh" else "rmw_cyclonedds_cpp"
+if args.transport == "rmw-agnocast":
+    rmw = "rmw_agnocast"
 env = dict(os.environ, RMW_IMPLEMENTATION=rmw, BENCH_BUFFER=args.buffer,
            ENABLE_AGNOCAST=str(int(args.transport == "agnocast")), AGNOCAST_BRIDGE_MODE="OFF",
            AGNOCAST_NO_DISCOVERY_AGENT="1")
-if args.transport == "agnocast":
+if args.transport == "rmw-agnocast":
+    env.update(AGNOCAST_RMW_TOPIC="/input:/output", AGNOCAST_RMW_BUFFER_CDR="1")
+if args.transport in ("agnocast", "rmw-agnocast"):
     for prefix in (get_package_prefix("agnocastlib"), get_package_prefix("rclcpp")):
         hook = Path(prefix) / "lib/libagnocast_heaphook.so"
         if hook.is_file():

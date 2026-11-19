@@ -708,3 +708,15 @@ the shell verified its exit status and checkpoint did the surviving publisher
 send 512 more loans. It reused the original object address. This establishes
 recovery of that allocation on this run; it is not a heap-wide leak test.
 Guarded build/run minimum MemAvailable was 4,830 MiB. The bridge was disabled.
+
+### Measure Buffer-containing PointCloud2 on the Universe target
+
+Enabled an explicit serialized representation for Buffer types only and
+selected /input and /output on the ordinary ROS crop. The serialized byte
+allocation has a private native topic per ROS topic and type. This costs
+copies but preserves process-local virtual backend dispatch. Minimum host
+MemAvailable over the three-round matrix was 5,141 MiB. Verified 1,080/1,080
+frames. The rmw_agnocast median/p95 measured a factor
+of 2.61/2.04 relative to native itself, missing both 1.20× gates. Retain the
+native reference and defer the Bazel migration milestone.
+[Method, complete comparison and reproduction](../rmw-agnocast/README.md#type-support-and-the-universe-decision)

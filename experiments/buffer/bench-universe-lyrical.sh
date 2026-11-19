@@ -8,6 +8,13 @@ out=${1:?supply a new results directory}
 shift
 cie=()
 if [[ ${1:-} == --compare-cie ]]; then cie=(--ros-cie); shift; fi
+compare_rmw=0
+if [[ ${1:-} == --compare-rmw ]]; then
+  compare_rmw=1
+  source build/rmw-agnocast/install/local_setup.bash
+  source build/rmw-agnocast/load-install/local_setup.bash
+  shift
+fi
 if (($#)); then echo "unexpected argument: $1" >&2; exit 2; fi
 mkdir "$out"
 for round in 1 2 3; do
@@ -16,6 +23,10 @@ for round in 1 2 3; do
     2) modes=(agnocast zenoh zenoh-cuda cyclone zenoh-shmem) ;;
     3) modes=(zenoh-cuda zenoh-shmem zenoh agnocast cyclone) ;;
   esac
+  if ((compare_rmw)); then
+    pos=$((2 * round - 2))
+    modes=("${modes[@]:0:pos}" rmw-agnocast "${modes[@]:pos}")
+  fi
   i=0
   for mode in "${modes[@]}"; do
     backend=cpu
@@ -28,11 +39,17 @@ for round in 1 2 3; do
       options=()
       label=$mode
       if [[ $variant == cie ]]; then options=("${cie[@]}"); label=$mode-cie; fi
-      python3 "$p/run_case.py" "${mode%%-*}" --buffer "$backend" "${options[@]}" "$out/$label-$round.csv" --resources "$out/$label-$round-resources.csv"
+      transport=${mode%%-*}
+      if [[ $mode == rmw-agnocast ]]; then transport=$mode; fi
+      python3 "$p/run_case.py" "$transport" --buffer "$backend" "${options[@]}" "$out/$label-$round.csv" --resources "$out/$label-$round-resources.csv"
     done
     i=$((i + 1))
   done
 done
 labels=(cyclone agnocast zenoh zenoh-shmem zenoh-cuda)
-if ((${#cie[@]})); then labels+=(cyclone-cie zenoh-cie zenoh-shmem-cie zenoh-cuda-cie); fi
+if ((compare_rmw)); then labels+=(rmw-agnocast); fi
+if ((${#cie[@]})); then
+  labels+=(cyclone-cie zenoh-cie zenoh-shmem-cie zenoh-cuda-cie)
+  if ((compare_rmw)); then labels+=(rmw-agnocast-cie); fi
+fi
 python3 src/crop_pipeline_benchmark/summarize.py "$out" "${labels[@]}"
