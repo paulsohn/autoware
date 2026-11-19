@@ -1,0 +1,25 @@
+load("@rules_cc//cc:defs.bzl", "cc_import", "cc_library")
+load("@spconv//:headers.bzl", "spconv_headers")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_import(
+    name = "spconv_so",
+    shared_library = "usr/local/lib/libspconv.so",
+)
+
+spconv_headers(
+    name = "headers",
+    hdrs = glob([
+        "usr/local/include/**/*.h",
+        "usr/local/include/**/*.hpp",
+    ]),
+)
+
+cc_library(
+    name = "spconv",
+    deps = [
+        ":headers",
+        ":spconv_so",
+    ],
+)

@@ -8258,3 +8258,76 @@ Targeted buildifier, clang-format, Python syntax, Markdown links and whitespace
 checks pass. No source changes beyond that demonstrated metadata bug are needed.
 Phase 6.3 is complete. No Fast DDS, bridge matrix, performance, ARM/Thor or
 runtime-bundle/OCI test was run. Phase 6.4's representative GPU consumer is next.
+
+## 2026-11-19: Phase 6.4.1 — Sparse-convolution SDK compatibility
+
+Purpose: prepare the actual external dependency required by the sparse plugins
+before declaring the full autoware_tensorrt_plugins package integrated. Inspected
+its complete CMake source list, eleven creators and reference tests; sparse
+creators include generated spconvlib headers and call APIs accepting TensorView,
+std::vector, std::string and unordered_map values. Kernel tests alone do not
+exercise this boundary. The related Phase 6.4 consumer group also includes the
+local classifier and YOLOX packages, with separate model/resource adoption gates.
+
+Inspected reference provisioning: ansible/roles/spconv selects spconv 2.3.8 and
+cumm 0.5.3, cu130-rev1 on Ubuntu 24.04. Download the immutable release assets
+without installing them:
+https://github.com/autowarefoundation/spconv_cpp/releases/tag/spconv_v2.3.8%2Bcumm_v0.5.3%2Bcu130-rev1
+The amd64 cumm payload SHA256 is
+30c776917c8082a5c54264293b9dbdfae15c858c390b99b4d55e61d82ade1833;
+spconv is 24e08b4af087059dc5758627303356b441bd5e9296a2d25876f2a77c20acb0ff.
+Both downloaded files match the release asset digests. Inspect with dpkg-deb -x
+and readelf -d/--version-info, without apt installation or pip imports.
+
+Observed SDK closure: libspconv.so needs libcudart.so.13, libcublasLt.so.13,
+libstdc++.so.6, libgcc_s.so.1 and baseline OS libraries. Its maximum versioned
+requirements include GLIBC 2.34, GLIBCXX 3.4.32 and CXXABI 1.3.9. Public API
+symbols use GNU std::__cxx11 rather than libc++ std::__1; the existing pinned
+GNU 12 runtime is insufficient for this SDK. Treat binary C++ ABI compatibility
+as a separate question from whether TensorRT itself loads GNU runtime libraries.
+
+Integration: third_party/spconv owns a repository rule extracting each Debian
+ar/data archive, applying the documented TensorView header correction and
+exporting system headers plus libspconv.so. Root selects this module and adds
+cuBLAS, cuRAND and NVRTC to the checksum-pinned CUDA 13.2.2 manifest. These are
+actual consumer requirements: libspconv needs cuBLASLt; TensorView includes
+curand.h and cuda/nvrtc.h even in the plugin host compilation. No apt/pip or
+host CUDA/GCC installation supplies build inputs.
+
+Clang 21 first fails compiling Tensor::astype: the callback-based conditional
+instantiates invalid std::copy conversions for forbidden integer/half and
+half/bfloat pairs. Replace only that conditional with C++17 if constexpr,
+preserving its allowed-pair predicate and rejection path. The dependency patch
+records the complete diff and upstream status. The probe checks float/half
+round trips and rejection of int64-to-half as well as the real SDK API.
+
+After headers compile, the default libc++ consumer cannot link StaticAllocator:
+its std::__1 container symbols differ from the vendor's std::__cxx11 symbols.
+Use the pinned LLVM module's GNU 13.3.0 platform/runtime, built from source,
+only for the SDK's C++ consumer closure. third_party/spconv/defs.bzl exports
+configured shared-library/test rules and a GNU runtime filegroup. Transition at
+the public shared-library or test boundary; ordinary underlying cc_library
+rules remain visible to cc_shared_library's link graph. Select dynamic C++
+runtimes explicitly on those shared targets: this toolchain does not provide
+static libstdc++ linking. The rest of Autoware remains on libc++.
+
+The acceptance probe constructs and updates StaticAllocator with real
+unordered_map/string/Tensor values, transfers integers to the GPU, invokes
+SpconvOps::sort_1d_by_key and checks sorted values and the returned permutation
+after copying back. This validates container ABI, ownership and SDK GPU code,
+rather than relying on a successful dlopen. Run with a working NVIDIA driver
+and device access, using the existing root/user resource settings:
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=no-agnocast --local_test_jobs=1 \
+  --nocache_test_results --test_output=errors @spconv//:abi_test
+```
+
+Final probe passes in 0.5 seconds (6.419-second invocation), including the
+conversion-policy checks. Earlier combined plugin validation also passes the
+same allocator/GPU boundary. GNU runtime construction initially took about four
+minutes; subsequent runs reuse declared build outputs. Module inputs are pinned;
+no host compiler/runtime search fallback was added. Validated on x86_64,
+CUDA 13.2.2, sm_120 and NVIDIA 595.99.02. ARM/JetPack, other vendor SDK releases
+and numerical/performance coverage of every sparse operation remain untested.

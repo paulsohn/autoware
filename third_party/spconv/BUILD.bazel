@@ -1,0 +1,49 @@
+load("@rules_cc//cc:defs.bzl", "cc_library")
+load(":defs.bzl", "spconv_cc_test", "spconv_filegroup")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "spconv",
+    defines = ["TV_CUDA"],
+    deps = [
+        "@cuda//:cublas",
+        "@cuda//:cuda_runtime",
+        "@cuda//:curand",
+        "@cuda//:nvrtc",
+        "@spconv_artifacts//:spconv",
+    ],
+)
+
+spconv_cc_test(
+    name = "abi_test",
+    srcs = ["test_abi.cpp"],
+    tags = [
+        "no-remote",
+        "no-sandbox",
+        "requires-gpu",
+    ],
+    deps = [":spconv"],
+)
+
+exports_files([
+    "BUILD.sdk.bazel",
+    "defs.bzl",
+    "headers.bzl",
+    "patches/tensorview_clang_lambda.patch",
+])
+
+platform(
+    name = "linux_x86_64_gnu13",
+    constraint_values = [
+        "@platforms//os:linux",
+        "@platforms//cpu:x86_64",
+        "@llvm//constraints/libc:gnu.2.34",
+        "@llvm//constraints/cxxstdlib:libstdcxx.13.3.0",
+    ],
+)
+
+spconv_filegroup(
+    name = "gnu_runtime",
+    srcs = ["@llvm//runtimes/libstdcxx:libstdcxx_shared_soname"],
+)

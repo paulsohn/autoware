@@ -1,0 +1,49 @@
+Affected module/version: cumm 0.5.3, cu130-rev1 amd64 SDK (TensorView headers).
+Observed failure: Clang 21 instantiates std::copy for forbidden integer/half and
+half/bfloat conversions while forming the callback passed to if_constexpr,
+even though is_convertible rejects the conversion and that branch is discarded.
+Rationale/scope: use C++17 if constexpr in astype so invalid copy expressions are
+actually discarded. Preserve conversion dispatch, allowed dtype pairs and the
+SDK binary ABI. Consumers must use C++17 or newer; no library payload is changed.
+Verification: Clang 21.1.8/GNU 13.3.0, CUDA 13.2.2, x86_64: @spconv//:abi_test
+passes real container/allocator ownership, GPU sorting, float/half round trips
+and rejected int64/half conversion. All 18 original autoware_tensorrt_plugins
+cases and both added libc++/TensorRT loading and serialized-engine cases pass.
+Upstream status: checked 2026-11-19, FindDefinition/cumm main
+ d971d02a0b29b7e6da46186564f37bde77b99dcc still uses callback dispatch.
+No matching fix associated or submission made. Related reports (not matching
+fixes): https://github.com/FindDefinition/cumm/issues/23 and
+https://github.com/traveller59/spconv/issues/658.
+
+--- a/usr/local/include/tensorview/tensor.h
++++ b/usr/local/include/tensorview/tensor.h
+@@ -1769,19 +1769,16 @@
+         //                         type_s<std::decay_t<Tcur>>, "to",
+         //                         type_s<std::decay_t<Tdst>>);
+         // }
+-        if_constexpr<detail::is_convertible<Tcur, Tdst>::value>(
+-            [&](auto _) {
+-              auto ptr = this->data<Tcur>();
+-              tensor =
+-                  Tensor(this->shape_, this->stride_, dtype, this->device(),
+-                         this->pinned(), this->storage_->managed());
+-              std::copy(ptr, ptr + this->size(), tensor.data<Tdst>());
+-            },
+-            [&](auto _) {
+-              TV_THROW_INVALID_ARG("not convertable from",
+-                                   type_s<std::decay_t<Tcur>>, "to",
+-                                   type_s<std::decay_t<Tdst>>);
+-            });
++        if constexpr (detail::is_convertible<Tcur, Tdst>::value) {
++          auto ptr = this->data<Tcur>();
++          tensor = Tensor(this->shape_, this->stride_, dtype, this->device(),
++                          this->pinned(), this->storage_->managed());
++          std::copy(ptr, ptr + this->size(), tensor.data<Tdst>());
++        } else {
++          TV_THROW_INVALID_ARG("not convertable from",
++                               type_s<std::decay_t<Tcur>>, "to",
++                               type_s<std::decay_t<Tdst>>);
++        }
+       });
+     });
+     return tensor;

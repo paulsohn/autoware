@@ -844,3 +844,9 @@ local_path_override(
     module_name = "cuda_blackboard",
     path = "src/core/cuda/cuda_blackboard",
 )
+
+bazel_dep(name = "spconv", version = "0.0.0")
+local_path_override(
+    module_name = "spconv",
+    path = "third_party/spconv",
+)

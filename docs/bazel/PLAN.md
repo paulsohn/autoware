@@ -66,6 +66,8 @@ only when your current target demonstrates the need.
   [evidence: original core launches](JOURNAL.md#2026-11-17-phase-525--core-planning-launch-composition).
   [Runtime-only dlopen resources and ABI closure](DEVELOPING.md#tensorrt-sdk-and-native-tests);
   [evidence: TensorRT SDK](JOURNAL.md#2026-11-18-phase-62--tensorrt-binary-sdk).
+  [Vendor C++ ABI boundaries](DEVELOPING.md#sparse-sdk-and-tensorrt-plugins);
+  [evidence: sparse SDK](JOURNAL.md#2026-11-19-phase-641--sparse-convolution-sdk-compatibility).
 - [ ] Declare caller-owned resources for dynamic runtime package selection.
   [Launch resource convention](DEVELOPING.md#launch-resource-composition);
   [evidence: global loader](JOURNAL.md#2026-11-18-phase-532--global-parameter-loader).
@@ -1505,14 +1507,40 @@ imports, resource providers, launch argument removal/path changes and their gate
 must land together. Phase 6.2 keeps its existing dummy ONNX fixture; introduce
 real model repositories when the selected consumer requires them.
 
-### Phase 6.4: Representative GPU consumer
+### Phase 6.4: Representative GPU consumers (in progress)
 
-Select a useful real consumer and validate its complete dependency closure and
-existing suite. Kernel-only reference checks may be an intermediate experiment,
+Select autoware_tensorrt_plugins, autoware_tensorrt_classifier and
+autoware_tensorrt_yolox as a related GPU/inference group. Validate each complete
+dependency closure and existing suite. Kernel-only reference checks may be an intermediate experiment,
 but cannot close an otherwise partially integrated plugin package. Introduce
 additional vendor/model dependencies only when that consumer needs them. Apply
 the model repository/runtime-path convention above to the complete selected
 consumer closure.
+
+Package boundaries:
+
+- **6.4.1 — Sparse-convolution providers (complete):** inspect the pinned cumm/spconv
+  artifacts used by the plugin sources; validate their CPU/CUDA/C++ ABI and
+  device support before accepting inputs. Keep reusable providers under
+  third_party/ and root-owned version selection. A vendor download is not
+  proof that its C++ API can be linked safely with this toolchain.
+- **6.4.2 — autoware_tensorrt_plugins:** build the entire seven-kernel cuda_ops
+  library and all eleven plugin creators, including sparse-convolution plugins.
+  Run all original parameterized reference-kernel cases on the GPU, plus added
+  library loading/creator and real TensorRT execution/serialization checks.
+- **6.4.3 — autoware_tensorrt_classifier:** expose the full classifier and GPU
+  preprocessing library. No original runtime suite is registered; add inference
+  and CPU/GPU preprocessing behavior checks with explicit expected results.
+  Introduce required model resources with their repository-owned indexes.
+- **6.4.4 — autoware_tensorrt_yolox:** integrate its required local utility and
+  interface closure, real model bundles and launcher paths. Preserve all label,
+  detector and ROS node tests, including GPU/model-dependent cases without
+  skips. Check actual detection/segmentation outputs and node resources.
+
+Dependencies and model imports remain separate validated package/repository
+commit boundaries. Refine exact behavior fixtures before each implementation;
+these gates are planned work, not accepted results. Do not widen into unrelated
+perception packages or alter the existing runtime/backend contract.
 
 Phase 6 closes when its selected module boundaries pass complete declared
 build/test/behavior gates and the SDK inputs/runtime requirements are pinned

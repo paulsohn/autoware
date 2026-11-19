@@ -4,9 +4,12 @@ cuda.redist_json(
     name = "cuda_redist",
     components = [
         "cccl",
+        "cublas",
         "crt",
         "cudart",
+        "curand",
         "nvcc",
+        "nvrtc",
         "nvvm",
     ],
     platforms = ["linux-x86_64"],

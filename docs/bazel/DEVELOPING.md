@@ -788,6 +788,22 @@ prerequisites follow the preceding CUDA convention. Ordinary applications need
 the equivalent declared runtime/resource loading contract; a successful link
 alone does not prove engine-building runtime closure.
 
+## Sparse SDK and TensorRT plugins
+
+The pinned spconv 2.3.8/cumm 0.5.3 SDK exposes GNU C++ containers. Use
+@spconv//:defs.bzl's spconv_cc_shared_library or spconv_cc_test at its consumer
+boundary to compile that closure with the pinned GNU 13.3.0 platform; do not mix
+its C++ headers/container API into libc++ code. Keep ordinary implementation
+cc_library targets beneath the configured shared target, with dynamic C++
+runtimes and explicit dynamic_deps for separately exported libraries.
+
+Validate the SDK's container/allocator API, TensorView conversion policy and
+actual GPU sorting with:
+
+```sh
+bazel test --config=no-agnocast --nocache_test_results --test_output=errors @spconv//:abi_test
+```
+
 ## Negotiated and CUDA blackboard transport
 
 The negotiated library and examples use native rclcpp and need no GPU. Run all
