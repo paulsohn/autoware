@@ -731,3 +731,15 @@ Path in each direction. Only the native peer and bridge preloaded the
 Agnocast hook. The bridge runtime minimum sampled host MemAvailable was
 5,637 MiB. The second host and second container were explicitly deferred.
 [Fixture scope and verification](../rmw-agnocast/README.md#explicit-bridge-boundary-on-the-laptop)
+
+### Distinguish Cyclone codec cost from DDS payload transport
+
+Control for RMW selection and heap-hook effects by loading the same library
+and clearing only the topic allowlist. All six timed runs delivered 60/60.
+Two separate instrumented payload runs and a codec-only run verified the
+transport path and measured the four codec calls per frame. The Path bridge
+fixture separately reported the Cyclone graph GID and the native callback's
+missing sample metadata. Point, Path, Trajectory, two-reader pressure, crash
+recovery and all four bridge cases passed the final functional rerun, with
+the recorded QoS and metadata limitations. Builds used one job.
+[Commands, numbers and interpretation](../rmw-agnocast/README.md#which-part-of-the-latency-comes-from-cyclone)

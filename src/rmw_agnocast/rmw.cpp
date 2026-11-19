@@ -24,6 +24,23 @@ F cyclone(const char * symbol)
   return fn;
 }
 #define CYCLONE(name) cyclone<decltype(&name)>(#name)
+// Separate diagnostic run: time only the Cyclone codec calls on Buffer topics.
+template <class F>
+rmw_ret_t measure_codec(const char * operation, F && call)
+{
+  static const bool enabled = std::getenv("AGNOCAST_RMW_TRACE_CODEC") != nullptr;
+  if (!enabled) return call();
+  auto start = std::chrono::steady_clock::now();
+  auto ret = call();
+  auto elapsed =
+    std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - start)
+      .count();
+  const char * role = std::getenv("BENCH_ROLE");
+  std::fprintf(
+    stderr, "codec_ns %s %s %lld\n", role ? role : "unknown", operation,
+    static_cast<long long>(elapsed));
+  return ret;
+}
 bool selected(const char * topic)
 {
   const char * enabled = std::getenv("AGNOCAST_RMW_TOPIC");
@@ -312,7 +329,8 @@ extern "C" rmw_ret_t rmw_publish(
   if (w->type.cdr) {
     rclcpp::SerializedMessage bytes;
     auto & raw = bytes.get_rcl_serialized_message();
-    auto ret = CYCLONE(rmw_serialize)(msg, w->type.ts, &raw);
+    auto ret =
+      measure_codec("serialize", [&] { return CYCLONE(rmw_serialize)(msg, w->type.ts, &raw); });
     if (ret != RMW_RET_OK) return ret;
     auto loan = w->pub.borrow_loaned_message(sizeof(size_t) + raw.buffer_length);
     auto length = new (loan.get()) size_t(raw.buffer_length);
@@ -361,7 +379,8 @@ rmw_ret_t take(
       auto raw = rmw_get_zero_initialized_serialized_message();
       raw.buffer = const_cast<uint8_t *>(payload);
       raw.buffer_capacity = raw.buffer_length = *length;
-      ret = CYCLONE(rmw_deserialize)(&raw, r.type.ts, copy);
+      ret = measure_codec(
+        "deserialize", [&] { return CYCLONE(rmw_deserialize)(&raw, r.type.ts, copy); });
     }
     if (ret != RMW_RET_OK) *taken = false;
     r.pending.pop_front();

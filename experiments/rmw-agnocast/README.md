@@ -276,3 +276,46 @@ upstream bridge for the native Path object layout. It does not establish
 compatibility with the private PointCloud2 CDR layout. Automatic startup
 policy, bridge restart and concurrent bidirectional forwarding remain open.
 Second-container and cross-host experiments are deferred by the operator.
+
+## Which part of the latency comes from Cyclone?
+
+Retain the same rmw_agnocast library, heap hook, CPU PointCloud2 endpoints and
+loopback configuration. The rmw-delegated control clears the selected topic
+list. This routes both payloads through Cyclone DDS. Three alternating-order
+pairs produced pooled median/p95 of 1.115/1.625 ms with Agnocast CDR and
+1.307/1.727 ms with Cyclone delegation. All six runs verified 60 frames.
+These measurements are a fresh control series; the native 1.20× decision
+above uses the separate, interleaved six-transport series.
+
+In a separate strace run per case, count successful Agnocast publish ioctl
+calls (group 0xa6, command 7) and sum successful IPv4 sendmsg/sendto return
+sizes across all benchmark descendants. No sendmmsg calls were observed.
+Both traced cases delivered 60 verified frames. Agnocast CDR made 120
+publish calls, exactly two per frame, and sent 198,240 IPv4 bytes. Delegation
+made zero native publish calls and sent 47,610,580 IPv4 bytes. These are
+process socket byte counts including control traffic. Traced latencies are
+excluded from the performance comparison.
+
+With AGNOCAST_RMW_TRACE_CODEC enabled in a separate candidate run, each
+frame made two Cyclone serialization calls and two deserialization calls.
+Across 50 post-warmup frames, their combined median elapsed time per frame
+was 0.493 ms, during a median 1.049 ms end-to-end measurement. The median
+per-frame fraction was 48.7%. This measures calls including dispatch and
+allocation inside the codec. The remaining time includes shared-memory
+copying, executor scheduling and the crop itself. It has no attribution
+to any one component. Reproduce with fresh directories:
+
+```bash
+cp /usr/bin/strace build/rmw-agnocast/strace
+BUFFER_RUNTIME_ONLY=1 TRACE_BIN=/ws/build/rmw-agnocast/strace experiments/buffer/run-lyrical.sh \
+  bash experiments/rmw-agnocast/crop-control.sh build/rmw-agnocast/fresh-control
+BUFFER_RUNTIME_ONLY=1 experiments/buffer/run-lyrical.sh \
+  bash experiments/rmw-agnocast/crop-control.sh build/rmw-agnocast/fresh-codec --codec
+```
+
+Publisher identity follows a different path. In the Path boundary probe,
+the rmw_agnocast writer's get_gid() reported rmw_cyclonedds_cpp from its
+graph handle. A bridged Cyclone reader received a Cyclone GID and nonzero
+timestamps. A native reader received a null GID provider and zero timestamps
+because the prototype clears sample metadata at native take.
+[Matched samples and diagnostic counts](crop-control-results/).

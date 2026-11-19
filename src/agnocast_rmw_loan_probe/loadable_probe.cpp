@@ -221,6 +221,8 @@ void bridge_peer(bool writer, bool active, bool dds)
   };
   if (writer) {
     auto pub = node->create_publisher<Path>(topic, 4);
+    std::cout << "writer " << rmw_get_implementation_identifier() << " GID provider "
+              << pub->get_gid().implementation_identifier << std::endl;
     wait_matches([&] { return pub->get_subscription_count(); });
     wait_file("discovered");
     Path msg;
@@ -231,10 +233,18 @@ void bridge_peer(bool writer, bool active, bool dds)
     return;
   }
   size_t calls = 0;
-  auto sub = node->create_subscription<Path>(topic, 4, [&](Path::ConstSharedPtr msg) {
-    verify(*msg, 3, false);
-    ++calls;
-  });
+  auto sub = node->create_subscription<Path>(
+    topic, 4, [&](Path::ConstSharedPtr msg, const rclcpp::MessageInfo & mi) {
+      auto & info = mi.get_rmw_message_info();
+      std::cout << "reader " << rmw_get_implementation_identifier() << " sample GID provider "
+                << (info.publisher_gid.implementation_identifier
+                      ? info.publisher_gid.implementation_identifier
+                      : "(null)")
+                << " source_ns " << info.source_timestamp << " received_ns "
+                << info.received_timestamp << std::endl;
+      verify(*msg, 3, false);
+      ++calls;
+    });
   wait_matches([&] { return sub->get_publisher_count(); });
   mark("discovered");
   wait_file("sent");
@@ -292,7 +302,7 @@ void contract(rclcpp::Node & node, const std::string & role)
     topic, rclcpp::QoS(2).reliable(), [&](Point::ConstSharedPtr) { mismatch = true; });
   auto generic = node.create_generic_subscription(
     topic, "geometry_msgs/msg/Point", rclcpp::QoS(2).best_effort(),
-    [&](std::shared_ptr<rclcpp::SerializedMessage> bytes) {
+    [&](std::shared_ptr<const rclcpp::SerializedMessage> bytes) {
       Point p;
       rclcpp::Serialization<Point>().deserialize_message(bytes.get(), &p);
       verify(p, 1, false);
