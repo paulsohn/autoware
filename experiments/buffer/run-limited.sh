@@ -7,7 +7,7 @@ start=3072
 if [[ ${BUFFER_RUNTIME_ONLY:-0} == 1 ]]; then limit=512; start=2816; fi
 minimum=$(available)
 if ((minimum < start)); then echo "Host has only $minimum MiB available" >&2; exit 75; fi
-systemd-run --user --scope --quiet --collect --unit="$unit" -p MemoryMax="${limit}M" -p MemorySwapMax=0 "$@" &
+systemd-run --user --scope --quiet --collect --unit="$unit" -p MemoryMax="${limit}M" -p MemorySwapMax=0 env --default-signal=INT --default-signal=QUIT "$@" &
 job=$!
 while kill -0 "$job" 2>/dev/null; do
   current=$(available)

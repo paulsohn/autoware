@@ -109,3 +109,15 @@ Host memory fell below the 3 GiB build admission threshold before these
 runtime-only checks. Their scopes used a smaller 512 MiB cap, a 2,816 MiB
 start threshold and the same 2,048 MiB stop threshold. Minimum available
 host memory was 2,848 MiB during the matrix and 3,105 MiB during profiling.
+
+## Agnocast-disabled production consumer
+
+Built the unmodified stop filter against the fresh Lyrical wrapper overlay.
+Its 27 checks passed without skips. The first standalone smoke run verified
+the two velocities but timed out at SIGINT. The surviving ros2 launch
+process had SIGINT in SigIgn, inherited from the background resource guard.
+Reset SIGINT/SIGQUIT for the guarded command and give the test launcher a
+dedicated signal group. On timeout the fixture cleans up that group.
+Reran experiments/buffer/test-stop.sh. All 27 checks passed again. Both
+the stock standalone launch and the component loaded via ComponentManager
+zeroed 0.05 m/s, preserved 0.2 m/s and exited cleanly on SIGINT.
