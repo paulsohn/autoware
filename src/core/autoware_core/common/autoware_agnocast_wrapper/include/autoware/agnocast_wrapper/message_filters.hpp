@@ -17,10 +17,10 @@
 #include "autoware/agnocast_wrapper/autoware_agnocast_wrapper.hpp"
 #include "autoware/agnocast_wrapper/node.hpp"
 
-#include <message_filters/subscriber.h>
-#include <message_filters/sync_policies/approximate_time.h>
-#include <message_filters/sync_policies/exact_time.h>
-#include <message_filters/synchronizer.h>
+#include <message_filters/subscriber.hpp>
+#include <message_filters/sync_policies/approximate_time.hpp>
+#include <message_filters/sync_policies/exact_time.hpp>
+#include <message_filters/synchronizer.hpp>
 
 #include <algorithm>
 #include <functional>
@@ -56,7 +56,7 @@ template <class M>
 class Subscriber
 {
 public:
-  using RclcppSubscriber = ::message_filters::Subscriber<M, rclcpp::Node>;
+  using RclcppSubscriber = ::message_filters::Subscriber<M>;
   using AgnocastSubscriber = agnocast::message_filters::Subscriber<M, agnocast::Node>;
 
   Subscriber()
@@ -83,7 +83,11 @@ public:
         if constexpr (std::is_same_v<std::decay_t<decltype(sub)>, AgnocastSubscriber>) {
           sub.subscribe(node->get_agnocast_node().get(), topic, qos);
         } else {
+#if RCLCPP_VERSION_MAJOR >= 32
+          sub.subscribe(node->get_rclcpp_node().get(), topic, detail::to_qos(qos));
+#else
           sub.subscribe(node->get_rclcpp_node().get(), topic, qos);
+#endif
         }
       },
       sub_);
@@ -461,25 +465,29 @@ namespace message_filters
 ///        underlying rclcpp::Node. Inherited upstream members (connectInput, registerCallback, ...)
 ///        are non-portable — they do not exist on the Agnocast-build Subscriber.
 template <class M>
-class Subscriber : public ::message_filters::Subscriber<M, rclcpp::Node>
+class Subscriber : public ::message_filters::Subscriber<M>
 {
 public:
-  using Base = ::message_filters::Subscriber<M, rclcpp::Node>;
+  using Base = ::message_filters::Subscriber<M>;
 
   Subscriber() = default;
 
   Subscriber(
     autoware::agnocast_wrapper::Node * node, const std::string & topic,
     const rmw_qos_profile_t qos = rmw_qos_profile_default)
-  : Base(node->get_rclcpp_node().get(), topic, qos)
   {
+    subscribe(node, topic, qos);
   }
 
   void subscribe(
     autoware::agnocast_wrapper::Node * node, const std::string & topic,
     const rmw_qos_profile_t qos = rmw_qos_profile_default)
   {
+#if RCLCPP_VERSION_MAJOR >= 32
+    Base::subscribe(node->get_rclcpp_node().get(), topic, detail::to_qos(qos));
+#else
     Base::subscribe(node->get_rclcpp_node().get(), topic, qos);
+#endif
   }
 };
 
