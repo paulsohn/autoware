@@ -21,7 +21,8 @@ ament_auto_add_library(${PROJECT_NAME} SHARED
 
 if(DEFINED ENV{ENABLE_AGNOCAST} AND "$ENV{ENABLE_AGNOCAST}" STREQUAL "1")
   find_package(autoware_agnocast_wrapper REQUIRED)
-  ament_target_dependencies(${PROJECT_NAME} autoware_agnocast_wrapper)
+  target_link_libraries(${PROJECT_NAME} ${autoware_agnocast_wrapper_LIBRARIES})
+  target_include_directories(${PROJECT_NAME} PUBLIC ${autoware_agnocast_wrapper_INCLUDE_DIRS})
   autoware_agnocast_wrapper_setup(${PROJECT_NAME})
 endif()
 

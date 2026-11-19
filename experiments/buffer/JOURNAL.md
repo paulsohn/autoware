@@ -272,3 +272,15 @@ The enabled node-registration macro from AWF autoware_core PR 1540 applies
 directly. The old macro called the removed ament_target_dependencies in the
 generated executable path. The enabled Universe crop and endpoint executables
 both configured and linked against the patched installed macro.
+
+For managed_transform_buffer 0.3.0, link the enabled wrapper and add its
+exported include directories, following the consumer pattern from that same
+AWF PR. The managed_transform_buffer tracker search did not identify a
+Lyrical patch. In the Lyrical root with ros-lyrical-pcl-ros and
+ros-lyrical-pcl-conversions installed, source the Agnocast overlay, export
+ENABLE_AGNOCAST=1, and build the managed_transform_buffer package with
+BUILD_TESTING=ON using Clang 21, -O1 -DNDEBUG and the GCC 15 C++ standard
+library. The complete colcon suite passed with ENABLE_AGNOCAST=0 at runtime
+(6.68 seconds). The original fixture publishes its TF data through rclcpp.
+The serial GCC build approached the 1,200 MiB scope cap while compiling PCL
+headers. Switching the PCL consumers to Clang kept the original cap.
