@@ -1528,10 +1528,11 @@ Package boundaries:
   library and all eleven plugin creators, including sparse-convolution plugins.
   Run all original parameterized reference-kernel cases on the GPU, plus added
   library loading/creator and real TensorRT execution/serialization checks.
-- **6.4.3 — autoware_tensorrt_classifier:** expose the full classifier and GPU
+- **6.4.3 — autoware_tensorrt_classifier (complete):** expose the full classifier and GPU
   preprocessing library. No original runtime suite is registered; add inference
   and CPU/GPU preprocessing behavior checks with explicit expected results.
-  Introduce required model resources with their repository-owned indexes.
+  The deterministic test-only ONNX fixture needs no pretrained model module;
+  introduce production model resources only at their real consumer boundary.
 - **6.4.4 — autoware_tensorrt_yolox:** integrate its required local utility and
   interface closure, real model bundles and launcher paths. Preserve all label,
   detector and ROS node tests, including GPU/model-dependent cases without

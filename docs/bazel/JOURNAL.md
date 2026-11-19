@@ -8413,3 +8413,59 @@ invocation), including fresh engine builds and cached loads. See the following
 entry for exact commands/fixtures. No original runtime tests exist in this
 package. Upstream source/related tracker association is recorded in
 UPSTREAM_AWF.md; upstream CMake/GCC and other platforms are not validated.
+
+## 2026-11-19: Phase 6.4.3 — TensorRT classifier
+
+Purpose: integrate the complete local classifier and its GPU preprocessing
+library. Inspect CMakeLists.txt, public headers, constructor/inference dispatch
+and preprocess.cu. There are no original runtime tests; CMake registers only
+lint. Define the behavior gate before implementation: fixed-batch numerical
+inference, CPU resizing/letterboxing/normalization, cached engine reload,
+preallocation/reallocation and direct numeric CUDA preprocessing. Reuse the
+accepted CUDA/TensorRT/common providers; no pretrained model is necessary for
+this library contract.
+
+Add package-local MODULE/BUILD definitions, root local override and ament index.
+Build preprocess.cu as a CUDA/C++17 library, and the classifier as a separate
+shared library with dynamic dependencies on it and TensorRT-common/RCLCPP.
+Direct CUDA runtime, cuBLAS and cuRAND headers replace the CMake-only finders;
+no empty dependency-meta module or stdc++fs link is needed with libc++.
+Preserve OpenMP using the existing NDT pattern: pinned LLVM libomp headers plus
+a native cc_import of its declared archive, with -fopenmp on the classifier.
+This preserves shared-link graph visibility. The hard-coded experimental
+filesystem compile blocker is corrected in the separate source-fix commit.
+
+Put new tests under bazel/tests/autoware_tensorrt_classifier. The checked-in
+166-byte ONNX fixture computes spatial channel means on [2,3,2,2] inputs;
+make_fixture.py regenerates its explicit ONNX IR8/opset13 protobuf with Python's
+standard library. TensorRT parsing/building supplies actual format validation.
+Copy it into TEST_TMPDIR before engine creation; never write engine caches into
+source/runfiles. Fixed colored images with custom normalization yield classes
+[2,0] and scores [12,45], or [6,22.5] after half-image zero letterboxing. Check
+both constructor cuda flags, repeated output-vector clearing, buffer resizing
+and fresh/cached engines. A separate direct CUDA helper check verifies both
+batches, RGB channel reversal, default mean/std and zero padding numerically.
+
+Important existing behavior: doInference always calls preprocess_opt (CPU), even
+with cuda=true. The private GPU path also has a different channel/normalization
+contract from CPU preprocessing. Preserve that implementation; do not claim the
+constructor flag selects CUDA preprocessing or assert equivalence between the
+two paths. The GPU helper is tested directly and inference itself runs on GPU.
+No INT8/calibration accuracy or pretrained traffic-light accuracy is claimed.
+
+```sh
+python3 bazel/tests/autoware_tensorrt_classifier/make_fixture.py
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel build --config=no-agnocast @autoware_tensorrt_classifier//...
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=no-agnocast --local_test_jobs=1 \
+  --nocache_test_results --test_output=errors //bazel/tests:tensorrt_classifier_test
+```
+
+All seven public package targets build (5.455 seconds); all five native cases
+pass (21.2-second test, 27.215-second invocation), zero failures/errors/skips.
+Logs show fresh engine creation and subsequent Loading engine paths. Targeted
+buildifier, clang-format, Python syntax and whitespace checks pass. Same pinned
+x86_64 CUDA13.2.2/TensorRT10.16.1/driver595 environment as the plugin gate. No
+Fast DDS, ARM, model repository or packaging test was needed for this boundary.
+Phase 6.4.4's YOLOX and its real model/resource closure remain to integrate.

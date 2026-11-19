@@ -1,0 +1,77 @@
+load("@rosdistro//ament:defs.bzl", "ament_index")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_import", "cc_library", "cc_shared_library")
+load("@rules_cuda//cuda:defs.bzl", "cuda_library")
+load("@tensorrt//:defs.bzl", "TENSORRT_VERSION_MAJOR")
+
+package(default_visibility = ["//visibility:public"])
+
+cuda_library(
+    name = "gpu_preprocess_library",
+    srcs = ["src/preprocess.cu"],
+    hdrs = ["include/autoware/tensorrt_classifier/preprocess.h"],
+    copts = ["-std=c++17"],
+    includes = ["include"],
+    deps = [
+        "@cuda//:cublas",
+        "@cuda//:cuda_runtime",
+        "@cuda//:curand",
+    ],
+)
+
+cc_shared_library(
+    name = "gpu_preprocess",
+    deps = [":gpu_preprocess_library"],
+)
+
+cc_import(
+    name = "openmp_runtime",
+    static_library = "@llvm-project//openmp:libomp",
+)
+
+cc_library(
+    name = "autoware_tensorrt_classifier_library",
+    srcs = ["src/tensorrt_classifier.cpp"],
+    hdrs = glob(["include/**/*.hpp"]),
+    copts = [
+        "-fopenmp",
+        "-Wall",
+        "-Wno-deprecated-declarations",
+    ],
+    includes = ["include"],
+    local_defines = ["TENSORRT_VERSION_MAJOR=" + TENSORRT_VERSION_MAJOR],
+    deps = [
+        ":gpu_preprocess_library",
+        ":openmp_runtime",
+        "@autoware_cuda_utils",
+        "@autoware_tensorrt_common//:autoware_tensorrt_common_library",
+        "@llvm-project//openmp:libomp",
+        "@rclcpp//:rclcpp_library",
+        "@rosdistro//cc:opencv_library",
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = [
+        "@autoware_tensorrt_common",
+        "@rclcpp//:rclcpp",
+    ],
+)
+
+cc_shared_library(
+    name = "autoware_tensorrt_classifier",
+    dynamic_deps = [
+        ":gpu_preprocess",
+        ":runtime_dynamic_deps",
+    ],
+    deps = [":autoware_tensorrt_classifier_library"],
+)
+
+ament_index(
+    libraries = [
+        ":autoware_tensorrt_classifier",
+        ":gpu_preprocess",
+    ],
+    package_xml = "package.xml",
+)

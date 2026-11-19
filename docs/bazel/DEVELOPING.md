@@ -819,6 +819,21 @@ The original suite has eighteen cases; the added suite has two, covering all
 eleven creator names and an actual serialized Argsort engine. These do not
 establish numerical coverage for every sparse plugin or ARM compatibility.
 
+## TensorRT classifier
+
+Use @autoware_tensorrt_classifier//:autoware_tensorrt_classifier_library for C++
+headers/link inputs and :autoware_tensorrt_classifier for dynamic_deps; its index
+contains the classifier and GPU preprocessing libraries. CPU preprocessing uses
+the pinned LLVM OpenMP archive. Supply model paths as declared runtime inputs,
+with writable engine-cache copies for tests.
+
+Run //bazel/tests:tensorrt_classifier_test with --config=no-agnocast on a supported
+GPU. All five cases must pass; the fixture generator beside the test reproduces
+the tiny checked-in ONNX model. doInference currently always selects CPU
+preprocessing, including with cuda=true; direct CUDA preprocessing is a separate
+entry point with RGB/default-normalization behavior. The test checks both
+contracts independently, not parity or INT8 accuracy.
+
 ## Negotiated and CUDA blackboard transport
 
 The negotiated library and examples use native rclcpp and need no GPU. Run all

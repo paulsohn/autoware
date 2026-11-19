@@ -1609,3 +1609,19 @@ tensorrt_cc_test(
         "@tensorrt",
     ],
 )
+
+tensorrt_cc_test(
+    name = "tensorrt_classifier_test",
+    srcs = ["autoware_tensorrt_classifier/test_classifier.cpp"],
+    data = ["autoware_tensorrt_classifier/channel_means.onnx"],
+    dynamic_deps = [
+        "@autoware_tensorrt_classifier",
+        "@autoware_tensorrt_classifier//:gpu_preprocess",
+        "@autoware_tensorrt_classifier//:runtime_dynamic_deps",
+    ],
+    local_defines = ['CLASSIFIER_ONNX_PATH=\\"$(rootpath autoware_tensorrt_classifier/channel_means.onnx)\\"'],
+    deps = [
+        "@autoware_tensorrt_classifier//:autoware_tensorrt_classifier_library",
+        "@googletest//:gtest_main",
+    ],
+)
