@@ -8530,6 +8530,18 @@ checks pass. This adds no changed DDS behavior or Agnocast backend; no Fast DDS
 check or broad communication matrix was run. Next: local Tier 4 interfaces and
 real model resources before the whole YOLOX gate.
 
+YOLOX consumer follow-up: linking the entire utility library with the legacy
+utility facade exposes cc_shared_library's linked-but-not-exported ownership
+checks for unrelated geometry/planning dependencies. YOLOX only uses the
+run-length mask codec. Split that existing source/header into
+run_length_encoder_library and run_length_encoder shared targets with only
+OpenCV dependencies. The complete perception_utils library depends on that
+same canonical codec target and composes its shared provider, avoiding duplicate
+implementations. Preserve all other public headers and original suites.
+The same full command passes all eight cases again (4.277-second invocation,
+0.3/0.4/0.3-second targets); no source changes. This target split addresses the
+actual consumer graph instead of exporting unrelated implementation symbols.
+
 ## 2026-11-19: Phase 6.4.4 — Tier 4 perception interfaces
 
 Purpose: provide YOLOX's feature-bearing detection messages from the local

@@ -819,6 +819,16 @@ The original suite has eighteen cases; the added suite has two, covering all
 eleven creator names and an actual serialized Argsort engine. These do not
 establish numerical coverage for every sparse plugin or ARM compatibility.
 
+## Perception utilities
+
+Consumers using only mask run-length encoding depend on
+@perception_utils//:run_length_encoder_library and its :run_length_encoder
+shared provider. The full :perception_utils_library/:perception_utils pair
+composes that same codec with remapping and suppression utilities. Select the
+needed target rather than making a codec-only consumer own unrelated geometry
+and planning dependencies. Run @perception_utils//... after changes: all eight
+original cases across three targets must pass.
+
 ## Model resources
 
 src/models/tensorrt_yolox owns module/package autoware_tensorrt_yolox_models.

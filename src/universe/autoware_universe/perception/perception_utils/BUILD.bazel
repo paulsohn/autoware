@@ -8,11 +8,14 @@ cc_library(
     srcs = [
         "src/detection_class_remapper.cpp",
         "src/iou_bev_nms.cpp",
-        "src/run_length_encoder.cpp",
     ],
-    hdrs = glob(["include/**/*.hpp"]),
+    hdrs = glob(
+        ["include/**/*.hpp"],
+        exclude = ["include/perception_utils/run_length_encoder.hpp"],
+    ),
     strip_include_prefix = "include",
     deps = [
+        ":run_length_encoder_library",
         "@autoware_object_recognition_utils",
         "@autoware_perception_msgs//:cc",
         "@autoware_utils_geometry",
@@ -25,6 +28,7 @@ cc_library(
 collect_transitive_dynamic_deps(
     name = "runtime_dynamic_deps",
     dynamic_deps = [
+        ":run_length_encoder",
         "@rosdistro//cc:opencv",
         "@autoware_object_recognition_utils//:runtime_dynamic_deps",
         "@autoware_perception_msgs//:cc_shared",
@@ -88,4 +92,18 @@ cc_test(
         ":perception_utils_library",
         "@googletest//:gtest",
     ],
+)
+
+cc_library(
+    name = "run_length_encoder_library",
+    srcs = ["src/run_length_encoder.cpp"],
+    hdrs = ["include/perception_utils/run_length_encoder.hpp"],
+    strip_include_prefix = "include",
+    deps = ["@rosdistro//cc:opencv_library"],
+)
+
+cc_shared_library(
+    name = "run_length_encoder",
+    dynamic_deps = ["@rosdistro//cc:opencv"],
+    deps = [":run_length_encoder_library"],
 )
