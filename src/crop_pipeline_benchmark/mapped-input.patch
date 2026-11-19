@@ -1,0 +1,120 @@
+--- a/crop_box_filter.cpp
++++ b/crop_box_filter.cpp
+@@ -19,6 +19,9 @@
+ #include <sensor_msgs/msg/point_field.hpp>
+ #include <sensor_msgs/point_cloud2_iterator.hpp>
+ 
++#include <shmem_buffer/shmem_buffer_api.hpp>
++
++#include <cstring>
+ #include <sstream>
+ #include <string>
+ 
+@@ -148,6 +151,19 @@
+ 
+ CropBoxFilterResult CropBoxFilter::filter(const PointCloud2 & cloud) const
+ {
++  const auto backend = cloud.data.get_backend_type();
++  if (backend == "shmem") {
++    auto input = shmem_buffer::from_input_buffer(cloud.data);
++    return filter_from_bytes(cloud, input.get_ptr());
++  }
++  if (backend == "cpu") return filter_from_bytes(cloud, cloud.data.data());
++  const auto staged = cloud.data.to_vector();
++  return filter_from_bytes(cloud, staged.data());
++}
++
++CropBoxFilterResult CropBoxFilter::filter_from_bytes(
++  const PointCloud2 & cloud, const uint8_t * bytes) const
++{
+   CropBoxFilterResult result;
+   auto & output = result.pointcloud;
+ 
+@@ -163,17 +179,20 @@
+ 
+   size_t output_size = 0;
+ 
+-  // create input iterators for reading coordinates
+-  sensor_msgs::PointCloud2ConstIterator<float> input_x(cloud, "x");
+-  sensor_msgs::PointCloud2ConstIterator<float> input_y(cloud, "y");
+-  sensor_msgs::PointCloud2ConstIterator<float> input_z(cloud, "z");
+-
+-  for (size_t point_index = 0; input_x != input_x.end();
+-       ++input_x, ++input_y, ++input_z, ++point_index) {
++  auto offset = [&](const char * name) -> size_t {
++    for (const auto & field : cloud.fields) {
++      if (field.name == name && field.datatype == sensor_msgs::msg::PointField::FLOAT32 &&
++        static_cast<size_t>(field.offset) + sizeof(float) <= cloud.point_step) return field.offset;
++    }
++    throw std::invalid_argument(std::string("Invalid coordinate: ") + name);
++  };
++  const auto x = offset("x"), y = offset("y"), z = offset("z");
++  for (size_t global_offset = 0; global_offset + cloud.point_step <= cloud.data.size();
++       global_offset += cloud.point_step) {
+     Eigen::Vector4f point;
+-    point[0] = *input_x;
+-    point[1] = *input_y;
+-    point[2] = *input_z;
++    std::memcpy(&point[0], bytes + global_offset + x, sizeof(float));
++    std::memcpy(&point[1], bytes + global_offset + y, sizeof(float));
++    std::memcpy(&point[2], bytes + global_offset + z, sizeof(float));
+     point[3] = 1;
+ 
+     if (!std::isfinite(point[0]) || !std::isfinite(point[1]) || !std::isfinite(point[2])) {
+@@ -191,9 +210,7 @@
+     if (
+       (!config_.keep_outside_box && point_is_inside) ||
+       (config_.keep_outside_box && !point_is_inside)) {
+-      const size_t global_offset = point_index * cloud.point_step;
+-
+-      memcpy(&output.data[output_size], &cloud.data[global_offset], cloud.point_step);
++      memcpy(&output.data[output_size], bytes + global_offset, cloud.point_step);
+ 
+       const Eigen::Vector4f point_output = eigen_transform_postprocess_ * point_preprocessed;
+       *output_x = point_output[0];
+--- a/crop_box_filter.hpp
++++ b/crop_box_filter.hpp
+@@ -70,6 +70,7 @@
+   CropBoxFilterResult filter(const PointCloud2 & cloud) const;
+ 
+ private:
++  CropBoxFilterResult filter_from_bytes(const PointCloud2 & cloud, const uint8_t * bytes) const;
+   CropBoxFilterConfig config_;
+   Eigen::Matrix4f eigen_transform_preprocess_{Eigen::Matrix4f::Identity()};
+   Eigen::Matrix4f eigen_transform_postprocess_{Eigen::Matrix4f::Identity()};
+--- a/crop_box_filter_node.cpp
++++ b/crop_box_filter_node.cpp
+@@ -115,9 +115,12 @@
+ 
+   // set input pointcloud callback
+   {
++    rclcpp::SubscriptionOptions opts;
++    input_backend_ = declare_parameter<std::string>("input_backend", "cpu");
++    opts.acceptable_buffer_backends = input_backend_;
+     sub_input_ = this->create_subscription<PointCloud2>(
+       "input", rclcpp::SensorDataQoS().keep_last(max_queue_size),
+-      std::bind(&CropBoxFilterNode::pointcloud_callback, this, std::placeholders::_1));
++      std::bind(&CropBoxFilterNode::pointcloud_callback, this, std::placeholders::_1), opts);
+   }
+ 
+   RCLCPP_DEBUG(this->get_logger(), "[Filter Constructor] successfully created.");
+@@ -125,6 +128,9 @@
+ 
+ void CropBoxFilterNode::pointcloud_callback(const PointCloud2ConstPtr cloud)
+ {
++  if (cloud->data.get_backend_type() != input_backend_) {
++    throw std::runtime_error("Unexpected input backend: " + cloud->data.get_backend_type());
++  }
+   // check whether the pointcloud is valid
+   const ValidationResult result = validate_pointcloud2(*cloud);
+   if (!result.is_valid) {
+--- a/crop_box_filter_node.hpp
++++ b/crop_box_filter_node.hpp
+@@ -47,6 +47,7 @@
+   /** \brief Internal mutex. */
+   std::mutex mutex_;
+ 
++  std::string input_backend_;
+   CropBoxFilterConfig config_;
+   std::optional<CropBoxFilter> crop_box_filter_;
+ 

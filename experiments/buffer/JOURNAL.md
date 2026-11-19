@@ -53,3 +53,25 @@ shmem/mixed (the backend and mode are separate arguments). All six
 subscriber processes checked 12 ordered frames and re-read the first after
 the last. In each mixed run an ordinary CPU reader received the same stream.
 The wrapper-disabled test and probes shared a Lyrical overlay built here.
+
+## Core target pipeline, Lyrical
+
+Built both variants against freshly generated Autoware interfaces, compiled
+each upstream crop-box suite, and passed all ten algorithm cases and the TF
+integration case on Cyclone for each variant. Run build-lyrical.sh after the
+wrapper prerequisite. The fixture source came from the archived experiment.
+Both builds used GCC -O2 with the documented single-worker limits. Each
+configuration delivered 60/60 in each of three rounds, 1,440 frames total.
+Pooled figures below use 150 timed frames per configuration in milliseconds.
+
+| Input transport | Ordinary CPU output median / p95 | Same backend on both wrapper edges median / p95 |
+| --- | ---: | ---: |
+| Cyclone DDS, ordinary CPU | 1.248 / 1.524 | 1.282 / 1.469 |
+| Zenoh, ordinary CPU | 1.068 / 1.348 | 1.015 / 1.238 |
+| Zenoh, mapped shmem | 0.876 / 1.055 | 0.754 / 0.865 |
+| Zenoh, CUDA | 1.140 / 1.357 | 1.114 / 1.484 |
+
+Recompute with src/crop_pipeline_benchmark/summarize.py and the corresponding
+results or two-edge-results directory. The two variants use different output
+allocation/packing. Within each column, each transport uses the same filter
+binary. Host kernel 7.0.0-43-generic, NVIDIA driver 595.99.02.

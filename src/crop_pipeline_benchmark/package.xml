@@ -1,0 +1,15 @@
+<package format="3">
+  <name>crop_pipeline_benchmark</name><version>0.1.0</version>
+  <description>Autoware Core crop-box transport benchmark.</description>
+  <maintainer email="paulsohn@users.noreply.github.com">Paul Sohn</maintainer>
+  <license>Apache-2.0</license>
+  <buildtool_depend>ament_cmake</buildtool_depend>
+  <depend condition="$WRAPPER_TWO_EDGE == 1">autoware_agnocast_wrapper</depend>
+  <depend>rclcpp</depend><depend>sensor_msgs</depend><depend>cuda_buffer</depend>
+  <depend>shmem_buffer</depend><exec_depend>cuda_buffer_backend</exec_depend>
+  <exec_depend>shmem_buffer_backend</exec_depend><exec_depend>rmw_zenoh_cpp</exec_depend>
+  <depend>autoware_internal_debug_msgs</depend><depend>autoware_internal_msgs</depend>
+  <depend>tf2_eigen</depend><depend>tf2_ros</depend><depend>rclcpp_components</depend>
+  <exec_depend>rmw_cyclonedds_cpp</exec_depend><test_depend>ament_cmake_gtest</test_depend>
+  <export><build_type>ament_cmake</build_type></export>
+</package>
