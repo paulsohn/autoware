@@ -658,3 +658,16 @@ MemAvailable was 5,582 MiB over this build and the three runs. These are
 functional results for one type and one reader. Cross-host reachability,
 bridge policy and pipeline performance are open.
 [Setup, reproduction commands and migration gates](../rmw-agnocast/README.md#loadable-local-transport-and-migration-plan)
+
+### Two native readers under queue pressure
+
+The loadable RMW passed three bridge-disabled pressure runs and a fourth
+under syscall tracing. A fast reader received sequences 1–11 plus a
+delegated Cyclone control message. A paused reader kept 1 through ROS
+context shutdown, observed the KeepLast(2) tail 8 and 9, and returned its
+kernel reference once on another thread before the subscriber was removed.
+A fresh process with the same node name received 11. The original single-reader
+loan and copy checks passed again. The final build and validation used one
+build job, a 1,200 MiB build cap and a 512 MiB runtime cap. Minimum sampled
+host MemAvailable was 5,439 MiB in that series. Only the fixture changed.
+[Reproduction, kernel evidence and limits](../rmw-agnocast/README.md#two-reader-pressure-and-restart)

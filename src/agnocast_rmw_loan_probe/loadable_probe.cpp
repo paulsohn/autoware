@@ -56,6 +56,112 @@ void verify(const Message & msg, int seq, bool same_address)
       "copied loan");
   }
 }
+void publish_trajectory(rclcpp::Publisher<Message> & pub, int seq)
+{
+  auto loan = pub.borrow_loaned_message();
+  auto & msg = loan.get();
+  fill(msg, seq);
+  std::ofstream("addresses" + std::to_string(seq))
+    << reinterpret_cast<uintptr_t>(&msg) << ' ' << reinterpret_cast<uintptr_t>(msg.points.data())
+    << ' ' << reinterpret_cast<uintptr_t>(msg.header.frame_id.data());
+  pub.publish(std::move(loan));
+}
+
+void pressure_writer(rclcpp::Node & node)
+{
+  auto pub = node.create_publisher<Message>("trajectory_loan_probe", 2);
+  auto dds = node.create_publisher<Message>("trajectory_dds_control", 2);
+  auto wait_readers = [&](size_t count) {
+    auto deadline = std::chrono::steady_clock::now() + 10s;
+    while (pub->get_subscription_count() != count) {
+      check(std::chrono::steady_clock::now() < deadline, "reader count mismatch");
+      std::this_thread::sleep_for(10ms);
+    }
+  };
+  wait_readers(2);
+  for (int seq = 1; seq <= 11; ++seq) {
+    if (seq == 10) {
+      wait_file("slow_released");
+      wait_readers(1);
+    }
+    if (seq == 11) wait_readers(2);
+    publish_trajectory(*pub, seq);
+    wait_file("fast" + std::to_string(seq));
+    if (seq == 1) wait_file("slow_holding");
+    if (seq == 9) mark("burst_done");
+    if (seq == 10) {
+      Message control;
+      fill(control, 10);
+      dds->publish(control);
+      wait_file("dds_received");
+      mark("restart_now");
+    }
+  }
+  wait_file("restarted_done");
+}
+
+void pressure_reader(rclcpp::Node::SharedPtr node, const std::string & role)
+{
+  const bool slow = role == "slow";
+  const bool restart = role == "restart";
+  int expected = restart ? 11 : 1;
+  Message::ConstSharedPtr held;
+  auto sub = node->create_subscription<Message>(
+    "trajectory_loan_probe", 2, [&](Message::ConstSharedPtr msg) {
+      verify(*msg, expected, true);
+      if (slow && expected == 1) held = msg;
+      if (!slow && !restart) mark("fast" + std::to_string(expected));
+      ++expected;
+    });
+  rclcpp::Subscription<Message>::SharedPtr dds;
+  if (!slow && !restart) {
+    dds = node->create_subscription<Message>(
+      "trajectory_dds_control", 2, [&](Message::ConstSharedPtr msg) {
+        verify(*msg, 10, false);
+        mark("dds_received");
+      });
+  }
+  rclcpp::executors::SingleThreadedExecutor exec;
+  exec.add_node(node);
+  auto receive_through = [&](int last) {
+    auto deadline = std::chrono::steady_clock::now() + 12s;
+    while (expected <= last) {
+      check(std::chrono::steady_clock::now() < deadline, "missing trajectory");
+      exec.spin_once(100ms);
+    }
+  };
+  if (!slow) {
+    receive_through(11);
+    if (restart)
+      mark("restarted_done");
+    else
+      wait_file("restarted_done");
+    return;
+  }
+  receive_through(1);
+  mark("slow_holding");
+  wait_file("burst_done");
+  // Allow the independent native receiver to enqueue the final publication.
+  std::this_thread::sleep_for(100ms);
+  expected = 8;
+  receive_through(9);
+  auto handle = std::weak_ptr<rcl_subscription_t>(sub->get_subscription_handle());
+  exec.remove_node(node);
+  sub.reset();
+  node.reset();
+  check(!handle.expired(), "held loan lost its subscription");
+  rclcpp::shutdown();
+  verify(*held, 1, true);
+  std::thread release([&] {
+    mark("final_release_begin");
+    held.reset();
+    mark("final_release_end");
+  });
+  release.join();
+  check(handle.expired(), "subscription survived final release");
+  mark("slow_released");
+}
+
 struct CallbackError
 {
 };
@@ -67,6 +173,18 @@ int main(int argc, char ** argv)
     rclcpp::init(argc, argv);
     check(
       std::string(rmw_get_implementation_identifier()) == "rmw_agnocast", "wrong implementation");
+    if (std::string(argv[2]) == "pressure") {
+      const std::string role = argv[1];
+      auto pressure_node =
+        std::make_shared<rclcpp::Node>("trajectory_" + (role == "restart" ? "slow" : role));
+      if (writer)
+        pressure_writer(*pressure_node);
+      else
+        pressure_reader(std::move(pressure_node), role);
+      pressure_node.reset();
+      if (rclcpp::ok()) rclcpp::shutdown();
+      return 0;
+    }
     auto node = std::make_shared<rclcpp::Node>(writer ? "trajectory_writer" : "trajectory_reader");
     if (writer) {
       auto pub = node->create_publisher<Message>("trajectory_loan_probe", 4);
@@ -85,14 +203,7 @@ int main(int argc, char ** argv)
           pub->publish(msg);
           msg.points.clear();
         } else {
-          auto loan = pub->borrow_loaned_message();
-          auto & msg = loan.get();
-          fill(msg, seq);
-          std::ofstream("addresses" + std::to_string(seq))
-            << reinterpret_cast<uintptr_t>(&msg) << ' '
-            << reinterpret_cast<uintptr_t>(msg.points.data()) << ' '
-            << reinterpret_cast<uintptr_t>(msg.header.frame_id.data());
-          pub->publish(std::move(loan));
+          publish_trajectory(*pub, seq);
         }
         wait_file("done" + std::to_string(seq));
       }

@@ -138,10 +138,10 @@ done
 
 Remaining work, in order:
 
-1. Exercise two readers including a slow reader, KeepLast pressure, outstanding
-   loans at shutdown, endpoint restart and mixed native/DDS waits. Record
-   deliveries, drops, final loan returns and teardown hangs. Validate metadata,
-   error paths and unsupported RMW operations before advertising capabilities.
+1. The [two-reader experiment](#two-reader-pressure-and-restart) covers slow
+   consumption, queue depth, graceful restart, shutdown with an outstanding
+   loan and mixed waits. Outstanding RMW contract work includes metadata,
+   error paths and explicit handling of unsupported operations.
 2. Replace the Trajectory specialization with a type support mechanism. Test
    flat and nested dynamic messages first. Qualify types containing Buffer
    separately. Verify QoS matching and graph counts against actual delivery.
@@ -155,3 +155,49 @@ Remaining work, in order:
    Cyclone shared-memory caveat. Separate CIE and bridge configurations.
    Require both median and p95 within 1.20 times native and compare CPU, memory
    and drops directly before considering a Bazel milestone.
+
+## Two-reader pressure and restart
+
+Use the same Lyrical root, module, heap hook and patched rclcpp overlay as
+the loadable probe above. Rebuild with build-loadable.sh. The 'pressure'
+argument starts the writer, a fast reader and a slow reader in separate
+processes. Both readers use volatile KeepLast(2). The writer waits for each
+fast callback. The slow application retains sample 1 and pauses its executor
+until after 9, allowing 100 ms for its native receiver to catch up. This
+controls queue pressure independently of the publication rate.
+
+```bash
+export LYRICAL_ROOT=$(cat build/agnocast-lyrical/universe-root)
+for n in 1 2 3; do
+  BUFFER_RUNTIME_ONLY=1 experiments/buffer/run-lyrical.sh timeout 60s bash experiments/rmw-agnocast/run-loadable.sh pressure
+done
+```
+
+The fast reader received 1 through 11. The slow reader received 1, 8 and 9.
+All native callbacks checked object, vector and string addresses plus every
+point. After removing its ROS subscription and node and shutting down its ROS
+context, the slow reader rechecked 1 and released it on a different thread.
+The writer observed the graph return to one reader and published 10. The fast
+reader also received a delegated Cyclone control topic in its native executor
+wait set. A fresh process with the original slow node name then received 11
+as its first sample. This tests graceful restart and a fixed-depth queue.
+The checks do not distinguish where in the receive path samples 2–7 were
+discarded. An abrupt process exit and sustained throughput remain untested.
+
+To observe the kernel boundary, run a compatible strace inside the Lyrical
+root. On this laptop the host binary could use the root's installed libraries:
+
+```bash
+w=build/rmw-agnocast
+cp /usr/bin/strace "$w/strace"
+trace=$(mktemp -d "$w/pressure-trace.XXXXXX")
+BUFFER_RUNTIME_ONLY=1 experiments/buffer/run-lyrical.sh timeout 60s "$w/strace" \
+  -ff -e trace=openat,ioctl -o "/ws/$trace/thread" bash experiments/rmw-agnocast/run-loadable.sh pressure
+awk '/"final_release_begin"/,/"final_release_end"/' "$trace"/thread.*
+```
+
+On the final-release thread the interval contained exactly two successful
+ioctls, in order. Command 0x06 released the subscriber reference and command
+0x11 removed the subscriber (Agnocast ioctl group 0xa6). This observes the
+subscriber reference return directly. Publisher-side heap reclamation timing
+is a separate measurement.
