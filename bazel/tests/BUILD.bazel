@@ -1625,3 +1625,9 @@ tensorrt_cc_test(
         "@googletest//:gtest_main",
     ],
 )
+
+cc_test(
+    name = "autoware_utils_facade_test",
+    srcs = ["autoware_utils/test_facade.cpp"],
+    deps = ["@autoware_utils"],
+)

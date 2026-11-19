@@ -862,3 +862,9 @@ local_path_override(
     module_name = "autoware_tensorrt_classifier",
     path = "src/universe/autoware_universe/perception/autoware_tensorrt_classifier",
 )
+
+bazel_dep(name = "autoware_utils", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_utils",
+    path = "src/core/autoware_utils/autoware_utils",
+)

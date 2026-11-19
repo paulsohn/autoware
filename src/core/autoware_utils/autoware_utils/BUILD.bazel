@@ -1,0 +1,22 @@
+load("@rules_cc//cc:defs.bzl", "cc_library")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "autoware_utils",
+    hdrs = glob(["include/**/*.hpp"]),
+    strip_include_prefix = "include",
+    deps = [
+        "@autoware_utils_debug",
+        "@autoware_utils_diagnostics",
+        "@autoware_utils_geometry",
+        "@autoware_utils_logging",
+        "@autoware_utils_math",
+        "@autoware_utils_pcl",
+        "@autoware_utils_rclcpp",
+        "@autoware_utils_system",
+        "@autoware_utils_tf",
+        "@autoware_utils_uuid",
+        "@autoware_utils_visualization",
+    ],
+)

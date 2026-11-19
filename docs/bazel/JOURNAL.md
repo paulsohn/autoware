@@ -8469,3 +8469,32 @@ buildifier, clang-format, Python syntax and whitespace checks pass. Same pinned
 x86_64 CUDA13.2.2/TensorRT10.16.1/driver595 environment as the plugin gate. No
 Fast DDS, ARM, model repository or packaging test was needed for this boundary.
 Phase 6.4.4's YOLOX and its real model/resource closure remain to integrate.
+
+## 2026-11-19: Phase 6.4.4 — Legacy utility header facade
+
+Purpose: satisfy YOLOX's actual autoware_utils/ros/debug_publisher.hpp and
+system/stop_watch.hpp includes from the local snapshot. Inspect the facade's
+CMake/package/header inventory: it forwards compatibility namespaces to the
+eleven already supported split utility packages, has no implementation sources
+and no original runtime suite. Do not replace its local headers with registry
+sources or edit consumers merely to rename includes.
+
+Add one package-local MODULE/BUILD and root override. Export all existing
+headers with include/ stripped, depending on all eleven split packages. Their
+previously accepted suites remain applicable because their code/configuration
+is unchanged. Add a root standalone compile/runtime consumer of the original
+aggregate header; assert StopWatch's namespace alias denotes the same split
+utility type and construct/read the timer. This checks the full public include
+closure and the compatibility namespace required by YOLOX.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=no-agnocast --nocache_test_results --test_output=errors \
+  //bazel/tests:autoware_utils_facade_test
+```
+
+Passes as part of the sequential utility gate (4.195-second invocation), zero
+failures/skips; no implementation or original test changes. Targeted buildifier,
+clang-format and whitespace checks pass. This facade introduces no new utility
+algorithm or middleware behavior, so no transport matrix or Fast DDS check is
+required. Perception utilities, messages and the model/YOLOX boundaries follow.
