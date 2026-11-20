@@ -48,10 +48,11 @@ if [[ ${1:-} == bridge ]]; then
   exit 0
 fi
 
-if [[ ${1:-} == host-cloud || ${1:-} == host-view ]]; then
+if [[ ${1:-} == host-cloud || ${1:-} == host-view || ${1:-} == host-loan ]]; then
   cd "$(mktemp -d)"
   export AGNOCAST_RMW_HOST_CLOUD=1
-  if [[ $1 == host-view ]]; then export AGNOCAST_RMW_HOST_VIEW=1 AGNOCAST_VIEW_ADDRESS_FILE=view-address; fi
+  if [[ $1 == host-loan ]]; then export AGNOCAST_RMW_HOST_LOAN=1; fi
+  if [[ $1 != host-cloud ]]; then export AGNOCAST_RMW_HOST_VIEW=1 AGNOCAST_VIEW_ADDRESS_FILE=view-address; fi
   LD_PRELOAD="$hook" "$probe" reader host-cloud &
   reader=$!
   trap 'kill "$reader" 2>/dev/null || true' EXIT

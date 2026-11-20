@@ -1029,3 +1029,89 @@ view class non-final allowed RTTI lookup across the loaded libraries. The
 complete repeat used that change. The ownership checks cover direct native
 wait on this host. A production backend still needs a stable exported API,
 endpoint discovery and validation with independent builds.
+
+## Transfer CPU point payloads through a publisher loan
+
+This experiment changes the publisher on both edges of the previous
+receiver-view fixture. A unique-output ROS wrapper borrows a standard
+rclcpp PointCloud2 before filling it. The wrapper holds the rclcpp loan and its
+publisher until publication or cancellation. The RMW copies metadata and
+transfers the CPU vector into the existing
+host-cloud representation in the borrowed allocation. The reader continues
+to receive a local read-only Buffer backed by the Agnocast subscriber loan.
+The point bytes retain their allocation address when allocated in the writer pool.
+The wrapper adaptation is applied to the colcon benchmark's private build
+copy. It exercises unique ownership. The RMW checks the vector against the
+shared writable Linux mapping containing its native loan and falls back to
+copying private storage. A missing mapping also selects the copy path. Shared or const-reference publications keep
+their copy semantics. A node using rclcpp directly uses its ordinary borrow/fill/publish API.
+
+Use the Lyrical root, Agnocast device and previously built overlays from
+the receiver-view experiment. Build and run serially:
+
+```bash
+set -e
+export LYRICAL_ROOT=$(cat build/agnocast-lyrical/universe-root)
+experiments/buffer/run-lyrical.sh bash experiments/rmw-agnocast/build-loadable.sh
+experiments/buffer/run-lyrical.sh bash experiments/buffer/build-universe-lyrical.sh
+export BUFFER_RUNTIME_ONLY=1
+for test in host-loan host-view host-cloud pressure; do
+  AGNOCAST_RMW_DIRECT_WAIT=1 experiments/buffer/run-lyrical.sh timeout 45s \
+    bash experiments/rmw-agnocast/run-loadable.sh "$test"
+done
+for order in forward reverse; do
+  opts=()
+  if [[ $order == reverse ]]; then opts+=(--reverse); fi
+  experiments/buffer/run-lyrical.sh timeout 180s bash \
+    experiments/rmw-agnocast/bench-host-cloud.sh "build/rmw-agnocast/fresh-publoan-$order" \
+    --loan "${opts[@]}"
+done
+```
+
+The two-process contract abandons a populated loan, then sends eight frames
+and compares the address recorded by the writer before publishing to the
+address read through the receiving Buffer. One frame deliberately moves in a
+vector allocated before borrowing. The reader requires a different address
+and identical content for that frame. The probe also checks a CPU-only reader,
+serialized delivery, independence on copy and retention through teardown.
+The first publication at each edge uses the conventional copy path while the
+crop initializes its DDS diagnostics. The timed loan case requires both the
+source and the crop to report 59 native publisher loans and zero private
+payload copies for those loans. The common ten-frame warmup excludes the
+startup copy from latency statistics. The copy control uses the same fixed blocking wait and
+read-only views at both receivers. Native Agnocast uses its existing CIE.
+
+Two failures shaped the test. Moving a completed private message into a loan
+issued at publish time crashed the receiving crop while copying the PointField
+vector. The heap hook selects shared allocation only between borrow and
+publish on the borrowing thread. The corrected writer borrows before filling,
+rebuilds metadata under the loan and transfers the point vector only when the
+writer owns its shared storage. The deliberate private-vector contract case
+exercises the fallback.
+
+Borrowing for the entire first crop callback exposed a second failure. The sink
+received output, then the crop aborted in Cyclone DDS while creating the lazy
+PublishedTime publisher. A diagnostic backtrace reached
+`dds_create_topic_sertype` from `ensure_publisher_exists`. Using ordinary
+publication during the first callback allowed the same diagnostic endpoints
+to initialize and all subsequent callbacks to use loans. This startup sequence
+is specific to the fixture. Dynamic DDS entity creation while a loan is active
+and publisher loans passed between threads remain outside the validated path.
+
+| Six runs per case, pooled | Median ms | p95 ms | Median / native | p95 / native | Child CPU s | Largest child peak MiB |
+|---|---:|---:|---:|---:|---:|---:|
+| Native Agnocast | 0.317 | 0.523 | 1.00× | 1.00× | 0.536 | 135.0 |
+| Receive view with ordinary publication | 0.424 | 0.553 | 1.34× | 1.06× | 0.573 | 133.5 |
+| Publisher loan and receive view | 0.386 | 0.582 | 1.22× | 1.11× | 0.603 | 136.6 |
+
+Forward ordering measured loan/native median and p95 of 1.19× and 1.04×.
+Reverse ordering measured 1.23× and 1.15×. Each row pools 300 frames after
+discarding the first ten per process group. The sink validated all 1,080 frames,
+including warmup. The loan reduced median latency by 9% against the paired
+receive-view control. Its p95 increased by 5%, and its aggregate child CPU
+increased by 5%. The pooled median misses the 1.20× criterion by about 6 µs.
+All 24 fixed receivers reported 59 native wakes and zero native-triggered
+interruptions. All 12 loan-enabled writers reported 59 loans and zero private
+payload copies after warmup. The previous [broader matrix](#fixed-mixed-wait-in-the-universe-pointcloud2-pipeline)
+contains the Cyclone and Zenoh controls.
+[Frames, resource measurements and check output](publisher-loan-results/).

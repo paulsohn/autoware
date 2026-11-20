@@ -978,3 +978,34 @@ edge with an explicitly loaned output allocation and the same receiving view,
 retaining a conventional CPU publication as the control. Open issues include
 mutable publisher ownership, cancellation, and the cost of slow readers.
 [Reproduction, raw samples and limitations](../rmw-agnocast/README.md#receiver-local-buffer-view-of-an-agnocast-point-payload)
+
+### Borrow CPU PointCloud2 before filling both pipeline outputs
+
+Tested the Lyrical rclcpp publisher-loan API on the same Universe crop fixture
+and fixed blocking wait as the receiver-view experiment. A benchmark-local
+wrapper borrows at unique output allocation time. The RMW restores typed
+metadata in shared storage, moves the point vector when it is in the writer
+pool, and copies a private vector. The contract checked an abandoned loan,
+retention through shutdown, serialized and CPU subscribers, address identity
+for shared storage and a deliberate private-vector fallback. The copy-mode
+and mixed pressure/restart regressions passed.
+
+A late borrow let process-private fields reach the reader, which faulted in
+metadata restoration. Moving the borrow before filling and checking allocation
+ownership fixed this. Loaning during the crop's first callback also caused a
+Cyclone abort while creating the lazy PublishedTime publisher. Running the
+first frame with ordinary publication allowed the diagnostic graph to initialize.
+The other 59 publications per edge used loans with zero private payload copies.
+
+Six laptop runs per case verified 1,080 frames. Native, conventional publication
+with a receive view, and loaned publication with a receive view measured
+0.317/0.523, 0.424/0.553 and 0.386/0.582 ms pooled median/p95. Loan/native
+was 1.19×/1.04× in the forward series and 1.23×/1.15× in reverse. The pooled
+1.22×/1.11× misses the median criterion. Keep Bazel adoption pending.
+Minimum sampled host availability was 12,244 MiB during the final Universe
+build and 13,175 MiB during the paired matrices. Next isolate the allocation
+window around the point payload so DDS diagnostics and other callback
+allocations can run on the ordinary heap, then test cold-start entity creation
+and repeat the paired measurement. The same-thread publisher restriction and
+stable graph during fixed wait still apply.
+[Commands, ownership checks, failures and raw runs](../rmw-agnocast/README.md#transfer-cpu-point-payloads-through-a-publisher-loan)

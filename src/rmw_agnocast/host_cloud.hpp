@@ -17,6 +17,18 @@ struct HostCloud
     dense(msg.is_dense)
   {
   }
+  explicit HostCloud(Cloud && msg)
+  : header(msg.header),
+    height(msg.height),
+    width(msg.width),
+    fields(msg.fields),
+    big_endian(msg.is_bigendian),
+    point_step(msg.point_step),
+    row_step(msg.row_step),
+    bytes(std::move(static_cast<std::vector<uint8_t> &>(msg.data))),
+    dense(msg.is_dense)
+  {
+  }
   void restore_metadata(Cloud & msg) const
   {
     msg.header = header;

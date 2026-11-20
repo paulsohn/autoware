@@ -416,8 +416,23 @@ void host_cloud_contract(rclcpp::Node & node, bool writer)
       check(std::chrono::steady_clock::now() < deadline, "missing cloud readers");
       std::this_thread::sleep_for(10ms);
     }
+    const bool loaned = std::getenv("AGNOCAST_RMW_HOST_LOAN");
+    if (loaned) {
+      check(pub->can_loan_messages(), "writer lacks native loan support");
+      auto abandoned = pub->borrow_loaned_message();
+      abandoned.get() = cloud_fixture(37);
+    }
     for (int seq = 0; seq < frames; ++seq) {
-      pub->publish(cloud_fixture(seq));
+      if (loaned) {
+        Cloud prebuilt;
+        if (seq == 2) prebuilt = cloud_fixture(seq);
+        auto loan = pub->borrow_loaned_message();
+        loan.get() = seq == 2 ? std::move(prebuilt) : cloud_fixture(seq);
+        std::ofstream("view-address") << reinterpret_cast<uintptr_t>(loan.get().data.data());
+        pub->publish(std::move(loan));
+      } else {
+        pub->publish(cloud_fixture(seq));
+      }
       wait_file("cloud_received" + std::to_string(seq));
     }
     if (view) wait_file("view_released");
@@ -440,7 +455,8 @@ void host_cloud_contract(rclcpp::Node & node, bool writer)
       const auto & impl = dynamic_cast<const rmw_agnocast::HostCloudView &>(*msg->data.get_impl());
       uintptr_t address;
       check(bool(std::ifstream("view-address") >> address) &&
-            address == reinterpret_cast<uintptr_t>(impl.bytes().data()), "payload address mismatch");
+            ((address == reinterpret_cast<uintptr_t>(impl.bytes().data())) ==
+             !(std::getenv("AGNOCAST_RMW_HOST_LOAN") && typed == 2)), "payload address mismatch");
       if (typed == 1) {
         retained = msg;
         owner = impl.owner();

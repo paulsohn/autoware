@@ -148,9 +148,40 @@ struct Writer
       agnocast::PublisherRole::AgnocastOnly)
   {
   }
+  const bool host_loan = type.host_cloud && std::getenv("AGNOCAST_RMW_HOST_LOAN");
+  size_t published_loans = 0, private_copies = 0;
+  uintptr_t pool_begin = 0, pool_end = 0;
+  // Linux maps this writer's native loan and its shared vector storage in one VMA.
+  bool owns_payload(const Cloud & msg, const void * loan)
+  {
+    if (!pool_end) {
+      std::ifstream maps("/proc/self/maps");
+      for (std::string line; std::getline(maps, line); ) {
+        unsigned long begin, end;
+        char mode[5];
+        if (std::sscanf(line.c_str(), "%lx-%lx %4s", &begin, &end, mode) == 3 &&
+            std::string_view(mode) == "rw-s" && begin <= reinterpret_cast<uintptr_t>(loan) &&
+            reinterpret_cast<uintptr_t>(loan) < end) {
+          pool_begin = begin;
+          pool_end = end;
+          break;
+        }
+      }
+    }
+    const auto & bytes = static_cast<const std::vector<uint8_t> &>(msg.data);
+    if (bytes.empty()) return !bytes.capacity();
+    const auto ptr = reinterpret_cast<uintptr_t>(bytes.data());
+    return pool_begin <= ptr && ptr < pool_end && bytes.capacity() <= pool_end - ptr;
+  }
+  ~Writer()
+  {
+    for (auto & entry : borrowed) cancel(std::move(entry.second));
+    if (host_loan) std::fprintf(stderr, "host-cloud publisher loans=%zu private_copies=%zu\n", published_loans, private_copies);
+  }
   auto borrow()
   {
-    auto loan = pub.borrow_loaned_message(type.members->size_of_);
+    auto size = host_loan ? std::max(sizeof(HostCloud), sizeof(Cloud)) : type.members->size_of_;
+    auto loan = pub.borrow_loaned_message(size);
     try {
       type.members->init_function(loan.get(), rosidl_runtime_cpp::MessageInitialization::ALL);
     } catch (...) {
@@ -371,7 +402,7 @@ extern "C" rmw_publisher_t * rmw_create_publisher(
     auto state = std::make_shared<Writer>(node, topic, *qos, ts);
     auto pub = fn(node, ts, topic, qos, options);
     if (!pub) return nullptr;
-    pub->can_loan_messages = !state->type.has_buffer;
+    pub->can_loan_messages = !state->type.has_buffer || state->host_loan;
     if (state->type.has_buffer)
       std::fprintf(
         stderr, "rmw_agnocast %s writer %s\n", state->type.host_cloud ? "host-cloud" : "CDR",
@@ -435,10 +466,20 @@ extern "C" rmw_ret_t rmw_borrow_loaned_message(
   auto w = lookup(writers, pub->data);
   if (!w) return CYCLONE(rmw_borrow_loaned_message)(pub, ts, msg);
   std::lock_guard lock(w->mutex);
-  if (w->type.has_buffer) return RMW_RET_UNSUPPORTED;
-  auto loan = w->borrow();
-  *msg = loan.get();
-  w->borrowed.emplace(*msg, std::move(loan));
+  if (w->type.has_buffer && !w->host_loan) return RMW_RET_UNSUPPORTED;
+  try {
+    auto loan = w->borrow();
+    try {
+      auto [entry, inserted] = w->borrowed.try_emplace(loan.get(), std::move(loan));
+      if (!inserted) throw std::runtime_error("duplicate publisher loan");
+      *msg = entry->first;
+    } catch (...) {
+      w->cancel(std::move(loan));
+      throw;
+    }
+  } catch (const std::exception & e) {
+    return error(e.what());
+  }
   return RMW_RET_OK;
 }
 extern "C" rmw_ret_t rmw_publish_loaned_message(
@@ -449,7 +490,29 @@ extern "C" rmw_ret_t rmw_publish_loaned_message(
   std::lock_guard lock(w->mutex);
   auto it = w->borrowed.find(msg);
   if (it == w->borrowed.end()) return error("unknown publisher loan");
-  w->publish(std::move(it->second));
+  if (w->host_loan) {
+    auto * cloud = static_cast<Cloud *>(msg);
+    if (cloud->data.get_backend_type() != "cpu") return error("publisher loan requires CPU data");
+    const bool shared = w->owns_payload(*cloud, msg);
+    try {
+      HostCloud wire = shared ? HostCloud(std::move(*cloud)) : HostCloud(*cloud);
+      std::destroy_at(cloud);
+      static_assert(std::is_nothrow_move_constructible_v<HostCloud>);
+      new (msg) HostCloud(std::move(wire));
+    } catch (const std::exception & e) {
+      w->cancel(std::move(it->second));
+      w->borrowed.erase(it);
+      return error(e.what());
+    }
+    if (!shared) ++w->private_copies;
+    w->pub.publish(std::move(it->second), [](void * p) {
+      std::destroy_at(static_cast<HostCloud *>(p));
+      ::operator delete(p);
+    });
+    ++w->published_loans;
+  } else {
+    w->publish(std::move(it->second));
+  }
   w->borrowed.erase(it);
   return RMW_RET_OK;
 }

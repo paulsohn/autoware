@@ -1,0 +1,55 @@
+build/rmw-agnocast/pubwarm-reverse.log:fixed_wait arms=1 completions=1 native=59 both=0 native_interrupts=0 stop_interrupts=1
+build/rmw-agnocast/pubwarm-reverse.log:fixed_wait arms=1 completions=1 native=59 both=0 native_interrupts=0 stop_interrupts=1
+build/rmw-agnocast/pubwarm-reverse.log:fixed_wait arms=1 completions=1 native=59 both=0 native_interrupts=0 stop_interrupts=1
+build/rmw-agnocast/pubwarm-reverse.log:host-cloud publisher loans=59 private_copies=0
+build/rmw-agnocast/pubwarm-reverse.log:fixed_wait arms=1 completions=1 native=59 both=0 native_interrupts=0 stop_interrupts=1
+build/rmw-agnocast/pubwarm-reverse.log:host-cloud publisher loans=59 private_copies=0
+build/rmw-agnocast/pubwarm-reverse.log:fixed_wait arms=1 completions=1 native=59 both=0 native_interrupts=0 stop_interrupts=1
+build/rmw-agnocast/pubwarm-reverse.log:fixed_wait arms=1 completions=1 native=59 both=0 native_interrupts=0 stop_interrupts=1
+build/rmw-agnocast/pubwarm-reverse.log:fixed_wait arms=1 completions=1 native=59 both=0 native_interrupts=0 stop_interrupts=1
+build/rmw-agnocast/pubwarm-reverse.log:host-cloud publisher loans=59 private_copies=0
+build/rmw-agnocast/pubwarm-reverse.log:fixed_wait arms=1 completions=1 native=59 both=0 native_interrupts=0 stop_interrupts=1
+build/rmw-agnocast/pubwarm-reverse.log:host-cloud publisher loans=59 private_copies=0
+build/rmw-agnocast/pubwarm-reverse.log:fixed_wait arms=1 completions=1 native=59 both=0 native_interrupts=0 stop_interrupts=1
+build/rmw-agnocast/pubwarm-reverse.log:host-cloud publisher loans=59 private_copies=0
+build/rmw-agnocast/pubwarm-reverse.log:fixed_wait arms=1 completions=1 native=59 both=0 native_interrupts=0 stop_interrupts=1
+build/rmw-agnocast/pubwarm-reverse.log:host-cloud publisher loans=59 private_copies=0
+build/rmw-agnocast/pubwarm-reverse.log:fixed_wait arms=1 completions=1 native=59 both=0 native_interrupts=0 stop_interrupts=1
+build/rmw-agnocast/pubwarm-reverse.log:fixed_wait arms=1 completions=1 native=59 both=0 native_interrupts=0 stop_interrupts=1
+build/rmw-agnocast/pubwarm-reverse.log:Minimum host MemAvailable: 13207 MiB
+build/rmw-agnocast/pubwarm-forward.log:fixed_wait arms=1 completions=1 native=59 both=0 native_interrupts=0 stop_interrupts=1
+build/rmw-agnocast/pubwarm-forward.log:host-cloud publisher loans=59 private_copies=0
+build/rmw-agnocast/pubwarm-forward.log:fixed_wait arms=1 completions=1 native=59 both=0 native_interrupts=0 stop_interrupts=1
+build/rmw-agnocast/pubwarm-forward.log:host-cloud publisher loans=59 private_copies=0
+build/rmw-agnocast/pubwarm-forward.log:fixed_wait arms=1 completions=1 native=59 both=0 native_interrupts=0 stop_interrupts=1
+build/rmw-agnocast/pubwarm-forward.log:fixed_wait arms=1 completions=1 native=59 both=0 native_interrupts=0 stop_interrupts=1
+build/rmw-agnocast/pubwarm-forward.log:fixed_wait arms=1 completions=1 native=59 both=0 native_interrupts=0 stop_interrupts=1
+build/rmw-agnocast/pubwarm-forward.log:host-cloud publisher loans=59 private_copies=0
+build/rmw-agnocast/pubwarm-forward.log:fixed_wait arms=1 completions=1 native=59 both=0 native_interrupts=0 stop_interrupts=1
+build/rmw-agnocast/pubwarm-forward.log:host-cloud publisher loans=59 private_copies=0
+build/rmw-agnocast/pubwarm-forward.log:fixed_wait arms=1 completions=1 native=59 both=0 native_interrupts=0 stop_interrupts=1
+build/rmw-agnocast/pubwarm-forward.log:fixed_wait arms=1 completions=1 native=59 both=0 native_interrupts=0 stop_interrupts=1
+build/rmw-agnocast/pubwarm-forward.log:fixed_wait arms=1 completions=1 native=59 both=0 native_interrupts=0 stop_interrupts=1
+build/rmw-agnocast/pubwarm-forward.log:fixed_wait arms=1 completions=1 native=59 both=0 native_interrupts=0 stop_interrupts=1
+build/rmw-agnocast/pubwarm-forward.log:fixed_wait arms=1 completions=1 native=59 both=0 native_interrupts=0 stop_interrupts=1
+build/rmw-agnocast/pubwarm-forward.log:host-cloud publisher loans=59 private_copies=0
+build/rmw-agnocast/pubwarm-forward.log:fixed_wait arms=1 completions=1 native=59 both=0 native_interrupts=0 stop_interrupts=1
+build/rmw-agnocast/pubwarm-forward.log:host-cloud publisher loans=59 private_copies=0
+build/rmw-agnocast/pubwarm-forward.log:Minimum host MemAvailable: 13175 MiB
+build/rmw-agnocast/pubfill-host-view.log:view addresses, independent mutation, retention and final release passed
+build/rmw-agnocast/pubfill-host-view.log:empty and padded clouds verified through typed and serialized take
+build/rmw-agnocast/pubfill-host-view.log:Minimum host MemAvailable: 13730 MiB
+build/rmw-agnocast/pubfill-pressure.log:Pressure passed: fast 1..11, slow 1/8/9, restarted 11; retained 1 through teardown
+build/rmw-agnocast/pubfill-pressure.log:Minimum host MemAvailable: 13850 MiB
+build/rmw-agnocast/pubfill-host-loan.log:view addresses, independent mutation, retention and final release passed
+build/rmw-agnocast/pubfill-host-loan.log:empty and padded clouds verified through typed and serialized take
+build/rmw-agnocast/pubfill-host-loan.log:host-cloud publisher loans=8 private_copies=1
+build/rmw-agnocast/pubfill-host-loan.log:Minimum host MemAvailable: 13719 MiB
+build/rmw-agnocast/pubfill-host-cloud.log:empty and padded clouds verified through typed and serialized take
+build/rmw-agnocast/pubfill-host-cloud.log:Minimum host MemAvailable: 13815 MiB
+build/rmw-agnocast/pubfill-build.log:Summary: 2 packages finished [18.8s]
+build/rmw-agnocast/pubfill-build.log:Minimum host MemAvailable: 13261 MiB
+build/rmw-agnocast/pubwarm-universe-build.log:Summary: 1 package finished [0.14s]
+build/rmw-agnocast/pubwarm-universe-build.log:Summary: 1 package finished [0.23s]
+build/rmw-agnocast/pubwarm-universe-build.log:Summary: 1 package finished [45.8s]
+build/rmw-agnocast/pubwarm-universe-build.log:Minimum host MemAvailable: 12244 MiB
