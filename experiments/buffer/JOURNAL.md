@@ -776,3 +776,17 @@ Clang reported 21.1.8. All three package lookups resolved in /opt/ros/lyrical.
 The existing Point loan and copy probes each verified four samples. Record
 the verified LYRICAL_ROOT in build/agnocast-lyrical/universe-root. This
 migration check produced no new performance measurements.
+
+### Compare native and RMW Path loans with the same payload
+
+Added a two-process nav_msgs/Path benchmark to the colcon loan probe package.
+The source loan, nested pose vector and heap string addresses matched across
+processes for all 960 frames over two series. Each reader also revalidated its
+retained previous sample. Four alternating-order rounds per series ran
+sequentially on the restored laptop using its memory guard. In the series
+with child resource accounting, native median/p95 were 41.86/56.25 µs and
+RMW median/p95 were 79.04/116.61 µs. Both 1.20× limits were exceeded even
+with the Buffer and codec costs removed. Minimum sampled host MemAvailable
+over the build and both series was 15,348 MiB. Next isolate receiver wakeup
+and dispatch before attributing the excess to rmw_wait.
+[Exact setup, commands, both series and limitations](../rmw-agnocast/README.md#matched-path-object-loans)

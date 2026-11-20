@@ -319,3 +319,57 @@ graph handle. A bridged Cyclone reader received a Cyclone GID and nonzero
 timestamps. A native reader received a null GID provider and zero timestamps
 because the prototype clears sample metadata at native take.
 [Matched samples and diagnostic counts](crop-control-results/).
+
+## Matched Path object loans
+
+The laptop control uses one writer and one reader in separate processes on
+the same Agnocast device. The same executable builds each Path from 64
+PoseStamped elements with 80-character frame IDs. Both paths borrow, fill
+and move the publisher loan, use volatile reliable KeepLast(4), and retain
+each received loan until the next callback. The reader verifies the sequence,
+every nested string and every assigned position, then rechecks the previous
+sample. Writer and reader log the object, pose-array and final string
+addresses in memory. The harness compares all three for every frame after
+both processes exit. No per-frame file I/O or acknowledgement is timed.
+
+The native reader uses the Agnocast-only single-threaded executor. The RMW
+reader uses the standard rclcpp single-threaded executor and the backend's
+native receiver thread. The measurement uses the Linux steady clock from
+just before publication to the start of the common callback body. Loan
+construction, validation and callback completion are outside the interval.
+Both processes preload the same heaphook; bridging and the discovery agent
+are off. There is no Buffer or CDR conversion on this workload.
+
+From the experimental worktree with its restored Lyrical root and overlays:
+
+```bash
+export LYRICAL_ROOT=$(cat build/agnocast-lyrical/universe-root)
+experiments/buffer/run-lyrical.sh bash experiments/rmw-agnocast/build-loadable.sh
+BUFFER_RUNTIME_ONLY=1 experiments/buffer/run-lyrical.sh timeout 180s bash \
+  experiments/rmw-agnocast/bench-path.sh build/rmw-agnocast/fresh-path
+```
+
+Four rounds of 60 publications at 10 Hz alternate which transport runs first.
+Each path verified 240/240 frames. Pool the last 50 of each round for the
+median and nearest-rank p95 (200 samples per path). CPU is median child user
+plus system seconds per two-process run, including startup and teardown. RSS
+is the median largest individual child peak. Latencies are in microseconds.
+
+| Path | Median µs | p95 µs | CPU s | Peak RSS MiB |
+|---|---:|---:|---:|---:|
+| Native Agnocast | 41.86 | 56.25 | 0.136 | 26.3 |
+| rmw_agnocast | 79.04 | 116.61 | 0.197 | 29.2 |
+
+The 1.20× limits were 50.23 µs and 67.50 µs. RMW/native was 1.89× median
+and 2.07× p95. Both gates were missed in each round. An earlier series
+without child resource accounting gave 44.18/66.70 µs native versus
+80.32/107.52 µs RMW and verified all 480 frames. The two series are separate.
+
+The candidate adds about 37 µs at the median on this single hop even with
+verified shared addresses. Measure time from native callback entry to guard
+signal, wait return, take and rclcpp callback entry before changing the wait
+integration. These end-to-end numbers include publication and dispatch and
+cannot assign the excess to a particular stage. The Universe crop has a
+different representation and two hops; its measured codec cost remains a
+separate optimization target.
+[Frame and resource records](path-results/).
