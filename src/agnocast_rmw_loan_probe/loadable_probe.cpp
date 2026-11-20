@@ -135,6 +135,8 @@ void pressure_writer(rclcpp::Node & node)
     if (seq == 1) wait_file("slow_holding");
     if (seq == 9) mark("burst_done");
     if (seq == 10) {
+      wait_file("dds_waiting");
+      std::this_thread::sleep_for(100ms);
       Message control;
       fill(control, 10);
       dds->publish(control);
@@ -159,10 +161,12 @@ void pressure_reader(rclcpp::Node::SharedPtr node, const std::string & role)
       ++expected;
     });
   rclcpp::Subscription<Message>::SharedPtr dds;
+  bool control_received = false;
   if (!slow && !restart) {
     dds = node->create_subscription<Message>(
       "trajectory_dds_control", 2, [&](Message::ConstSharedPtr msg) {
         verify(*msg, 10, false);
+        control_received = true;
         mark("dds_received");
       });
   }
@@ -176,6 +180,13 @@ void pressure_reader(rclcpp::Node::SharedPtr node, const std::string & role)
     }
   };
   if (!slow) {
+    if (!restart) {
+      receive_through(10);
+      auto deadline = std::chrono::steady_clock::now() + 2s;
+      mark("dds_waiting");
+      while (!control_received && std::chrono::steady_clock::now() < deadline) exec.spin_once(3s);
+      check(control_received && std::chrono::steady_clock::now() < deadline, "DDS wake timed out");
+    }
     receive_through(11);
     if (restart)
       mark("restarted_done");

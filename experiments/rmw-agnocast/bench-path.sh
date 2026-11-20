@@ -11,18 +11,25 @@ export CYCLONEDDS_URI='<CycloneDDS><Domain><General><Interfaces><NetworkInterfac
 out=$(realpath -m "${1:?fresh result directory}")
 mkdir "$out"
 rounds=(1 2 3 4)
-if [[ ${2:-} == --handoff ]]; then rounds+=(5 6); fi
+variant=
+case ${2:-} in
+  --handoff) variant=traced;;
+  --direct) variant=direct;;
+  "") ;;
+  *) exit 2;;
+esac
+if [[ -n $variant ]]; then rounds+=(5 6); fi
 for round in "${rounds[@]}"; do
   modes=(native rmw)
   if ((round % 2 == 0)); then modes=(rmw native); fi
-  if [[ ${2:-} == --handoff ]]; then
+  if [[ -n $variant ]]; then
     case $round in
-      1) modes=(native rmw traced);;
-      2) modes=(rmw traced native);;
-      3) modes=(traced native rmw);;
-      4) modes=(traced rmw native);;
-      5) modes=(rmw native traced);;
-      6) modes=(native traced rmw);;
+      1) modes=(native rmw "$variant");;
+      2) modes=(rmw "$variant" native);;
+      3) modes=("$variant" native rmw);;
+      4) modes=("$variant" rmw native);;
+      5) modes=(rmw native "$variant");;
+      6) modes=(native "$variant" rmw);;
     esac
   fi
   for mode in "${modes[@]}"; do

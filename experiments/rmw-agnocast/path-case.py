@@ -9,9 +9,13 @@ import tempfile
 
 probe, hook, mode, prefix = sys.argv[1:]
 env = dict(os.environ, LD_PRELOAD=hook)
+env.pop("AGNOCAST_RMW_DIRECT_WAIT", None)
+env.pop("AGNOCAST_RMW_HANDOFF_FILE", None)
 with tempfile.TemporaryDirectory() as directory:
     reader_env = env.copy()
-    reader_env.pop("AGNOCAST_RMW_HANDOFF_FILE", None)
+    if mode == "direct":
+        reader_env["AGNOCAST_RMW_DIRECT_WAIT"] = "1"
+        mode = "rmw"
     if mode == "traced":
         reader_env["AGNOCAST_RMW_HANDOFF_FILE"] = str(Path(directory) / "handoff")
         mode = "rmw"

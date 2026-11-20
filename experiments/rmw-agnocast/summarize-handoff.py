@@ -10,7 +10,8 @@ def report(label, values):
     print(f"{label:33s} {median(values)/1000:7.2f} {sorted(values)[math.ceil(.95*len(values))-1]/1000:7.2f}")
 
 print("interval                             median     p95 (us)")
-for mode in ("native", "rmw", "traced"):
+variant = "direct" if (root / "direct-1.csv").exists() else "traced"
+for mode in ("native", "rmw", variant):
     values = []
     for run in range(1, 7):
         with (root / f"{mode}-{run}.csv").open() as f:
@@ -18,6 +19,18 @@ for mode in ("native", "rmw", "traced"):
         assert [seq for seq, _ in rows] == list(range(60))
         values.extend(ns for _, ns in rows[10:])
     report(mode, values)
+
+if variant == "direct":
+    print("median per run: child CPU seconds, largest child peak MiB")
+    for mode in ("native", "rmw", variant):
+        cpu, rss = [], []
+        for run in range(1, 7):
+            with (root / f"{mode}-{run}-resources.csv").open() as f:
+                row = next(csv.DictReader(f))
+            cpu.append(float(row["child_user_s"]) + float(row["child_system_s"]))
+            rss.append(int(row["largest_child_maxrss_kib"])/1024)
+        print(f"{mode:8s} {median(cpu):.3f} {median(rss):.1f}")
+    sys.exit(0)
 
 frames = []
 for run in range(1, 7):

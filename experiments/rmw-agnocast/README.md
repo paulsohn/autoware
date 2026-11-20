@@ -434,3 +434,90 @@ consumes native readiness directly. Preserve the existing mixed Cyclone/native
 wait test, queue-depth and retained-loan tests when evaluating it. These Path
 diagnostics do not quantify PointCloud2 codec cost.
 [Per-frame timings and resource samples](handoff-results/).
+
+## Direct native readiness in a mixed ROS executor
+
+Set `AGNOCAST_RMW_DIRECT_WAIT=1` in the subscribing process before ROS
+initialization to try this path. The selected topic list, loan API, heaphook,
+kernel module and bridge policy are the same as in the existing RMW probe.
+The default still uses one native receiver thread per selected subscription.
+
+The ROS executor polls each selected subscription's Agnocast notification fd
+and takes native batches on its own thread. A blocking mixed wait also needs
+a wakeup from delegated DDS entities. The prototype uses one persistent helper
+per participating wait set. That helper blocks in Cyclone's public RMW wait
+and signals an eventfd on completion. On native wake, the executor interrupts
+the helper using a private Cyclone guard and acquires native loans while the
+helper finishes. Both threads synchronize before returning the caller's DDS
+entity arrays. Zero-duration waits and already queued loans use a synchronous
+DDS readiness check. There is no timer-based polling. The helper still costs
+a scheduling rendezvous on a blocking native wake. The adapter depends on
+protected Agnocast executor/subscription internals at this branch's revision.
+
+On the laptop with the existing Lyrical overlays and /dev/agnocast, reproduce
+the functional checks and matched Path comparison serially:
+
+```bash
+export LYRICAL_ROOT=$(cat build/agnocast-lyrical/universe-root)
+experiments/buffer/run-lyrical.sh bash experiments/rmw-agnocast/build-loadable.sh
+for case in path pressure contract bridge; do
+  AGNOCAST_RMW_DIRECT_WAIT=1 BUFFER_RUNTIME_ONLY=1 experiments/buffer/run-lyrical.sh \
+    timeout 60s bash experiments/rmw-agnocast/run-loadable.sh "$case" || break
+done
+BUFFER_RUNTIME_ONLY=1 experiments/buffer/run-lyrical.sh \
+  timeout 60s bash experiments/rmw-agnocast/run-loadable.sh pressure
+BUFFER_RUNTIME_ONLY=1 experiments/buffer/run-lyrical.sh timeout 240s bash \
+  experiments/rmw-agnocast/bench-path.sh build/rmw-agnocast/fresh-direct --direct
+python3 experiments/rmw-agnocast/summarize-handoff.py build/rmw-agnocast/fresh-direct
+```
+
+Each of the six rounds runs native, default RMW and direct RMW in a different
+order. Only the direct reader has the new flag. All three cases use the same
+dynamic Path and check the object, pose vector and string addresses at both
+endpoints. The aggregate excludes ten warmup frames per run. CPU covers both
+child processes including startup and teardown. RSS is the larger child peak.
+The idle DDS check sends a control on an ordinary topic after a 100 ms delay
+with native publishing paused. The reader allows a 3 s spin and requires the
+verified control callback within 2 s, including that delay.
+
+Both direct and default readers passed the mixed DDS wake, depth-two pressure,
+retained-loan teardown and restarted-reader checks. Direct mode passed Path
+loan/copy and exception handling, recovered the killed reader's held address,
+and passed both manual bridge directions with their bridge-off controls.
+The contract probe still observed zero native timestamps, an empty GID and a
+callback on the incompatible reliability pair. Those ROS semantics remain open.
+
+The existing Universe crop verified 60/60 PointCloud2 frames on the two-edge
+CDR-over-Agnocast path with the flag set. This single run checks integration.
+Use the [Universe matrix](#type-support-and-the-universe-decision)
+for the prior Cyclone, Zenoh, Buffer and native comparisons. Reproduce the smoke
+run from the same worktree with a fresh CSV path:
+
+```bash
+BUFFER_RUNTIME_ONLY=1 AGNOCAST_RMW_DIRECT_WAIT=1 experiments/buffer/run-lyrical.sh bash -ec '
+  source build/agnocast-lyrical/install/local_setup.bash
+  source build/rmw-agnocast/install/local_setup.bash
+  source build/rmw-agnocast/load-install/local_setup.bash
+  python3 src/universe_crop_benchmark/run_case.py rmw-agnocast build/rmw-agnocast/fresh-direct-crop.csv'
+```
+
+| Final Path series | Median µs | p95 µs | CPU s | Peak RSS MiB |
+|---|---:|---:|---:|---:|
+| Native Agnocast | 40.74 | 62.01 | 0.154 | 26.2 |
+| Existing rmw_agnocast | 80.42 | 113.86 | 0.204 | 29.6 |
+| Direct-wait rmw_agnocast | 82.38 | 119.38 | 0.203 | 29.5 |
+
+Direct wait measured 2.02× native median and 1.93× native p95. The 1.20×
+ceilings were 48.89 and 74.41 µs. The preliminary series gave the same
+decision (native 39.80/61.58, existing RMW 80.00/127.45, direct RMW
+83.57/126.68 µs). The final series followed guard-allocation and error-path
+cleanup and used the same workload. Each series verified 1,080 deliveries,
+with 300 post-warmup observations per mode. Both are laptop observations.
+
+Keep direct wait opt-in and the Bazel milestone closed. The native notification
+now reaches the ROS executor directly, but the executor still waits for the DDS
+helper to return the caller's entity arrays. Time native-fd wake, loan
+acquisition, helper completion and callback entry per sample before deciding
+whether to change the Cyclone wait integration. This experiment measures
+end-to-end latency and does not establish how much the rendezvous costs.
+[Raw Path and crop samples](direct-wait-results/).

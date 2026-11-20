@@ -1,14 +1,20 @@
+#include <agnocast/agnocast_executor.hpp>
 #include <agnocast/node/agnocast_node.hpp>
 #include <agnocast/node/agnocast_only_single_threaded_executor.hpp>
 #include <rclcpp/serialized_message.hpp>
 #include <rosidl_typesupport_introspection_cpp/field_types.hpp>
 
 #include <dlfcn.h>
+#include <poll.h>
 #include <rmw/error_handling.h>
 #include <rmw/rmw.h>
+#include <sys/eventfd.h>
 
+#include <condition_variable>
 #include <deque>
+#include <exception>
 #include <fstream>
+#include <functional>
 #include <map>
 #include <thread>
 
@@ -192,6 +198,40 @@ struct HandoffTrace
           << ' ' << r.taken << ' ' << r.blocking << '\n';
   }
 };
+bool direct_wait_enabled()
+{
+  static const bool enabled = [] {
+    const char * mode = std::getenv("AGNOCAST_RMW_DIRECT_WAIT");
+    return mode && std::strcmp(mode, "1") == 0;
+  }();
+  return enabled;
+}
+class NativeSubscription : public agnocast::Subscription<void>
+{
+public:
+  using agnocast::Subscription<void>::Subscription;
+  int notification_fd() const { return notify_eventfd_; }
+};
+class NativeExecutor : public agnocast::AgnocastOnlySingleThreadedExecutor
+{
+public:
+  void prepare()
+  {
+    add_callback_groups_from_nodes_associated_to_executor();
+    epoll_manager_->prepare_epoll(
+      [this](const auto & group) { return is_callback_group_associated(group); });
+  }
+  void receive()
+  {
+    agnocast::AgnocastExecutable executable;
+    // Consume one notification, including continuation batches for coalesced writes.
+    if (get_next_agnocast_executable(executable, 0)) {
+      do {
+        execute_agnocast_executable(executable);
+      } while (get_next_ready_agnocast_executable(executable));
+    }
+  }
+};
 struct Reader
 {
   std::shared_ptr<agnocast::Node> node;
@@ -202,20 +242,25 @@ struct Reader
   std::unique_ptr<HandoffTrace> trace;
   std::deque<Loan> pending;
   std::map<void *, Loan> held;
-  agnocast::Subscription<void>::SharedPtr sub;
-  agnocast::AgnocastOnlySingleThreadedExecutor exec;
+  std::shared_ptr<NativeSubscription> sub;
+  std::mutex receive_mutex;
+  NativeExecutor exec;
   std::thread thread;
   Reader(
     const rmw_node_t * owner, const char * topic, const rmw_qos_profile_t & qos,
     const rosidl_message_type_support_t * ts)
   : node(native_node(owner)),
     type(ts),
-    guard(CYCLONE(rmw_create_guard_condition)(owner->context), CYCLONE(rmw_destroy_guard_condition))
+    guard(
+      direct_wait_enabled() ? nullptr : CYCLONE(rmw_create_guard_condition)(owner->context),
+      CYCLONE(rmw_destroy_guard_condition))
   {
-    if (const char * file = std::getenv("AGNOCAST_RMW_HANDOFF_FILE"))
-      trace = std::make_unique<HandoffTrace>(file);
-    if (!guard) throw std::runtime_error("native wait guard creation failed");
-    sub = std::make_shared<agnocast::Subscription<void>>(
+    if (!direct_wait_enabled()) {
+      if (!guard) throw std::runtime_error("native wait guard creation failed");
+      if (const char * file = std::getenv("AGNOCAST_RMW_HANDOFF_FILE"))
+        trace = std::make_unique<HandoffTrace>(file);
+    }
+    sub = std::make_shared<NativeSubscription>(
       node.get(), type.native_topic(topic), type.name,
       rclcpp::QoS(rclcpp::QoSInitialization::from_rmw(qos), qos),
       [this, depth = qos.depth](Loan sample) {
@@ -223,6 +268,7 @@ struct Reader
         std::lock_guard lock(mutex);
         if (pending.size() == depth) pending.pop_front();
         pending.emplace_back(std::move(sample));
+        if (direct_wait_enabled()) return;
         HandoffTrace::Row * row = nullptr;
         if (trace && trace->rows.size() < trace->rows.capacity()) {
           const auto & loan = pending.back();
@@ -235,7 +281,10 @@ struct Reader
       },
       agnocast::SubscriptionOptions{}, agnocast::SubscriptionRole::AgnocastOnly);
     exec.add_node(node);
-    thread = std::thread([this] { exec.spin(); });
+    if (direct_wait_enabled())
+      exec.prepare();
+    else
+      thread = std::thread([this] { exec.spin(); });
   }
   ~Reader()
   {
@@ -244,6 +293,11 @@ struct Reader
     // Release kernel references before unregistering the native subscriber.
     held.clear();
     pending.clear();
+  }
+  void receive_direct()
+  {
+    std::lock_guard lock(receive_mutex);
+    exec.receive();
   }
   bool ready(int64_t start = 0, int64_t returned = 0, bool blocking = false)
   {
@@ -411,6 +465,7 @@ rmw_ret_t take(
   Reader & r, void * copy, void ** loan, bool * taken, rmw_message_info_t * info,
   rmw_serialized_message_t * serialized = nullptr)
 {
+  if (direct_wait_enabled() && !r.ready()) r.receive_direct();
   auto entry = r.trace ? HandoffTrace::now() : 0;
   std::lock_guard lock(r.mutex);
   *taken = !r.pending.empty();
@@ -518,6 +573,181 @@ extern "C" rmw_ret_t rmw_return_loaned_message_from_subscription(
   std::lock_guard lock(r->mutex);
   return r->held.erase(msg) ? RMW_RET_OK : error("unknown subscriber loan");
 }
+namespace
+{
+// Cyclone's public rmw_wait has no pollable descriptor. Its helper operates
+// only for the lifetime of each blocking wait; DDS entity pointers are never
+// retained after rmw_wait returns. Native payloads stay on the caller thread.
+class DirectWaitSet
+{
+  Reader::Guard interrupt;
+  int done_fd;
+  std::mutex mutex;
+  std::condition_variable cv;
+  std::function<void()> job;
+  bool stopping = false;
+  std::thread worker;
+
+  void serve()
+  {
+    std::unique_lock lock(mutex);
+    for (;;) {
+      cv.wait(lock, [this] { return stopping || bool(job); });
+      if (stopping) return;
+      auto call = std::move(job);
+      job = {};
+      lock.unlock();
+      call();
+      lock.lock();
+      int status;
+      do {
+        status = eventfd_write(done_fd, 1);
+      } while (status < 0 && errno == EINTR);
+      if (status < 0) std::terminate();
+    }
+  }
+
+public:
+  explicit DirectWaitSet(rmw_context_t * context)
+  : interrupt(CYCLONE(rmw_create_guard_condition)(context), CYCLONE(rmw_destroy_guard_condition)),
+    done_fd(-1)
+  {
+    if (!interrupt) throw std::runtime_error("could not create DDS interrupt guard");
+    done_fd = eventfd(0, EFD_CLOEXEC);
+    if (done_fd < 0) throw std::runtime_error("could not create DDS notification fd");
+  }
+  ~DirectWaitSet()
+  {
+    {
+      std::lock_guard lock(mutex);
+      stopping = true;
+    }
+    cv.notify_one();
+    if (worker.joinable()) worker.join();
+    close(done_fd);
+  }
+  rmw_ret_t wait(
+    const std::vector<std::pair<size_t, std::shared_ptr<Reader>>> & native,
+    rmw_subscriptions_t * subs, rmw_guard_conditions_t * guards, rmw_services_t * services,
+    rmw_clients_t * clients, rmw_events_t * events, rmw_wait_set_t * ws, const rmw_time_t * timeout)
+  {
+    std::vector<void *> guard_data;
+    if (guards && guards->guard_condition_count)
+      guard_data.assign(
+        guards->guard_conditions, guards->guard_conditions + guards->guard_condition_count);
+    guard_data.push_back(interrupt->data);
+    rmw_guard_conditions_t combined{guard_data.size(), guard_data.data()};
+    std::vector<pollfd> fds{{done_fd, POLLIN, 0}};
+    std::vector<void *> original;
+    bool queued = false;
+    for (auto & [idx, r] : native) {
+      original.push_back(subs->subscribers[idx]);
+      fds.push_back({r->sub->notification_fd(), POLLIN, 0});
+      queued |= r->ready();
+    }
+    // Only delegated readers participate in the Cyclone wait. The native
+    // shadow graph entities can match external writers without native data.
+    std::vector<size_t> indices;
+    std::vector<void *> delegated;
+    size_t n = 0;
+    for (size_t i = 0; i < subs->subscriber_count; ++i) {
+      if (n < native.size() && native[n].first == i) {
+        ++n;
+        continue;
+      }
+      indices.push_back(i);
+      delegated.push_back(subs->subscribers[i]);
+    }
+    rmw_subscriptions_t dds_subs{delegated.size(), delegated.data()};
+    rmw_ret_t result = RMW_RET_ERROR;
+    rmw_time_t zero{};
+    auto dds_wait = [&](const rmw_time_t * t) {
+      result = CYCLONE(rmw_wait)(&dds_subs, &combined, services, clients, events, ws, t);
+    };
+    if (queued || (timeout && !timeout->sec && !timeout->nsec)) {
+      dds_wait(&zero);
+      if (poll(fds.data() + 1, native.size(), 0) < 0 && errno != EINTR)
+        return error("native poll failed");
+    } else {
+      {
+        std::lock_guard lock(mutex);
+        if (!worker.joinable()) worker = std::thread([this] { serve(); });
+        job = [&] { dds_wait(timeout); };
+      }
+      cv.notify_one();
+      int rc;
+      do {
+        rc = poll(fds.data(), fds.size(), -1);
+      } while (rc < 0 && errno == EINTR);
+      if (rc < 0 || !(fds.front().revents & POLLIN)) {
+        if (CYCLONE(rmw_trigger_guard_condition)(interrupt.get()) != RMW_RET_OK) std::terminate();
+      }
+      // Acquire the loan while the helper is returning its borrowed DDS handles.
+      std::exception_ptr failure;
+      try {
+        for (size_t i = 0; i < native.size(); ++i)
+          if (fds[i + 1].revents & POLLIN) native[i].second->receive_direct();
+      } catch (...) {
+        failure = std::current_exception();
+      }
+      eventfd_t count;
+      int status;
+      do {
+        status = eventfd_read(done_fd, &count);
+      } while (status < 0 && errno == EINTR);
+      if (status < 0) std::terminate();
+      {
+        std::lock_guard sync(mutex);
+      }  // synchronize with completion in serve()
+      if (failure) std::rethrow_exception(failure);
+      if (rc < 0) return error("mixed wait poll failed");
+    }
+    if (result != RMW_RET_OK && result != RMW_RET_TIMEOUT)
+      return error("delegated DDS wait failed");
+    for (size_t i = 0; i < indices.size(); ++i) subs->subscribers[indices[i]] = delegated[i];
+    if (guards && guards->guard_condition_count)
+      std::copy_n(guard_data.begin(), guards->guard_condition_count, guards->guard_conditions);
+    for (size_t i = 0; i < native.size(); ++i) {
+      auto & [idx, r] = native[i];
+      if (fds[i + 1].revents & (POLLERR | POLLHUP | POLLNVAL))
+        return error("native notification fd failed");
+      if ((queued || (timeout && !timeout->sec && !timeout->nsec)) && (fds[i + 1].revents & POLLIN))
+        r->receive_direct();
+      if (r->ready()) {
+        subs->subscribers[idx] = original[i];
+        result = RMW_RET_OK;
+      } else
+        subs->subscribers[idx] = nullptr;
+    }
+    return result;
+  }
+};
+std::map<const void *, std::shared_ptr<DirectWaitSet>> direct_waitsets;
+}  // namespace
+extern "C" rmw_wait_set_t * rmw_create_wait_set(rmw_context_t * context, size_t max_conditions)
+{
+  auto ws = CYCLONE(rmw_create_wait_set)(context, max_conditions);
+  if (ws && direct_wait_enabled()) {
+    try {
+      auto state = std::make_shared<DirectWaitSet>(context);
+      std::lock_guard lock(registry);
+      direct_waitsets.emplace(ws, std::move(state));
+    } catch (const std::exception & e) {
+      CYCLONE(rmw_destroy_wait_set)(ws);
+      error(e.what());
+      return nullptr;
+    }
+  }
+  return ws;
+}
+extern "C" rmw_ret_t rmw_destroy_wait_set(rmw_wait_set_t * ws)
+{
+  if (direct_wait_enabled()) {
+    std::lock_guard lock(registry);
+    direct_waitsets.erase(ws);
+  }
+  return CYCLONE(rmw_destroy_wait_set)(ws);
+}
 extern "C" rmw_ret_t rmw_wait(
   rmw_subscriptions_t * subs, rmw_guard_conditions_t * guards, rmw_services_t * services,
   rmw_clients_t * clients, rmw_events_t * events, rmw_wait_set_t * ws, const rmw_time_t * timeout)
@@ -530,6 +760,15 @@ extern "C" rmw_ret_t rmw_wait(
     }
   if (native.empty())
     return CYCLONE(rmw_wait)(subs, guards, services, clients, events, ws, timeout);
+  if (direct_wait_enabled()) {
+    auto state = lookup(direct_waitsets, ws);
+    if (!state) return error("missing direct wait set");
+    try {
+      return state->wait(native, subs, guards, services, clients, events, ws, timeout);
+    } catch (const std::exception & e) {
+      return error(e.what());
+    }
+  }
   std::vector<void *> guard_data;
   if (guards && guards->guard_condition_count)
     guard_data.assign(

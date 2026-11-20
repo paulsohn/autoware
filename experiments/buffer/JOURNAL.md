@@ -805,3 +805,23 @@ missed both 1.20× targets. No transport semantics were intentionally changed.
 The tracing-off mixed native/Cyclone pressure and restart case and both Path
 loan/copy regression cases passed after instrumentation. Minimum sampled host
 MemAvailable was 14,614 MiB over the serial build, matrix and regressions.
+
+### Poll Agnocast readiness on the ROS executor
+
+On the laptop's exported Lyrical root, built the loadable RMW and standard
+rclcpp probes serially with colcon. Added an opt-in wait mode that consumes
+the Agnocast notification fd on the ROS executor and delegates ordinary DDS
+waits to a per-wait-set helper. The helper must release the caller's wait
+arrays before the executor can return. No kernel or Agnocast subtree patch
+was needed for this step. Strengthened the mixed pressure test with a delayed
+DDS publication and a deadline shorter than the executor spin timeout.
+
+Both modes passed mixed wake, pressure and restart. Direct mode passed
+loan/copy, retained ownership, killed-reader recovery and both manual bridge
+directions. The Universe CDR path verified 60/60 frames. The final matched
+Path series verified 1,080/1,080 frames. Direct median/p95 were 82.38/119.38 µs,
+existing RMW 80.42/113.86 µs and native Agnocast 40.74/62.01 µs. Both series
+missed the native-relative 1.20× latency gate. The final build and run groups
+kept at least 14,917 MiB host memory available. Keep the current default and
+measure the remaining helper rendezvous before advancing migration.
+[Reproduction commands, resource accounting, limitations and raw samples](../rmw-agnocast/README.md#direct-native-readiness-in-a-mixed-ros-executor)
