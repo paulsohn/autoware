@@ -178,7 +178,26 @@ void native(bool writer, bool trace)
     receiver.run();
   }
 }
-void middleware(bool writer, bool trace)
+// Diagnostic for one fixed subscription on one executor thread.
+class PathExecutor : public rclcpp::executors::SingleThreadedExecutor
+{
+public:
+  rclcpp::SubscriptionBase::SharedPtr only;
+  void spin() override
+  {
+    if (!only) return SingleThreadedExecutor::spin();
+    spinning.store(true);
+    while (spinning.load() && rclcpp::ok()) {
+      wait_for_work();
+      if (wait_result_->kind() != rclcpp::WaitResultKind::Ready) continue;
+      auto ready = wait_result_->next_ready_subscription();
+      if (!ready) continue;
+      check(ready == only, "unexpected ready subscription");
+      execute_subscription(ready);
+    }
+  }
+};
+void middleware(bool writer, bool trace, bool single)
 {
   check(std::string(rmw_get_implementation_identifier()) == "rmw_agnocast", "wrong RMW");
   auto node = std::make_shared<rclcpp::Node>(writer ? "path_writer" : "path_reader");
@@ -187,11 +206,12 @@ void middleware(bool writer, bool trace)
     check(pub->can_loan_messages(), "writer cannot loan");
     send(*pub);
   } else {
-    rclcpp::executors::SingleThreadedExecutor exec;
+    PathExecutor exec;
     Receiver<Path::ConstSharedPtr, decltype(exec)> receiver{exec};
     receiver.trace = trace;
     auto sub = node->create_subscription<Path>(
       topic, 4, [&](Path::ConstSharedPtr msg) { receiver.receive(std::move(msg)); });
+    if (single) exec.only = sub;
     check(sub->can_loan_messages(), "reader cannot loan");
     exec.add_node(node);
     receiver.run();
@@ -209,7 +229,7 @@ int main(int argc, char ** argv)
       agnocast::shutdown();
     } else {
       rclcpp::init(argc, argv);
-      middleware(writer, std::string(argv[1]) == "rmw-traced");
+      middleware(writer, std::string(argv[1]) == "rmw-traced", std::string(argv[1]) == "single");
       rclcpp::shutdown();
     }
   } catch (const std::exception & e) {

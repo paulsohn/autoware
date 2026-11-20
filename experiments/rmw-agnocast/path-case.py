@@ -22,11 +22,14 @@ with tempfile.TemporaryDirectory() as directory:
         if not (library / "libagnocast.so").is_file():
             raise FileNotFoundError(library / "libagnocast.so")
         reader_env["LD_LIBRARY_PATH"] = str(library) + ":" + env["LD_LIBRARY_PATH"]
-    if mode == "rendezvous" or direct_trace:
+    single = mode in ("single", "single-traced")
+    if mode in ("rendezvous", "single-traced") or direct_trace:
         reader_env["AGNOCAST_RMW_DIRECT_TRACE"] = str(Path(directory) / "rendezvous")
-    if mode in ("direct", "rendezvous") or direct_trace:
+    if mode in ("direct", "rendezvous") or direct_trace or single:
         reader_env["AGNOCAST_RMW_DIRECT_WAIT"] = "1"
         mode = "rmw-traced" if direct_trace else "rmw"
+    if single:
+        mode = "single"
     if mode == "traced":
         reader_env["AGNOCAST_RMW_HANDOFF_FILE"] = str(Path(directory) / "handoff")
         mode = "rmw"

@@ -17,6 +17,7 @@ case ${2:-} in
   --handoff) variant=traced;;
   --direct) variant=direct;;
   --native-stages) ;;
+  --dispatch) rounds+=(5);;
   --rendezvous) baseline=direct; variant=rendezvous;;
   "") ;;
   *) exit 2;;
@@ -42,6 +43,11 @@ for round in "${rounds[@]}"; do
       3) modes=(direct direct-stages native-traced native);;
       4) modes=(direct-stages native direct native-traced);;
     esac
+  fi
+  if [[ ${2:-} == --dispatch ]]; then
+    treatments=(native direct single rendezvous single-traced)
+    offset=$((round - 1))
+    modes=("${treatments[@]:offset}" "${treatments[@]:0:offset}")
   fi
   for mode in "${modes[@]}"; do
     export RMW_IMPLEMENTATION=rmw_agnocast

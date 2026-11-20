@@ -873,3 +873,18 @@ host memory available respectively. After the matrix, the untraced direct
 Path loan/copy and mixed DDS wake, queue pressure, retained-loan and reader
 restart cases passed using the previous entry's path and pressure commands.
 [Exact build and run commands, timing boundaries and raw measurements](../rmw-agnocast/README.md#comparing-the-native-executor-and-direct-rmw-at-loan-creation).
+
+### Isolate single-ready-subscription dispatch
+
+On the exported laptop Lyrical root, built a probe-only single-threaded
+executor control that uses the same wait_for_work and execute_subscription
+methods as normal rclcpp dispatch. Only the ready-subscription selection and
+scheduling path changes. Five serial, position-balanced rounds verified all
+1,500 Path frames, all retained payloads and all 600 traced wake records.
+Minimum available host memory was 17,357 MiB during build and 17,092 MiB
+during the matrix. Ready-to-callback median/p95 fell from 20.04/35.37 to
+18.18/31.22 µs. Untraced single-selection latency remained 1.73×/1.80× native,
+with slightly worse p95 than ordinary selection. Keep this fixed-topology
+control diagnostic and retain standard ROS executor behavior. Revisit the
+mixed wake and DDS synchronization path before optimizing entity selection.
+[Commands, matched controls, metrics and raw frames](../rmw-agnocast/README.md#dispatching-a-single-ready-path-subscription)

@@ -673,3 +673,51 @@ RMW readiness to application entry and retain the ownership checks. This
 isolates the portion of the post-loan interval that an executor change could
 recover before attempting a production change to mixed DDS wake handling.
 [Raw frames, stage timestamps and resource measurements](native-stage-results/).
+
+## Dispatching a single ready Path subscription
+
+The probe's executor control calls the inherited rclcpp wait_for_work, checks
+the wait result for a ready subscription, verifies its identity, and calls
+the inherited execute_subscription. This preserves the RMW wait set, DDS
+helper, native queue, typed loan take, callback and retained-loan deleter.
+The ordinary executor does its usual entity selection and callback-group
+handling. The control is specific to a fixed subscription on one thread. It
+omits general scheduling of timers, services and callback groups.
+
+Run in the existing exported Lyrical environment with the previous overlays:
+
+```bash
+export LYRICAL_ROOT=$(cat build/agnocast-lyrical/universe-root)
+experiments/buffer/run-lyrical.sh bash experiments/rmw-agnocast/build-loadable.sh
+BUFFER_RUNTIME_ONLY=1 experiments/buffer/run-lyrical.sh timeout 240s bash \
+  experiments/rmw-agnocast/bench-path.sh build/rmw-agnocast/fresh-dispatch --dispatch
+python3 experiments/rmw-agnocast/summarize-handoff.py build/rmw-agnocast/fresh-dispatch
+```
+
+Five rounds rotate native Agnocast, direct RMW with normal selection, the
+single-subscription control, and traced versions of both RMW readers. Each
+occupies each run position once. Each pair sends 60 Path frames at 10 Hz.
+The benchmark checks sequence, nested content, three cross-process addresses
+and the previous retained loan. The latency summary uses the last 50 frames
+per run. RMW readiness is timestamped at the final native-readiness check
+inside rmw_wait, before rclcpp resumes.
+
+| Path reader | Median µs | p95 µs | Median child CPU s | Largest child peak MiB |
+|---|---:|---:|---:|---:|
+| Native Agnocast | 53.96 | 86.03 | 0.213 | 25.9 |
+| Normal direct RMW | 97.98 | 151.35 | 0.182 | 29.3 |
+| Single ready subscription | 93.11 | 154.88 | 0.182 | 29.4 |
+| Traced normal direct RMW | 102.46 | 160.32 | 0.191 | 29.4 |
+| Traced single ready subscription | 99.47 | 150.67 | 0.276 | 29.3 |
+
+All 1,500 frames passed, including 600 matched blocking-wake traces. Traced
+RMW-ready to callback median/p95 measured 20.04/35.37 µs for normal dispatch
+and 18.18/31.22 µs for single-subscription dispatch. The untraced control
+improved median by 4.87 µs while p95 increased by 3.53 µs. Relative to native,
+the control measured 1.73× median and 1.80× p95. These are single-host pooled
+observations. General entity selection accounts for little of the observed
+dispatch delay in this fixture. Keep the standard executor and the migration
+gate. Next isolate the unavoidable work on the mixed wait path by comparing
+against a diagnostic native-only wake with an idle DDS helper removed, keeping
+standard ROS callback dispatch and measuring loss of mixed wake capability.
+[Per-frame timings and resources](dispatch-results/).

@@ -17,6 +17,10 @@ native_stages = (root / "native-traced-1.csv").exists()
 rounds = range(1, 5) if native_stages else range(1, 7)
 if native_stages:
     modes = ("native", "native-traced", "direct", "direct-stages")
+dispatch = (root / "single-1.csv").exists()
+if dispatch:
+    rounds = range(1, 6)
+    modes = ("native", "direct", "single", "rendezvous", "single-traced")
 for mode in modes:
     values = []
     for run in rounds:
@@ -36,6 +40,16 @@ if variant == "direct":
             cpu.append(float(row["child_user_s"]) + float(row["child_system_s"]))
             rss.append(int(row["largest_child_maxrss_kib"])/1024)
         print(f"{mode:8s} {median(cpu):.3f} {median(rss):.1f}")
+    if dispatch:
+        for mode in ("rendezvous", "single-traced"):
+            values = []
+            for run in rounds:
+                with (root / f"{mode}-{run}-stages.csv").open() as f:
+                    rows = list(csv.DictReader(f))
+                assert [int(r["frame"]) for r in rows] == list(range(60))
+                values.extend(int(r["callback"]) - int(r["ready"]) for r in rows[10:])
+            report(f"{mode} ready to callback", values)
+        sys.exit(0)
     if native_stages:
         for mode in ("native-traced", "direct-stages"):
             frames = []
