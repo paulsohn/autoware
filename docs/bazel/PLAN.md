@@ -2062,8 +2062,11 @@ Buffer views and blocking wait after graph initialization. Pin the experimental
 RMW and its rclcpp changes from the colcon branch. Keep native Agnocast and
 the longer publisher loan as paired controls. Validate cold Cyclone diagnostic
 delivery, 60 verified frames and 60 publisher loans with zero private payload
-copies on each scoped edge. Compare median and p95 to 1.20× native, report
-both run orders and pooled results, and record child CPU and RSS.
+copies on each scoped edge. Use 1.20× native median and p95 as an engineering
+milestone. A single crossing in either direction cannot establish a regression
+or readiness. Compare paired runs in rotated order, report their spread and
+pooled results, and record child CPU, RSS, drops and extra payload copies.
+When an effect is smaller than run-to-run variation, report it as unresolved.
 
 Colcon met both pooled latency targets. Median exceeded the target in one
 ordering. This milestone covers build and behavior reproduction on this

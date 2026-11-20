@@ -9726,3 +9726,15 @@ commands and raw results linked in the plan to establish the reference on a
 provisioned worker before comparing Bazel-built binaries. This commit updates
 planning documents only. Verified the reference commit, document anchor and
 whitespace. All runtime evidence here comes from colcon.
+
+## Clarify the scoped-loan performance milestone
+
+The 1.20× native latency ratio guides engineering work. The same colcon
+implementation produced median ratios of 1.30× and 1.17× in different orders,
+so a few microseconds of headroom in the pooled result cannot serve as a
+bridge overhead budget. Use paired, rotated measurements and evaluate drops,
+copies and resource use alongside latency. Correctness checks remain strict.
+The pilot preference is a single supervised bridge with explicit routes at
+startup. A native-only deployment can supply an empty route list. Bridge
+qualification and the native QoS investigation continue on the colcon branch.
+Documentation-only update, validated with git diff --check.
