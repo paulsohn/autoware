@@ -9714,3 +9714,15 @@ role is modified. No pre-commit, Fast DDS, GPU or QEMU check is run; this scope
 is application distribution on Linux x86_64, not bootable OS/production OTA.
 Phase 7.2 is complete. Next is 7.3's selected AWF planning-simulator/Universe
 closure.
+
+## 2026-11-21 — Scope an opt-in RMW reproduction milestone
+
+Added a planned Bazel reproduction of the separate Lyrical colcon CPU crop
+experiment. In six laptop runs per case, scoped publisher loans achieved
+1.19× native median and 1.09× native p95 pooled. Median ratios by run order
+were 1.30× and 1.17×. All 1,080 timed-run frames passed and a separate cold
+Cyclone observer received 60 diagnostics. Use the pinned source, exact colcon
+commands and raw results linked in the plan to establish the reference on a
+provisioned worker before comparing Bazel-built binaries. This commit updates
+planning documents only. Verified the reference commit, document anchor and
+whitespace. All runtime evidence here comes from colcon.

@@ -2053,6 +2053,23 @@ References reviewed during the discussion:
 - [Pigweed toolchain setup](https://pigweed.dev/toolchain/get_started.html)
   demonstrates Bazel cross-toolchain/platform selection for embedded firmware.
 
+## Proposed milestone — reproduce scoped PointCloud2 loans under Bazel
+
+Reproduce the Lyrical colcon result on a provisioned x86_64 Agnocast worker
+as an opt-in communication experiment. Use the same three-process Universe
+crop fixture, scoped shared allocation at both CPU writers, receiver-owned
+Buffer views and blocking wait after graph initialization. Pin the experimental
+RMW and its rclcpp changes from the colcon branch. Keep native Agnocast and
+the longer publisher loan as paired controls. Validate cold Cyclone diagnostic
+delivery, 60 verified frames and 60 publisher loans with zero private payload
+copies on each scoped edge. Compare median and p95 to 1.20× native, report
+both run orders and pooled results, and record child CPU and RSS.
+
+Colcon met both pooled latency targets. Median exceeded the target in one
+ordering. This milestone covers build and behavior reproduction on this
+pipeline. Selecting a wrapper default requires separate workload evidence.
+[Colcon implementation, commands and measurements](https://github.com/paulsohn/autoware/blob/e1699e0e4c7654c01f6dcfa8436851e3d63aa295/experiments/rmw-agnocast/README.md#scope-the-agnocast-allocation-to-point-storage).
+
 ## Commit and publication policy
 
 Use signed-off Conventional Commits and validate each task in proportion to its
