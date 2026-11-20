@@ -1,0 +1,4 @@
+#!/command/with-contenv /bin/sh
+mkdir -p /run/autoware
+export AUTOWARE_NOTIFY_FD=3
+exec /usr/lib/autoware-services/demo_prerequisite

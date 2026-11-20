@@ -9373,3 +9373,89 @@ Validation: documentation consistency, local links and whitespace only; no
 runtime behavior changes and no build/test rerun is required for this decision.
 Next: resume Phase 7.2.2's complete s6/core-plus-prerequisite image gate, then
 systemd and OSTree, before beginning 7.3.
+
+## 2026-11-21: Phase 7.2.2 — s6 core service supervision
+
+Purpose: demonstrate a full core application and a prerequisite daemon in one
+OCI image, with actual readiness ordering, dependency-loss handling, restart
+recovery and ordered shutdown. The complete module gate includes the existing
+core behavior/shutdown cases against the supervisor-started instance, image
+structure, delayed readiness and pre/post-readiness failure injection. Routine
+middleware remains Cyclone DDS, Agnocast disabled.
+
+Inspected inputs: s6-overlay 3.2.3.2's immutable noarch and static x86_64 release
+archives, s6-rc service definitions, readiness descriptors, finish exit status
+125 and the read-only-root/non-root execution contract. SHA-256 pins and
+provenance belong to third_party/s6/. The product owns the service definitions
+in images/s6/, the original core payload and a tiny root-owned demonstration
+daemon. The daemon announces readiness through the manager's notification
+channel and remains alive. The core waits for that notification; startup order
+alone is insufficient. Unexpected prerequisite failure terminates the product,
+with nonzero status and explicit restart recovery.
+
+Integration pattern: extend the existing image with the upstream runtime layer,
+the demo binary's executable-adjacent runfiles and product configuration.
+Preserve its complete declared runtime closure: the LLVM/rules_cc runtime
+toolchain adds shared libc++/ABI/unwind dependencies even for this C-only
+binary. Copying only the ELF leaves unresolved libraries. Ordinary trailing
+--as-needed flags and disabling static_link_cpp_runtimes do not remove the
+separately injected runtime providers. image_layer(include_runfiles=True)
+preserves their existing relative RPATH layout instead of listing libraries by
+hand. Keep the installed executable name consistent in service commands.
+
+The root test's lifecycle adapter attaches to the existing managed core and
+requests its manager to stop the dependency group on test shutdown. An explicit
+service PID file makes the existing executable/library audit inspect the core
+and its descendants instead of the adapter. The verification companion stays
+outside the application image. No component source is modified and no second
+core graph is launched to stand in for the managed process.
+
+Validation commands (run sequentially, unsourced shell, native Docker Engine
+29.10.0 and Bazel 9.3.2):
+
+```sh
+bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --nocache_test_results --test_output=errors \
+  //bazel/tests:core_s6_structure_test //bazel/tests:core_s6_runtime_test
+bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --nocache_test_results --test_output=errors \
+  //bazel/tests:core_image_runtime_test //bazel/tests:core_bundle_structure_test \
+  //bazel/tests:core_system_headless_launch_test
+```
+
+Both s6 targets pass: nine structure assertions and the full managed runtime
+gate. Both original core cases pass against the supervised process, including
+the parent/child library/executable audit, expected nodes, parameters, map/URDF,
+velocity relay, version API and graph endpoints. All 26 inner processes report
+clean exits and none of the recorded application PIDs survive group shutdown.
+The gate proves no early core startup while readiness is withheld, crash and
+clean unexpected prerequisite loss both terminating the product with nonzero
+status, explicit container restart recovery, clean reverse shutdown and failure
+before readiness never starting the core. The final s6 runtime gate takes 60.8
+seconds, including archive loading/extraction and the repeated lifecycle cases.
+The three affected native/plain-image targets also pass without failures/skips;
+unchanged image payload-parity evidence is reused. Builds reuse the native core
+closure; no original source package is modified.
+
+Runtime contract: --read-only --network=none --cap-drop=ALL
+--security-opt=no-new-privileges, writable /tmp, and writable executable /run
+owned by UID/GID 1000 (mode 0755). Test-only mounts provide map inputs, the
+separate verification companion and observable /run/autoware state. Manual
+execution only needs the map mount; the image defaults to /maps. The supervisor
+and services all run as 1000:1000; no cgroup/device/privileged-container access is
+required. S6_READ_ONLY_ROOT=1 directs mutable supervisor state to /run.
+
+Consequential failure-policy finding: service dependencies govern transitions,
+not continuous health. A finish script that only examines exit status misses
+unexpected clean daemon exits. Inspect s6-svstat's wantedup state as well as the
+exit status; unexpected exit while still wanted up halts the product, while a
+requested reverse shutdown stays successful. Finish exit 125 prevents automatic
+restart from hiding a failed prerequisite. The gate injects both SIGKILL and
+caught SIGTERM, and verifies normal shutdown separately. The lifecycle adapter
+stops the prerequisite through s6-rc so its reverse dependencies stop first.
+
+Targeted buildifier, clang-format, Python/flake8, shell syntax, YAML, local
+documentation links and whitespace checks pass. No pre-commit, Fast DDS or GPU
+check is run. Phase 7.2.2 is complete for the existing x86_64 CPU/Cyclone product,
+with Agnocast disabled. This does not establish native systemd or OSTree support.
+Next: Phase 7.2.3's pinned manager closure and equivalent systemd image gate.

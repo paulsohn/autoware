@@ -1,0 +1,22 @@
+schemaVersion: '2.0.0'
+metadataTest:
+  entrypoint: ['/init']
+  cmd: []
+  user: '1000:1000'
+  workdir: '/'
+fileExistenceTests:
+  - name: Original application
+    path: /opt/autoware/run
+    shouldExist: true
+  - name: Dummy dependency
+    path: /usr/lib/autoware-services/demo_prerequisite
+    shouldExist: true
+  - name: Readiness notification
+    path: /etc/s6-overlay/s6-rc.d/prerequisite/notification-fd
+    shouldExist: true
+  - name: Dependency edge
+    path: /etc/s6-overlay/s6-rc.d/core/dependencies.d/prerequisite
+    shouldExist: true
+  - name: No OS Python
+    path: /usr/bin/python3
+    shouldExist: false

@@ -847,6 +847,43 @@ children cleanly. Writable /tmp is ephemeral; persistent logs/state and
 device-specific configuration need explicit deployment mounts. This image does
 not establish GUI, GPU, enabled Agnocast, ARM, QEMU or OTA support.
 
+### s6 core image
+
+The core_s6 image adds a supervised demo prerequisite and core launch to the
+same native payload. s6-rc starts the core only after the prerequisite writes
+its readiness notification. Unexpected prerequisite failure stops the product
+with nonzero status; recover by explicitly restarting the product. Ordinary
+shutdown stops the core and its nodes before the prerequisite.
+
+```sh
+bazel run --config=runtime --config=no-agnocast //images:core_s6_load
+bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_output=errors //bazel/tests:core_s6_structure_test \
+  //bazel/tests:core_s6_runtime_test
+docker run --rm --pull=never --network=none --read-only --cap-drop=ALL \
+  --security-opt=no-new-privileges --tmpfs /tmp:rw,exec,nosuid,nodev \
+  --tmpfs /run:rw,exec,uid=1000,gid=1000,mode=0755 \
+  --mount "type=bind,src=$map_dir,dst=/maps,readonly" \
+  docker.io/library/autoware-core:s6
+```
+
+This variant runs its whole supervision tree as 1000:1000. The writable /run
+mount belongs to that UID; S6_READ_ONLY_ROOT=1 keeps service definitions in the
+image and mutable supervisor state in /run. Core output is recorded at
+/run/autoware/core.log; lifecycle events are in /run/autoware/events. They are
+ephemeral unless the operator explicitly supplies persistent storage. The
+AUTOWARE_MAP_PATH environment variable selects another container-visible map
+directory. AUTOWARE_READY_GATE is a demonstration/testing gate: when supplied,
+the prerequisite waits for that file before announcing readiness.
+
+Keep product service edges and failure policies under images/. Preserve each
+added executable's runfiles, including toolchain-injected native runtimes;
+copying only its ELF can omit required DSOs. The root verification adapter
+checks the actual supervised core PID, reuses both original core cases and
+asks the supervisor to stop the group. It does not start another core graph.
+See [the s6 adoption gate](JOURNAL.md#2026-11-21-phase-722--s6-core-service-supervision)
+for reproducible experiments and supported scope.
+
 ## CUDA targets and tests
 
 The product root owns version selection from third_party/: it includes the

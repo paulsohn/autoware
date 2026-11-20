@@ -1,8 +1,14 @@
 load("@launch_ros//:defs.bzl", "launch_ros_binary")
+load("@rules_cc//cc:defs.bzl", "cc_binary")
 load("@rules_pkg//pkg:tar.bzl", "pkg_tar")
 load("//third_party/runtime:defs.bzl", "runtime_libraries")
 
 package(default_visibility = ["//visibility:public"])
+
+cc_binary(
+    name = "demo_prerequisite",
+    srcs = ["services/prerequisite.c"],
+)
 
 runtime_libraries(
     name = "native_runtime",
@@ -50,6 +56,7 @@ pkg_tar(
     testonly = True,
     srcs = [
         "//bazel/tests:core_system_headless_launch_test",
+        "//bazel/tests:runtime/service_launcher",
         "//bazel/tests:runtime/verify",
     ],
     allow_duplicates_with_different_content = False,

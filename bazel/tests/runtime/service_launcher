@@ -1,0 +1,13 @@
+#!/bin/sh
+# Copyright 2026 Taeseung Sohn
+# SPDX-License-Identifier: Apache-2.0
+# Attach the existing launch-test lifecycle to an already supervised core.
+set -eu
+finish() {
+  touch /run/autoware/stop-request
+  while test ! -f /run/autoware/stop-done; do sleep 0.1; done
+  cat /run/autoware/core.log
+  exit 0
+}
+trap finish INT TERM
+while :; do sleep 0.1; done

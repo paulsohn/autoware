@@ -1,5 +1,5 @@
 load("@rules_img//img:image.bzl", "image_manifest")
-load("@rules_img//img:layer.bzl", "layer_from_tar")
+load("@rules_img//img:layer.bzl", "image_layer", "layer_from_tar")
 load("@rules_img//img:load.bzl", "image_load")
 load("@rules_pkg//pkg:tar.bzl", "pkg_tar")
 
@@ -17,6 +17,36 @@ pkg_tar(
     preserve_mode = True,
     stamp = 0,
     deps = ["//bazel/runtime:core_bundle"],
+)
+
+pkg_tar(
+    name = "service_support",
+    srcs = ["services/core"],
+    package_dir = "usr/lib/autoware-services",
+    preserve_mode = True,
+    strip_prefix = "services",
+)
+
+image_layer(
+    name = "prerequisite_layer",
+    srcs = {"/usr/lib/autoware-services/demo_prerequisite": "//bazel/runtime:demo_prerequisite"},
+    estargz = "disabled",
+    include_runfiles = True,
+)
+
+pkg_tar(
+    name = "s6_services",
+    srcs = glob(["s6/**"]),
+    extension = "tar.gz",
+    preserve_mode = True,
+    strip_prefix = "s6",
+    deps = [":service_support"],
+)
+
+layer_from_tar(
+    name = "s6_services_layer",
+    src = ":s6_services",
+    estargz = "disabled",
 )
 
 layer_from_tar(
@@ -62,5 +92,39 @@ image_load(
 filegroup(
     name = "core_docker_archive",
     srcs = [":core_load"],
+    output_group = "tarball",
+)
+
+image_manifest(
+    name = "core_s6",
+    base = ":core",
+    cmd = [],
+    entrypoint = ["/init"],
+    env = {
+        "S6_READ_ONLY_ROOT": "1",
+        "S6_BEHAVIOUR_IF_STAGE2_FAILS": "2",
+        "S6_CMD_WAIT_FOR_SERVICES_MAXTIME": "60000",
+        "ROS_DOMAIN_ID": "86",
+    },
+    layers = [
+        "//third_party/s6:layer",
+        ":prerequisite_layer",
+        ":s6_services_layer",
+    ],
+    stop_signal = "SIGTERM",
+    user = "1000:1000",
+)
+
+image_load(
+    name = "core_s6_load",
+    daemon = "docker",
+    image = ":core_s6",
+    strategy = "eager",
+    tag = "docker.io/library/autoware-core:s6",
+)
+
+filegroup(
+    name = "core_s6_docker_archive",
+    srcs = [":core_s6_load"],
     output_group = "tarball",
 )

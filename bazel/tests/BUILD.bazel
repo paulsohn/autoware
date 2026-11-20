@@ -10,7 +10,37 @@ load("@tensorrt//:defs.bzl", "tensorrt_cc_test")
 
 package(default_visibility = ["//visibility:public"])
 
-exports_files(["runtime/verify"])
+exports_files([
+    "runtime/verify",
+    "runtime/service_launcher",
+])
+
+image_structure_test(
+    name = "core_s6_structure_test",
+    configs = ["runtime/core_s6.yaml"],
+    image = "//images:core_s6",
+)
+
+py_test(
+    name = "core_s6_runtime_test",
+    size = "large",
+    srcs = ["runtime/test_supervised_image.py"],
+    args = [
+        "s6",
+        "$(rootpath //images:core_s6_docker_archive)",
+        "$(rootpath //bazel/runtime:core_bundle_tests)",
+    ],
+    data = [
+        "//bazel/runtime:core_bundle_tests",
+        "//images:core_s6_docker_archive",
+    ],
+    main = "runtime/test_supervised_image.py",
+    tags = [
+        "external",
+        "no-remote",
+        "no-sandbox",
+    ],
+)
 
 image_structure_test(
     name = "core_image_structure_test",

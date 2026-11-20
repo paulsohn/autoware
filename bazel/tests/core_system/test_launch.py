@@ -46,7 +46,8 @@ def generate_test_description():
     # Preserve the default GUI contract while explicitly exercising headless mode.
     assert ET.parse(source).find("arg[@name='launch_rviz']").get('default') == 'true'
     launcher = os.environ.get('CORE_SYSTEM_BUNDLE_LAUNCHER')
-    system = ExecuteProcess(cmd=[launcher, 'map_path:=' + str(directory)], output='screen') if launcher else (
+    service_launcher = os.environ.get('CORE_SYSTEM_SERVICE_LAUNCHER', launcher)
+    system = ExecuteProcess(cmd=[service_launcher, 'map_path:=' + str(directory)], output='screen') if launcher else (
         IncludeLaunchDescription(AnyLaunchDescriptionSource(str(source)), launch_arguments={
             'map_path': str(directory), 'vehicle_model': 'autoware_sample_vehicle',
             'sensor_model': 'autoware_sample_sensor_kit', 'launch_rviz': 'false',
@@ -88,6 +89,7 @@ class TestCoreSystem(unittest.TestCase):
                 '/control/simple_pure_pursuit', '/robot_state_publisher',
                 '/adapi/node/interface',
             }
+
             def names():
                 return {ns.rstrip('/') + '/' + n for n, ns in node.get_node_names_and_namespaces()}
             wait(lambda: expected <= names())
@@ -123,7 +125,9 @@ class TestCoreSystem(unittest.TestCase):
                 baseline = {'ld-linux-x86-64.so.2', 'libc.so.6', 'libm.so.6', 'libdl.so.2',
                             'libpthread.so.0', 'librt.so.1', 'libresolv.so.2', 'libutil.so.1'}
                 system_libraries = set()
-                parent = psutil.Process(bundle_process.process_details['pid'])
+                service_pid = os.environ.get('CORE_SYSTEM_SERVICE_PID_FILE')
+                parent = psutil.Process(int(Path(service_pid).read_text()) if service_pid else
+                                        bundle_process.process_details['pid'])
                 processes = parent.children(recursive=True)
                 self.assertTrue(processes, 'No packaged application processes to audit')
                 for process in [parent] + processes:

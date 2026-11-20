@@ -78,6 +78,9 @@ only when your current target demonstrates the need.
   middleware configurations before implementing each task.
   [Backend executor convention](DEVELOPING.md#switchable-standalone-nodes);
   [evidence: complete Agnocast test inventory](JOURNAL.md#2026-11-15-phase-41--adopt-the-complete-agnocast-library-test-inventory).
+- [ ] Define service readiness, dependency-loss policy and ordered shutdown.
+  [Supervisor convention](DEVELOPING.md#s6-core-image);
+  [evidence: supervised core](JOURNAL.md#2026-11-21-phase-722--s6-core-service-supervision).
 - [ ] Separate builder-host, build-environment and runtime prerequisites; declare
   runtime resources once and reuse them for packaging.
   [Packaging and deployment requirements](#runtime-packaging-and-deployment-requirements);
@@ -1627,14 +1630,17 @@ Phase 7.2 task boundaries:
 
 - **7.2.1 — Single-entrypoint OCI image (complete, 2026-11-20).** Retain the
   validated native bundle, image exports and existing complete image gate.
-- **7.2.2 — s6 service supervision (planned).** Add a separate OCI variant with
+- **7.2.2 — s6 service supervision (complete, 2026-11-21).** The separate OCI variant uses
   s6-overlay/s6-rc as PID 1, the unchanged core bundle and a small dummy
   prerequisite service. Use explicit readiness notification to gate core
   startup. On unexpected prerequisite loss, stop the managed core and expose
   the failure; recovery requires an explicit product restart. Define orderly
   reverse shutdown; startup dependencies alone do not implement this policy.
-  Pin upstream release inputs through generic third_party/ support; keep
-  product service definitions under images/ and new tests under bazel/tests/.
+  SHA-256-pinned 3.2.3.2 release inputs live under third_party/s6/; product
+  definitions stay under images/ and tests under bazel/tests/. Both original
+  core cases and all readiness/failure/restart/shutdown checks pass with a
+  read-only image, UID/GID 1000, dropped capabilities and no network/source/cache
+  mount. The complete affected native/plain-image regressions also pass.
 - **7.2.3 — systemd service supervision (planned).** Add another OCI variant
   implementing the same service relationship and behavior contract with native
   systemd units, including explicit ordering, requirement and readiness

@@ -1,0 +1,16 @@
+# Upstream static binaries and scripts; image composition remains root-owned.
+http_file = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_file")
+
+http_file(
+    name = "s6_overlay_noarch",
+    downloaded_file_path = "s6-overlay-noarch.tar.xz",
+    sha256 = "5379750ed30a84bbd2e2dd74847ba6b5bd29cd0b2e3ea2ec58049b57eb2eda12",
+    urls = ["https://github.com/just-containers/s6-overlay/releases/download/v3.2.3.2/s6-overlay-noarch.tar.xz"],
+)
+
+http_file(
+    name = "s6_overlay_x86_64",
+    downloaded_file_path = "s6-overlay-x86_64.tar.xz",
+    sha256 = "e6befcc96a437a3831386ecfc51808c5d3e939dc5fe3c02ae9284599e8aa2408",
+    urls = ["https://github.com/just-containers/s6-overlay/releases/download/v3.2.3.2/s6-overlay-x86_64.tar.xz"],
+)
