@@ -8,6 +8,7 @@ bazel_dep(name = "googletest", version = "1.18.0.bcr.1")
 bazel_dep(name = "rules_python", version = "2.4.5")
 bazel_dep(name = "rules_shell", version = "0.6.1")
 bazel_dep(name = "rules_pkg", version = "1.3.0")
+bazel_dep(name = "rules_img", version = "0.3.22")
 bazel_dep(name = "llvm", version = "0.8.25.rcr.0")
 bazel_dep(name = "rosdistro", version = "lyrical.2026-10-05.rcr.3")
 bazel_dep(name = "ament_index_python", version = "0.0.0")
@@ -108,6 +109,7 @@ filegroup(name = "runtime", srcs = glob(["lib/libgcc_s.so*"]), visibility = ["//
 
 include("//third_party/cuda:cuda.MODULE.bazel")
 include("//third_party/graphics_runtime:graphics_runtime.MODULE.bazel")
+include("//images:images.MODULE.bazel")
 
 # Local source dependencies, ordered by their package-local MODULE declarations.
 # Overrides select the source; root declarations need no registry release version.

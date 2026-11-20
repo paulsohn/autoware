@@ -1,0 +1,33 @@
+schemaVersion: '2.0.0'
+metadataTest:
+  entrypoint: ['/opt/autoware/run']
+  cmd: []
+  workdir: '/'
+  user: '1000:1000'
+  envVars:
+    - key: HOME
+      value: /tmp
+    - key: LOGNAME
+      value: autoware
+fileExistenceTests:
+  - name: Application launcher
+    path: /opt/autoware/run
+    shouldExist: true
+  - name: Repository mapping
+    path: /opt/autoware/core_headless.runfiles/_repo_mapping
+    shouldExist: true
+  - name: Core package index
+    path: /opt/autoware/core_headless.runfiles/_main/share/ament_index/resource_index/packages/autoware_core
+    shouldExist: true
+  - name: Base shell
+    path: /usr/bin/bash
+    shouldExist: true
+  - name: No OS Python
+    path: /usr/bin/python3
+    shouldExist: false
+  - name: No installed ROS distribution
+    path: /opt/ros
+    shouldExist: false
+  - name: Verification peer stays outside the application
+    path: /opt/autoware/core_system_headless_launch_test
+    shouldExist: false

@@ -1,0 +1,66 @@
+load("@rules_img//img:image.bzl", "image_manifest")
+load("@rules_img//img:layer.bzl", "layer_from_tar")
+load("@rules_img//img:load.bzl", "image_load")
+load("@rules_pkg//pkg:tar.bzl", "pkg_tar")
+
+package(default_visibility = ["//visibility:public"])
+
+exports_files(["images.MODULE.bazel"])
+
+# Add only the image install prefix to the existing native distribution.
+pkg_tar(
+    name = "core_payload",
+    allow_duplicates_with_different_content = False,
+    compression_level = 1,
+    extension = "tar.gz",
+    package_dir = "opt/autoware",
+    preserve_mode = True,
+    stamp = 0,
+    deps = ["//bazel/runtime:core_bundle"],
+)
+
+layer_from_tar(
+    name = "core_layer",
+    src = ":core_payload",
+    compress = "gzip",
+    estargz = "disabled",
+)
+
+image_manifest(
+    name = "core",
+    base = "@ubuntu_runtime",
+    cmd = [],
+    entrypoint = ["/opt/autoware/run"],
+    env = {
+        "HOME": "/tmp",
+        "LOGNAME": "autoware",
+    },
+    layers = [":core_layer"],
+    stop_signal = "SIGINT",
+    target_compatible_with = [
+        "@platforms//cpu:x86_64",
+        "@platforms//os:linux",
+    ],
+    user = "1000:1000",
+    working_dir = "/",
+)
+
+filegroup(
+    name = "core_oci",
+    srcs = [":core"],
+    output_group = "oci_tarball",
+)
+
+image_load(
+    name = "core_load",
+    daemon = "docker",
+    image = ":core",
+    strategy = "eager",
+    tag = "docker.io/library/autoware-core:bazel",
+)
+
+filegroup(
+    name = "core_docker_archive",
+    srcs = [":core_load"],
+    output_group = "tarball",
+)

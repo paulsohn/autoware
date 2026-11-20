@@ -9170,3 +9170,137 @@ from the inspected standalone simulator manifests but has no runtime proof and
 does not satisfy that original workflow's milestone. See the
 [phase plan](PLAN.md#phase-7--runtime-packaging-and-headless-planning-simulation-in-progress)
 for source references and the separate acceptance boundary.
+
+## 2026-11-20: Phase 7.2 — Thin OCI core distribution
+
+Purpose: package the validated native core closure into a deployable OCI image
+without introducing a second application dependency list or installing target
+dependencies in a Dockerfile. The complete task gate comprises payload parity,
+image structure/configuration, both existing headless behavior/shutdown cases,
+and clean termination through the normal image entrypoint.
+
+Prerequisites and inspected inputs: Phase 7.1's native application and separate
+verification archives; Ubuntu 24.04 x86_64 at the same immutable image digest;
+local Docker Engine access for execution only. Inspect rules_img 0.3.22's
+pull, layer_from_tar, image_manifest, image_load and image_structure_test rules.
+This version already participates in RCR's module graph; make its selection
+explicit in the root rather than introduce another image assembly library.
+Keep --config=runtime --config=no-agnocast throughout, preserving the cached
+Bash/Python bootstrap and selecting CPU/Cyclone DDS without Agnocast.
+
+Integration pattern: images/images.MODULE.bazel pulls the digest-pinned base
+with eager layer materialization so exported archives contain every base blob.
+In images/BUILD.bazel, pkg_tar consumes the native archive through deps and adds
+only package_dir="opt/autoware". Feed that archive to layer_from_tar, then append
+it to the base with image_manifest. Select /opt/autoware/run as entrypoint,
+empty command, / as workdir, user 1000:1000, HOME=/tmp and SIGINT for clean ROS
+launch shutdown. Export an OCI tarball and an eager, canonically tagged Docker
+load archive from the same image provider. Image assembly needs no Docker
+daemon, apt, pip or rosdep. The verification companion remains outside the
+product; no component source or runtime dependency provider changes are needed.
+
+The root tests compare every native payload file/link's
+bytes, mode and target after prefixing, inspect image metadata and filesystem,
+then load the built archive into the local engine. The runtime test executes
+the existing two-case suite against the baked application with only the separate
+verification companion and writable results mounted; a second run uses the
+normal image entrypoint and only map inputs, then checks docker stop and every
+child's clean-exit report. Both runs use read-only roots, an unprivileged image
+user, fresh /tmp, no network, dropped capabilities and no workspace/cache mount.
+The existing loaded-library audit remains active.
+
+Verification, using Bazel 9.3.2 and native Docker Engine 29.10.0:
+
+```sh
+bazel build --config=runtime --config=no-agnocast \
+  //images:core_oci //images:core_docker_archive
+bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --nocache_test_results --test_output=errors \
+  //bazel/tests:core_image_structure_test \
+  //bazel/tests:core_image_payload_test //bazel/tests:core_image_runtime_test
+bazel run --config=runtime --config=no-agnocast //images:core_load
+docker image inspect docker.io/library/autoware-core:bazel \
+  --format 'Descriptor={{json .Descriptor}} RepoDigests={{json .RepoDigests}}'
+docker info --format '{{json .DriverStatus}}'
+```
+
+Run Bazel from an unsourced shell; the recorded invocations use env -i with
+HOME and PATH containing only the Bazel launcher and /usr/bin:/bin. If the
+current login has stale Docker group membership, wrap these commands in
+sg docker -c rather than alter socket permissions. Builds reuse the unchanged
+native outputs; image export does not require C++ recompilation.
+
+Results: all three image tests pass. Payload parity covers 23,665 native
+files/links, preserving bytes, modes and targets. All 13 image structure and
+configuration assertions pass. The runtime test passes both original headless
+cases with zero failures/errors/skips: expected nodes, wheelbase/use_sim_time,
+nonempty latched map, sensor-bearing URDF, velocity relay, version API, graph
+endpoints and clean nested shutdown. The parent and all native children execute
+from the baked /opt/autoware payload; the loaded-library audit permits only
+the documented OS loader/glibc outside it. The functional-suite launch has 27
+processes including its outer launcher. The separate default-entrypoint run
+initializes the stop-line plugin, then docker stop honors SIGINT, returns exit
+code 0 and produces matching clean-exit reports for all 26 child processes.
+No child reports a crash or forced termination. The final runtime test takes
+26.3 seconds, including image loading, companion extraction and both launches.
+
+The OCI archive is 811,123,712 bytes, containing one Ubuntu layer and one native
+application layer. Verify the standalone export without a daemon or registry
+by checking its index, manifest, config and every layer blob:
+
+```sh
+python3 - <<'PY'
+import hashlib
+import json
+import tarfile
+from pathlib import Path
+with tarfile.open('bazel-bin/images/core_oci_layout.tar') as archive:
+    assert json.load(archive.extractfile('oci-layout'))['imageLayoutVersion'] == '1.0.0'
+    index = json.load(archive.extractfile('index.json'))
+    assert len(index['manifests']) == 1
+    def verify(descriptor):
+        algorithm, digest = descriptor['digest'].split(':')
+        member = archive.getmember('blobs/' + algorithm + '/' + digest)
+        assert member.size == descriptor['size']
+        assert hashlib.file_digest(archive.extractfile(member), algorithm).hexdigest() == digest
+        return member
+    manifest = json.load(archive.extractfile(verify(index['manifests'][0])))
+    verify(manifest['config'])
+    for layer in manifest['layers']:
+        verify(layer)
+    assert len(manifest['layers']) == 2
+    assert index['manifests'][0]['digest'] == Path('bazel-bin/images/core_digest').read_text().strip()
+    print(index['manifests'][0]['digest'])
+PY
+```
+
+All blob sizes and SHA-256 digests pass. The exported manifest digest is
+sha256:6217f630e7abc7096327f01976124c1df129c1176b6a3b7d868f28e512cb0117.
+The normal core_load target also succeeds. Its direct containerd-socket probe
+is denied for the unprivileged account and it falls back to docker load. The
+loader's generic warning predicts a changed digest, but actual inspection on
+this Engine's io.containerd.snapshotter.v1 store confirms the loaded OCI
+descriptor and RepoDigests match the exported manifest. No socket permission
+change or root invocation is needed; check actual descriptors when using a
+different engine/storage backend. The local convenience tag is not an
+immutable publication mechanism.
+
+Test setup findings: an empty OCI command may be omitted from Docker's inspected
+Config rather than appear as Cmd: []; treat a missing/empty value alike, while
+still asserting the image entrypoint. The mtree structure matcher checks
+canonical archive paths and does not follow Ubuntu's /bin directory symlink;
+assert /usr/bin/bash there. Without these corrections the test harness fails
+before exercising runtime behavior, although the image itself is valid. Capture
+both Docker log streams when checking initialization and shutdown. These fixes
+require no product/source patch.
+
+Targeted buildifier, Python syntax/flake8, YAML, documentation links and
+whitespace checks pass. No pre-commit or Fast DDS run is performed. Unchanged
+Phase 7.1 native/module suites retain their previous evidence.
+
+Phase 7.2 is complete for x86_64 CPU/Cyclone DDS with Agnocast disabled.
+The image does not establish GUI, GPU, enabled Agnocast, ARM, QEMU, OTA or a
+driving scenario. QEMU remains an optional additional packaging check.
+
+Next: 7.3 reconciles the AWF tutorial and integrates its actual selected Universe
+planning/launch closure before demonstrating the documented simulator workflow.

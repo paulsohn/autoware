@@ -83,6 +83,8 @@ only when your current target demonstrates the need.
   [Packaging and deployment requirements](#runtime-packaging-and-deployment-requirements);
   [distribution convention](DEVELOPING.md#native-core-distribution);
   [evidence: native runtime closure](JOURNAL.md#2026-11-20-phase-71--native-headless-core-distribution).
+  [OCI image convention](DEVELOPING.md#oci-core-distribution);
+  [evidence: payload and image execution](JOURNAL.md#2026-11-20-phase-72--thin-oci-core-distribution).
 - [ ] Define editable model modules and portable runtime resource paths together.
   [Model repository/path convention](#model-repository-and-runtime-path-convention);
   [evidence and required experiment](JOURNAL.md#2026-11-18-model-subtree-layout-and-portable-launch-path-requirements);
@@ -1600,10 +1602,16 @@ Complete each distribution boundary before expanding the application closure.
    logging provider; root composition selects real GL dispatch, pinned GNU and
    source-built zlib runtime providers. Scope is x86_64 CPU/Cyclone DDS with
    Agnocast disabled. See the [reproducible gate](JOURNAL.md#2026-11-20-phase-71--native-headless-core-distribution).
-2. **7.2 — Thin OCI distribution.** Install the same native bundle under a fixed
-   prefix in a pinned minimal compatible base. Repeat the same behavior gate;
-   do not resolve application dependencies through image-side apt/pip/rosdep.
-   Consider a pinned QEMU guest as an additional CPU packaging check, without
+2. **7.2 — Thin OCI distribution (complete, 2026-11-20).** rules_img 0.3.22
+   adds the unchanged native payload at /opt/autoware to digest-pinned Ubuntu
+   24.04. OCI and Docker-load exports contain both layers; assembly needs no
+   container daemon or image-side apt/pip/rosdep. Payload parity, all image
+   structure assertions, both existing behavior/shutdown cases, and SIGINT
+   shutdown through the normal unprivileged image entrypoint pass on native
+   Docker Engine with read-only roots and no network/workspace/cache mounts.
+   Scope remains x86_64 CPU/Cyclone DDS with Agnocast disabled. See the
+   [reproducible gate](JOURNAL.md#2026-11-20-phase-72--thin-oci-core-distribution).
+   A pinned QEMU guest remains an optional additional packaging check, without
    real-time or GPU acceptance claims.
 3. **7.3 — AWF planning simulation.** Establish the exact tutorial/source/input
    contract, then demonstrate the original planning_simulator.launch.xml
@@ -1716,8 +1724,10 @@ a claim that the current binaries can run in an empty image.
 
 Use packaging mappings for destination prefixes, preserved relative paths and
 necessary explicit renames. Image workdir/entrypoint settings do not copy files
-or discover their runtime closure. rules_pkg and rules_oci are candidate tools,
-not yet selected or validated dependencies. Keep image prefixes, entry points
+or discover their runtime closure. Phase 7.1 selects rules_pkg 1.3.0 for native
+archives; Phase 7.2 selects rules_img 0.3.22, already in the RCR graph, for
+digest-pinned base pulls, image assembly and OCI/Docker-load exports. No separate
+rules_oci dependency is required. Keep image prefixes, entry points
 and device-side bind mounts in product/deployment configuration, outside
 component BUILD definitions. Separate immutable application/model resources
 from writable state, logs and device-specific configuration; mount persistent

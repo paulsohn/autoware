@@ -3,6 +3,7 @@ load("@pip_ros//:requirements.bzl", "requirement")
 load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
 load("@rosdistro//python:defs.bzl", "py_pytest")
 load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_test")
+load("@rules_img//img:test.bzl", "image_structure_test")
 load("@rules_python//python:defs.bzl", "py_binary", "py_test")
 load("@rules_shell//shell:sh_test.bzl", "sh_test")
 load("@tensorrt//:defs.bzl", "tensorrt_cc_test")
@@ -10,6 +11,47 @@ load("@tensorrt//:defs.bzl", "tensorrt_cc_test")
 package(default_visibility = ["//visibility:public"])
 
 exports_files(["runtime/verify"])
+
+image_structure_test(
+    name = "core_image_structure_test",
+    configs = ["runtime/core_image.yaml"],
+    image = "//images:core",
+)
+
+py_test(
+    name = "core_image_payload_test",
+    size = "large",
+    srcs = ["runtime/test_image_payload.py"],
+    args = [
+        "$(rootpath //bazel/runtime:core_bundle)",
+        "$(rootpath //images:core_payload)",
+    ],
+    data = [
+        "//bazel/runtime:core_bundle",
+        "//images:core_payload",
+    ],
+    main = "runtime/test_image_payload.py",
+)
+
+py_test(
+    name = "core_image_runtime_test",
+    size = "large",
+    srcs = ["runtime/test_image_runtime.py"],
+    args = [
+        "$(rootpath //images:core_docker_archive)",
+        "$(rootpath //bazel/runtime:core_bundle_tests)",
+    ],
+    data = [
+        "//bazel/runtime:core_bundle_tests",
+        "//images:core_docker_archive",
+    ],
+    main = "runtime/test_image_runtime.py",
+    tags = [
+        "external",
+        "no-remote",
+        "no-sandbox",
+    ],
+)
 
 py_test(
     name = "core_bundle_structure_test",

@@ -797,6 +797,56 @@ out of the deployed application. See the
 [Phase 7.1 journal](JOURNAL.md#2026-11-20-phase-71--native-headless-core-distribution)
 for the recorded relocation/isolation commands and supported OS baseline.
 
+## OCI core distribution
+
+The image reuses the native application archive verbatim beneath /opt/autoware.
+Keep its prefix, OS selection, user and entrypoint in images/, outside component
+BUILD files. The root selects rules_img and the pinned Ubuntu base through
+images/images.MODULE.bazel. Assembly downloads declared blobs with Bazel and
+requires no Docker daemon; image execution requires a compatible Linux host
+kernel and container engine. The supported product remains Ubuntu 24.04 x86_64,
+CPU/Cyclone DDS, with Agnocast disabled.
+
+```sh
+bazel build --config=runtime --config=no-agnocast \
+  //images:core_oci //images:core_docker_archive
+bazel run --config=runtime --config=no-agnocast //images:core_load
+bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_output=errors //bazel/tests:core_image_structure_test \
+  //bazel/tests:core_image_payload_test //bazel/tests:core_image_runtime_test
+```
+
+The OCI layout archive is bazel-bin/images/core_oci_layout.tar; the Docker-load
+archive is bazel-bin/images/core_load_docker.tar. The core_load target loads the
+same image as docker.io/library/autoware-core:bazel into the selected local
+daemon. That tag is a local convenience; use the generated images/core_digest
+manifest digest as the immutable release identity, with a registry reference
+when publishing. No registry upload occurs in these commands.
+
+The structure and payload tests need no daemon. The runtime test loads its own
+archive and is an uncached local test: Docker access is a prerequisite, not a
+dependency skip. It runs both original headless cases using the external
+verification companion, then checks the normal entrypoint and docker stop.
+No application bind mount, source/cache mount, installed ROS or OS Python is
+needed. Re-run all three tests when image packaging changes.
+
+For manual execution, set map_dir to an absolute directory containing the three
+map inputs described in the native distribution section, then run:
+
+```sh
+docker run --rm --name autoware-core --pull=never --network=none --read-only \
+  --cap-drop=ALL --security-opt=no-new-privileges \
+  --tmpfs /tmp:rw,exec,nosuid,nodev \
+  --mount "type=bind,src=$map_dir,dst=/maps,readonly" \
+  docker.io/library/autoware-core:bazel map_path:=/maps
+```
+
+The image defaults to user 1000:1000, workdir / and HOME=/tmp. Its SIGINT stop
+signal lets docker stop --time 30 autoware-core terminate ROS launch and its
+children cleanly. Writable /tmp is ephemeral; persistent logs/state and
+device-specific configuration need explicit deployment mounts. This image does
+not establish GUI, GPU, enabled Agnocast, ARM, QEMU or OTA support.
+
 ## CUDA targets and tests
 
 The product root owns version selection from third_party/: it includes the
