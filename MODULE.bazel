@@ -111,6 +111,7 @@ include("//third_party/cuda:cuda.MODULE.bazel")
 include("//third_party/graphics_runtime:graphics_runtime.MODULE.bazel")
 include("//third_party/s6:s6.MODULE.bazel")
 include("//third_party/systemd:systemd.MODULE.bazel")
+include("//third_party/ostree:ostree.MODULE.bazel")
 include("//images:images.MODULE.bazel")
 
 # Local source dependencies, ordered by their package-local MODULE declarations.

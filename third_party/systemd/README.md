@@ -5,7 +5,7 @@ archives.json pins the 32 manager/library/helper payloads by package version,
 archive path and SHA-256. They were selected from Ubuntu noble/noble-updates
 metadata on 2026-11-21. The root OS image supplies glibc and its loader.
 
-The repository rule downloads Debian archives, preserves their data tarballs
+The shared third_party/deb_payloads rule downloads Debian archives, preserves their data tarballs
 and emits declared Python 3.14 Zstandard conversion actions. rules_pkg then
 combines those uncompressed tars, preserving links, executable permissions and
 upstream copyright resources. Package maintainer scripts are not executed.

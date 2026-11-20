@@ -1,3 +1,6 @@
-systemd_runtime = use_repo_rule("//third_party/systemd:repositories.bzl", "systemd_runtime")
+deb_runtime = use_repo_rule("//third_party/deb_payloads:repositories.bzl", "deb_runtime")
 
-systemd_runtime(name = "systemd_runtime")
+deb_runtime(
+    name = "systemd_runtime",
+    archives = "//third_party/systemd:archives.json",
+)

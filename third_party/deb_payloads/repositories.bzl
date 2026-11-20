@@ -1,6 +1,6 @@
-"""Materialize pinned Ubuntu systemd payloads without package installation."""
+"""Materialize pinned Ubuntu Debian payloads without package installation."""
 
-def _systemd_runtime_impl(ctx):
+def _deb_runtime_impl(ctx):
     rules = ["""
 load("@rules_pkg//pkg:tar.bzl", "pkg_tar")
 load("@rules_python//python:defs.bzl", "py_binary")
@@ -47,10 +47,10 @@ pkg_tar(
     ctx.file("payload_tar.py", ctx.read(ctx.attr.payload_tar))
     ctx.file("BUILD.bazel", "\n".join(rules))
 
-systemd_runtime = repository_rule(
-    implementation = _systemd_runtime_impl,
+deb_runtime = repository_rule(
+    implementation = _deb_runtime_impl,
     attrs = {
-        "archives": attr.label(default = Label(":archives.json"), allow_single_file = True),
+        "archives": attr.label(mandatory = True, allow_single_file = True),
         "payload_tar": attr.label(default = Label(":payload_tar.py"), allow_single_file = True),
     },
 )

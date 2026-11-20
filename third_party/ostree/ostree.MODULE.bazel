@@ -1,0 +1,6 @@
+deb_runtime = use_repo_rule("//third_party/deb_payloads:repositories.bzl", "deb_runtime")
+
+deb_runtime(
+    name = "ostree_runtime",
+    archives = "//third_party/ostree:archives.json",
+)

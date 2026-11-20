@@ -1651,19 +1651,14 @@ Phase 7.2 task boundaries:
   bind mount, host manager or privileged-container mode is used. See the
   [systemd gate](JOURNAL.md#2026-11-21-phase-723--systemd-core-service-supervision)
   for the precise runtime contract and dependency/failure-policy findings.
-- **7.2.4 — OSTree native distribution (planned).** Reuse the native core
-  payload and the systemd/core-plus-dummy service composition for versioned
-  delivery through a pinned OSTree repository. First settle and record the
-  deployment scope: application-tree replication/activation on the existing OS,
-  or a bootable OS deployment. OSTree checkout alone does not establish OS boot,
-  service activation or transactional application lifecycle. For OS deployment,
-  additionally pin the compatible OS tree, kernel/initramfs, boot integration
-  and a disposable QEMU guest; keep application files and default units in the
-  deployment's read-only content and configuration/state in the appropriate
-  writable locations. Do not convert or modify the developer's host OS.
-  Pin generic OSTree tools/dependencies under third_party/; keep product
-  assembly with root runtime/distribution definitions and added tests under
-  bazel/tests/. No target-side apt/pip/rosdep repair is allowed.
+- **7.2.4 — OSTree native distribution (in progress).** The generic dependency
+  boundary is validated: Ubuntu-compatible OSTree 2024.5-1build2, its pinned
+  loader/library closure and independent public-CLI fixture. The selected scope
+  is application-tree delivery on the fixed supported OS, using the systemd
+  image as a disposable harness. Whole-OS/bootc deployment stays deferred.
+  Next, compose immutable native core revisions and validate all transition,
+  state and managed-core gates below. See the
+  [SDK experiment](JOURNAL.md#2026-11-21-phase-724--ostree-sdk).
 
 The OSTree gate must exercise two immutable, distinguishable revisions: verify
 repository integrity and provenance, install/activate the first revision, update
@@ -1684,7 +1679,8 @@ under [later priorities](#later-phases). A bootc-compatible OCI OS image is a
 candidate for the bootable scope, subject to base/ABI and boot validation.
 See the upstream [OSTree overview](https://ostreedev.github.io/ostree/introduction/)
 and [deployment contract](https://ostreedev.github.io/ostree/deployment/), reviewed
-2026-11-20; no OSTree input or runtime behavior has been validated here yet.
+2026-11-20; SDK inputs and local commands are validated in the dependency
+gate. Complete application delivery validation follows.
 
 For both supervised variants, the dummy daemon is product demonstration support,
 not a change to core packages. It announces readiness and remains alive while

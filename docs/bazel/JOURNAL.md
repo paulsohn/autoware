@@ -9542,3 +9542,68 @@ Targeted buildifier, Python/flake8, shell syntax, YAML and whitespace checks pas
 No pre-commit, Fast DDS or GPU check is run. Scope is Linux x86_64 container
 supervision on the supported base, not a host OS or kernel/bootloader update.
 Next: application-only OSTree distribution on a fixed OS.
+
+## 2026-11-21: Phase 7.2.4 — OSTree SDK
+
+Purpose: provide pinned local OSTree tools without installing host packages,
+using Ubuntu noble inputs compatible with the established runtime baseline.
+Select OSTree 2024.5-1build2 and 73 ELF/runtime payloads, including libc/loader,
+by version/path/SHA-256 in third_party/ostree/archives.json. The source indexes
+are noble/noble-updates main and universe, inspected 2026-11-21; the selected
+Ubuntu mirrors and manifest hashes establish the same input contract as systemd.
+
+Minimum pattern: move Debian payload handling from the systemd SDK into
+third_party/deb_payloads only when this second consumer requires it. Owners
+retain their separate manifests and root-selected versions. The shared rule
+preserves original data archives, emits declared Python 3.14 Zstandard conversion
+and rules_pkg assembly, and executes no apt/dpkg/maintainer scripts. No generic
+facade module or Autoware dependency is introduced. Both SDK runtime archives
+build; the relocated systemd provider passes its complete consumer gate in the
+following application-distribution experiment.
+
+The OSTree Python helper extracts its declared SDK, runs its own ELF loader and
+library directory in a clean environment, and selects local GIO behavior. Before
+execution, a loader audit resolves symlinks and rejects DSOs outside the SDK.
+The public //third_party/ostree:ostree CLI forwards command arguments/output and
+status, using an ephemeral SDK extraction. This avoids a host OSTree/zstd
+installation. Only the exercised local command scope is established; advertised
+optional features, remote transport, signing/key management and the absent gnupg
+command suite are not validated runtime capabilities.
+
+Verification: in a clean unsourced shell with Bazel and ordinary shell/file
+utilities, first run the CLI with --version; it reports libostree 2024.5. Then
+exercise the declared tool independently of Autoware using this small fixture:
+
+```sh
+ostree=(bazel run --config=runtime --config=no-agnocast //third_party/ostree:ostree --)
+task_tmp=$(mktemp -d)
+mkdir "$task_tmp/fixture"
+printf 'SDK fixture\n' > "$task_tmp/fixture/payload"
+chmod 666 "$task_tmp/fixture/payload"
+ln -s payload "$task_tmp/fixture/link"
+"${ostree[@]}" --repo="$task_tmp/source" init --mode=archive
+revision=$("${ostree[@]}" --repo="$task_tmp/source" commit --branch=fixture \
+  --no-xattrs --canonical-permissions --owner-uid=0 --owner-gid=0 \
+  --timestamp=2026-11-21T00:00:00Z --add-metadata-string=fixture=verified \
+  "$task_tmp/fixture")
+test "$revision" = "$("${ostree[@]}" --repo="$task_tmp/source" rev-parse fixture)"
+"${ostree[@]}" --repo="$task_tmp/source" show --print-metadata-key=fixture "$revision"
+"${ostree[@]}" --repo="$task_tmp/source" fsck
+"${ostree[@]}" --repo="$task_tmp/client" init --mode=archive
+"${ostree[@]}" --repo="$task_tmp/client" pull-local --untrusted "$task_tmp/source" fixture
+"${ostree[@]}" --repo="$task_tmp/client" fsck
+"${ostree[@]}" --repo="$task_tmp/client" checkout --user-mode --force-copy \
+  "$revision" "$task_tmp/checkout"
+cmp "$task_tmp/fixture/payload" "$task_tmp/checkout/payload"
+test "$(readlink "$task_tmp/checkout/link")" = payload
+```
+
+All commands succeed: metadata is 'verified', both repositories pass fsck for
+one commit/five objects, and imported bytes/link targets match. The observed
+fixture revision is
+488a6bee20035f88be56898ee6587ad1d20f7808807fc0700c56e971c8699b9b.
+Targeted buildifier, Python/flake8, links and whitespace checks pass. This closes
+the dependency-tool boundary; it does not by itself establish Autoware delivery.
+Next: the native application repository and complete managed core transition
+gate below. No source package, host installation or reference Ansible role is
+modified; no pre-commit or middleware/GPU check is needed for this SDK fixture.

@@ -1,0 +1,31 @@
+load("@rules_python//python:defs.bzl", "py_binary", "py_library")
+
+package(default_visibility = ["//visibility:public"])
+
+exports_files([
+    "ostree.MODULE.bazel",
+    "archives.json",
+])
+
+alias(
+    name = "runtime",
+    actual = "@ostree_runtime//:runtime",
+)
+
+py_library(
+    name = "tool",
+    srcs = ["tool.py"],
+)
+
+py_binary(
+    name = "ostree",
+    srcs = ["cli.py"],
+    args = ["$(rootpath :runtime)"],
+    data = [":runtime"],
+    main = "cli.py",
+    target_compatible_with = [
+        "@platforms//cpu:x86_64",
+        "@platforms//os:linux",
+    ],
+    deps = [":tool"],
+)
