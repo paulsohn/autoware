@@ -1602,23 +1602,95 @@ Complete each distribution boundary before expanding the application closure.
    logging provider; root composition selects real GL dispatch, pinned GNU and
    source-built zlib runtime providers. Scope is x86_64 CPU/Cyclone DDS with
    Agnocast disabled. See the [reproducible gate](JOURNAL.md#2026-11-20-phase-71--native-headless-core-distribution).
-2. **7.2 — Thin OCI distribution (complete, 2026-11-20).** rules_img 0.3.22
-   adds the unchanged native payload at /opt/autoware to digest-pinned Ubuntu
-   24.04. OCI and Docker-load exports contain both layers; assembly needs no
-   container daemon or image-side apt/pip/rosdep. Payload parity, all image
+2. **7.2 — Runtime distribution variants and service supervision (in progress).**
+   rules_img 0.3.22 adds the unchanged native payload at /opt/autoware to
+   digest-pinned Ubuntu 24.04. OCI and Docker-load exports contain both layers;
+   assembly needs no container daemon or image-side apt/pip/rosdep. Payload
+   parity, all image
    structure assertions, both existing behavior/shutdown cases, and SIGINT
    shutdown through the normal unprivileged image entrypoint pass on native
    Docker Engine with read-only roots and no network/workspace/cache mounts.
    Scope remains x86_64 CPU/Cyclone DDS with Agnocast disabled. See the
    [reproducible gate](JOURNAL.md#2026-11-20-phase-72--thin-oci-core-distribution).
-   A pinned QEMU guest remains an optional additional packaging check, without
-   real-time or GPU acceptance claims.
+   The single-entrypoint variant is complete; the s6, systemd and OSTree
+   variants below are additional completion gates. A pinned QEMU guest is an
+   optional additional OCI packaging check; a bootable OSTree deployment would
+   require its own guest boot gate. Neither establishes real-time or GPU support.
 3. **7.3 — AWF planning simulation.** Establish the exact tutorial/source/input
    contract, then demonstrate the original planning_simulator.launch.xml
    workflow and repeatable headless functional assertions. Integrate the
    selected autoware_universe planning/launch dependency closure first where
    required by that workflow. A smaller core-only experiment is optional and
    does not satisfy the AWF workflow gate by itself.
+
+Phase 7.2 task boundaries:
+
+- **7.2.1 — Single-entrypoint OCI image (complete, 2026-11-20).** Retain the
+  validated native bundle, image exports and existing complete image gate.
+- **7.2.2 — s6 service supervision (planned).** Add a separate OCI variant with
+  s6-overlay/s6-rc as PID 1, the unchanged core bundle and a small dummy
+  prerequisite service. Use explicit readiness notification to gate core
+  startup. On unexpected prerequisite loss, stop the managed core and expose
+  the failure; recovery requires an explicit product restart. Define orderly
+  reverse shutdown; startup dependencies alone do not implement this policy.
+  Pin upstream release inputs through generic third_party/ support; keep
+  product service definitions under images/ and new tests under bazel/tests/.
+- **7.2.3 — systemd service supervision (planned).** Add another OCI variant
+  implementing the same service relationship and behavior contract with native
+  systemd units, including explicit ordering, requirement and readiness
+  semantics. First inspect and pin the Ubuntu-compatible manager/library
+  closure, and establish the actual cgroup, permission and writable-filesystem
+  prerequisites on the current engine. Do not assume the plain image's
+  unprivileged/drop-all runtime settings transfer unchanged. Resolve the
+  required runtime configuration before declaring this variant supported.
+- **7.2.4 — OSTree native distribution (planned).** Reuse the native core
+  payload and the systemd/core-plus-dummy service composition for versioned
+  delivery through a pinned OSTree repository. First settle and record the
+  deployment scope: application-tree replication/activation on the existing OS,
+  or a bootable OS deployment. OSTree checkout alone does not establish OS boot,
+  service activation or transactional application lifecycle. For OS deployment,
+  additionally pin the compatible OS tree, kernel/initramfs, boot integration
+  and a disposable QEMU guest; keep application files and default units in the
+  deployment's read-only content and configuration/state in the appropriate
+  writable locations. Do not convert or modify the developer's host OS.
+  Pin generic OSTree tools/dependencies under third_party/; keep product
+  assembly with root runtime/distribution definitions and added tests under
+  bazel/tests/. No target-side apt/pip/rosdep repair is allowed.
+
+The OSTree gate must exercise two immutable, distinguishable revisions: verify
+repository integrity and provenance, install/activate the first revision, update
+to the second, and roll back to the first. Check the active revision, complete
+core behavior, the dummy prerequisite relationship and clean shutdown after
+each transition. Demonstrate that interrupted preparation leaves the previous
+revision usable and that writable configuration/state is preserved under the
+documented compatibility policy. Use an isolated disposable runtime; if the
+selected scope includes OS deployment, actually boot/reboot into the selected
+deployment and verify the booted revision. An application-only demonstration
+must not claim bootloader/kernel rollback or whole-OS update support. Select
+the exact inputs and verification commands before implementation. This is a
+local deployment/update experiment, not production OTA or fleet orchestration.
+See the upstream [OSTree overview](https://ostreedev.github.io/ostree/introduction/)
+and [deployment contract](https://ostreedev.github.io/ostree/deployment/), reviewed
+2026-11-20; no OSTree input or runtime behavior has been validated here yet.
+
+For both supervised variants, the dummy daemon is product demonstration support,
+not a change to core packages. It announces readiness and remains alive while
+the core runs. The acceptance gate must demonstrate delayed readiness without
+early core startup, normal operation, prerequisite failure stopping the core,
+explicit restart recovery, plus reverse shutdown with no surviving children.
+Reuse the existing core functional assertions against the supervisor-started
+core, with a root-owned external-runtime adapter where necessary; do not launch
+a second independent core graph to stand in for the supervised application.
+Keep nodes, parameters, map/URDF delivery, velocity relay, version API, graph
+endpoints and executable/library closure checks. Validate the new image
+structure/configuration and reuse unchanged native payload evidence. Each
+variant's full gate must pass before its module task is complete.
+
+Implement and validate these tasks sequentially with Cyclone DDS and Agnocast
+disabled, respecting user.bazelrc. Fast DDS requires fresh approval; GPU,
+mixed-deployment frameworks and Phase 7.3 implementation are outside these
+tasks. QEMU is conditional on the selected OSTree deployment scope. Commit the
+validated 7.2.1 boundary and this plan, then pause before implementing 7.2.2–7.2.4.
 
 The local standalone autoware_simple_planning_simulator manifests do not require
 Universe planning implementations. Its
@@ -1666,8 +1738,8 @@ target requires them.
 ## Runtime packaging and deployment requirements
 
 Phase 7 establishes the runtime distribution gates below; incomplete experiments
-do not establish deployment support. OTA is a deferred extension, not an added
-Phase 7 completion requirement.
+do not establish deployment support. Production OTA remains deferred. Phase
+7.2.4 separately plans a local OSTree installation/update/rollback demonstration.
 
 ### Environment responsibilities
 
@@ -1685,6 +1757,22 @@ SDK archives alone establish hermetic execution. images/dev.Dockerfile is a
 build-validation environment, not a runtime image or deployment prerequisite.
 For existing kernel/runtime alternatives, see
 [the deferred platform options](#deferred-cross-platform-and-kernel-runtime-options).
+
+### Deployment scope decision
+
+Keep the native bundle as the primary product artifact and OCI as an optional
+single-host packaging form of the same application closure. Preserve ROS launch
+as the owner of the ROS node graph. The s6 and systemd image variants demonstrate
+management of surrounding services, with core launch as one managed service;
+they do not require one service unit or container per ROS node.
+
+Do not pursue multi-container composition, multi-host placement profiles,
+mixed-backend configuration generation or a universal deployment abstraction in
+this experiment. Those remain possible later options when an actual isolation,
+runtime-environment or operational requirement justifies their maintenance cost.
+Service dependencies and differing library dependencies alone do not establish
+that requirement. This closes the deployment-profile investigation; the explicit
+Phase 7.2 supervisor and OSTree distribution demonstrations are scheduled now.
 
 ### Declare once, package from the runtime closure
 

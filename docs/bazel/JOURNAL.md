@@ -9298,9 +9298,54 @@ Targeted buildifier, Python syntax/flake8, YAML, documentation links and
 whitespace checks pass. No pre-commit or Fast DDS run is performed. Unchanged
 Phase 7.1 native/module suites retain their previous evidence.
 
-Phase 7.2 is complete for x86_64 CPU/Cyclone DDS with Agnocast disabled.
+The single-entrypoint variant, now Phase 7.2.1, is complete for x86_64
+CPU/Cyclone DDS with Agnocast disabled.
 The image does not establish GUI, GPU, enabled Agnocast, ARM, QEMU, OTA or a
 driving scenario. QEMU remains an optional additional packaging check.
 
-Next: 7.3 reconciles the AWF tutorial and integrates its actual selected Universe
-planning/launch closure before demonstrating the documented simulator workflow.
+Additional completion scope agreed on 2026-11-20: Phase 7.2 remains open for
+s6 and systemd OCI service demonstrations and the OSTree task below.
+Preserve the existing core artifact and give each manager a
+small dummy prerequisite daemon with explicit readiness. Add product definitions
+under images/, pinned generic dependency support under third_party/ and
+root-owned tests under bazel/tests/. Inspect each manager's actual runtime
+requirements before choosing versions or asserting container settings work.
+No image-side apt/pip/rosdep dependency resolution is planned.
+
+To-dos: test delayed readiness, the existing functional core behavior against
+the managed instance, dependency-loss policy and clean ordered shutdown. Keep
+the core source unchanged and avoid substituting an independently launched core
+for the managed process under test. Record each variant's exact inputs,
+commands, diagnosed failures and complete results when implemented. The
+[subphase plan](PLAN.md#phase-7--runtime-packaging-and-headless-planning-simulation-in-progress)
+defines the full acceptance boundary. This addition is planning only: no s6 or
+systemd implementation, build or behavior check has been performed.
+
+Deployment decision: retain native artifacts plus optional single-host OCI
+packaging and ROS launch composition. Multi-container, multi-host profiles and
+mixed-backend generation are not being pursued; see the authoritative
+[scope decision](PLAN.md#deployment-scope-decision). The supervisor variants
+are demonstrations within one image/host, not a general orchestration layer.
+
+Additional plan requested on 2026-11-20: add Phase 7.2.4 for OSTree native
+distribution of the same core and systemd/dummy composition. Before
+implementation, explicitly choose application-tree delivery versus bootable OS
+deployment; the latter also requires pinned OS/kernel/boot inputs and actual
+boot/update/rollback checks in a disposable guest. The upstream
+[overview](https://ostreedev.github.io/ostree/introduction/) and
+[deployment contract](https://ostreedev.github.io/ostree/deployment/) distinguish
+the repository/checkout mechanism from full OS deployments. The plan requires
+two immutable revisions, integrity/provenance checks, install/update/rollback,
+the complete core and prerequisite-service behavior after each transition,
+preserved compatible state and a usable previous revision after interrupted
+preparation. No developer-host OS conversion or production OTA/fleet machinery
+is authorized by this experiment. Keep the scope and gates in PLAN.md rather
+than repeat a prospective developer workflow in DEVELOPING.md.
+
+The s6, systemd and OSTree additions are planning-only documentation changes;
+reuse the passing 7.2.1 runtime evidence above. Documentation consistency,
+local links/anchors and whitespace checks pass; no runtime rerun is needed for
+these plans. The validated OCI boundary is committed separately as 3ec963e7;
+publish the remaining-variant plan and pause before implementation. After all
+four 7.2 variants pass, proceed to 7.3's AWF tutorial and actual selected Universe
+planning/launch closure.
