@@ -9607,3 +9607,110 @@ the dependency-tool boundary; it does not by itself establish Autoware delivery.
 Next: the native application repository and complete managed core transition
 gate below. No source package, host installation or reference Ansible role is
 modified; no pre-commit or middleware/GPU check is needed for this SDK fixture.
+
+## 2026-11-21: Phase 7.2.4 — OSTree application-tree distribution
+
+Purpose: demonstrate immutable native application delivery/update/rollback while
+keeping the supported OS, systemd units and demo prerequisite fixed. Whole-OS,
+kernel/bootloader updates, bootc and vehicle provisioning remain deferred. The
+OCI systemd variant is the disposable fixed-OS harness; the delivery artifact
+is a native application OSTree repository. Broader Universe integration is next.
+The deferred OTA section in PLAN.md records tool/state ownership for later:
+Bazel builds identified artifacts, an OS pipeline owns its base, optional
+Ansible provisions machine-specific inputs, local supervisors own services,
+and an update agent would own authenticated activation/recovery decisions.
+The existing ansible/ dependency-installer reference is not extended.
+
+Inputs/prerequisites: use the [validated SDK](#2026-11-21-phase-724--ostree-sdk),
+the existing native core_bundle, and the supported systemd/Docker runtime
+contract. Version selection, the 73-payload manifest, declared conversion,
+loader audit and local command scope are documented in the dependency gate
+above. Components remain independent of product assembly and SDK definitions.
+
+Minimum integration pattern: a root py_binary/genrule imports core_bundle into
+an archive repository through --tree=tar, applies --no-xattrs, owner UID/GID 0,
+--canonical-permissions, and a fixed commit timestamp. Add release.json with
+release/domain metadata as an overlay. The second commit reuses the first tree
+and changes only that metadata. The two revisions deliberately have identical
+application binaries. Emit the repository and releases.json in core_ostree.tar.gz,
+plus a separate identical core_ostree.json receipt. Manifest/commit metadata bind
+the trees to the native bundle SHA-256; the receipt also pins the SDK archive
+hash. Normalize archive ownership/time headers; preserve file/link payloads.
+No Git/workspace/cache paths enter the artifact. The builder runs fsck before
+publishing its outputs. The resulting archive is approximately 258 MiB; this is
+an observed artifact size, not a performance acceptance gate.
+
+Consequential import findings: 45 Lark wheel files in the native tar have mode
+0666; a bare-user-only client rejects them. Canonical commit permissions remove
+unsupported writable bits while preserving executable status. A subsequent
+bare-user-only fsck still fails for the three logical 0555 symlinks in the
+native tar, because that mode stores physical symlinks without their original
+metadata. Inspection of failing object d8e663ac… confirms its logical 0120555
+mode and Python bootstrap symlink target in the archive header. Use an archive-mode local client instead. It retains logical metadata
+without requiring filesystem xattrs; force-copy, user-mode checkout produces
+a separate application tree. Keep both fsck and --untrusted import verification;
+do not suppress the checksum failure or rewrite source package contents.
+
+Activation/state pattern: create complete deployments/<commit> trees, keep
+vehicle records outside them, and use an atomically replaced relative active
+symlink (with directory fsync) to select a prepared tree. Stop the whole product
+before switching, then start a fresh manager/product instance so late resource
+loads cannot span revisions. Rollback selects a retained compatible tree and
+uses the same stop/start procedure. The test kills a real force-copy checkout
+after observing files, verifies SIGKILL termination and unchanged active A,
+then demonstrates A remains usable through its full gate. This proves interrupted
+preparation behavior, not arbitrary power-loss or kernel/bootloader recovery.
+The fixture preserves synthetic identity.json and calibration.yaml outside
+revision content, exposing them read-only to the test runtime; it does not add
+calibration-consuming application behavior. Only synthetic release/domain
+metadata changes. Real model/map/domain switching and state migrations remain
+deferred; current compatibility means identical binaries and state schemas.
+
+Exact verification, in a clean unsourced environment with the documented local
+Docker/cgroup access and user.bazelrc limits, sequentially:
+
+```sh
+bazel build --config=runtime --config=no-agnocast \
+  //bazel/runtime/ostree:core_repository
+bazel run --config=runtime --config=no-agnocast //third_party/ostree:ostree -- --version
+bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --nocache_test_results --test_output=errors //bazel/tests:core_ostree_runtime_test
+bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --nocache_test_results --test_output=errors \
+  //bazel/tests:core_s6_structure_test //bazel/tests:core_s6_runtime_test \
+  //bazel/tests:core_systemd_structure_test
+```
+
+The CLI reports libostree 2024.5. The complete OSTree gate passes in 180.7
+seconds: repository integrity/provenance, intentional object corruption rejected,
+restored source verified, untrusted local import and local fsck, exact comparison
+of all 23,665 native files/links (bytes, link targets and executable status),
+interrupted preparation, and A→B→A activation. Each selected tree mounts read-only
+over /opt/autoware in the systemd harness; its embedded original application is
+hidden. Each selection passes the entire supervisor gate: both original core
+functional/lifecycle cases, executable/library audits, delayed readiness,
+SIGKILL and clean SIGTERM prerequisite loss, no independent daemon restart,
+explicit product recovery, startup failure, reverse shutdown and all 26 inner
+processes terminating cleanly. Six original core cases pass across three
+selections, with no failures or skips. Synthetic vehicle records remain identical
+throughout; active release/domain metadata matches each selected revision.
+
+Observed revisions: A is
+3f083ff81ed9c1bc5fea73f3884ee4567f5637b6953624df14293b42f6b0d6eb,
+B is e6843e8708364d9681df4f53392e8641d0281657ed4beb6b3eb15972f717cd3c.
+Input bundle SHA-256 is
+4be16386f59a90da9e9be8de92b398954f867af1a036ee6400c35e2d998a8844;
+SDK archive SHA-256 is
+767a0a8fa6b17774108f571611faa06e706ab8ad21c68f6e7f641abcd36336ef.
+Other integrations should compare their own receipt against their declared
+inputs, not expect these commits after changing application content.
+
+All three affected supervisor regressions pass: s6 runtime (58.8 seconds),
+s6 image structure and systemd image structure. The unchanged native/plain-image
+implementation and prior payload-parity evidence are reused. Targeted buildifier,
+Python/flake8, documentation links/anchors and whitespace checks pass.
+No original source package, host OS/service installation or reference Ansible
+role is modified. No pre-commit, Fast DDS, GPU or QEMU check is run; this scope
+is application distribution on Linux x86_64, not bootable OS/production OTA.
+Phase 7.2 is complete. Next is 7.3's selected AWF planning-simulator/Universe
+closure.

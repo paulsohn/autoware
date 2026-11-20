@@ -88,6 +88,12 @@ class TestSupervisedImage(unittest.TestCase):
                 name = 'autoware-' + MANAGER + '-' + uuid.uuid4().hex[:10]
                 containers.append(name)
                 flags = ['--env', 'AUTOWARE_READY_GATE=/run/autoware/release'] if blocked else []
+                # Distribution gates can supply an independently selected native checkout.
+                if bundle := os.environ.get('CORE_IMAGE_BUNDLE'):
+                    flags += ['--mount', f'type=bind,src={Path(bundle).resolve()},dst=/opt/autoware,readonly']
+                if vehicle := os.environ.get('CORE_IMAGE_VEHICLE_STATE'):
+                    flags += ['--mount', f'type=bind,src={Path(vehicle).resolve()},'
+                              'dst=/var/lib/autoware/vehicle,readonly']
                 runtime = ['--cgroupns=private', '--tty', '--cap-add=SYS_ADMIN',
                            '--security-opt=apparmor=unconfined'] if systemd else ['--cap-drop=ALL']
                 run_mount = '/run:rw,exec' if systemd else '/run:rw,exec,uid=1000,gid=1000,mode=0755'

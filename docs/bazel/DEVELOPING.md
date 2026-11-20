@@ -926,6 +926,74 @@ shutdown. When stopping services without exiting PID 1, wait for all jobs:
 Stopping the target alone can return before its members finish. See the
 [complete gate](JOURNAL.md#2026-11-21-phase-723--systemd-core-service-supervision).
 
+### OSTree application distribution
+
+//bazel/runtime/ostree:core_repository produces core_ostree.tar.gz (an archive-mode
+OSTree repository plus releases.json) and core_ostree.json (the same manifest).
+It reuses the complete native core bundle. The two demo releases have identical
+application binaries and distinct synthetic release/domain metadata; they test
+selection/update mechanics. The manifest records their immutable commit IDs,
+the input bundle SHA-256 and SDK SHA-256. Commit metadata repeats the bundle
+identity. The fixed timestamp and normalized archive headers avoid wall-clock
+inputs. This is application delivery on the supported OS; systemd, its units
+and the prerequisite stay in that OS/harness and are outside the update tree.
+
+```sh
+bazel build --config=runtime --config=no-agnocast \
+  //bazel/runtime/ostree:core_repository
+bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --nocache_test_results --test_output=errors //bazel/tests:core_ostree_runtime_test
+```
+
+The gate uses the validated core_systemd image as a disposable fixed-OS harness,
+mounting each independently selected checkout read-only over /opt/autoware. Both
+original core cases and the complete managed failure/recovery/shutdown gate run
+for A, B and rollback A. The SDK's own libc/ELF loader runs OSTree; a loader audit
+rejects DSOs outside that SDK. No host OSTree installation is needed.
+
+The local client also uses archive mode: it retains logical symlink metadata
+without requiring filesystem xattrs. Force-copy checkout materializes a separate
+application tree; regular-file permissions are canonicalized at commit time.
+Native bundle bytes, link targets and executable status are checked directly.
+
+For manual inspection, create a deployment directory, extract the distribution
+there and use the declared CLI (absolute repository paths are needed because
+Bazel runs tools from its execution environment):
+
+```sh
+deploy_root=$(mktemp -d)
+tar -xf bazel-bin/bazel/runtime/ostree/core_ostree.tar.gz -C "$deploy_root"
+ostree=(bazel run --config=runtime //third_party/ostree:ostree --)
+"${ostree[@]}" --repo="$deploy_root/repo" fsck
+"${ostree[@]}" --repo="$deploy_root/local" init --mode=archive
+"${ostree[@]}" --repo="$deploy_root/local" pull-local --untrusted \
+  "$deploy_root/repo" core/a core/b
+a=$("${ostree[@]}" --repo="$deploy_root/local" rev-parse core/a)
+mkdir "$deploy_root/deployments"
+"${ostree[@]}" --repo="$deploy_root/local" checkout --user-mode --force-copy \
+  "$a" "$deploy_root/deployments/$a"
+ln -s "deployments/$a" "$deploy_root/active"
+```
+
+Stage a new checkout completely and verify its identity/integrity before
+activation. Stop the whole product, atomically replace active with a symlink to
+the prepared checkout, then start a fresh product instance. Resolve the selected
+checkout for the image's /opt/autoware mount before startup. Do not change active
+under a running product that might load further resources through that path.
+Rollback selects a retained compatible checkout and follows the same stop/start
+sequence. The gate kills an actual force-copy preparation after observing files;
+the previous selection remains unchanged and passes its complete gate afterward.
+This does not establish crash-safe whole-OS deployment or bootloader rollback.
+
+Keep writable vehicle identity/calibration outside deployments and never overlay
+it with revision content. The fixture preserves synthetic records across A→B→A;
+release-owned domain metadata changes with the selected tree. Compatibility here
+means unchanged binary/state schemas and unchanged service definitions. Real
+schema migration, credentials, remote authentication/signing, fleet rollout and
+full domain-resource switching are deferred. No automatic OS or host service
+installation is performed. See the
+[adoption gate](JOURNAL.md#2026-11-21-phase-724--ostree-application-tree-distribution).
+
 ## CUDA targets and tests
 
 The product root owns version selection from third_party/: it includes the

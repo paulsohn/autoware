@@ -1843,3 +1843,33 @@ py_test(
     precompile = "disabled",
     deps = ["@rules_python//python/runfiles"],
 )
+
+py_test(
+    name = "core_ostree_runtime_test",
+    size = "large",
+    srcs = [
+        "runtime/test_ostree.py",
+        "runtime/test_supervised_image.py",
+    ],
+    args = [
+        "$(rootpath //third_party/ostree:runtime)",
+        "$(rootpath //bazel/runtime/ostree:archive)",
+        "$(rootpath //images:core_systemd_docker_archive)",
+        "$(rootpath //bazel/runtime:core_bundle_tests)",
+        "$(rootpath //bazel/runtime:core_bundle)",
+    ],
+    data = [
+        "//bazel/runtime:core_bundle",
+        "//bazel/runtime:core_bundle_tests",
+        "//bazel/runtime/ostree:archive",
+        "//images:core_systemd_docker_archive",
+        "//third_party/ostree:runtime",
+    ],
+    main = "runtime/test_ostree.py",
+    tags = [
+        "external",
+        "no-remote",
+        "no-sandbox",
+    ],
+    deps = ["//third_party/ostree:tool"],
+)

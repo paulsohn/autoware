@@ -1,0 +1,32 @@
+load("@rules_python//python:defs.bzl", "py_binary")
+
+package(default_visibility = ["//visibility:public"])
+
+py_binary(
+    name = "make_repository",
+    srcs = ["make_repository.py"],
+    deps = ["//third_party/ostree:tool"],
+)
+
+genrule(
+    name = "core_repository",
+    srcs = [
+        "//bazel/runtime:core_bundle",
+        "//third_party/ostree:runtime",
+    ],
+    outs = [
+        "core_ostree.tar.gz",
+        "core_ostree.json",
+    ],
+    cmd = "$(execpath :make_repository) --sdk $(location //third_party/ostree:runtime) --bundle $(location //bazel/runtime:core_bundle) --archive $(location core_ostree.tar.gz) --manifest $(location core_ostree.json)",
+    target_compatible_with = [
+        "@platforms//cpu:x86_64",
+        "@platforms//os:linux",
+    ],
+    tools = [":make_repository"],
+)
+
+filegroup(
+    name = "archive",
+    srcs = ["core_ostree.tar.gz"],
+)

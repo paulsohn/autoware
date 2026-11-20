@@ -88,6 +88,10 @@ only when your current target demonstrates the need.
   [evidence: native runtime closure](JOURNAL.md#2026-11-20-phase-71--native-headless-core-distribution).
   [OCI image convention](DEVELOPING.md#oci-core-distribution);
   [evidence: payload and image execution](JOURNAL.md#2026-11-20-phase-72--thin-oci-core-distribution).
+- [ ] Separate immutable release/domain resources from persistent vehicle records,
+  and define activation/state compatibility before updating them.
+  [Application update convention](DEVELOPING.md#ostree-application-distribution);
+  [evidence: local update/rollback](JOURNAL.md#2026-11-21-phase-724--ostree-application-tree-distribution).
 - [ ] Define editable model modules and portable runtime resource paths together.
   [Model repository/path convention](#model-repository-and-runtime-path-convention);
   [evidence and required experiment](JOURNAL.md#2026-11-18-model-subtree-layout-and-portable-launch-path-requirements);
@@ -1605,7 +1609,7 @@ Complete each distribution boundary before expanding the application closure.
    logging provider; root composition selects real GL dispatch, pinned GNU and
    source-built zlib runtime providers. Scope is x86_64 CPU/Cyclone DDS with
    Agnocast disabled. See the [reproducible gate](JOURNAL.md#2026-11-20-phase-71--native-headless-core-distribution).
-2. **7.2 — Runtime distribution variants and service supervision (in progress).**
+2. **7.2 — Runtime distribution variants and service supervision (complete, 2026-11-21).**
    rules_img 0.3.22 adds the unchanged native payload at /opt/autoware to
    digest-pinned Ubuntu 24.04. OCI and Docker-load exports contain both layers;
    assembly needs no container daemon or image-side apt/pip/rosdep. Payload
@@ -1651,14 +1655,20 @@ Phase 7.2 task boundaries:
   bind mount, host manager or privileged-container mode is used. See the
   [systemd gate](JOURNAL.md#2026-11-21-phase-723--systemd-core-service-supervision)
   for the precise runtime contract and dependency/failure-policy findings.
-- **7.2.4 — OSTree native distribution (in progress).** The generic dependency
-  boundary is validated: Ubuntu-compatible OSTree 2024.5-1build2, its pinned
-  loader/library closure and independent public-CLI fixture. The selected scope
-  is application-tree delivery on the fixed supported OS, using the systemd
-  image as a disposable harness. Whole-OS/bootc deployment stays deferred.
-  Next, compose immutable native core revisions and validate all transition,
-  state and managed-core gates below. See the
-  [SDK experiment](JOURNAL.md#2026-11-21-phase-724--ostree-sdk).
+- **7.2.4 — OSTree native distribution (complete, 2026-11-21).** Reuse the native core
+  payload and the systemd/core-plus-dummy service composition for versioned
+  delivery through pinned OSTree 2024.5-1build2. The selected scope is application
+  trees on a fixed supported OS: the OCI systemd variant is an isolated test
+  harness, not the delivery artifact. Immutable checkouts plus atomic active
+  selection, followed by an explicit product restart, implement activation.
+  Whole-OS/bootc deployment is deferred. No host OS conversion or QEMU boot is
+  required for this application-only scope. Pin generic OSTree tools/dependencies
+  under third_party/; keep product assembly with root runtime/distribution
+  definitions and added tests under bazel/tests/. No target-side apt/pip/rosdep
+  repair is allowed. The full gate passes for A→B→A, including 23,665 native
+  file/link comparisons, integrity rejection, interrupted preparation, all
+  managed core behavior and preserved synthetic vehicle records. See the
+  [OSTree evidence](JOURNAL.md#2026-11-21-phase-724--ostree-application-tree-distribution).
 
 The OSTree gate must exercise two immutable, distinguishable revisions: verify
 repository integrity and provenance, install/activate the first revision, update
@@ -1679,8 +1689,8 @@ under [later priorities](#later-phases). A bootc-compatible OCI OS image is a
 candidate for the bootable scope, subject to base/ABI and boot validation.
 See the upstream [OSTree overview](https://ostreedev.github.io/ostree/introduction/)
 and [deployment contract](https://ostreedev.github.io/ostree/deployment/), reviewed
-2026-11-20; SDK inputs and local commands are validated in the dependency
-gate. Complete application delivery validation follows.
+2026-11-20; the selected application-only inputs and runtime gate were validated
+2026-11-21. No bootable OS deployment is established.
 
 For both supervised variants, the dummy daemon is product demonstration support,
 not a change to core packages. It announces readiness and remains alive while
@@ -1762,7 +1772,7 @@ target requires them.
 
 Phase 7 establishes the runtime distribution gates below; incomplete experiments
 do not establish deployment support. Production OTA remains deferred. Phase
-7.2.4 separately plans a local OSTree installation/update/rollback demonstration.
+7.2.4 demonstrates local OSTree application installation/update/rollback.
 
 ### Environment responsibilities
 
@@ -1795,7 +1805,8 @@ this experiment. Those remain possible later options when an actual isolation,
 runtime-environment or operational requirement justifies their maintenance cost.
 Service dependencies and differing library dependencies alone do not establish
 that requirement. This closes the deployment-profile investigation; the explicit
-Phase 7.2 supervisor and OSTree distribution demonstrations are scheduled now.
+Phase 7.2 supervisor and application-only OSTree demonstrations are complete
+for the current CPU/Cyclone core product.
 
 ### Declare once, package from the runtime closure
 
@@ -1926,11 +1937,38 @@ validation environment, not a claim of an existing QEMU runner.
 
 ### Deferred OTA deployment
 
+Revisit this after the [Universe coverage priority](#later-phases). The proposed
+ownership boundary is recorded now; no additional deployment framework is being
+implemented in Phase 7.2.
+
+| Layer | Proposed responsibility |
+| --- | --- |
+| Bazel | Build identified application/model/resource artifacts from pinned inputs; never delegate application compilation or dependency resolution to target provisioning. |
+| OS image pipeline | Own the supported base OS, kernel/drivers and fixed service definitions. bootc is an option for a separately validated bootable OCI OS image; current application images are not bootc OS images. |
+| Optional Ansible provisioning | Bootstrap/configure machines and supply machine-specific networking, permissions, identities/secrets and calibration references. Consume already-built releases or invoke the chosen update agent. Keep future provisioning playbooks separate from the existing ansible/ dependency-installer reference. |
+| systemd or s6 | Own local service readiness, ordering, failure and shutdown, with ROS launch owning the internal node graph. |
+| Update agent | Own authenticated staging, compatibility/health decisions, safe activation and recovery. Ansible can coordinate operations but is not itself the transactional update protocol. |
+
+Keep four independently owned inputs explicit: immutable software release;
+versioned domain resources (models/maps/parameters); persistent per-vehicle
+identity/calibration; and writable runtime state/logs. A domain change selects a
+compatible resource manifest and restarts affected services, while preserving
+vehicle records. Image/application rollback must not blindly replace identities
+or calibrations. State-schema compatibility and any migrations need an explicit
+policy before recovery can be claimed. The later milestone's acceptance gate
+is described under the priority above; this is not a new incoming phase.
+
+These are design choices for this experiment. Reference capabilities:
+[Ansible playbooks](https://docs.ansible.com/projects/ansible/latest/playbook_guide/playbooks_intro.html)
+provide configuration/orchestration, while [bootc](https://bootc.dev/bootc/)
+targets bootable host OS updates. Neither is currently a required runtime layer.
+
 An OCI release is delivered by immutable image digest, with authenticated release
 metadata identifying application/configuration/model versions, target hardware
 and required host ABI/driver/module compatibility. Separately delivered models
 must also have exact identities pinned by the release. Select signing and update
-tooling when an OTA experiment is authorized; no updater exists in this branch.
+tooling when an OTA experiment is authorized. Phase 7.2.4 supplies local
+application selection/update tests, not an authenticated OTA agent.
 
 A host-side agent/supervisor, independent of the application container, would
 verify the release, download/stage it while retaining the working version,
