@@ -888,3 +888,17 @@ with slightly worse p95 than ordinary selection. Keep this fixed-topology
 control diagnostic and retain standard ROS executor behavior. Revisit the
 mixed wake and DDS synchronization path before optimizing entity selection.
 [Commands, matched controls, metrics and raw frames](../rmw-agnocast/README.md#dispatching-a-single-ready-path-subscription)
+
+### Measure the helper-free native wake control
+
+In the existing Lyrical colcon overlay, added a diagnostic native-only poll
+to the direct RMW reader. Used standard ROS executor dispatch throughout.
+Six serial rounds balanced all three run orders pairwise and verified 1,080
+Path deliveries. Native Agnocast median/p95 were 41.03/58.69 µs, mixed RMW
+83.91/121.37 µs, and helper-free RMW 66.39/105.53 µs. Minimum host memory
+available during build and matrix was 17,000 and 17,060 MiB respectively.
+The mixed pressure/restart test passed. The helper-free reader missed the
+idle DDS wake deadline as expected. Both helper-free latency metrics exceed
+the 1.20× native target. Keep the Bazel milestone closed and investigate
+PointCloud2 CDR avoidance on Universe next.
+[Exact commands, control semantics and measurements](../rmw-agnocast/README.md#removing-the-dds-helper-from-the-direct-wait)

@@ -721,3 +721,55 @@ gate. Next isolate the unavoidable work on the mixed wait path by comparing
 against a diagnostic native-only wake with an idle DDS helper removed, keeping
 standard ROS callback dispatch and measuring loss of mixed wake capability.
 [Per-frame timings and resources](dispatch-results/).
+
+## Removing the DDS helper from the direct wait
+
+The helper-free Path reader sets both `AGNOCAST_RMW_DIRECT_WAIT=1` and
+`AGNOCAST_RMW_PROBE_NATIVE_ONLY=1`. For a wait set containing a selected native
+subscription, the standard ROS executor now blocks on only the native
+notification fds, honoring the supplied timeout. The control skips the DDS
+wait, helper thread, guard trigger, completion eventfd and synchronization.
+It still consumes native notifications through the same Agnocast executor and
+uses the same rclcpp callback dispatch and loan ownership. A mixed wait
+reports only native subscriptions as ready. An idle DDS sample or shutdown
+guard cannot wake an indefinite native-only wait. Use this flag solely for
+the bounded experiment.
+
+Run from the colcon worktree with the previously built Lyrical overlays:
+
+```bash
+export LYRICAL_ROOT=$(cat build/agnocast-lyrical/universe-root)
+experiments/buffer/run-lyrical.sh bash experiments/rmw-agnocast/build-loadable.sh
+export BUFFER_RUNTIME_ONLY=1
+experiments/buffer/run-lyrical.sh timeout 240s bash \
+  experiments/rmw-agnocast/bench-path.sh build/rmw-agnocast/fresh-helper-free --helper-free
+python3 experiments/rmw-agnocast/summarize-handoff.py build/rmw-agnocast/fresh-helper-free
+AGNOCAST_RMW_DIRECT_WAIT=1 experiments/buffer/run-lyrical.sh timeout 45s \
+  bash experiments/rmw-agnocast/run-loadable.sh pressure
+AGNOCAST_RMW_DIRECT_WAIT=1 AGNOCAST_RMW_PROBE_NATIVE_ONLY=1 \
+  experiments/buffer/run-lyrical.sh timeout 45s bash experiments/rmw-agnocast/run-loadable.sh pressure
+```
+
+The last command is a negative control. Look for the reader's specific
+`DDS wake timed out` error. Six Path rounds run the three untraced treatments
+in all six orders. Each verifies 60 frames. The latency summary pools the
+last 50 frames per round, and CPU/RSS summarize whole child processes.
+
+| Untraced Path reader | Median µs | p95 µs | Median child CPU s | Largest child peak MiB |
+|---|---:|---:|---:|---:|
+| Native Agnocast | 41.03 | 58.69 | 0.149 | 26.0 |
+| Direct RMW with mixed DDS wait | 83.91 | 121.37 | 0.201 | 29.3 |
+| Direct RMW with native-only wait | 66.39 | 105.53 | 0.197 | 29.4 |
+
+All 1,080 frames passed the content, retained loan and address checks. Each
+round's median favored the helper-free control over mixed wait. Pooled median
+and p95 fell by 17.52 and 15.84 µs. The helper-free path still measured
+1.62×/1.80× native against the 1.20× gate. The mixed pressure check passed;
+the native-only reader reported DDS wake timed out and its writer timed out
+waiting for acknowledgement. The control trades away mixed wake semantics.
+
+Keep the existing executor and mixed wait. Defer a production Cyclone wait
+redesign. Return to the Universe PointCloud2 pipeline and test avoiding the
+CDR payload round trip against the prior native, Cyclone DDS and Zenoh/Buffer
+rows. That is a separate hypothesis about pipeline cost.
+[Raw samples and process resource measurements](helper-free-results/).

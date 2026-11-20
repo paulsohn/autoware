@@ -14,6 +14,7 @@ rounds=(1 2 3 4)
 variant=
 baseline=rmw
 case ${2:-} in
+  --helper-free) baseline=direct; variant=helper-free;;
   --handoff) variant=traced;;
   --direct) variant=direct;;
   --native-stages) ;;

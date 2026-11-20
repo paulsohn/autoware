@@ -10,6 +10,7 @@ import tempfile
 probe, hook, mode, prefix = sys.argv[1:]
 env = dict(os.environ, LD_PRELOAD=hook)
 env.pop("AGNOCAST_RMW_DIRECT_WAIT", None)
+env.pop("AGNOCAST_RMW_PROBE_NATIVE_ONLY", None)
 env.pop("AGNOCAST_RMW_HANDOFF_FILE", None)
 env.pop("AGNOCAST_RMW_DIRECT_TRACE", None)
 with tempfile.TemporaryDirectory() as directory:
@@ -25,6 +26,9 @@ with tempfile.TemporaryDirectory() as directory:
     single = mode in ("single", "single-traced")
     if mode in ("rendezvous", "single-traced") or direct_trace:
         reader_env["AGNOCAST_RMW_DIRECT_TRACE"] = str(Path(directory) / "rendezvous")
+    if mode == "helper-free":
+        reader_env["AGNOCAST_RMW_PROBE_NATIVE_ONLY"] = "1"
+        mode = "direct"
     if mode in ("direct", "rendezvous") or direct_trace or single:
         reader_env["AGNOCAST_RMW_DIRECT_WAIT"] = "1"
         mode = "rmw-traced" if direct_trace else "rmw"

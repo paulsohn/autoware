@@ -683,7 +683,26 @@ public:
     auto dds_wait = [&](const rmw_time_t * t) {
       result = CYCLONE(rmw_wait)(&dds_subs, &combined, services, clients, events, ws, t);
     };
-    if (queued || (timeout && !timeout->sec && !timeout->nsec)) {
+    // Diagnostic only: delegated entities cannot wake this native-only poll.
+    static const bool native_only = [] {
+      const char * flag = std::getenv("AGNOCAST_RMW_PROBE_NATIVE_ONLY");
+      return flag && std::strcmp(flag, "1") == 0;
+    }();
+    if (native_only) {
+      timespec duration{};
+      if (timeout && !queued) {
+        duration.tv_sec = timeout->sec;
+        duration.tv_nsec = timeout->nsec;
+      }
+      int rc = ppoll(fds.data() + 1, native.size(), timeout || queued ? &duration : nullptr, nullptr);
+      if (rc < 0 && errno != EINTR) return error("native-only poll failed");
+      std::fill(delegated.begin(), delegated.end(), nullptr);
+      std::fill(guard_data.begin(), guard_data.end(), nullptr);
+      if (services) std::fill_n(services->services, services->service_count, nullptr);
+      if (clients) std::fill_n(clients->clients, clients->client_count, nullptr);
+      if (events) std::fill_n(events->events, events->event_count, nullptr);
+      result = RMW_RET_TIMEOUT;
+    } else if (queued || (timeout && !timeout->sec && !timeout->nsec)) {
       dds_wait(&zero);
       if (poll(fds.data() + 1, native.size(), 0) < 0 && errno != EINTR)
         return error("native poll failed");
@@ -737,7 +756,7 @@ public:
       auto & [idx, r] = native[i];
       if (fds[i + 1].revents & (POLLERR | POLLHUP | POLLNVAL))
         return error("native notification fd failed");
-      if ((queued || (timeout && !timeout->sec && !timeout->nsec)) && (fds[i + 1].revents & POLLIN))
+      if ((native_only || queued || (timeout && !timeout->sec && !timeout->nsec)) && (fds[i + 1].revents & POLLIN))
         r->receive_direct();
       auto timing = r->trace && times.wake && (fds[i + 1].revents & POLLIN) ? &times : nullptr;
       if (r->ready(0, 0, false, timing)) {
