@@ -743,3 +743,36 @@ missing sample metadata. Point, Path, Trajectory, two-reader pressure, crash
 recovery and all four bridge cases passed the final functional rerun, with
 the recorded QoS and metadata limitations. Builds used one job.
 [Commands, numbers and interpretation](../rmw-agnocast/README.md#which-part-of-the-latency-comes-from-cyclone)
+
+### Restore the laptop environment on native Docker Engine
+
+The old exported Universe root was in /tmp and had disappeared. The persistent
+colcon overlays and cached Clang packages were still in the worktree. On
+2026-11-20 the source Desktop containers were stopped. Commit each of
+awf-buffer-lyrical-zenoh, awf-cyclone-baseline and awf-buffer-wrapper-disabled
+to its own local/autoware-migration tag, save the linux/amd64 image to a file,
+load into Engine and compare image inspect .Id across the two contexts.
+All three IDs matched. The existing session used sg docker for Engine access.
+The wrapper snapshot already contained the Lyrical PCL, Cyclone and Zenoh
+packages. Recreate its /sources bind read-only from the original worktree.
+
+Export the recreated wrapper container with docker export and extract into a
+user-owned persistent directory. Extract build/agnocast-lyrical/clang-debs/*.deb
+there with dpkg-deb -x. Create the /ws and /usr/local/cuda-13.0 mountpoints
+inside that root, the relative /usr/local/cuda symlink to cuda-13.0, and empty
+destinations for the host driver files bound by run-lyrical.sh. The read-only
+root requires these mount destinations before running the namespace helper.
+
+Set LYRICAL_ROOT to the resulting directory and run:
+
+```bash
+BUFFER_RUNTIME_ONLY=1 experiments/buffer/run-lyrical.sh bash -ec \
+  'test -c /dev/agnocast; clang++-21 --version; ros2 pkg prefix pcl_ros; ros2 pkg prefix rmw_cyclonedds_cpp; ros2 pkg prefix rmw_zenoh_cpp'
+BUFFER_RUNTIME_ONLY=1 experiments/buffer/run-lyrical.sh timeout 60s \
+  bash experiments/rmw-agnocast/run-loadable.sh point
+```
+
+Clang reported 21.1.8. All three package lookups resolved in /opt/ros/lyrical.
+The existing Point loan and copy probes each verified four samples. Record
+the verified LYRICAL_ROOT in build/agnocast-lyrical/universe-root. This
+migration check produced no new performance measurements.
