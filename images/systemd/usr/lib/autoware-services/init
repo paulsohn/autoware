@@ -1,0 +1,14 @@
+#!/bin/sh
+# Copyright 2026 Taeseung Sohn
+# SPDX-License-Identifier: Apache-2.0
+set -eu
+test "$(cat /proc/self/cgroup)" = '0::/' || {
+  echo 'systemd image requires a private cgroup namespace' >&2
+  exit 1
+}
+if ! test -w /sys/fs/cgroup; then
+  /usr/bin/mount -o remount,rw,bind /sys/fs/cgroup
+fi
+mkdir -p /run/autoware
+chown 1000:1000 /run/autoware
+exec /usr/lib/systemd/systemd --unit=autoware.target --log-target=console --log-color=false

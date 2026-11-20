@@ -128,3 +128,50 @@ filegroup(
     srcs = [":core_s6_load"],
     output_group = "tarball",
 )
+
+pkg_tar(
+    name = "systemd_services",
+    srcs = glob(["systemd/**"]),
+    extension = "tar.gz",
+    preserve_mode = True,
+    strip_prefix = "systemd",
+    deps = [":service_support"],
+)
+
+layer_from_tar(
+    name = "systemd_services_layer",
+    src = ":systemd_services",
+    estargz = "disabled",
+)
+
+image_manifest(
+    name = "core_systemd",
+    base = ":core",
+    cmd = [],
+    entrypoint = ["/usr/lib/autoware-services/init"],
+    env = {
+        "container": "docker",
+        "ROS_DOMAIN_ID": "86",
+    },
+    layers = [
+        "//third_party/systemd:layer",
+        ":prerequisite_layer",
+        ":systemd_services_layer",
+    ],
+    stop_signal = "SIGRTMIN+3",
+    user = "0:0",
+)
+
+image_load(
+    name = "core_systemd_load",
+    daemon = "docker",
+    image = ":core_systemd",
+    strategy = "eager",
+    tag = "docker.io/library/autoware-core:systemd",
+)
+
+filegroup(
+    name = "core_systemd_docker_archive",
+    srcs = [":core_systemd_load"],
+    output_group = "tarball",
+)

@@ -9459,3 +9459,86 @@ documentation links and whitespace checks pass. No pre-commit, Fast DDS or GPU
 check is run. Phase 7.2.2 is complete for the existing x86_64 CPU/Cyclone product,
 with Agnocast disabled. This does not establish native systemd or OSTree support.
 Next: Phase 7.2.3's pinned manager closure and equivalent systemd image gate.
+
+## 2026-11-21: Phase 7.2.3 — systemd core service supervision
+
+Purpose: implement the same prerequisite/core readiness, loss, restart and
+shutdown contract using native systemd units in a separate OCI image. The
+complete existing headless core behavior and lifecycle suite is retained, with
+Cyclone DDS and Agnocast disabled. No original source package is modified.
+
+Inputs/prerequisites: Ubuntu noble/noble-updates package metadata, inspected
+2026-11-21, selects systemd 255.4-1ubuntu8.19, matching shared libraries and the
+explicit 32-payload closure in third_party/systemd/archives.json. Preserve each
+package version, path and SHA-256; the pinned Ubuntu base supplies glibc. The
+main archive returned HTTP 403 for selected payloads; kernel.org and Ubuntu's
+security mirror supplied matching hashes. Package-installation tooling such as
+debconf and systemd-dev is excluded. No package manager/maintainer scripts run.
+Bazel extraction preserves original data archives; declared Python 3.14
+compression.zstd conversion produces tar inputs accepted by rules_pkg, keeping
+links, modes and copyright files. This avoids a host dpkg/zstd build dependency.
+
+Minimum pattern: compose the generic SDK layer with unchanged native core,
+the demo executable's full runfiles, and product-owned units under images/.
+Type=notify delays prerequisite activation until READY=1. Core uses
+Requires/BindsTo/After on the prerequisite; PartOf connects both services to
+autoware.target. Use RequiresMountsFor on service runtime/input mounts so
+shutdown does not unmount them before application termination. PID 1 runs as
+root; services run as 1000:1000. ExecStopPost records shutdown, while the
+instanced OnFailure handler records failure and requests manager exit status 1.
+
+Failure policy and diagnosed issues: OnFailure alone misses unexpected clean
+exits. ExecStopPost inspection of transient job/target state is unreliable during
+dependency propagation. Instead, Restart=always with StartLimitIntervalSec=infinity
+and StartLimitBurst=1 permits initial startup but rejects replacement starts,
+triggering OnFailure. The test proves only one daemon start actually occurs.
+Use Wants on the product target: Requires propagated target teardown back into
+the prerequisite and cancelled its pending restart/failure policy after a clean
+exit. The core's strict requirement stays intact. Normal explicit stop does not
+restart; explicit container restart supplies a fresh manager and start budget.
+The launch-test adapter must wait for all three systemctl stop jobs, because a
+target's own stop can complete before member processes. Otherwise log inspection
+races application shutdown even though runtime ordering is correct.
+
+Supported runtime, experimentally established on native Docker Engine 29.10.0,
+cgroup v2/systemd driver: --read-only --network=none --cgroupns=private --tty,
+--cap-add=SYS_ADMIN --security-opt=apparmor=unconfined,
+--security-opt=no-new-privileges, /tmp:rw,exec,nosuid,nodev and /run:rw,exec.
+The entrypoint verifies 0::/ before bind-remounting its private cgroup view rw.
+Default Docker cannot remount it; SYS_ADMIN alone still fails under AppArmor.
+The container-local profile override is required for this invocation. No writable
+host-cgroup bind mount, privileged mode, device or host manager installation is
+used. Operator acceptance of these broader permissions is a runtime prerequisite.
+Maps mount read-only at /maps; tests additionally mount a separate verification
+companion and observable state. The stop signal is SIGRTMIN+3. See
+[developer invocation](DEVELOPING.md#systemd-core-image).
+
+Exact gate (run in a clean unsourced environment with local Docker access):
+
+```sh
+bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --nocache_test_results --test_output=errors \
+  //bazel/tests:core_systemd_structure_test //bazel/tests:core_systemd_runtime_test
+bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --nocache_test_results --test_output=errors \
+  //bazel/tests:core_s6_structure_test //bazel/tests:core_s6_runtime_test
+```
+
+The systemd gate passes: ten image structure assertions and the complete runtime
+gate (42.3 seconds). Both original core cases check actual managed processes,
+including executable/library closure, nodes, parameters, map/URDF, relay, API,
+graph endpoints and shutdown. All 26 inner processes finish cleanly with no
+surviving recorded application PIDs. Delayed readiness prevents early core
+startup. SIGKILL and caught SIGTERM prerequisite loss both stop the product with
+nonzero status and no independent daemon restart; explicit container restart
+recovers, and normal reverse shutdown exits zero. Failure before readiness does
+not start the core. The gate also verifies systemd is PID 1 and core has its own
+service cgroup. Both affected s6 targets also pass, including the strengthened no-restart
+assertion; its full runtime gate takes 60.7 seconds.
+Previously passing plain/native core gates and payload parity are reused because
+their implementation/configuration is unchanged.
+
+Targeted buildifier, Python/flake8, shell syntax, YAML and whitespace checks pass.
+No pre-commit, Fast DDS or GPU check is run. Scope is Linux x86_64 container
+supervision on the supported base, not a host OS or kernel/bootloader update.
+Next: application-only OSTree distribution on a fixed OS.

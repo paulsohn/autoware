@@ -1,0 +1,10 @@
+[Unit]
+Description=Report required service failure and terminate the product
+DefaultDependencies=no
+RequiresMountsFor=/run/autoware
+
+[Service]
+Type=oneshot
+ExecStart=/usr/lib/autoware-services/failure %i
+StandardOutput=null
+StandardError=null

@@ -1,0 +1,25 @@
+load("@rules_img//img:layer.bzl", "layer_from_tar")
+
+package(default_visibility = ["//visibility:public"])
+
+exports_files([
+    "systemd.MODULE.bazel",
+    "archives.json",
+    "payload_tar.py",
+    "repositories.bzl",
+])
+
+alias(
+    name = "runtime",
+    actual = "@systemd_runtime//:runtime",
+)
+
+layer_from_tar(
+    name = "layer",
+    src = ":runtime",
+    estargz = "disabled",
+    target_compatible_with = [
+        "@platforms//cpu:x86_64",
+        "@platforms//os:linux",
+    ],
+)

@@ -1,0 +1,3 @@
+systemd_runtime = use_repo_rule("//third_party/systemd:repositories.bzl", "systemd_runtime")
+
+systemd_runtime(name = "systemd_runtime")

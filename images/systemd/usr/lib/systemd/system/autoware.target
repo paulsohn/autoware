@@ -1,0 +1,7 @@
+[Unit]
+Description=Headless core and demonstration prerequisite
+DefaultDependencies=no
+Wants=autoware-core.service
+After=autoware-core.service
+Conflicts=shutdown.target
+Before=shutdown.target

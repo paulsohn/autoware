@@ -1,0 +1,25 @@
+[Unit]
+Description=Demonstration prerequisite with readiness notification
+DefaultDependencies=no
+RequiresMountsFor=/tmp /run/autoware
+PartOf=autoware.target
+Conflicts=shutdown.target
+Before=shutdown.target
+StartLimitIntervalSec=infinity
+StartLimitBurst=1
+OnFailure=autoware-failure@%n.service
+
+[Service]
+Type=notify
+User=1000
+Group=1000
+Environment=HOME=/tmp LOGNAME=autoware
+PassEnvironment=AUTOWARE_READY_GATE
+ExecStart=/usr/lib/autoware-services/demo_prerequisite
+ExecStopPost=+/usr/lib/autoware-services/service-stopped prerequisite
+StandardOutput=null
+StandardError=null
+Restart=always
+RestartSec=0
+TimeoutStartSec=60
+TimeoutStopSec=15

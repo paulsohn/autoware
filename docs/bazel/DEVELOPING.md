@@ -884,6 +884,48 @@ asks the supervisor to stop the group. It does not start another core graph.
 See [the s6 adoption gate](JOURNAL.md#2026-11-21-phase-722--s6-core-service-supervision)
 for reproducible experiments and supported scope.
 
+### systemd core image
+
+core_systemd uses native systemd units for the same prerequisite/core product.
+The prerequisite's Type=notify gates core startup; BindsTo/Requires stops core
+on prerequisite loss. Unexpected service exit is fatal, including exit zero.
+The units allow one start per manager instance: Restart=always plus an infinite
+start-limit interval and burst one rejects the replacement start, then
+OnFailure terminates the product. Recovery means restarting the container,
+which supplies a fresh manager/start budget. Explicit group shutdown does not
+request restart. The target uses Wants rather than Requires so target teardown
+does not cancel the service's failure policy. PartOf propagates requested
+product stops to both services.
+
+```sh
+bazel run --config=runtime --config=no-agnocast //images:core_systemd_load
+bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_output=errors //bazel/tests:core_systemd_structure_test \
+  //bazel/tests:core_systemd_runtime_test
+docker run --rm --pull=never --network=none --read-only --cgroupns=private -t \
+  --cap-add=SYS_ADMIN --security-opt=apparmor=unconfined \
+  --security-opt=no-new-privileges --tmpfs /tmp:rw,exec,nosuid,nodev \
+  --tmpfs /run:rw,exec \
+  --mount "type=bind,src=$map_dir,dst=/maps,readonly" \
+  docker.io/library/autoware-core:systemd
+```
+
+The supported engine uses cgroup v2 with the systemd cgroup driver. PID 1 runs
+as root; both application services use UID/GID 1000. Before starting systemd,
+the entrypoint requires the private namespace root (0::/) and bind-remounts its
+cgroup view writable. SYS_ADMIN alone is insufficient with docker-default
+AppArmor; this container's profile is unconfined. These permissions are broader
+than the s6 variant and must be accepted by the runtime operator. There is no
+host-cgroup bind mount or use of the host's systemd package. The image is a
+container supervision demonstration, not a bootable host OS.
+
+Core output, readiness gating and map selection use the same paths/environment
+as the s6 variant. Docker's SIGRTMIN+3 stop signal requests orderly manager
+shutdown. When stopping services without exiting PID 1, wait for all jobs:
+`systemctl stop autoware.target autoware-core.service autoware-prerequisite.service`.
+Stopping the target alone can return before its members finish. See the
+[complete gate](JOURNAL.md#2026-11-21-phase-723--systemd-core-service-supervision).
+
 ## CUDA targets and tests
 
 The product root owns version selection from third_party/: it includes the

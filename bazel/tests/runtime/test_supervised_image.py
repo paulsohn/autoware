@@ -53,13 +53,15 @@ class TestSupervisedImage(unittest.TestCase):
         self.assertEqual(started, stopped)
 
     def test_services(self):
-        self.assertEqual(MANAGER, 's6')
+        self.assertIn(MANAGER, ['s6', 'systemd'])
+        systemd = MANAGER == 'systemd'
         with tarfile.open(ARCHIVE) as archive:
             image = json.load(archive.extractfile('manifest.json'))[0]['RepoTags'][0]
         docker('load', '--input', ARCHIVE)
         info = json.loads(docker('image', 'inspect', image).stdout)[0]
-        self.assertEqual(info['Config']['Entrypoint'], ['/init'])
-        self.assertEqual(info['Config']['User'], '1000:1000')
+        self.assertEqual(info['Config']['Entrypoint'],
+                         ['/usr/lib/autoware-services/init'] if systemd else ['/init'])
+        self.assertEqual(info['Config']['User'], '0:0' if systemd else '1000:1000')
         self.assertEqual((info['Os'], info['Architecture']), ('linux', 'amd64'))
         containers = []
         temporary = tempfile.TemporaryDirectory(prefix="supervised-core-", dir=os.environ["TEST_TMPDIR"])
@@ -86,9 +88,12 @@ class TestSupervisedImage(unittest.TestCase):
                 name = 'autoware-' + MANAGER + '-' + uuid.uuid4().hex[:10]
                 containers.append(name)
                 flags = ['--env', 'AUTOWARE_READY_GATE=/run/autoware/release'] if blocked else []
+                runtime = ['--cgroupns=private', '--tty', '--cap-add=SYS_ADMIN',
+                           '--security-opt=apparmor=unconfined'] if systemd else ['--cap-drop=ALL']
+                run_mount = '/run:rw,exec' if systemd else '/run:rw,exec,uid=1000,gid=1000,mode=0755'
                 docker('run', '--detach', '--name', name, '--pull=never', '--network=none',
-                       '--read-only', '--cap-drop=ALL', '--security-opt=no-new-privileges',
-                       '--tmpfs', '/tmp:rw,exec,nosuid,nodev', '--tmpfs', '/run:rw,exec,uid=1000,gid=1000,mode=0755',
+                       '--read-only', *runtime, '--security-opt=no-new-privileges',
+                       '--tmpfs', '/tmp:rw,exec,nosuid,nodev', '--tmpfs', run_mount,
                        '--mount', f'type=bind,src={state},dst=/run/autoware',
                        '--mount', f'type=bind,src={maps},dst=/maps,readonly',
                        '--mount', f'type=bind,src={checks},dst=/checks,readonly', *flags, image)
@@ -108,6 +113,11 @@ class TestSupervisedImage(unittest.TestCase):
             self.assertFalse((state / 'core.pid').exists(), 'Core started before prerequisite readiness')
             (state / 'release').touch()
             self.wait(lambda: self.ready(state), 'Core did not initialize after readiness')
+            if systemd:
+                self.assertEqual(docker('exec', name, '/bin/cat', '/proc/1/comm').stdout.strip(), 'systemd')
+                pid = (state / 'core.pid').read_text().strip()
+                group = docker('exec', name, '/bin/cat', '/proc/' + pid + '/cgroup').stdout
+                self.assertIn('/autoware-core.service', group)
             events = (state / 'events').read_text().splitlines()
             self.assertLess(events.index('prerequisite:ready'), events.index('core:starting'))
 
@@ -118,9 +128,13 @@ class TestSupervisedImage(unittest.TestCase):
                 while not finished.wait(0.1):
                     if (state / 'stop-request').exists():
                         try:
-                            docker('exec', name, '/command/s6-rc', '-d', 'change', 'prerequisite')
+                            command = ['/usr/bin/systemctl', 'stop', 'autoware.target',
+                                       'autoware-core.service', 'autoware-prerequisite.service'] if systemd else [
+                                '/command/s6-rc', '-d', 'change', 'prerequisite']
+                            docker('exec', name, *command)
                         except Exception as error:
                             errors.append(error)
+                            print('Supervisor stop failed:', error, getattr(error, 'stderr', ''), flush=True)
                         finally:
                             (state / 'stop-done').touch()
                         return
@@ -159,6 +173,8 @@ class TestSupervisedImage(unittest.TestCase):
                 result = self.wait(lambda: self.stopped(name), 'Dependency failure did not stop product')
                 self.assertNotEqual(result['ExitCode'], 0)
                 self.assertIn('prerequisite:failed', (state / 'events').read_text())
+                self.assertEqual((state / 'events').read_text().splitlines().count('prerequisite:starting'), 1,
+                                 'A failed prerequisite must not be independently restarted')
                 self.clean_core(state)
                 for path in state.iterdir():
                     path.unlink()

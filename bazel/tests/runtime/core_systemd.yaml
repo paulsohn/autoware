@@ -1,0 +1,25 @@
+schemaVersion: '2.0.0'
+metadataTest:
+  entrypoint: ['/usr/lib/autoware-services/init']
+  cmd: []
+  user: '0:0'
+  workdir: '/'
+fileExistenceTests:
+  - name: Original application
+    path: /opt/autoware/run
+    shouldExist: true
+  - name: Native service manager
+    path: /usr/lib/systemd/systemd
+    shouldExist: true
+  - name: Systemd shared runtime
+    path: /usr/lib/x86_64-linux-gnu/systemd/libsystemd-shared-255.so
+    shouldExist: true
+  - name: Core dependency unit
+    path: /usr/lib/systemd/system/autoware-core.service
+    shouldExist: true
+  - name: Prerequisite readiness unit
+    path: /usr/lib/systemd/system/autoware-prerequisite.service
+    shouldExist: true
+  - name: No OS Python
+    path: /usr/bin/python3
+    shouldExist: false

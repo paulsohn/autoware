@@ -16,6 +16,33 @@ exports_files([
 ])
 
 image_structure_test(
+    name = "core_systemd_structure_test",
+    configs = ["runtime/core_systemd.yaml"],
+    image = "//images:core_systemd",
+)
+
+py_test(
+    name = "core_systemd_runtime_test",
+    size = "large",
+    srcs = ["runtime/test_supervised_image.py"],
+    args = [
+        "systemd",
+        "$(rootpath //images:core_systemd_docker_archive)",
+        "$(rootpath //bazel/runtime:core_bundle_tests)",
+    ],
+    data = [
+        "//bazel/runtime:core_bundle_tests",
+        "//images:core_systemd_docker_archive",
+    ],
+    main = "runtime/test_supervised_image.py",
+    tags = [
+        "external",
+        "no-remote",
+        "no-sandbox",
+    ],
+)
+
+image_structure_test(
     name = "core_s6_structure_test",
     configs = ["runtime/core_s6.yaml"],
     image = "//images:core_s6",

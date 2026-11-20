@@ -1641,14 +1641,16 @@ Phase 7.2 task boundaries:
   core cases and all readiness/failure/restart/shutdown checks pass with a
   read-only image, UID/GID 1000, dropped capabilities and no network/source/cache
   mount. The complete affected native/plain-image regressions also pass.
-- **7.2.3 — systemd service supervision (planned).** Add another OCI variant
-  implementing the same service relationship and behavior contract with native
-  systemd units, including explicit ordering, requirement and readiness
-  semantics. First inspect and pin the Ubuntu-compatible manager/library
-  closure, and establish the actual cgroup, permission and writable-filesystem
-  prerequisites on the current engine. Do not assume the plain image's
-  unprivileged/drop-all runtime settings transfer unchanged. Resolve the
-  required runtime configuration before declaring this variant supported.
+- **7.2.3 — systemd service supervision (complete, 2026-11-21).** The
+  separate OCI variant uses pinned Ubuntu systemd 255.4-1ubuntu8.19 as PID 1,
+  Type=notify readiness and strict core-to-prerequisite requirements. Both
+  original core cases and the complete readiness/failure/recovery/shutdown
+  contract pass. Applications run as UID 1000; the manager runs as root with
+  a private cgroup namespace, SYS_ADMIN and a container-local AppArmor override.
+  The entrypoint makes only its private cgroup mount writable; no host-cgroup
+  bind mount, host manager or privileged-container mode is used. See the
+  [systemd gate](JOURNAL.md#2026-11-21-phase-723--systemd-core-service-supervision)
+  for the precise runtime contract and dependency/failure-policy findings.
 - **7.2.4 — OSTree native distribution (planned).** Reuse the native core
   payload and the systemd/core-plus-dummy service composition for versioned
   delivery through a pinned OSTree repository. First settle and record the

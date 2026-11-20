@@ -1,0 +1,29 @@
+[Unit]
+Description=Original headless Autoware core launch
+DefaultDependencies=no
+RequiresMountsFor=/tmp /run/autoware /maps
+Requires=autoware-prerequisite.service
+BindsTo=autoware-prerequisite.service
+After=autoware-prerequisite.service
+PartOf=autoware.target
+Conflicts=shutdown.target
+Before=shutdown.target
+StartLimitIntervalSec=infinity
+StartLimitBurst=1
+OnFailure=autoware-failure@%n.service
+
+[Service]
+Type=exec
+User=1000
+Group=1000
+Environment=HOME=/tmp LOGNAME=autoware
+PassEnvironment=AUTOWARE_MAP_PATH ROS_DOMAIN_ID
+ExecStart=/usr/lib/autoware-services/core
+ExecStopPost=+/usr/lib/autoware-services/service-stopped core
+StandardOutput=null
+StandardError=null
+KillSignal=SIGINT
+KillMode=mixed
+Restart=always
+RestartSec=0
+TimeoutStopSec=20

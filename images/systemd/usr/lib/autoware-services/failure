@@ -1,0 +1,8 @@
+#!/bin/sh
+# Copyright 2026 Taeseung Sohn
+# SPDX-License-Identifier: Apache-2.0
+set -eu
+service=${1#autoware-}
+service=${service%.service}
+echo "$service:failed" >> /run/autoware/events
+exec /usr/bin/systemctl --no-block exit 1
