@@ -14,17 +14,25 @@ env.pop("AGNOCAST_RMW_HANDOFF_FILE", None)
 env.pop("AGNOCAST_RMW_DIRECT_TRACE", None)
 with tempfile.TemporaryDirectory() as directory:
     reader_env = env.copy()
-    if mode == "rendezvous":
+    native_trace = mode == "native-traced"
+    direct_trace = mode == "direct-stages"
+    writer_mode = "native" if mode in ("native", "native-traced") else "rmw"
+    if native_trace or direct_trace:
+        library = Path("build/rmw-agnocast/path-trace-lib").resolve()
+        if not (library / "libagnocast.so").is_file():
+            raise FileNotFoundError(library / "libagnocast.so")
+        reader_env["LD_LIBRARY_PATH"] = str(library) + ":" + env["LD_LIBRARY_PATH"]
+    if mode == "rendezvous" or direct_trace:
         reader_env["AGNOCAST_RMW_DIRECT_TRACE"] = str(Path(directory) / "rendezvous")
-    if mode in ("direct", "rendezvous"):
+    if mode in ("direct", "rendezvous") or direct_trace:
         reader_env["AGNOCAST_RMW_DIRECT_WAIT"] = "1"
-        mode = "rmw"
+        mode = "rmw-traced" if direct_trace else "rmw"
     if mode == "traced":
         reader_env["AGNOCAST_RMW_HANDOFF_FILE"] = str(Path(directory) / "handoff")
         mode = "rmw"
     reader = subprocess.Popen([probe, mode, "reader"], cwd=directory, env=reader_env)
     try:
-        subprocess.run([probe, mode, "writer"], cwd=directory, env=env, check=True, timeout=30)
+        subprocess.run([probe, writer_mode, "writer"], cwd=directory, env=env, check=True, timeout=30)
         if reader.wait(timeout=5):
             raise RuntimeError("reader failed")
     finally:
@@ -46,6 +54,18 @@ with tempfile.TemporaryDirectory() as directory:
                 raise ValueError(f"bad loan addresses or timestamps at frame {seq}")
             out.writerow((seq, b[0] - a[0]))
 
+    if native_trace or direct_trace:
+        core_rows = records("native-stages")
+        if len(core_rows) != len(tx) or len({r[0] for r in core_rows}) != len(core_rows):
+            raise ValueError("missing or duplicate native acquisition")
+        with open(prefix + "-core.csv", "x") as f:
+            out = csv.writer(f, lineterminator="\n")
+            out.writerow(("frame", "entry_id", "publish", "wake", "acquired", "callback"))
+            for seq, ((entry, address, wake, acquired), a, b) in enumerate(zip(core_rows, tx, rx)):
+                if address != a[1] or not a[0] <= wake <= acquired <= b[0]:
+                    raise ValueError(f"inconsistent native stages at frame {seq}")
+                out.writerow((seq, entry, a[0], wake, acquired, b[0]))
+
     if "AGNOCAST_RMW_DIRECT_TRACE" in reader_env:
         rows = records("rendezvous")
         if len(rows) != len(tx) or len({row[0] for row in rows}) != len(rows):
@@ -61,6 +81,10 @@ with tempfile.TemporaryDirectory() as directory:
                 chain = [a[0], wake, interrupted, acquired, drained, sync, ready, take, taken, b[0]]
                 if addr != a[1] or chain != sorted(chain) or not 0 < helper <= sync:
                     raise ValueError(f"inconsistent direct wait at frame {seq}")
+                if direct_trace:
+                    core_entry, core_address, core_wake, core_loan = core_rows[seq]
+                    if (entry, addr) != (core_entry, core_address) or not interrupted <= core_wake <= core_loan <= acquired:
+                        raise ValueError(f"direct and native stages disagree at frame {seq}")
                 out.writerow((seq, entry, *chain[:5], helper, sync, ready, b[0]))
 
     if "AGNOCAST_RMW_HANDOFF_FILE" in reader_env:

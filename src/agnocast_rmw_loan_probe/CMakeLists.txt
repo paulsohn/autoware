@@ -17,5 +17,7 @@ target_link_libraries(manual_bridge ${agnocastlib_TARGETS} rclcpp::rclcpp)
 install(TARGETS manual_bridge DESTINATION lib/${PROJECT_NAME})
 add_executable(path_benchmark path_benchmark.cpp)
 target_link_libraries(path_benchmark ${agnocastlib_TARGETS} ${nav_msgs_TARGETS} rclcpp::rclcpp rmw::rmw)
+target_link_options(path_benchmark PRIVATE
+  -Wl,--export-dynamic-symbol=path_probe_wake -Wl,--export-dynamic-symbol=path_probe_loan)
 install(TARGETS path_benchmark DESTINATION lib/${PROJECT_NAME})
 ament_package()

@@ -594,3 +594,82 @@ comparison can identify how much of the 24.19 µs acquisition and 19.51 µs ROS
 dispatch intervals is incremental. The [Universe matrix](#type-support-and-the-universe-decision)
 retains the separate Cyclone DDS, Zenoh and Buffer pipeline measurements.
 [Per-frame stages, latency and process resources](rendezvous-results/).
+
+## Comparing the native executor and direct RMW at loan creation
+
+This experiment uses one instrumented Agnocast userspace library for both
+traced readers. The first probe fires after a successful subscription
+`epoll_wait`, once Agnocast has decoded the event type. The second fires
+immediately after `message_creator` constructs the subscriber loan, before
+the library dispatches its callable. Both run on the receiving executor
+thread. The application timestamps entry before checking the message. For
+each Path frame at 10 Hz, the harness checks the native subscription ID,
+object address and frame order. It also pairs the two RMW traces by entry ID.
+Matching nested-vector and string addresses and checking the previously
+retained sample remain mandatory.
+
+The RMW reader additionally records its outer blocking poll, DDS guard and
+wait-set synchronization. Its inner Agnocast epoll is nonblocking. Its stage
+CSV uses `acquired` for entry to the RMW's native callback; its core CSV uses
+`acquired` for the earlier loan-creation probe shared with native Agnocast.
+The harness checks the ordering of both sets of timestamps for each sample.
+
+Use the existing Release colcon build of agnocastlib, its installed overlay,
+and the exported Lyrical root. The build script copies the instrumented
+library to a private directory and restores the CMake option to OFF. Only the
+two traced readers search that directory. All writers and both untraced
+controls load the installed library.
+
+```bash
+export LYRICAL_ROOT=$(cat build/agnocast-lyrical/universe-root)
+experiments/buffer/run-lyrical.sh bash -ec '
+  bash experiments/rmw-agnocast/build-path-trace.sh
+  bash experiments/rmw-agnocast/build-loadable.sh'
+BUFFER_RUNTIME_ONLY=1 experiments/buffer/run-lyrical.sh timeout 240s bash \
+  experiments/rmw-agnocast/bench-path.sh build/rmw-agnocast/fresh-native-stages --native-stages
+python3 experiments/rmw-agnocast/summarize-handoff.py build/rmw-agnocast/fresh-native-stages
+```
+
+Four rounds use a balanced order for native and direct RMW, each with and
+without tracing. Every treatment occupies each position once and follows
+every other treatment once within the four rounds. Each process pair sends
+60 frames. The summary drops the first ten per run and reports the median and
+nearest-rank p95 over 200 samples per treatment.
+
+| Path on the Lyrical laptop | Median µs | p95 µs | Child CPU s | Largest child peak MiB |
+|---|---:|---:|---:|---:|
+| Native Agnocast | 51.90 | 94.28 | 0.126 | 26.2 |
+| Native with library probes | 56.62 | 120.64 | 0.193 | 26.9 |
+| Direct RMW | 111.21 | 186.62 | 0.234 | 29.4 |
+| Direct RMW with library and helper probes | 98.22 | 180.98 | 0.253 | 29.7 |
+
+| Matched stage, median / p95 in µs | Native | Direct RMW |
+|---|---:|---:|
+| Publish to Agnocast epoll return | 34.03 / 70.53 | 45.49 / 80.56 |
+| Agnocast epoll return to loan creation | 25.08 / 50.48 | 21.21 / 34.20 |
+| Loan creation to application callback | 0.68 / 1.34 | 33.03 / 70.28 |
+
+The direct executor first woke from its outer poll at 29.44 µs median from
+publish. Handling the DDS interrupt took another 12.26 µs median and reaching
+the inner Agnocast epoll timestamp took 4.74 µs after that. Once both readers
+were in the native acquisition code, direct RMW had comparable acquisition
+time. The post-loan difference held in every round: per-round medians were
+0.19–0.74 µs native and 26.55–39.29 µs direct. On direct RMW, loan creation
+to RMW readiness measured 13.02/40.59 µs median/p95 and readiness to the
+application callback measured 19.55/36.34 µs. Percentiles are computed per
+interval. The two readers ran in distinct processes and trials.
+
+All 960 frames passed the address, ordering and retained-payload checks, and
+all 480 traced frames had matching loan records. The untraced RMW median/p95
+were 2.14×/1.98× native, above the 1.20× ceilings of 62.28/113.13 µs. Timings
+varied between trials, including a faster traced direct median. Use the
+untraced rows for the performance gate. The [Universe matrix](#type-support-and-the-universe-decision)
+covers the separate PointCloud2 pipeline with Cyclone DDS, Zenoh and Buffer.
+
+Keep direct wait opt-in. The next diagnostic should hold the RMW wait and
+native loan path fixed and compare normal ROS executor dispatch with a
+single-ready-subscription control that reuses the same loan handler. Measure
+RMW readiness to application entry and retain the ownership checks. This
+isolates the portion of the post-loan interval that an executor change could
+recover before attempting a production change to mixed DDS wake handling.
+[Raw frames, stage timestamps and resource measurements](native-stage-results/).

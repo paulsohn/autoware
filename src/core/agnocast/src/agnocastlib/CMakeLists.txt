@@ -6,6 +6,12 @@ if(NOT CMAKE_CXX_STANDARD)
   set(CMAKE_CXX_STANDARD 17)
 endif()
 
+option(AGNOCAST_PATH_PROBE "Instrument the matched Path experiment" OFF)
+if(AGNOCAST_PATH_PROBE)
+  set_property(SOURCE src/agnocast_callback_info.cpp src/agnocast_epoll.cpp
+    APPEND PROPERTY COMPILE_DEFINITIONS AGNOCAST_PATH_PROBE)
+endif()
+
 option(COVERAGE "Enable coverage reporting for gcov" OFF)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")

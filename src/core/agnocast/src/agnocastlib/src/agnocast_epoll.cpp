@@ -10,6 +10,11 @@
 #include <stdexcept>
 #include <string>
 
+#ifdef AGNOCAST_PATH_PROBE
+// Optional timing hook exported by the matched Path probe.
+extern "C" __attribute__((weak)) void path_probe_wake(uint32_t);
+#endif
+
 namespace agnocast
 {
 
@@ -90,6 +95,10 @@ void EpollManager::wait_and_handle_epoll_event(const int timeout_ms)
   }
 
   const auto [event_type, event_local_id] = unpack_epoll_data(event.data.u64);
+
+#ifdef AGNOCAST_PATH_PROBE
+  if (event_type == EpollEventType::Subscription && path_probe_wake) path_probe_wake(event_local_id);
+#endif
 
   if (event_type >= EpollEventType::NrEventType) {
     RCLCPP_ERROR(

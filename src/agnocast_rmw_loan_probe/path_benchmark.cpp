@@ -16,6 +16,28 @@ constexpr size_t frames = 60;
 constexpr size_t poses = 64;
 constexpr char topic[] = "/path_latency";
 
+// The native executor invokes both hooks on the application callback thread.
+struct NativeStages
+{
+  Clock::time_point wake, acquired;
+  uint32_t wake_id, loan_id;
+  int64_t entry;
+  uintptr_t address;
+};
+thread_local NativeStages current_stages{};
+extern "C" void path_probe_wake(uint32_t id)
+{
+  current_stages.wake = Clock::now();
+  current_stages.wake_id = id;
+}
+extern "C" void path_probe_loan(uint32_t id, int64_t entry, uintptr_t address)
+{
+  current_stages.acquired = Clock::now();
+  current_stages.loan_id = id;
+  current_stages.entry = entry;
+  current_stages.address = address;
+}
+
 struct Record
 {
   int64_t time;
@@ -91,6 +113,20 @@ void send(Pub & pub)
     std::this_thread::sleep_for(10ms);
   }
 }
+void save_native_stages(const std::array<NativeStages, frames> & stages)
+{
+  std::ofstream out("native-stages");
+  out.exceptions(std::ios::failbit | std::ios::badbit);
+  for (const auto & row : stages) {
+    check(row.wake_id == row.loan_id, "native wake belongs to another subscription");
+    out << row.entry << ' ' << row.address << ' '
+        << std::chrono::duration_cast<std::chrono::nanoseconds>(row.wake.time_since_epoch()).count()
+        << ' '
+        << std::chrono::duration_cast<std::chrono::nanoseconds>(row.acquired.time_since_epoch())
+             .count()
+        << '\n';
+  }
+}
 template <class Ptr, class Exec>
 struct Receiver
 {
@@ -98,12 +134,15 @@ struct Receiver
   Ptr held{};
   Records rows{};
   size_t count = 0;
+  std::array<NativeStages, frames> stages{};
+  bool trace = false;
   void receive(Ptr msg)
   {
     const auto now = Clock::now();
     check(count < frames, "extra frame");
     verify(*msg, count);
     rows[count] = record(*msg, now);
+    if (trace) stages[count] = current_stages;
     if (count) verify(*held, count - 1);
     held = std::move(msg);
     if (++count == frames) exec.cancel();
@@ -116,10 +155,11 @@ struct Receiver
     verify(*held, frames - 1);
     held.reset();
     save("reader", rows);
+    if (trace) save_native_stages(stages);
     std::ofstream("released").close();
   }
 };
-void native(bool writer)
+void native(bool writer, bool trace)
 {
   auto node = std::make_shared<agnocast::Node>(writer ? "path_writer" : "path_reader");
   if (writer) {
@@ -130,6 +170,7 @@ void native(bool writer)
     agnocast::AgnocastOnlySingleThreadedExecutor exec;
     using Ptr = agnocast::ipc_shared_ptr<const Path>;
     Receiver<Ptr, decltype(exec)> receiver{exec};
+    receiver.trace = trace;
     auto sub = std::make_shared<agnocast::Subscription<Path>>(
       node.get(), topic, rclcpp::QoS(4), [&](Ptr msg) { receiver.receive(std::move(msg)); },
       agnocast::SubscriptionOptions{}, agnocast::SubscriptionRole::AgnocastOnly);
@@ -137,7 +178,7 @@ void native(bool writer)
     receiver.run();
   }
 }
-void middleware(bool writer)
+void middleware(bool writer, bool trace)
 {
   check(std::string(rmw_get_implementation_identifier()) == "rmw_agnocast", "wrong RMW");
   auto node = std::make_shared<rclcpp::Node>(writer ? "path_writer" : "path_reader");
@@ -148,6 +189,7 @@ void middleware(bool writer)
   } else {
     rclcpp::executors::SingleThreadedExecutor exec;
     Receiver<Path::ConstSharedPtr, decltype(exec)> receiver{exec};
+    receiver.trace = trace;
     auto sub = node->create_subscription<Path>(
       topic, 4, [&](Path::ConstSharedPtr msg) { receiver.receive(std::move(msg)); });
     check(sub->can_loan_messages(), "reader cannot loan");
@@ -160,13 +202,14 @@ int main(int argc, char ** argv)
   try {
     check(argc == 3, "expected transport and role");
     const bool writer = std::string(argv[2]) == "writer";
-    if (std::string(argv[1]) == "native") {
+    const bool trace = std::string(argv[1]) == "native-traced";
+    if (trace || std::string(argv[1]) == "native") {
       agnocast::init(argc, argv);
-      native(writer);
+      native(writer, trace);
       agnocast::shutdown();
     } else {
       rclcpp::init(argc, argv);
-      middleware(writer);
+      middleware(writer, std::string(argv[1]) == "rmw-traced");
       rclcpp::shutdown();
     }
   } catch (const std::exception & e) {

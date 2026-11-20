@@ -16,6 +16,7 @@ baseline=rmw
 case ${2:-} in
   --handoff) variant=traced;;
   --direct) variant=direct;;
+  --native-stages) ;;
   --rendezvous) baseline=direct; variant=rendezvous;;
   "") ;;
   *) exit 2;;
@@ -34,9 +35,17 @@ for round in "${rounds[@]}"; do
       6) modes=(native "$variant" "$baseline");;
     esac
   fi
+  if [[ ${2:-} == --native-stages ]]; then
+    case $round in
+      1) modes=(native native-traced direct-stages direct);;
+      2) modes=(native-traced direct native direct-stages);;
+      3) modes=(direct direct-stages native-traced native);;
+      4) modes=(direct-stages native direct native-traced);;
+    esac
+  fi
   for mode in "${modes[@]}"; do
     export RMW_IMPLEMENTATION=rmw_agnocast
-    if [[ $mode == native ]]; then export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp; fi
+    if [[ $mode == native || $mode == native-traced ]]; then export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp; fi
     python3 experiments/rmw-agnocast/path-case.py "$probe" "$hook" "$mode" "$out/$mode-$round"
   done
 done

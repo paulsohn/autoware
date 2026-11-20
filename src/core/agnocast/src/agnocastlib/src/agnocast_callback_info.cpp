@@ -11,6 +11,11 @@
 #include <stdexcept>
 #include <utility>
 
+#ifdef AGNOCAST_PATH_PROBE
+// Optional timing hook exported by the matched Path probe.
+extern "C" __attribute__((weak)) void path_probe_loan(uint32_t, int64_t, uintptr_t);
+#endif
+
 namespace agnocast
 {
 
@@ -92,6 +97,9 @@ void receive_and_execute_message(
     auto typed_msg = callback_info.message_creator(
       reinterpret_cast<void *>(entry_addr), callback_info.topic_name, callback_info.subscriber_id,
       entry_id);
+#ifdef AGNOCAST_PATH_PROBE
+    if (path_probe_loan) path_probe_loan(callback_info_id, entry_id, entry_addr);
+#endif
     // NOTE: agnocast_callable_start should be renamed to agnocast_callback_start. As mentioned
     // earlier, we will not change the name in order to avoid requiring changes to be made to the
     // implementation of CARET.

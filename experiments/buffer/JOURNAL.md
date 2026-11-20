@@ -849,3 +849,27 @@ queue-pressure, retention and restart checks; direct Path loan and copy both
 passed. Reproduce with the previous entry's pressure/path commands and the
 [matched matrix, stage definitions and raw data](../rmw-agnocast/README.md#timing-the-direct-wait-dds-helper).
 The benchmark's minimum sampled host MemAvailable was 15,288 MiB.
+
+### Compare native and direct RMW at the same Agnocast loan boundary
+
+Added two compile-time, default-off userspace probes at subscription epoll
+return and subscriber loan creation. The first native-only trial could not
+pair the RMW's callback-entry timestamp with the exact loan-creation boundary.
+Built a private copy of the instrumented Agnocast library for both traced
+readers and restarted the matrix in a fresh directory. The preliminary runs
+are excluded. The installed library and kernel were reused. The new harness
+also checks the direct RMW's inner native timestamps against its outer wait
+trace by object address and entry ID.
+
+The four-round, order-balanced laptop matrix verified 960/960 Path frames.
+Between native epoll return and loan creation, native/direct medians were
+25.08/21.21 µs. Between loan creation and application callback, they were
+0.68/33.03 µs. All four rounds showed the post-loan gap. Untraced end-to-end
+median/p95 were 51.90/94.28 µs native and 111.21/186.62 µs direct. Keep the
+Bazel milestone closed. Compare the ROS executor's dispatch overhead next.
+
+The single-job build and serial matrix kept at least 13,792 and 14,396 MiB
+host memory available respectively. After the matrix, the untraced direct
+Path loan/copy and mixed DDS wake, queue pressure, retained-loan and reader
+restart cases passed using the previous entry's path and pressure commands.
+[Exact build and run commands, timing boundaries and raw measurements](../rmw-agnocast/README.md#comparing-the-native-executor-and-direct-rmw-at-loan-creation).
