@@ -14,6 +14,7 @@ variant=fixed
 if [[ ${2:-} == --view ]]; then variant=view; fi
 if [[ ${2:-} == --loan ]]; then variant=loan; control=view; fi
 if [[ ${2:-} == --scope ]]; then variant=scope; control=loan; fi
+if [[ ${2:-} == --wire ]]; then variant=v2; control=legacy; fi
 for round in 1 2 3; do
   case $round in
     1) modes=(agnocast "$variant" "$control");;
@@ -26,10 +27,12 @@ for round in 1 2 3; do
     transport=$mode
     if [[ $mode == host ]]; then transport=fixed; opts+=(--host-cloud); fi
     if [[ $mode == host && $variant == view ]]; then opts+=(--typed-input); fi
-    if [[ $mode == scope ]]; then transport=fixed; opts+=(--payload-scope); fi
+    wire_env=()
+    if [[ $mode == legacy ]]; then wire_env+=(AGNOCAST_RMW_LEGACY_WIRE=1); fi
+    if [[ $mode == scope || $mode == v2 || $mode == legacy ]]; then transport=fixed; opts+=(--payload-scope); fi
     if [[ $mode == loan ]]; then transport=fixed; opts+=(--host-loan); fi
     if [[ $mode == view ]]; then transport=fixed; opts+=(--host-view); fi
-    python3 src/universe_crop_benchmark/run_case.py "$transport" "$out/$mode-$round.csv" \
+    env -u AGNOCAST_RMW_LEGACY_WIRE "${wire_env[@]}" python3 src/universe_crop_benchmark/run_case.py "$transport" "$out/$mode-$round.csv" \
       "${opts[@]}" --resources "$out/$mode-$round-resources.csv"
   done
 done

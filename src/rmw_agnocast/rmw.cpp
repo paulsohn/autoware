@@ -82,7 +82,30 @@ struct Type
   const Members * members;
   bool has_buffer;
   bool host_cloud = false;
+  bool legacy = [] {
+    const char * flag = std::getenv("AGNOCAST_RMW_LEGACY_WIRE");
+    return flag && std::strcmp(flag, "1") == 0;
+  }();
   std::string name;
+  std::string route(const char * topic, bool reliable) const
+  {
+    if (legacy) return native_topic(topic);
+    const char * layout = host_cloud ? "host_cloud" : has_buffer ? "cdr" : "object";
+    return std::string(topic) + "/_rmw_agnocast_v2/" + name + "/" + layout +
+           (reliable ? "/reliable" : "/best_effort");
+  }
+  size_t wire_size(size_t payload) const
+  {
+    if (legacy) return payload;
+    if (payload > SIZE_MAX - RMW_GID_STORAGE_SIZE) throw std::bad_alloc();
+    return payload + RMW_GID_STORAGE_SIZE;
+  }
+  size_t payload_size(const void * sample) const
+  {
+    if (host_cloud) return sizeof(HostCloud);
+    if (has_buffer) return sizeof(size_t) + *static_cast<const size_t *>(sample);
+    return members->size_of_;
+  }
   std::string native_topic(const char * topic) const
   {
     if (host_cloud) return std::string(topic) + "/_rmw_agnocast_host_cloud_v1";
@@ -137,13 +160,19 @@ struct Writer
   agnocast::TypeErasedPublisher pub;
   std::mutex mutex;
   std::map<void *, agnocast::ipc_shared_ptr<void>> borrowed;
+  rmw_gid_t gid{};
+  void stamp(void * payload) const
+  {
+    if (!type.legacy) std::memcpy(static_cast<uint8_t *>(payload) + type.payload_size(payload),
+                                  gid.data, sizeof(gid.data));
+  }
   Writer(
     const rmw_node_t * owner, const char * topic, const rmw_qos_profile_t & qos,
     const rosidl_message_type_support_t * ts)
   : node(native_node(owner)),
     type(ts),
     pub(
-      node.get(), type.native_topic(topic), type.name,
+      node.get(), type.route(topic, qos.reliability == RMW_QOS_POLICY_RELIABILITY_RELIABLE), type.name,
       rclcpp::QoS(rclcpp::QoSInitialization::from_rmw(qos), qos), {},
       agnocast::PublisherRole::AgnocastOnly)
   {
@@ -181,7 +210,7 @@ struct Writer
   auto borrow()
   {
     auto size = host_loan ? std::max(sizeof(HostCloud), sizeof(Cloud)) : type.members->size_of_;
-    auto loan = pub.borrow_loaned_message(size);
+    auto loan = pub.borrow_loaned_message(type.wire_size(size));
     try {
       type.members->init_function(loan.get(), rosidl_runtime_cpp::MessageInitialization::ALL);
     } catch (...) {
@@ -192,6 +221,7 @@ struct Writer
   }
   void publish(agnocast::ipc_shared_ptr<void> && loan)
   {
+    stamp(loan.get());
     pub.publish(std::move(loan), [this](void * p) { type.destroy(p); });
   }
   void cancel(agnocast::ipc_shared_ptr<void> && loan)
@@ -291,7 +321,7 @@ struct Reader : std::enable_shared_from_this<Reader>
   std::unique_ptr<HandoffTrace> trace;
   std::deque<Loan> pending;
   std::map<void *, Loan> held;
-  std::shared_ptr<NativeSubscription> sub;
+  std::vector<std::shared_ptr<NativeSubscription>> routes;
   std::mutex receive_mutex;
   NativeExecutor exec;
   std::thread thread;
@@ -313,26 +343,30 @@ struct Reader : std::enable_shared_from_this<Reader>
       if (const char * file = std::getenv("AGNOCAST_RMW_DIRECT_TRACE"))
         trace = std::make_unique<HandoffTrace>(file);
     }
-    sub = std::make_shared<NativeSubscription>(
-      node.get(), type.native_topic(topic), type.name,
-      rclcpp::QoS(rclcpp::QoSInitialization::from_rmw(qos), qos),
-      [this, depth = qos.depth](Loan sample) {
-        auto entry = trace ? HandoffTrace::now() : 0;
-        std::lock_guard lock(mutex);
-        if (pending.size() == depth) pending.pop_front();
-        pending.emplace_back(std::move(sample));
-        HandoffTrace::Row * row = nullptr;
-        if (trace && trace->rows.size() < trace->rows.capacity()) {
-          const auto & loan = pending.back();
-          row = &trace->rows.emplace_back(
-            HandoffTrace::Row{loan.get_entry_id(), reinterpret_cast<uintptr_t>(loan.get()), entry});
-        }
-        if (direct_wait_enabled()) return;
-        if (row) row->signal = HandoffTrace::now();
-        if (CYCLONE(rmw_trigger_guard_condition)(guard.get()) != RMW_RET_OK) std::terminate();
-        if (row) row->signalled = HandoffTrace::now();
-      },
-      agnocast::SubscriptionOptions{}, agnocast::SubscriptionRole::AgnocastOnly);
+    auto subscribe = [&](bool reliable) {
+      routes.push_back(std::make_shared<NativeSubscription>(
+        node.get(), type.route(topic, reliable), type.name,
+        rclcpp::QoS(rclcpp::QoSInitialization::from_rmw(qos), qos),
+        [this, depth = qos.depth](Loan sample) {
+          auto entry = trace ? HandoffTrace::now() : 0;
+          std::lock_guard lock(mutex);
+          if (pending.size() == depth) pending.pop_front();
+          pending.emplace_back(std::move(sample));
+          HandoffTrace::Row * row = nullptr;
+          if (trace && trace->rows.size() < trace->rows.capacity()) {
+            const auto & loan = pending.back();
+            row = &trace->rows.emplace_back(
+              HandoffTrace::Row{loan.get_entry_id(), reinterpret_cast<uintptr_t>(loan.get()), entry});
+          }
+          if (direct_wait_enabled()) return;
+          if (row) row->signal = HandoffTrace::now();
+          if (CYCLONE(rmw_trigger_guard_condition)(guard.get()) != RMW_RET_OK) std::terminate();
+          if (row) row->signalled = HandoffTrace::now();
+        },
+        agnocast::SubscriptionOptions{}, agnocast::SubscriptionRole::AgnocastOnly));
+    };
+    subscribe(true);
+    if (!type.legacy && qos.reliability == RMW_QOS_POLICY_RELIABILITY_BEST_EFFORT) subscribe(false);
     exec.add_node(node);
     if (direct_wait_enabled())
       exec.prepare();
@@ -399,9 +433,16 @@ extern "C" rmw_publisher_t * rmw_create_publisher(
     return nullptr;
   }
   try {
-    auto state = std::make_shared<Writer>(node, topic, *qos, ts);
     auto pub = fn(node, ts, topic, qos, options);
     if (!pub) return nullptr;
+    auto cleanup = [node](rmw_publisher_t * p) { CYCLONE(rmw_destroy_publisher)(const_cast<rmw_node_t *>(node), p); };
+    std::unique_ptr<rmw_publisher_t, decltype(cleanup)> handle(pub, cleanup);
+    rmw_qos_profile_t actual{};
+    if (CYCLONE(rmw_publisher_get_actual_qos)(pub, &actual) != RMW_RET_OK) return nullptr;
+    auto native_qos = *qos;
+    native_qos.reliability = actual.reliability;
+    auto state = std::make_shared<Writer>(node, topic, native_qos, ts);
+    if (CYCLONE(rmw_get_gid_for_publisher)(pub, &state->gid) != RMW_RET_OK) return nullptr;
     pub->can_loan_messages = !state->type.has_buffer || state->host_loan;
     if (state->type.has_buffer)
       std::fprintf(
@@ -409,7 +450,7 @@ extern "C" rmw_publisher_t * rmw_create_publisher(
         topic);
     std::lock_guard lock(registry);
     writers.emplace(pub->data, std::move(state));
-    return pub;
+    return handle.release();
   } catch (const std::exception & e) {
     error(e.what());
     return nullptr;
@@ -426,11 +467,17 @@ extern "C" rmw_subscription_t * rmw_create_subscription(
     return nullptr;
   }
   try {
-    auto state = std::make_shared<Reader>(node, topic, *qos, ts);
-    state->host_view = std::getenv("AGNOCAST_RMW_HOST_VIEW") && options &&
-      options->acceptable_buffer_backends && std::string_view(options->acceptable_buffer_backends) == "any";
     auto sub = fn(node, ts, topic, qos, options);
     if (!sub) return nullptr;
+    auto cleanup = [node](rmw_subscription_t * p) { CYCLONE(rmw_destroy_subscription)(const_cast<rmw_node_t *>(node), p); };
+    std::unique_ptr<rmw_subscription_t, decltype(cleanup)> handle(sub, cleanup);
+    rmw_qos_profile_t actual{};
+    if (CYCLONE(rmw_subscription_get_actual_qos)(sub, &actual) != RMW_RET_OK) return nullptr;
+    auto native_qos = *qos;
+    native_qos.reliability = actual.reliability;
+    auto state = std::make_shared<Reader>(node, topic, native_qos, ts);
+    state->host_view = std::getenv("AGNOCAST_RMW_HOST_VIEW") && options &&
+      options->acceptable_buffer_backends && std::string_view(options->acceptable_buffer_backends) == "any";
     sub->can_loan_messages = !state->type.has_buffer;
     if (state->type.has_buffer)
       std::fprintf(
@@ -438,7 +485,7 @@ extern "C" rmw_subscription_t * rmw_create_subscription(
         topic);
     std::lock_guard lock(registry);
     readers.emplace(sub->data, std::move(state));
-    return sub;
+    return handle.release();
   } catch (const std::exception & e) {
     error(e.what());
     return nullptr;
@@ -505,6 +552,7 @@ extern "C" rmw_ret_t rmw_publish_loaned_message(
       return error(e.what());
     }
     if (!shared) ++w->private_copies;
+    w->stamp(msg);
     w->pub.publish(std::move(it->second), [](void * p) {
       std::destroy_at(static_cast<HostCloud *>(p));
       ::operator delete(p);
@@ -537,7 +585,7 @@ extern "C" rmw_ret_t rmw_publish(
     try {
       const auto & cloud = *static_cast<const Cloud *>(msg);
       if (cloud.data.get_backend_type() != "cpu") return error("host cloud requires CPU data");
-      auto loan = w->pub.borrow_loaned_message(sizeof(HostCloud));
+      auto loan = w->pub.borrow_loaned_message(w->type.wire_size(sizeof(HostCloud)));
       try {
         new (loan.get()) HostCloud(cloud);
       } catch (...) {
@@ -547,6 +595,7 @@ extern "C" rmw_ret_t rmw_publish(
       if (const char * path = std::getenv("AGNOCAST_VIEW_ADDRESS_FILE")) {
         std::ofstream(path) << reinterpret_cast<uintptr_t>(static_cast<HostCloud *>(loan.get())->bytes.data());
       }
+      w->stamp(loan.get());
       w->pub.publish(std::move(loan), [](void * p) {
         static_cast<HostCloud *>(p)->~HostCloud();
         ::operator delete(p);
@@ -562,9 +611,10 @@ extern "C" rmw_ret_t rmw_publish(
     auto ret =
       measure_codec("serialize", [&] { return CYCLONE(rmw_serialize)(msg, w->type.ts, &raw); });
     if (ret != RMW_RET_OK) return ret;
-    auto loan = w->pub.borrow_loaned_message(sizeof(size_t) + raw.buffer_length);
+    auto loan = w->pub.borrow_loaned_message(w->type.wire_size(sizeof(size_t) + raw.buffer_length));
     auto length = new (loan.get()) size_t(raw.buffer_length);
     std::memcpy(length + 1, raw.buffer, *length);
+    w->stamp(loan.get());
     w->pub.publish(std::move(loan), [](void * p) { ::operator delete(p); });
     return RMW_RET_OK;
   }
@@ -590,6 +640,13 @@ rmw_ret_t take(
   if (!*taken) return RMW_RET_OK;
   if (info) *info = {};
   auto & sample = r.pending.front();
+  if (info && !r.type.legacy) {
+    static const char * const implementation = CYCLONE(rmw_get_implementation_identifier)();
+    info->publisher_gid.implementation_identifier = implementation;
+    std::memcpy(info->publisher_gid.data,
+      static_cast<const uint8_t *>(sample.get()) + r.type.payload_size(sample.get()),
+      sizeof(info->publisher_gid.data));
+  }
   if (r.type.has_buffer) {
     if (loan) {
       *taken = false;
@@ -834,16 +891,24 @@ public:
     guard_data.push_back(interrupt->data);
     rmw_guard_conditions_t combined{guard_data.size(), guard_data.data()};
     std::vector<pollfd> fds{{done_fd, POLLIN, 0}};
+    std::vector<size_t> fd_starts;
     std::vector<void *> original;
     bool queued = false;
     bool tracing = false;
     HandoffTrace::DirectTimes times;
     for (auto & [idx, r] : native) {
       original.push_back(subs->subscribers[idx]);
-      fds.push_back({r->sub->notification_fd(), POLLIN, 0});
+      fd_starts.push_back(fds.size());
+      for (const auto & route : r->routes) fds.push_back({route->notification_fd(), POLLIN, 0});
       tracing |= bool(r->trace);
       queued |= r->ready();
     }
+    fd_starts.push_back(fds.size());
+    auto events_for = [&](size_t i) {
+      short events = 0;
+      for (size_t fd = fd_starts[i]; fd < fd_starts[i + 1]; ++fd) events |= fds[fd].revents;
+      return events;
+    };
     // Only delegated readers participate in the Cyclone wait. The native
     // shadow graph entities can match external writers without native data.
     std::vector<size_t> indices;
@@ -953,7 +1018,7 @@ public:
         duration.tv_nsec = timeout->nsec;
       }
       int rc =
-        ppoll(fds.data() + 1, native.size(), timeout || queued ? &duration : nullptr, nullptr);
+        ppoll(fds.data() + 1, fds.size() - 1, timeout || queued ? &duration : nullptr, nullptr);
       if (rc < 0 && errno != EINTR) return error("native-only poll failed");
       std::fill(delegated.begin(), delegated.end(), nullptr);
       std::fill(guard_data.begin(), guard_data.end(), nullptr);
@@ -963,7 +1028,7 @@ public:
       result = RMW_RET_TIMEOUT;
     } else if (queued || (timeout && !timeout->sec && !timeout->nsec)) {
       dds_wait(&zero);
-      if (poll(fds.data() + 1, native.size(), 0) < 0 && errno != EINTR)
+      if (poll(fds.data() + 1, fds.size() - 1, 0) < 0 && errno != EINTR)
         return error("native poll failed");
     } else {
       {
@@ -989,7 +1054,7 @@ public:
       std::exception_ptr failure;
       try {
         for (size_t i = 0; i < native.size(); ++i)
-          if (fds[i + 1].revents & POLLIN) native[i].second->receive_direct();
+          if (events_for(i) & POLLIN) native[i].second->receive_direct();
       } catch (...) {
         failure = std::current_exception();
       }
@@ -1014,11 +1079,11 @@ public:
       std::copy_n(guard_data.begin(), guards->guard_condition_count, guards->guard_conditions);
     for (size_t i = 0; i < native.size(); ++i) {
       auto & [idx, r] = native[i];
-      if (fds[i + 1].revents & (POLLERR | POLLHUP | POLLNVAL))
+      if (events_for(i) & (POLLERR | POLLHUP | POLLNVAL))
         return error("native notification fd failed");
-      if ((fixed_probe || native_only || queued || (timeout && !timeout->sec && !timeout->nsec)) && (fds[i + 1].revents & POLLIN))
+      if ((fixed_probe || native_only || queued || (timeout && !timeout->sec && !timeout->nsec)) && (events_for(i) & POLLIN))
         r->receive_direct();
-      auto timing = r->trace && times.wake && (fds[i + 1].revents & POLLIN) ? &times : nullptr;
+      auto timing = r->trace && times.wake && (events_for(i) & POLLIN) ? &times : nullptr;
       if (r->ready(0, 0, false, timing)) {
         subs->subscribers[idx] = original[i];
         result = RMW_RET_OK;

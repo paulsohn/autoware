@@ -1259,3 +1259,96 @@ matching before incompatible samples can occupy the reader's KeepLast queue.
 Preserve the existing native object/bridge layout or version any new
 representation. Then exercise best-effort flooding at shallow depth.
 [Recorded observations and exit status](native-matching-results.txt).
+
+### Native writer identity and reliability before queue admission
+
+A selected ROS topic now maps to private Agnocast routes by ROS topic, message
+type, storage layout and offered reliability. A writer publishes once. A
+reliable reader opens the reliable route. A best-effort reader opens both and
+merges them into one bounded application queue. Direct wait watches a
+notification FD for each open route. This matters at depth one. In
+`agnocast_kmod/agnocast_ioctl.c`, `receive_msg_core` applies the subscriber
+depth while scanning deliverable entries. A callback-side filter would run
+after a burst of incompatible entries could already displace a compatible one.
+
+The writer obtains the GID and resolved reliability from its Cyclone graph
+endpoint. It appends the GID bytes to the shared allocation after the native
+object, host-cloud representation or length-prefixed CDR payload. The reader
+sets the local implementation identifier when filling ROS message info. The
+loan keeps its payload address. Source/receive timestamps, sequence numbers,
+other QoS policies, retransmission and ordering across the two routes remain
+outside this result. The test exercises reliable/best-effort *matching*.
+
+Configure this format consistently across a deployment. Existing raw Agnocast
+publishers and the upstream Path bridge speak the earlier format. To run that
+bridge set `AGNOCAST_RMW_LEGACY_WIRE=1` on its rmw_agnocast peers. This restores
+the previously measured behavior including its missing writer identity and
+reliability filtering. Discovery can still report a DDS match when native
+routes or layouts differ. A bridge that understands the new routes is open work.
+The kernel module and preload library are the same for both formats.
+
+Run from the worktree with the existing Universe Lyrical root, heaphook, loaded
+module and scoped-payload benchmark overlays. The runtime wrapper monitors host
+memory and caps each sequential invocation at 512 MiB.
+
+```bash
+export LYRICAL_ROOT=$(cat build/agnocast-lyrical/universe-root)
+experiments/buffer/run-lyrical.sh bash experiments/rmw-agnocast/build-loadable.sh
+export BUFFER_RUNTIME_ONLY=1
+run() { experiments/buffer/run-lyrical.sh timeout 180s bash "$@"; }
+probe=experiments/rmw-agnocast/run-loadable.sh
+for direct in 0 1; do
+  for disabled in 0 1; do
+    for traffic in normal flood; do
+      AGNOCAST_RMW_DIRECT_WAIT=$direct ROS_DISABLE_LOANED_MESSAGES=$disabled \
+        run "$probe" matching native "$traffic"
+    done
+  done
+done
+for test in host-loan cloud-cdr host-cloud host-view pressure contract trajectory path bridge; do
+  run "$probe" "$test"
+done
+bench=experiments/rmw-agnocast/bench-host-cloud.sh
+run "$bench" --check-cold
+run "$bench" build/rmw-agnocast/wire-forward --wire
+run "$bench" build/rmw-agnocast/wire-reverse --wire --reverse
+```
+
+The two-writer matrix passed all eight combinations. A further control ran
+`matching cyclone flood` with direct wait selected and ROS loans disabled.
+Cyclone retained the reliable sample. Repeating `matching native flood` with
+the legacy wire instead delivered one incompatible sample, lost the reliable
+sample and exited 3. With the new wire the same reader received the reliable
+sample with the publisher's GID. Both typed and serialized cloud readers
+checked the GID against the publisher across all four cloud probes.
+
+| Universe crop on laptop | Runs | Median ms | p95 ms | Child CPU s | Largest child peak MiB |
+|---|---:|---:|---:|---:|---:|
+| Native Agnocast | 6 | 0.360 | 0.645 | 0.585 | 137.8 |
+| rmw_agnocast legacy wire | 6 | 0.434 | 0.708 | 0.716 | 139.4 |
+| rmw_agnocast versioned wire | 6 | 0.442 | 0.752 | 0.707 | 139.1 |
+| Cyclone DDS, CPU | 3 | 1.302 | 1.455 | 0.789 | 134.0 |
+| Zenoh, CPU | 3 | 1.076 | 1.351 | 3.486 | 288.1 |
+
+Each run verified 60 sequential frames on both crop edges. Latency pools the
+last 50 per run. CPU and peak RSS are medians of whole-run child resource
+measurements, including the router for Zenoh. Native Agnocast and the two RMW
+variants rotated order in both directions. Both RMW variants used fixed
+blocking wait and scoped publisher allocation. Each publisher on both edges
+reported 60 loans and zero private payload copies in every run. Cyclone and
+Zenoh CPU controls followed as a separate batch, three runs per transport in
+orders Cyclone/Zenoh, Zenoh/Cyclone, Cyclone/Zenoh. To repeat them, use the
+same overlays and loopback Cyclone configuration as `bench-host-cloud.sh`
+and run `python3 src/universe_crop_benchmark/run_case.py TRANSPORT FILE.csv
+--resources FILE-resources.csv` once per case using a fresh filename.
+
+The versioned wire reached 1.23× native median and 1.17× native p95. Relative
+to the legacy wire, six same-round differences in median ranged from −52 to
++71 µs (median +3 µs). The p95 differences ranged from −72 to +151 µs
+(median +79 µs). The higher pooled p95 merits tracking on another host. This
+experiment demonstrates correct admission and attribution with retained CPU
+payload loans on this laptop. The next integration test should connect a
+versioned native Path route to ordinary ROS in both directions and verify the
+identity exposed at each side of the bridge. Keep the explicit legacy bridge
+as a control.
+[Raw latency, resources and contract checks](native-matching-v2-results/).

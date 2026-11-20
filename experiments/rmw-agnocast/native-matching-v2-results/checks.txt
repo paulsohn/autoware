@@ -1,0 +1,112 @@
+build/rmw-agnocast/v2-final-1-1-normal.log:matched readers reliable=1 best_effort=0
+build/rmw-agnocast/v2-final-1-1-normal.log:compatible callbacks=3 incompatible callbacks=0 calibrated writer identity=1 receiver GIDs reliable=rmw_cyclonedds_cpp/79f2762f2780404b0000000000000000 best_effort=rmw_cyclonedds_cpp/fa722f36809f01140000000000000000
+build/rmw-agnocast/v2-final-1-1-normal.log:Minimum host MemAvailable: 17896 MiB
+build/rmw-agnocast/v2-final-reverse.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/v2-final-reverse.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/v2-final-reverse.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/v2-final-reverse.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/v2-final-reverse.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/v2-final-reverse.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/v2-final-reverse.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/v2-final-reverse.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/v2-final-reverse.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/v2-final-reverse.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/v2-final-reverse.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/v2-final-reverse.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/v2-final-reverse.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/v2-final-reverse.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/v2-final-reverse.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/v2-final-reverse.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/v2-final-reverse.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/v2-final-reverse.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/v2-final-reverse.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/v2-final-reverse.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/v2-final-reverse.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/v2-final-reverse.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/v2-final-reverse.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/v2-final-reverse.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/v2-final-reverse.log:Minimum host MemAvailable: 17428 MiB
+build/rmw-agnocast/v2-final-1-0-normal.log:matched readers reliable=1 best_effort=0
+build/rmw-agnocast/v2-final-1-0-normal.log:compatible callbacks=3 incompatible callbacks=0 calibrated writer identity=1 receiver GIDs reliable=rmw_cyclonedds_cpp/f99e83cdb49e9a350000000000000000 best_effort=rmw_cyclonedds_cpp/0017f60b742226850000000000000000
+build/rmw-agnocast/v2-final-1-0-normal.log:Minimum host MemAvailable: 17912 MiB
+build/rmw-agnocast/v2-final-1-0-flood.log:matched readers reliable=1 best_effort=0
+build/rmw-agnocast/v2-final-1-0-flood.log:compatible callbacks=1 incompatible callbacks=0 calibrated writer identity=1 receiver GIDs reliable=rmw_cyclonedds_cpp/10a5035eec45f54c0000000000000000 best_effort=rmw_cyclonedds_cpp/78b6d74db2026a660000000000000000
+build/rmw-agnocast/v2-final-1-0-flood.log:Minimum host MemAvailable: 17908 MiB
+build/rmw-agnocast/v2-final-forward.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/v2-final-forward.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/v2-final-forward.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/v2-final-forward.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/v2-final-forward.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/v2-final-forward.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/v2-final-forward.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/v2-final-forward.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/v2-final-forward.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/v2-final-forward.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/v2-final-forward.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/v2-final-forward.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/v2-final-forward.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/v2-final-forward.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/v2-final-forward.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/v2-final-forward.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/v2-final-forward.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/v2-final-forward.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/v2-final-forward.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/v2-final-forward.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/v2-final-forward.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/v2-final-forward.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/v2-final-forward.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/v2-final-forward.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/v2-final-forward.log:Minimum host MemAvailable: 17445 MiB
+build/rmw-agnocast/v2-final-bridge.log:a2r off passed
+build/rmw-agnocast/v2-final-bridge.log:a2r on passed
+build/rmw-agnocast/v2-final-bridge.log:r2a off passed
+build/rmw-agnocast/v2-final-bridge.log:r2a on passed
+build/rmw-agnocast/v2-final-bridge.log:Minimum host MemAvailable: 17813 MiB
+build/rmw-agnocast/v2-final-trajectory.log:rmw_agnocast autoware_planning_msgs/msg/Trajectory loan: verified four samples, retained A, throwing C and copied publish D
+build/rmw-agnocast/v2-final-trajectory.log:rmw_agnocast autoware_planning_msgs/msg/Trajectory copy: verified four samples, retained A, throwing C and copied publish D
+build/rmw-agnocast/v2-final-trajectory.log:Minimum host MemAvailable: 17846 MiB
+build/rmw-agnocast/v2-final-cold.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/v2-final-cold.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/v2-final-cold.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/v2-final-cold.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/v2-final-cold.log:Received 60 distinct stamped diagnostics from /output/debug/published_time
+build/rmw-agnocast/v2-final-cold.log:Minimum host MemAvailable: 17379 MiB
+build/rmw-agnocast/v2-final-path.log:rmw_agnocast nav_msgs/msg/Path loan: verified four samples, retained A, throwing C and copied publish D
+build/rmw-agnocast/v2-final-path.log:rmw_agnocast nav_msgs/msg/Path copy: verified four samples, retained A, throwing C and copied publish D
+build/rmw-agnocast/v2-final-path.log:Minimum host MemAvailable: 17829 MiB
+build/rmw-agnocast/v2-final-contract.log:writer reused held sample address after SIGKILL
+build/rmw-agnocast/v2-final-contract.log:Minimum host MemAvailable: 17835 MiB
+build/rmw-agnocast/v2-final-pressure.log:Pressure passed: fast 1..11, slow 1/8/9, restarted 11; retained 1 through teardown
+build/rmw-agnocast/v2-final-pressure.log:Minimum host MemAvailable: 17828 MiB
+build/rmw-agnocast/v2-final-0-1-normal.log:matched readers reliable=1 best_effort=0
+build/rmw-agnocast/v2-final-0-1-normal.log:compatible callbacks=3 incompatible callbacks=0 calibrated writer identity=1 receiver GIDs reliable=rmw_cyclonedds_cpp/70af7c8758376fc40000000000000000 best_effort=rmw_cyclonedds_cpp/653615335dfe4f100000000000000000
+build/rmw-agnocast/v2-final-0-1-normal.log:Minimum host MemAvailable: 17928 MiB
+build/rmw-agnocast/v2-final-cloud-cdr.log:empty and padded clouds verified through typed and serialized take
+build/rmw-agnocast/v2-final-cloud-cdr.log:Minimum host MemAvailable: 17829 MiB
+build/rmw-agnocast/v2-final-host-cloud.log:empty and padded clouds verified through typed and serialized take
+build/rmw-agnocast/v2-final-host-cloud.log:Minimum host MemAvailable: 17833 MiB
+build/rmw-agnocast/v2-final-1-1-flood.log:matched readers reliable=1 best_effort=0
+build/rmw-agnocast/v2-final-1-1-flood.log:compatible callbacks=1 incompatible callbacks=0 calibrated writer identity=1 receiver GIDs reliable=rmw_cyclonedds_cpp/956b599fc96d00cd0000000000000000 best_effort=rmw_cyclonedds_cpp/e2704e1db10a69be0000000000000000
+build/rmw-agnocast/v2-final-1-1-flood.log:Minimum host MemAvailable: 17916 MiB
+build/rmw-agnocast/v2-final-0-1-flood.log:matched readers reliable=1 best_effort=0
+build/rmw-agnocast/v2-final-0-1-flood.log:compatible callbacks=1 incompatible callbacks=0 calibrated writer identity=1 receiver GIDs reliable=rmw_cyclonedds_cpp/813cf6f5d9f01bf60000000000000000 best_effort=rmw_cyclonedds_cpp/5b5d53362def1a3e0000000000000000
+build/rmw-agnocast/v2-final-0-1-flood.log:Minimum host MemAvailable: 17862 MiB
+build/rmw-agnocast/v2-final-0-0-flood.log:matched readers reliable=1 best_effort=0
+build/rmw-agnocast/v2-final-0-0-flood.log:compatible callbacks=1 incompatible callbacks=0 calibrated writer identity=1 receiver GIDs reliable=rmw_cyclonedds_cpp/2429a20b3463231d0000000000000000 best_effort=rmw_cyclonedds_cpp/ed55d25f4b578bb50000000000000000
+build/rmw-agnocast/v2-final-0-0-flood.log:Minimum host MemAvailable: 17924 MiB
+build/rmw-agnocast/v2-final-host-loan.log:empty and padded clouds verified through typed and serialized take
+build/rmw-agnocast/v2-final-host-loan.log:host-cloud publisher loans=8 private_copies=1
+build/rmw-agnocast/v2-final-host-loan.log:Minimum host MemAvailable: 17846 MiB
+build/rmw-agnocast/v2-final-0-0-normal.log:matched readers reliable=1 best_effort=0
+build/rmw-agnocast/v2-final-0-0-normal.log:compatible callbacks=3 incompatible callbacks=0 calibrated writer identity=1 receiver GIDs reliable=rmw_cyclonedds_cpp/d626d1adbca0c9bf0000000000000000 best_effort=rmw_cyclonedds_cpp/23bec46bcce02f100000000000000000
+build/rmw-agnocast/v2-final-0-0-normal.log:Minimum host MemAvailable: 17905 MiB
+build/rmw-agnocast/v2-final-host-view.log:empty and padded clouds verified through typed and serialized take
+build/rmw-agnocast/v2-final-host-view.log:Minimum host MemAvailable: 17822 MiB
+Summary: 2 packages finished [17.1s]
+Minimum host MemAvailable: 17371 MiB
+build/rmw-agnocast/v2-final-controls.log:Minimum host MemAvailable: 17438 MiB
+build/rmw-agnocast/v2-flood-legacy.log:compatible callbacks=0 incompatible callbacks=1 calibrated writer identity=0 receiver GIDs reliable=(null)/00000000000000000000000000000000 best_effort=(null)/00000000000000000000000000000000
+build/rmw-agnocast/v2-flood-legacy.log:Minimum host MemAvailable: 17954 MiB
+build/rmw-agnocast/v2-flood-legacy.log:legacy exit=3
+build/rmw-agnocast/v2-flood-cyclone.log:compatible callbacks=1 incompatible callbacks=0 calibrated writer identity=1 receiver GIDs reliable=rmw_cyclonedds_cpp/e7e31bbb880694ac0000000000000000 best_effort=rmw_cyclonedds_cpp/da5765a4b113f04c0000000000000000
+build/rmw-agnocast/v2-flood-cyclone.log:Minimum host MemAvailable: 18005 MiB

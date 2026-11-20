@@ -326,7 +326,7 @@ std::string gid_text(const rmw_gid_t & gid)
   return result;
 }
 
-bool native_matching(bool writer)
+bool native_matching(bool writer, bool flood)
 {
   auto node = std::make_shared<rclcpp::Node>(writer ? "matching_writers" : "matching_reader");
   constexpr auto topic = "/trajectory_loan_probe";
@@ -352,7 +352,15 @@ bool native_matching(bool writer)
         (seq % 2 ? best : reliable)->publish(msg);
       }
     };
-    send();
+    if (flood) {
+      Path last, noise;
+      fill(last, 6);
+      fill(noise, 1);
+      reliable->publish(last);
+      for (int i = 0; i < 64; ++i) best->publish(noise);
+    } else {
+      send();
+    }
     mark("sent");
     wait_file("calibrate");
     deadline = std::chrono::steady_clock::now() + 5s;
@@ -370,7 +378,7 @@ bool native_matching(bool writer)
   std::vector<int> compatible, incompatible;
   std::vector<std::pair<int, std::string>> delivered;
   bool calibrating = false;
-  auto sub = node->create_subscription<Path>(topic, rclcpp::QoS(8).reliable(),
+  auto sub = node->create_subscription<Path>(topic, rclcpp::QoS(flood ? 1 : 8).reliable(),
     [&](Path::ConstSharedPtr msg, const rclcpp::MessageInfo & mi) {
       if (calibrating) return;
       check(!msg->poses.empty(), "empty Path");
@@ -421,12 +429,15 @@ bool native_matching(bool writer)
     return id.rfind("(null)/", 0) != 0 && id.find_first_not_of('0', id.find('/') + 1) != std::string::npos;
   };
   bool identity = usable(ids[0]) && usable(ids[1]) && ids[0] != ids[1];
+  if (std::string(std::getenv("RMW_IMPLEMENTATION")) == "rmw_agnocast")
+    identity &= ids[0].count(rel_gid) == 1 && ids[1].count(be_gid) == 1;
   for (const auto & [seq, id] : delivered) identity &= ids[seq % 2].count(id) == 1;
   std::cout << "compatible callbacks=" << compatible.size() << " incompatible callbacks="
             << incompatible.size() << " calibrated writer identity=" << identity
             << " receiver GIDs reliable=" << *ids[0].begin() << " best_effort=" << *ids[1].begin() << std::endl;
   mark("observed");
-  return matches == 1 && compatible == std::vector<int>{2, 4, 6} && incompatible.empty() && identity;
+  auto expected = flood ? std::vector<int>{6} : std::vector<int>{2, 4, 6};
+  return matches == 1 && compatible == expected && incompatible.empty() && identity;
 }
 
 void contract(rclcpp::Node & node, const std::string & role)
@@ -526,6 +537,7 @@ void host_cloud_contract(rclcpp::Node & node, bool writer)
   const int frames = view ? 8 : 2;
   if (writer) {
     auto pub = node.create_publisher<Cloud>(topic, 4);
+    std::ofstream("cloud_gid") << gid_text(pub->get_gid());
     wait_file("cloud_attached");
     auto deadline = std::chrono::steady_clock::now() + 10s;
     while (pub->get_subscription_count() != (view ? 3u : 2u)) {
@@ -556,6 +568,12 @@ void host_cloud_contract(rclcpp::Node & node, bool writer)
   }
   Cloud::ConstSharedPtr retained;
   std::weak_ptr<const std::vector<uint8_t>> owner;
+  wait_file("cloud_gid");
+  std::string expected_gid;
+  check(bool(std::ifstream("cloud_gid") >> expected_gid), "missing cloud publisher GID");
+  auto verify_gid = [&](const rclcpp::MessageInfo & info) {
+    check(gid_text(info.get_rmw_message_info().publisher_gid) == expected_gid, "wrong cloud publisher GID");
+  };
   int typed = 0, serialized = 0, cpu = 0;
   rclcpp::SubscriptionOptions options;
   if (view) options.acceptable_buffer_backends = "any";
@@ -565,7 +583,8 @@ void host_cloud_contract(rclcpp::Node & node, bool writer)
       check(msg.data.get_backend_type() == "cpu" && msg == cloud_fixture(cpu++), "CPU fallback mismatch");
     });
   }
-  auto sub = node.create_subscription<Cloud>(topic, 4, [&](Cloud::SharedPtr msg) {
+  auto sub = node.create_subscription<Cloud>(topic, 4, [&](Cloud::SharedPtr msg, const rclcpp::MessageInfo & info) {
+    verify_gid(info);
     check(*msg == cloud_fixture(typed), "typed cloud mismatch");
     if (view) {
       const auto & impl = dynamic_cast<const rmw_agnocast::HostCloudView &>(*msg->data.get_impl());
@@ -591,7 +610,8 @@ void host_cloud_contract(rclcpp::Node & node, bool writer)
     ++typed;
   }, options);
   auto generic = node.create_generic_subscription(topic, "sensor_msgs/msg/PointCloud2", rclcpp::QoS(4),
-    [&](std::shared_ptr<const rclcpp::SerializedMessage> bytes) {
+    [&](std::shared_ptr<const rclcpp::SerializedMessage> bytes, const rclcpp::MessageInfo & info) {
+      verify_gid(info);
       Cloud msg;
       rclcpp::Serialization<Cloud>().deserialize_message(bytes.get(), &msg);
       check(msg == cloud_fixture(serialized++), "serialized cloud mismatch");
@@ -703,7 +723,7 @@ int main(int argc, char ** argv)
     bool writer = std::string(argv[1]) == "writer", use_loan = std::string(argv[2]) == "loan";
     rclcpp::init(argc, argv);
     if (std::string(argv[2]) == "matching") {
-      bool ok = native_matching(writer);
+      bool ok = native_matching(writer, argc == 4 && std::string(argv[3]) == "flood");
       rclcpp::shutdown();
       return ok ? 0 : 3;
     }

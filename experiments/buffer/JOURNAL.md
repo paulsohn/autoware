@@ -1054,3 +1054,34 @@ receiver-local attribution. An initial writer-process byte comparison also
 failed under Cyclone, so the final probe calibrates callback identities in the
 receiving process. The native assertions remain red to catch the actual fix.
 [Commands, evidence, diagnosis and next test](../rmw-agnocast/README.md#two-native-writers-and-one-reliable-path-reader)
+
+### Enforce native reliability matching and preserve the writer GID
+
+The two-writer Path probe from the previous entry exposed a data-plane mismatch
+with the Cyclone discovery counts. Reading the Agnocast kernel receive loop
+showed why rejecting incompatible messages during take would be too late at
+shallow depth. Implemented separate native reliability routes and a versioned
+writer-GID trailer in the experimental colcon RMW. Native data stays on the
+laptop and uses the existing heaphook and kernel module. Cyclone supplies the
+graph endpoint identity and resolved QoS.
+
+Validated both blocking wait paths and both rclcpp take modes. With two writers
+on one ROS topic the reliable reader received sequences 2, 4 and 6, zero
+incompatible samples, and the originating writer's GID. With an idle depth-one
+reader, a reliable sample followed by 64 incompatible publications survived
+in all four configurations. A best-effort calibration reader received all six
+subsequent samples, classified by writer. Typed and generic serialized cloud
+callbacks also matched the writer GID for CDR, host-cloud, view and publisher
+loan paths. Pressure, reader death, retained references, Path, Trajectory and
+60 distinct delegated diagnostics passed. Both upstream bridge directions
+passed their on/off controls with the legacy wire explicitly selected.
+A bridge into the versioned native routes remains open.
+
+[Reproduction, benchmark and deployment implications](../rmw-agnocast/README.md#native-writer-identity-and-reliability-before-queue-admission)
+
+The legacy depth-one negative control lost its reliable sample and delivered
+one incompatible sample. Ordinary Cyclone and the new implementation retained
+the reliable sample. All 1,440 crop frames across 24 timed runs passed. The
+new wire reached 1.23× native median and 1.17× p95. Paired p95 deltas against
+the legacy wire varied from −72 to +151 µs. Keep tracking that spread as we
+implement a bridge for the versioned format.

@@ -19,17 +19,18 @@ if [[ ${1:-} == matching ]]; then
     export LD_PRELOAD="$hook"
   fi
   echo "matching RMW=$RMW_IMPLEMENTATION ROS_DISABLE_LOANED_MESSAGES=${ROS_DISABLE_LOANED_MESSAGES:-default}"
-  "$probe" writer matching &
+  "$probe" writer matching "${3:-normal}" &
   writer=$!
   trap 'kill "$writer" 2>/dev/null || true' EXIT
   status=0
-  "$probe" reader matching || status=$?
+  "$probe" reader matching "${3:-normal}" || status=$?
   wait "$writer" || exit $?
   trap - EXIT
   exit "$status"
 fi
 
 if [[ ${1:-} == bridge ]]; then
+  export AGNOCAST_RMW_LEGACY_WIRE=1
   for direction in a2r r2a; do
     for active in off on; do
       cd "$(mktemp -d)"
@@ -66,11 +67,11 @@ if [[ ${1:-} == bridge ]]; then
   exit 0
 fi
 
-if [[ ${1:-} == host-cloud || ${1:-} == host-view || ${1:-} == host-loan ]]; then
+if [[ ${1:-} == host-cloud || ${1:-} == host-view || ${1:-} == host-loan || ${1:-} == cloud-cdr ]]; then
   cd "$(mktemp -d)"
-  export AGNOCAST_RMW_HOST_CLOUD=1
+  if [[ $1 == cloud-cdr ]]; then export AGNOCAST_RMW_BUFFER_CDR=1; else export AGNOCAST_RMW_HOST_CLOUD=1; fi
   if [[ $1 == host-loan ]]; then export AGNOCAST_RMW_HOST_LOAN=1; fi
-  if [[ $1 != host-cloud ]]; then export AGNOCAST_RMW_HOST_VIEW=1 AGNOCAST_VIEW_ADDRESS_FILE=view-address; fi
+  if [[ $1 == host-view || $1 == host-loan ]]; then export AGNOCAST_RMW_HOST_VIEW=1 AGNOCAST_VIEW_ADDRESS_FILE=view-address; fi
   LD_PRELOAD="$hook" "$probe" reader host-cloud &
   reader=$!
   trap 'kill "$reader" 2>/dev/null || true' EXIT
