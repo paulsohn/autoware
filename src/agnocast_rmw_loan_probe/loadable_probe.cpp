@@ -12,6 +12,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <set>
 #include <thread>
 
 using Message = autoware_planning_msgs::msg::Trajectory;
@@ -313,6 +314,121 @@ void bridge_peer(bool writer, bool active, bool dds)
   mark("checked");
 }
 
+std::string gid_text(const rmw_gid_t & gid)
+{
+  std::string result = gid.implementation_identifier ? gid.implementation_identifier : "(null)";
+  result += '/';
+  constexpr char digits[] = "0123456789abcdef";
+  for (uint8_t byte : gid.data) {
+    result += digits[byte >> 4];
+    result += digits[byte & 15];
+  }
+  return result;
+}
+
+bool native_matching(bool writer)
+{
+  auto node = std::make_shared<rclcpp::Node>(writer ? "matching_writers" : "matching_reader");
+  constexpr auto topic = "/trajectory_loan_probe";
+  if (writer) {
+    auto reliable = node->create_publisher<Path>(topic, rclcpp::QoS(8).reliable());
+    auto best = node->create_publisher<Path>(topic, rclcpp::QoS(8).best_effort());
+    auto reliable_gid = gid_text(reliable->get_gid());
+    auto best_gid = gid_text(best->get_gid());
+    check(reliable_gid != best_gid, "writers share a GID");
+    std::ofstream("writers") << reliable_gid << ' ' << best_gid;
+    wait_file("reader_ready");
+    auto deadline = std::chrono::steady_clock::now() + 5s;
+    while (!reliable->get_subscription_count()) {
+      check(std::chrono::steady_clock::now() < deadline, "reliable writer never matched");
+      std::this_thread::sleep_for(10ms);
+    }
+    auto rel_matches = reliable->get_subscription_count(), be_matches = best->get_subscription_count();
+    std::cout << "matched readers reliable=" << rel_matches << " best_effort=" << be_matches << std::endl;
+    auto send = [&] {
+      for (int seq = 1; seq <= 6; ++seq) {
+        Path msg;
+        fill(msg, seq);
+        (seq % 2 ? best : reliable)->publish(msg);
+      }
+    };
+    send();
+    mark("sent");
+    wait_file("calibrate");
+    deadline = std::chrono::steady_clock::now() + 5s;
+    while (!best->get_subscription_count() || reliable->get_subscription_count() != 2) {
+      check(std::chrono::steady_clock::now() < deadline, "calibration listener never matched");
+      std::this_thread::sleep_for(10ms);
+    }
+    send();
+    mark("calibration_sent");
+    wait_file("observed");
+    return rel_matches == 1 && be_matches == 0;
+  }
+
+  std::string rel_gid, be_gid;
+  std::vector<int> compatible, incompatible;
+  std::vector<std::pair<int, std::string>> delivered;
+  bool calibrating = false;
+  auto sub = node->create_subscription<Path>(topic, rclcpp::QoS(8).reliable(),
+    [&](Path::ConstSharedPtr msg, const rclcpp::MessageInfo & mi) {
+      if (calibrating) return;
+      check(!msg->poses.empty(), "empty Path");
+      int seq = static_cast<int>(msg->poses.front().pose.position.x);
+      check(seq >= 1 && seq <= 6, "unexpected sequence");
+      verify(*msg, seq, false);
+      (seq % 2 ? incompatible : compatible).push_back(seq);
+      auto actual = gid_text(mi.get_rmw_message_info().publisher_gid);
+      delivered.emplace_back(seq, actual);
+      std::cout << "received seq=" << seq << " gid=" << actual << std::endl;
+    });
+  wait_file("writers");
+  check(bool(std::ifstream("writers") >> rel_gid >> be_gid), "missing writer GIDs");
+  auto deadline = std::chrono::steady_clock::now() + 5s;
+  while (node->count_publishers(topic) != 2 || sub->get_publisher_count() == 0) {
+    check(std::chrono::steady_clock::now() < deadline, "writer discovery incomplete");
+    std::this_thread::sleep_for(10ms);
+  }
+  auto matches = sub->get_publisher_count();
+  std::cout << "discovered=2 matched writers=" << matches << " reliable_gid=" << rel_gid
+            << " best_effort_gid=" << be_gid << std::endl;
+  mark("reader_ready");
+  wait_file("sent");
+  rclcpp::executors::SingleThreadedExecutor exec;
+  exec.add_node(node);
+  deadline = std::chrono::steady_clock::now() + 1s;
+  while (std::chrono::steady_clock::now() < deadline) exec.spin_once(10ms);
+  calibrating = true;
+  std::set<std::string> ids[2];
+  std::set<int> calibration_sequences;
+  auto calibration = node->create_subscription<Path>(topic, rclcpp::QoS(8).best_effort(),
+    [&](Path::ConstSharedPtr msg, const rclcpp::MessageInfo & mi) {
+      check(!msg->poses.empty(), "empty calibration Path");
+      int seq = static_cast<int>(msg->poses.front().pose.position.x);
+      check(seq >= 1 && seq <= 6 && calibration_sequences.insert(seq).second, "invalid calibration sequence");
+      verify(*msg, seq, false);
+      ids[seq % 2].insert(gid_text(mi.get_rmw_message_info().publisher_gid));
+    });
+  mark("calibrate");
+  wait_file("calibration_sent");
+  deadline = std::chrono::steady_clock::now() + 2s;
+  while (calibration_sequences.size() < 6 && std::chrono::steady_clock::now() < deadline)
+    exec.spin_once(10ms);
+  check(calibration_sequences.size() == 6, "calibration samples missing");
+  auto usable = [](const auto & group) {
+    if (group.size() != 1) return false;
+    const auto & id = *group.begin();
+    return id.rfind("(null)/", 0) != 0 && id.find_first_not_of('0', id.find('/') + 1) != std::string::npos;
+  };
+  bool identity = usable(ids[0]) && usable(ids[1]) && ids[0] != ids[1];
+  for (const auto & [seq, id] : delivered) identity &= ids[seq % 2].count(id) == 1;
+  std::cout << "compatible callbacks=" << compatible.size() << " incompatible callbacks="
+            << incompatible.size() << " calibrated writer identity=" << identity
+            << " receiver GIDs reliable=" << *ids[0].begin() << " best_effort=" << *ids[1].begin() << std::endl;
+  mark("observed");
+  return matches == 1 && compatible == std::vector<int>{2, 4, 6} && incompatible.empty() && identity;
+}
+
 void contract(rclcpp::Node & node, const std::string & role)
 {
   constexpr auto topic = "trajectory_loan_probe";
@@ -586,6 +702,11 @@ int main(int argc, char ** argv)
     check((argc == 3 || argc == 4), "expected role and loan/copy mode");
     bool writer = std::string(argv[1]) == "writer", use_loan = std::string(argv[2]) == "loan";
     rclcpp::init(argc, argv);
+    if (std::string(argv[2]) == "matching") {
+      bool ok = native_matching(writer);
+      rclcpp::shutdown();
+      return ok ? 0 : 3;
+    }
     if (std::string(argv[2]) == "boundary" && argc == 4) {
       bool dds = std::string(rmw_get_implementation_identifier()) == "rmw_cyclonedds_cpp";
       bridge_peer(writer, std::string(argv[3]) == "on", dds);

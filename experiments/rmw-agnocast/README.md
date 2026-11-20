@@ -1,5 +1,8 @@
 # Whole-message loans with Agnocast storage
 
+The current pilot decision and latency milestone are recorded in
+[Pilot bridge choice and interpretation of performance](#pilot-bridge-choice-and-interpretation-of-performance).
+
 The target deployment uses standard ROS message types and rclcpp publishers and
 subscriptions, selects an rmw_agnocast library through RMW_IMPLEMENTATION, and
 preloads a matching Agnocast heap hook on hosts with its kernel module. This
@@ -1179,3 +1182,80 @@ frames. These results apply to fresh CPU point vectors on the same host.
 Reusing sufficient private vector capacity can still select the RMW copy
 fallback. The fixed receiver topology and backend-aware input access remain
 prerequisites. [Raw frames, child resource use and checks](scoped-payload-results/).
+
+## Pilot bridge choice and interpretation of performance
+
+Use 1.20× native Agnocast median and p95 as an engineering milestone. Earlier
+references to a gate record how the measurements were originally evaluated.
+The scoped-loan median changed from 1.30× to 1.17× across run orders. The
+roughly 4 µs between its pooled median and the target is within the observed
+variation. Evaluate changes using paired, rotated runs and report within-pair
+differences, spread, CPU, RSS, drops, duplicates and payload copies. Small
+latency differences can remain unresolved. Correct delivery, ownership and
+QoS matching have independently testable expectations.
+
+If the Autoware pilot selects one deployment, prefer rmw_agnocast with one
+supervised Cyclone bridge and statically configured topics and directions.
+Start routes at launch, expose readiness and allow an empty native-only
+profile. A late recorder uses DDS discovery on an existing outbound route.
+An explicit operator-launched relay remains useful for ad hoc routes and can
+reuse the same forwarding implementation. A Cyclone PSMX Agnocast backend
+remains an alternative if one writer can serve an ordinary DDS reader while
+retaining local zero-copy delivery for dynamic PointCloud2. Only explicit
+Path bridging has measured delivery on this laptop. Active point-cloud bridge
+latency, restart behavior and PSMX costs remain unmeasured.
+
+Bridge qualification uses one native writer, a native crop and an ordinary
+DDS recorder. Compare route absent, enabled but idle, and actively recording.
+Measure both readers separately, startup and late-join time, and sequence
+loss or duplicates through relay restart. First qualify native matching and
+publisher identity with the bridge disabled.
+
+## Two native writers and one reliable Path reader
+
+The writer process creates two publishers on the same topic, with identical
+volatile KeepLast(8) history and different offered reliability. The reliable
+reader discovers both before sending starts. The best-effort writer sends odd
+sequence numbers and the reliable writer sends even numbers. Six samples fit
+the reader history. The reader verifies the full nested Path and drains the
+executor for one second. In a second phase a best-effort subscription in the
+same reader process receives another six labelled samples. Its callback GIDs
+establish the receiver-local identity of each writer. The strict test requires
+stable, nonzero, distinct identities, an ordered 2/4/6 on the reliable reader
+and zero incompatible callbacks. Exit 3 indicates a failed matching or
+identity assertion. The runner separately enforces discovery and completeness.
+
+| RMW / take | Discovered / matched writers | Matched readers, reliable / best-effort writer | Reliable-reader callbacks, compatible / incompatible | Writer identity |
+|---|---:|---:|---:|---|
+| Cyclone-only control, copy | 2 / 1 | 1 / 0 | 3 / 0 | distinct, stable |
+| rmw_agnocast, copy | 2 / 1 | 1 / 0 | 3 / 3 | empty for both |
+| rmw_agnocast, loan | 2 / 1 | 1 / 0 | 3 / 3 | empty for both |
+
+All endpoints within each run use the same RMW. Bridge and discovery agent are
+off. No ordinary DDS peer participates in the native runs. The Cyclone-only
+run is a separate fixture control. The first identity assertion compared the
+writer process's get_gid() bytes with sample metadata on the receiver. Those
+bytes differed even under plain Cyclone. The final test logs both and checks
+attribution against receiver-local observations.
+
+Reproduce with the installed Lyrical Agnocast, message and patched rclcpp
+overlays. Run sequentially and inspect each exit status:
+
+```bash
+export LYRICAL_ROOT=$(cat build/agnocast-lyrical/universe-root)
+experiments/buffer/run-lyrical.sh bash experiments/rmw-agnocast/build-loadable.sh
+export BUFFER_RUNTIME_ONLY=1 AGNOCAST_RMW_DIRECT_WAIT=1
+ROS_DISABLE_LOANED_MESSAGES=1 experiments/buffer/run-lyrical.sh timeout 35s bash experiments/rmw-agnocast/run-loadable.sh matching cyclone
+ROS_DISABLE_LOANED_MESSAGES=1 experiments/buffer/run-lyrical.sh timeout 35s bash experiments/rmw-agnocast/run-loadable.sh matching native
+ROS_DISABLE_LOANED_MESSAGES=0 experiments/buffer/run-lyrical.sh timeout 35s bash experiments/rmw-agnocast/run-loadable.sh matching native
+```
+
+The delegated match counts already express the expected reliability policy.
+Native delivery ignores it and the native take clears message info. The
+received loan's pubsub ID is constructed with the subscription ID. Using that
+ID as the writer identity would conflate both publishers. Next carry a
+per-writer identity and offered reliability through native delivery and enforce
+matching before incompatible samples can occupy the reader's KeepLast queue.
+Preserve the existing native object/bridge layout or version any new
+representation. Then exercise best-effort flooding at shallow depth.
+[Recorded observations and exit status](native-matching-results.txt).

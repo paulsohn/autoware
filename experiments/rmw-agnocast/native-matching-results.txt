@@ -1,0 +1,33 @@
+build/rmw-agnocast/matching-final-native-0.log:matching RMW=rmw_agnocast ROS_DISABLE_LOANED_MESSAGES=0
+build/rmw-agnocast/matching-final-native-0.log:discovered=2 matched writers=1 reliable_gid=rmw_cyclonedds_cpp/1192236bf6d5cd520000000000000000 best_effort_gid=rmw_cyclonedds_cpp/ca93f2b846014d140000000000000000
+build/rmw-agnocast/matching-final-native-0.log:matched readers reliable=1 best_effort=0
+build/rmw-agnocast/matching-final-native-0.log:received seq=1 gid=(null)/00000000000000000000000000000000
+build/rmw-agnocast/matching-final-native-0.log:received seq=2 gid=(null)/00000000000000000000000000000000
+build/rmw-agnocast/matching-final-native-0.log:received seq=3 gid=(null)/00000000000000000000000000000000
+build/rmw-agnocast/matching-final-native-0.log:received seq=4 gid=(null)/00000000000000000000000000000000
+build/rmw-agnocast/matching-final-native-0.log:received seq=5 gid=(null)/00000000000000000000000000000000
+build/rmw-agnocast/matching-final-native-0.log:received seq=6 gid=(null)/00000000000000000000000000000000
+build/rmw-agnocast/matching-final-native-0.log:compatible callbacks=3 incompatible callbacks=3 calibrated writer identity=0 receiver GIDs reliable=(null)/00000000000000000000000000000000 best_effort=(null)/00000000000000000000000000000000
+build/rmw-agnocast/matching-final-native-0.log:Minimum host MemAvailable: 18260 MiB
+build/rmw-agnocast/matching-final-native-0.log:contract exit=3
+build/rmw-agnocast/matching-final-native-1.log:matching RMW=rmw_agnocast ROS_DISABLE_LOANED_MESSAGES=1
+build/rmw-agnocast/matching-final-native-1.log:discovered=2 matched writers=1 reliable_gid=rmw_cyclonedds_cpp/91800d847d90e8010000000000000000 best_effort_gid=rmw_cyclonedds_cpp/81bb1babe391dec40000000000000000
+build/rmw-agnocast/matching-final-native-1.log:matched readers reliable=1 best_effort=0
+build/rmw-agnocast/matching-final-native-1.log:received seq=1 gid=(null)/00000000000000000000000000000000
+build/rmw-agnocast/matching-final-native-1.log:received seq=2 gid=(null)/00000000000000000000000000000000
+build/rmw-agnocast/matching-final-native-1.log:received seq=3 gid=(null)/00000000000000000000000000000000
+build/rmw-agnocast/matching-final-native-1.log:received seq=4 gid=(null)/00000000000000000000000000000000
+build/rmw-agnocast/matching-final-native-1.log:received seq=5 gid=(null)/00000000000000000000000000000000
+build/rmw-agnocast/matching-final-native-1.log:received seq=6 gid=(null)/00000000000000000000000000000000
+build/rmw-agnocast/matching-final-native-1.log:compatible callbacks=3 incompatible callbacks=3 calibrated writer identity=0 receiver GIDs reliable=(null)/00000000000000000000000000000000 best_effort=(null)/00000000000000000000000000000000
+build/rmw-agnocast/matching-final-native-1.log:Minimum host MemAvailable: 18250 MiB
+build/rmw-agnocast/matching-final-native-1.log:contract exit=3
+build/rmw-agnocast/matching-final-cyclone-1.log:matching RMW=rmw_cyclonedds_cpp ROS_DISABLE_LOANED_MESSAGES=1
+build/rmw-agnocast/matching-final-cyclone-1.log:discovered=2 matched writers=1 reliable_gid=rmw_cyclonedds_cpp/1e12e25bd1df3aab0000000000000000 best_effort_gid=rmw_cyclonedds_cpp/167e201dd35d545c0000000000000000
+build/rmw-agnocast/matching-final-cyclone-1.log:matched readers reliable=1 best_effort=0
+build/rmw-agnocast/matching-final-cyclone-1.log:received seq=2 gid=rmw_cyclonedds_cpp/36e8e6631d6f531a0000000000000000
+build/rmw-agnocast/matching-final-cyclone-1.log:received seq=4 gid=rmw_cyclonedds_cpp/36e8e6631d6f531a0000000000000000
+build/rmw-agnocast/matching-final-cyclone-1.log:received seq=6 gid=rmw_cyclonedds_cpp/36e8e6631d6f531a0000000000000000
+build/rmw-agnocast/matching-final-cyclone-1.log:compatible callbacks=3 incompatible callbacks=0 calibrated writer identity=1 receiver GIDs reliable=rmw_cyclonedds_cpp/36e8e6631d6f531a0000000000000000 best_effort=rmw_cyclonedds_cpp/97072b38ebc0853c0000000000000000
+build/rmw-agnocast/matching-final-cyclone-1.log:Minimum host MemAvailable: 18253 MiB
+build/rmw-agnocast/matching-final-cyclone-1.log:contract exit=0

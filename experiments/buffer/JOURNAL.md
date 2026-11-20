@@ -1036,3 +1036,21 @@ is warranted for this specific same-host CPU path. Broad wrapper migration
 still needs evidence on a dynamic graph, realistic sensor load and stable
 latency across repeated runs.
 [Commands, controls, raw results and restrictions](../rmw-agnocast/README.md#scope-the-agnocast-allocation-to-point-storage)
+
+### Record the bridge decision and test native reliability matching
+
+Treat 1.20× native median and p95 as an engineering milestone. Judge small
+latency changes by paired runs and variability. Prefer supervisor-owned,
+startup-configured bridge routes for the pilot. The explicit bridge and
+Cyclone PSMX designs remain alternatives. Their comparative PointCloud2
+bridge costs are open.
+
+Ran the standalone two-writer Path test first. In the two native runs all
+endpoints used rmw_agnocast, with bridging off. Counts reported one compatible
+writer. Both native copy and loaned takes delivered all three incompatible
+samples alongside the three compatible samples, with empty GIDs. A separate
+ordinary Cyclone run delivered only the three compatible samples and passed
+receiver-local attribution. An initial writer-process byte comparison also
+failed under Cyclone, so the final probe calibrates callback identities in the
+receiving process. The native assertions remain red to catch the actual fix.
+[Commands, evidence, diagnosis and next test](../rmw-agnocast/README.md#two-native-writers-and-one-reliable-path-reader)

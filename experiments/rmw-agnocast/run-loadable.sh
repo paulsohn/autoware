@@ -11,6 +11,24 @@ export AGNOCAST_BRIDGE_MODE=OFF AGNOCAST_NO_DISCOVERY_AGENT=1
 export CYCLONEDDS_URI='<CycloneDDS><Domain><General><Interfaces><NetworkInterface name="lo"/></Interfaces><AllowMulticast>false</AllowMulticast></General><Discovery><ParticipantIndex>auto</ParticipantIndex><Peers><Peer Address="127.0.0.1"/></Peers></Discovery></Domain></CycloneDDS>'
 hook=/ws/build/agnocast-lyrical/install/agnocastlib/lib/libagnocast_heaphook.so
 
+if [[ ${1:-} == matching ]]; then
+  cd "$(mktemp -d)"
+  if [[ ${2:-native} == cyclone ]]; then
+    export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+  else
+    export LD_PRELOAD="$hook"
+  fi
+  echo "matching RMW=$RMW_IMPLEMENTATION ROS_DISABLE_LOANED_MESSAGES=${ROS_DISABLE_LOANED_MESSAGES:-default}"
+  "$probe" writer matching &
+  writer=$!
+  trap 'kill "$writer" 2>/dev/null || true' EXIT
+  status=0
+  "$probe" reader matching || status=$?
+  wait "$writer" || exit $?
+  trap - EXIT
+  exit "$status"
+fi
+
 if [[ ${1:-} == bridge ]]; then
   for direction in a2r r2a; do
     for active in off on; do
