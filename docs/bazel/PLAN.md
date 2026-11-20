@@ -1669,6 +1669,11 @@ deployment and verify the booted revision. An application-only demonstration
 must not claim bootloader/kernel rollback or whole-OS update support. Select
 the exact inputs and verification commands before implementation. This is a
 local deployment/update experiment, not production OTA or fleet orchestration.
+In the state-preservation fixture, distinguish synthetic vehicle identity and
+calibration records from replaceable domain resources. Preserve the former
+across updates/rollback; full domain switching remains deferred as described
+under [later priorities](#later-phases). A bootc-compatible OCI OS image is a
+candidate for the bootable scope, subject to base/ABI and boot validation.
 See the upstream [OSTree overview](https://ostreedev.github.io/ostree/introduction/)
 and [deployment contract](https://ostreedev.github.io/ostree/deployment/), reviewed
 2026-11-20; no OSTree input or runtime behavior has been validated here yet.
@@ -1690,7 +1695,7 @@ Implement and validate these tasks sequentially with Cyclone DDS and Agnocast
 disabled, respecting user.bazelrc. Fast DDS requires fresh approval; GPU,
 mixed-deployment frameworks and Phase 7.3 implementation are outside these
 tasks. QEMU is conditional on the selected OSTree deployment scope. Commit the
-validated 7.2.1 boundary and this plan, then pause before implementing 7.2.2–7.2.4.
+validated boundaries separately with their complete gates and journal entries.
 
 The local standalone autoware_simple_planning_simulator manifests do not require
 Universe planning implementations. Its
@@ -1726,6 +1731,20 @@ when Phase 8 begins; any baseline change must be explicit and journaled.
 
 These are scope markers, not implementation decisions. Refine each phase only
 when the preceding phase meets its exit criteria.
+
+Priority agreed 2026-11-21: finish the current 7.2 distribution variants, then
+use 7.3's original planning-simulator workflow to integrate its selected
+autoware_universe closure. Broaden Universe coverage in groups of related
+packages with complete package suites and relevant behavior gates. Preserve
+existing phase identifiers; refine broader coverage tasks when that closure is
+known. Vehicle-specific provisioning and operating-domain redeployment remain
+deferred until substantial Universe coverage is available; do not introduce
+Ansible deployment roles, fleet tooling or a domain-switching framework now.
+Retain the ownership distinction between software releases, model/map/parameter
+resources, individual vehicle identity/calibration records and runtime state.
+Any later redeployment milestone should prove A → B → A resource selection,
+compatibility rejection and recovery while preserving vehicle records. This
+does not expand Phase 7.2 beyond its agreed distribution/service demonstrations.
 
 From phase 1 onward, runnable slices use Cyclone DDS by default. Propose Fast
 DDS compatibility checks at major milestones after the Cyclone DDS exit

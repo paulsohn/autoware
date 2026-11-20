@@ -9349,3 +9349,27 @@ these plans. The validated OCI boundary is committed separately as 3ec963e7;
 publish the remaining-variant plan and pause before implementation. After all
 four 7.2 variants pass, proceed to 7.3's AWF tutorial and actual selected Universe
 planning/launch closure.
+
+## 2026-11-21: Prioritize Universe coverage before vehicle redeployment
+
+Purpose: keep upcoming work focused on Autoware adoption after defining the
+ownership of software, domain resources, per-vehicle records and runtime state.
+The current distribution variants remain required; after them, the original
+planning-simulator workflow drives its actual Universe closure, followed by
+broader related-package integration. Keep existing phase identifiers.
+
+Decision: defer vehicle-specific provisioning and model/map/domain switching
+until substantial Universe coverage is available. No new Ansible roles, fleet
+service or mixed-deployment abstraction is scheduled. A later domain deployment
+experiment should use identified software/model/map/parameter revisions and
+synthetic vehicle records, prove resource selection during A → B → A, reject
+incompatible selections, and preserve identity/calibrations through recovery.
+Phase 7.2.4 only gains an explicit distinction in its existing state-preservation
+fixture; a full domain-switching experiment remains outside its gate. bootc is
+an OS-deployment candidate whose actual base compatibility and boot behavior
+would need validation if selected.
+
+Validation: documentation consistency, local links and whitespace only; no
+runtime behavior changes and no build/test rerun is required for this decision.
+Next: resume Phase 7.2.2's complete s6/core-plus-prerequisite image gate, then
+systemd and OSTree, before beginning 7.3.
