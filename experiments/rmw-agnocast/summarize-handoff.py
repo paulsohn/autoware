@@ -23,6 +23,9 @@ if dispatch:
     modes = ("native", "direct", "single", "rendezvous", "single-traced")
 if (root / "helper-free-1.csv").exists():
     modes = ("native", "direct", "helper-free")
+if (root / "fixed-1.csv").exists():
+    rounds = range(1, 5)
+    modes = ("native", "direct", "helper-free", "fixed")
 for mode in modes:
     values = []
     for run in rounds:

@@ -18,6 +18,7 @@ case ${2:-} in
   --handoff) variant=traced;;
   --direct) variant=direct;;
   --native-stages) ;;
+  --fixed) export AGNOCAST_PROBE_IDLE_DDS=1;;
   --dispatch) rounds+=(5);;
   --rendezvous) baseline=direct; variant=rendezvous;;
   "") ;;
@@ -49,6 +50,14 @@ for round in "${rounds[@]}"; do
     treatments=(native direct single rendezvous single-traced)
     offset=$((round - 1))
     modes=("${treatments[@]:offset}" "${treatments[@]:0:offset}")
+  fi
+  if [[ ${2:-} == --fixed ]]; then
+    case $round in
+      1) modes=(native direct fixed helper-free);;
+      2) modes=(direct helper-free native fixed);;
+      3) modes=(helper-free fixed direct native);;
+      4) modes=(fixed native helper-free direct);;
+    esac
   fi
   for mode in "${modes[@]}"; do
     export RMW_IMPLEMENTATION=rmw_agnocast

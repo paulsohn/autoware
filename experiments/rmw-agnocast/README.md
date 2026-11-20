@@ -773,3 +773,81 @@ redesign. Return to the Universe PointCloud2 pipeline and test avoiding the
 CDR payload round trip against the prior native, Cyclone DDS and Zenoh/Buffer
 rows. That is a separate hypothesis about pipeline cost.
 [Raw samples and process resource measurements](helper-free-results/).
+
+## Fixed-topology blocking mixed wait
+
+The experimental reader holds its entities alive across all waits. Its probe
+scope ends before subscription destruction, including on exceptions and
+before the retained-loan teardown test removes its node. The helper uses a
+private Cyclone wait set and its own arrays of handles. The executor validates
+the handle lists against the fixed snapshot. Reconfiguration during the
+scope is unsupported. This scope is a fixture-only contract, not a new ROS API.
+
+The executor blocks in ppoll on the native notification fds and a DDS
+completion eventfd. A native fd can be consumed immediately, while the
+helper stays blocked in Cyclone. A DDS completion publishes readiness once.
+The worker waits for the executor to consume that result, then rearms on
+the next RMW wait. When both sources are ready the executor merges the masks.
+Stopping the scope signals the worker's private guard, joins the thread and
+destroys the private DDS wait set. This protocol assumes one executor thread
+and stable entities, including event handlers and guard conditions.
+
+From the colcon worktree on the laptop with its exported Lyrical overlays:
+
+```bash
+export LYRICAL_ROOT=$(cat build/agnocast-lyrical/universe-root)
+experiments/buffer/run-lyrical.sh bash experiments/rmw-agnocast/build-loadable.sh
+export BUFFER_RUNTIME_ONLY=1
+AGNOCAST_RMW_DIRECT_WAIT=1 AGNOCAST_FIXED_PROBE=1 experiments/buffer/run-lyrical.sh \
+  timeout 45s bash experiments/rmw-agnocast/run-loadable.sh pressure
+experiments/buffer/run-lyrical.sh timeout 240s bash \
+  experiments/rmw-agnocast/bench-path.sh build/rmw-agnocast/fresh-fixed --fixed
+python3 experiments/rmw-agnocast/summarize-handoff.py build/rmw-agnocast/fresh-fixed
+```
+
+The pressure fixture pauses native publishing to verify an independent DDS
+wake. It then parks the executor until both the final native sample and a
+second DDS sample have been sent. The reader must verify both, and the
+`both` counter records co-readiness observed by poll. Finally a separate
+thread cancels an idle executor. Queue depth, retained loans, reader restart
+and cross-thread final release use the existing checks. The matrix uses four
+balanced orders, 60 frames per run and 50 timed frames after warmup.
+All RMW readers include the same idle ordinary DDS subscription. Native
+Agnocast retains its standalone reference executor.
+
+The idle context-shutdown variant sets `AGNOCAST_PROBE_CONTEXT_SHUTDOWN=1`
+in the pressure command above. Also setting `AGNOCAST_PROBE_REBIND=1`
+stops and joins the helper after the first DDS sample, removes the node,
+replaces the ordinary DDS subscription, reattaches the node and starts a
+fresh scope on the same executor. Three independent runs passed both
+payload checks after replacement and shut down the idle ROS context.
+This requires a coordinated pause. Arbitrary entity destruction concurrent
+with a live wait, automatic topology changes, multiple executors and full
+RMW wait conformance remain outside this experiment. In particular, a
+zero-time wait can precede the helper's observation of new DDS readiness.
+
+In the fixed Path reader the helper's private interrupt guard was used
+only to stop the scope. Native publications generated no helper interrupts.
+The pressure reader observed native and DDS fds simultaneously ready and
+delivered both samples, then woke for executor cancel or context shutdown.
+[Per-run frames, resource measurements and wake counters](fixed-wait-results/).
+
+| Reader, median / p95 µs | Series 1 | Series 2 | Series 3 | All post-warmup samples |
+|---|---:|---:|---:|---:|
+| Native Agnocast | 44.48 / 62.12 | 46.98 / 236.24 | 41.32 / 61.19 | 43.86 / 78.32 |
+| Original mixed RMW | 89.55 / 131.74 | 90.03 / 130.73 | 81.54 / 124.08 | 86.64 / 130.73 |
+| Helper-free control | 68.58 / 98.57 | 68.03 / 100.84 | 69.33 / 96.96 | 68.74 / 98.57 |
+| Fixed mixed RMW | 70.50 / 90.85 | 68.67 / 95.85 | 69.34 / 128.62 | 69.44 / 101.55 |
+
+All 2,880 frames passed. Each of the 12 fixed readers reported 60 native
+wakes, zero native-triggered interruptions and one stop interrupt. The pooled
+column combines 600 post-warmup samples per reader. Native round four of
+series two reached 548.36 µs p95, so the unusually high native tail in that
+series is retained explicitly. Fixed mixed wait matched the helper-free
+median within 2 µs in all three series; its p95 exceeded the original mixed
+p95 in series three. Pooled fixed latency remained 1.58×/1.30× native. Keep
+the fast path experimental. Across series the median CPU seconds per run
+were 0.162–0.201 for fixed versus 0.167–0.206 for original mixed, and
+largest-child peak RSS ranged from 29.5–29.6 versus 29.2–29.4 MiB.
+The first series preceded teardown cleanup; series two and three use that
+cleanup, and the final fixture also validates coordinated rebinding.

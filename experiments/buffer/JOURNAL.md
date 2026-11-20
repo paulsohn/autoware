@@ -902,3 +902,25 @@ idle DDS wake deadline as expected. Both helper-free latency metrics exceed
 the 1.20× native target. Keep the Bazel milestone closed and investigate
 PointCloud2 CDR avoidance on Universe next.
 [Exact commands, control semantics and measurements](../rmw-agnocast/README.md#removing-the-dds-helper-from-the-direct-wait)
+
+### Give the blocking mixed DDS helper its own wait set
+
+A fixed-topology probe scope pins entity lifetimes in a single-threaded
+executor. The helper waits indefinitely in Cyclone on private arrays and
+signals an eventfd on DDS readiness. Native delivery completes on the ROS
+executor without interrupting or joining the helper. The scope stops and
+joins it before entity teardown. This required changes to the experimental
+RMW and probes only. Three runs also replaced an ordinary DDS subscription
+between scopes, resumed on the same executor, delivered simultaneous DDS and
+native samples and shut down the idle context. The ordinary mixed pressure
+regression passed.
+
+Three serial laptop matrices verified 2,880 frames. Every fixed reader
+reported 60 native wakes and zero native-triggered helper interruptions.
+Pooled median/p95 were 69.44/101.55 µs fixed, 68.74/98.57 helper-free,
+86.64/130.73 original mixed and 43.86/78.32 native. The fixed path recovered
+the helper-free median with both wake sources, while p95 varied between
+series. The 1.20× migration gate remains unmet. Minimum sampled host
+MemAvailable during the three matrices was 13,582 MiB. Keep coordinated
+reconfiguration and stable entity ownership explicit before broadening use.
+[Setup, checks, exact commands, all three series and limitations](../rmw-agnocast/README.md#fixed-topology-blocking-mixed-wait)

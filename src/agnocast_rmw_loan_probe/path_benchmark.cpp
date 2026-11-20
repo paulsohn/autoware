@@ -1,3 +1,4 @@
+#include "fixed_scope.hpp"
 #include <agnocast/node/agnocast_node.hpp>
 #include <agnocast/node/agnocast_only_single_threaded_executor.hpp>
 #include <rclcpp/rclcpp.hpp>
@@ -211,9 +212,15 @@ void middleware(bool writer, bool trace, bool single)
     receiver.trace = trace;
     auto sub = node->create_subscription<Path>(
       topic, 4, [&](Path::ConstSharedPtr msg) { receiver.receive(std::move(msg)); });
+    rclcpp::Subscription<Path>::SharedPtr idle_dds;
+    if (std::getenv("AGNOCAST_PROBE_IDLE_DDS"))
+      idle_dds = node->create_subscription<Path>("idle_dds", 4, [](Path::ConstSharedPtr) {
+        throw std::runtime_error("unexpected idle DDS payload");
+      });
     if (single) exec.only = sub;
     check(sub->can_loan_messages(), "reader cannot loan");
     exec.add_node(node);
+    FixedScope fixed;
     receiver.run();
   }
 }

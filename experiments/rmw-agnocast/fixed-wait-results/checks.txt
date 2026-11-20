@@ -1,0 +1,62 @@
+fixed-run
+fixed_wait arms=2 completions=1 native=60 both=0 native_interrupts=0 stop_interrupts=1
+fixed_wait arms=2 completions=1 native=60 both=0 native_interrupts=0 stop_interrupts=1
+fixed_wait arms=2 completions=1 native=60 both=0 native_interrupts=0 stop_interrupts=1
+fixed_wait arms=2 completions=1 native=60 both=0 native_interrupts=0 stop_interrupts=1
+Minimum host MemAvailable: 16062 MiB
+fixed-repeat
+fixed_wait arms=2 completions=1 native=60 both=0 native_interrupts=0 stop_interrupts=1
+fixed_wait arms=2 completions=1 native=60 both=0 native_interrupts=0 stop_interrupts=1
+fixed_wait arms=2 completions=1 native=60 both=0 native_interrupts=0 stop_interrupts=1
+fixed_wait arms=2 completions=1 native=60 both=0 native_interrupts=0 stop_interrupts=1
+Minimum host MemAvailable: 13883 MiB
+fixed-third
+fixed_wait arms=2 completions=1 native=60 both=0 native_interrupts=0 stop_interrupts=1
+fixed_wait arms=2 completions=1 native=60 both=0 native_interrupts=0 stop_interrupts=1
+fixed_wait arms=2 completions=1 native=60 both=0 native_interrupts=0 stop_interrupts=1
+fixed_wait arms=2 completions=1 native=60 both=0 native_interrupts=0 stop_interrupts=1
+Minimum host MemAvailable: 13582 MiB
+fixed-repeat-cancel
+fixed_wait arms=2 completions=1 native=2 both=0 native_interrupts=0 stop_interrupts=1
+fixed_wait arms=2 completions=1 native=1 both=0 native_interrupts=0 stop_interrupts=1
+dual delivery and idle executor cancel passed
+fixed_wait arms=5 completions=5 native=11 both=1 native_interrupts=0 stop_interrupts=1
+Pressure passed: fast 1..11, slow 1/8/9, restarted 11; retained 1 through teardown
+Minimum host MemAvailable: 15622 MiB
+fixed-repeat-shutdown
+fixed_wait arms=2 completions=1 native=2 both=0 native_interrupts=0 stop_interrupts=1
+fixed_wait arms=2 completions=1 native=1 both=0 native_interrupts=0 stop_interrupts=1
+dual delivery and idle context shutdown passed
+fixed_wait arms=5 completions=5 native=11 both=1 native_interrupts=0 stop_interrupts=1
+Pressure passed: fast 1..11, slow 1/8/9, restarted 11; retained 1 through teardown
+Minimum host MemAvailable: 15641 MiB
+fixed-rebind-1
+fixed_wait arms=2 completions=1 native=2 both=0 native_interrupts=0 stop_interrupts=1
+fixed_wait arms=2 completions=2 native=10 both=0 native_interrupts=0 stop_interrupts=1
+replaced DDS subscription between fixed scopes
+fixed_wait arms=2 completions=1 native=1 both=0 native_interrupts=0 stop_interrupts=1
+dual delivery and idle context shutdown passed
+fixed_wait arms=3 completions=3 native=1 both=1 native_interrupts=0 stop_interrupts=1
+Pressure passed: fast 1..11, slow 1/8/9, restarted 11; retained 1 through teardown
+Minimum host MemAvailable: 14130 MiB
+fixed-rebind-2
+fixed_wait arms=2 completions=1 native=2 both=0 native_interrupts=0 stop_interrupts=1
+fixed_wait arms=2 completions=2 native=10 both=0 native_interrupts=0 stop_interrupts=1
+replaced DDS subscription between fixed scopes
+fixed_wait arms=2 completions=1 native=1 both=0 native_interrupts=0 stop_interrupts=1
+dual delivery and idle context shutdown passed
+fixed_wait arms=3 completions=3 native=1 both=1 native_interrupts=0 stop_interrupts=1
+Pressure passed: fast 1..11, slow 1/8/9, restarted 11; retained 1 through teardown
+Minimum host MemAvailable: 14127 MiB
+fixed-rebind-3
+fixed_wait arms=2 completions=1 native=2 both=0 native_interrupts=0 stop_interrupts=1
+fixed_wait arms=2 completions=2 native=10 both=0 native_interrupts=0 stop_interrupts=1
+replaced DDS subscription between fixed scopes
+fixed_wait arms=2 completions=1 native=1 both=0 native_interrupts=0 stop_interrupts=1
+dual delivery and idle context shutdown passed
+fixed_wait arms=3 completions=3 native=1 both=1 native_interrupts=0 stop_interrupts=1
+Pressure passed: fast 1..11, slow 1/8/9, restarted 11; retained 1 through teardown
+Minimum host MemAvailable: 13851 MiB
+fixed-baseline-pressure
+Pressure passed: fast 1..11, slow 1/8/9, restarted 11; retained 1 through teardown
+Minimum host MemAvailable: 15296 MiB

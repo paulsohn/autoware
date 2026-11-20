@@ -594,6 +594,7 @@ namespace
 // Cyclone's public rmw_wait has no pollable descriptor. Its helper operates
 // only for the lifetime of each blocking wait; DDS entity pointers are never
 // retained after rmw_wait returns. Native payloads stay on the caller thread.
+thread_local bool fixed_probe = false;
 class DirectWaitSet
 {
   Reader::Guard interrupt;
@@ -603,6 +604,14 @@ class DirectWaitSet
   std::function<void()> job;
   bool stopping = false;
   std::thread worker;
+
+  rmw_context_t * context;
+  rmw_wait_set_t * fixed_set = nullptr;
+  using Lists = std::array<std::vector<void *>, 5>;
+  Lists fixed_inputs, fixed_output;
+  rmw_ret_t fixed_result{};
+  bool armed = false;
+  unsigned arms = 0, completions = 0, native_wakes = 0, both = 0, interrupts = 0, native_interrupts = 0;
 
   void serve()
   {
@@ -626,14 +635,51 @@ class DirectWaitSet
 public:
   explicit DirectWaitSet(rmw_context_t * context)
   : interrupt(CYCLONE(rmw_create_guard_condition)(context), CYCLONE(rmw_destroy_guard_condition)),
-    done_fd(-1)
+    done_fd(-1), context(context)
   {
     if (!interrupt) throw std::runtime_error("could not create DDS interrupt guard");
     done_fd = eventfd(0, EFD_CLOEXEC);
     if (done_fd < 0) throw std::runtime_error("could not create DDS notification fd");
   }
+  void stop_fixed()
+  {
+    if (!fixed_set) return;
+    {
+      std::lock_guard lock(mutex);
+      stopping = true;
+    }
+    ++interrupts;
+    if (CYCLONE(rmw_trigger_guard_condition)(interrupt.get()) != RMW_RET_OK) std::terminate();
+    cv.notify_one();
+    if (worker.joinable()) worker.join();
+    CYCLONE(rmw_destroy_wait_set)(fixed_set);
+    fixed_set = nullptr;
+    // A shutdown guard can leave a completion posted while the executor is idle.
+    pollfd done{done_fd, POLLIN, 0};
+    int rc;
+    do {
+      rc = poll(&done, 1, 0);
+    } while (rc < 0 && errno == EINTR);
+    if (rc < 0) std::terminate();
+    if (rc > 0) {
+      eventfd_t count;
+      while (eventfd_read(done_fd, &count) < 0)
+        if (errno != EINTR) std::terminate();
+    }
+    armed = stopping = false;
+    job = {};
+    fixed_inputs = {};
+    fixed_output = {};
+    std::fprintf(
+      stderr,
+      "fixed_wait arms=%u completions=%u native=%u both=%u native_interrupts=%u "
+      "stop_interrupts=%u\n",
+      arms, completions, native_wakes, both, native_interrupts, interrupts);
+    arms = completions = native_wakes = both = native_interrupts = interrupts = 0;
+  }
   ~DirectWaitSet()
   {
+    stop_fixed();
     {
       std::lock_guard lock(mutex);
       stopping = true;
@@ -688,13 +734,84 @@ public:
       const char * flag = std::getenv("AGNOCAST_RMW_PROBE_NATIVE_ONLY");
       return flag && std::strcmp(flag, "1") == 0;
     }();
-    if (native_only) {
+    if (fixed_probe) {
+      using View = std::pair<void **, size_t>;
+      std::array<View, 5> views{
+        View{delegated.data(), delegated.size()}, View{guard_data.data(), guard_data.size()},
+        services ? View{services->services, services->service_count} : View{},
+        clients ? View{clients->clients, clients->client_count} : View{},
+        events ? View{events->events, events->event_count} : View{}};
+      if (!fixed_set) {
+        fixed_set = CYCLONE(rmw_create_wait_set)(context, 0);
+        if (!fixed_set) return error("fixed DDS wait set creation failed");
+        for (size_t i = 0; i < views.size(); ++i) {
+          auto [p, n] = views[i];
+          if (n) fixed_inputs[i].assign(p, p + n);
+        }
+      }
+      for (size_t i = 0; i < views.size(); ++i) {
+        auto [p, n] = views[i];
+        if (
+          n != fixed_inputs[i].size() ||
+          !std::equal(fixed_inputs[i].begin(), fixed_inputs[i].end(), p))
+          return error("fixed DDS topology changed");
+      }
+      if (!armed) {
+        fixed_output = fixed_inputs;
+        std::lock_guard lock(mutex);
+        if (!worker.joinable()) worker = std::thread([this] { serve(); });
+        job = [this] {
+          auto & v = fixed_output;
+          rmw_subscriptions_t s{v[0].size(), v[0].data()};
+          rmw_guard_conditions_t g{v[1].size(), v[1].data()};
+          rmw_services_t sv{v[2].size(), v[2].data()};
+          rmw_clients_t c{v[3].size(), v[3].data()};
+          rmw_events_t e{v[4].size(), v[4].data()};
+          fixed_result = CYCLONE(rmw_wait)(&s, &g, &sv, &c, &e, fixed_set, nullptr);
+        };
+        armed = true;
+        ++arms;
+        cv.notify_one();
+      }
       timespec duration{};
       if (timeout && !queued) {
         duration.tv_sec = timeout->sec;
         duration.tv_nsec = timeout->nsec;
       }
-      int rc = ppoll(fds.data() + 1, native.size(), timeout || queued ? &duration : nullptr, nullptr);
+      int rc = ppoll(fds.data(), fds.size(), timeout || queued ? &duration : nullptr, nullptr);
+      if (rc < 0 && errno != EINTR) return error("fixed mixed poll failed");
+      bool dds_ready = fds.front().revents & POLLIN;
+      bool native_ready =
+        std::any_of(fds.begin() + 1, fds.end(), [](auto fd) { return fd.revents & POLLIN; });
+      native_wakes += native_ready;
+      both += native_ready && dds_ready;
+      if (dds_ready) {
+        eventfd_t count;
+        std::lock_guard lock(mutex);
+        if (eventfd_read(done_fd, &count)) return error("fixed completion read failed");
+
+        result = fixed_result;
+        armed = false;
+        ++completions;
+      } else {
+        result = RMW_RET_TIMEOUT;
+      }
+      for (size_t i = 0; i < views.size(); ++i) {
+        auto [p, n] = views[i];
+        if (!n) continue;
+        if (dds_ready)
+          std::copy_n(fixed_output[i].begin(), n, p);
+        else
+          std::fill_n(p, n, nullptr);
+      }
+    } else if (native_only) {
+      timespec duration{};
+      if (timeout && !queued) {
+        duration.tv_sec = timeout->sec;
+        duration.tv_nsec = timeout->nsec;
+      }
+      int rc =
+        ppoll(fds.data() + 1, native.size(), timeout || queued ? &duration : nullptr, nullptr);
       if (rc < 0 && errno != EINTR) return error("native-only poll failed");
       std::fill(delegated.begin(), delegated.end(), nullptr);
       std::fill(guard_data.begin(), guard_data.end(), nullptr);
@@ -722,6 +839,7 @@ public:
       } while (rc < 0 && errno == EINTR);
       if (tracing) times.wake = HandoffTrace::now();
       if (rc < 0 || !(fds.front().revents & POLLIN)) {
+        ++native_interrupts;
         if (CYCLONE(rmw_trigger_guard_condition)(interrupt.get()) != RMW_RET_OK) std::terminate();
       }
       if (tracing) times.interrupted = HandoffTrace::now();
@@ -756,7 +874,7 @@ public:
       auto & [idx, r] = native[i];
       if (fds[i + 1].revents & (POLLERR | POLLHUP | POLLNVAL))
         return error("native notification fd failed");
-      if ((native_only || queued || (timeout && !timeout->sec && !timeout->nsec)) && (fds[i + 1].revents & POLLIN))
+      if ((fixed_probe || native_only || queued || (timeout && !timeout->sec && !timeout->nsec)) && (fds[i + 1].revents & POLLIN))
         r->receive_direct();
       auto timing = r->trace && times.wake && (fds[i + 1].revents & POLLIN) ? &times : nullptr;
       if (r->ready(0, 0, false, timing)) {
@@ -768,8 +886,18 @@ public:
     return result;
   }
 };
+thread_local std::weak_ptr<DirectWaitSet> fixed_owner;
 std::map<const void *, std::shared_ptr<DirectWaitSet>> direct_waitsets;
 }  // namespace
+// The single-threaded probe owns all registered entities until it ends this scope.
+extern "C" void agnocast_fixed_probe_scope(bool begin)
+{
+  fixed_probe = begin;
+  if (!begin) {
+    if (auto state = fixed_owner.lock()) state->stop_fixed();
+    fixed_owner.reset();
+  }
+}
 extern "C" rmw_wait_set_t * rmw_create_wait_set(rmw_context_t * context, size_t max_conditions)
 {
   auto ws = CYCLONE(rmw_create_wait_set)(context, max_conditions);
@@ -809,6 +937,10 @@ extern "C" rmw_ret_t rmw_wait(
   if (direct_wait_enabled()) {
     auto state = lookup(direct_waitsets, ws);
     if (!state) return error("missing direct wait set");
+    if (fixed_probe) {
+      if (auto prior = fixed_owner.lock(); prior && prior != state) return error("fixed executor changed");
+      fixed_owner = state;
+    }
     try {
       return state->wait(native, subs, guards, services, clients, events, ws, timeout);
     } catch (const std::exception & e) {

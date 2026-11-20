@@ -1,3 +1,4 @@
+#include "fixed_scope.hpp"
 #include <rclcpp/rclcpp.hpp>
 
 #include <autoware_planning_msgs/msg/trajectory.hpp>
@@ -130,7 +131,14 @@ void pressure_writer(rclcpp::Node & node)
       wait_readers(1);
     }
     if (seq == 11) wait_readers(2);
+    if (seq == 11 && std::getenv("AGNOCAST_FIXED_PROBE")) wait_file("dual_waiting");
     publish_trajectory(*pub, seq);
+    if (seq == 11 && std::getenv("AGNOCAST_FIXED_PROBE")) {
+      Message control;
+      fill(control, 11);
+      dds->publish(control);
+      mark("dual_sent");
+    }
     wait_file("fast" + std::to_string(seq));
     if (seq == 1) wait_file("slow_holding");
     if (seq == 9) mark("burst_done");
@@ -161,17 +169,19 @@ void pressure_reader(rclcpp::Node::SharedPtr node, const std::string & role)
       ++expected;
     });
   rclcpp::Subscription<Message>::SharedPtr dds;
-  bool control_received = false;
-  if (!slow && !restart) {
-    dds = node->create_subscription<Message>(
+  int controls = 0;
+  auto make_dds = [&] {
+    return node->create_subscription<Message>(
       "trajectory_dds_control", 2, [&](Message::ConstSharedPtr msg) {
-        verify(*msg, 10, false);
-        control_received = true;
+        verify(*msg, 10 + controls, false);
+        ++controls;
         mark("dds_received");
       });
-  }
+  };
+  if (!slow && !restart) dds = make_dds();
   rclcpp::executors::SingleThreadedExecutor exec;
   exec.add_node(node);
+  FixedScope fixed;
   auto receive_through = [&](int last) {
     auto deadline = std::chrono::steady_clock::now() + 12s;
     while (expected <= last) {
@@ -184,10 +194,42 @@ void pressure_reader(rclcpp::Node::SharedPtr node, const std::string & role)
       receive_through(10);
       auto deadline = std::chrono::steady_clock::now() + 2s;
       mark("dds_waiting");
-      while (!control_received && std::chrono::steady_clock::now() < deadline) exec.spin_once(3s);
-      check(control_received && std::chrono::steady_clock::now() < deadline, "DDS wake timed out");
+      while (!controls && std::chrono::steady_clock::now() < deadline) exec.spin_once(3s);
+      check(controls && std::chrono::steady_clock::now() < deadline, "DDS wake timed out");
+    }
+    if (!restart && fixed.scope) {
+      if (std::getenv("AGNOCAST_PROBE_REBIND")) {
+        fixed.stop();
+        exec.remove_node(node);
+        dds.reset();
+        dds = make_dds();
+        exec.add_node(node);
+        exec.spin_once(0ns);
+        fixed.start();
+        std::cout << "replaced DDS subscription between fixed scopes" << std::endl;
+      }
+      exec.spin_once(10ms);  // Rearm DDS before both publications queue.
+      mark("dual_waiting");
+      wait_file("dual_sent");
+      std::this_thread::sleep_for(100ms);
     }
     receive_through(11);
+    if (!restart && fixed.scope) {
+      if (controls == 1) exec.spin_once(1s);
+      check(controls == 2, "missing simultaneous DDS sample");
+      auto start = std::chrono::steady_clock::now();
+      std::thread cancel([&] {
+        std::this_thread::sleep_for(100ms);
+        if (std::getenv("AGNOCAST_PROBE_CONTEXT_SHUTDOWN")) rclcpp::shutdown();
+        else exec.cancel();
+      });
+      exec.spin();
+      cancel.join();
+      check(std::chrono::steady_clock::now() - start < 2s, "idle cancel timed out");
+      std::cout << "dual delivery and idle "
+                << (std::getenv("AGNOCAST_PROBE_CONTEXT_SHUTDOWN") ? "context shutdown" : "executor cancel")
+                << " passed" << std::endl;
+    }
     if (restart)
       mark("restarted_done");
     else
@@ -202,6 +244,7 @@ void pressure_reader(rclcpp::Node::SharedPtr node, const std::string & role)
   expected = 8;
   receive_through(9);
   auto handle = std::weak_ptr<rcl_subscription_t>(sub->get_subscription_handle());
+  fixed.stop();
   exec.remove_node(node);
   sub.reset();
   node.reset();
