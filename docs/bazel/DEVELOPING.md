@@ -736,6 +736,14 @@ This gate does not assert a full driving scenario.
 
 ## Native core distribution
 
+The isolated runtime gate supports Docker Engine directly. Select a working
+context and make the pinned base image available in that daemon's image store;
+switching contexts does not transfer cached images. Docker Desktop is optional.
+After adding Docker group membership, start a new login session or use
+`sg docker -c 'docker version'` so the command receives the updated groups. See
+[Docker's Linux post-installation instructions](https://docs.docker.com/engine/install/linux-postinstall/).
+Keep context, credential-helper and service preferences in local host settings.
+
 Build the application and its separate verification companion with the bundled
 Python bootstrap configuration:
 

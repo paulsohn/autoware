@@ -9129,6 +9129,40 @@ execution, ARM, QEMU, OTA and a driving scenario are not established here.
 Native distributions still contain duplicated runfiles paths; size optimization
 must preserve resource/library identity and the existing behavior gate.
 
+Additional runtime-environment verification on 2026-11-20: the same unchanged
+archives pass both existing cases on native Docker Engine 29.10.0, with Desktop
+stopped and its autostart disabled. Use the isolated command above with
+docker --context default run --pull=never. Both functional and post-shutdown
+cases pass, zero failures/errors/skips; the parent/child library audit again
+allows only the loader and glibc outside the application. A small FROM scratch /
+COPY marker build with the Engine's default Buildx driver also exports matching
+file contents. Engine-installed Buildx 0.39.0 and Compose 5.8.0 are available.
+No Autoware rebuild, additional middleware run or new integration phase is needed.
+
+For an existing Desktop installation, switching context alone leaves separate
+image stores and local client preferences. While the source daemon is running,
+transfer the existing reference images without changing their digests:
+
+```sh
+set -o pipefail
+docker --context desktop-linux image save ubuntu:24.04 ros:lyrical-ros-base | \
+  sg docker -c 'docker --context default image load'
+sg docker -c 'docker --context default version --format "{{.Server.Version}}"'
+```
+
+The Ubuntu digest used above and the ROS reference image digest are preserved.
+Other Desktop images, stopped containers, volumes and builder cache remain in
+their original store. Back up local client settings before replacing Desktop-
+owned Buildx/Compose links with Engine-installed plugins. Clear the Desktop
+credential-store preference only after verifying its store contains no
+credentials; preserve registry-specific helpers. Check for active
+builds before stopping/disabling the Desktop service. Native Engine and
+containerd were already running and enabled at boot. The account's Docker group
+membership was present but absent from the existing process groups; sg docker
+resolved access without changing socket permissions or requiring sudo. A new
+login session makes that membership available to ordinary CLI commands. These
+host-local settings require no Bazel rule or source-package changes.
+
 For 7.3, preserve the agreed sequence: reconcile the exact AWF tutorial and
 integrate its selected Universe planning/launch closure before demonstrating
 planning_simulator.launch.xml. A core-only simulator experiment remains plausible
