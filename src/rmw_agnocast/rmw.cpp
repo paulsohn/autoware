@@ -171,12 +171,17 @@ struct HandoffTrace
              std::chrono::steady_clock::now().time_since_epoch())
       .count();
   }
+  struct DirectTimes
+  {
+    int64_t wake{}, interrupted{}, drained{}, helper_return{}, synchronized{};
+  };
   struct Row
   {
     int64_t id;
     uintptr_t address;
     int64_t native, signal, signalled, wait_start, dds_return, ready, take_enter, taken;
     bool blocking;
+    DirectTimes direct{};
   };
   std::vector<Row> rows;
   std::string path;
@@ -192,10 +197,15 @@ struct HandoffTrace
   ~HandoffTrace()
   {
     std::ofstream out(path);
-    for (const auto & r : rows)
+    for (const auto & r : rows) {
       out << r.id << ' ' << r.address << ' ' << r.native << ' ' << r.signal << ' ' << r.signalled
           << ' ' << r.wait_start << ' ' << r.dds_return << ' ' << r.ready << ' ' << r.take_enter
-          << ' ' << r.taken << ' ' << r.blocking << '\n';
+          << ' ' << r.taken << ' ' << r.blocking;
+      if (r.direct.wake)
+        out << ' ' << r.direct.wake << ' ' << r.direct.interrupted << ' ' << r.direct.drained
+            << ' ' << r.direct.helper_return << ' ' << r.direct.synchronized;
+      out << '\n';
+    }
   }
 };
 bool direct_wait_enabled()
@@ -260,6 +270,10 @@ struct Reader
       if (const char * file = std::getenv("AGNOCAST_RMW_HANDOFF_FILE"))
         trace = std::make_unique<HandoffTrace>(file);
     }
+    if (direct_wait_enabled()) {
+      if (const char * file = std::getenv("AGNOCAST_RMW_DIRECT_TRACE"))
+        trace = std::make_unique<HandoffTrace>(file);
+    }
     sub = std::make_shared<NativeSubscription>(
       node.get(), type.native_topic(topic), type.name,
       rclcpp::QoS(rclcpp::QoSInitialization::from_rmw(qos), qos),
@@ -268,14 +282,14 @@ struct Reader
         std::lock_guard lock(mutex);
         if (pending.size() == depth) pending.pop_front();
         pending.emplace_back(std::move(sample));
-        if (direct_wait_enabled()) return;
         HandoffTrace::Row * row = nullptr;
         if (trace && trace->rows.size() < trace->rows.capacity()) {
           const auto & loan = pending.back();
           row = &trace->rows.emplace_back(
             HandoffTrace::Row{loan.get_entry_id(), reinterpret_cast<uintptr_t>(loan.get()), entry});
-          row->signal = HandoffTrace::now();
         }
+        if (direct_wait_enabled()) return;
+        if (row) row->signal = HandoffTrace::now();
         if (CYCLONE(rmw_trigger_guard_condition)(guard.get()) != RMW_RET_OK) std::terminate();
         if (row) row->signalled = HandoffTrace::now();
       },
@@ -299,11 +313,13 @@ struct Reader
     std::lock_guard lock(receive_mutex);
     exec.receive();
   }
-  bool ready(int64_t start = 0, int64_t returned = 0, bool blocking = false)
+  bool ready(int64_t start = 0, int64_t returned = 0, bool blocking = false,
+             const HandoffTrace::DirectTimes * direct = nullptr)
   {
     std::lock_guard lock(mutex);
-    if (start && !pending.empty()) {
+    if ((start || direct) && !pending.empty()) {
       if (auto row = trace->find(pending.front())) {
+        if (direct) row->direct = *direct;
         row->wait_start = start;
         row->dds_return = returned;
         row->blocking = blocking;
@@ -640,9 +656,12 @@ public:
     std::vector<pollfd> fds{{done_fd, POLLIN, 0}};
     std::vector<void *> original;
     bool queued = false;
+    bool tracing = false;
+    HandoffTrace::DirectTimes times;
     for (auto & [idx, r] : native) {
       original.push_back(subs->subscribers[idx]);
       fds.push_back({r->sub->notification_fd(), POLLIN, 0});
+      tracing |= bool(r->trace);
       queued |= r->ready();
     }
     // Only delegated readers participate in the Cyclone wait. The native
@@ -672,16 +691,21 @@ public:
       {
         std::lock_guard lock(mutex);
         if (!worker.joinable()) worker = std::thread([this] { serve(); });
-        job = [&] { dds_wait(timeout); };
+        job = [&] {
+          dds_wait(timeout);
+          if (tracing) times.helper_return = HandoffTrace::now();
+        };
       }
       cv.notify_one();
       int rc;
       do {
         rc = poll(fds.data(), fds.size(), -1);
       } while (rc < 0 && errno == EINTR);
+      if (tracing) times.wake = HandoffTrace::now();
       if (rc < 0 || !(fds.front().revents & POLLIN)) {
         if (CYCLONE(rmw_trigger_guard_condition)(interrupt.get()) != RMW_RET_OK) std::terminate();
       }
+      if (tracing) times.interrupted = HandoffTrace::now();
       // Acquire the loan while the helper is returning its borrowed DDS handles.
       std::exception_ptr failure;
       try {
@@ -690,6 +714,7 @@ public:
       } catch (...) {
         failure = std::current_exception();
       }
+      if (tracing) times.drained = HandoffTrace::now();
       eventfd_t count;
       int status;
       do {
@@ -699,6 +724,7 @@ public:
       {
         std::lock_guard sync(mutex);
       }  // synchronize with completion in serve()
+      if (tracing) times.synchronized = HandoffTrace::now();
       if (failure) std::rethrow_exception(failure);
       if (rc < 0) return error("mixed wait poll failed");
     }
@@ -713,7 +739,8 @@ public:
         return error("native notification fd failed");
       if ((queued || (timeout && !timeout->sec && !timeout->nsec)) && (fds[i + 1].revents & POLLIN))
         r->receive_direct();
-      if (r->ready()) {
+      auto timing = r->trace && times.wake && (fds[i + 1].revents & POLLIN) ? &times : nullptr;
+      if (r->ready(0, 0, false, timing)) {
         subs->subscribers[idx] = original[i];
         result = RMW_RET_OK;
       } else

@@ -11,7 +11,9 @@ def report(label, values):
 
 print("interval                             median     p95 (us)")
 variant = "direct" if (root / "direct-1.csv").exists() else "traced"
-for mode in ("native", "rmw", variant):
+rendezvous = (root / "rendezvous-1.csv").exists()
+modes = ("native", "direct", "rendezvous") if rendezvous else ("native", "rmw", variant)
+for mode in modes:
     values = []
     for run in range(1, 7):
         with (root / f"{mode}-{run}.csv").open() as f:
@@ -22,7 +24,7 @@ for mode in ("native", "rmw", variant):
 
 if variant == "direct":
     print("median per run: child CPU seconds, largest child peak MiB")
-    for mode in ("native", "rmw", variant):
+    for mode in modes:
         cpu, rss = [], []
         for run in range(1, 7):
             with (root / f"{mode}-{run}-resources.csv").open() as f:
@@ -30,6 +32,26 @@ if variant == "direct":
             cpu.append(float(row["child_user_s"]) + float(row["child_system_s"]))
             rss.append(int(row["largest_child_maxrss_kib"])/1024)
         print(f"{mode:8s} {median(cpu):.3f} {median(rss):.1f}")
+    if rendezvous:
+        frames = []
+        for run in range(1, 7):
+            with (root / f"rendezvous-{run}-stages.csv").open() as f:
+                rows = [{k: int(v) for k, v in row.items()} for row in csv.DictReader(f)]
+            assert [r["frame"] for r in rows] == list(range(60))
+            frames.extend(rows[10:])
+        for a, b in (("publish", "wake"), ("wake", "interrupted"), ("interrupted", "acquired"),
+                     ("acquired", "drained"), ("drained", "synchronized"),
+                     ("synchronized", "ready"), ("ready", "callback"), ("wake", "callback")):
+            report(f"{a} to {b}", [r[b] - r[a] for r in frames])
+        report("DDS return after drain (clamped)", [
+            max(0, r["helper_return"] - r["drained"]) for r in frames])
+        print("DDS returned by native drain:", sum(r["helper_return"] <= r["drained"]
+                                                    for r in frames), "/", len(frames))
+        report("interrupt + sync intervals", [
+            r["interrupted"] - r["wake"] + r["synchronized"] - r["drained"] for r in frames])
+        report("remaining outside both intervals", [
+            (r["callback"] - r["publish"]) - (r["interrupted"] - r["wake"])
+            - (r["synchronized"] - r["drained"]) for r in frames])
     sys.exit(0)
 
 frames = []

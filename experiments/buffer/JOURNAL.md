@@ -825,3 +825,27 @@ missed the native-relative 1.20× latency gate. The final build and run groups
 kept at least 14,917 MiB host memory available. Keep the current default and
 measure the remaining helper rendezvous before advancing migration.
 [Reproduction commands, resource accounting, limitations and raw samples](../rmw-agnocast/README.md#direct-native-readiness-in-a-mixed-ros-executor)
+
+### Measure the DDS helper rendezvous on the direct wait path
+
+Added opt-in timestamps to the selected direct reader and a matched six-round
+native/direct/traced Path comparison. The existing Lyrical root, loan probe,
+colcon overlay and memory guard were reused. The executor records poll return,
+guard handling, native acquisition/drain and synchronization. The DDS helper
+independently timestamps its wait return. One row per verified loan ties these
+events to the publisher and application callback. The harness rejects a
+missing blocking wake or an inconsistent timestamp chain.
+
+All 1,080 frames passed. On the untraced direct path, median/p95 were
+89.82/130.97 µs versus native 44.56/69.42 µs. In 300 post-warmup traced
+samples, the per-frame sum of interrupt and post-drain synchronization was
+20.26/35.92 µs. Cyclone had returned by the end of native drain in 168 cases.
+Acquisition and application dispatch also used substantial time. Keep the
+migration gate closed and measure the corresponding native executor stages
+before selecting the next implementation change.
+
+With tracing disabled, both direct and default modes passed the mixed DDS wake,
+queue-pressure, retention and restart checks; direct Path loan and copy both
+passed. Reproduce with the previous entry's pressure/path commands and the
+[matched matrix, stage definitions and raw data](../rmw-agnocast/README.md#timing-the-direct-wait-dds-helper).
+The benchmark's minimum sampled host MemAvailable was 15,288 MiB.

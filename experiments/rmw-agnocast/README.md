@@ -521,3 +521,76 @@ acquisition, helper completion and callback entry per sample before deciding
 whether to change the Cyclone wait integration. This experiment measures
 end-to-end latency and does not establish how much the rendezvous costs.
 [Raw Path and crop samples](direct-wait-results/).
+
+## Timing the direct-wait DDS helper
+
+The direct-wait reader optionally records a steady-clock timestamp at each
+boundary below. Only the reader in the traced case receives
+`AGNOCAST_RMW_DIRECT_TRACE`, a private output file path. A reserved trace
+buffer is written at teardown. The helper writes its return timestamp before
+signalling completion. The executor reads it after synchronizing with the
+helper. Existing loan entry IDs and object addresses link each blocking wake
+to the application callback. The harness rejects unmatched entries, missing
+blocking wakes, address mismatches and inconsistent timestamps.
+
+* **Wake** is immediately after the executor's poll returns with the native
+  fd readable. Publish-to-wake includes publisher work and scheduling.
+* **Interrupted** follows the check and conditional trigger of the private
+  DDS guard. **Acquired** is entry to the native callback holding the loan.
+  **Drained** is the executor's return from native batch handling.
+* **Helper return** is the helper's return from Cyclone's RMW wait.
+  **Synchronized** follows the executor's completion-eventfd read and mutex
+  synchronization. Helper return can precede or follow native drain.
+* **Ready** is the final native readiness check. **Callback** is application
+  callback entry in the Path reader.
+
+Use the same exported Lyrical root and laptop memory guard as above:
+
+```bash
+export LYRICAL_ROOT=$(cat build/agnocast-lyrical/universe-root)
+experiments/buffer/run-lyrical.sh bash experiments/rmw-agnocast/build-loadable.sh
+BUFFER_RUNTIME_ONLY=1 experiments/buffer/run-lyrical.sh timeout 240s bash \
+  experiments/rmw-agnocast/bench-path.sh build/rmw-agnocast/fresh-rendezvous --rendezvous
+python3 experiments/rmw-agnocast/summarize-handoff.py build/rmw-agnocast/fresh-rendezvous
+```
+
+Six rounds rotate through every ordering of native Agnocast, direct RMW and
+traced direct RMW. Each run checks 60 frames. Latency and stage distributions
+pool frames 10–59 from each round. CPU and RSS include startup and teardown.
+
+| Path on the Lyrical laptop | Median µs | p95 µs | Child CPU s | Peak child RSS MiB |
+|---|---:|---:|---:|---:|
+| Native Agnocast | 44.56 | 69.42 | 0.123 | 26.3 |
+| Direct RMW | 89.82 | 130.97 | 0.199 | 29.5 |
+| Direct RMW with tracing | 97.23 | 143.89 | 0.199 | 29.7 |
+
+All 1,080 deliveries passed the cross-process loan checks. All 360 traced
+frames had a complete blocking native wake. The untraced direct path measured
+2.02× and 1.89× native at median and p95. The 1.20× thresholds in this series
+were 53.47 and 83.30 µs. The traced row measured 7.41 µs higher median and
+12.92 µs higher p95 than the untraced control. Use the untraced row for the gate.
+
+| Within the traced Path run | Median µs | p95 µs |
+|---|---:|---:|
+| Publish to poll return | 30.56 | 48.65 |
+| Poll return through DDS interrupt check | 11.61 | 15.89 |
+| After interrupt to native callback holding the loan | 24.19 | 38.42 |
+| Native callback entry to end of native drain | 1.59 | 2.48 |
+| End of drain through helper synchronization | 9.93 | 24.92 |
+| Synchronization to RMW ready | 0.27 | 0.53 |
+| RMW ready to application callback | 19.51 | 25.50 |
+
+Cyclone had already returned on the helper thread by the end of native drain
+in 168/300 post-warmup frames. The executor still had to consume the eventfd
+and synchronize. For each frame, adding the interrupt interval and the
+post-drain synchronization interval gave 20.26 µs median and 35.92 µs p95.
+Subtracting those two intervals from that same frame left 76.23/114.57 µs
+median/p95, above both targets. This arithmetic describes the recorded path.
+Changing the wake architecture can also change scheduling and native acquisition.
+
+Keep direct wait opt-in. Before patching Cyclone, trace native Agnocast's own
+poll-to-loan and loan-to-user-callback times with the same payload. That
+comparison can identify how much of the 24.19 µs acquisition and 19.51 µs ROS
+dispatch intervals is incremental. The [Universe matrix](#type-support-and-the-universe-decision)
+retains the separate Cyclone DDS, Zenoh and Buffer pipeline measurements.
+[Per-frame stages, latency and process resources](rendezvous-results/).

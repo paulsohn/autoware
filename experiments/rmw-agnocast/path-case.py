@@ -11,9 +11,12 @@ probe, hook, mode, prefix = sys.argv[1:]
 env = dict(os.environ, LD_PRELOAD=hook)
 env.pop("AGNOCAST_RMW_DIRECT_WAIT", None)
 env.pop("AGNOCAST_RMW_HANDOFF_FILE", None)
+env.pop("AGNOCAST_RMW_DIRECT_TRACE", None)
 with tempfile.TemporaryDirectory() as directory:
     reader_env = env.copy()
-    if mode == "direct":
+    if mode == "rendezvous":
+        reader_env["AGNOCAST_RMW_DIRECT_TRACE"] = str(Path(directory) / "rendezvous")
+    if mode in ("direct", "rendezvous"):
         reader_env["AGNOCAST_RMW_DIRECT_WAIT"] = "1"
         mode = "rmw"
     if mode == "traced":
@@ -42,6 +45,23 @@ with tempfile.TemporaryDirectory() as directory:
             if len(a) != 4 or len(b) != 4 or a[1:] != b[1:] or not all(a[1:]) or b[0] <= a[0]:
                 raise ValueError(f"bad loan addresses or timestamps at frame {seq}")
             out.writerow((seq, b[0] - a[0]))
+
+    if "AGNOCAST_RMW_DIRECT_TRACE" in reader_env:
+        rows = records("rendezvous")
+        if len(rows) != len(tx) or len({row[0] for row in rows}) != len(rows):
+            raise ValueError("missing or duplicate direct trace entries")
+        with open(prefix + "-stages.csv", "x") as f:
+            out = csv.writer(f, lineterminator="\n")
+            out.writerow(("frame", "entry_id", "publish", "wake", "interrupted", "acquired",
+                          "drained", "helper_return", "synchronized", "ready", "callback"))
+            for seq, (a, b, row) in enumerate(zip(tx, rx, rows)):
+                if len(row) != 16:
+                    raise ValueError(f"frame {seq} did not follow a blocking native wake")
+                entry, addr, acquired, _, _, _, _, ready, take, taken, _, wake, interrupted, drained, helper, sync = row
+                chain = [a[0], wake, interrupted, acquired, drained, sync, ready, take, taken, b[0]]
+                if addr != a[1] or chain != sorted(chain) or not 0 < helper <= sync:
+                    raise ValueError(f"inconsistent direct wait at frame {seq}")
+                out.writerow((seq, entry, *chain[:5], helper, sync, ready, b[0]))
 
     if "AGNOCAST_RMW_HANDOFF_FILE" in reader_env:
         rows = records("handoff")

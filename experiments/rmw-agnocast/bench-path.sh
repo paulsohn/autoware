@@ -12,9 +12,11 @@ out=$(realpath -m "${1:?fresh result directory}")
 mkdir "$out"
 rounds=(1 2 3 4)
 variant=
+baseline=rmw
 case ${2:-} in
   --handoff) variant=traced;;
   --direct) variant=direct;;
+  --rendezvous) baseline=direct; variant=rendezvous;;
   "") ;;
   *) exit 2;;
 esac
@@ -24,12 +26,12 @@ for round in "${rounds[@]}"; do
   if ((round % 2 == 0)); then modes=(rmw native); fi
   if [[ -n $variant ]]; then
     case $round in
-      1) modes=(native rmw "$variant");;
-      2) modes=(rmw "$variant" native);;
-      3) modes=("$variant" native rmw);;
-      4) modes=("$variant" rmw native);;
-      5) modes=(rmw native "$variant");;
-      6) modes=(native "$variant" rmw);;
+      1) modes=(native "$baseline" "$variant");;
+      2) modes=("$baseline" "$variant" native);;
+      3) modes=("$variant" native "$baseline");;
+      4) modes=("$variant" "$baseline" native);;
+      5) modes=("$baseline" native "$variant");;
+      6) modes=(native "$variant" "$baseline");;
     esac
   fi
   for mode in "${modes[@]}"; do
