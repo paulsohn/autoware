@@ -17,6 +17,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("transport", choices=["cyclone", "agnocast", "zenoh", "rmw-agnocast", "rmw-delegated", "mixed", "fixed"])
 parser.add_argument("csv", type=Path)
 parser.add_argument("--typed-input", action="store_true")
+parser.add_argument("--payload-scope", action="store_true", help="allocate shared point bytes before borrowing at publication")
 parser.add_argument("--host-loan", action="store_true", help="transfer both outputs through publisher loans")
 parser.add_argument("--host-view", action="store_true", help="read host-cloud payloads through a retained loan")
 parser.add_argument("--host-cloud", action="store_true", help="use the same-host CPU PointCloud2 representation")
@@ -28,6 +29,8 @@ if args.ros_cie and args.transport == "agnocast":
     parser.error("native Agnocast already uses its Agnocast-only CIE")
 if args.buffer != "cpu" and args.transport != "zenoh":
     parser.error("the explicit buffer matrix uses the Zenoh descriptor transport")
+if args.payload_scope:
+    args.host_loan = True
 if args.host_loan:
     if args.transport != "fixed":
         parser.error("--host-loan uses the fixed wait control")
@@ -62,7 +65,7 @@ if args.transport in ("agnocast", "rmw-agnocast", "rmw-delegated", "mixed", "fix
         raise FileNotFoundError("libagnocast_heaphook.so in Agnocast or ROS install prefix")
 config = (Path(__file__).resolve().parents[1] / "universe/autoware_universe/sensing/"
           "autoware_pointcloud_preprocessor/config/crop_box_filter_node.param.yaml")
-for key in ("AGNOCAST_RMW_HOST_LOAN", "BENCH_TYPED_INPUT", "AGNOCAST_RMW_HOST_VIEW", "AGNOCAST_VIEW_ADDRESS_FILE", "AGNOCAST_RMW_HOST_CLOUD", "AGNOCAST_RMW_DIRECT_WAIT", "AGNOCAST_RMW_PROBE_NATIVE_ONLY", "AGNOCAST_FIXED_PROBE"):
+for key in ("BENCH_PAYLOAD_SCOPE", "AGNOCAST_RMW_HOST_LOAN", "BENCH_TYPED_INPUT", "AGNOCAST_RMW_HOST_VIEW", "AGNOCAST_VIEW_ADDRESS_FILE", "AGNOCAST_RMW_HOST_CLOUD", "AGNOCAST_RMW_DIRECT_WAIT", "AGNOCAST_RMW_PROBE_NATIVE_ONLY", "AGNOCAST_FIXED_PROBE"):
     env.pop(key, None)
 if args.host_cloud:
     env.pop("AGNOCAST_RMW_BUFFER_CDR")
@@ -79,6 +82,8 @@ with tempfile.TemporaryDirectory() as tmp:
             child_env["BENCH_TYPED_INPUT"] = "1"
         if args.host_loan and role in ("pub", "filter"):
             child_env["AGNOCAST_RMW_HOST_LOAN"] = "1"
+            if args.payload_scope:
+                child_env["BENCH_PAYLOAD_SCOPE"] = "1"
         if args.host_view and role in ("sub", "filter"):
             child_env["AGNOCAST_RMW_HOST_VIEW"] = "1"
         if role in ("sub", "filter") and args.transport in ("mixed", "fixed"):
@@ -140,8 +145,9 @@ with tempfile.TemporaryDirectory() as tmp:
             if role != "pub":
                 summaries[role] = matches
     for role, counts in loan_counts.items():
-        if counts != [("59", "0")]:
-            raise RuntimeError(f"{role}: expected 59 publisher loans after startup and zero private payload copies")
+        expected = "60" if args.payload_scope else "59"
+        if counts != [(expected, "0")]:
+            raise RuntimeError(f"{role}: expected {expected} publisher loans and zero private payload copies")
     for role, matches in summaries.items():
         if len(matches) != 1 or matches[0][1:] != ("0", "1") or not 51 <= int(matches[0][0]) <= 59:
             raise RuntimeError(f"{role}: unexpected fixed wake counts {matches}")

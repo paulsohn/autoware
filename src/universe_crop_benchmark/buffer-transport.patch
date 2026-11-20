@@ -59,7 +59,8 @@
 -  const std::vector<uint8_t> & input_data = input->data;
 +  benchmark::InputBytes view(input->data);
 +  const auto input_data = view.bytes;
-   output.data.resize(input_data.size());
+-  output.data.resize(input_data.size());
++  benchmark::resize_point_payload(output.data, input_data.size());
    size_t output_size = 0;
 
 @@ -187,6 +189,7 @@

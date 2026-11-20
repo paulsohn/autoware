@@ -4,12 +4,16 @@ source build/agnocast-lyrical/install/local_setup.bash
 source build/rmw-agnocast/install/local_setup.bash
 source build/rmw-agnocast/load-install/local_setup.bash
 export CYCLONEDDS_URI='<CycloneDDS><Domain><General><Interfaces><NetworkInterface name="lo"/></Interfaces><AllowMulticast>false</AllowMulticast></General><Discovery><ParticipantIndex>auto</ParticipantIndex><Peers><Peer Address="127.0.0.1"/></Peers></Discovery></Domain></CycloneDDS>'
+if [[ ${1:-} == --check-cold ]]; then
+  exec python3 experiments/rmw-agnocast/check-cold-diagnostic.py
+fi
 out=${1:?fresh results directory}
 mkdir "$out"
 control=host
 variant=fixed
 if [[ ${2:-} == --view ]]; then variant=view; fi
 if [[ ${2:-} == --loan ]]; then variant=loan; control=view; fi
+if [[ ${2:-} == --scope ]]; then variant=scope; control=loan; fi
 for round in 1 2 3; do
   case $round in
     1) modes=(agnocast "$variant" "$control");;
@@ -22,6 +26,7 @@ for round in 1 2 3; do
     transport=$mode
     if [[ $mode == host ]]; then transport=fixed; opts+=(--host-cloud); fi
     if [[ $mode == host && $variant == view ]]; then opts+=(--typed-input); fi
+    if [[ $mode == scope ]]; then transport=fixed; opts+=(--payload-scope); fi
     if [[ $mode == loan ]]; then transport=fixed; opts+=(--host-loan); fi
     if [[ $mode == view ]]; then transport=fixed; opts+=(--host-view); fi
     python3 src/universe_crop_benchmark/run_case.py "$transport" "$out/$mode-$round.csv" \

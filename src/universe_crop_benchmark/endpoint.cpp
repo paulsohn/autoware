@@ -79,7 +79,11 @@ private:
       f.count = 1;
       msg->fields.push_back(f);
     }
+#ifdef UNIVERSE_BUFFER_MATRIX
+    resize_point_payload(msg->data, msg->row_step);
+#else
     msg->data.resize(msg->row_step);
+#endif
     for (unsigned i = 0; i < points; ++i) {
       const auto point = sample(i, frame_);
       std::memcpy(msg->data.data() + i * sizeof(Point), &point, sizeof(Point));

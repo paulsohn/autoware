@@ -1,0 +1,60 @@
+build/rmw-agnocast/scope-diagnostic.log:fixed_wait arms=1 completions=1 native=59 both=0 native_interrupts=0 stop_interrupts=1
+build/rmw-agnocast/scope-diagnostic.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/scope-diagnostic.log:fixed_wait arms=1 completions=1 native=59 both=0 native_interrupts=0 stop_interrupts=1
+build/rmw-agnocast/scope-diagnostic.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/scope-diagnostic.log:Received 60 distinct stamped diagnostics from /output/debug/published_time
+build/rmw-agnocast/scope-diagnostic.log:Minimum host MemAvailable: 18254 MiB
+build/rmw-agnocast/scope-reverse.log:fixed_wait arms=1 completions=1 native=59 both=0 native_interrupts=0 stop_interrupts=1
+build/rmw-agnocast/scope-reverse.log:host-cloud publisher loans=59 private_copies=0
+build/rmw-agnocast/scope-reverse.log:fixed_wait arms=1 completions=1 native=59 both=0 native_interrupts=0 stop_interrupts=1
+build/rmw-agnocast/scope-reverse.log:host-cloud publisher loans=59 private_copies=0
+build/rmw-agnocast/scope-reverse.log:fixed_wait arms=1 completions=1 native=59 both=0 native_interrupts=0 stop_interrupts=1
+build/rmw-agnocast/scope-reverse.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/scope-reverse.log:fixed_wait arms=1 completions=1 native=59 both=0 native_interrupts=0 stop_interrupts=1
+build/rmw-agnocast/scope-reverse.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/scope-reverse.log:fixed_wait arms=1 completions=1 native=59 both=0 native_interrupts=0 stop_interrupts=1
+build/rmw-agnocast/scope-reverse.log:host-cloud publisher loans=59 private_copies=0
+build/rmw-agnocast/scope-reverse.log:fixed_wait arms=1 completions=1 native=59 both=0 native_interrupts=0 stop_interrupts=1
+build/rmw-agnocast/scope-reverse.log:host-cloud publisher loans=59 private_copies=0
+build/rmw-agnocast/scope-reverse.log:fixed_wait arms=1 completions=1 native=59 both=0 native_interrupts=0 stop_interrupts=1
+build/rmw-agnocast/scope-reverse.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/scope-reverse.log:fixed_wait arms=1 completions=1 native=59 both=0 native_interrupts=0 stop_interrupts=1
+build/rmw-agnocast/scope-reverse.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/scope-reverse.log:fixed_wait arms=1 completions=1 native=59 both=0 native_interrupts=0 stop_interrupts=1
+build/rmw-agnocast/scope-reverse.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/scope-reverse.log:fixed_wait arms=1 completions=1 native=59 both=0 native_interrupts=0 stop_interrupts=1
+build/rmw-agnocast/scope-reverse.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/scope-reverse.log:fixed_wait arms=1 completions=1 native=59 both=0 native_interrupts=0 stop_interrupts=1
+build/rmw-agnocast/scope-reverse.log:host-cloud publisher loans=59 private_copies=0
+build/rmw-agnocast/scope-reverse.log:fixed_wait arms=1 completions=1 native=59 both=0 native_interrupts=0 stop_interrupts=1
+build/rmw-agnocast/scope-reverse.log:host-cloud publisher loans=59 private_copies=0
+build/rmw-agnocast/scope-reverse.log:Minimum host MemAvailable: 18286 MiB
+build/rmw-agnocast/scope-build.log:Summary: 1 package finished [0.22s]
+build/rmw-agnocast/scope-build.log:Summary: 1 package finished [0.23s]
+build/rmw-agnocast/scope-build.log:Summary: 1 package finished [48.0s]
+build/rmw-agnocast/scope-build.log:Minimum host MemAvailable: 17200 MiB
+build/rmw-agnocast/scope-forward.log:fixed_wait arms=1 completions=1 native=59 both=0 native_interrupts=0 stop_interrupts=1
+build/rmw-agnocast/scope-forward.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/scope-forward.log:fixed_wait arms=1 completions=1 native=59 both=0 native_interrupts=0 stop_interrupts=1
+build/rmw-agnocast/scope-forward.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/scope-forward.log:fixed_wait arms=1 completions=1 native=59 both=0 native_interrupts=0 stop_interrupts=1
+build/rmw-agnocast/scope-forward.log:host-cloud publisher loans=59 private_copies=0
+build/rmw-agnocast/scope-forward.log:fixed_wait arms=1 completions=1 native=59 both=0 native_interrupts=0 stop_interrupts=1
+build/rmw-agnocast/scope-forward.log:host-cloud publisher loans=59 private_copies=0
+build/rmw-agnocast/scope-forward.log:fixed_wait arms=1 completions=1 native=59 both=0 native_interrupts=0 stop_interrupts=1
+build/rmw-agnocast/scope-forward.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/scope-forward.log:fixed_wait arms=1 completions=1 native=59 both=0 native_interrupts=0 stop_interrupts=1
+build/rmw-agnocast/scope-forward.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/scope-forward.log:fixed_wait arms=1 completions=1 native=59 both=0 native_interrupts=0 stop_interrupts=1
+build/rmw-agnocast/scope-forward.log:host-cloud publisher loans=59 private_copies=0
+build/rmw-agnocast/scope-forward.log:fixed_wait arms=1 completions=1 native=59 both=0 native_interrupts=0 stop_interrupts=1
+build/rmw-agnocast/scope-forward.log:host-cloud publisher loans=59 private_copies=0
+build/rmw-agnocast/scope-forward.log:fixed_wait arms=1 completions=1 native=59 both=0 native_interrupts=0 stop_interrupts=1
+build/rmw-agnocast/scope-forward.log:host-cloud publisher loans=59 private_copies=0
+build/rmw-agnocast/scope-forward.log:fixed_wait arms=1 completions=1 native=59 both=0 native_interrupts=0 stop_interrupts=1
+build/rmw-agnocast/scope-forward.log:host-cloud publisher loans=59 private_copies=0
+build/rmw-agnocast/scope-forward.log:fixed_wait arms=1 completions=1 native=59 both=0 native_interrupts=0 stop_interrupts=1
+build/rmw-agnocast/scope-forward.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/scope-forward.log:fixed_wait arms=1 completions=1 native=59 both=0 native_interrupts=0 stop_interrupts=1
+build/rmw-agnocast/scope-forward.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/scope-forward.log:Minimum host MemAvailable: 18127 MiB

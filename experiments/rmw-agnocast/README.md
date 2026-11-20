@@ -1115,3 +1115,67 @@ interruptions. All 12 loan-enabled writers reported 59 loans and zero private
 payload copies after warmup. The previous [broader matrix](#fixed-mixed-wait-in-the-universe-pointcloud2-pipeline)
 contains the Cyclone and Zenoh controls.
 [Frames, resource measurements and check output](publisher-loan-results/).
+
+## Scope the Agnocast allocation to point storage
+
+On both CPU PointCloud2 edges, the application builds a normal message. The
+benchmark brackets the first point-vector resize with Agnocast's thread-local
+allocation counter and restores it on scope exit, including exceptions.
+The crop shrink fits within existing capacity. The publishing wrapper then
+borrows a ROS message, moves the completed output into it and publishes.
+The existing RMW copies the metadata inside this short publisher loan and
+transfers a vector that belongs to the publisher's shared pool. Filling the
+points, executing crop diagnostics and creating DDS entities take place
+outside the allocation scope. This prototype uses Agnocast's internal
+allocator-selection functions at the two resize sites. It does not require
+a new kernel module, heap hook or RMW implementation change.
+
+Rebuild only the Universe fixture on top of the previous publisher-loan
+overlays. Run the cold-start check and both three-round series sequentially:
+
+```bash
+set -e
+export LYRICAL_ROOT=$(cat build/agnocast-lyrical/universe-root)
+experiments/buffer/run-lyrical.sh bash experiments/buffer/build-universe-lyrical.sh
+export BUFFER_RUNTIME_ONLY=1
+experiments/buffer/run-lyrical.sh timeout 60s bash experiments/rmw-agnocast/bench-host-cloud.sh --check-cold
+for order in forward reverse; do
+  opts=()
+  if [[ $order == reverse ]]; then opts+=(--reverse); fi
+  experiments/buffer/run-lyrical.sh timeout 180s bash \
+    experiments/rmw-agnocast/bench-host-cloud.sh "build/rmw-agnocast/fresh-scope-$order" \
+    --scope "${opts[@]}"
+done
+```
+
+The paired controls are native Agnocast and the previous longer publisher
+loan with a first-frame copy. Every process group starts fresh. The scoped
+case requires 60 loans and zero private payload copies at each writer. The
+longer-loan control requires 59 and zero respectively. The first ten
+frames are excluded only from steady-state latency. The sink validates all
+60 frames. The separate diagnostic observer joins before the crop starts
+and receives typed PublishedTime messages over Cyclone DDS.
+
+| Laptop, six runs per case | Median ms | p95 ms | Median / native | p95 / native | Child CPU s | Largest child peak MiB |
+|---|---:|---:|---:|---:|---:|---:|
+| Native Agnocast | 0.357 | 0.616 | 1.00× | 1.00× | 0.619 | 136.7 |
+| Longer loan with startup copy | 0.421 | 0.641 | 1.18× | 1.04× | 0.647 | 138.6 |
+| Scoped point allocation from frame one | 0.424 | 0.671 | 1.19× | 1.09× | 0.668 | 138.2 |
+
+The scoped case met the pooled 1.20× median and p95 targets. Forward order
+gave 1.30×/1.14× and reverse gave 1.17×/1.03×. The matched longer loan also
+passed on pooled latency. Restricting the allocation window enabled cold
+start. The measured median stayed within 3 µs of the longer loan and the p95
+increased by 30 µs. Pooled latency uses 300 post-warmup frames per row.
+CPU and largest child peak RSS are medians over six complete process groups.
+All 1,080 timed-run frames passed. The scoped writers completed 720
+publications, all with zero private payload copies. Every fixed reader
+reported 59 native wakes, zero native interrupts and one shutdown interrupt.
+
+In the separate cold-start run both writers used 60 loans each. A Cyclone
+subscriber received 60 distinct stamped messages from the previously absent
+/output/debug/published_time publisher while the sink verified another 60
+frames. These results apply to fresh CPU point vectors on the same host.
+Reusing sufficient private vector capacity can still select the RMW copy
+fallback. The fixed receiver topology and backend-aware input access remain
+prerequisites. [Raw frames, child resource use and checks](scoped-payload-results/).

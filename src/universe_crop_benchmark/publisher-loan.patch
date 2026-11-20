@@ -33,7 +33,7 @@
    AUTOWARE_MESSAGE_UNIQUE_PTR(MessageT) allocate_output_message_unique() override
    {
 +    if (std::getenv("AGNOCAST_RMW_HOST_LOAN") && publisher_->can_loan_messages() &&
-+        !warmup_.exchange(false, std::memory_order_relaxed)) {
++        !std::getenv("BENCH_PAYLOAD_SCOPE") && !warmup_.exchange(false, std::memory_order_relaxed)) {
 +      AUTOWARE_MESSAGE_UNIQUE_PTR(MessageT) output;
 +      output.ptr_ = std::make_unique<LoanedOutput>(publisher_);
 +      return output;
@@ -41,10 +41,17 @@
      return AUTOWARE_MESSAGE_UNIQUE_PTR(MessageT){std::make_unique<MessageT>()};
    }
 
-@@ -147,5 +167,11 @@
+@@ -147,5 +167,18 @@
 
    void publish(AUTOWARE_MESSAGE_UNIQUE_PTR(MessageT) && message) override
    {
++    if (std::getenv("BENCH_PAYLOAD_SCOPE") && publisher_->can_loan_messages()) {
++      auto loan = publisher_->borrow_loaned_message();
++      loan.get() = std::move(*message);
++      publisher_->publish(std::move(loan));
++      message = {};
++      return;
++    }
 +    if (auto * output = dynamic_cast<LoanedOutput *>(message.ptr_.get())) {
 +      if (output->publisher != publisher_) throw std::invalid_argument("loan belongs to another publisher");
 +      publisher_->publish(std::move(output->loan));

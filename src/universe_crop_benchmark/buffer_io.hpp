@@ -2,6 +2,7 @@
 
 #include "../rmw_agnocast/host_cloud_view.hpp"
 
+#include <agnocast/agnocast_publisher.hpp>
 #include <cuda_buffer/cuda_buffer_api.hpp>
 #include <shmem_buffer/shmem_buffer_api.hpp>
 
@@ -24,6 +25,20 @@ inline const std::string & buffer_backend()
     return std::string(value ? value : "cpu");
   }();
   return backend;
+}
+
+inline void resize_point_payload(rosidl::Buffer<uint8_t> & buffer, size_t size)
+{
+  static const bool scoped = std::getenv("BENCH_PAYLOAD_SCOPE") != nullptr;
+  if (scoped) {
+    struct SharedAllocation {
+      SharedAllocation() { agnocast::increment_borrowed_publisher_num(); }
+      ~SharedAllocation() { agnocast::decrement_borrowed_publisher_num(); }
+    } allocation;
+    buffer.resize(size);
+  } else {
+    buffer.resize(size);
+  }
 }
 
 inline bool explicit_subscription()

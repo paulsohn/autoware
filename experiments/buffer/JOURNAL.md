@@ -1009,3 +1009,30 @@ allocations can run on the ordinary heap, then test cold-start entity creation
 and repeat the paired measurement. The same-thread publisher restriction and
 stable graph during fixed wait still apply.
 [Commands, ownership checks, failures and raw runs](../rmw-agnocast/README.md#transfer-cpu-point-payloads-through-a-publisher-loan)
+
+### Use shared point storage from the first crop callback
+
+Changed the source and crop to scope Agnocast heap selection around point
+vector growth. They fill ordinary PointCloud2 messages and acquire the
+publisher loan at handoff. At that point the existing RMW copies the metadata
+and transfers the already-shared vector. This eliminated the first-frame copy
+and allowed cold DDS diagnostic creation on the original crop path. A separate
+Cyclone subscriber started before the crop, confirmed the topic initially had
+zero publishers and received 60 stamped PublishedTime messages. Its pipeline
+also verified 60 output frames and 60 zero-copy point publications per edge.
+
+Six fresh process groups per case verified 1,080 frames. Pooled native,
+previous longer loan and scoped median/p95 were 0.357/0.616, 0.421/0.641 and
+0.424/0.671 ms. Scoped/native met the pooled target at 1.19×/1.09×. Median
+varied with order (1.30× forward, 1.17× reverse). The scoped case used 0.668 s
+child CPU per run versus 0.619 s native. Serial builds and runtime used
+1,200 and 512 MiB memory caps. Lowest sampled host availability was 17,200 MiB.
+
+I edited the benchmark driver while the forward series was running. Bash
+reported a parse error after writing all nine verified frame logs and their
+resource files. Reran the summary on those complete files and ran the reverse
+series and diagnostic with the finalized driver. A Bazel reproduction milestone
+is warranted for this specific same-host CPU path. Broad wrapper migration
+still needs evidence on a dynamic graph, realistic sensor load and stable
+latency across repeated runs.
+[Commands, controls, raw results and restrictions](../rmw-agnocast/README.md#scope-the-agnocast-allocation-to-point-storage)
