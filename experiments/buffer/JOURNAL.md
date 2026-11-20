@@ -924,3 +924,27 @@ series. The 1.20× migration gate remains unmet. Minimum sampled host
 MemAvailable during the three matrices was 13,582 MiB. Keep coordinated
 reconfiguration and stable entity ownership explicit before broadening use.
 [Setup, checks, exact commands, all three series and limitations](../rmw-agnocast/README.md#fixed-topology-blocking-mixed-wait)
+
+### Test fixed wait and CDR avoidance in the Universe crop pipeline
+
+Ran the existing Lyrical Universe source, crop and sink on the laptop. Starting
+fixed wait immediately rejected a crop event-list growth (10 to 18 after the
+first native wake). Used ordinary mixed wait through the first verified
+frame, drained ready work, then entered the fixed scope under the standard
+executor. All fixed receivers recorded 59 native wakes, zero native-triggered
+interruptions and one stop interruption. The broad three-round matrix
+verified 1,440 frames. Fixed CDR median/p95 were 0.970/1.120 ms, versus
+0.998/1.328 ms with ordinary direct mixed wait and 0.365/0.545 ms native.
+
+Added an opt-in, versioned same-host representation for CPU PointCloud2. Typed
+delivery copies metadata and point bytes into Agnocast storage, then
+reconstructs a process-local CPU Buffer. The callback never uses another
+process's Buffer implementation. Empty and padded cloud fixtures matched
+field-for-field in typed and serialized subscriptions. Direct Path loan/copy
+and mixed pressure/restart regressions passed. Two focused matrices verified
+another 1,080 frames: pooled median/p95 were 0.554/0.961 ms for host-cloud,
+0.994/1.126 ms for fixed CDR and 0.395/0.876 ms for native Agnocast. The 1.40×
+median misses the 1.20× target. Keep the Bazel milestone closed and focus the
+next control on payload copies and receiver-held loan lifetime. Minimum sampled
+available host memory in the three matrices was 13,940 MiB.
+[Commands, startup failure, counters, CPU/RSS and raw frames](../rmw-agnocast/README.md#fixed-mixed-wait-in-the-universe-pointcloud2-pipeline)

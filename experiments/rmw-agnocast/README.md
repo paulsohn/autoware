@@ -851,3 +851,96 @@ were 0.162–0.201 for fixed versus 0.167–0.206 for original mixed, and
 largest-child peak RSS ranged from 29.5–29.6 versus 29.2–29.4 MiB.
 The first series preceded teardown cleanup; series two and three use that
 cleanup, and the final fixture also validates coordinated rebinding.
+
+## Fixed mixed wait in the Universe PointCloud2 pipeline
+
+The fixture runs the existing Universe crop-box component, source and verifier
+in three processes. For the matched mixed/fixed cases, a colcon-built component
+runner loads the same filter and sink libraries under the standard rclcpp
+single-threaded executor. The source uses the existing wrapper launcher. Native
+Agnocast retains its production crop CIE. Source and sink check a CPU crop of
+the same PointXYZIRC fixture as the previous Universe matrix.
+
+Starting fixed wait before the first callback failed. The crop's DDS event
+list grew from 10 handles to 18 after its first native wake. Both matched
+runners therefore start in ordinary mixed mode, wait for the sink's first
+verified CSV row, drain currently ready work and then spin. The fixed runner
+holds its fixed-topology scope until spin returns and closes it before node
+removal. The harness checks each receiving process's wake counters at
+shutdown. The first ten frames per run are warmup. This sequencing requires
+the graph to stay stable during the fixed phase.
+
+With the exported Lyrical root, Universe buffer-matrix libraries and RMW
+overlays installed in this worktree, reproduce sequentially:
+
+```bash
+export LYRICAL_ROOT=$(cat build/agnocast-lyrical/universe-root)
+experiments/buffer/run-lyrical.sh bash experiments/rmw-agnocast/build-loadable.sh
+export BUFFER_RUNTIME_ONLY=1
+experiments/buffer/run-lyrical.sh timeout 420s bash \
+  experiments/buffer/bench-universe-lyrical.sh build/rmw-agnocast/fresh-universe --fixed
+experiments/buffer/run-lyrical.sh timeout 45s bash experiments/rmw-agnocast/run-loadable.sh host-cloud
+experiments/buffer/run-lyrical.sh timeout 180s bash \
+  experiments/rmw-agnocast/bench-host-cloud.sh build/rmw-agnocast/fresh-cloud
+```
+
+The optional host-cloud representation copies the CPU point vector and all
+PointCloud2 metadata into typed Agnocast storage. The receiver reconstructs
+a local standard PointCloud2 and CPU Buffer. Reader and writer must both opt
+in; a dedicated internal topic keeps its representation distinct from CDR
+storage. Typed reads skip the CDR round trip. A serialized reader requests
+CDR from the reconstructed local message. This same-host CPU control still
+copies payload bytes on publication and reception at each edge.
+
+| Universe pipeline, three runs | Median ms | p95 ms | Child CPU s | Largest child peak MiB |
+|---|---:|---:|---:|---:|
+| Native Agnocast | 0.365 | 0.545 | 0.564 | 139.0 |
+| Default rmw_agnocast, CDR | 0.986 | 1.189 | 0.701 | 137.9 |
+| Direct mixed wait, CDR | 0.998 | 1.328 | 0.752 | 135.6 |
+| Fixed mixed wait, CDR | 0.970 | 1.120 | 0.657 | 135.3 |
+| Cyclone DDS | 1.303 | 1.540 | 0.793 | 134.0 |
+| Zenoh | 1.063 | 1.304 | 1.547 | 290.4 |
+| Zenoh + shmem Buffer | 0.744 | 0.955 | 1.542 | 288.1 |
+| Zenoh + CUDA Buffer | 1.110 | 1.918 | 1.506 | 288.9 |
+| Cyclone DDS + shmem Buffer | — | — | — | — |
+
+The last row carries the [previous incompatibility evidence](../../src/crop_pipeline_benchmark/two-edge-results/cyclone-matrix.tsv);
+it has no Universe latency measurement. All 1,440 timed-run frames passed.
+The fixed crop and sink each recorded 59 native wakes in every run, zero
+native-triggered interruptions and one teardown interruption. CPU is median
+aggregate child user plus system seconds per run, including startup and
+teardown. The Zenoh rows include the router. Latency uses 150 post-warmup
+samples per row.
+
+The host-cloud contract sends an empty cloud and a two-point fixture
+with padding. It exercises a long frame ID and field name, byte order,
+density, field type/count/offset, stamp and payload bytes. Both a typed
+subscriber and a generic subscriber deserializing the recorded CDR compare
+the complete ROS message with the expected value. The Universe verifier
+separately checks every retained point and sequence at the sink.
+
+In the first focused three-round comparison, native median/p95 were
+0.399/1.325 ms, fixed CDR 1.000/1.138 ms, and fixed host-cloud 0.571/1.050 ms.
+Native round two reached 1.375 ms p95; host-cloud round three reached
+1.122 ms. These rounds are included in the reported distributions.
+
+The repeat measured 0.386/0.683 ms native, 0.991/1.115 ms fixed CDR, and
+0.539/0.639 ms fixed host-cloud. Both series verified 540 frames each. The
+combined latency distributions use 300 post-warmup frames per case. CPU and
+RSS summarize six complete process groups per case.
+
+| Focused comparison, pooled | Median ms | p95 ms | Child CPU s | Largest child peak MiB |
+|---|---:|---:|---:|---:|
+| Native Agnocast | 0.395 | 0.876 | 0.588 | 137.9 |
+| Fixed mixed RMW, CDR | 0.994 | 1.126 | 0.737 | 135.9 |
+| Fixed mixed RMW, CPU host-cloud | 0.554 | 0.961 | 0.724 | 137.6 |
+
+The host-cloud representation reduced median latency by 44% versus CDR under
+the same fixed wait. Native-relative median/p95 were 1.40×/1.10×. Both focused
+series passed the p95 criterion and missed the median criterion; the 1.20×
+gate requires both. Keep the representation opt-in. Next isolate reception
+copies using a receiver-local Buffer view whose lifetime owns the Agnocast
+loan. Check retained samples, mutation/copy behavior and final release before
+timing it. CPU-only field reconstruction still leaves shmem and CUDA Buffer
+ownership as separate integration work.
+[Raw matrix and both focused series](universe-fixed-results/).

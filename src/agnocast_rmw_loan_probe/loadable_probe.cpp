@@ -1,3 +1,4 @@
+#include <sensor_msgs/msg/point_cloud2.hpp>
 #include "fixed_scope.hpp"
 #include <rclcpp/rclcpp.hpp>
 
@@ -377,6 +378,71 @@ void contract(rclcpp::Node & node, const std::string & role)
   std::raise(SIGKILL);
 }
 
+using Cloud = sensor_msgs::msg::PointCloud2;
+Cloud cloud_fixture(int seq)
+{
+  Cloud msg;
+  msg.header.stamp.sec = seq;
+  msg.header.stamp.nanosec = 123;
+  msg.header.frame_id = std::string(80, 'a' + seq);
+  msg.height = seq;
+  msg.width = seq ? 2 : 0;
+  msg.point_step = 4;
+  msg.row_step = seq ? 12 : 0;
+  msg.is_dense = !seq;
+  msg.is_bigendian = seq;
+  if (seq) {
+    msg.fields.resize(1);
+    msg.fields[0].name.assign(64, 'x');
+    msg.fields[0].datatype = sensor_msgs::msg::PointField::UINT16;
+    msg.fields[0].offset = 2;
+    msg.fields[0].count = 1;
+    msg.data.resize(msg.row_step);
+    for (size_t i = 0; i < msg.data.size(); ++i) msg.data[i] = 3 * i;
+  }
+  return msg;
+}
+void host_cloud_contract(rclcpp::Node & node, bool writer)
+{
+  const char * topic = "trajectory_loan_probe";
+  if (writer) {
+    auto pub = node.create_publisher<Cloud>(topic, 4);
+    wait_file("cloud_attached");
+    auto deadline = std::chrono::steady_clock::now() + 10s;
+    while (pub->get_subscription_count() != 2) {
+      check(std::chrono::steady_clock::now() < deadline, "missing cloud readers");
+      std::this_thread::sleep_for(10ms);
+    }
+    for (int seq = 0; seq < 2; ++seq) {
+      pub->publish(cloud_fixture(seq));
+      wait_file("cloud_received" + std::to_string(seq));
+    }
+    return;
+  }
+  int typed = 0, serialized = 0;
+  auto sub = node.create_subscription<Cloud>(topic, 4, [&](const Cloud & msg) {
+    check(msg == cloud_fixture(typed++), "typed cloud mismatch");
+  });
+  auto generic = node.create_generic_subscription(topic, "sensor_msgs/msg/PointCloud2", rclcpp::QoS(4),
+    [&](std::shared_ptr<const rclcpp::SerializedMessage> bytes) {
+      Cloud msg;
+      rclcpp::Serialization<Cloud>().deserialize_message(bytes.get(), &msg);
+      check(msg == cloud_fixture(serialized++), "serialized cloud mismatch");
+    });
+  rclcpp::executors::SingleThreadedExecutor exec;
+  exec.add_node(node.get_node_base_interface());
+  mark("cloud_attached");
+  for (int seq = 0; seq < 2; ++seq) {
+    auto deadline = std::chrono::steady_clock::now() + 10s;
+    while (typed <= seq || serialized <= seq) {
+      check(std::chrono::steady_clock::now() < deadline, "cloud callback timeout");
+      exec.spin_once(100ms);
+    }
+    mark("cloud_received" + std::to_string(seq));
+  }
+  std::cout << "empty and padded clouds verified through typed and serialized take" << std::endl;
+}
+
 struct CallbackError
 {
 };
@@ -464,6 +530,12 @@ int main(int argc, char ** argv)
     }
     check(
       std::string(rmw_get_implementation_identifier()) == "rmw_agnocast", "wrong implementation");
+    if (std::string(argv[2]) == "host-cloud") {
+      auto n = std::make_shared<rclcpp::Node>(writer ? "cloud_writer" : "cloud_reader");
+      host_cloud_contract(*n, writer);
+      rclcpp::shutdown();
+      return 0;
+    }
     if (std::string(argv[2]) == "contract") {
       auto n = std::make_shared<rclcpp::Node>(writer ? "contract_writer" : "contract_reader");
       contract(*n, argv[1]);

@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.16)
 project(agnocast_rmw_loan_probe)
 find_package(ament_cmake REQUIRED)
-foreach(pkg IN ITEMS nav_msgs geometry_msgs agnocastlib autoware_planning_msgs rclcpp rmw)
+foreach(pkg IN ITEMS sensor_msgs nav_msgs geometry_msgs agnocastlib autoware_planning_msgs rclcpp rmw)
   find_package(${pkg} REQUIRED)
 endforeach()
 add_executable(loan_probe probe.cpp loan_hooks.cpp)
@@ -10,7 +10,7 @@ target_link_libraries(loan_probe ${agnocastlib_TARGETS} ${autoware_planning_msgs
   rclcpp::rclcpp rmw::rmw ${CMAKE_DL_LIBS})
 install(TARGETS loan_probe DESTINATION lib/${PROJECT_NAME})
 add_executable(loadable_probe loadable_probe.cpp)
-target_link_libraries(loadable_probe ${nav_msgs_TARGETS} ${geometry_msgs_TARGETS} ${autoware_planning_msgs_TARGETS} rclcpp::rclcpp rmw::rmw)
+target_link_libraries(loadable_probe ${sensor_msgs_TARGETS} ${nav_msgs_TARGETS} ${geometry_msgs_TARGETS} ${autoware_planning_msgs_TARGETS} rclcpp::rclcpp rmw::rmw)
 install(TARGETS loadable_probe DESTINATION lib/${PROJECT_NAME})
 add_executable(manual_bridge manual_bridge.cpp)
 target_link_libraries(manual_bridge ${agnocastlib_TARGETS} rclcpp::rclcpp)
@@ -20,4 +20,10 @@ target_link_libraries(path_benchmark ${agnocastlib_TARGETS} ${nav_msgs_TARGETS} 
 target_link_options(path_benchmark PRIVATE
   -Wl,--export-dynamic-symbol=path_probe_wake -Wl,--export-dynamic-symbol=path_probe_loan)
 install(TARGETS path_benchmark DESTINATION lib/${PROJECT_NAME})
+find_package(rclcpp_components REQUIRED)
+find_package(class_loader REQUIRED)
+add_executable(crop_wait_runner crop_wait_runner.cpp)
+target_link_libraries(crop_wait_runner rclcpp_components::component_manager
+  class_loader::class_loader rclcpp::rclcpp ${CMAKE_DL_LIBS})
+install(TARGETS crop_wait_runner DESTINATION lib/${PROJECT_NAME})
 ament_package()

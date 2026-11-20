@@ -9,6 +9,8 @@ shift
 cie=()
 if [[ ${1:-} == --compare-cie ]]; then cie=(--ros-cie); shift; fi
 compare_rmw=0
+fixed=0
+if [[ ${1:-} == --fixed ]]; then fixed=1; set -- --compare-rmw "${@:2}"; fi
 if [[ ${1:-} == --compare-rmw ]]; then
   compare_rmw=1
   source build/rmw-agnocast/install/local_setup.bash
@@ -26,6 +28,13 @@ for round in 1 2 3; do
   if ((compare_rmw)); then
     pos=$((2 * round - 2))
     modes=("${modes[@]:0:pos}" rmw-agnocast "${modes[@]:pos}")
+  fi
+  if ((fixed)); then
+    case "$round" in
+      1) modes=(fixed cyclone zenoh-shmem mixed agnocast rmw-agnocast zenoh-cuda zenoh);;
+      2) modes=(agnocast mixed zenoh zenoh-cuda rmw-agnocast fixed cyclone zenoh-shmem);;
+      3) modes=(zenoh-cuda zenoh-shmem rmw-agnocast zenoh fixed agnocast mixed cyclone);;
+    esac
   fi
   i=0
   for mode in "${modes[@]}"; do
@@ -48,6 +57,7 @@ for round in 1 2 3; do
 done
 labels=(cyclone agnocast zenoh zenoh-shmem zenoh-cuda)
 if ((compare_rmw)); then labels+=(rmw-agnocast); fi
+if ((fixed)); then labels+=(mixed fixed); fi
 if ((${#cie[@]})); then
   labels+=(cyclone-cie zenoh-cie zenoh-shmem-cie zenoh-cuda-cie)
   if ((compare_rmw)); then labels+=(rmw-agnocast-cie); fi

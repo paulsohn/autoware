@@ -48,6 +48,18 @@ if [[ ${1:-} == bridge ]]; then
   exit 0
 fi
 
+if [[ ${1:-} == host-cloud ]]; then
+  cd "$(mktemp -d)"
+  export AGNOCAST_RMW_HOST_CLOUD=1
+  LD_PRELOAD="$hook" "$probe" reader host-cloud &
+  reader=$!
+  trap 'kill "$reader" 2>/dev/null || true' EXIT
+  LD_PRELOAD="$hook" "$probe" writer host-cloud
+  wait "$reader"
+  trap - EXIT
+  exit 0
+fi
+
 if [[ ${1:-} == contract ]]; then
   cd "$(mktemp -d)"
   ROS_DISABLE_LOANED_MESSAGES=0 LD_PRELOAD="$hook" "$probe" writer contract &

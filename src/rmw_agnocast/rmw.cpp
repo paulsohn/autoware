@@ -1,3 +1,4 @@
+#include "host_cloud.hpp"
 #include <agnocast/agnocast_executor.hpp>
 #include <agnocast/node/agnocast_node.hpp>
 #include <agnocast/node/agnocast_only_single_threaded_executor.hpp>
@@ -77,11 +78,13 @@ struct Type
 {
   const rosidl_message_type_support_t * ts;
   const Members * members;
-  bool cdr;
+  bool has_buffer;
+  bool host_cloud = false;
   std::string name;
   std::string native_topic(const char * topic) const
   {
-    if (!cdr) return topic;
+    if (host_cloud) return std::string(topic) + "/_rmw_agnocast_host_cloud_v1";
+    if (!has_buffer) return topic;
     return std::string(topic) + "/_rmw_agnocast_cdr/" + name;
   }
   explicit Type(const rosidl_message_type_support_t * handle) : ts(handle)
@@ -89,12 +92,14 @@ struct Type
     auto intro = get_message_typesupport_handle(handle, "rosidl_typesupport_introspection_cpp");
     if (!intro) throw std::runtime_error("native topics require C++ introspection");
     members = static_cast<const Members *>(intro->data);
-    cdr = contains_buffer(*members);
-    if (cdr && !std::getenv("AGNOCAST_RMW_BUFFER_CDR"))
-      throw std::runtime_error("native object loans cannot expose a foreign Buffer implementation");
+    has_buffer = contains_buffer(*members);
     name = members->message_namespace_;
     for (size_t pos; (pos = name.find("::")) != std::string::npos;) name.replace(pos, 2, "/");
     name += "/" + std::string(members->message_name_);
+    host_cloud =
+      has_buffer && name == "sensor_msgs/msg/PointCloud2" && std::getenv("AGNOCAST_RMW_HOST_CLOUD");
+    if (has_buffer && !host_cloud && !std::getenv("AGNOCAST_RMW_BUFFER_CDR"))
+      throw std::runtime_error("native object loans cannot expose a foreign Buffer implementation");
   }
   void destroy(void * p) const
   {
@@ -363,8 +368,11 @@ extern "C" rmw_publisher_t * rmw_create_publisher(
     auto state = std::make_shared<Writer>(node, topic, *qos, ts);
     auto pub = fn(node, ts, topic, qos, options);
     if (!pub) return nullptr;
-    pub->can_loan_messages = !state->type.cdr;
-    if (state->type.cdr) std::fprintf(stderr, "rmw_agnocast CDR writer %s\n", topic);
+    pub->can_loan_messages = !state->type.has_buffer;
+    if (state->type.has_buffer)
+      std::fprintf(
+        stderr, "rmw_agnocast %s writer %s\n", state->type.host_cloud ? "host-cloud" : "CDR",
+        topic);
     std::lock_guard lock(registry);
     writers.emplace(pub->data, std::move(state));
     return pub;
@@ -387,8 +395,11 @@ extern "C" rmw_subscription_t * rmw_create_subscription(
     auto state = std::make_shared<Reader>(node, topic, *qos, ts);
     auto sub = fn(node, ts, topic, qos, options);
     if (!sub) return nullptr;
-    sub->can_loan_messages = !state->type.cdr;
-    if (state->type.cdr) std::fprintf(stderr, "rmw_agnocast CDR reader %s\n", topic);
+    sub->can_loan_messages = !state->type.has_buffer;
+    if (state->type.has_buffer)
+      std::fprintf(
+        stderr, "rmw_agnocast %s reader %s\n", state->type.host_cloud ? "host-cloud" : "CDR",
+        topic);
     std::lock_guard lock(registry);
     readers.emplace(sub->data, std::move(state));
     return sub;
@@ -419,7 +430,7 @@ extern "C" rmw_ret_t rmw_borrow_loaned_message(
   auto w = lookup(writers, pub->data);
   if (!w) return CYCLONE(rmw_borrow_loaned_message)(pub, ts, msg);
   std::lock_guard lock(w->mutex);
-  if (w->type.cdr) return RMW_RET_UNSUPPORTED;
+  if (w->type.has_buffer) return RMW_RET_UNSUPPORTED;
   auto loan = w->borrow();
   *msg = loan.get();
   w->borrowed.emplace(*msg, std::move(loan));
@@ -454,7 +465,27 @@ extern "C" rmw_ret_t rmw_publish(
 {
   auto w = lookup(writers, pub->data);
   if (!w) return CYCLONE(rmw_publish)(pub, msg, a);
-  if (w->type.cdr) {
+  if (w->type.host_cloud) {
+    try {
+      const auto & cloud = *static_cast<const Cloud *>(msg);
+      if (cloud.data.get_backend_type() != "cpu") return error("host cloud requires CPU data");
+      auto loan = w->pub.borrow_loaned_message(sizeof(HostCloud));
+      try {
+        new (loan.get()) HostCloud(cloud);
+      } catch (...) {
+        w->pub.cancel_message(std::move(loan), [](void * p) { ::operator delete(p); });
+        throw;
+      }
+      w->pub.publish(std::move(loan), [](void * p) {
+        static_cast<HostCloud *>(p)->~HostCloud();
+        ::operator delete(p);
+      });
+      return RMW_RET_OK;
+    } catch (const std::exception & e) {
+      return error(e.what());
+    }
+  }
+  if (w->type.has_buffer) {
     rclcpp::SerializedMessage bytes;
     auto & raw = bytes.get_rcl_serialized_message();
     auto ret =
@@ -488,10 +519,28 @@ rmw_ret_t take(
   if (!*taken) return RMW_RET_OK;
   if (info) *info = {};
   auto & sample = r.pending.front();
-  if (r.type.cdr) {
+  if (r.type.has_buffer) {
     if (loan) {
       *taken = false;
       return RMW_RET_UNSUPPORTED;
+    }
+    if (r.type.host_cloud) {
+      rmw_ret_t ret = RMW_RET_OK;
+      try {
+        const auto & cloud = *static_cast<const HostCloud *>(sample.get());
+        if (serialized) {
+          Cloud local;
+          cloud.restore(local);
+          ret = CYCLONE(rmw_serialize)(&local, r.type.ts, serialized);
+        } else {
+          cloud.restore(*static_cast<Cloud *>(copy));
+        }
+      } catch (const std::exception & e) {
+        ret = error(e.what());
+      }
+      if (ret != RMW_RET_OK) *taken = false;
+      r.pending.pop_front();
+      return ret;
     }
     const auto length = static_cast<const size_t *>(sample.get());
     auto payload = reinterpret_cast<const uint8_t *>(length + 1);
@@ -742,6 +791,7 @@ public:
         clients ? View{clients->clients, clients->client_count} : View{},
         events ? View{events->events, events->event_count} : View{}};
       if (!fixed_set) {
+        native_interrupts = 0;  // Begin accounting after any ordinary mixed-wait warmup.
         fixed_set = CYCLONE(rmw_create_wait_set)(context, 0);
         if (!fixed_set) return error("fixed DDS wait set creation failed");
         for (size_t i = 0; i < views.size(); ++i) {
@@ -753,8 +803,15 @@ public:
         auto [p, n] = views[i];
         if (
           n != fixed_inputs[i].size() ||
-          !std::equal(fixed_inputs[i].begin(), fixed_inputs[i].end(), p))
+          !std::equal(fixed_inputs[i].begin(), fixed_inputs[i].end(), p)) {
+          std::fprintf(
+            stderr, "fixed topology list=%zu old=%zu new=%zu wakes=%u permutation=%d\n", i,
+            fixed_inputs[i].size(), n, native_wakes,
+            int(
+              n == fixed_inputs[i].size() &&
+              std::is_permutation(fixed_inputs[i].begin(), fixed_inputs[i].end(), p)));
           return error("fixed DDS topology changed");
+        }
       }
       if (!armed) {
         fixed_output = fixed_inputs;

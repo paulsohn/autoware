@@ -1,0 +1,103 @@
+universe-fixed
+fixed_wait arms=1 completions=1 native=59 both=0 native_interrupts=0 stop_interrupts=1
+verified fixed wait filter: 59 native wakes
+fixed_wait arms=1 completions=1 native=59 both=0 native_interrupts=0 stop_interrupts=1
+verified fixed wait sub: 59 native wakes
+fixed_wait arms=1 completions=1 native=59 both=0 native_interrupts=0 stop_interrupts=1
+fixed_wait arms=1 completions=1 native=59 both=0 native_interrupts=0 stop_interrupts=1
+verified fixed wait filter: 59 native wakes
+verified fixed wait sub: 59 native wakes
+fixed_wait arms=1 completions=1 native=59 both=0 native_interrupts=0 stop_interrupts=1
+fixed_wait arms=1 completions=1 native=59 both=0 native_interrupts=0 stop_interrupts=1
+verified fixed wait filter: 59 native wakes
+verified fixed wait sub: 59 native wakes
+Minimum host MemAvailable: 14519 MiB
+host-cloud-rounds
+fixed_wait arms=1 completions=1 native=59 both=0 native_interrupts=0 stop_interrupts=1
+fixed_wait arms=1 completions=1 native=59 both=0 native_interrupts=0 stop_interrupts=1
+verified fixed wait filter: 59 native wakes
+verified fixed wait sub: 59 native wakes
+rmw_agnocast host-cloud writer /input
+rmw_agnocast host-cloud writer /output
+rmw_agnocast host-cloud reader /input
+fixed_wait arms=1 completions=1 native=59 both=0 native_interrupts=0 stop_interrupts=1
+rmw_agnocast host-cloud reader /output
+fixed_wait arms=1 completions=1 native=59 both=0 native_interrupts=0 stop_interrupts=1
+verified fixed wait filter: 59 native wakes
+verified fixed wait sub: 59 native wakes
+fixed_wait arms=1 completions=1 native=59 both=0 native_interrupts=0 stop_interrupts=1
+fixed_wait arms=1 completions=1 native=59 both=0 native_interrupts=0 stop_interrupts=1
+verified fixed wait filter: 59 native wakes
+verified fixed wait sub: 59 native wakes
+rmw_agnocast host-cloud writer /input
+rmw_agnocast host-cloud writer /output
+rmw_agnocast host-cloud reader /input
+fixed_wait arms=1 completions=1 native=59 both=0 native_interrupts=0 stop_interrupts=1
+rmw_agnocast host-cloud reader /output
+fixed_wait arms=1 completions=1 native=59 both=0 native_interrupts=0 stop_interrupts=1
+verified fixed wait filter: 59 native wakes
+verified fixed wait sub: 59 native wakes
+rmw_agnocast host-cloud writer /input
+rmw_agnocast host-cloud writer /output
+rmw_agnocast host-cloud reader /input
+fixed_wait arms=1 completions=1 native=59 both=0 native_interrupts=0 stop_interrupts=1
+rmw_agnocast host-cloud reader /output
+fixed_wait arms=1 completions=1 native=59 both=0 native_interrupts=0 stop_interrupts=1
+verified fixed wait filter: 59 native wakes
+verified fixed wait sub: 59 native wakes
+fixed_wait arms=1 completions=1 native=59 both=0 native_interrupts=0 stop_interrupts=1
+fixed_wait arms=1 completions=1 native=59 both=0 native_interrupts=0 stop_interrupts=1
+verified fixed wait filter: 59 native wakes
+verified fixed wait sub: 59 native wakes
+Minimum host MemAvailable: 13940 MiB
+host-cloud-repeat
+fixed_wait arms=1 completions=1 native=59 both=0 native_interrupts=0 stop_interrupts=1
+fixed_wait arms=1 completions=1 native=59 both=0 native_interrupts=0 stop_interrupts=1
+verified fixed wait filter: 59 native wakes
+verified fixed wait sub: 59 native wakes
+rmw_agnocast host-cloud writer /input
+rmw_agnocast host-cloud writer /output
+rmw_agnocast host-cloud reader /input
+fixed_wait arms=1 completions=1 native=59 both=0 native_interrupts=0 stop_interrupts=1
+rmw_agnocast host-cloud reader /output
+fixed_wait arms=1 completions=1 native=59 both=0 native_interrupts=0 stop_interrupts=1
+verified fixed wait filter: 59 native wakes
+verified fixed wait sub: 59 native wakes
+fixed_wait arms=1 completions=1 native=59 both=0 native_interrupts=0 stop_interrupts=1
+fixed_wait arms=1 completions=1 native=59 both=0 native_interrupts=0 stop_interrupts=1
+verified fixed wait filter: 59 native wakes
+verified fixed wait sub: 59 native wakes
+rmw_agnocast host-cloud writer /input
+rmw_agnocast host-cloud writer /output
+rmw_agnocast host-cloud reader /input
+fixed_wait arms=1 completions=1 native=59 both=0 native_interrupts=0 stop_interrupts=1
+rmw_agnocast host-cloud reader /output
+fixed_wait arms=1 completions=1 native=59 both=0 native_interrupts=0 stop_interrupts=1
+verified fixed wait filter: 59 native wakes
+verified fixed wait sub: 59 native wakes
+rmw_agnocast host-cloud writer /input
+rmw_agnocast host-cloud writer /output
+rmw_agnocast host-cloud reader /input
+fixed_wait arms=1 completions=1 native=59 both=0 native_interrupts=0 stop_interrupts=1
+rmw_agnocast host-cloud reader /output
+fixed_wait arms=1 completions=1 native=59 both=0 native_interrupts=0 stop_interrupts=1
+verified fixed wait filter: 59 native wakes
+verified fixed wait sub: 59 native wakes
+fixed_wait arms=1 completions=1 native=59 both=0 native_interrupts=0 stop_interrupts=1
+fixed_wait arms=1 completions=1 native=59 both=0 native_interrupts=0 stop_interrupts=1
+verified fixed wait filter: 59 native wakes
+verified fixed wait sub: 59 native wakes
+Minimum host MemAvailable: 14050 MiB
+host-cloud-final-host-cloud
+rmw_agnocast host-cloud writer /trajectory_loan_probe
+rmw_agnocast host-cloud reader /trajectory_loan_probe
+rmw_agnocast host-cloud reader /trajectory_loan_probe
+empty and padded clouds verified through typed and serialized take
+Minimum host MemAvailable: 14149 MiB
+host-cloud-final-path
+rmw_agnocast nav_msgs/msg/Path loan: verified four samples, retained A, throwing C and copied publish D
+rmw_agnocast nav_msgs/msg/Path copy: verified four samples, retained A, throwing C and copied publish D
+Minimum host MemAvailable: 14133 MiB
+host-cloud-final-pressure
+Pressure passed: fast 1..11, slow 1/8/9, restarted 11; retained 1 through teardown
+Minimum host MemAvailable: 14164 MiB
