@@ -46,9 +46,9 @@ public:
       csv_.open(std::getenv("BENCH_CSV"));
       if (!csv_) throw std::runtime_error("could not open sample log");
 #ifdef UNIVERSE_BUFFER_MATRIX
-      if (buffer_backend() != "cpu") {
+      if (explicit_subscription()) {
         rclcpp::SubscriptionOptions options;
-        options.acceptable_buffer_backends = buffer_backend();
+        options.acceptable_buffer_backends = std::getenv("AGNOCAST_RMW_HOST_VIEW") ? "any" : buffer_backend();
         buffer_sub_ = get_rclcpp_node()->create_subscription<Cloud>("output", rclcpp::SensorDataQoS(),
           [this](const Cloud &msg) { receive(msg); }, options);
         return;

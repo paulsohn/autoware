@@ -1,3 +1,4 @@
+#include "host_cloud_view.hpp"
 #include "host_cloud.hpp"
 #include <agnocast/agnocast_executor.hpp>
 #include <agnocast/node/agnocast_node.hpp>
@@ -17,6 +18,7 @@
 #include <fstream>
 #include <functional>
 #include <map>
+#include <string_view>
 #include <thread>
 
 namespace
@@ -247,11 +249,12 @@ public:
     }
   }
 };
-struct Reader
+struct Reader : std::enable_shared_from_this<Reader>
 {
   std::shared_ptr<agnocast::Node> node;
   using Guard = std::unique_ptr<rmw_guard_condition_t, decltype(&rmw_destroy_guard_condition)>;
   Type type;
+  bool host_view = false;
   Guard guard;
   std::mutex mutex;
   std::unique_ptr<HandoffTrace> trace;
@@ -393,6 +396,8 @@ extern "C" rmw_subscription_t * rmw_create_subscription(
   }
   try {
     auto state = std::make_shared<Reader>(node, topic, *qos, ts);
+    state->host_view = std::getenv("AGNOCAST_RMW_HOST_VIEW") && options &&
+      options->acceptable_buffer_backends && std::string_view(options->acceptable_buffer_backends) == "any";
     auto sub = fn(node, ts, topic, qos, options);
     if (!sub) return nullptr;
     sub->can_loan_messages = !state->type.has_buffer;
@@ -476,6 +481,9 @@ extern "C" rmw_ret_t rmw_publish(
         w->pub.cancel_message(std::move(loan), [](void * p) { ::operator delete(p); });
         throw;
       }
+      if (const char * path = std::getenv("AGNOCAST_VIEW_ADDRESS_FILE")) {
+        std::ofstream(path) << reinterpret_cast<uintptr_t>(static_cast<HostCloud *>(loan.get())->bytes.data());
+      }
       w->pub.publish(std::move(loan), [](void * p) {
         static_cast<HostCloud *>(p)->~HostCloud();
         ::operator delete(p);
@@ -530,10 +538,24 @@ rmw_ret_t take(
         const auto & cloud = *static_cast<const HostCloud *>(sample.get());
         if (serialized) {
           Cloud local;
-          cloud.restore(local);
+          cloud.restore_metadata(local);
+          local.data = cloud.bytes;
           ret = CYCLONE(rmw_serialize)(&local, r.type.ts, serialized);
         } else {
-          cloud.restore(*static_cast<Cloud *>(copy));
+          auto & msg = *static_cast<Cloud *>(copy);
+          cloud.restore_metadata(msg);
+          if (r.host_view) {
+            // Member destruction order returns the loan before unregistering the reader.
+            struct Held {
+              std::shared_ptr<Reader> reader;
+              Loan loan;
+            };
+            auto held = std::make_shared<Held>(Held{r.shared_from_this(), std::move(sample)});
+            std::shared_ptr<const std::vector<uint8_t>> bytes(held, &cloud.bytes);
+            msg.data = rosidl::Buffer<uint8_t>(std::make_unique<rmw_agnocast::HostCloudView>(std::move(bytes)));
+          } else {
+            msg.data = cloud.bytes;
+          }
         }
       } catch (const std::exception & e) {
         ret = error(e.what());

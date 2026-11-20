@@ -23,9 +23,9 @@
      std::function<void(const PointCloud2ConstPtr)> cb =
        std::bind(callback, this, std::placeholders::_1, PointIndicesConstPtr());
 +    if constexpr (kIsAgnocastNode) {
-+      if (benchmark::buffer_backend() != "cpu") {
++      if (benchmark::explicit_subscription()) {
 +        rclcpp::SubscriptionOptions options;
-+        options.acceptable_buffer_backends = benchmark::buffer_backend();
++        options.acceptable_buffer_backends = std::getenv("AGNOCAST_RMW_HOST_VIEW") ? "any" : benchmark::buffer_backend();
 +        buffer_input_ = this->get_rclcpp_node()->template create_subscription<PointCloud2>(
 +          "input", rclcpp::SensorDataQoS().keep_last(max_queue_size_), cb, options);
 +        return;

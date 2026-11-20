@@ -948,3 +948,33 @@ median misses the 1.20× target. Keep the Bazel milestone closed and focus the
 next control on payload copies and receiver-held loan lifetime. Minimum sampled
 available host memory in the three matrices was 13,940 MiB.
 [Commands, startup failure, counters, CPU/RSS and raw frames](../rmw-agnocast/README.md#fixed-mixed-wait-in-the-universe-pointcloud2-pipeline)
+
+### Receive Universe point bytes through a Buffer that owns the native loan
+
+Added an opt-in typed host-cloud take that restores PointCloud2 metadata and
+attaches the received Agnocast loan to a reader-local, read-only Buffer. The
+new backend requires an explicit accepting subscription. A CPU-only subscriber
+in the same process still receives a mutable CPU Buffer, and a generic reader
+receives serialized ROS data. The two-process probe verified payload address
+identity, independent mutation of a copied message, survival past history
+eviction and ROS shutdown, and final release on another thread. The copying
+and pressure/restart regression probes also passed.
+
+The first component run exposed a cross-library vtable comparison in the
+cast to a final header-defined backend class. A backtrace and disassembly
+located the failure. Removing final enabled RTTI lookup and both receiving
+components completed six runs. Both RMW controls used explicit typed
+subscriptions. Each retained the blocking wait and both achieved 59 native
+wakes with zero native interrupts at each receiver in every timed run.
+
+Six laptop runs per case verified 1,080 frames. Native, receive-copy and
+receive-view median/p95 in ms were 0.387/0.602, 0.510/0.659 and 0.475/0.595.
+The view's 1.23× native median misses the 1.20× gate in both run orders.
+The pooled p95 passes. Total child CPU time increased from 0.652 s for
+copy to 0.710 s for view. Builds ran serially with a 1,200 MiB cap and
+runtime used 512 MiB. Lowest sampled available host memory was 12,465 MiB.
+Keep the Bazel milestone closed. Next isolate the publisher copy at each
+edge with an explicitly loaned output allocation and the same receiving view,
+retaining a conventional CPU publication as the control. Open issues include
+mutable publisher ownership, cancellation, and the cost of slow readers.
+[Reproduction, raw samples and limitations](../rmw-agnocast/README.md#receiver-local-buffer-view-of-an-agnocast-point-payload)

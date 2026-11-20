@@ -1,0 +1,39 @@
+build/rmw-agnocast/view-rtti-universe-build.log:Summary: 1 package finished [0.16s]
+build/rmw-agnocast/view-rtti-universe-build.log:Summary: 1 package finished [0.25s]
+build/rmw-agnocast/view-rtti-universe-build.log:Summary: 1 package finished [48.0s]
+build/rmw-agnocast/view-rtti-universe-build.log:Minimum host MemAvailable: 12465 MiB
+build/rmw-agnocast/view-rtti-pressure.log:Pressure passed: fast 1..11, slow 1/8/9, restarted 11; retained 1 through teardown
+build/rmw-agnocast/view-rtti-pressure.log:Minimum host MemAvailable: 13703 MiB
+build/rmw-agnocast/view-rtti-rmw-build.log:Summary: 2 packages finished [20.4s]
+build/rmw-agnocast/view-rtti-rmw-build.log:Minimum host MemAvailable: 13385 MiB
+build/rmw-agnocast/view-rtti-host-view.log:view addresses, independent mutation, retention and final release passed
+build/rmw-agnocast/view-rtti-host-view.log:empty and padded clouds verified through typed and serialized take
+build/rmw-agnocast/view-rtti-host-view.log:Minimum host MemAvailable: 13753 MiB
+build/rmw-agnocast/view-rtti-host-cloud.log:empty and padded clouds verified through typed and serialized take
+build/rmw-agnocast/view-rtti-host-cloud.log:Minimum host MemAvailable: 13788 MiB
+build/rmw-agnocast/view-rtti-reverse.log:fixed_wait arms=1 completions=1 native=59 both=0 native_interrupts=0 stop_interrupts=1
+build/rmw-agnocast/view-rtti-reverse.log:fixed_wait arms=1 completions=1 native=59 both=0 native_interrupts=0 stop_interrupts=1
+build/rmw-agnocast/view-rtti-reverse.log:fixed_wait arms=1 completions=1 native=59 both=0 native_interrupts=0 stop_interrupts=1
+build/rmw-agnocast/view-rtti-reverse.log:fixed_wait arms=1 completions=1 native=59 both=0 native_interrupts=0 stop_interrupts=1
+build/rmw-agnocast/view-rtti-reverse.log:fixed_wait arms=1 completions=1 native=59 both=0 native_interrupts=0 stop_interrupts=1
+build/rmw-agnocast/view-rtti-reverse.log:fixed_wait arms=1 completions=1 native=59 both=0 native_interrupts=0 stop_interrupts=1
+build/rmw-agnocast/view-rtti-reverse.log:fixed_wait arms=1 completions=1 native=59 both=0 native_interrupts=0 stop_interrupts=1
+build/rmw-agnocast/view-rtti-reverse.log:fixed_wait arms=1 completions=1 native=59 both=0 native_interrupts=0 stop_interrupts=1
+build/rmw-agnocast/view-rtti-reverse.log:fixed_wait arms=1 completions=1 native=59 both=0 native_interrupts=0 stop_interrupts=1
+build/rmw-agnocast/view-rtti-reverse.log:fixed_wait arms=1 completions=1 native=59 both=0 native_interrupts=0 stop_interrupts=1
+build/rmw-agnocast/view-rtti-reverse.log:fixed_wait arms=1 completions=1 native=59 both=0 native_interrupts=0 stop_interrupts=1
+build/rmw-agnocast/view-rtti-reverse.log:fixed_wait arms=1 completions=1 native=59 both=0 native_interrupts=0 stop_interrupts=1
+build/rmw-agnocast/view-rtti-reverse.log:Minimum host MemAvailable: 13843 MiB
+build/rmw-agnocast/view-rtti-forward.log:fixed_wait arms=1 completions=1 native=59 both=0 native_interrupts=0 stop_interrupts=1
+build/rmw-agnocast/view-rtti-forward.log:fixed_wait arms=1 completions=1 native=59 both=0 native_interrupts=0 stop_interrupts=1
+build/rmw-agnocast/view-rtti-forward.log:fixed_wait arms=1 completions=1 native=59 both=0 native_interrupts=0 stop_interrupts=1
+build/rmw-agnocast/view-rtti-forward.log:fixed_wait arms=1 completions=1 native=59 both=0 native_interrupts=0 stop_interrupts=1
+build/rmw-agnocast/view-rtti-forward.log:fixed_wait arms=1 completions=1 native=59 both=0 native_interrupts=0 stop_interrupts=1
+build/rmw-agnocast/view-rtti-forward.log:fixed_wait arms=1 completions=1 native=59 both=0 native_interrupts=0 stop_interrupts=1
+build/rmw-agnocast/view-rtti-forward.log:fixed_wait arms=1 completions=1 native=59 both=0 native_interrupts=0 stop_interrupts=1
+build/rmw-agnocast/view-rtti-forward.log:fixed_wait arms=1 completions=1 native=59 both=0 native_interrupts=0 stop_interrupts=1
+build/rmw-agnocast/view-rtti-forward.log:fixed_wait arms=1 completions=1 native=59 both=0 native_interrupts=0 stop_interrupts=1
+build/rmw-agnocast/view-rtti-forward.log:fixed_wait arms=1 completions=1 native=59 both=0 native_interrupts=0 stop_interrupts=1
+build/rmw-agnocast/view-rtti-forward.log:fixed_wait arms=1 completions=1 native=59 both=0 native_interrupts=0 stop_interrupts=1
+build/rmw-agnocast/view-rtti-forward.log:fixed_wait arms=1 completions=1 native=59 both=0 native_interrupts=0 stop_interrupts=1
+build/rmw-agnocast/view-rtti-forward.log:Minimum host MemAvailable: 13609 MiB

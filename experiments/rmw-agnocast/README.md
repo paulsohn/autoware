@@ -944,3 +944,88 @@ loan. Check retained samples, mutation/copy behavior and final release before
 timing it. CPU-only field reconstruction still leaves shmem and CUDA Buffer
 ownership as separate integration work.
 [Raw matrix and both focused series](universe-fixed-results/).
+
+## Receiver-local Buffer view of an Agnocast point payload
+
+The CPU host-cloud writer and its private wire representation stay the same.
+In the opt-in typed take path, the receiver copies the ROS metadata and builds
+a local Buffer implementation referencing the shared point vector. Its owner
+holds both the Agnocast sample loan and the native reader; destruction returns
+the loan before releasing the reader. The crop and sink obtain a const byte
+span from this receiver-local implementation. They never invoke a Buffer
+implementation constructed in another process.
+
+This view uses the existing Lyrical Buffer extension interface. It is an
+explicit read-only backend. The stock CPU vector accessors reject mutation
+of this backend. Copying the message or calling to_vector materializes
+independent CPU storage. The crop still allocates its output normally, and
+each publisher still copies the point payload into Agnocast storage. Generic
+serialized subscribers use the existing reconstruction and CDR path.
+A consumer using the CPU-vector interface must materialize the view or keep
+the copying host-cloud mode. The prototype requires both a receiver process
+opt-in and the Lyrical subscription option `acceptable_buffer_backends="any"`.
+A CPU-only subscription keeps its normal Buffer within that same process.
+The view and copy controls use explicit typed rclcpp subscriptions and the
+same callbacks. This is a paired same-host RMW experiment with a private
+representation. Publication still expects CPU-backed input, so a relay must
+materialize a view before republishing it through this writer.
+
+Reproduce serially from the worktree using the existing overlays:
+
+```bash
+export LYRICAL_ROOT=$(cat build/agnocast-lyrical/universe-root)
+experiments/buffer/run-lyrical.sh bash experiments/rmw-agnocast/build-loadable.sh
+experiments/buffer/run-lyrical.sh bash experiments/buffer/build-universe-lyrical.sh
+export BUFFER_RUNTIME_ONLY=1
+for test in host-view host-cloud pressure; do
+  AGNOCAST_RMW_DIRECT_WAIT=1 experiments/buffer/run-lyrical.sh timeout 45s \
+    bash experiments/rmw-agnocast/run-loadable.sh "$test" || exit 1
+done
+experiments/buffer/run-lyrical.sh timeout 180s bash \
+  experiments/rmw-agnocast/bench-host-cloud.sh build/rmw-agnocast/fresh-view-forward --view
+experiments/buffer/run-lyrical.sh timeout 180s bash \
+  experiments/rmw-agnocast/bench-host-cloud.sh build/rmw-agnocast/fresh-view-reverse --view --reverse
+```
+
+The view contract uses two processes and three subscriptions. The writer records
+the address of the vector's payload **inside its Agnocast publication**.
+The typed reader checks that address and complete field values, including an
+empty sample and sample-specific padded payloads. It holds frame 1 across
+eight publications at queue depth four, subscription destruction and ROS
+shutdown. It rejects a direct write, mutates a deep copy independently and
+checks expiry of the view owner on final release from another thread. The
+CPU-only subscriber checks its backend and full message. A generic subscriber
+decodes a serialized take and checks the same ROS values.
+Address logging is disabled in latency runs.
+
+The two three-round series use all six orderings of native Agnocast,
+fixed mixed RMW with receive copies, and fixed mixed RMW with receive views.
+All cases run the same Universe two-edge crop fixture. Ten warmup frames
+per run are excluded. See the [preceding matrix](#fixed-mixed-wait-in-the-universe-pointcloud2-pipeline)
+for Cyclone DDS and Zenoh CPU, shmem and CUDA measurements.
+
+| Six runs per case, pooled | Median ms | p95 ms | Median / native | p95 / native | Child CPU s | Largest child peak MiB |
+|---|---:|---:|---:|---:|---:|---:|
+| Native Agnocast | 0.387 | 0.602 | 1.00× | 1.00× | 0.615 | 135.2 |
+| Fixed mixed RMW, receive copy | 0.510 | 0.659 | 1.32× | 1.09× | 0.652 | 133.9 |
+| Fixed mixed RMW, receive view | 0.475 | 0.595 | 1.23× | 0.99× | 0.710 | 133.5 |
+
+The view cut the matched receive-copy median by 7%. The two series
+individually measured view/native median ratios of 1.24× and 1.21×, with
+p95 ratios of 1.07× and 0.91×. The median missed the gate in both.
+CPU time includes all children through startup and shutdown. It increased
+for the view despite the lower median latency. Each row contains 300
+post-warmup frames, and CPU and peak memory are medians over six runs.
+All 1,080 frames passed validation. Both fixed receivers in every run recorded
+59 native wakes, zero native-triggered interrupts and one shutdown interrupt.
+[Raw frames, per-run resource usage and checks](host-view-results/).
+
+During integration the non-component contract passed while the dynamically
+loaded crop threw `std::bad_cast`. The input carried the expected backend
+name. A terminate backtrace located the throw in the crop's InputBytes
+constructor. Disassembly showed Clang comparing the vtable address of the
+header-defined final class with the crop library's local copy. Keeping the
+view class non-final allowed RTTI lookup across the loaded libraries. The
+complete repeat used that change. The ownership checks cover direct native
+wait on this host. A production backend still needs a stable exported API,
+endpoint discovery and validation with independent builds.

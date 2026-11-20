@@ -1,3 +1,4 @@
+#include "../rmw_agnocast/host_cloud_view.hpp"
 #include <sensor_msgs/msg/point_cloud2.hpp>
 #include "fixed_scope.hpp"
 #include <rclcpp/rclcpp.hpp>
@@ -385,7 +386,7 @@ Cloud cloud_fixture(int seq)
   msg.header.stamp.sec = seq;
   msg.header.stamp.nanosec = 123;
   msg.header.frame_id = std::string(80, 'a' + seq);
-  msg.height = seq;
+  msg.height = seq ? 1 : 0;
   msg.width = seq ? 2 : 0;
   msg.point_step = 4;
   msg.row_step = seq ? 12 : 0;
@@ -398,31 +399,65 @@ Cloud cloud_fixture(int seq)
     msg.fields[0].offset = 2;
     msg.fields[0].count = 1;
     msg.data.resize(msg.row_step);
-    for (size_t i = 0; i < msg.data.size(); ++i) msg.data[i] = 3 * i;
+    for (size_t i = 0; i < msg.data.size(); ++i) msg.data[i] = seq + 3 * i;
   }
   return msg;
 }
 void host_cloud_contract(rclcpp::Node & node, bool writer)
 {
   const char * topic = "trajectory_loan_probe";
+  const bool view = std::getenv("AGNOCAST_RMW_HOST_VIEW");
+  const int frames = view ? 8 : 2;
   if (writer) {
     auto pub = node.create_publisher<Cloud>(topic, 4);
     wait_file("cloud_attached");
     auto deadline = std::chrono::steady_clock::now() + 10s;
-    while (pub->get_subscription_count() != 2) {
+    while (pub->get_subscription_count() != (view ? 3u : 2u)) {
       check(std::chrono::steady_clock::now() < deadline, "missing cloud readers");
       std::this_thread::sleep_for(10ms);
     }
-    for (int seq = 0; seq < 2; ++seq) {
+    for (int seq = 0; seq < frames; ++seq) {
       pub->publish(cloud_fixture(seq));
       wait_file("cloud_received" + std::to_string(seq));
     }
+    if (view) wait_file("view_released");
     return;
   }
-  int typed = 0, serialized = 0;
-  auto sub = node.create_subscription<Cloud>(topic, 4, [&](const Cloud & msg) {
-    check(msg == cloud_fixture(typed++), "typed cloud mismatch");
-  });
+  Cloud::ConstSharedPtr retained;
+  std::weak_ptr<const std::vector<uint8_t>> owner;
+  int typed = 0, serialized = 0, cpu = 0;
+  rclcpp::SubscriptionOptions options;
+  if (view) options.acceptable_buffer_backends = "any";
+  rclcpp::Subscription<Cloud>::SharedPtr cpu_sub;
+  if (view) {
+    cpu_sub = node.create_subscription<Cloud>(topic, 4, [&](const Cloud & msg) {
+      check(msg.data.get_backend_type() == "cpu" && msg == cloud_fixture(cpu++), "CPU fallback mismatch");
+    });
+  }
+  auto sub = node.create_subscription<Cloud>(topic, 4, [&](Cloud::SharedPtr msg) {
+    check(*msg == cloud_fixture(typed), "typed cloud mismatch");
+    if (view) {
+      const auto & impl = dynamic_cast<const rmw_agnocast::HostCloudView &>(*msg->data.get_impl());
+      uintptr_t address;
+      check(bool(std::ifstream("view-address") >> address) &&
+            address == reinterpret_cast<uintptr_t>(impl.bytes().data()), "payload address mismatch");
+      if (typed == 1) {
+        retained = msg;
+        owner = impl.owner();
+        bool rejected = false;
+        try {
+          msg->data[0] = 99;
+        } catch (const std::runtime_error &) {
+          rejected = true;
+        }
+        check(rejected, "view allowed in-place mutation");
+        auto clone = *msg;
+        clone.data[0] = 99;
+        check(impl.bytes()[0] == typed && clone.data.get_backend_type() == "cpu", "copy mutation leaked");
+      }
+    }
+    ++typed;
+  }, options);
   auto generic = node.create_generic_subscription(topic, "sensor_msgs/msg/PointCloud2", rclcpp::QoS(4),
     [&](std::shared_ptr<const rclcpp::SerializedMessage> bytes) {
       Cloud msg;
@@ -432,13 +467,26 @@ void host_cloud_contract(rclcpp::Node & node, bool writer)
   rclcpp::executors::SingleThreadedExecutor exec;
   exec.add_node(node.get_node_base_interface());
   mark("cloud_attached");
-  for (int seq = 0; seq < 2; ++seq) {
+  for (int seq = 0; seq < frames; ++seq) {
     auto deadline = std::chrono::steady_clock::now() + 10s;
-    while (typed <= seq || serialized <= seq) {
+    while (typed <= seq || serialized <= seq || (view && cpu <= seq)) {
       check(std::chrono::steady_clock::now() < deadline, "cloud callback timeout");
       exec.spin_once(100ms);
     }
     mark("cloud_received" + std::to_string(seq));
+  }
+  if (view) {
+    exec.remove_node(node.get_node_base_interface());
+    cpu_sub.reset();
+    sub.reset();
+    generic.reset();
+    rclcpp::shutdown();
+    check(!owner.expired() && *retained == cloud_fixture(1), "lost retained view after teardown");
+    std::thread release([&] { retained.reset(); });
+    release.join();
+    check(owner.expired(), "view still owns the loan");
+    mark("view_released");
+    std::cout << "view addresses, independent mutation, retention and final release passed" << std::endl;
   }
   std::cout << "empty and padded clouds verified through typed and serialized take" << std::endl;
 }
@@ -533,7 +581,7 @@ int main(int argc, char ** argv)
     if (std::string(argv[2]) == "host-cloud") {
       auto n = std::make_shared<rclcpp::Node>(writer ? "cloud_writer" : "cloud_reader");
       host_cloud_contract(*n, writer);
-      rclcpp::shutdown();
+      if (rclcpp::ok()) rclcpp::shutdown();
       return 0;
     }
     if (std::string(argv[2]) == "contract") {

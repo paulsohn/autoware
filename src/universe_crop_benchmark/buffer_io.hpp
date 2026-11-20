@@ -1,5 +1,7 @@
 #pragma once
 
+#include "../rmw_agnocast/host_cloud_view.hpp"
+
 #include <cuda_buffer/cuda_buffer_api.hpp>
 #include <shmem_buffer/shmem_buffer_api.hpp>
 
@@ -24,6 +26,11 @@ inline const std::string & buffer_backend()
   return backend;
 }
 
+inline bool explicit_subscription()
+{
+  return buffer_backend() != "cpu" || std::getenv("BENCH_TYPED_INPUT");
+}
+
 // CPU pointers remain valid while this view and the incoming message are alive.
 class InputBytes {
   std::optional<shmem_buffer::ReadHandle> mapping_;
@@ -33,6 +40,12 @@ public:
   explicit InputBytes(const rosidl::Buffer<uint8_t> & buffer)
   {
     const auto & backend = buffer_backend();
+    if (std::getenv("AGNOCAST_RMW_HOST_VIEW")) {
+      if (buffer.get_backend_type() != "agnocast_host_view")
+        throw std::runtime_error("host view required, received " + buffer.get_backend_type());
+      bytes = dynamic_cast<const rmw_agnocast::HostCloudView &>(*buffer.get_impl()).bytes();
+      return;
+    }
     if (backend == "cpu") {
       // The native Agnocast CPU allocation may belong to a different process.
       bytes = static_cast<const std::vector<uint8_t> &>(buffer);
