@@ -8,6 +8,7 @@
 #include <rmw/rmw.h>
 
 #include <deque>
+#include <fstream>
 #include <map>
 #include <thread>
 
@@ -154,6 +155,43 @@ struct Writer
     pub.cancel_message(std::move(loan), [this](void * p) { type.destroy(p); });
   }
 };
+// Bounded, single-reader diagnostic. All row access is under the reader mutex;
+// the benchmark supplies one private output file per reader process.
+struct HandoffTrace
+{
+  static int64_t now()
+  {
+    return std::chrono::duration_cast<std::chrono::nanoseconds>(
+             std::chrono::steady_clock::now().time_since_epoch())
+      .count();
+  }
+  struct Row
+  {
+    int64_t id;
+    uintptr_t address;
+    int64_t native, signal, signalled, wait_start, dds_return, ready, take_enter, taken;
+    bool blocking;
+  };
+  std::vector<Row> rows;
+  std::string path;
+  explicit HandoffTrace(const char * file) : path(file) { rows.reserve(1024); }
+  Row * find(const Loan & loan)
+  {
+    auto id = loan.get_entry_id();
+    auto it = std::find_if(rows.rbegin(), rows.rend(), [&](const Row & row) {
+      return row.id == id && row.address == reinterpret_cast<uintptr_t>(loan.get());
+    });
+    return it == rows.rend() ? nullptr : &*it;
+  }
+  ~HandoffTrace()
+  {
+    std::ofstream out(path);
+    for (const auto & r : rows)
+      out << r.id << ' ' << r.address << ' ' << r.native << ' ' << r.signal << ' ' << r.signalled
+          << ' ' << r.wait_start << ' ' << r.dds_return << ' ' << r.ready << ' ' << r.take_enter
+          << ' ' << r.taken << ' ' << r.blocking << '\n';
+  }
+};
 struct Reader
 {
   std::shared_ptr<agnocast::Node> node;
@@ -161,6 +199,7 @@ struct Reader
   Type type;
   Guard guard;
   std::mutex mutex;
+  std::unique_ptr<HandoffTrace> trace;
   std::deque<Loan> pending;
   std::map<void *, Loan> held;
   agnocast::Subscription<void>::SharedPtr sub;
@@ -173,15 +212,26 @@ struct Reader
     type(ts),
     guard(CYCLONE(rmw_create_guard_condition)(owner->context), CYCLONE(rmw_destroy_guard_condition))
   {
+    if (const char * file = std::getenv("AGNOCAST_RMW_HANDOFF_FILE"))
+      trace = std::make_unique<HandoffTrace>(file);
     if (!guard) throw std::runtime_error("native wait guard creation failed");
     sub = std::make_shared<agnocast::Subscription<void>>(
       node.get(), type.native_topic(topic), type.name,
       rclcpp::QoS(rclcpp::QoSInitialization::from_rmw(qos), qos),
       [this, depth = qos.depth](Loan sample) {
+        auto entry = trace ? HandoffTrace::now() : 0;
         std::lock_guard lock(mutex);
         if (pending.size() == depth) pending.pop_front();
         pending.emplace_back(std::move(sample));
+        HandoffTrace::Row * row = nullptr;
+        if (trace && trace->rows.size() < trace->rows.capacity()) {
+          const auto & loan = pending.back();
+          row = &trace->rows.emplace_back(
+            HandoffTrace::Row{loan.get_entry_id(), reinterpret_cast<uintptr_t>(loan.get()), entry});
+          row->signal = HandoffTrace::now();
+        }
         if (CYCLONE(rmw_trigger_guard_condition)(guard.get()) != RMW_RET_OK) std::terminate();
+        if (row) row->signalled = HandoffTrace::now();
       },
       agnocast::SubscriptionOptions{}, agnocast::SubscriptionRole::AgnocastOnly);
     exec.add_node(node);
@@ -195,9 +245,17 @@ struct Reader
     held.clear();
     pending.clear();
   }
-  bool ready()
+  bool ready(int64_t start = 0, int64_t returned = 0, bool blocking = false)
   {
     std::lock_guard lock(mutex);
+    if (start && !pending.empty()) {
+      if (auto row = trace->find(pending.front())) {
+        row->wait_start = start;
+        row->dds_return = returned;
+        row->blocking = blocking;
+        row->ready = HandoffTrace::now();
+      }
+    }
     return !pending.empty();
   }
 };
@@ -353,6 +411,7 @@ rmw_ret_t take(
   Reader & r, void * copy, void ** loan, bool * taken, rmw_message_info_t * info,
   rmw_serialized_message_t * serialized = nullptr)
 {
+  auto entry = r.trace ? HandoffTrace::now() : 0;
   std::lock_guard lock(r.mutex);
   *taken = !r.pending.empty();
   if (!*taken) return RMW_RET_OK;
@@ -386,6 +445,7 @@ rmw_ret_t take(
     r.pending.pop_front();
     return ret;
   }
+  auto row = r.trace ? r.trace->find(sample) : nullptr;
   if (loan) {
     *loan = const_cast<void *>(sample.get());
     r.held.emplace(*loan, std::move(sample));
@@ -398,6 +458,10 @@ rmw_ret_t take(
     }
   }
   r.pending.pop_front();
+  if (row) {
+    row->take_enter = entry;
+    row->taken = HandoffTrace::now();
+  }
   return RMW_RET_OK;
 }
 }  // namespace
@@ -470,9 +534,11 @@ extern "C" rmw_ret_t rmw_wait(
   if (guards && guards->guard_condition_count)
     guard_data.assign(
       guards->guard_conditions, guards->guard_conditions + guards->guard_condition_count);
+  bool tracing = false;
   bool queued = false;
   for (auto & [idx, r] : native) {
     guard_data.push_back(r->guard->data);
+    tracing |= bool(r->trace);
     queued |= r->ready();
   }
   rmw_guard_conditions_t combined{guard_data.size(), guard_data.data()};
@@ -481,14 +547,17 @@ extern "C" rmw_ret_t rmw_wait(
   // on readiness even though the delegated wait clears empty DDS readers.
   std::vector<void *> originals;
   for (auto & [idx, r] : native) originals.push_back(subs->subscribers[idx]);
+  auto start = tracing ? HandoffTrace::now() : 0;
   auto ret =
     CYCLONE(rmw_wait)(subs, &combined, services, clients, events, ws, queued ? &zero : timeout);
+  auto returned = tracing ? HandoffTrace::now() : 0;
   if (ret != RMW_RET_OK && ret != RMW_RET_TIMEOUT) return ret;
   if (guards && guards->guard_condition_count)
     std::copy_n(guard_data.begin(), guards->guard_condition_count, guards->guard_conditions);
   for (size_t i = 0; i < native.size(); ++i) {
     auto & [idx, r] = native[i];
-    auto ready = r->ready();
+    auto ready = r->ready(
+      r->trace ? start : 0, returned, !queued && (!timeout || timeout->sec || timeout->nsec));
     subs->subscribers[idx] = ready ? originals[i] : nullptr;
     if (ready) ret = RMW_RET_OK;
   }

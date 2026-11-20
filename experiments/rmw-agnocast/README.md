@@ -373,3 +373,64 @@ cannot assign the excess to a particular stage. The Universe crop has a
 different representation and two hops; its measured codec cost remains a
 separate optimization target.
 [Frame and resource records](path-results/).
+
+## Receiver handoff timing
+
+Six rounds ran all six orders of native Agnocast, ordinary rmw_agnocast and
+instrumented rmw_agnocast with the matched Path fixture above. Each mode
+verified 360/360 retained, address-matched samples. Dropping the first ten
+frames from each round leaves 300 per mode. Resource columns use the same
+whole-run accounting as the matched Path study.
+
+| Mode | Median µs | p95 µs | CPU s | Peak RSS MiB |
+|---|---:|---:|---:|---:|
+| Native Agnocast | 45.58 | 79.92 | 0.125 | 25.8 |
+| rmw_agnocast, tracing off | 77.87 | 139.32 | 0.168 | 28.9 |
+| rmw_agnocast, tracing on | 91.70 | 146.61 | 0.166 | 28.9 |
+
+The untraced RMW measured 1.71× native median and 1.74×
+native p95. Traced minus untraced pooled latency was +13.84 µs median
+and +7.29 µs p95. These differences include between-run variation.
+
+| Traced interval | Median µs | p95 µs |
+|---|---:|---:|
+| Publish to native callback entry | 46.05 | 82.52 |
+| Native callback entry to guard trigger start | 0.25 | 0.99 |
+| Guard trigger start to delegated wait return | 26.59 | 44.11 |
+| Delegated wait return to subscription marked ready | 0.44 | 1.00 |
+| Ready to loan take entry | 10.68 | 24.11 |
+| Loan take body | 0.63 | 1.51 |
+| Loan taken to application callback entry | 3.07 | 6.65 |
+
+The guard trigger call itself took 10.00 µs median, overlapping the
+signal-to-wait-return interval across the two threads. For 300/300
+post-warmup frames the delegated wait was already blocking when the guard
+trigger started and returned afterwards. Native callback entry to application
+callback entry took 43.90 µs median, calculated per frame. Each row's
+percentiles are calculated independently.
+
+The opt-in reader stores timestamps in reserved memory under its existing
+queue mutex and writes its trace only at teardown. Its loan entry ID and
+object address identify the sample, including when the allocator reuses an
+address. The harness rejects missing or duplicate entries, mismatched loan
+addresses and chronologically inconsistent traces. The ready timestamp is
+inside the final native-readiness check in rmw_wait. Take entry is after
+the RMW registry lookup and before acquiring the queue mutex. Ready-to-take
+includes the wait epilogue, rcl/rclcpp dispatch and that lookup. The
+signal-to-wait-return interval includes guard work and thread scheduling;
+the measurements cannot separate their individual costs.
+
+With LYRICAL_ROOT and overlays set as above, build once and run serially:
+
+```bash
+experiments/buffer/run-lyrical.sh bash experiments/rmw-agnocast/build-loadable.sh
+BUFFER_RUNTIME_ONLY=1 experiments/buffer/run-lyrical.sh timeout 240s bash \
+  experiments/rmw-agnocast/bench-path.sh build/rmw-agnocast/fresh-handoff --handoff
+python3 experiments/rmw-agnocast/summarize-handoff.py build/rmw-agnocast/fresh-handoff
+```
+
+The first optimization to test is a wait path in which the ROS executor
+consumes native readiness directly. Preserve the existing mixed Cyclone/native
+wait test, queue-depth and retained-loan tests when evaluating it. These Path
+diagnostics do not quantify PointCloud2 codec cost.
+[Per-frame timings and resource samples](handoff-results/).

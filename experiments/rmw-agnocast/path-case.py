@@ -10,7 +10,12 @@ import tempfile
 probe, hook, mode, prefix = sys.argv[1:]
 env = dict(os.environ, LD_PRELOAD=hook)
 with tempfile.TemporaryDirectory() as directory:
-    reader = subprocess.Popen([probe, mode, "reader"], cwd=directory, env=env)
+    reader_env = env.copy()
+    reader_env.pop("AGNOCAST_RMW_HANDOFF_FILE", None)
+    if mode == "traced":
+        reader_env["AGNOCAST_RMW_HANDOFF_FILE"] = str(Path(directory) / "handoff")
+        mode = "rmw"
+    reader = subprocess.Popen([probe, mode, "reader"], cwd=directory, env=reader_env)
     try:
         subprocess.run([probe, mode, "writer"], cwd=directory, env=env, check=True, timeout=30)
         if reader.wait(timeout=5):
@@ -33,6 +38,22 @@ with tempfile.TemporaryDirectory() as directory:
             if len(a) != 4 or len(b) != 4 or a[1:] != b[1:] or not all(a[1:]) or b[0] <= a[0]:
                 raise ValueError(f"bad loan addresses or timestamps at frame {seq}")
             out.writerow((seq, b[0] - a[0]))
+
+    if "AGNOCAST_RMW_HANDOFF_FILE" in reader_env:
+        rows = records("handoff")
+        if len(rows) != len(tx) or len({row[0] for row in rows}) != len(rows):
+            raise ValueError("missing or duplicate native entries")
+        with open(prefix + "-handoff.csv", "x") as f:
+            out = csv.writer(f, lineterminator="\n")
+            out.writerow(("frame", "entry_id", "publish_ns", "native_ns", "signal_ns",
+                          "signalled_ns", "wait_start_ns", "dds_return_ns", "ready_ns",
+                          "take_enter_ns", "taken_ns", "callback_ns", "blocking"))
+            for seq, (a, b, row) in enumerate(zip(tx, rx, rows)):
+                entry, addr, native, signal, signalled, start, returned, ready, take, taken, blocking = row
+                chain = [a[0], native, signal, signalled, ready, take, taken, b[0]]
+                if addr != a[1] or chain != sorted(chain) or not 0 < start <= returned <= ready:
+                    raise ValueError(f"inconsistent handoff at frame {seq}")
+                out.writerow((seq, entry, *chain[:4], start, returned, *chain[4:], blocking))
 
 usage = resource.getrusage(resource.RUSAGE_CHILDREN)
 with open(prefix + "-resources.csv", "x") as f:

@@ -790,3 +790,18 @@ with the Buffer and codec costs removed. Minimum sampled host MemAvailable
 over the build and both series was 15,348 MiB. Next isolate receiver wakeup
 and dispatch before attributing the excess to rmw_wait.
 [Exact setup, commands, both series and limitations](../rmw-agnocast/README.md#matched-path-object-loans)
+
+### Attribute the Path receiver handoff
+
+Instrumented only the selected reader and reused the matched 10 Hz Path
+fixture on the restored laptop. All 1,080 payloads passed and all 360 traced
+entries matched the verified loan addresses. In 300 post-warmup traced
+samples, guard-trigger start to delegated wait return measured
+26.59 µs median, ready to loan take
+entry 10.68 µs and the take body
+0.63 µs. The untraced control still
+missed both 1.20× targets. No transport semantics were intentionally changed.
+[Controls, exact commands, stage boundaries and raw data](../rmw-agnocast/README.md#receiver-handoff-timing)
+The tracing-off mixed native/Cyclone pressure and restart case and both Path
+loan/copy regression cases passed after instrumentation. Minimum sampled host
+MemAvailable was 14,614 MiB over the serial build, matrix and regressions.
