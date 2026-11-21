@@ -273,6 +273,13 @@ the package-local module.
 Package-local dependency versions remain `0.0.0`; the root selects registry
 releases for external dependencies and source overrides for local ones.
 
+For an external registry package that resolves to 0.0.0 without BUILD rules,
+inspect registry metadata and published overlays before introducing a provider.
+Pin a usable published release at root while keeping component requirements at
+0.0.0; validate that dependency's original suites and its affected consumers.
+The source-only placeholder is not evidence that every registry release lacks
+support.
+
 Removing a local override requires an explicitly requested source-selection
 comparison and a compatible registry version. It is not part of the normal
 developer loop. Add missing Bazel definitions when adopting a required local

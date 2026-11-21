@@ -13491,3 +13491,36 @@ native suite takes 38.7 seconds; standalone profiles take 0.8–3.1 seconds each
 Formatting/flake8/whitespace checks pass. No Fast DDS, kernel matrix, full
 simulator launch or GUI driving test is run. Continue the selected validator
 plugins and controller closure before composing the full simulator.
+
+## 2026-11-22: Phase 7.3.2 — Published angles dependency
+
+Purpose: supply the header/Python angle algorithms required by the selected
+validator and its original test helper. No angles implementation is present in
+src/. Initial consumer analysis resolves its version-0 dependency to the RCR
+0.0.0 placeholder and fails because the archive has no root BUILD file.
+Inspect the actual registry metadata and overlays before adding a dependency
+provider: published 1.16.1-3.rcr.2 supplies the native angles target, angles_py,
+index/install layout and both original test executables.
+
+Pin that published release in root's registry section after its build-rule
+prerequisites; component MODULE declarations remain version 0.0.0. The root
+owns concrete external release selection. Its release/lyrical/angles/1.16.1-3
+archive is integrity-pinned by registry source.json; the source remains angles
+1.16.1. No local implementation substitution, dependency patch, host install or
+extra facade module is needed. This repeats the earlier TF/cv_bridge lesson:
+0.0.0 can mean a source-only registry placeholder, not the supported overlay.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_output=errors @angles//test:all
+git diff --check
+```
+
+Both original targets pass in 7.3 seconds: nine C++ GTest cases and seven Python
+pytest cases, zero failures/errors/skips. The Python wrapper's outer XML counts
+one invocation; its captured pytest result explicitly collects/passes seven.
+The native/header and Python surfaces remain distinct providers. No middleware
+behavior is involved; Cyclone DDS/Agnocast-off configuration is retained and
+Fast DDS/pre-commit are not run. Continue the full validator gate with this pin;
+this dependency result does not claim the consumer integration is complete.

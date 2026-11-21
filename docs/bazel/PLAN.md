@@ -51,6 +51,7 @@ only when your current target demonstrates the need.
 
 - [ ] Select local dependency snapshots and inventory missing Bazel support.
   [Root declaration layout](DEVELOPING.md#dependency-conventions);
+  [published external providers](JOURNAL.md#2026-11-22-phase-732--published-angles-dependency);
   [evidence: local interface adoption](JOURNAL.md#2026-11-17-local-interface-adoption--autoware_adapi_v1_msgs).
 - [ ] Establish source-preservation and added-test locations.
   [Evidence: tests outside component packages](JOURNAL.md#2026-11-17-keep-added-integration-tests-outside-component-packages).
