@@ -1,0 +1,42 @@
+load("@rules_python//python:defs.bzl", "py_test")
+load("@rules_cc//cc:defs.bzl", "cc_test")
+load("//bazel/tests/ros_interfaces:defs.bzl", "interface_serialization_test")
+
+[
+    py_test(
+        name = name + "_runtime_test",
+        srcs = ["test_runtime.py"],
+        main = "test_runtime.py",
+        args = [package, executable, config],
+        data = ["@" + package + "//:ament_index", "@autoware_test_utils//:ament_index"] + (
+            ["@autoware_raw_vehicle_cmd_converter//:ament_index"] if package == "autoware_external_cmd_converter" else []
+        ),
+        env = {"ENABLE_AGNOCAST": "0", "LD_LIBRARY_PATH": "lib", "ROS_DOMAIN_ID": "96"},
+        precompile = "disabled",
+        tags = ["no-remote", "no-sandbox"],
+        deps = ["@ament_index_python", "@rcl_interfaces//:py", "@rclpy"] + (
+            ["@autoware_control_msgs//:py", "@autoware_system_msgs//:py", "@autoware_vehicle_msgs//:py"]
+            if package == "autoware_shift_decider" else []
+        ),
+    )
+    for name, package, executable, config in [
+        ("raw", "autoware_raw_vehicle_cmd_converter", "autoware_raw_vehicle_cmd_converter_node", "raw_vehicle_cmd_converter.param.yaml"),
+        ("gate", "autoware_vehicle_cmd_gate", "vehicle_cmd_gate_exe", "vehicle_cmd_gate.param.yaml"),
+        ("mode", "autoware_operation_mode_transition_manager", "autoware_operation_mode_transition_manager_exe", "operation_mode_transition_manager.param.yaml"),
+        ("transition_flag", "autoware_operation_mode_transition_manager", "autonomous_mode_transition_flag_node", "operation_mode_transition_manager.param.yaml"),
+        ("selector", "autoware_external_cmd_selector", "autoware_external_cmd_selector", "external_cmd_selector.param.yaml"),
+        ("shift", "autoware_shift_decider", "autoware_shift_decider", "shift_decider.param.yaml"),
+        ("external", "autoware_external_cmd_converter", "external_cmd_converter_node", "test_external_cmd_converter.param.yaml"),
+    ]
+]
+
+cc_test(
+    name = "steering_limit_test",
+    srcs = ["steering_limit_test.cpp"],
+    dynamic_deps = ["@autoware_vehicle_cmd_gate//:runtime_dynamic_deps"],
+    env = {"LD_LIBRARY_PATH": "lib"},
+    deps = ["@autoware_vehicle_cmd_gate", "@googletest//:gtest_main"],
+)
+
+interface_serialization_test(package = "autoware_vehicle_cmd_gate", name = "gate_serialization_test")
+interface_serialization_test(package = "autoware_operation_mode_transition_manager", name = "mode_serialization_test")

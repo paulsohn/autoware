@@ -1415,3 +1415,9 @@ local_path_override(
     module_name = "autoware_shift_decider",
     path = "src/universe/autoware_universe/control/autoware_shift_decider",
 )
+
+bazel_dep(name = "autoware_external_cmd_converter", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_external_cmd_converter",
+    path = "src/universe/autoware_universe/vehicle/autoware_external_cmd_converter",
+)

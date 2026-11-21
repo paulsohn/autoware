@@ -14641,3 +14641,52 @@ git diff --check
 These component checks do not establish full simulator engagement or driving.
 No Fast DDS or full simulator launch is run. Product-level interface/typed-bridge
 compilation remains the final accumulated-interface gate before 7.3.2 closes.
+
+## 2026-11-22: Phase 7.3.2 — External command conversion
+
+Purpose: integrate the selected local command/control dependency at its source
+repository boundary. Inspect package.xml, original CMake source/test registration,
+headers and indexed configs before adding MODULE/BUILD. Prefer existing local
+core/Universe inputs; expose real native/shared providers and select the local
+0.0.0 override after prerequisites. New adapters belong under bazel/tests, not
+the original package. Existing implementation/test files remain unchanged except
+for the separately documented compatibility fixes.
+
+Compile the original implementation against the local raw converter's map
+library rather than its node DSO. Preserve the original wrapper executable and
+index its config/launch. Compile the complete original four-case suite under
+tests/ (not test/), with TestUtils and raw-map resource indexes in test data.
+The heartbeat argument fix is a separate source commit above.
+
+The installed executable uses the original test config with indexed raw default
+CSV paths as CLI overrides. Startup, parameter access, own-DSO mapping and clean
+shutdown pass. Root command adapters also publish the shared steering regression
+and both mixed-package wire checks. The serialization macro gains an optional
+name so multiple checks can coexist in one root package; its default std_srvs
+consumer still passes all nine wire types.
+
+The complete group gate below passes all sixteen targets: 36 active original
+native cases, eight installed executable/plotting cases and one steering
+regression (45 native/runtime cases), plus eleven generated wire types in three
+serialization targets. Final invocation: 8.0 seconds, reusing unchanged native
+results; external converter 9.2 seconds and gate 4.2 seconds in their original
+runs. No failures, introduced skips or disabled cases. CPU/Cyclone DDS,
+ENABLE_AGNOCAST=0, LLVM/libc++ 21.1.8, Bazel 9.3.2 and Python 3.14.4 are selected.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast \
+  --local_test_jobs=1 --test_output=errors \
+  @autoware_component_interface_specs_universe//... @tier4_api_utils//... \
+  @autoware_raw_vehicle_cmd_converter//... @autoware_vehicle_cmd_gate//... \
+  @autoware_operation_mode_transition_manager//... \
+  @autoware_external_cmd_selector//... @autoware_shift_decider//... \
+  @autoware_external_cmd_converter//... //bazel/tests/command_nodes:all \
+  //bazel/tests/ros_interfaces:generated_serialization_test
+python3 -m flake8 --max-line-length=150 bazel/tests/command_nodes/test_runtime.py
+git diff --check
+```
+
+These component checks do not establish full simulator engagement or driving.
+No Fast DDS or full simulator launch is run. Product-level interface/typed-bridge
+compilation remains the final accumulated-interface gate before 7.3.2 closes.

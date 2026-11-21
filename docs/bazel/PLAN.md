@@ -1877,6 +1877,12 @@ Phase 7.3 task boundaries (selected 2026-11-21):
   verifies control commands. Expected headers align with merged AWF #13622;
   unused experimental optional headers are removed separately from build rules.
   [Follower group](JOURNAL.md#2026-11-22-phase-732--trajectory-follower-node).
+  Command conversion, gating, operation-mode transition and shift selection are
+  complete: the complete original suites and installed component/plotting/gear
+  checks pass 45 native/runtime cases plus eleven wire types in sixteen targets.
+  Mixed status providers keep one component-owned index. The two source fixture/
+  math portability fixes are separate commits; full simulator behavior remains
+  deferred. [Command group](JOURNAL.md#2026-11-22-phase-732--external-command-conversion).
   Continue in dependency order through shared planner helpers, the
   preset-selected behavior/motion plugins and controller libraries, then
   simulated perception and the selected system/API closure. The selected local
