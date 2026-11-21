@@ -15169,3 +15169,55 @@ tracker benchmarks stay disabled; no introduced skips or failures. The final
 evaluator suite. CPU/Cyclone DDS, ENABLE_AGNOCAST=0, LLVM/libc++ 21.1.8, Boost 1.90,
 Python 3.14.4 and Bazel 9.3.2 are selected. No Fast DDS, full simulator launch,
 older-ROS/colcon execution or real-time performance acceptance is claimed.
+
+## 2026-11-22: Phase 7.3.2 — Local pointcloud and laserscan conversion
+
+Purpose: adopt this selected local perception dependency. Inspect source-owned
+package.xml/CMake, production/public headers, complete original test registration,
+fixtures and executable/configuration contracts. Prerequisites are the pinned
+RCR/LLVM providers and existing local core/Universe utilities and interfaces;
+source provenance is repositories/autoware.repos (Universe 0.53.2, with separate
+immutable external-repository refs). Add package-owned MODULE/BUILD, select its
+adjacent root 0.0.0/local override after prerequisites and keep added integration
+checks under bazel/tests. Keep original source/test changes restricted to the
+separately documented demonstrated blockers.
+
+Expose the two original converter implementations as separate native libraries
+and uniquely named component DSOs; register both original standalone executable
+names and the dummy publisher under lib/pointcloud_to_laserscan. Index original
+launch files. CMake registers only lint, no original behavioral suite. Added
+checks remain root-owned and exercise real 2 m forward/reverse ROS conversions,
+the lazily activated input subscriptions and clean dummy-publisher shutdown.
+
+Use pinned native PCL common/pcl_conversions providers instead of treating the
+manifest's apt package libpcl-all-dev as a Bazel module. Declare ROS message,
+filter and TF native/shared providers. Laser geometry is absent locally and
+0.0.0 resolves to an empty placeholder. Inspect published metadata/overlay, then
+select the existing 2.11.3-6.rcr.2 RCR release at the root; do not create an SDK
+facade when a usable published provider exists. The separate source fix above
+addresses actual current-header/QoS compilation failures.
+
+Reproduce the complete affected gate with the following command after adding
+the source-owned declarations and root adapters described in the module entries:
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast \
+  --local_test_jobs=1 --test_output=errors \
+  @mussp//... @pointcloud_to_laserscan//... \
+  @autoware_multi_object_tracker//... @autoware_map_based_prediction//... \
+  @autoware_perception_online_evaluator//... \
+  @autoware_dummy_traffic_light_publisher//... \
+  //bazel/tests/perception_nodes:all //bazel/tests/perception_metrics:all
+python3 -m flake8 --max-line-length=150 bazel/tests/perception_nodes/test_runtime.py
+git diff --check
+```
+
+All fourteen targets pass: 173 active original cases (tracker 59, prediction 43,
+traffic helpers 33, evaluator 38), eight installed executable/behavior profiles
+and two added time-window regressions: 183 active cases. Four original disabled
+tracker benchmarks stay disabled; no introduced skips or failures. The final
+39.3-second invocation reuses unchanged results, including the full 134.5-second
+evaluator suite. CPU/Cyclone DDS, ENABLE_AGNOCAST=0, LLVM/libc++ 21.1.8, Boost 1.90,
+Python 3.14.4 and Bazel 9.3.2 are selected. No Fast DDS, full simulator launch,
+older-ROS/colcon execution or real-time performance acceptance is claimed.
