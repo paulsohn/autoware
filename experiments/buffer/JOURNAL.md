@@ -1992,3 +1992,59 @@ respective near delivery patterns. Peak runtime scope memory was 444.9 MiB,
 minimum runtime host MemAvailable was 9,188 MiB and the sequential colcon
 builds reported at least 8,144 MiB available. See the
 [comparison and interpretation](../rmw-agnocast/README.md#isolation-of-the-healthy-crop-when-its-sibling-stalls).
+
+## 2026-11-22 — Fresh observations during CPU-busy and sleeping crop callbacks
+
+Investigate whether the extra two near-region losses cost a consumer fresh
+observations. Reanalyse the preceding 40 launches and run a separate
+paired experiment on the same laptop, Lyrical overlays, kernel module and
+seven-process graph. Select the same six near callbacks for 150 ms of work
+each. With BENCH_BUSY_NEAR set, their benchmark-only hook repeatedly reads
+the steady clock until each wall-time deadline. Measure thread CPU time
+around each interval with CLOCK_THREAD_CPUTIME_ID. Ordinary control runs
+leave the stall hook inactive. The scheduler can use all normally available
+cores. This models a worker consuming one core, without forcing it to share
+a core with the far branch. The Universe source snapshot is unchanged.
+
+The verifier is the consumer. It accepts both complete and partial fused
+groups. There is no detector or tracker deadline configured for these
+synthetic region topics. Use 100 ms as an illustrative budget shared with
+the previous recovery check. At each arrival, infer callback time from
+source stamp plus logged age. A fresh delivery has age at most the budget.
+Measure the longest interval between consecutive fresh deliveries spanning
+any part of the stall, including the flanking deliveries. Separately, at
+each instant the latest available observation is the newest acquisition
+stamp received so far. Its age increases between arrivals. Integrate the
+time that age exceeds the budget over the measured stall and record the
+maximum just before an arrival or at stall end. Missing outputs never
+refresh this clock. Align each control window to its own first acquisition.
+
+Repeat the preceding journal entry's guarded colcon build command with
+`--base-paths src/universe_crop_benchmark` in both cached overlays. The
+existing source, sink, launch and synchronizer binaries need no changes.
+With LYRICAL_ROOT exported as above, run:
+
+```bash
+report=experiments/rmw-agnocast
+out=build/universe-isolation/busy
+BENCH_BUSY_NEAR=1 bash "$report/bench-native-graph.sh" "$out" isolation
+python3 "$report/summarize-isolation.py" "$out" --busy --freshness-ms 100
+python3 "$report/summarize-isolation.py" "$report/pipeline-isolation-results" --freshness-ms 100
+```
+
+The runner alternates condition order and uses a fresh bounded scope per
+launch. Each impaired run must contain six thread CPU readings. The
+analyzer retains the previous route, payload verification marker, cadence
+and shutdown checks. To evaluate a different downstream budget, supply it
+in milliseconds. Each gap measurement requires a qualifying delivery on
+both sides of the interval.
+
+Both stock and native crop builds passed sequentially with at least 9,229 MiB
+host memory available. All 24 runtime launches passed. Peak scope memory was
+487.6 MiB under the 512 MiB limit, and minimum host MemAvailable was
+8,410 MiB. Both impaired Agnocast stacks went about 915 ms between fresh
+near arrivals, and the far branch received every expected cloud. Replaying
+the archived sleep logs with the original analyzer arguments reproduced
+the original summary exactly. A synthetic out-of-order arrival check
+confirmed that an older arrival does not reset the latest observation age.
+[CPU and freshness results](../rmw-agnocast/README.md#freshness-of-the-near-region-under-overload).

@@ -1,0 +1,49 @@
+freshness_budget_ms=100
+native 1 missing_seq=7,13,14,15,16,17 matched_full=9 recovery_ms=3.06 control_ms=2.48/3.56 stall_ms=2.66/3.41
+native 2 missing_seq=7,13,14,15,16,17 matched_full=9 recovery_ms=2.65 control_ms=2.37/3.68 stall_ms=3.37/3.70
+native 3 missing_seq=7,13,14,15,16,17 matched_full=9 recovery_ms=2.74 control_ms=2.13/3.17 stall_ms=2.84/3.52
+native 4 missing_seq=7,13,14,15,16,17 matched_full=9 recovery_ms=2.75 control_ms=2.81/4.02 stall_ms=3.03/4.05
+native 5 missing_seq=7,13,14,15,16,17 matched_full=9 recovery_ms=3.13 control_ms=2.40/3.77 stall_ms=2.88/3.68
+native 6 missing_seq=7,13,14,15,16,17 matched_full=9 recovery_ms=3.12 control_ms=3.10/3.72 stall_ms=3.10/4.13
+native 7 missing_seq=7,13,14,15,16,17 matched_full=9 recovery_ms=3.48 control_ms=2.63/3.73 stall_ms=2.77/3.86
+native 8 missing_seq=7,13,14,15,16,17 matched_full=9 recovery_ms=3.32 control_ms=2.61/3.59 stall_ms=2.92/3.87
+native healthy fresh_gap_ms 89.58..90.15
+native healthy peak_age_ms 92.68..93.21
+native healthy over_budget_pct 0.00..0.00
+native impaired fresh_gap_ms 915.98..917.23
+native impaired peak_age_ms 655.96..656.67
+native impaired over_budget_pct 94.73..94.81
+native pairs=8 full_n=72 far_healthy_ms=2.47/3.72 far_slow_ms=2.88/3.87 near_missing=48/256 partial_healthy_ms=41.80/42.86 partial_slow_ms=41.95/42.79 max_far_slow_ms=43.09 oldest_near_ms=606.7..607.6 recovery_ms=2.6..3.5 cpu_s=2.33..2.67 peak_MiB=342.2 min_host_MiB=9332
+stock 1 missing_seq=7,9,10,11,13,15,16,17 matched_full=9 recovery_ms=3.16 control_ms=2.59/3.29 stall_ms=2.80/3.50
+stock 2 missing_seq=7,9,10,11,13,15,16,17 matched_full=9 recovery_ms=3.39 control_ms=2.36/3.11 stall_ms=2.53/3.05
+stock 3 missing_seq=7,9,10,11,13,15,16,17 matched_full=9 recovery_ms=3.87 control_ms=2.56/3.30 stall_ms=2.69/3.05
+stock 4 missing_seq=7,9,10,11,13,15,16,17 matched_full=9 recovery_ms=7.69 control_ms=2.44/3.74 stall_ms=6.77/9.36
+stock 5 missing_seq=7,9,10,11,13,15,16,17 matched_full=9 recovery_ms=3.28 control_ms=2.47/3.96 stall_ms=2.96/4.07
+stock 6 missing_seq=7,9,10,11,13,15,16,17 matched_full=9 recovery_ms=3.67 control_ms=2.58/3.32 stall_ms=2.64/3.77
+stock 7 missing_seq=7,9,10,11,13,15,16,17 matched_full=9 recovery_ms=1.68 control_ms=2.78/3.44 stall_ms=2.53/3.21
+stock 8 missing_seq=7,9,10,11,13,15,16,17 matched_full=9 recovery_ms=3.21 control_ms=2.35/3.07 stall_ms=2.50/3.26
+stock healthy fresh_gap_ms 89.58..90.92
+stock healthy peak_age_ms 92.30..93.45
+stock healthy over_budget_pct 0.00..0.00
+stock impaired fresh_gap_ms 914.90..932.86
+stock impaired peak_age_ms 555.52..569.93
+stock impaired over_budget_pct 94.74..95.33
+stock pairs=8 full_n=72 far_healthy_ms=2.52/3.32 far_slow_ms=2.67/7.10 near_missing=64/256 partial_healthy_ms=41.94/42.64 partial_slow_ms=42.02/46.71 max_far_slow_ms=49.32 oldest_near_ms=405.9..423.4 recovery_ms=1.7..7.7 cpu_s=2.46..3.13 peak_MiB=318.7 min_host_MiB=9188
+cyclone 1 missing_seq=7,9,10,11,13,15,16,17 matched_full=9 recovery_ms=2.04 control_ms=3.80/3.99 stall_ms=3.77/4.30
+cyclone 2 missing_seq=7,9,10,11,13,15,16,17 matched_full=9 recovery_ms=1.91 control_ms=3.75/5.32 stall_ms=3.61/3.96
+cyclone healthy fresh_gap_ms 89.50..89.59
+cyclone healthy peak_age_ms 92.92..93.23
+cyclone healthy over_budget_pct 0.00..0.00
+cyclone impaired fresh_gap_ms 915.09..915.44
+cyclone impaired peak_age_ms 555.82..556.40
+cyclone impaired over_budget_pct 94.79..94.82
+cyclone pairs=2 full_n=18 far_healthy_ms=3.79/5.32 far_slow_ms=3.73/4.30 near_missing=16/64 partial_healthy_ms=42.77/43.12 partial_slow_ms=42.74/43.12 max_far_slow_ms=43.64 oldest_near_ms=406.5..407.1 recovery_ms=1.9..2.0 cpu_s=2.53..2.66 peak_MiB=239.4 min_host_MiB=10029
+zenoh 1 missing_seq=7,9,10,11,13,15,16,17 matched_full=9 recovery_ms=1.55 control_ms=3.21/3.44 stall_ms=2.95/4.00
+zenoh 2 missing_seq=7,9,10,11,13,15,16,17 matched_full=9 recovery_ms=3.34 control_ms=3.27/3.50 stall_ms=2.98/3.54
+zenoh healthy fresh_gap_ms 89.55..89.84
+zenoh healthy peak_age_ms 92.85..93.21
+zenoh healthy over_budget_pct 0.00..0.00
+zenoh impaired fresh_gap_ms 914.43..916.57
+zenoh impaired peak_age_ms 555.28..556.05
+zenoh impaired over_budget_pct 94.72..94.76
+zenoh pairs=2 full_n=18 far_healthy_ms=3.21/3.50 far_slow_ms=2.95/4.00 near_missing=16/64 partial_healthy_ms=42.51/43.08 partial_slow_ms=42.35/42.86 max_far_slow_ms=43.81 oldest_near_ms=405.8..406.8 recovery_ms=1.6..3.3 cpu_s=4.16..4.33 peak_MiB=444.9 min_host_MiB=9497

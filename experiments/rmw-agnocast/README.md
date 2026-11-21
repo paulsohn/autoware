@@ -2680,3 +2680,46 @@ near worker CPU-busy for the same duty cycle while observing the far branch.
 
 [Per-run sequence losses, timings and resources](pipeline-isolation-results/summary.txt) ·
 [Reproduction](../buffer/JOURNAL.md#2026-11-22--overloading-one-downstream-region-crop).
+
+### Freshness of the near region under overload
+
+Six delayed callbacks let us distinguish a lost message from a period
+without a usable observation. In the saved sleeping-worker trials,
+native and rmw_agnocast did not simply differ by two omissions. Native
+alone delivered sequence numbers 9, 10 and 11, aged 506–608 ms at receipt.
+The RMW alone delivered sequence 14, aged 406–423 ms. The native total
+was two higher, but none of these four distinct observations met a 100 ms
+arrival budget. These numbers identify whole filtered point clouds.
+
+Using the fixture's 100 ms threshold, the sleeping native worker went
+916–917 ms between fresh deliveries, and the RMW went 915–933 ms. The
+latest near observation available at the sink exceeded this budget for
+roughly 95% of the stall with both stacks. Matched controls stayed within
+budget throughout. With a looser illustrative 500 ms budget, the sleeping
+native worker's longest gap between qualifying deliveries was 302–303 ms
+versus 161–168 ms for the RMW. A downstream consumer that can use delayed
+history may value the delivered samples differently. This fixture has no
+object detections, tracks or configured perception deadline.
+
+[Sleeping-worker freshness by transport](pipeline-busy-results/sleep-freshness.txt).
+
+The CPU-busy experiment repeated the six callbacks on an unrestricted
+worker thread. Its six measured intervals consumed 897.6–899.9 ms of
+thread CPU in total per impaired launch. All 24 launches delivered every
+fused cloud, metadata record and far output. With the same 100 ms budget:
+
+| Middleware | Pairs | Near missing per impaired run | Longest fresh near gap, ms | Peak latest near age, ms | Far full-cloud p95, control → busy, ms |
+|---|---:|---:|---:|---:|---:|
+| rmw_agnocast | 4 | 8 | 914–915 | 555–556 | 3.21 → 3.42 |
+| Native Agnocast | 4 | 6 | 915–916 | 655–656 | 5.76 → 3.96 |
+| Cyclone DDS | 2 | 8 | 915 | 556 | 4.24 → 4.14 |
+| Zenoh | 2 | 8 | 914–916 | 555–557 | 3.75 → 15.99 |
+
+Every busy case exceeded the near freshness budget for about 95% of the
+stall. Every healthy control met it throughout the corresponding window.
+Zenoh's busy far p95 uses just 18 complete acquisitions across two launches.
+These results support moving to an actual perception consumer to measure
+whether a missing acquisition changes a detection or track.
+
+[CPU-busy measurements and per-run losses](pipeline-busy-results/summary.txt) ·
+[Reproduction](../buffer/JOURNAL.md#2026-11-22--fresh-observations-during-cpu-busy-and-sleeping-crop-callbacks).
