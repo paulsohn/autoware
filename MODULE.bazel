@@ -1385,3 +1385,9 @@ local_path_override(
     module_name = "tier4_api_utils",
     path = "src/universe/autoware_universe/common/tier4_api_utils",
 )
+
+bazel_dep(name = "autoware_raw_vehicle_cmd_converter", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_raw_vehicle_cmd_converter",
+    path = "src/universe/autoware_universe/vehicle/autoware_raw_vehicle_cmd_converter",
+)
