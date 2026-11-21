@@ -1103,6 +1103,7 @@ suite fails with `tf2/LinearMath/Quaternion.h file not found`. The selected tf2
 exports Quaternion.hpp. Change the include spelling and preserve all 21
 original arrival assertions; the complete suite passes after this correction.
 This is test-source compatibility, without a planner behavior change.
+Local source fix: f8acc3b6 (include spelling/grouping only).
 
 - [ ] Associated with a matching AWF PR. Checked 2026-11-21: upstream
   [main test source](https://github.com/autowarefoundation/autoware_universe/blob/main/planning/autoware_mission_planner_universe/test/test_arrival_checker.cpp)

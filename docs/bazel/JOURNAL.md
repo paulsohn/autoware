@@ -10108,3 +10108,67 @@ the existing native ROS convention. All declared generated targets and the expan
 also passes rejection, preference-update and reset behavior in the manual
 handler gate below. Original sources are unchanged; buildifier, Python/flake8
 and whitespace checks pass. CPU/Cyclone DDS only, no Fast DDS check.
+
+## 2026-11-21: Phase 7.3.2 — Universe mission planner
+
+Purpose: integrate the default Universe mission-planning implementation required
+by the local planning-simulator launch. Inspect its package.xml, CMake, all
+sources, original config/XML launches and both complete original GTest binaries:
+15 planner/utility and 21 arrival cases. The acceptance gate also requires the
+three original node executables, a valid six-segment route, public selector
+forwarding, UUID preservation, echoed goal, invalid-preference rejection,
+arrival, clearing and normal shutdown through the original mission/visualizer
+XML. It does not establish vehicle motion or full lane-driving acceptance.
+
+Integration: declare the local module and native library/shared component with
+explicit local utility/map/planning dependencies. Expose service_utils as a
+small public library so the manual handler consumes that API without linking
+node factories. Register mission_planner and route_selector with their original
+MultiThreadedExecutor ROS fallback, and goal_pose_visualizer with its original
+SingleThreadedExecutor; use the existing Agnocast wrapper's generated executables
+and resource records. Use a package-specific shared-library identity and index
+original config/launch resources and executable names. Component definitions
+have no root labels. Preserve both original test binaries, linking gtest for
+the arrival executable's own main and gtest_main for planner/utilities.
+
+The root-only fixture composes the already-integrated core map launch, the
+original test-utils map and vehicle YAML, and the original Universe mission and
+goal-visualizer launches. Its MGRS grid must be 54SVE, matching the map's own
+metadata and the original tests' coordinates. Publish stationary map-frame
+odometry and STOP operation mode; drive real SetWaypointRoute/SetPreferredPrimitive/
+ClearRoute services. Keep the selector's internal planner route topic distinct
+from its public /planning/route output: remapping both to the same topic creates
+a forwarding loop. Assert the same UUID on public and internal deliveries.
+The external inputs are fixtures; they are not a substituted planning stack.
+
+Two consequential failures guide the build pattern. The original arrival test's
+removed tf2 .h include needs the separate compatibility fix above. The node then
+links but exits during startup because BasicLoggerLevelConfigure dynamically
+loads logging_demo service type support. Declare logging_demo//:cc_shared in the
+flattened runtime dependencies and its module dependency; it must be reachable
+from the node, not supplied incidentally by another test's index. Declare the
+wrapper's ament_package in fixture data for its XML include. These are build/
+runtime closure declarations, with no planner implementation change.
+
+Reproduce the native and original-launch gates sequentially:
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --nocache_test_results --test_output=errors \
+  @autoware_mission_planner_universe//...
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --nocache_test_results --test_output=errors \
+  //bazel/tests/autoware_mission_planner_universe:launch_test
+```
+
+The actual native invocation grouped both node modules, both interface peers and
+both root launch targets. All 36 original cases pass (0.3/0.2 seconds). The final
+fixture-and-metadata invocation passes both mission launch cases in 2.8 seconds, checking
+route IDs 9102/9540/9546/9178/52/124, public/internal UUID, goal frame/position,
+SET/ARRIVED/UNSET states, explicit malformed-preference rejection and clean exit
+of all seven processes. Unchanged native results are reused after fixture-only
+corrections. Targeted buildifier, Python/flake8, clang-format and whitespace
+checks pass. The module gate is complete for CPU/Cyclone DDS, ENABLE_AGNOCAST=0;
+no Fast DDS, enabled-Agnocast runtime, GPU, RViz or full simulator gate is claimed.

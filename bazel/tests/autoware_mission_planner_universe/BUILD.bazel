@@ -1,0 +1,54 @@
+load("@launch_testing//:defs.bzl", "launch_test")
+load("@pip_ros//:requirements.bzl", "requirement")
+load("@rules_python//python:defs.bzl", "py_library")
+
+package(default_visibility = ["//visibility:public"])
+
+py_library(
+    name = "fixture",
+    srcs = ["fixture.py"],
+    data = [
+        "projector.yaml",
+        "single.pcd",
+        "@autoware_agnocast_wrapper//:ament_package",
+        "@autoware_core_map//:ament_index",
+        "@autoware_mission_planner_universe//:ament_index",
+        "@autoware_test_utils//:ament_index",
+    ],
+    deps = [
+        "@ament_index_python",
+        "@autoware_adapi_v1_msgs//:py",
+        "@autoware_planning_msgs//:py",
+        "@geometry_msgs//:py",
+        "@launch",
+        "@launch_ros",
+        "@nav_msgs//:py",
+        "@rclpy",
+    ],
+)
+
+launch_test(
+    name = "launch_test",
+    src = "test_launch.py",
+    env = {
+        "ENABLE_AGNOCAST": "0",
+        "ROS_DOMAIN_ID": "91",
+        "LD_LIBRARY_PATH": "lib",
+    },
+    precompile = "disabled",
+    tags = [
+        "no-remote",
+        "no-sandbox",
+    ],
+    deps = [
+        ":fixture",
+        "@autoware_planning_msgs//:py",
+        "@launch",
+        "@launch_ros",
+        "@launch_testing",
+        "@launch_xml",
+        "@launch_yaml",
+        "@rclpy",
+        requirement("pytest"),
+    ],
+)
