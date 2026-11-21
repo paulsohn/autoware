@@ -1,0 +1,64 @@
+load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
+load("@generate_parameter_library//:defs.bzl", "generate_parameter_library")
+
+package(default_visibility = ["//visibility:public"])
+
+generate_parameter_library(name = "intersection_collision_checker_node_parameters", yaml_file = "param/intersection_collision_checker_node_parameters.yaml")
+
+cc_library(
+    name = "autoware_planning_validator_intersection_collision_checker",
+    srcs = glob(["src/**/*.cpp"]),
+    hdrs = glob(["include/**/*.hpp"]),
+    includes = ["include", "src", "include/autoware_planning_validator_intersection_collision_checker"],
+    deps = [
+        ":intersection_collision_checker_node_parameters",
+        "@autoware_agnocast_wrapper//:autoware_agnocast_wrapper_library",
+        "@autoware_internal_debug_msgs//:cc",
+        "@autoware_motion_utils",
+        "@autoware_planning_validator",
+        "@autoware_route_handler",
+        "@autoware_signal_processing",
+        "@autoware_traffic_light_utils",
+        "@autoware_trajectory",
+        "@autoware_utils",
+        "@pluginlib//:pluginlib_library",
+        "@rclcpp//:rclcpp_library",
+        "@rosdistro//cc:boost.geometry",
+        "@rosdistro//cc:magic_enum",
+        "@tf2_eigen//:tf2_eigen_library",
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = [
+        "@autoware_agnocast_wrapper//:autoware_agnocast_wrapper",
+        "@autoware_internal_debug_msgs//:cc_shared",
+        "@autoware_motion_utils//:runtime_dynamic_deps",
+        "@autoware_planning_validator//:runtime_dynamic_deps",
+        "@autoware_route_handler//:runtime_dynamic_deps",
+        "@autoware_traffic_light_utils//:runtime_dynamic_deps",
+        "@autoware_trajectory//:runtime_dynamic_deps",
+        "@generate_parameter_library//:rclcpp_lifecycle",
+        "@generate_parameter_library//:rsl",
+        "@pluginlib//:pluginlib",
+        "@rclcpp//:rclcpp",
+        "@tf2_eigen//:tf2_eigen",
+    ],
+)
+
+cc_shared_library(
+    name = "intersection_collision_checker_plugin",
+    shared_lib_name = "libautoware_planning_validator_intersection_collision_checker.so",
+    dynamic_deps = [":runtime_dynamic_deps"],
+    deps = [":autoware_planning_validator_intersection_collision_checker"],
+)
+
+ament_index(
+    libraries = [":intersection_collision_checker_plugin"],
+    data = glob(["config/**"]),
+    plugin_categories = {"plugins.xml": "autoware_planning_validator"},
+    package_xml = "package.xml",
+)
