@@ -937,3 +937,9 @@ local_path_override(
     module_name = "tier4_planning_msgs",
     path = "src/universe/external/tier4_autoware_msgs/tier4_planning_msgs",
 )
+
+bazel_dep(name = "tier4_external_api_msgs", version = "0.0.0")
+local_path_override(
+    module_name = "tier4_external_api_msgs",
+    path = "src/universe/external/tier4_autoware_msgs/tier4_external_api_msgs",
+)

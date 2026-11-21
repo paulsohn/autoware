@@ -53,6 +53,7 @@ ros_interface_set(
             roots = ["@visualization_msgs//msg:MarkerArray"],
         ),
         ros_interface_package("@tier4_planning_msgs//:cc", "@tier4_planning_msgs//:cc_shared"),
+        ros_interface_package("@tier4_external_api_msgs//:cc", "@tier4_external_api_msgs//:cc_shared"),
         ros_interface_package("@tier4_perception_msgs//:cc", "@tier4_perception_msgs//:cc_shared"),
         ros_interface_package("@std_msgs//:cc", "@std_msgs//:cc_shared"),
         ros_interface_package("@std_srvs//:cc", "@std_srvs//:cc_shared"),

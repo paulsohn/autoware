@@ -10068,3 +10068,43 @@ launch gate below. All declared generated targets and the expanded plugin librar
 is changed. Targeted buildifier, Python/flake8 and whitespace checks pass. This
 accepts the declared interface surface; additional types require explicit BUILD
 registration when their consumers are integrated. No Fast DDS check is run.
+
+## 2026-11-21: Phase 7.3.2 — Tier IV preferred-lane service
+
+Purpose: supply the local SetPreferredLane service used by the default manual
+lane handler. Inspect tier4_external_api_msgs 0.0.0, its manifest/CMake, the
+service and its native consumer. There is no existing behavior suite. Register
+this service only, preserving its LEFT=0, RIGHT=1, AUTO=2 contract and its
+external autoware_common_msgs/ResponseStatus response; the package's similarly
+named legacy ResponseStatus is not that response type.
+
+Integration follows the reroute interface entry: a local module/root override,
+srv/BUILD.bazel with ros_service and the referenced common status target,
+package-root default_generators with autoware_common_msgs as its generator
+dependency, and one central collector provider pair. Retain all manifest-level
+interface dependencies in MODULE.bazel, including builtin_interfaces from its
+build/exec declarations. Lyrical generates request, response and service-event
+messages alongside the service.
+
+Build this provider and the selected plugin closure, then test sequentially:
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel build --config=runtime --config=no-agnocast \
+  @tier4_external_api_msgs//... \
+  //bazel/interfaces:all_interfaces //bazel/agnocast:plugins
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --nocache_test_results --test_output=errors \
+  //bazel/tests/tier4_external_api_msgs:serialization_test
+```
+
+The case passes for request, response and event wire round trips, retaining the
+three constants, direction, success/code/message and nested payloads. Without
+the test's LD_LIBRARY_PATH=lib, Cyclone reports missing common-message C
+introspection type support; generated Python imports alone do not establish
+that runtime search path. Set it in the native py_test environment, following
+the existing native ROS convention. All declared generated targets and the expanded plugin library build successfully. The real service
+also passes rejection, preference-update and reset behavior in the manual
+handler gate below. Original sources are unchanged; buildifier, Python/flake8
+and whitespace checks pass. CPU/Cyclone DDS only, no Fast DDS check.
