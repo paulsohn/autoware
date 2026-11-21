@@ -116,6 +116,10 @@ interface and its dependencies explicitly when a consumer needs it. Undeclared
 source files remain outside the build graph. An all-interface collection is
 the declared dependency closure of its selected product roots.
 
+Interface identities use package/kind/Name, where kind is msg, srv or action
+from the source extension. Nested source categories such as msg/object_recognition/
+do not add a ROS namespace; consumers use the generated package/msg headers.
+
 Maintain the top-level selection in `bazel/interfaces/BUILD.bazel`. Each
 `ros_interface_package(cc, shared, roots = ...)` entry pairs the package's
 explicit C++ and shared-provider targets once. Its default selection is the

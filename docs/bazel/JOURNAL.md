@@ -9985,3 +9985,47 @@ the .h spelling when checked on 2026-11-21; the Lyrical tracker and scoped PR
 searches identify no matching fix. Association/status are recorded in
 UPSTREAM_AWF.md. Local verification is CPU/Cyclone DDS with Agnocast disabled;
 Humble/Jazzy and colcon are not tested.
+
+## 2026-11-21: Phase 7.3.2 — Nested interface source namespaces
+
+Purpose: expand the product-level interface consumer for the current mission
+interfaces and compile its complete selected closure. The first plugin analysis
+fails on tier4_perception_msgs/object_recognition/DetectedObjectWithFeature,
+before compiling a plugin. That package's already-registered message source lives
+under msg/object_recognition/, but ROS generates tier4_perception_msgs::msg and
+headers under tier4_perception_msgs/msg/. Its traffic_light subdirectory has the
+same distinction.
+
+Cause/fix: the root collector inferred interface kind from the source's immediate
+parent directory. Infer msg/srv/action from its interface source extension instead;
+keep basename and provider-owned package identity. This also preserves existing
+flat and category/msg layouts. Do not move source files or add package-specific
+path exceptions. Add one root regression test against the actual collected nested
+Tier IV message descriptors, without checking source-directory completeness.
+The bridge implementation/templates and registered interface surface are unchanged.
+
+Reproduce with the final interface selection and then test sequentially:
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel build --config=runtime --config=no-agnocast \
+  //bazel/interfaces:all_interfaces //bazel/agnocast:plugins
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --nocache_test_results --test_output=errors \
+  //bazel/interfaces:descriptor_test //bazel/agnocast:template_tests
+```
+
+The full plugin library links successfully with 252 collected identities and
+289 bridge instantiations (1161 seconds for this build). The descriptor and
+template gate passes. The merged package CcInfo makes an added provider capable of
+changing compiler inputs across the plugin library; this run recompiles all
+289 bridge units. Keep the full plugin build for interface-selection changes
+and reuse it for unchanged implementation-only integrations. This verifies
+canonical metadata/header/type instantiation,
+including the already-selected nested perception messages; no enabled bridge
+transport or full communication matrix is claimed. No kernel module or Fast DDS
+check is required for this metadata/template gate. Targeted buildifier,
+Python/flake8 and whitespace checks pass. Preserve source-layout independence in
+future all-interface consumers; package/kind/Name is a ROS identity rather than
+a relative source path.

@@ -16,7 +16,9 @@ RosInterfaceSetInfo = provider(
 
 def _interface_descriptor(info):
     src = info.src
-    kind = src.dirname.rsplit("/", 1)[-1]
+
+    # Source subdirectories do not change the generated ROS namespace.
+    kind = src.extension
     name = src.basename.removesuffix("." + src.extension)
     return "{}/{}/{}".format(info.package, kind, name)
 

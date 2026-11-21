@@ -58,6 +58,8 @@ only when your current target demonstrates the need.
   [Dependency layers and root selection](DEVELOPING.md#repository-dependency-layers);
   [evidence: reusable dependency relocation](JOURNAL.md#2026-11-18-reusable-dependency-layers-under-third_party).
   [Evidence: root-owned interface consumers](JOURNAL.md#2026-11-15-build-root-owned-typed-agnocast-plugins-from-the-interface-graph).
+  [Canonical interface identity](DEVELOPING.md#interface-declarations-and-bridge-plugins);
+  [evidence: nested source categories](JOURNAL.md#2026-11-21-phase-732--nested-interface-source-namespaces).
   [Native plugin registration](DEVELOPING.md#native-plugin-libraries);
   [evidence: stop-line plugin](JOURNAL.md#2026-11-17-phase-525--stop-line-plugin).
 - [ ] Preserve executable contracts and unique library identities in composed indexes.

@@ -1,3 +1,4 @@
+load("@rules_python//python:defs.bzl", "py_test")
 load(":interfaces.bzl", "ros_interface_package", "ros_interface_set")
 
 package(default_visibility = ["//visibility:public"])
@@ -55,4 +56,11 @@ ros_interface_set(
         ros_interface_package("@std_msgs//:cc", "@std_msgs//:cc_shared"),
         ros_interface_package("@std_srvs//:cc", "@std_srvs//:cc_shared"),
     ],
+)
+
+py_test(
+    name = "descriptor_test",
+    srcs = ["descriptor_test.py"],
+    args = ["$(rootpath :all_interfaces)"],
+    data = [":all_interfaces"],
 )
