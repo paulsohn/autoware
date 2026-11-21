@@ -1404,3 +1404,15 @@ Local source fix: `5eb05315`.
   [source-fix journal](JOURNAL.md#2026-11-22-phase-732--pid-controller-dependency-headers)
   and following module entries for exact commands. No older-compiler/colcon
   runtime verification is claimed.
+
+### Vehicle command filter uses an unavailable float math macro
+
+- [ ] Associate with a matching upstream change. Reviewed 2026-11-22: current
+  [filter source](https://github.com/autowarefoundation/autoware_universe/blob/main/control/autoware_vehicle_cmd_gate/src/vehicle_cmd_filter.cpp)
+  retains M_PI_2f. Related merged PR #10532 corrected clamp assignment, not this
+  libc++ portability issue; it is not a matching fix. No submission is claimed.
+- LLVM/libc++ 21.1.8 cannot compile the existing half-pi comparison and assignment.
+  Explicitly cast the existing M_PI_2 to float in both places. The six original
+  gate cases plus added positive/negative/in-range steering regression and the
+  complete command group pass, Cyclone DDS/Agnocast off. See the source-fix
+  journal for exact commands; no older-toolchain/colcon result is claimed.

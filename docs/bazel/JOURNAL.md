@@ -14237,3 +14237,44 @@ checks pass. No Fast DDS, enabled-kernel matrix, optional disabled case,
 performance acceptance or full simulator launch is run. Continue command gating,
 mode transition and the preset-enabled control-safety nodes before simulator
 composition. The accumulated product interface/bridge gate remains pending.
+
+## 2026-11-22: Phase 7.3.2 — Vehicle gate steering-limit constant portability
+
+Purpose: unblock the original local component and its complete existing suite.
+Inspect its manifest, CMake registration, affected callers and wrapper/provider
+API before changing source. Keep the compatibility fix separate from build rules.
+
+Building the existing vehicle command filter against libc++ 21 fails because
+M_PI_2f is not declared. Its comparison and clamp assignment both need a float
+half-pi value. Replace only those two uses with static_cast<float>(M_PI_2),
+preserving the original float threshold, saturation and public behavior. Do not
+introduce a global feature define or require a newer language math-constant API.
+The original six-case filter/node suite passes. The added root regression checks
+positive/negative saturation, two unchanged in-range angles and unchanged
+longitudinal velocity. All assertions and production formulas remain intact.
+
+The complete group gate below passes all sixteen targets: 36 active original
+native cases, eight installed executable/plotting cases and one steering
+regression (45 native/runtime cases), plus eleven generated wire types in three
+serialization targets. Final invocation: 8.0 seconds, reusing unchanged native
+results; external converter 9.2 seconds and gate 4.2 seconds in their original
+runs. No failures, introduced skips or disabled cases. CPU/Cyclone DDS,
+ENABLE_AGNOCAST=0, LLVM/libc++ 21.1.8, Bazel 9.3.2 and Python 3.14.4 are selected.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast \
+  --local_test_jobs=1 --test_output=errors \
+  @autoware_component_interface_specs_universe//... @tier4_api_utils//... \
+  @autoware_raw_vehicle_cmd_converter//... @autoware_vehicle_cmd_gate//... \
+  @autoware_operation_mode_transition_manager//... \
+  @autoware_external_cmd_selector//... @autoware_shift_decider//... \
+  @autoware_external_cmd_converter//... //bazel/tests/command_nodes:all \
+  //bazel/tests/ros_interfaces:generated_serialization_test
+python3 -m flake8 --max-line-length=150 bazel/tests/command_nodes/test_runtime.py
+git diff --check
+```
+
+These component checks do not establish full simulator engagement or driving.
+No Fast DDS or full simulator launch is run. Product-level interface/typed-bridge
+compilation remains the final accumulated-interface gate before 7.3.2 closes.
