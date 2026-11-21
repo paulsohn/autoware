@@ -1520,3 +1520,9 @@ local_path_override(
     module_name = "autoware_pipeline_latency_monitor",
     path = "src/universe/autoware_universe/system/autoware_pipeline_latency_monitor",
 )
+
+bazel_dep(name = "autoware_mrm_comfortable_stop_operator", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_mrm_comfortable_stop_operator",
+    path = "src/universe/autoware_universe/system/autoware_mrm_comfortable_stop_operator",
+)
