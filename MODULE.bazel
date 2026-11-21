@@ -1514,3 +1514,9 @@ local_path_override(
     module_name = "autoware_processing_time_checker",
     path = "src/universe/autoware_universe/system/autoware_processing_time_checker",
 )
+
+bazel_dep(name = "autoware_pipeline_latency_monitor", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_pipeline_latency_monitor",
+    path = "src/universe/autoware_universe/system/autoware_pipeline_latency_monitor",
+)

@@ -15618,3 +15618,20 @@ The complete gate passes all sixteen targets/92 active cases: 77 original graph
 cases and fifteen root executable/behavior profiles. No failures or introduced
 skips. CPU/Cyclone DDS, ENABLE_AGNOCAST=0, LLVM/libc++ 21.1.8 and Python 3.14.4.
 No Fast DDS, full simulator launch, older ROS/colcon or real-time acceptance.
+
+## 2026-11-22: Phase 7.3.2 — Pipeline latency monitoring
+
+Purpose: make autoware_pipeline_latency_monitor part of the selected CPU system implementation
+closure with declared build/runtime inputs. Inspect the original single CPP/header and four configured input steps. Register the wrapper executable and resource index with concrete debug messages, diagnostic_updater and the planning-validator message provider. Depend on the latter :cc/:cc_shared, not its whole planner node or root interface collector. Preserve the original offsets and generic deserialization paths.
+
+The installed node consumes a real 0.02-second control latency and publishes 350 ms: converted 20 ms plus the original 330 ms offsets, with absent earlier-step inputs handled by its existing algorithm.
+
+There are no original functional tests in this package (CMake only registers lint or no tests). Preserve that inventory and add the behavior check outside the source package.
+
+Verification: run the package's complete @autoware_pipeline_latency_monitor//... target pattern and //bazel/tests/system_nodes:latency_runtime_test using
+the exact clean-environment command and shared configuration recorded in the
+[system gate](#2026-11-22-phase-732--dummy-diagnostic-publication-and-system-gate).
+The complete gate passes all sixteen targets/92 active cases: 77 original graph
+cases and fifteen root executable/behavior profiles. No failures or introduced
+skips. CPU/Cyclone DDS, ENABLE_AGNOCAST=0, LLVM/libc++ 21.1.8 and Python 3.14.4.
+No Fast DDS, full simulator launch, older ROS/colcon or real-time acceptance.
