@@ -2364,3 +2364,77 @@ Agnocast callbacks on the cloud group; its default native timed wait is
 run did not vary that wait to establish causality. The RMW partial median was
 41.625 ms with the same configured 40 ms collector timeout.
 [Verified runs, lifetime audit, CPU and memory readings](sync-native-results/summary.txt).
+
+### Launch three Universe crops into the three-LiDAR synchronizer
+
+Use the tracked Universe CPU crop and synchronizer in a colcon overlay with
+ENABLE_AGNOCAST=0 at build and runtime. The launch file loads three independent
+CropBoxFilterComponent instances into the standard single-threaded
+rclcpp_components container through its load-node service. The synchronizer
+runs in its own process. Separate source and sink processes exercise every
+cloud edge across a process boundary. A static TF process supplies the same
+4 m transform as the three-LiDAR control.
+
+The source publishes 60 packed, 512 KiB PointCloud2 messages over 24 groups
+at 10/10/5 Hz. Each crop retains a different contiguous half of its input.
+For the left, right and top sensors the accepted point indices start at
+0, 8192 and 16384, respectively. At the sink, compare the bytes of each
+transformed segment against the corresponding original point indices.
+Check the cloud and input stamps, frame, source offsets, counts, timeout
+status, missing or duplicate groups and clean termination. The source writes
+its timestamp manifest after publication. The file is a verifier input;
+point clouds and concatenation metadata travel on the ROS graph.
+
+The plain variant uses both original component implementations, including
+the original converter. The stock variant uses the existing retained-input
+fixture adaptation and the same standard ROS executables. The runner variant
+changes only the synchronizer executor to blocking A after its first output.
+The two ordinary middleware references use the byte converter with CPU inputs.
+All crops use the original code in every mode. The crop benchmark package
+also builds an older endpoint tool; it now uses the wrapper allocation macro
+so the package compiles with Agnocast disabled.
+
+For rmw_agnocast, select the installed experimental RMW and host-cloud mode
+on the application processes, preload the matching heap hook, and give all
+participants access to the host Agnocast device. Select seven resolved cloud
+topics: three raw inputs, three crop outputs, and one concatenated output.
+The component load service, TF and output_info use delegated Cyclone DDS.
+The launch client uses Cyclone directly. The bridge is disabled. Only the
+runner variant enables the scoped wait probe. Runtime setup for each variant
+is in run-pipeline.sh and the installed three_lidar.launch.py.
+
+```bash
+set -e
+export LYRICAL_ROOT=$(cat build/agnocast-lyrical/universe-root)
+run=experiments/buffer/run-lyrical.sh
+"$run" bash experiments/rmw-agnocast/build-pipeline.sh
+"$run" bash experiments/rmw-agnocast/build-pipeline.sh plain
+bash experiments/rmw-agnocast/bench-pipeline.sh build/universe-pipeline/fresh-pairs
+```
+
+The build reuses the existing Lyrical Agnocast, RMW and sensing message
+overlays. A separate plain synchronizer prefix compiles the tracked source
+directly. The driver runs one launch at a time in forward and reverse order.
+Discard the first four groups per run; report pooled median and nearest-rank
+p95 for 20 complete and 20 partial groups per mode. The reference CPU times
+include launch, discovery, source preparation, verification and shutdown.
+
+| Graph mode | Complete median / p95 ms | Partial median / p95 ms | Graph CPU s, runs 1 / 2 |
+|---|---:|---:|---:|
+| rmw_agnocast, original sources and stock launch | 3.379 / 4.430 | 42.034 / 42.390 | 1.833 / 1.692 |
+| rmw_agnocast, retained input and stock launch | 2.404 / 3.359 | 41.603 / 42.084 | 1.681 / 1.755 |
+| rmw_agnocast, retained input and blocking-A runner | 2.407 / 3.132 | 41.635 / 41.904 | 1.636 / 1.889 |
+| Cyclone DDS | 2.868 / 3.270 | 42.114 / 42.392 | 1.659 / 1.793 |
+| Zenoh | 2.765 / 3.594 | 42.133 / 42.346 | 2.708 / 2.838 |
+
+All ten launches verified 240 concatenated clouds and their metadata from
+600 raw sensor messages. All seven Agnocast host-cloud routes had actual
+readers and writers. The retained-input runs each reported 60 views and
+zero copied synchronizer inputs. The ordinary-source and retained-input
+rows also differ in XYZIRC conversion. The directly comparable executor
+rows have similar medians. Two runs per mode give limited tail evidence.
+Use stock launch for the next workload; keep the runner as a diagnostic
+control. The earlier native synchronizer measurement has a shorter graph
+and is not a denominator for these results.
+[Timing samples and verification](pipeline-launch-results/summary.txt)
+and [build selections](pipeline-launch-results/build-checks.txt).

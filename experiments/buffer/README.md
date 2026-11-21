@@ -191,3 +191,8 @@ and [per-round measurements](../../src/universe_gpu_edge_benchmark/results.csv).
 The CPU track has since tested publication of the completed synchronizer
 output. Retained input with ordinary publication remains the laptop baseline.
 [Publisher-loan comparison and next diagnostic](../rmw-agnocast/README.md#transfer-the-universe-synchronizer-output-through-a-publisher-loan).
+
+The launch-driven three-LiDAR CPU pipeline passed with three crop components
+in the standard ROS container and a separate synchronizer and consumer.
+Both original-source and retained-input builds ran with runtime rmw_agnocast.
+[Build, launch and matched comparison](../rmw-agnocast/README.md#launch-three-universe-crops-into-the-three-lidar-synchronizer).

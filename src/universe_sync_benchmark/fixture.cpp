@@ -4,7 +4,6 @@
 
 #include <agnocast/agnocast_callback_isolated_executor.hpp>
 
-#include <thread>
 #endif
 
 #include <autoware_sensing_msgs/msg/concatenated_point_cloud_info.hpp>
@@ -15,10 +14,12 @@
 #include <chrono>
 #include <cstdlib>
 #include <cstring>
+#include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <map>
 #include <set>
+#include <thread>
 #include <tuple>
 #include <vector>
 
@@ -82,10 +83,58 @@ Cloud cloud(int seq, int sensor)
   }
   return c;
 }
+// Separate source process for the launch-driven crop and synchronizer graph.
+int pipeline_source(rclcpp::Node::SharedPtr node, const std::filesystem::path & directory)
+{
+  auto qos = rclcpp::SensorDataQoS().keep_last(32);
+  std::vector<rclcpp::Publisher<Cloud>::SharedPtr> pubs;
+  std::array<std::vector<Cloud>, sets> inputs;
+  for (const auto & topic : topics)
+    pubs.push_back(node->create_publisher<Cloud>("/raw" + topic, qos));
+  for (int seq = 0; seq < sets; ++seq) {
+    for (int sensor = 0; sensor < (seq % 2 ? 2 : 3); ++sensor)
+      inputs[seq].push_back(cloud(seq, sensor));
+  }
+  const auto deadline = Clock::now() + 20s;
+  auto matched = [&] {
+    return std::filesystem::exists(directory / "sink-ready") &&
+           std::all_of(
+             pubs.begin(), pubs.end(),
+             [](const auto & p) { return p->get_subscription_count() > 0; }) &&
+           std::all_of(topics.begin(), topics.end(), [&](const auto & t) {
+             return node->count_publishers(t) && node->count_subscribers(t);
+           });
+  };
+  while (!matched()) {
+    check(Clock::now() < deadline, "pipeline discovery timeout");
+    std::this_thread::sleep_for(20ms);
+  }
+  std::this_thread::sleep_for(500ms);
+  const auto start = Clock::now();
+  std::array<int64_t, sets> stamps;
+  for (int seq = 0; seq < sets; ++seq) {
+    std::this_thread::sleep_until(start + seq * 100ms);
+    stamps[seq] = node->now().nanoseconds();
+    for (size_t sensor = 0; sensor < inputs[seq].size(); ++sensor) {
+      inputs[seq][sensor].header.stamp = rclcpp::Time(stamps[seq] + int64_t(sensor) * 1000000);
+      pubs[sensor]->publish(inputs[seq][sensor]);
+    }
+  }
+  std::ofstream out(directory / "stamps.tmp");
+  out.exceptions(std::ios::badbit | std::ios::failbit);
+  for (auto stamp : stamps) out << stamp << '\n';
+  out.close();
+  std::filesystem::rename(directory / "stamps.tmp", directory / "stamps");
+  rclcpp::spin(node);
+  return 0;
+}
 int main(int argc, char ** argv)
 {
   rclcpp::init(argc, argv);
   auto node = std::make_shared<rclcpp::Node>("sync_fixture");
+  const char * directory = std::getenv("PIPELINE_DIR");
+  if (directory && std::getenv("PIPELINE_SOURCE")) return pipeline_source(node, directory);
+  const int segment_points = directory ? points / 2 : points;
   auto qos = rclcpp::SensorDataQoS().keep_last(32);
   std::map<int64_t, Cloud::ConstSharedPtr> clouds;
   std::map<int64_t, int64_t> arrival;
@@ -118,7 +167,9 @@ int main(int argc, char ** argv)
   auto spin_until = [](Clock::time_point end) { std::this_thread::sleep_until(end); };
 #else
   std::vector<rclcpp::Publisher<Cloud>::SharedPtr> pubs;
-  for (const auto & topic : topics) pubs.push_back(node->create_publisher<Cloud>(topic, qos));
+  if (!directory) {
+    for (const auto & topic : topics) pubs.push_back(node->create_publisher<Cloud>(topic, qos));
+  }
   rclcpp::executors::SingleThreadedExecutor executor;
   executor.add_node(node);
   auto spin_until = [&](Clock::time_point end) {
@@ -139,27 +190,40 @@ int main(int argc, char ** argv)
   check(ready(), "endpoints failed to match");
   spin_until(Clock::now() + 500ms);
   std::vector<int64_t> stamps;
-  std::array<std::vector<Cloud>, sets> payloads;
-  for (int seq = 0; seq < sets; ++seq) {
-    for (int sensor = 0; sensor < (seq % 2 ? 2 : 3); ++sensor)
-      payloads[seq].push_back(cloud(seq, sensor));
-  }
-  auto start = Clock::now();
-  for (int seq = 0; seq < sets; ++seq) {
-    auto & inputs = payloads[seq];
-    spin_until(start + seq * 100ms);
-    stamps.push_back(node->now().nanoseconds());
-    // Two 10 Hz streams and one 5 Hz stream, with a 40 ms collector timeout.
-    for (size_t sensor = 0; sensor < inputs.size(); ++sensor) {
-      inputs[sensor].header.stamp = rclcpp::Time(stamps.back() + int64_t(sensor) * 1000000);
-#ifdef SYNC_NATIVE
-      native_sync::publish(*pubs[sensor], inputs[sensor]);
-#else
-      pubs[sensor]->publish(inputs[sensor]);
-#endif
+  if (directory) {
+    const auto path = std::filesystem::path(directory);
+    std::ofstream(path / "sink-ready") << "ready";
+    const auto end = Clock::now() + 25s;
+    while (Clock::now() < end && (clouds.size() < sets || infos.size() < sets ||
+                                  !std::filesystem::exists(path / "stamps")))
+      spin_until(Clock::now() + 20ms);
+    std::ifstream in(path / "stamps");
+    for (int64_t stamp; in >> stamp;) stamps.push_back(stamp);
+    check(stamps.size() == sets, "missing source timestamps");
+    spin_until(Clock::now() + 100ms);
+  } else {
+    std::array<std::vector<Cloud>, sets> payloads;
+    for (int seq = 0; seq < sets; ++seq) {
+      for (int sensor = 0; sensor < (seq % 2 ? 2 : 3); ++sensor)
+        payloads[seq].push_back(cloud(seq, sensor));
     }
+    auto start = Clock::now();
+    for (int seq = 0; seq < sets; ++seq) {
+      auto & inputs = payloads[seq];
+      spin_until(start + seq * 100ms);
+      stamps.push_back(node->now().nanoseconds());
+      // Two 10 Hz streams and one 5 Hz stream, with a 40 ms collector timeout.
+      for (size_t sensor = 0; sensor < inputs.size(); ++sensor) {
+        inputs[sensor].header.stamp = rclcpp::Time(stamps.back() + int64_t(sensor) * 1000000);
+#ifdef SYNC_NATIVE
+        native_sync::publish(*pubs[sensor], inputs[sensor]);
+#else
+        pubs[sensor]->publish(inputs[sensor]);
+#endif
+      }
+    }
+    spin_until(Clock::now() + 500ms);
   }
-  spin_until(Clock::now() + 500ms);
 #ifdef SYNC_NATIVE
   executor.cancel();
   worker.join();
@@ -171,7 +235,7 @@ int main(int argc, char ** argv)
     const auto & m = *infos.at(stamps[seq]);
     const int count = seq % 2 ? 2 : 3;
     check(
-      c.header.frame_id == "base_link" && c.width == count * points && c.height == 1 &&
+      c.header.frame_id == "base_link" && c.width == count * segment_points && c.height == 1 &&
         c.point_step == sizeof(Point) && c.row_step == bytes.size() &&
         bytes.size() == c.width * sizeof(Point),
       "invalid cloud frame or shape");
@@ -190,15 +254,16 @@ int main(int argc, char ** argv)
         continue;
       }
       check(
-        source.status == source.STATUS_OK && source.length == points &&
-          source.idx_begin % points == 0 && source.idx_begin / points < unsigned(count) &&
+        source.status == source.STATUS_OK && source.length == segment_points &&
+          source.idx_begin % segment_points == 0 &&
+          source.idx_begin / segment_points < unsigned(count) &&
           segments.insert(source.idx_begin).second,
         "invalid source segment");
       check(
         rclcpp::Time(source.header.stamp).nanoseconds() == stamps[seq] + sensor * 1000000,
         "wrong source stamp");
-      for (int i = 0; i < points; ++i) {
-        auto expected = point(seq, sensor, i);
+      for (int i = 0; i < segment_points; ++i) {
+        auto expected = point(seq, sensor, i + (directory ? sensor * points / 4 : 0));
         if (sensor) expected.x += 4;
         check(
           !std::memcmp(

@@ -1549,3 +1549,45 @@ Partial-group median was 41.625 ms for the RMW and 52.048 ms for the native
 mixed CIE. The comparison supplies a direct native baseline for this graph.
 Keep the retained-input implementation and defer further tuning. All runs
 used one guarded graph at a time, 512 MiB runtime and 1,200 MiB build caps.
+
+## 2026-11-21 — Launch three Universe crops and a synchronizer with runtime RMW selection
+
+Built the Universe crop component directly from the tracked source with
+ENABLE_AGNOCAST=0 and the crop fixture's Buffer patches disabled.
+The older endpoint executable in the crop fixture initially failed to build:
+it called allocate_output_message_unique directly on an ordinary rclcpp
+publisher. Switched that fixture call to the existing wrapper macro, which
+selects the correct allocator in either build. The crop implementation required
+no change. Built two synchronizer prefixes, one from the original source and
+one with the previously measured input view. The generated sensing type-support
+libraries reside in the earlier Universe sync overlay; sourcing that overlay at
+runtime resolved the initial component/fixture loader failure.
+
+ROS launch loads all three crop plugins into the standard container. The
+separate synchronizer process consumes the three cropped topics; a separate
+consumer verifies the concatenated payload and metadata using the original
+source stamps. Each crop retains a different 16,384-point range, so a swapped,
+missing or bypassed filter can be detected in the final data. Dynamic load
+services, TF and metadata remain on ordinary ROS. Inspect each rmw_agnocast
+launch for a host-cloud reader and writer on each of the seven cloud topics
+and check all five application processes terminate cleanly. Installed
+build-marker, configured sources, commands and checks are recorded with
+the results. Use the two unmodified component implementations as the
+runtime-selection control; compare ordinary and scoped-runner execution
+with the identical adapted component binary.
+[Reproduction and deployment details](../rmw-agnocast/README.md#launch-three-universe-crops-into-the-three-lidar-synchronizer).
+
+Ten timing launches verified all 240 synchronized outputs and metadata
+records, with three successful dynamic component loads and five clean
+application exits per launch. The ordinary unadapted rmw_agnocast graph
+passed using normal ROS publishing, subscriptions and launch. With the
+retained-input adapter the complete-group median/p95 were 2.404/3.359 ms
+under stock launch and 2.407/3.132 ms under the scoped runner. Keep stock
+launch for the next representative workload and retain the runner for
+diagnostics. The timing run minimum host MemAvailable was 11,695 MiB.
+
+An additional stock launch passed after adding explicit launch failure
+propagation for the verifier. Rebuilt and reran the original synchronizer-only
+fixture in retained-input and native Agnocast modes. Both verified all 24
+groups with 60 retained inputs and clean shutdown. The native regression uses
+the shorter graph and is excluded from the launch timing table.

@@ -1,0 +1,91 @@
+"""Launch three Universe crop components, their synchronizer, and a verifying consumer."""
+import os
+from pathlib import Path
+
+from ament_index_python.packages import get_package_prefix, get_package_share_directory
+from launch import LaunchDescription
+from launch.actions import DeclareLaunchArgument, EmitEvent, OpaqueFunction, RegisterEventHandler
+from launch.event_handlers import OnProcessExit
+from launch.events import Shutdown
+from launch.substitutions import LaunchConfiguration
+from launch_ros.actions import ComposableNodeContainer, Node
+from launch_ros.descriptions import ComposableNode
+
+
+def graph(context):
+    mode = LaunchConfiguration("mode").perform(context)
+    directory = LaunchConfiguration("fixture_directory").perform(context)
+    if not Path(directory).is_dir() or any((Path(directory) / name).exists() for name in
+                                           ("sink-ready", "stamps", "stamps.tmp", "first-output")):
+        raise RuntimeError("fixture_directory must be a fresh directory for this launch")
+    sensors = ("left", "right", "top")
+    cropped = [f"/sync/{sensor}" for sensor in sensors]
+    raw = ["/raw" + topic for topic in cropped]
+    use_agnocast = mode in ("plain", "stock", "runner")
+    env = {"ENABLE_AGNOCAST": "0", "SYNC_LARGE": "1", "PIPELINE_DIR": directory}
+    if use_agnocast:
+        env.update(
+            RMW_IMPLEMENTATION="rmw_agnocast",
+            LD_PRELOAD=str(Path(get_package_prefix("agnocastlib")) / "lib/libagnocast_heaphook.so"),
+            AGNOCAST_BRIDGE_MODE="OFF", AGNOCAST_NO_DISCOVERY_AGENT="1",
+            AGNOCAST_RMW_HOST_CLOUD="1", AGNOCAST_RMW_TOPIC=":".join(raw + cropped + ["/output"]),
+        )
+    sync_env = dict(env, SYNC_BYTE_INPUT="1")
+    if use_agnocast and mode != "plain":
+        sync_env.update(SYNC_VIEW_INPUT="1", AGNOCAST_RMW_HOST_VIEW="1")
+
+    share = Path(get_package_share_directory("universe_sync_benchmark"))
+    crop_nodes = []
+    for i, sensor in enumerate(sensors):
+        frame = "base_link" if i == 0 else "sync_lidar"
+        crop_nodes.append(ComposableNode(
+            package="universe_crop_benchmark",
+            plugin="autoware::pointcloud_preprocessor::CropBoxFilterComponent",
+            name="crop_" + sensor,
+            parameters=[str(share / "config/crop_box_filter_node.param.yaml"), {
+                "input_frame": frame, "output_frame": frame,
+                "min_x": i * 8192 - 0.5, "max_x": i * 8192 + 16383.5,
+                "min_y": -1.0, "max_y": 24.0, "min_z": -1.0, "max_z": 3.0,
+            }],
+            remappings=[("input", raw[i]), ("output", cropped[i])],
+        ))
+    container = ComposableNodeContainer(
+        name="lidar_crops", namespace="", package="rclcpp_components",
+        executable="component_container", composable_node_descriptions=crop_nodes,
+        additional_env=env, output="screen",
+    )
+    sync = {"package": "universe_sync_benchmark", "executable": "concatenate_and_time_sync_node"}
+    ready = os.path.join(directory, "first-output")
+    if mode == "runner":
+        sync.update(package="agnocast_rmw_loan_probe", executable="crop_wait_runner",
+                    arguments=["libuniverse_sync.so",
+                               "autoware::pointcloud_preprocessor::PointCloudConcatenateDataSynchronizerComponent"])
+        sync_env.update(BENCH_CSV=ready, AGNOCAST_FIXED_PROBE="1", AGNOCAST_RMW_DIRECT_WAIT="1",
+                        AGNOCAST_RMW_READY_FD="0")
+    synchronizer = Node(**sync, parameters=[
+        str(share / "config/concatenate_and_time_sync_node.param.yaml"),
+        {"input_topics": cropped, "is_motion_compensated": False,
+         "publish_synchronized_pointcloud": False, "timeout_sec": 0.04},
+    ], additional_env=sync_env, output="screen")
+    sink = Node(package="universe_sync_benchmark", executable="sync_fixture", name="pipeline_sink",
+                additional_env=dict(env, SYNC_READY_FILE=ready), output="screen")
+    source = Node(package="universe_sync_benchmark", executable="sync_fixture", name="pipeline_source",
+                  additional_env=dict(env, PIPELINE_SOURCE="1"), output="screen")
+    tf = Node(package="tf2_ros", executable="static_transform_publisher",
+              arguments=["--x", "4", "--frame-id", "base_link", "--child-frame-id", "sync_lidar"],
+              additional_env=env, output="screen")
+    def finished(event, _context):
+        if event.returncode:
+            raise RuntimeError(f"pipeline verifier exited with status {event.returncode}")
+        return [EmitEvent(event=Shutdown(reason="pipeline verification finished"))]
+
+    return [RegisterEventHandler(OnProcessExit(target_action=sink, on_exit=finished)),
+        tf, container, synchronizer, sink, source]
+
+
+def generate_launch_description():
+    return LaunchDescription([
+        DeclareLaunchArgument("mode", choices=["plain", "stock", "runner", "cyclone", "zenoh"], default_value="stock"),
+        DeclareLaunchArgument("fixture_directory", description="Fresh directory for source timestamps and readiness"),
+        OpaqueFunction(function=graph),
+    ])

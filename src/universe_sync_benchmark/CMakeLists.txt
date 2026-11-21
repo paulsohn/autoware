@@ -81,4 +81,7 @@ if(SYNC_NATIVE)
   target_include_directories(sync_fixture PRIVATE ${rmw_agnocast_INCLUDE_DIRS})
   target_link_libraries(sync_fixture ${agnocastlib_TARGETS})
 endif()
+install(DIRECTORY launch DESTINATION share/${PROJECT_NAME})
+install(FILES "${pre}/config/crop_box_filter_node.param.yaml"
+  "${pre}/config/concatenate_and_time_sync_node.param.yaml" DESTINATION share/${PROJECT_NAME}/config)
 ament_package()

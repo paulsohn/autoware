@@ -1,0 +1,24 @@
+Crop registration:
+autoware::pointcloud_preprocessor::CropBoxFilterComponent;0
+Crop build:
+UNIVERSE_BUFFER_MATRIX:BOOL=OFF
+universe-pipeline synchronizer:
+AUTOWARE_ENABLE_AGNOCAST_HOST_VIEW:BOOL=ON
+SYNC_NATIVE:BOOL=OFF
+universe-pipeline-plain synchronizer:
+AUTOWARE_ENABLE_AGNOCAST_HOST_VIEW:BOOL=OFF
+SYNC_NATIVE:BOOL=OFF
+build/universe-pipeline/final-build-plain.log:Summary: 1 package finished [1min 3s]
+build/universe-pipeline/final-build-plain.log:Minimum host MemAvailable: 11117 MiB
+build/universe-pipeline/final-build-view.log:Summary: 2 packages finished [52.3s]
+build/universe-pipeline/final-build-view.log:Minimum host MemAvailable: 11272 MiB
+build/universe-pipeline/legacy-native.log:verified 24 synchronized clouds and metadata, 12 complete and 12 timed out, 1966080 input points
+build/universe-pipeline/legacy-native.log:sync_input views=60 copies=0
+build/universe-pipeline/legacy-native.log:Minimum host MemAvailable: 12293 MiB
+build/universe-pipeline/legacy.log:verified 24 synchronized clouds and metadata, 12 complete and 12 timed out, 1966080 input points
+build/universe-pipeline/legacy.log:fixed_wait arms=24 completions=24 native=57 both=0 native_interrupts=0 stop_interrupts=1
+build/universe-pipeline/legacy.log:sync_input views=60 copies=0
+build/universe-pipeline/legacy.log:Minimum host MemAvailable: 12274 MiB
+build/universe-pipeline/final-launch.log:[sync_fixture-4] verified 24 synchronized clouds and metadata, 12 complete and 12 timed out, 1966080 input points
+build/universe-pipeline/final-launch.log:[concatenate_and_time_sync_node-3] sync_input views=60 copies=0
+build/universe-pipeline/final-launch.log:Minimum host MemAvailable: 12199 MiB

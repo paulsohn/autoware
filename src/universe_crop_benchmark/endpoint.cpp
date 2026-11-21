@@ -88,7 +88,7 @@ public:
 private:
   void send() {
     if (frame_ >= frames || !pub_->get_subscription_count()) return;
-    auto msg = pub_->allocate_output_message_unique();
+    auto msg = ALLOCATE_OUTPUT_MESSAGE_UNIQUE(pub_);
     msg->header.frame_id = "base_link";
     msg->width = points;
     msg->height = 1;
