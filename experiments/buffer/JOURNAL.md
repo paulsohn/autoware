@@ -1929,3 +1929,66 @@ records plus 2,016 filtered outputs. The joint region completion stock/native
 median / p95 ratio was 1.01× / 0.92× at 10 Hz and 1.01× / 0.90× at 20 Hz.
 Peak scope memory across the timed runs was 471.3 MiB and minimum host
 MemAvailable was 9,408 MiB. [Per-middleware results](../rmw-agnocast/README.md#two-region-filters-downstream-of-three-lidar-synchronization).
+
+## 2026-11-22 — Overloading one downstream region crop
+
+Can one slow region consumer delay the other or stop upstream fusion? Reuse
+the preceding seven-process local graph, with left/right/top at 20/20/10 Hz,
+32 acquisition groups per launch, 32,768 points per input and the 40 ms
+synchronizer timeout. Build both the ordinary ROS and native Agnocast
+versions. Keep the native mixed executor's 1 ms wait and disable bridges.
+
+The launch sets BENCH_STALL_THIS_CROP only in the near region process for
+the impaired condition. A build-directory copy of the Universe crop sleeps
+150 ms inside each of its fifth through tenth filter callbacks and logs
+the beginning and end using the same ROS system clock as the source.
+This occupies the callback worker while using little CPU. The far crop,
+synchronizer and shared verification process keep running. Both conditions
+use identical binaries. The verifier matches each returned region by source
+stamp and checks every selected point against the fused payload. It requires
+all fused clouds, metadata and far outputs, and the first four and final six
+near outputs. Missing intermediate near stamps are recorded individually.
+
+From the preceding colcon milestone, with the matching host kernel module
+loaded, rebuild the two benchmark packages in each existing overlay:
+
+```bash
+export LYRICAL_ROOT=$(cat build/agnocast-lyrical/universe-root)
+experiments/buffer/run-lyrical.sh bash -ec '
+  source build/agnocast-lyrical/install/local_setup.bash
+  source build/universe-sync/install/local_setup.bash
+  source build/rmw-agnocast/load-install/local_setup.bash
+  for ws in universe-pipeline universe-pipeline-native; do
+    if [[ $ws == universe-pipeline-native ]]; then export ENABLE_AGNOCAST=1; else export ENABLE_AGNOCAST=0; fi
+    colcon build --base-paths src/universe_sync_benchmark src/universe_crop_benchmark \
+      --build-base "build/$ws/obj" --install-base "build/$ws/install" --executor sequential
+  done'
+mkdir -p build/universe-isolation
+out=build/universe-isolation/pairs
+bash experiments/rmw-agnocast/bench-native-graph.sh "$out" isolation
+bash experiments/rmw-agnocast/bench-native-graph.sh "$out-repeat" isolation-repeat
+cp "$out-repeat"/*.log "$out/"
+python3 experiments/rmw-agnocast/summarize-isolation.py "$out"
+```
+
+The result directory must be fresh. Each paired launch changes only the
+near stall, alternating order between rounds. For each impaired run, select
+complete acquisitions whose source timestamps fall inside its measured
+stall interval. Use those same sequence numbers from the paired healthy
+launch to calculate the far branch's median and nearest-rank p95. This
+selection includes slow arrivals even if they arrive after the stall ends.
+The summary also reports the timed-out two-sensor acquisitions separately.
+Recovery is the time from the final sleep ending to the first subsequent
+near delivery after which all observed near deliveries are under 100 ms
+old. Source timestamps identify losses independently of this freshness metric.
+
+All 40 timed launches passed, as did a separate stock regression launch
+at 20/20/10 Hz with the previous 24-group fixture. The first four pairs
+put the impaired rmw_agnocast far p95 at 7.82 ms. Four additional pairs
+with the same settings put the pooled estimate at 7.10 ms. The original
+fourth impaired run was slow before, during and after the near stall.
+All eight native and eight rmw_agnocast impaired runs reproduced their
+respective near delivery patterns. Peak runtime scope memory was 444.9 MiB,
+minimum runtime host MemAvailable was 9,188 MiB and the sequential colcon
+builds reported at least 8,144 MiB available. See the
+[comparison and interpretation](../rmw-agnocast/README.md#isolation-of-the-healthy-crop-when-its-sibling-stalls).

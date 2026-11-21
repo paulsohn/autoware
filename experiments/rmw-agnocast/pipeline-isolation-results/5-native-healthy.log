@@ -1,0 +1,287 @@
+[INFO] [launch]: All log files can be found below /tmp/tmp.QqgP41r6JY/roslog/2026-11-21-17-15-50-201319-paulsohn-tuf-624064
+[INFO] [launch]: Default logging verbosity is set to INFO
+[INFO] [static_transform_publisher-1]: process started with pid [624084]
+[INFO] [native_crop_container-2]: process started with pid [624085]
+[INFO] [concatenate_and_time_sync_node-3]: process started with pid [624086]
+[INFO] [crop-4]: process started with pid [624087]
+[INFO] [crop-5]: process started with pid [624088]
+[INFO] [sync_fixture-6]: process started with pid [624089]
+[INFO] [sync_fixture-7]: process started with pid [624090]
+[static_transform_publisher-1] [INFO] [1795281350.303842935] [static_transform_publisher_1gBEjmTuZHXrOB9I]: Spinning until stopped - publishing transform
+[static_transform_publisher-1] translation: ('4.000000', '0.000000', '0.000000')
+[static_transform_publisher-1] rotation: ('0.000000', '0.000000', '0.000000', '1.000000')
+[static_transform_publisher-1] from 'base_link' to 'sync_lidar'
+[sync_fixture-6] [WARN] [1795281350.330081353] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[sync_fixture-6] [WARN] [1795281350.330382576] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[sync_fixture-6] [WARN] [1795281350.330409947] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[sync_fixture-7] [WARN] [1795281350.330459129] [Agnocast]: Agnocast publishers do not honor the BestEffort reliability QoS policy. Messages are delivered through shared memory regardless of this setting.
+[sync_fixture-7] [WARN] [1795281350.330510605] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[sync_fixture-7] [WARN] [1795281350.330620310] [Agnocast]: Agnocast publishers do not honor the BestEffort reliability QoS policy. Messages are delivered through shared memory regardless of this setting.
+[sync_fixture-7] [WARN] [1795281350.330626211] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[sync_fixture-7] [WARN] [1795281350.330640598] [Agnocast]: Agnocast publishers do not honor the BestEffort reliability QoS policy. Messages are delivered through shared memory regardless of this setting.
+[sync_fixture-7] [WARN] [1795281350.330645096] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[sync_fixture-6] [WARN] [1795281350.334098147] [Agnocast]: Callback group 0x57dea8177520 contains both ROS 2 callbacks and Agnocast callbacks (topics: [/region/far, /region/near, /output]). In SingleThreadedAgnocastExecutor, the Agnocast timed wait may block ROS 2 callbacks in the same callback group every spin iteration. Consider separating them into different callback groups.
+[crop-4] [INFO] [1795281350.763971698] [crop]: Starting node with agnocast mode (compiled with agnocast support)
+[crop-5] [INFO] [1795281350.763971908] [crop]: Starting node with agnocast mode (compiled with agnocast support)
+[concatenate_and_time_sync_node-3] [INFO] [1795281350.776662286] [point_cloud_concatenator_component]: Utilize naive matching strategy
+[crop-5] [WARN] [1795281350.777994505] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[crop-4] [WARN] [1795281350.778233421] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[native_crop_container-2] [WARN] [1795281350.778244893] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[native_crop_container-2] [WARN] [1795281350.778355018] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[native_crop_container-2] [WARN] [1795281350.778377861] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[native_crop_container-2] [WARN] [1795281350.778397408] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[native_crop_container-2] [WARN] [1795281350.778418437] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[native_crop_container-2] [WARN] [1795281350.778436951] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[native_crop_container-2] [WARN] [1795281350.778604745] [Agnocast]: Agnocast publishers do not honor the BestEffort reliability QoS policy. Messages are delivered through shared memory regardless of this setting.
+[native_crop_container-2] [WARN] [1795281350.778612089] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[concatenate_and_time_sync_node-3] [WARN] [1795281350.778415461] [Agnocast]: Agnocast publishers do not honor the BestEffort reliability QoS policy. Messages are delivered through shared memory regardless of this setting.
+[concatenate_and_time_sync_node-3] [WARN] [1795281350.778435238] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[crop-5] [WARN] [1795281350.778521529] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[crop-5] [WARN] [1795281350.778556665] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[crop-5] [WARN] [1795281350.778580409] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[crop-5] [WARN] [1795281350.778598804] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[crop-5] [WARN] [1795281350.778621116] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[crop-4] [WARN] [1795281350.778659026] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[crop-4] [WARN] [1795281350.778682390] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[crop-4] [WARN] [1795281350.778701055] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[crop-4] [WARN] [1795281350.778718748] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[crop-4] [WARN] [1795281350.778739477] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[crop-5] [WARN] [1795281350.778730620] [Agnocast]: Agnocast publishers do not honor the BestEffort reliability QoS policy. Messages are delivered through shared memory regardless of this setting.
+[crop-5] [WARN] [1795281350.778737824] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[crop-4] [WARN] [1795281350.778846787] [Agnocast]: Agnocast publishers do not honor the BestEffort reliability QoS policy. Messages are delivered through shared memory regardless of this setting.
+[crop-4] [WARN] [1795281350.778853119] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[crop-5] [WARN] [1795281350.778851396] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[native_crop_container-2] [WARN] [1795281350.778854522] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[crop-4] [WARN] [1795281350.778959027] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[crop-5] [WARN] [1795281350.779504967] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[concatenate_and_time_sync_node-3] [WARN] [1795281350.779504175] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[native_crop_container-2] [WARN] [1795281350.779510417] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[crop-4] [WARN] [1795281350.779521428] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[crop-5] [WARN] [1795281350.779543639] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[native_crop_container-2] [WARN] [1795281350.779549250] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[crop-4] [WARN] [1795281350.779566361] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[native_crop_container-2] native_crop /crop_left
+[crop-5] [WARN] [1795281350.779633036] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[crop-4] [WARN] [1795281350.779651501] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[native_crop_container-2] [WARN] [1795281350.779702305] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[native_crop_container-2] [WARN] [1795281350.779731099] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[native_crop_container-2] [WARN] [1795281350.779749864] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[concatenate_and_time_sync_node-3] [WARN] [1795281350.779730869] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[concatenate_and_time_sync_node-3] [WARN] [1795281350.779756537] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[native_crop_container-2] [WARN] [1795281350.779767627] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[native_crop_container-2] [WARN] [1795281350.779786833] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[native_crop_container-2] [WARN] [1795281350.779804146] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[native_crop_container-2] [WARN] [1795281350.779838600] [Agnocast]: Agnocast publishers do not honor the BestEffort reliability QoS policy. Messages are delivered through shared memory regardless of this setting.
+[native_crop_container-2] [WARN] [1795281350.779843279] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[native_crop_container-2] [WARN] [1795281350.779859209] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[native_crop_container-2] [WARN] [1795281350.779899534] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[native_crop_container-2] [WARN] [1795281350.779919271] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[native_crop_container-2] native_crop /crop_right
+[native_crop_container-2] [WARN] [1795281350.780019949] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[native_crop_container-2] [WARN] [1795281350.780042952] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[native_crop_container-2] [WARN] [1795281350.780060905] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[native_crop_container-2] [WARN] [1795281350.780079670] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[native_crop_container-2] [WARN] [1795281350.780096302] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[native_crop_container-2] [WARN] [1795281350.780112973] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[native_crop_container-2] [WARN] [1795281350.780142368] [Agnocast]: Agnocast publishers do not honor the BestEffort reliability QoS policy. Messages are delivered through shared memory regardless of this setting.
+[native_crop_container-2] [WARN] [1795281350.780153679] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[native_crop_container-2] [WARN] [1795281350.780177914] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[native_crop_container-2] [WARN] [1795281350.780226675] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[native_crop_container-2] [WARN] [1795281350.780248606] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[native_crop_container-2] native_crop /crop_top
+[concatenate_and_time_sync_node-3] [WARN] [1795281350.782059970] [Agnocast]: Callback group 0x586cd5824260 contains both ROS 2 callbacks and Agnocast callbacks (topics: [/sync/top, /sync/right, /sync/left]). In SingleThreadedAgnocastExecutor, the Agnocast timed wait may block ROS 2 callbacks in the same callback group every spin iteration. Consider separating them into different callback groups.
+[sync_fixture-7] native_route /raw/sync/left writers=1 readers=1
+[sync_fixture-7] native_route /raw/sync/right writers=1 readers=1
+[sync_fixture-7] native_route /raw/sync/top writers=1 readers=1
+[sync_fixture-7] native_route /sync/left writers=1 readers=1
+[sync_fixture-7] native_route /sync/right writers=1 readers=1
+[sync_fixture-7] native_route /sync/top writers=1 readers=1
+[sync_fixture-7] native_route /output writers=1 readers=3
+[sync_fixture-7] native_route /region/near writers=1 readers=1
+[sync_fixture-7] native_route /region/far writers=1 readers=1
+[native_crop_container-2] [WARN] [1795281351.797836732] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[native_crop_container-2] [WARN] [1795281351.797892026] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[native_crop_container-2] [WARN] [1795281351.797910981] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[native_crop_container-2] [WARN] [1795281351.798013012] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[native_crop_container-2] [WARN] [1795281351.798459816] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[native_crop_container-2] [WARN] [1795281351.798477750] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[native_crop_container-2] [WARN] [1795281351.798491546] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[native_crop_container-2] [WARN] [1795281351.798519838] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[native_crop_container-2] [WARN] [1795281351.798954050] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[native_crop_container-2] [WARN] [1795281351.798970891] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[native_crop_container-2] [WARN] [1795281351.798987202] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[native_crop_container-2] [WARN] [1795281351.799013721] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[crop-5] [WARN] [1795281351.816091756] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[crop-5] [WARN] [1795281351.816145026] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[crop-5] [WARN] [1795281351.816186603] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[crop-4] [WARN] [1795281351.816119157] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[crop-4] [WARN] [1795281351.816217240] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[crop-4] [WARN] [1795281351.816247417] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[crop-5] [WARN] [1795281351.816287522] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[crop-4] [WARN] [1795281351.816395413] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[sync_fixture-7] top_release_ns,0,714906
+[sync_fixture-7] top_release_ns,2,877770
+[sync_fixture-7] top_release_ns,4,620109
+[sync_fixture-7] top_release_ns,6,747075
+[sync_fixture-7] top_release_ns,8,697443
+[sync_fixture-7] top_release_ns,10,637120
+[sync_fixture-7] top_release_ns,12,714154
+[sync_fixture-7] top_release_ns,14,727709
+[sync_fixture-7] top_release_ns,16,594100
+[sync_fixture-7] top_release_ns,18,738880
+[sync_fixture-7] top_release_ns,20,637331
+[sync_fixture-7] top_release_ns,22,784846
+[sync_fixture-7] top_release_ns,24,663129
+[sync_fixture-7] top_release_ns,26,697153
+[sync_fixture-7] top_release_ns,28,857082
+[sync_fixture-7] top_release_ns,30,887197
+[sync_fixture-6] branch,0,full,0,1795281351796106490,20467156
+[sync_fixture-6] branch,0,full,1,1795281351796106490,20303470
+[sync_fixture-6] regions,0,full,20467156
+[sync_fixture-6] sample,0,full,19599535
+[sync_fixture-6] branch,1,partial,0,1795281351846144360,43460401
+[sync_fixture-6] branch,1,partial,1,1795281351846144360,43320670
+[sync_fixture-6] regions,1,partial,43460401
+[sync_fixture-6] sample,1,partial,42856904
+[sync_fixture-6] branch,2,full,0,1795281351896146262,3433705
+[sync_fixture-6] branch,2,full,1,1795281351896146262,3737312
+[sync_fixture-6] regions,2,full,3737312
+[sync_fixture-6] sample,2,full,2998061
+[sync_fixture-6] branch,3,partial,0,1795281351946152352,42597190
+[sync_fixture-6] branch,3,partial,1,1795281351946152352,42378461
+[sync_fixture-6] regions,3,partial,42597190
+[sync_fixture-6] sample,3,partial,42107896
+[sync_fixture-6] branch,4,full,0,1795281351996142012,3190160
+[sync_fixture-6] branch,4,full,1,1795281351996142012,3370176
+[sync_fixture-6] regions,4,full,3370176
+[sync_fixture-6] sample,4,full,2722767
+[sync_fixture-6] branch,5,partial,0,1795281352046144976,42728515
+[sync_fixture-6] branch,5,partial,1,1795281352046144976,42584967
+[sync_fixture-6] regions,5,partial,42728515
+[sync_fixture-6] sample,5,partial,42330241
+[sync_fixture-6] branch,6,full,0,1795281352096106053,3576892
+[sync_fixture-6] branch,6,full,1,1795281352096106053,3767388
+[sync_fixture-6] regions,6,full,3767388
+[sync_fixture-6] sample,6,full,3133434
+[sync_fixture-6] branch,7,partial,0,1795281352146148711,42200939
+[sync_fixture-6] branch,7,partial,1,1795281352146148711,42316515
+[sync_fixture-6] regions,7,partial,42316515
+[sync_fixture-6] sample,7,partial,42043846
+[sync_fixture-6] branch,8,full,0,1795281352196146586,3558939
+[sync_fixture-6] branch,8,full,1,1795281352196146586,3715501
+[sync_fixture-6] regions,8,full,3715501
+[sync_fixture-6] sample,8,full,2942798
+[sync_fixture-6] branch,9,partial,0,1795281352246145844,42260209
+[sync_fixture-6] branch,9,partial,1,1795281352246145844,42128483
+[sync_fixture-6] regions,9,partial,42260209
+[sync_fixture-6] sample,9,partial,42042553
+[sync_fixture-6] branch,10,full,0,1795281352296146504,2996969
+[sync_fixture-6] branch,10,full,1,1795281352296146504,2854383
+[sync_fixture-6] regions,10,full,2996969
+[sync_fixture-6] sample,10,full,2414851
+[sync_fixture-6] branch,11,partial,0,1795281352346147585,41949259
+[sync_fixture-6] branch,11,partial,1,1795281352346147585,41819226
+[sync_fixture-6] regions,11,partial,41949259
+[sync_fixture-6] sample,11,partial,41715682
+[sync_fixture-6] branch,12,full,0,1795281352396144899,2620996
+[sync_fixture-6] branch,12,full,1,1795281352396144899,2889127
+[sync_fixture-6] regions,12,full,2889127
+[sync_fixture-6] sample,12,full,2198417
+[sync_fixture-6] branch,13,partial,0,1795281352446145739,41666170
+[sync_fixture-6] branch,13,partial,1,1795281352446145739,41782107
+[sync_fixture-6] regions,13,partial,41782107
+[sync_fixture-6] sample,13,partial,41559601
+[sync_fixture-6] branch,14,full,0,1795281352496148003,2099462
+[sync_fixture-6] branch,14,full,1,1795281352496148003,2257567
+[sync_fixture-6] regions,14,full,2257567
+[sync_fixture-6] sample,14,full,1986831
+[sync_fixture-6] branch,15,partial,0,1795281352546142251,41871503
+[sync_fixture-6] branch,15,partial,1,1795281352546142251,41981659
+[sync_fixture-6] regions,15,partial,41981659
+[sync_fixture-6] sample,15,partial,41758402
+[sync_fixture-6] branch,16,full,0,1795281352596143843,2237800
+[sync_fixture-6] branch,16,full,1,1795281352596143843,2395284
+[sync_fixture-6] regions,16,full,2395284
+[sync_fixture-6] sample,16,full,2126182
+[sync_fixture-6] branch,17,partial,0,1795281352646145715,41579348
+[sync_fixture-6] branch,17,partial,1,1795281352646145715,41446880
+[sync_fixture-6] regions,17,partial,41579348
+[sync_fixture-6] sample,17,partial,41352634
+[sync_fixture-6] branch,18,full,0,1795281352696147728,2333850
+[sync_fixture-6] branch,18,full,1,1795281352696147728,2188829
+[sync_fixture-6] regions,18,full,2333850
+[sync_fixture-6] sample,18,full,2067723
+[sync_fixture-6] branch,19,partial,0,1795281352746144120,41346182
+[sync_fixture-6] branch,19,partial,1,1795281352746144120,41504277
+[sync_fixture-6] regions,19,partial,41504277
+[sync_fixture-6] sample,19,partial,41210168
+[sync_fixture-6] branch,20,full,0,1795281352796143297,2020896
+[sync_fixture-6] branch,20,full,1,1795281352796143297,2123708
+[sync_fixture-6] regions,20,full,2123708
+[sync_fixture-6] sample,20,full,1925137
+[sync_fixture-6] branch,21,partial,0,1795281352846143968,41627597
+[sync_fixture-6] branch,21,partial,1,1795281352846143968,41484550
+[sync_fixture-6] regions,21,partial,41627597
+[sync_fixture-6] sample,21,partial,41316636
+[sync_fixture-6] branch,22,full,0,1795281352896148004,2261675
+[sync_fixture-6] branch,22,full,1,1795281352896148004,2128747
+[sync_fixture-6] regions,22,full,2261675
+[sync_fixture-6] sample,22,full,2010556
+[sync_fixture-6] branch,23,partial,0,1795281352946147592,41713809
+[sync_fixture-6] branch,23,partial,1,1795281352946147592,41576432
+[sync_fixture-6] regions,23,partial,41713809
+[sync_fixture-6] sample,23,partial,41476085
+[sync_fixture-6] branch,24,full,0,1795281352996151188,2362624
+[sync_fixture-6] branch,24,full,1,1795281352996151188,2223193
+[sync_fixture-6] regions,24,full,2362624
+[sync_fixture-6] sample,24,full,2101917
+[sync_fixture-6] branch,25,partial,0,1795281353046141549,41756518
+[sync_fixture-6] branch,25,partial,1,1795281353046141549,41890168
+[sync_fixture-6] regions,25,partial,41890168
+[sync_fixture-6] sample,25,partial,41651101
+[sync_fixture-6] branch,26,full,0,1795281353096132881,3373823
+[sync_fixture-6] branch,26,full,1,1795281353096132881,2243351
+[sync_fixture-6] regions,26,full,3373823
+[sync_fixture-6] sample,26,full,1917212
+[sync_fixture-6] branch,27,partial,0,1795281353146145304,41604033
+[sync_fixture-6] branch,27,partial,1,1795281353146145304,41736310
+[sync_fixture-6] regions,27,partial,41736310
+[sync_fixture-6] sample,27,partial,41485532
+[sync_fixture-6] branch,28,full,0,1795281353196127579,2228073
+[sync_fixture-6] branch,28,full,1,1795281353196127579,2099082
+[sync_fixture-6] regions,28,full,2228073
+[sync_fixture-6] sample,28,full,1983145
+[sync_fixture-6] branch,29,partial,0,1795281353246139230,41405212
+[sync_fixture-6] branch,29,partial,1,1795281353246139230,41275700
+[sync_fixture-6] regions,29,partial,41405212
+[sync_fixture-6] sample,29,partial,41120681
+[sync_fixture-6] branch,30,full,0,1795281353296127998,2098190
+[sync_fixture-6] branch,30,full,1,1795281353296127998,2242570
+[sync_fixture-6] regions,30,full,2242570
+[sync_fixture-6] sample,30,full,1996510
+[sync_fixture-6] branch,31,partial,0,1795281353346143266,41372020
+[sync_fixture-6] branch,31,partial,1,1795281353346143266,41492715
+[sync_fixture-6] regions,31,partial,41492715
+[sync_fixture-6] sample,31,partial,41275750
+[sync_fixture-6] fast_source_hz=19.9995
+[sync_fixture-6] verified 32 synchronized clouds and metadata, 16 complete and 16 timed out, 2621440 input points
+[INFO] [sync_fixture-6]: process has finished cleanly [pid 624089]
+[INFO] [sync_fixture-7]: sending signal 'SIGINT' to process[sync_fixture-7]
+[INFO] [crop-5]: sending signal 'SIGINT' to process[crop-5]
+[INFO] [crop-4]: sending signal 'SIGINT' to process[crop-4]
+[INFO] [concatenate_and_time_sync_node-3]: sending signal 'SIGINT' to process[concatenate_and_time_sync_node-3]
+[INFO] [native_crop_container-2]: sending signal 'SIGINT' to process[native_crop_container-2]
+[INFO] [static_transform_publisher-1]: sending signal 'SIGINT' to process[static_transform_publisher-1]
+[sync_fixture-7] [INFO] [1795281354.146002145] [rclcpp]: signal_handler(signum=2)
+[concatenate_and_time_sync_node-3] [INFO] [1795281354.146759830] [rclcpp]: signal_handler(signum=2)
+[static_transform_publisher-1] [INFO] [1795281354.147201345] [rclcpp]: signal_handler(signum=2)
+[concatenate_and_time_sync_node-3] sync_input views=80 copies=0
+[INFO] [native_crop_container-2]: process has finished cleanly [pid 624085]
+[INFO] [crop-4]: process has finished cleanly [pid 624087]
+[INFO] [crop-5]: process has finished cleanly [pid 624088]
+[INFO] [static_transform_publisher-1]: process has finished cleanly [pid 624084]
+[INFO] [sync_fixture-7]: process has finished cleanly [pid 624090]
+[INFO] [concatenate_and_time_sync_node-3]: process has finished cleanly [pid 624086]
+graph_user_s=1.656 graph_sys_s=1.017
+scope_peak_bytes=358801408
+Minimum host MemAvailable: 9825 MiB

@@ -4,11 +4,13 @@ set -eu
 out=${1:?fresh result directory}
 mkdir "$out"
 export BUFFER_RUNTIME_ONLY=1 SYNC_SHORT_WAIT=1
-unset SYNC_REGIONS SYNC_DOUBLE_RATE SYNC_AUDIT SYNC_SINK_TRACE SYNC_EXTENDED SYNC_TOP_JITTER SYNC_SLOW_SINK
+unset SYNC_ISOLATION SYNC_STALL_NEAR BENCH_STALL_THIS_CROP SYNC_REGIONS SYNC_DOUBLE_RATE SYNC_AUDIT SYNC_SINK_TRACE SYNC_EXTENDED SYNC_TOP_JITTER SYNC_SLOW_SINK
 failed=0
 rounds=(1 2)
 if [[ ${2:-} == confirmation ]]; then rounds=(3 4 5 6); fi
 if [[ ${2:-} == regions || ${2:-} == regions-fast ]]; then rounds=(1 2 3 4 5 6); fi
+if [[ ${2:-} == isolation ]]; then rounds=(1 2 3 4); fi
+if [[ ${2:-} == isolation-repeat ]]; then rounds=(5 6 7 8); fi
 for round in "${rounds[@]}"; do
   modes=(native-default native stock cyclone zenoh)
   conditions=(nominal overflow)
@@ -32,6 +34,12 @@ for round in "${rounds[@]}"; do
     if ((round == 1)); then modes=(native stock cyclone zenoh); fi
     if ((round == 2)); then modes=(zenoh cyclone stock native); fi
   fi
+  if [[ ${2:-} == isolation || ${2:-} == isolation-repeat ]]; then
+    if ((round == 1)); then modes=(native stock cyclone zenoh); fi
+    if ((round == 2)); then modes=(zenoh cyclone stock native); fi
+    conditions=(healthy slow-near)
+    if ((round % 2 == 0)); then conditions=(slow-near healthy); fi
+  fi
   for mode in "${modes[@]}"; do
     launch_mode=$mode
     if [[ $mode == native-default ]]; then
@@ -42,7 +50,11 @@ for round in "${rounds[@]}"; do
     fi
     for condition in "${conditions[@]}"; do
       if [[ $mode == native-default && $condition == overflow ]]; then continue; fi
+      unset SYNC_STALL_NEAR
+      if [[ $condition == healthy || $condition == slow-near ]]; then export SYNC_DOUBLE_RATE=1 SYNC_ISOLATION=1; fi
       unset SYNC_REGIONS SYNC_EXTENDED SYNC_TOP_JITTER SYNC_SLOW_SINK
+      if [[ $condition == slow-near ]]; then export SYNC_STALL_NEAR=1; fi
+      if [[ $condition == healthy || $condition == slow-near ]]; then export SYNC_REGIONS=1; fi
       if [[ $condition == regions || $condition == jitter ]]; then export SYNC_REGIONS=1; fi
       if [[ $condition == fast ]]; then export SYNC_REGIONS=1 SYNC_DOUBLE_RATE=1; fi
       if [[ $condition == jitter ]]; then export SYNC_TOP_JITTER=1; fi

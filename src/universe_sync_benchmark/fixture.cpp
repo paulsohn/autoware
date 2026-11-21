@@ -30,7 +30,9 @@ using namespace std::chrono_literals;
 const bool extended = std::getenv("PIPELINE_DIR") && std::getenv("SYNC_EXTENDED");
 const bool regions = std::getenv("PIPELINE_DIR") && std::getenv("SYNC_REGIONS");
 const std::array<std::string, 2> region_topics{"/region/near", "/region/far"};
-const int sets = extended ? 104 : 24;
+const bool isolation = regions && std::getenv("SYNC_ISOLATION");
+const bool stall_near = isolation && std::getenv("SYNC_STALL_NEAR");
+const int sets = extended ? 104 : (isolation ? 32 : 24);
 const int points = std::getenv("SYNC_LARGE") ? 32768 : 1024;
 const std::array<std::string, 3> topics{"/sync/left", "/sync/right", "/sync/top"};
 struct Point
@@ -288,15 +290,16 @@ int main(int argc, char ** argv)
     const auto path = std::filesystem::path(directory);
     std::ofstream(path / "sink-ready") << "ready";
     const auto end = Clock::now() + 25s;
-    while (Clock::now() < end && ((!extended && (cloud_count.load() < size_t(expected_outputs) ||
-                                                 info_count.load() < size_t(expected_outputs))) ||
-                                  (regions && region_count.load() < 2 * size_t(expected_outputs)) ||
-                                  !std::filesystem::exists(path / "stamps")))
+    while (Clock::now() < end &&
+           ((!extended && (cloud_count.load() < size_t(expected_outputs) ||
+                           info_count.load() < size_t(expected_outputs))) ||
+            (regions && !stall_near && region_count.load() < 2 * size_t(expected_outputs)) ||
+            !std::filesystem::exists(path / "stamps")))
       spin_until(Clock::now() + 20ms);
     std::ifstream in(path / "stamps");
     for (int64_t stamp; in >> stamp;) stamps.push_back(stamp);
     check(stamps.size() == sets, "missing source timestamps");
-    spin_until(Clock::now() + (extended ? 500ms : 100ms));
+    spin_until(Clock::now() + (extended || isolation ? 500ms : 100ms));
   } else {
     std::vector<std::vector<Cloud>> payloads(sets);
     for (int seq = 0; seq < sets; ++seq) {
@@ -354,6 +357,17 @@ int main(int argc, char ** argv)
       if (regions) {
         int64_t both = 0;
         for (size_t j = 0; j < region_topics.size(); ++j) {
+          if (isolation) {
+            const auto it = region_ages[j].find(stamp);
+            const auto age = it == region_ages[j].end() ? -1 : it->second;
+            std::cout << "branch," << seq << "," << kind << "," << j << "," << stamp << "," << age
+                      << "\n";
+            if (age < 0) {
+              check(
+                stall_near && j == 0 && seq >= 4 && seq < sets - 6, "unexpected missing region");
+              continue;
+            }
+          }
           const auto & roi = *region_clouds[j].at(stamp);
           const auto & data = static_cast<const std::vector<uint8_t> &>(roi.data);
           check(
@@ -375,7 +389,8 @@ int main(int argc, char ** argv)
           check(offset && offset == data.size(), "region count mismatch");
           both = std::max(both, region_ages[j].at(stamp));
         }
-        std::cout << "regions," << seq << "," << kind << "," << both << "\n";
+        if (region_clouds[0].count(stamp) && region_clouds[1].count(stamp))
+          std::cout << "regions," << seq << "," << kind << "," << both << "\n";
       }
       for (int part = 0; part < count; ++part) {
         unsigned offset = part * segment_points;
@@ -439,9 +454,14 @@ int main(int argc, char ** argv)
               << "\n";
   else
     std::cout << "verified " << expected_outputs << " synchronized clouds and metadata, "
-              << (jitter ? 6 : 12) << " complete and " << (jitter ? 24 : 12) << " timed out, "
-              << 60 * points << " input points\n";
-  if (regions) check(region_count == 2 * size_t(expected_outputs), "unexpected region outputs");
+              << (jitter ? sets / 4 : sets / 2) << " complete and " << (jitter ? sets : sets / 2)
+              << " timed out, " << (sets * 5 / 2) * points << " input points\n";
+  if (isolation) {
+    for (const auto & branch : region_clouds)
+      for (const auto & item : branch) check(clouds.count(item.first), "unknown region stamp");
+  }
+  if (regions && !stall_near)
+    check(region_count == 2 * size_t(expected_outputs), "unexpected region outputs");
   clouds.clear();
   rclcpp::shutdown();
 }

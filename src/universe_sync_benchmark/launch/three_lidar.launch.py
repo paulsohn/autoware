@@ -92,9 +92,12 @@ def graph(context):
               additional_env=env, output="screen")
     regions = []
     for topic, (low, high) in zip(region_topics, [(11999.5, 17999.5), (15999.5, 22999.5)]):
+        crop_env = dict(env)
+        if topic == "/region/near" and os.getenv("SYNC_STALL_NEAR"):
+            crop_env["BENCH_STALL_THIS_CROP"] = "1"
         regions.append(Node(package="universe_crop_benchmark", executable="crop",
                             name="region_" + topic.split("/")[-1], output="screen",
-                            additional_env=env, remappings=[("input", "/output"), ("output", topic)],
+                            additional_env=crop_env, remappings=[("input", "/output"), ("output", topic)],
                             parameters=[config, {"input_frame": "base_link", "output_frame": "base_link",
                                                 "min_x": low, "max_x": high, "min_y": -1.0,
                                                 "max_y": 24.0, "min_z": -1.0, "max_z": 3.0}]))

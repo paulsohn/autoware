@@ -2644,3 +2644,39 @@ is a different condition.
 
 [All timing, CPU and memory measurements](pipeline-regions-results/summary.txt) ·
 [Reproduction](../buffer/JOURNAL.md#2026-11-22--two-downstream-region-filters-on-the-synchronized-cloud).
+
+### Isolation of the healthy crop when its sibling stalls
+
+The same seven-process graph received 32 groups at 20/20/10 Hz. In the
+impaired launch the near crop slept for 150 ms on six consecutive callbacks,
+occupying its worker for at least 900 ms. In the paired control both crops
+ran normally. Far latency runs from sensor acquisition to receipt of the
+filtered output by the verifier. Only acquisitions made during the stall
+and their matching control sequence numbers enter the latency comparison.
+Complete three-sensor groups and the two-sensor groups that wait for the
+40 ms synchronization timeout are measured separately.
+
+| Middleware | Matched pairs | Healthy far p50/p95, ms | Far p50/p95 with near stalled, ms | Missing near outputs per impaired launch | Oldest delivered near cloud, ms |
+|---|---:|---:|---:|---:|---:|
+| rmw_agnocast | 8 | 2.52/3.32 | 2.67/7.10 | 8 of 32 | 406–423 |
+| Native Agnocast (1 ms wait) | 8 | 2.47/3.72 | 2.88/3.87 | 6 of 32 | 607–608 |
+| Cyclone DDS | 2 | 3.79/5.32 | 3.73/4.30 | 8 of 32 | 406–407 |
+| Zenoh | 2 | 3.21/3.50 | 2.95/4.00 | 8 of 32 | 406–407 |
+
+Every run delivered all 32 fused clouds, metadata records and far outputs.
+Native delivered two more near outputs per impaired launch and delivered
+older queued data. The exact missing sequence numbers repeated within each
+implementation. All four resumed sustained delivery below 100 ms of age
+within 8 ms of the final sleep ending.
+
+One rmw_agnocast impaired launch dominated its pooled complete-group p95.
+Its far latency had already reached 7.36 ms on group 2 before the first
+sleep and reached 6.16 ms on group 30 after recovery. The other seven
+impaired launches had complete-group p95s of 3.05–4.07 ms. The pooled
+result retains all eight. Delivery isolation held on this laptop. Latency
+isolation under CPU contention remains open because a sleeping callback
+places little demand on the CPU. The next distinct workload is to keep the
+near worker CPU-busy for the same duty cycle while observing the far branch.
+
+[Per-run sequence losses, timings and resources](pipeline-isolation-results/summary.txt) ·
+[Reproduction](../buffer/JOURNAL.md#2026-11-22--overloading-one-downstream-region-crop).
