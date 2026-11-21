@@ -1135,6 +1135,13 @@ the same missing header. Its two includes and manifest correction also exactly
 match merged #13622 (all 41 PR files inspected), and the complete motion group
 passes 16 targets including individual/joint module reload. See the
 [module source-fix evidence](JOURNAL.md#2026-11-22-phase-732--boundary-prevention-expected-compatibility).
+The selected trajectory-controller group independently exposes the same issue
+on 2026-11-22: two follower-base headers, MPC mpc.hpp and PID's node header,
+plus the three owning manifests, exactly match the merged PR. The full
+139-active-case/seven-target group passes, preserving one original disabled
+pure-pursuit case. See the
+[controller source-fix evidence](JOURNAL.md#2026-11-22-phase-732--trajectory-follower-base-expected-compatibility).
+The separate unused experimental/optional removal is not part of that association.
 Other packages in that PR enter compatibility work only when a current target
 exposes the need. No host libexpected-dev installation, older
 ROS validation or colcon result is implied by this manifest alignment. See the
