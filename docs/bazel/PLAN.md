@@ -1908,6 +1908,14 @@ Phase 7.3 task boundaries (selected 2026-11-21):
   header adapter. Current filter and raytrace API corrections are separate
   source changes. GPU pointcloud/fusion variants remain outside this CPU scope.
   [Occupancy evidence](JOURNAL.md#2026-11-22-phase-732--cpu-occupancy-grid-pipeline).
+  The selected system monitor/MRM/diagnostic implementations are complete:
+  eleven source modules, fourteen node entrypoints and tree CLI pass 77 original
+  graph cases plus fifteen installed behavior profiles in sixteen targets.
+  Static logic registration is retained explicitly; processing-time logging API
+  compatibility is a separate source fix. MRM handler startup does not claim
+  full vehicle-state arbitration. Universe AD API and the accumulated interface
+  compilation gate remain before simulator composition.
+  [System group](JOURNAL.md#2026-11-22-phase-732--dummy-diagnostic-publication-and-system-gate).
   Continue in dependency order through shared planner helpers, the
   preset-selected behavior/motion plugins and controller libraries, then
   simulated perception and the selected system/API closure. The selected local

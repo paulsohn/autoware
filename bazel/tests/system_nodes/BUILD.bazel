@@ -38,5 +38,6 @@ load("@rules_python//python:defs.bzl", "py_test")
         ("graph_converter", "autoware_diagnostic_graph_utils", "converter_node", "-"),
         ("logging", "autoware_diagnostic_graph_utils", "logging_node", "-"),
         ("hazard", "autoware_hazard_status_converter", "autoware_hazard_status_converter_node", "hazard_status_converter.param.yaml"),
+        ("dummy_diag", "autoware_dummy_diag_publisher", "autoware_dummy_diag_publisher_node", "dummy_diag_publisher.param.yaml"),
     ]
 ]

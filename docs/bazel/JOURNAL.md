@@ -15737,3 +15737,46 @@ The complete gate passes all sixteen targets/92 active cases: 77 original graph
 cases and fifteen root executable/behavior profiles. No failures or introduced
 skips. CPU/Cyclone DDS, ENABLE_AGNOCAST=0, LLVM/libc++ 21.1.8 and Python 3.14.4.
 No Fast DDS, full simulator launch, older ROS/colcon or real-time acceptance.
+
+## 2026-11-22: Phase 7.3.2 — Dummy diagnostic publication and system gate
+
+Purpose: make autoware_dummy_diag_publisher part of the selected CPU system implementation
+closure with declared build/runtime inputs. Inspect the original single CPP/header, required_diags config and ordinary-rclcpp CMake registration. Declare its original executable and component index using diagnostic_updater/rcl_interfaces native/shared providers. Keep existing diagnostic configuration and source untouched.
+
+The installed publisher emits the configured velodyne_temperature warning on /diagnostics and exits cleanly. The shared root harness composes package indexes, typed launch parameters and actual pub/sub/services without an installed ROS environment.
+
+There are no original functional tests in this package (CMake only registers lint or no tests). Preserve that inventory and add the behavior check outside the source package.
+
+Verification: run the package's complete @autoware_dummy_diag_publisher//... target pattern and //bazel/tests/system_nodes:dummy_diag_runtime_test using
+the exact clean-environment command and shared configuration recorded in the
+[system gate](#2026-11-22-phase-732--dummy-diagnostic-publication-and-system-gate).
+The complete gate passes all sixteen targets/92 active cases: 77 original graph
+cases and fifteen root executable/behavior profiles. No failures or introduced
+skips. CPU/Cyclone DDS, ENABLE_AGNOCAST=0, LLVM/libc++ 21.1.8 and Python 3.14.4.
+No Fast DDS, full simulator launch, older ROS/colcon or real-time acceptance.
+
+Run the full selected system gate (reusing unchanged passing results):
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast \
+  --local_test_jobs=1 --test_output=errors \
+  @autoware_component_state_monitor//... @autoware_duplicated_node_checker//... \
+  @autoware_processing_time_checker//... @autoware_pipeline_latency_monitor//... \
+  @autoware_mrm_comfortable_stop_operator//... \
+  @autoware_mrm_emergency_stop_operator//... @autoware_mrm_handler//... \
+  @autoware_diagnostic_graph_aggregator//... @autoware_diagnostic_graph_utils//... \
+  @autoware_hazard_status_converter//... @autoware_dummy_diag_publisher//... \
+  //bazel/tests/system_nodes:all
+python3 -m flake8 --max-line-length=150 bazel/tests/system_nodes/test_runtime.py
+git diff --check
+```
+
+All sixteen targets pass in the final invocation; the initial graph suite has
+77 cases and exposes static-factory retention before runtime composition. The
+installed processing checker additionally verifies its actual output JSON after
+the separate logging fix. The shared harness observes child output with pread,
+checks the owned component DSO/no heaphook and asserts clean SIGINT exit. Inputs
+are indexed/declared, and temporary ROS_LOG_DIR confines metrics output. Further
+API integration and the accumulated interface compilation gate remain before
+full simulator composition.
