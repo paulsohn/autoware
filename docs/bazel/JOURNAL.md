@@ -15686,3 +15686,19 @@ The complete gate passes all sixteen targets/92 active cases: 77 original graph
 cases and fifteen root executable/behavior profiles. No failures or introduced
 skips. CPU/Cyclone DDS, ENABLE_AGNOCAST=0, LLVM/libc++ 21.1.8 and Python 3.14.4.
 No Fast DDS, full simulator launch, older ROS/colcon or real-time acceptance.
+
+## 2026-11-22: Phase 7.3.2 — Diagnostic graph aggregation
+
+Purpose: make autoware_diagnostic_graph_aggregator part of the selected CPU system implementation
+closure with declared build/runtime inputs. Inspect all 24 production CPPs (18 common logic/config/graph, four node, tree CLI and test helper) and all seven CMake-registered test CPPs. Separate reusable common APIs from node factory registration; preserve the tree executable and both wrapper nodes. Use native yaml-cpp in place of its CMake vendor shim. Keep common logic alwayslink: otherwise unreferenced static factory initializers are discarded and 67 original cases throw UnknownLogic. No source fix is needed.
+
+All 77 original cases pass. Declare original YAML fixtures and derive TEST_RESOURCE_PATH from an explicitly declared rootpath with filesystem parents; quote through both Starlark and copts tokenization. Installed aggregation publishes matching retained structure/status IDs and dimensions using the original example with relative includes. The converter maps configured command ID 1002 true/false to autonomous availability; installed tree renders the original example.
+
+Verification: run the package's complete @autoware_diagnostic_graph_aggregator//... target pattern and //bazel/tests/system_nodes:aggregator_runtime_test using
+the exact clean-environment command and shared configuration recorded in the
+[system gate](#2026-11-22-phase-732--dummy-diagnostic-publication-and-system-gate).
+For this module also select mode_converter_runtime_test and tree_runtime_test.
+The complete gate passes all sixteen targets/92 active cases: 77 original graph
+cases and fifteen root executable/behavior profiles. No failures or introduced
+skips. CPU/Cyclone DDS, ENABLE_AGNOCAST=0, LLVM/libc++ 21.1.8 and Python 3.14.4.
+No Fast DDS, full simulator launch, older ROS/colcon or real-time acceptance.

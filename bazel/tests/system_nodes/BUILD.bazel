@@ -31,5 +31,8 @@ load("@rules_python//python:defs.bzl", "py_test")
         ("comfortable_stop", "autoware_mrm_comfortable_stop_operator", "autoware_mrm_comfortable_stop_operator_node", "mrm_comfortable_stop_operator.param.yaml"),
         ("emergency_stop", "autoware_mrm_emergency_stop_operator", "autoware_mrm_emergency_stop_operator_node", "mrm_emergency_stop_operator.param.yaml"),
         ("mrm_handler", "autoware_mrm_handler", "autoware_mrm_handler_node", "mrm_handler.param.yaml"),
+        ("aggregator", "autoware_diagnostic_graph_aggregator", "aggregator_node", "default.param.yaml"),
+        ("mode_converter", "autoware_diagnostic_graph_aggregator", "converter_node", "converter.param.yaml"),
+        ("tree", "autoware_diagnostic_graph_aggregator", "tree", "-"),
     ]
 ]

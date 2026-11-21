@@ -1,0 +1,109 @@
+load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test", "cc_binary")
+load("@autoware_agnocast_wrapper//:defs.bzl", "autoware_agnocast_node")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "autoware_diagnostic_graph_aggregator",
+    # Logic factories register through static initializers in otherwise unreferenced objects.
+    alwayslink = True,
+    srcs = glob(["src/common/**/*.cpp"]),
+    hdrs = glob(["include/**/*.hpp", "src/**/*.hpp"]),
+    includes = ["include", "src", "src/common"],
+    deps = [
+        "@ament_index_cpp//:ament_index_cpp_library",
+        "@autoware_agnocast_wrapper//:autoware_agnocast_wrapper_library",
+        "@diagnostic_msgs//:cc",
+        "@rclcpp//:rclcpp_library",
+        "@rclcpp_components//:rclcpp_components_library",
+        "@rosdistro//cc:yaml-cpp_library",
+        "@std_srvs//:cc",
+        "@tier4_system_msgs//:cc",
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = [
+        "@ament_index_cpp//:ament_index_cpp",
+        "@autoware_agnocast_wrapper//:autoware_agnocast_wrapper",
+        "@diagnostic_msgs//:cc_shared",
+        "@rclcpp//:rclcpp",
+        "@rclcpp_components//:rclcpp_components",
+        "@rosdistro//cc:yaml-cpp",
+        "@std_srvs//:cc_shared",
+        "@tier4_system_msgs//:cc_shared",
+    ],
+)
+
+cc_library(name = "node_library", srcs = glob(["src/node/*.cpp"]), deps = [":autoware_diagnostic_graph_aggregator"])
+
+cc_library(name = "test_helpers", srcs = ["src/tests/tests.cpp"], deps = [":autoware_diagnostic_graph_aggregator"])
+
+cc_binary(name = "tree", srcs = ["src/tool/tree.cpp"], dynamic_deps = [":runtime_dynamic_deps"], deps = [":autoware_diagnostic_graph_aggregator"])
+
+cc_shared_library(
+    name = "autoware_diagnostic_graph_aggregator_component",
+    dynamic_deps = [":runtime_dynamic_deps"],
+    deps = [":node_library"],
+)
+
+autoware_agnocast_node(
+    name = "aggregator_node",
+    package_name = "autoware_diagnostic_graph_aggregator",
+    component = ":autoware_diagnostic_graph_aggregator_component",
+    plugin = "autoware::diagnostic_graph_aggregator::AggregatorNode",
+    agnocast_only = True,
+)
+
+autoware_agnocast_node(
+    name = "converter_node",
+    package_name = "autoware_diagnostic_graph_aggregator",
+    component = ":autoware_diagnostic_graph_aggregator_component",
+    plugin = "autoware::diagnostic_graph_aggregator::ConverterNode",
+    agnocast_only = True,
+)
+
+register_ament_files(
+    name = "node_executables",
+    files = [":tree", ":aggregator_node", ":converter_node"],
+    prefix = "lib/autoware_diagnostic_graph_aggregator",
+    strip_prefix = "*",
+)
+
+ament_index(
+    package_xml = "package.xml",
+    data = glob(["config/**", "launch/**", "example/**"]) + [":aggregator_node_plugin", ":converter_node_plugin", ":node_executables"],
+    components = [":aggregator_node_components", ":converter_node_components"],
+)
+
+collect_transitive_dynamic_deps(
+    name = "test_dynamic_deps",
+    dynamic_deps = [
+        ":runtime_dynamic_deps",
+        "@ament_index_cpp//:ament_index_cpp",
+    ],
+)
+
+cc_test(
+    name = "test_autoware_diagnostic_graph_aggregator",
+    timeout = "long",
+    copts = ["-DTEST_RESOURCE_PATH=std::filesystem::path(\\\"$(rootpath test/files/others/override.yaml)\\\").parent_path().parent_path()"],
+    srcs = glob(["test/**/*.cpp", "test/**/*.hpp"]),
+    data = [
+        ":ament_index",
+        ":test_data",
+        "test/files/others/override.yaml",
+    ],
+    dynamic_deps = [":test_dynamic_deps"],
+    env = {"ENABLE_AGNOCAST": "0", "LD_LIBRARY_PATH": "lib", "ROS_DOMAIN_ID": "95"},
+    deps = [
+        ":node_library",
+        "@ament_index_cpp//:ament_index_cpp_library",
+        "@googletest//:gtest_main",
+    ],
+)
+
+filegroup(name = "test_data", srcs = glob(["test/files/**"]))
