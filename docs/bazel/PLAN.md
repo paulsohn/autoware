@@ -1883,6 +1883,13 @@ Phase 7.3 task boundaries (selected 2026-11-21):
   Mixed status providers keep one component-owned index. The two source fixture/
   math portability fixes are separate commits; full simulator behavior remains
   deferred. [Command group](JOURNAL.md#2026-11-22-phase-732--external-command-conversion).
+  The default-enabled control-safety group is complete: control validation,
+  emergency braking, collision detection, lane departure and control evaluation
+  pass all nine gate targets (57 active original cases, five installed-node
+  lifecycles and one status wire type). Preserve the one original disabled
+  validator case. The logging API fix is separate; debug-message introspection
+  providers are declared explicitly for installed processes.
+  [Safety group](JOURNAL.md#2026-11-22-phase-732--control-evaluation).
   Continue in dependency order through shared planner helpers, the
   preset-selected behavior/motion plugins and controller libraries, then
   simulated perception and the selected system/API closure. The selected local

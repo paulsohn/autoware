@@ -1,0 +1,25 @@
+load("@rules_python//python:defs.bzl", "py_test")
+load("//bazel/tests/ros_interfaces:defs.bzl", "interface_serialization_test")
+
+[
+    py_test(
+        name = name + "_runtime_test",
+        srcs = ["test_runtime.py"],
+        main = "test_runtime.py",
+        args = [package, executable, config],
+        data = ["@" + package + "//:ament_index", "@autoware_test_utils//:ament_index"],
+        env = {"ENABLE_AGNOCAST": "0", "LD_LIBRARY_PATH": "lib", "ROS_DOMAIN_ID": "97"},
+        precompile = "disabled",
+        tags = ["no-remote", "no-sandbox"],
+        deps = ["@ament_index_python", "@rcl_interfaces//:py", "@rclpy"],
+    )
+    for name, package, executable, config in [
+        ("validator", "autoware_control_validator", "autoware_control_validator_node", "control_validator.param.yaml"),
+        ("aeb", "autoware_autonomous_emergency_braking", "autoware_autonomous_emergency_braking", "autonomous_emergency_braking.param.yaml"),
+        ("collision", "autoware_collision_detector", "autoware_collision_detector_node", "collision_detector.param.yaml"),
+        ("lane", "autoware_lane_departure_checker", "lane_departure_checker_node", "lane_departure_checker.param.yaml"),
+        ("evaluator", "autoware_control_evaluator", "control_evaluator", "control_evaluator.param.yaml"),
+    ]
+]
+
+interface_serialization_test(package = "autoware_control_validator")
