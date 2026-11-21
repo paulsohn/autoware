@@ -1,0 +1,44 @@
+load("@rosidl_default_generators//:defs.bzl", "ros_message")
+
+package(default_visibility = ["//visibility:public"])
+
+ros_message(
+    name = "InfrastructureCommand",
+    src = "InfrastructureCommand.msg",
+    deps = [
+        "//msg:KeyValue",
+        "@builtin_interfaces//msg:Time",
+    ],
+)
+
+ros_message(
+    name = "InfrastructureCommandArray",
+    src = "InfrastructureCommandArray.msg",
+    deps = [
+        "//msg:InfrastructureCommand",
+        "@builtin_interfaces//msg:Time",
+    ],
+)
+
+ros_message(
+    name = "KeyValue",
+    src = "KeyValue.msg",
+    deps = [],
+)
+
+ros_message(
+    name = "VirtualTrafficLightState",
+    src = "VirtualTrafficLightState.msg",
+    deps = [
+        "@builtin_interfaces//msg:Time",
+    ],
+)
+
+ros_message(
+    name = "VirtualTrafficLightStateArray",
+    src = "VirtualTrafficLightStateArray.msg",
+    deps = [
+        "//msg:VirtualTrafficLightState",
+        "@builtin_interfaces//msg:Time",
+    ],
+)
