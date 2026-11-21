@@ -1,0 +1,9 @@
+# A short lane-driving acceptance candidate on the pinned official map.
+# Route feasibility is checked here; autonomous motion is a later gate.
+frame_id: map
+map_package: autoware_planning_simulator_map
+vehicle_model: sample_vehicle
+sensor_model: sample_sensor_kit
+initial_pose: [3717.239501953125, 73720.84375, 0.0, 0.48724]
+goal_pose: [3732.0, 73728.6, 0.0, 0.48724]
+preferred_lanelets: [9102, 9540]

@@ -73,6 +73,8 @@ only when your current target demonstrates the need.
 - [ ] Declare caller-owned resources for dynamic runtime package selection.
   [Launch resource convention](DEVELOPING.md#launch-resource-composition);
   [evidence: global loader](JOURNAL.md#2026-11-18-phase-532--global-parameter-loader).
+  [Indexed tutorial resources](DEVELOPING.md#tutorial-vehicle-and-map-resources);
+  [evidence: official map](JOURNAL.md#2026-11-21-phase-733--official-tutorial-map-and-scenario-resources).
 - [ ] Preserve original suites' source-layout and tool prerequisites in declared fixtures.
   [Test adapter convention](DEVELOPING.md#original-test-source-layout);
   [evidence: interface lint](JOURNAL.md#2026-11-18-phase-534--interface-spec-lint).
@@ -1741,14 +1743,23 @@ Phase 7.3 task boundaries (selected 2026-11-21):
   in related groups, followed by the remaining control/system/API closure.
   Refine each group from the actual selected launch/source declarations;
   do not replace the Universe stack with the smaller core-only launch.
-- **7.3.3 — Original launch and resources (in progress).** The local
-  tutorial vehicle and sensor description modules are complete. Eight cases in
-  five targets validate isolated-prefix resources, combined robot description/
-  calibrated transforms and the existing core sample/AWSIM variants.
-  Compose the actual planning_simulator.launch.xml closure and its sample
-  map/vehicle/sensor inputs after the remaining 7.3.2 implementations are ready.
-  Pin tutorial map/scenario inputs before the behavior gate; preserve default
-  rule-based behavior and indexed model resources.
+- **7.3.3 — Original launch and resources (in progress).** The first resource
+  group is complete (2026-11-21): the tutorial's local sample_vehicle_description
+  and sample_sensor_kit_description own their original model/calibration/mesh
+  resources, and a root-owned map index selects the official tutorial archive.
+  SHA-256 5536fce7bb8db7688fdf94ec004118b898637ad0d5b6175108b10989dd6e93b9
+  pins the otherwise mutable map URL; use the documented tutorial input rather
+  than a substituted test map. [Map provenance](../../bazel/maps/README.md).
+  A short MGRS/54SVE scenario is pinned and accepted by the real Universe planner
+  through lanelets 9102/9540; PCL reads all 1757841 cloud points. Resource,
+  relocation and affected description-launch gates pass 12 cases in seven
+  targets, CPU/Cyclone DDS with ENABLE_AGNOCAST=0.
+  [Evidence](JOURNAL.md#2026-11-21-phase-733--official-tutorial-map-and-scenario-resources).
+  Compose the actual planning_simulator.launch.xml after the remaining 7.3.2
+  implementation closure is available; this resource gate does not close that
+  dependency or establish full simulator startup. Keep default rule-based
+  behavior; migrate any selected model provider and affected launcher paths
+  together under the indexed-resource convention.
 - **7.3.4 — Lane-driving acceptance.** Demonstrate the original RViz workflow
   and a repeatable equivalent headless case, including initial pose, route,
   autonomous engagement, vehicle motion, bounded goal completion and clean

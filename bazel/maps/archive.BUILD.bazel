@@ -1,0 +1,8 @@
+package(default_visibility = ["//visibility:public"])
+
+exports_files([
+    "lanelet2_map.osm",
+    "map_config.yaml",
+    "map_projector_info.yaml",
+    "pointcloud_map.pcd",
+])

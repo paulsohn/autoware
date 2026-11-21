@@ -760,6 +760,25 @@ Use `//bazel/tests:autoware_test_node_launch_test` for standalone/component
 checks and `//bazel/tests:autoware_testing_original_smoke_test` for the original
 generic smoke helper, both with `--config=no-agnocast`.
 
+## Tutorial vehicle and map resources
+
+The tutorial's sample_vehicle_description and sample_sensor_kit_description are
+separate local providers from the core autoware_sample_* descriptions. Declare
+`@sample_vehicle_description//:ament_index` and
+`@sample_sensor_kit_description//:ament_index` in the caller's data/deps and pass
+vehicle_model=sample_vehicle and sensor_model=sample_sensor_kit. The sensor
+index includes its velodyne_description dependency; Xacro, YAML, mesh and image
+resources stay with their original source packages.
+
+Declare `//bazel/maps:planning_simulator_map` to consume the pinned official
+map. Resolve map_path from the `autoware_planning_simulator_map` share directory
+using ament_index/FindPackageShare or `$(find-pkg-share ...)`. Its original map
+and projector files are installed together; do not inject workspace or HOME
+paths. Fetching is a build operation, and runtime lookup uses indexed resources.
+The map input and per-file provenance are maintained in
+[the provider README](../../bazel/maps/README.md). Map/description resource tests
+do not establish full planning-simulator or autonomous-driving support.
+
 ## Headless core composition
 
 The original autoware_core launch accepts `launch_rviz=false`; it defaults to

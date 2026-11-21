@@ -1,0 +1,46 @@
+load("@pip_ros//:requirements.bzl", "requirement")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_test")
+load("@rules_python//python:defs.bzl", "py_test")
+
+py_test(
+    name = "resources_test",
+    srcs = ["resources_test.py"],
+    data = ["//bazel/maps:planning_simulator_map"],
+    precompile = "disabled",
+    deps = [
+        "@ament_index_python",
+        requirement("pyyaml"),
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "route_test_dynamic_deps",
+    dynamic_deps = [
+        "@autoware_mission_planner_universe//:test_dynamic_deps",
+        "@rosdistro//cc:yaml-cpp",
+        "@rosdistro//cc:pcl",
+    ],
+)
+
+cc_test(
+    name = "route_test",
+    srcs = ["route_test.cpp"],
+    args = ["$(rootpath :scenario.yaml)"],
+    data = [
+        "scenario.yaml",
+        "//bazel/maps:planning_simulator_map",
+        "@sample_vehicle_description//:ament_index",
+    ],
+    dynamic_deps = [":route_test_dynamic_deps"],
+    deps = [
+        "@ament_index_cpp//:ament_index_cpp_library",
+        "@autoware_mission_planner_universe",
+        "@autoware_test_utils",
+        "@autoware_vehicle_info_utils",
+        "@geometry_msgs//:cc",
+        "@googletest//:gtest",
+        "@rosdistro//cc:pcl_library",
+        "@rosdistro//cc:yaml-cpp_library",
+    ],
+)

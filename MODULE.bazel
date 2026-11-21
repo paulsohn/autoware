@@ -113,6 +113,7 @@ include("//third_party/s6:s6.MODULE.bazel")
 include("//third_party/systemd:systemd.MODULE.bazel")
 include("//third_party/ostree:ostree.MODULE.bazel")
 include("//images:images.MODULE.bazel")
+include("//bazel/maps:maps.MODULE.bazel")
 
 # Local source dependencies, ordered by their package-local MODULE declarations.
 # Overrides select the source; root declarations need no registry release version.

@@ -1,0 +1,26 @@
+load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
+
+package(default_visibility = ["//visibility:public"])
+
+exports_files([
+    "archive.BUILD.bazel",
+    "maps.MODULE.bazel",
+])
+
+register_ament_files(
+    name = "planning_map_files",
+    files = [
+        "@planning_simulator_map_data//:lanelet2_map.osm",
+        "@planning_simulator_map_data//:map_config.yaml",
+        "@planning_simulator_map_data//:map_projector_info.yaml",
+        "@planning_simulator_map_data//:pointcloud_map.pcd",
+    ],
+    prefix = "share/autoware_planning_simulator_map",
+    strip_prefix = "*",
+)
+
+ament_index(
+    name = "planning_simulator_map",
+    data = [":planning_map_files"],
+    export_name = "autoware_planning_simulator_map",
+)

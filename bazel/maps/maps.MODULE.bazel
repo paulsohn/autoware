@@ -1,0 +1,10 @@
+# Official tutorial map, selected by the product root.
+http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
+http_archive(
+    name = "planning_simulator_map_data",
+    build_file = "//bazel/maps:archive.BUILD.bazel",
+    sha256 = "5536fce7bb8db7688fdf94ec004118b898637ad0d5b6175108b10989dd6e93b9",
+    strip_prefix = "sample-map-planning",
+    urls = ["https://autoware-files.s3.us-west-2.amazonaws.com/maps/demos/sample-map-planning.zip"],
+)

@@ -10323,3 +10323,76 @@ vehicle-only COLLADA check correction. Targeted buildifier, Python/flake8 and
 whitespace checks pass. The module gate is complete for CPU/Cyclone DDS with
 Agnocast disabled. Gazebo plugin execution, sensor drivers and full Universe
 startup are outside this description-resource contract; no Fast DDS check runs.
+
+## 2026-11-21: Phase 7.3.3 — Official tutorial map and scenario resources
+
+Purpose: make the documented planning-simulator map an explicit build input and
+pin scenario geometry before adding autonomous-driving assertions. Review both
+AWF's version 1.4.0 planning tutorial and current planning-simulation preparation/
+lane-driving pages on 2026-11-21, then inspect the local demo_artifacts role's
+map URL read-only. Both tutorials name sample-map-planning, sample_vehicle and
+sample_sensor_kit; the current role supplies the official S3 archive. Do not
+extend or invoke Ansible to provide a Bazel dependency.
+
+Accepted input: sample-map-planning.zip from the official URL, SHA-256
+5536fce7bb8db7688fdf94ec004118b898637ad0d5b6175108b10989dd6e93b9. The hash,
+not the mutable URL, identifies the accepted data. Inspect its four payloads,
+archive member timestamps, OSM structure, projector YAML and PCD header. Exact
+URLs, per-file hashes/sizes, attribution and reference links are maintained in
+[bazel/maps/README.md](../../bazel/maps/README.md). No payload is changed or
+committed into the source tree.
+
+Integration: the root includes bazel/maps/maps.MODULE.bazel, whose http_archive
+pins SHA-256, strips sample-map-planning/ and applies a small exports-only BUILD
+overlay. Product composition under bazel/maps registers those four files at
+share/autoware_planning_simulator_map and exports its ament index. Consumers
+must declare //bazel/maps:planning_simulator_map and resolve the share directory
+through the index. There is no HOME lookup, absolute workspace path or runtime
+fetch. This product map archive is separate from per-repository model indexes.
+
+Pin the root scenario YAML: frame map, MGRS/54SVE, sample_vehicle and
+sample_sensor_kit, initial (3717.239501953125, 73720.84375, 0, yaw 0.48724),
+goal (3732, 73728.6, 0, yaw 0.48724). The existing Universe DefaultPlanner,
+using the real indexed vehicle YAML dimensions and its default footprint/goal-
+angle settings, accepts the route through preferred lanelets [9102, 9540].
+The approximately 16.7 m route is a lane-driving candidate; this gate does not
+prove controller behavior, engagement, goal arrival or screenshot-derived pose
+coordinates. The tutorial's GUI lets the user choose the poses; these exact
+coordinates make the corresponding future headless choice reproducible.
+
+Add root format/relocation checks and a native consumer gate. The OSM contains
+4499 nodes and 241 relations; its legacy format omits MetaInfo, so route_handler
+warns about the absent version while accepting the loaded map. Preserve the
+archive rather than inventing metadata. Use map_projector_info.yaml's MGRS,
+54SVE and WGS84 values for the current loader contract. The PCD declares binary
+XYZ/RGB data with 1757841 points and retains 186 trailing zero padding bytes;
+strict file-size equality incorrectly rejects this original artifact. Verify
+the declared payload/padding and load it through the real pinned PCL reader,
+which returns the expected dimensions/data size. Copy the indexed resources to
+a fresh prefix and verify package lookup there, independently of HOME/source
+paths. No new completeness validator or original-package edit is introduced.
+
+Reproduce after the two description modules:
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --nocache_test_results --test_output=errors \
+  //bazel/tests/planning_simulator_resources:resources_test \
+  //bazel/tests/planning_simulator_resources:route_test
+```
+
+Both format/relocation cases pass in the Python target (0.5 seconds), and both
+native cases pass (0.6 seconds): nonempty routable geometry with exact preferred
+lanelets/goal and PCL load of the complete pointcloud. The vehicle-only resource
+correction also passes; unchanged sensor/launch results are reused. The first
+resource group totals 12 passing cases across seven targets, no failures/skips.
+Targeted buildifier, Python/flake8, clang-format, local Markdown links/anchors
+and whitespace checks pass. CPU/Cyclone DDS with ENABLE_AGNOCAST=0 only; no
+Fast DDS, GUI, autonomous vehicle motion or packaging rerun is claimed.
+
+The independent resource portion of 7.3.3 has started while 7.3.2 remains open.
+Full original planning_simulator.launch.xml composition still requires its
+remaining selected behavior/motion-planning, control and system/API dependency
+closure. Neither 7.3.2 nor 7.3.3 is declared complete by these resource gates;
+7.3.4 retains full original workflow/RViz and autonomous-driving acceptance.
