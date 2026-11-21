@@ -1277,3 +1277,46 @@ distinct samples. Sequential builds used the 1,200 MiB limit and runs the
 512 MiB limit. Existing archived uninstrumented ready-FD and light hop
 summaries reproduced byte-for-byte with the updated analysis scripts.
 [Exact commands, paired medians, p95, CPU and raw observations](../rmw-agnocast/README.md#blocking-poll-probe-and-graph-wide-scheduler-hint)
+
+## 2026-11-21 — Enter Universe through the wrapper's ROS path
+
+The Core wrapper's build switch controls availability of the native API.
+A native-capable executable can select rclcpp at runtime with ENABLE_AGNOCAST=0.
+On that path RMW_IMPLEMENTATION selects the experimental middleware. Use
+the normal rclcpp container and provide the heaphook in its process environment.
+The wrapper's disabled launch branch preserves existing LD_PRELOAD and does
+not add the hook. All local Agnocast participants need the matching module,
+device and runtime libraries.
+
+Ran the two-crop branched smoke through the generated crop and endpoint
+executables in the compiled-with-native overlay. All five processes logged
+rclcpp mode. The RMW reported CDR endpoints on /input, /stage1 and /output.
+Both verifying readers received 60 frames at 10 Hz. The memory-guarded run
+reported 11,834 MiB minimum host memory available. This verifies middleware
+selection independently of the specialized scoped wait runner. This route
+serializes the point cloud and provides a functional control.
+
+From the experimental worktree, use a fresh output directory:
+
+```bash
+export LYRICAL_ROOT=$(cat build/agnocast-lyrical/universe-root)
+export BUFFER_RUNTIME_ONLY=1
+out=$(mktemp -d build/rmw-agnocast/wrapper-entry-XXXXXX)
+experiments/buffer/run-lyrical.sh timeout 65 bash -ec '
+  source build/agnocast-lyrical/install/local_setup.bash
+  source build/rmw-agnocast/install/local_setup.bash
+  source build/rmw-agnocast/load-install/local_setup.bash
+  python3 src/universe_crop_benchmark/run_case.py rmw-agnocast "$1/frames.csv" --branched --resources "$1/resources.csv"
+' bash "$out"
+```
+
+The Universe concatenate_and_time_sync_node in this checkout registers with
+rclcpp_components and uses regular rclcpp subscriptions and publishers. Start
+with its normal executable, route resolved cloud topic names on both endpoints
+and leave TF, motion inputs, status and services delegated to Cyclone. Verify
+cloud contents and timestamps against Cyclone before enabling the host-cloud
+representation and testing the scoped blocking wait on this executor. Its
+default subscription options, output allocation and loan lifetimes need
+separate verification for a zero-copy claim. Keep native-wrapper A/B on a
+component that actually implements the native API.
+[Smoke observations](../rmw-agnocast/wrapper-entry-results/)

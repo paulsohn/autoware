@@ -1,0 +1,14 @@
+[INFO] [1795226158.401314114] [endpoint]: Starting node with rclcpp mode (compiled with agnocast support)
+[INFO] [1795226158.401319574] [endpoint]: Starting node with rclcpp mode (compiled with agnocast support)
+rmw_agnocast CDR reader /stage1
+rmw_agnocast CDR reader /output
+[INFO] [1795226158.782884267] [crop]: Starting node with rclcpp mode (compiled with agnocast support)
+[INFO] [1795226158.782904985] [crop]: Starting node with rclcpp mode (compiled with agnocast support)
+rmw_agnocast CDR writer /output
+rmw_agnocast CDR writer /stage1
+rmw_agnocast CDR reader /input
+rmw_agnocast CDR reader /stage1
+[INFO] [1795226160.379475301] [endpoint]: Starting node with rclcpp mode (compiled with agnocast support)
+rmw_agnocast CDR writer /input
+source_rate_hz=10.00
+Minimum host MemAvailable: 11834 MiB
