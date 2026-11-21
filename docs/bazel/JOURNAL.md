@@ -11274,3 +11274,72 @@ dependency and acceptance-scope differences.
 Documentation-only validation: git diff --check passes, and the local plan
 link/heading is checked. No build, test or behavior suite is rerun. Existing
 passing module results remain applicable; no comparison result is claimed.
+
+## 2026-11-22: Phase 7.3.2 — Behavior-path planner node
+
+Purpose: expose the original Universe behavior-path planner as a composable
+node and standalone executable, providing its test helpers for selected scene
+modules. Prerequisites are the validated behavior-path common library, local
+planning-test manager/test-utils, and the existing message/pluginlib/RCLCPP
+providers. Inspect package.xml, CMakeLists.txt, both implementation sources,
+the test-helper source, all public headers, the original YAML/launch resources
+and both CMake-registered test groups before adding rules.
+
+Add package-owned MODULE/BUILD declarations and root local selection after the
+common library. Keep planner_manager.cpp and behavior_path_planner_node.cpp in
+the production library; expose src/test_utils.cpp and its header as a test-only
+library, as with the integrated velocity planner. Register the original
+BehaviorPathPlannerNode factory through RCR's rclcpp_components helper, retain
+the expected standalone executable name and use a unique component SONAME.
+Export original config/launch files, component record and executable through
+ament_index. Collect the common library's transitive shared dependencies plus
+ament_index_cpp, pluginlib, component support, map messages and logging_demo.
+
+The manifest lists sampling planners, BehaviorTree and OpenCV, but the actual
+node/helper translation units and headers do not reference their APIs. Avoid
+new otherwise-unused modules or direct links solely for those broad manifest
+entries. Existing common providers retain their own actual dependencies. The
+full node compilation, shared-library link and original behavior suite validate
+this selection. No implementation, manifest or original test source changes.
+The diagnostics interface used here is a header template; its existing provider
+has no runtime_dynamic_deps label. Its required diagnostic message/updater DSOs
+already reach the node through the common boundary-checker closure; inspect
+readelf -d on libautoware_behavior_path_planner_component.so to confirm these,
+RCLCPP, pluginlib and tinyxml2 are shared dependencies.
+
+Preserve both original executables: utilities compiles test/input.cpp,
+test/input.hpp and test/test_utils.cpp; node_interface compiles
+test/test_autoware_behavior_path_planner_node_interface.cpp. Supply this
+package's ament index plus common/route-handler/test-utils indexes and the
+planning-test manager runtime. The six active cases cover path/goal/lanelet
+utilities and actual node publication under normal/empty routes and off-track
+odometry. No scene plugin is requested by those original node cases. Use
+Cyclone DDS, ENABLE_AGNOCAST=0 and sequential tests on ROS domain 70.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_output=errors @autoware_behavior_path_planner//...
+```
+
+All public targets build, including the shared component and generated
+standalone executable. Both original test executables pass all six cases with
+zero failures, errors, disabled cases or skips (131.5-second invocation;
+utilities 0.5 seconds, node interface 9.5 seconds). Test XML confirms four and
+two cases respectively. No source compatibility fix is needed. Bazel analysis,
+targeted source/test inventory and git diff --check pass. No pre-commit,
+Fast DDS or unchanged distribution matrix is run.
+
+The subsequent standalone gate exposes a missing runtime edge: ConfigLogger
+service creation aborts because liblogging_demo__rosidl_typesupport_introspection_cpp.so
+is absent. The in-process test-helper closure supplied it, hiding the omission.
+Export @logging_demo//:cc_shared from the planner's runtime_dynamic_deps and
+add its module dependency. The full paired gate reruns both planner suites and
+the scene-plugin suites plus the real executable; all 13 cases pass in
+62.8 seconds. The following entry records that complete standalone reproducer.
+Keep this build-closure correction with the planner definitions; no source fix
+or host-runtime fallback is needed.
+
+This completes the planner node's existing suite. Actual standalone scene-plugin
+loading/configuration/shutdown is the next paired plugin gate; full selected
+scene coverage and simulator startup remain pending Phase 7.3.2/7.3.3 work.

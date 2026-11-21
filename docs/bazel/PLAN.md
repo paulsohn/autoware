@@ -1773,6 +1773,11 @@ Phase 7.3 task boundaries (selected 2026-11-21):
   or runtime skips. Two explicitly upstream-disabled cases retain that status;
   no source compatibility patch or new dependency module is required.
   [Evidence](JOURNAL.md#2026-11-21-phase-732--shared-behavior-path-planning-library).
+  The behavior-path planner node/component now builds and passes all six
+  original utility and node-interface cases, including normal/empty routes and
+  off-track odometry. Its test helpers are available to scene-module suites;
+  selected scene plugins and their executable loading checks follow.
+  [Evidence](JOURNAL.md#2026-11-22-phase-732--behavior-path-planner-node).
   Continue in dependency order through shared planner helpers, the
   preset-selected behavior/motion plugins and controller libraries, then
   simulated perception and the selected system/API closure. CMake-only shims
