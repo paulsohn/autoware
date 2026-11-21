@@ -13224,3 +13224,52 @@ executable startup/shutdown. Freespace retains two original disabled cases;
 there are no introduced skips or failures. CPU/Cyclone DDS, ENABLE_AGNOCAST=0.
 Targeted clang-format/flake8/diff checks pass. No colcon/Jazzy or full simulator
 result is implied.
+
+## 2026-11-22: Phase 7.3.2 — Costmap generator
+
+Purpose: expose the selected parking costmap_generator component from local sources.
+Inspect manifest/CMake, all 4 implementation sources, public headers,
+original launch/config and complete original suites before declaring success.
+Prerequisites are the local planning/test utilities and pinned grid-map/PCL/TF
+providers; routine execution uses CPU/Cyclone DDS with ENABLE_AGNOCAST=0.
+
+Split its three utility sources from the node, matching original CMake's two
+test executables (seven utility cases and three node cases). Generate the real
+parameter header from param/costmap_generator_node_parameters.yaml, expose its
+unqualified include root and rclcpp_lifecycle/rsl runtime providers. Declare
+native PCL common/IO/filters/surface, FLANN/QHull, grid-map ROS/messages, TF,
+message_filters and local lanelet/vehicle/utility dependencies. The header
+compatibility correction is separate 95934446.
+
+Add package-owned MODULE/BUILD and a root override after actual dependencies.
+Expose the component and original executable name under lib/<package>, register
+its component factory and index launch/config resources. Publish flattened shared
+runtime dependencies for native consumers and declare indexed fixtures on the
+unchanged original test sources. Added checks remain under bazel/tests. Extend
+the existing indexed-node adapter with a concrete package/config/executable
+profile; prove the installed path starts, parameters respond, its own component
+DSO is mapped, no heaphook is preloaded and SIGINT shutdown returns zero.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_output=errors @autoware_costmap_generator//... \
+  @autoware_freespace_planner//... \
+  //bazel/tests/planning_nodes:autoware_costmap_generator_runtime_test \
+  //bazel/tests/planning_nodes:autoware_freespace_planner_runtime_test \
+  //bazel/tests/planning_nodes:autoware_path_smoother_runtime_test \
+  //bazel/tests/planning_nodes:autoware_path_optimizer_runtime_test \
+  //bazel/tests/planning_nodes:autoware_scenario_selector_runtime_test
+python3 -m flake8 --max-line-length=150 bazel/tests/planning_nodes/test_runtime.py
+git diff --check
+```
+
+All eight targets pass: twenty active original parking cases plus seven indexed
+startup/script cases, including existing smoother/optimizer/scenario profiles
+affected by the shared adapter. Freespace preserves two original disabled
+cases; there are no failures/errors or introduced skips. The adapter now reads
+shared subprocess logs with os.pread, keeping the child's writer offset intact;
+existing assertions remain. Original costmap/freespace native tests are unchanged.
+No Fast DDS, Agnocast kernel matrix, performance or full simulator launch is run.
+This establishes package behavior/startup, not parking manoeuvre completion in
+the simulator. Continue the remaining selected planning helpers and controllers.

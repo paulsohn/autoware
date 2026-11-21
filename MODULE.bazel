@@ -1270,3 +1270,9 @@ local_path_override(
     module_name = "autoware_motion_velocity_road_user_stop_module",
     path = "src/universe/autoware_universe/planning/motion_velocity_planner/autoware_motion_velocity_road_user_stop_module",
 )
+
+bazel_dep(name = "autoware_costmap_generator", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_costmap_generator",
+    path = "src/universe/autoware_universe/planning/autoware_costmap_generator",
+)

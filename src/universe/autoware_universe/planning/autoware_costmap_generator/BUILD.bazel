@@ -1,0 +1,182 @@
+load("@generate_parameter_library//:defs.bzl", "generate_parameter_library")
+load("@rclcpp_components//:defs.bzl", "rclcpp_components_register_node")
+load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
+package(default_visibility = ["//visibility:public"])
+
+generate_parameter_library(name = "costmap_generator_node_parameters", yaml_file = "param/costmap_generator_node_parameters.yaml")
+
+cc_library(
+    name = "costmap_generator_lib",
+    srcs = glob(["src/utils/*.cpp"]),
+    hdrs = glob(["include/autoware/costmap_generator/utils/*.hpp"]),
+    includes = ["include"],
+    deps = [
+        "@ament_index_cpp//:ament_index_cpp_library",
+        "@autoware_grid_map_utils",
+        "@autoware_internal_debug_msgs//:cc",
+        "@autoware_internal_planning_msgs//:cc",
+        "@autoware_lanelet2_extension//:autoware_lanelet2_extension_lib_library",
+        "@autoware_lanelet2_utils",
+        "@autoware_map_msgs//:cc",
+        "@autoware_perception_msgs//:cc",
+        "@autoware_utils",
+        "@autoware_vehicle_info_utils",
+        "@geometry_msgs//:cc",
+        "@grid_map//:grid_map_msgs_cc",
+        "@grid_map//:grid_map_ros",
+        "@lanelet2_core//:lanelet2_core_library",
+        "@message_filters//:message_filters_library",
+        "@nav_msgs//:cc",
+        "@pcl_conversions//:pcl_conversions_library",
+        "@pcl_ros//:pcl_ros_tf_library",
+        "@rclcpp//:rclcpp_library",
+        "@rclcpp_components//:rclcpp_components_library",
+        "@rosdistro//cc:boost.geometry",
+        "@rosdistro//cc:eigen",
+        "@rosdistro//cc:flann_library",
+        "@rosdistro//cc:pcl_common",
+        "@rosdistro//cc:pcl_filters",
+        "@rosdistro//cc:pcl_io",
+        "@rosdistro//cc:pcl_surface",
+        "@rosdistro//cc:qhull_r_library",
+        "@sensor_msgs//:cc",
+        "@tf2//:tf2_library",
+        "@tf2_eigen//:tf2_eigen_library",
+        "@tf2_geometry_msgs//:tf2_geometry_msgs_library",
+        "@tf2_ros//:tf2_ros_library",
+        "@tier4_planning_msgs//:cc",
+        "@visualization_msgs//:cc",
+    ],
+)
+
+cc_library(
+    name = "autoware_costmap_generator",
+    srcs = ["src/costmap_generator.cpp"],
+    hdrs = ["include/autoware/costmap_generator/costmap_generator.hpp"],
+    includes = ["include", "include/autoware_costmap_generator"],
+    deps = [
+        ":costmap_generator_lib",
+        ":costmap_generator_node_parameters",
+        "@ament_index_cpp//:ament_index_cpp_library",
+        "@autoware_grid_map_utils",
+        "@autoware_internal_debug_msgs//:cc",
+        "@autoware_internal_planning_msgs//:cc",
+        "@autoware_lanelet2_extension//:autoware_lanelet2_extension_lib_library",
+        "@autoware_lanelet2_utils",
+        "@autoware_map_msgs//:cc",
+        "@autoware_perception_msgs//:cc",
+        "@autoware_utils",
+        "@autoware_vehicle_info_utils",
+        "@geometry_msgs//:cc",
+        "@grid_map//:grid_map_msgs_cc",
+        "@grid_map//:grid_map_ros",
+        "@lanelet2_core//:lanelet2_core_library",
+        "@message_filters//:message_filters_library",
+        "@nav_msgs//:cc",
+        "@pcl_conversions//:pcl_conversions_library",
+        "@pcl_ros//:pcl_ros_tf_library",
+        "@rclcpp//:rclcpp_library",
+        "@rclcpp_components//:rclcpp_components_library",
+        "@rosdistro//cc:boost.geometry",
+        "@rosdistro//cc:eigen",
+        "@rosdistro//cc:flann_library",
+        "@rosdistro//cc:pcl_common",
+        "@rosdistro//cc:pcl_filters",
+        "@rosdistro//cc:pcl_io",
+        "@rosdistro//cc:pcl_surface",
+        "@rosdistro//cc:qhull_r_library",
+        "@sensor_msgs//:cc",
+        "@tf2//:tf2_library",
+        "@tf2_eigen//:tf2_eigen_library",
+        "@tf2_geometry_msgs//:tf2_geometry_msgs_library",
+        "@tf2_ros//:tf2_ros_library",
+        "@tier4_planning_msgs//:cc",
+        "@visualization_msgs//:cc",
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = [
+        "@ament_index_cpp//:ament_index_cpp",
+        "@autoware_grid_map_utils//:runtime_dynamic_deps",
+        "@autoware_internal_debug_msgs//:cc_shared",
+        "@autoware_internal_planning_msgs//:cc_shared",
+        "@autoware_lanelet2_extension//:autoware_lanelet2_extension_lib",
+        "@autoware_lanelet2_utils//:runtime_dynamic_deps",
+        "@autoware_map_msgs//:cc_shared",
+        "@autoware_perception_msgs//:cc_shared",
+        "@generate_parameter_library//:rclcpp_lifecycle",
+        "@generate_parameter_library//:rsl",
+        "@geometry_msgs//:cc_shared",
+        "@grid_map//:grid_map_msgs_cc_shared",
+        "@grid_map//:grid_map_ros_runtime_dynamic_deps",
+        "@lanelet2_core//:lanelet2_core",
+        "@message_filters//:message_filters",
+        "@nav_msgs//:cc_shared",
+        "@pcl_conversions//:pcl_conversions",
+        "@pcl_ros//:pcl_ros_tf",
+        "@rclcpp//:rclcpp",
+        "@rclcpp_components//:rclcpp_components",
+        "@sensor_msgs//:cc_shared",
+        "@tf2//:tf2",
+        "@tf2_eigen//:tf2_eigen",
+        "@tf2_geometry_msgs//:tf2_geometry_msgs",
+        "@tf2_ros//:tf2_ros",
+        "@tier4_planning_msgs//:cc_shared",
+        "@visualization_msgs//:cc_shared",
+    ],
+)
+
+cc_shared_library(
+    name = "autoware_costmap_generator_component",
+    dynamic_deps = [":runtime_dynamic_deps"],
+    deps = [":autoware_costmap_generator"],
+)
+
+rclcpp_components_register_node(
+    name = "costmap_generator",
+    node_name = "costmap_generator",
+    plugin = "autoware::costmap_generator::CostmapGenerator",
+    component = ":autoware_costmap_generator_component",
+)
+
+register_ament_files(
+    name = "node_executables",
+    files = [":costmap_generator"],
+    prefix = "lib/autoware_costmap_generator",
+    strip_prefix = "*",
+)
+
+ament_index(
+    components = [":costmap_generator_record"],
+    data = glob(["config/**", "launch/**"]) + [":node_executables"],
+    package_xml = "package.xml",
+)
+
+collect_transitive_dynamic_deps(
+    name = "test_dynamic_deps",
+    dynamic_deps = [":runtime_dynamic_deps", "@autoware_planning_test_manager//:runtime_dynamic_deps", "@autoware_test_utils//:runtime_dynamic_deps", "@ament_index_cpp//:ament_index_cpp"],
+)
+
+cc_test(
+    name = "test_costmap_generator_lib",
+    timeout = "long",
+    srcs = ["test/test_points_to_costmap.cpp", "test/test_objects_to_costmap.cpp", "test/test_object_map_utils.cpp"],
+    data = [":ament_index", "@autoware_test_utils//:ament_index", "@autoware_route_handler//:ament_index", "@autoware_lanelet2_utils//:ament_index", "@autoware_vehicle_info_utils//:ament_index"],
+    dynamic_deps = [":test_dynamic_deps"],
+    env = {"ENABLE_AGNOCAST": "0", "LD_LIBRARY_PATH": "lib", "ROS_DOMAIN_ID": "87"},
+    deps = [":costmap_generator_lib", "@autoware_planning_test_manager", "@autoware_test_utils", "@ament_index_cpp//:ament_index_cpp_library", "@googletest//:gtest_main"],
+)
+
+cc_test(
+    name = "test_autoware_costmap_generator",
+    timeout = "long",
+    srcs = ["test/test_costmap_generator.cpp"],
+    data = [":ament_index", "@autoware_test_utils//:ament_index", "@autoware_route_handler//:ament_index", "@autoware_lanelet2_utils//:ament_index", "@autoware_vehicle_info_utils//:ament_index"],
+    dynamic_deps = [":test_dynamic_deps"],
+    env = {"ENABLE_AGNOCAST": "0", "LD_LIBRARY_PATH": "lib", "ROS_DOMAIN_ID": "87"},
+    deps = [":autoware_costmap_generator", "@autoware_planning_test_manager", "@autoware_test_utils", "@ament_index_cpp//:ament_index_cpp_library", "@googletest//:gtest_main"],
+)

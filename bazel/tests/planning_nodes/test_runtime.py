@@ -45,8 +45,7 @@ class IndexedNode(unittest.TestCase):
                 process = subprocess.Popen(args, stdout=log, stderr=subprocess.STDOUT)
 
                 def output():
-                    log.seek(0)
-                    return log.read()
+                    return os.pread(log.fileno(), os.fstat(log.fileno()).st_size, 0).decode(errors='replace')
 
                 def wait(condition):
                     deadline = time.monotonic() + 25
