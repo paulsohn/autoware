@@ -1,0 +1,163 @@
+load("@rosidl_default_generators//:defs.bzl", "ros_message")
+
+package(default_visibility = ["//visibility:public"])
+
+ros_message(
+    name = "CommandModeAvailability",
+    src = "CommandModeAvailability.msg",
+    deps = [
+        "//msg:CommandModeAvailabilityItem",
+        "@builtin_interfaces//msg:Time",
+    ],
+)
+
+ros_message(
+    name = "CommandModeAvailabilityItem",
+    src = "CommandModeAvailabilityItem.msg",
+    deps = [],
+)
+
+ros_message(
+    name = "DiagGraphStatus",
+    src = "DiagGraphStatus.msg",
+    deps = [
+        "//msg:DiagLeafStatus",
+        "//msg:DiagLinkStatus",
+        "//msg:DiagNodeStatus",
+        "@builtin_interfaces//msg:Time",
+    ],
+)
+
+ros_message(
+    name = "DiagGraphStruct",
+    src = "DiagGraphStruct.msg",
+    deps = [
+        "//msg:DiagLeafStruct",
+        "//msg:DiagLinkStruct",
+        "//msg:DiagNodeStruct",
+        "@builtin_interfaces//msg:Time",
+    ],
+)
+
+ros_message(
+    name = "DiagLeafStatus",
+    src = "DiagLeafStatus.msg",
+    deps = [
+        "@diagnostic_msgs//msg:KeyValue",
+    ],
+)
+
+ros_message(
+    name = "DiagLeafStruct",
+    src = "DiagLeafStruct.msg",
+    deps = [],
+)
+
+ros_message(
+    name = "DiagLinkStatus",
+    src = "DiagLinkStatus.msg",
+    deps = [],
+)
+
+ros_message(
+    name = "DiagLinkStruct",
+    src = "DiagLinkStruct.msg",
+    deps = [],
+)
+
+ros_message(
+    name = "DiagNodeStatus",
+    src = "DiagNodeStatus.msg",
+    deps = [],
+)
+
+ros_message(
+    name = "DiagNodeStruct",
+    src = "DiagNodeStruct.msg",
+    deps = [],
+)
+
+ros_message(
+    name = "DrivingModeFlag",
+    src = "DrivingModeFlag.msg",
+    deps = [
+        "//msg:DrivingModeFlagItem",
+        "@builtin_interfaces//msg:Time",
+    ],
+)
+
+ros_message(
+    name = "DrivingModeFlagItem",
+    src = "DrivingModeFlagItem.msg",
+    deps = [],
+)
+
+ros_message(
+    name = "DrivingModeInfo",
+    src = "DrivingModeInfo.msg",
+    deps = [
+        "//msg:DrivingModeInfoItem",
+        "@builtin_interfaces//msg:Time",
+    ],
+)
+
+ros_message(
+    name = "DrivingModeInfoItem",
+    src = "DrivingModeInfoItem.msg",
+    deps = [],
+)
+
+ros_message(
+    name = "DrivingModeMrmState",
+    src = "DrivingModeMrmState.msg",
+    deps = [
+        "//msg:DrivingModeMrmStateItem",
+        "@builtin_interfaces//msg:Time",
+    ],
+)
+
+ros_message(
+    name = "DrivingModeMrmStateItem",
+    src = "DrivingModeMrmStateItem.msg",
+    deps = [],
+)
+
+ros_message(
+    name = "DrivingModeRequest",
+    src = "DrivingModeRequest.msg",
+    deps = [
+        "@builtin_interfaces//msg:Time",
+    ],
+)
+
+ros_message(
+    name = "EmergencyHoldingState",
+    src = "EmergencyHoldingState.msg",
+    deps = [
+        "@builtin_interfaces//msg:Time",
+    ],
+)
+
+ros_message(
+    name = "ModeChangeAvailable",
+    src = "ModeChangeAvailable.msg",
+    deps = [
+        "@builtin_interfaces//msg:Time",
+    ],
+)
+
+ros_message(
+    name = "MrmBehaviorStatus",
+    src = "MrmBehaviorStatus.msg",
+    deps = [
+        "@builtin_interfaces//msg:Time",
+    ],
+)
+
+ros_message(
+    name = "OperationModeAvailability",
+    src = "OperationModeAvailability.msg",
+    deps = [
+        "@builtin_interfaces//msg:Time",
+    ],
+)

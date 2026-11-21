@@ -1,0 +1,39 @@
+load("@rosidl_default_generators//:defs.bzl", "default_generators")
+
+package(default_visibility = ["//visibility:public"])
+
+# Supported interfaces are selected by the integrated consumers.
+default_generators(
+    dependencies = [
+        "@autoware_common_msgs",
+        "@builtin_interfaces",
+        "@diagnostic_msgs",
+    ],
+    package_xml = "package.xml",
+    deps = [
+        "//msg:CommandModeAvailability",
+        "//msg:CommandModeAvailabilityItem",
+        "//msg:DiagGraphStatus",
+        "//msg:DiagGraphStruct",
+        "//msg:DiagLeafStatus",
+        "//msg:DiagLeafStruct",
+        "//msg:DiagLinkStatus",
+        "//msg:DiagLinkStruct",
+        "//msg:DiagNodeStatus",
+        "//msg:DiagNodeStruct",
+        "//msg:DrivingModeFlag",
+        "//msg:DrivingModeFlagItem",
+        "//msg:DrivingModeInfo",
+        "//msg:DrivingModeInfoItem",
+        "//msg:DrivingModeMrmState",
+        "//msg:DrivingModeMrmStateItem",
+        "//msg:DrivingModeRequest",
+        "//msg:EmergencyHoldingState",
+        "//msg:ModeChangeAvailable",
+        "//msg:MrmBehaviorStatus",
+        "//msg:OperationModeAvailability",
+        "//srv:OperateMrm",
+        "//srv:ResetDiagGraph",
+        "//srv:SetDiagGraphOverride",
+    ],
+)

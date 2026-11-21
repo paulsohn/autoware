@@ -1,0 +1,28 @@
+load("@rosidl_default_generators//:defs.bzl", "ros_service")
+
+package(default_visibility = ["//visibility:public"])
+
+ros_service(
+    name = "OperateMrm",
+    src = "OperateMrm.srv",
+    deps = [
+        "@autoware_common_msgs//msg:ResponseStatus",
+        "@builtin_interfaces//msg:Time",
+    ],
+)
+
+ros_service(
+    name = "ResetDiagGraph",
+    src = "ResetDiagGraph.srv",
+    deps = [
+        "@autoware_common_msgs//msg:ResponseStatus",
+    ],
+)
+
+ros_service(
+    name = "SetDiagGraphOverride",
+    src = "SetDiagGraphOverride.srv",
+    deps = [
+        "@autoware_common_msgs//msg:ResponseStatus",
+    ],
+)
