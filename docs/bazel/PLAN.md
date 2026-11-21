@@ -1814,6 +1814,11 @@ Phase 7.3 task boundaries (selected 2026-11-21):
   The Bézier sampler builds both production sources and passes two consumer
   cases for boundary states, curve evaluation and candidate-family generation.
   [Evidence](JOURNAL.md#2026-11-22-phase-732--bézier-sampler-library).
+  Start-planner is complete: all nine implementation sources and six original
+  test/helper sources build; four active cases and all six standalone profiles
+  pass. Its original disabled freespace case and optional figure-export default
+  remain unchanged.
+  [Evidence](JOURNAL.md#2026-11-22-phase-732--start-planner-scene-plugin).
   Continue in dependency order through shared planner helpers, the
   preset-selected behavior/motion plugins and controller libraries, then
   simulated perception and the selected system/API closure. CMake-only shims

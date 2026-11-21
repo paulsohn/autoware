@@ -11691,3 +11691,49 @@ in 0.3 seconds (26.8-second invocation), zero failures/errors/skips. Source/test
 inventory and whitespace checks pass. CPU/Cyclone DDS, ENABLE_AGNOCAST=0 is
 selected; no source patch, pre-commit, Fast DDS or unrelated matrix is needed.
 Next validate the goal-planner consumer together with the selected parking scenes.
+
+## 2026-11-22: Phase 7.3.2 — Start-planner scene plugin
+
+Purpose: supply the selected parking pull-out manager. Inspect the nine production
+sources, public headers, factory/config/test_data, manifest/CMake and all six
+original test/helper translation units. Preserve the complete original single
+test executable: clothoid, shift and geometric pull-out generation plus the
+start-prevention planning-factor case. The original freespace pull-out test is
+explicitly disabled upstream; keep that state visible. Several extra route
+fixtures are commented out in the original cases and are not newly enabled.
+
+Add package-local module/library/shared-plugin/index rules and the root local
+override. Declare the actual freespace implementation, planner common helpers,
+map/TF/messages and utilities. The existing Lanelet2 extension exports distinct
+CcInfo and shared-library targets: use autoware_lanelet2_extension_lib_library
+for compile dependencies, retaining its shared closure through planner common.
+The test helper lives under test/src with a test/include header; compile it once
+with the complete original test glob and declare that include directory. Link
+the pinned pyplot/Python embedding API rather than host Python. Preserve CMake's
+EXPORT_TEST_PLOT_FIGURE=OFF default; optional figure export is not an enabled
+test group or an acceptance claim here.
+
+Extend the root standalone profile to load StartPlannerModuleManager through the
+actual planner executable/index. Require its DLL mapping, arrival/stopped-time
+defaults 1/1, supported stopped-time update to 1.5 and clean shutdown. Keep the
+five earlier profiles as regressions. No original source/test edits are needed.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_output=errors @autoware_behavior_path_start_planner_module//... \
+  //bazel/tests/autoware_behavior_path_planner:all
+python3 -m flake8 --max-line-length=150 \
+  bazel/tests/autoware_behavior_path_planner/test_runtime.py
+git diff --check
+```
+
+All nine production and six original test/helper sources build. The original
+suite passes four active cases in 7.6 seconds and retains its one disabled case;
+standalone start-planner passes in 2.1 seconds and all five prior profiles pass.
+The combined gate has ten active cases across seven targets, zero failures,
+errors or runtime skips (243.3-second invocation). The final declaration-only
+cleanup gate also passes, reusing unchanged profile results and rerunning the
+original suite (7.8 seconds) and start profile (1.4 seconds). CPU/Cyclone DDS with
+ENABLE_AGNOCAST=0 is selected; no pre-commit, Fast DDS or unchanged packaging
+matrix runs. Goal-planner and joint scene loading are the next parking gates.

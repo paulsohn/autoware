@@ -38,6 +38,9 @@ CLASS, PARAMETERS, VALUES, UPDATED = {
                                  ['avoidance_by_lane_change.execute_object_longitudinal_margin',
                                   'lane_change.backward_lane_length'],
                                  [80.0, 200.0], 201.0),
+    'start_planner': ('StartPlannerModuleManager',
+                      ['start_planner.th_arrived_distance', 'start_planner.th_stopped_time'],
+                      [1.0, 1.0], 1.5),
 }[MODULE]
 PLUGINS = ['autoware::behavior_path_planner::' + c for c in CLASS.split(',')]
 

@@ -1099,3 +1099,9 @@ local_path_override(
     module_name = "autoware_bezier_sampler",
     path = "src/universe/autoware_universe/planning/sampling_based_planner/autoware_bezier_sampler",
 )
+
+bazel_dep(name = "autoware_behavior_path_start_planner_module", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_behavior_path_start_planner_module",
+    path = "src/universe/autoware_universe/planning/behavior_path_planner/autoware_behavior_path_start_planner_module",
+)

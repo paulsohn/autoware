@@ -1,0 +1,104 @@
+load("@rosdistro//ament:defs.bzl", "ament_index")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "autoware_behavior_path_start_planner_module",
+    srcs = glob(["src/**/*.cpp"]),
+    hdrs = glob(["include/**/*.hpp"]),
+    strip_include_prefix = "include",
+    deps = [
+        "@ament_index_cpp//:ament_index_cpp_library",
+        "@autoware_behavior_path_planner_common",
+        "@autoware_freespace_planning_algorithms",
+        "@autoware_internal_debug_msgs//:cc",
+        "@autoware_internal_planning_msgs//:cc",
+        "@autoware_interpolation",
+        "@autoware_lanelet2_utils",
+        "@autoware_lanelet2_extension//:autoware_lanelet2_extension_lib_library",
+        "@autoware_motion_utils",
+        "@autoware_perception_msgs//:cc",
+        "@autoware_planning_msgs//:cc",
+        "@autoware_rtc_interface",
+        "@autoware_utils",
+        "@autoware_utils_geometry",
+        "@autoware_utils_math",
+        "@autoware_vehicle_info_utils",
+        "@geometry_msgs//:cc",
+        "@lanelet2_core//:lanelet2_core_library",
+        "@pluginlib//:pluginlib_library",
+        "@rclcpp//:rclcpp_library",
+        "@rosdistro//cc:boost.geometry",
+        "@rosdistro//cc:eigen",
+        "@rosdistro//cc:magic_enum",
+        "@tf2_ros//:tf2_ros_library",
+        "@tf2//:tf2_library",
+        "@tf2_geometry_msgs//:tf2_geometry_msgs_library",
+        "@tier4_planning_msgs//:cc",
+        "@visualization_msgs//:cc",
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = [
+        "@ament_index_cpp//:ament_index_cpp",
+        "@autoware_behavior_path_planner_common//:runtime_dynamic_deps",
+        "@autoware_freespace_planning_algorithms//:runtime_dynamic_deps",
+        "@pluginlib//:pluginlib",
+    ],
+)
+
+cc_shared_library(
+    name = "start_planner_plugin",
+    dynamic_deps = [":runtime_dynamic_deps"],
+    shared_lib_name = "libautoware_behavior_path_start_planner_module.so",
+    deps = [":autoware_behavior_path_start_planner_module"],
+)
+
+ament_index(
+    data = glob([
+        "config/**",
+        "test_data/**",
+    ]),
+    libraries = [":start_planner_plugin"],
+    package_xml = "package.xml",
+    plugin_categories = {"plugins.xml": "autoware_behavior_path_planner"},
+)
+
+collect_transitive_dynamic_deps(
+    name = "test_dynamic_deps",
+    dynamic_deps = [
+        ":runtime_dynamic_deps",
+        "@autoware_behavior_path_planner//:test_dynamic_deps",
+    ],
+)
+
+cc_test(
+    name = "test_autoware_behavior_path_start_planner_module",
+    timeout = "long",
+    srcs = glob(["test/**/*.cpp", "test/**/*.hpp"]),
+    includes = ["test/include"],
+    data = [
+        ":ament_index",
+        "@autoware_behavior_path_planner//:ament_index",
+        "@autoware_behavior_path_planner_common//:ament_index",
+        "@autoware_route_handler//:ament_index",
+        "@autoware_test_utils//:ament_index",
+    ],
+    dynamic_deps = [":test_dynamic_deps"],
+    env = {
+        "LD_LIBRARY_PATH": "lib",
+        "ROS_DOMAIN_ID": "73",
+    },
+    deps = [
+        ":autoware_behavior_path_start_planner_module",
+        "@autoware_behavior_path_planner//:test_utils",
+        "@googletest//:gtest_main",
+        "@autoware_pyplot",
+        "@rules_python//python/cc:current_py_cc_headers",
+        "@rules_python//python/cc:current_py_cc_libs",
+    ],
+)

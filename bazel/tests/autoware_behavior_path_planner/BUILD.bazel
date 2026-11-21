@@ -39,5 +39,6 @@ load("@rules_python//python:defs.bzl", "py_test")
         "static_obstacle_avoidance",
         "lane_change",
         "avoidance_by_lane_change",
+        "start_planner",
     ]
 ]
