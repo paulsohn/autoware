@@ -1,0 +1,29 @@
+fast_source_hz=9.99968
+sample,0,full,25186051
+sample,1,partial,44621950
+sample,2,full,6166871
+sample,3,partial,43862932
+sample,4,full,5066587
+sample,5,partial,43178856
+sample,6,full,4236006
+sample,7,partial,43496990
+sample,8,full,5072508
+sample,9,partial,43504795
+sample,10,full,5749592
+sample,11,partial,43773877
+sample,12,full,4864550
+sample,13,partial,43417662
+sample,14,full,4683783
+sample,15,partial,43834870
+sample,16,full,4886731
+sample,17,partial,43626241
+sample,18,full,4953616
+sample,19,partial,43171452
+sample,20,full,4138124
+sample,21,partial,43438431
+sample,22,full,4983953
+sample,23,partial,43007346
+verified 24 synchronized clouds and metadata, 12 complete and 12 timed out, 1966080 input points
+graph_user_s=0.490 graph_sys_s=0.360
+Minimum host MemAvailable: 11519 MiB
+exit_status=0

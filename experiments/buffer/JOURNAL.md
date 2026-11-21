@@ -1320,3 +1320,56 @@ default subscription options, output allocation and loan lifetimes need
 separate verification for a zero-copy claim. Keep native-wrapper A/B on a
 component that actually implements the native API.
 [Smoke observations](../rmw-agnocast/wrapper-entry-results/)
+
+## 2026-11-21 — Integrate the Universe three-LiDAR synchronizer
+
+Built the real CPU concatenate_and_time_sync_node sources and rclcpp component
+registration in an isolated colcon package. The laptop runs its exported
+Lyrical userspace and Agnocast device. The build uses one worker, the
+1,200 MiB build limit and ENABLE_AGNOCAST=0. Use the existing patched
+rclcpp/RMW overlay and heaphook for the RMW cases. Checked the resolved
+native input/output endpoints, validated delegated output_info and static
+TF, and left bridging off in every mode.
+
+Two source changes were necessary. The initial compile failed at the removed
+message_filters/pass_through.h. Removed five unused includes from the public
+synchronizer header in 0a4bcd6e. The Bazel snapshot and inspected AWF main
+still carried them. On the executable's first functional runs all groups
+were valid, followed by SIGSEGV at shutdown in both RMW layouts. One
+diagnostic rerun reported a double free. The node stored shared ownership of
+the collectors and each collector stored shared ownership of the node.
+Changed that back-reference to weak ownership and retained the parent only
+while executing its callbacks (a61d55cf). Subsequent runs checked the child
+exit statuses as well as application output. This isolates the observed
+failure to a real graph lifecycle path and does not require a kernel patch.
+The CPU component is the tested instantiation of the shared collector template.
+[Inspected AWF source](https://github.com/autowarefoundation/autoware_universe/tree/8361f0ef2dd4558864f0d00d8bfb9e036c7102af/sensing/autoware_pointcloud_preprocessor/include/autoware/pointcloud_preprocessor/concatenate_data)
+
+The first scoped-run launcher inadvertently preloaded the hook into an
+intermediate env executable. Its re-exec under the same PID produced an
+Agnocast add-process error before discovery. Pass all settings in one env
+invocation so only the actual process receives the hook. In the scoped
+test, enter the fixed wait after the first cloud, once the node has created
+its collectors. Verify native wake and delegated completion counters and
+application progress through both complete and timed-out groups.
+
+Use the build and matrix commands in the linked README on a fresh output
+directory. The separate C++ fixture verifies each segment of every cloud
+against known XYZIRC points and frame translations. Matched rates are
+10/10/5 Hz with 1 ms inter-sensor timestamp offsets. Each timed run uses 60
+half-MiB input clouds, producing 12 complete outputs and 12 intentional
+partial outputs. Control modes are Cyclone and Zenoh. The candidate modes
+use CDR, copying host-cloud, and copying host-cloud plus blocking A. Native
+Agnocast requires a separate native data path for this rclcpp-only node.
+Ordinary subscriptions do not opt into the loan-backed host view. The
+next integration decision is where the actual synchronizer can consume that
+view and where constructing transformed or concatenated data requires a new
+output allocation.
+[Reproduction, comparison and raw evidence](../rmw-agnocast/README.md#universe-multi-lidar-concatenation-and-synchronization)
+
+Final passes verified 240 matched cloud/metadata pairs from 600 inputs.
+Blocking A's complete-group medians were 4.38/5.15 ms and its intentional
+partial-group medians were 42.15/42.44 ms. Both runs reported 57 native
+wakes and 24 delegated completions. All ten graph invocations passed the
+payload, TF, timeout and teardown checks. No consistent complete-group
+median advantage over ordinary host-cloud was established.

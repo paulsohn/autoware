@@ -2053,3 +2053,75 @@ multi-LiDAR synchronization/concatenation graph, retaining this benchmark as
 a control. Compare at matched delivered sensor rates with native, A, Cyclone
 DDS and Zenoh, and validate synchronized output contents and timestamps.
 [Per-frame observations, resource counters, paired results and checks](poll-clamp-results/).
+
+### Universe multi-LiDAR concatenation and synchronization
+
+Build the actual PointCloudConcatenateDataSynchronizerComponent, its collectors,
+matcher, transform and cloud-combination code from the tracked Universe subtree.
+The isolated colcon target registers the same plugin class and executable as
+Universe. It avoids building unrelated CPU/GPU filters. The node uses regular
+rclcpp publishers/subscriptions. The application build and launch use
+ENABLE_AGNOCAST=0. The existing Lyrical overlay supplies managed TF and message
+dependencies. No relay is started.
+
+The C++ fixture is a separate process from the synchronizer. It drives two
+10 Hz inputs and one 5 Hz input, with acquisition stamps offset by 0/1/2 ms.
+One input is in base_link and two are in a sensor frame translated by +4 m
+through a separate ROS static TF publisher. Motion compensation and optional
+per-sensor output clouds are disabled. Every other group is missing the third
+sensor by design and should publish after the configured 40 ms timeout. For
+each output, check frame, shape, oldest stamp, per-sensor stamp, exact payload
+bytes including TF, segment positions and lengths, and success/timeout status
+on the separately received output_info topic. Reject duplicate or missing
+groups and abnormal child termination. This is a controlled, synthetic sensor
+workload running the real algorithm on the laptop.
+
+The Cyclone and Zenoh references use their stock RMWs. The other three modes
+select the same four resolved cloud topics in rmw_agnocast. TF, ROS services
+and output_info remain delegated to Cyclone. CDR serializes the clouds.
+Host uses the same-host representation with the component's default CPU
+subscription and normal publishing. Fixed uses that same representation and
+the existing single-threaded scoped wait runner **only for the synchronizer**.
+It enters blocking A after the first verified-fixture output arrives, by
+which time the component has lazily created its collectors and timers.
+Check the fixed-wait counters at teardown. Ordinary node startup is exercised
+in all other modes. The two compiled RMW host-cloud modes copy the received
+payload into the CPU Buffer. These runs do not measure loaned host views.
+Native Agnocast has no equivalent transport row for this rclcpp-only component.
+
+From this worktree with the existing Lyrical root, Agnocast kernel module and
+crop/RMW overlays:
+
+```bash
+set -e
+export LYRICAL_ROOT=$(cat build/agnocast-lyrical/universe-root)
+experiments/buffer/run-lyrical.sh bash experiments/rmw-agnocast/build-sync.sh
+bash experiments/rmw-agnocast/bench-sync.sh build/universe-sync/new-batch
+```
+
+Both matrix passes use 32,768 XYZIRC points (512 KiB) per sensor input.
+The fixture prepares the input bytes before timing, stamps immediately before
+publishing the first input of the group, and measures until receipt of the
+combined cloud in the fixture process. Each pass covers 24 groups, 60 inputs
+and 1,966,080 input points per mode. The repeat reverses mode order. Report
+complete groups and intentional timeouts separately. After four warmup
+groups, each per-pass p95 is the largest of ten samples of that kind. Child
+CPU includes launch, discovery, processing, validation and teardown, plus the
+router for Zenoh. Short-run tails and CPU totals are descriptive.
+
+| Mode | Complete median ms, pass 1 / 2 | Complete p95 ms, pass 1 / 2 | Partial median ms, pass 1 / 2 |
+|---|---:|---:|---:|
+| Cyclone DDS | 4.92 / 5.58 | 5.75 / 6.28 | 43.47 / 43.65 |
+| rmw_agnocast, CDR | 4.60 / 4.24 | 5.92 / 5.79 | 43.04 / 43.09 |
+| rmw_agnocast, host-cloud | 4.64 / 4.49 | 6.15 / 5.39 | 42.27 / 42.18 |
+| rmw_agnocast, host-cloud + A | 4.38 / 5.15 | 5.51 / 5.44 | 42.15 / 42.44 |
+| Zenoh | 4.49 / 3.56 | 6.13 / 4.29 | 43.04 / 42.79 |
+
+The final two passes validated all 240 output clouds and metadata records,
+including the expected 120 partially populated outputs. All processes exited
+cleanly. Both A runs reported 57 native wakes, 24 delegated completions and
+zero native-triggered DDS interrupts. A worked with the real timer and
+subscription topology. Its advantage over ordinary host-cloud varied in
+sign at the complete-group median. The next comparison should isolate
+payload copies on this exact graph before changing deployment defaults.
+[Per-set latency, exit status, counters, CPU and memory](sync-results/).

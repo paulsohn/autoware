@@ -1,0 +1,178 @@
+#include <rclcpp/rclcpp.hpp>
+
+#include <autoware_sensing_msgs/msg/concatenated_point_cloud_info.hpp>
+#include <sensor_msgs/msg/point_cloud2.hpp>
+
+#include <algorithm>
+#include <array>
+#include <chrono>
+#include <cstdlib>
+#include <cstring>
+#include <fstream>
+#include <iostream>
+#include <map>
+#include <set>
+#include <tuple>
+#include <vector>
+
+using Cloud = sensor_msgs::msg::PointCloud2;
+using Info = autoware_sensing_msgs::msg::ConcatenatedPointCloudInfo;
+using Clock = std::chrono::steady_clock;
+using namespace std::chrono_literals;
+constexpr int sets = 24;
+const int points = std::getenv("SYNC_LARGE") ? 32768 : 1024;
+const std::array<std::string, 3> topics{"/sync/left", "/sync/right", "/sync/top"};
+struct Point
+{
+  float x, y, z;
+  uint8_t intensity, type;
+  uint16_t channel;
+};
+static_assert(sizeof(Point) == 16);
+
+void check(bool ok, const char * message)
+{
+  if (!ok) throw std::runtime_error(message);
+}
+Point point(int seq, int sensor, int index)
+{
+  return {float(index), float(seq), float(sensor), uint8_t(seq), uint8_t(sensor), uint16_t(index)};
+}
+Cloud cloud(int seq, int sensor)
+{
+  Cloud c;
+  c.header.frame_id = sensor ? "sync_lidar" : "base_link";
+  c.width = points;
+  c.height = 1;
+  c.is_dense = true;
+  c.point_step = sizeof(Point);
+  c.row_step = points * sizeof(Point);
+  using Field = sensor_msgs::msg::PointField;
+  for (auto [name, offset, type] :
+       {std::tuple{"x", 0, Field::FLOAT32},
+        {"y", 4, Field::FLOAT32},
+        {"z", 8, Field::FLOAT32},
+        {"intensity", 12, Field::UINT8},
+        {"return_type", 13, Field::UINT8},
+        {"channel", 14, Field::UINT16}}) {
+    Field f;
+    f.name = name;
+    f.offset = offset;
+    f.datatype = type;
+    f.count = 1;
+    c.fields.push_back(f);
+  }
+  c.data.resize(c.row_step);
+  for (int i = 0; i < points; ++i) {
+    auto p = point(seq, sensor, i);
+    std::memcpy(c.data.data() + i * sizeof(p), &p, sizeof(p));
+  }
+  return c;
+}
+int main(int argc, char ** argv)
+{
+  rclcpp::init(argc, argv);
+  auto node = std::make_shared<rclcpp::Node>("sync_fixture");
+  auto qos = rclcpp::SensorDataQoS().keep_last(32);
+  std::map<int64_t, Cloud::ConstSharedPtr> clouds;
+  std::map<int64_t, int64_t> arrival;
+  std::map<int64_t, Info::ConstSharedPtr> infos;
+  auto sub = node->create_subscription<Cloud>("/output", qos, [&](Cloud::ConstSharedPtr c) {
+    const auto stamp = rclcpp::Time(c->header.stamp).nanoseconds();
+    arrival[stamp] = node->now().nanoseconds() - stamp;
+    if (clouds.empty()) {
+      if (const char * path = std::getenv("SYNC_READY_FILE")) std::ofstream(path) << "ready";
+    }
+    check(clouds.emplace(rclcpp::Time(c->header.stamp).nanoseconds(), c).second, "duplicate cloud");
+  });
+  auto status = node->create_subscription<Info>("/output_info", qos, [&](Info::ConstSharedPtr m) {
+    check(infos.emplace(rclcpp::Time(m->header.stamp).nanoseconds(), m).second, "duplicate info");
+  });
+  std::vector<rclcpp::Publisher<Cloud>::SharedPtr> pubs;
+  for (const auto & topic : topics) pubs.push_back(node->create_publisher<Cloud>(topic, qos));
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(node);
+  auto spin_until = [&](Clock::time_point end) {
+    while (true) {
+      auto remaining = end - Clock::now();
+      if (remaining <= Clock::duration::zero()) break;
+      executor.spin_once(std::chrono::duration_cast<std::chrono::nanoseconds>(remaining));
+    }
+  };
+  auto ready = [&] {
+    return sub->get_publisher_count() && status->get_publisher_count() &&
+           std::all_of(
+             pubs.begin(), pubs.end(), [](auto & p) { return p->get_subscription_count(); });
+  };
+  auto deadline = Clock::now() + 10s;
+  while (!ready() && Clock::now() < deadline) spin_until(Clock::now() + 20ms);
+  check(ready(), "endpoints failed to match");
+  spin_until(Clock::now() + 500ms);
+  std::vector<int64_t> stamps;
+  std::array<std::vector<Cloud>, sets> payloads;
+  for (int seq = 0; seq < sets; ++seq) {
+    for (int sensor = 0; sensor < (seq % 2 ? 2 : 3); ++sensor)
+      payloads[seq].push_back(cloud(seq, sensor));
+  }
+  auto start = Clock::now();
+  for (int seq = 0; seq < sets; ++seq) {
+    auto & inputs = payloads[seq];
+    spin_until(start + seq * 100ms);
+    stamps.push_back(node->now().nanoseconds());
+    // Two 10 Hz streams and one 5 Hz stream, with a 40 ms collector timeout.
+    for (size_t sensor = 0; sensor < inputs.size(); ++sensor) {
+      inputs[sensor].header.stamp = rclcpp::Time(stamps.back() + int64_t(sensor) * 1000000);
+      pubs[sensor]->publish(inputs[sensor]);
+    }
+  }
+  spin_until(Clock::now() + 500ms);
+  check(clouds.size() == sets && infos.size() == sets, "missing synchronized output or metadata");
+  for (int seq = 0; seq < sets; ++seq) {
+    const auto & c = *clouds.at(stamps[seq]);
+    const auto & m = *infos.at(stamps[seq]);
+    const int count = seq % 2 ? 2 : 3;
+    check(
+      c.header.frame_id == "base_link" && c.width == count * points && c.height == 1 &&
+        c.point_step == sizeof(Point) && c.row_step == c.data.size() &&
+        c.data.size() == c.width * sizeof(Point),
+      "invalid cloud frame or shape");
+    check(
+      m.concatenation_success == (count == 3) && m.source_info.size() == 3,
+      "invalid collection status");
+    std::set<std::string> seen;
+    std::set<unsigned> segments;
+    for (const auto & source : m.source_info) {
+      auto it = std::find(topics.begin(), topics.end(), source.topic);
+      check(it != topics.end() && seen.insert(source.topic).second, "unknown or duplicate sensor");
+      int sensor = it - topics.begin();
+      if (sensor >= count) {
+        check(
+          source.status == source.STATUS_TIMEOUT && source.length == 0, "expected sensor timeout");
+        continue;
+      }
+      check(
+        source.status == source.STATUS_OK && source.length == points &&
+          source.idx_begin % points == 0 && source.idx_begin / points < unsigned(count) &&
+          segments.insert(source.idx_begin).second,
+        "invalid source segment");
+      check(
+        rclcpp::Time(source.header.stamp).nanoseconds() == stamps[seq] + sensor * 1000000,
+        "wrong source stamp");
+      for (int i = 0; i < points; ++i) {
+        auto expected = point(seq, sensor, i);
+        if (sensor) expected.x += 4;
+        check(
+          !std::memcmp(
+            c.data.data() + (source.idx_begin + i) * sizeof(Point), &expected, sizeof(Point)),
+          "source payload or TF mismatch");
+      }
+    }
+  }
+  std::cout << "fast_source_hz=" << 1e9 * (sets - 1) / (stamps.back() - stamps.front()) << "\n";
+  for (int i = 0; i < sets; ++i)
+    std::cout << "sample," << i << "," << (i % 2 ? "partial" : "full") << ","
+              << arrival.at(stamps[i]) << "\n";
+  std::cout << "verified 24 synchronized clouds and metadata, 12 complete and 12 timed out, "
+            << 60 * points << " input points\n";
+  rclcpp::shutdown();
+}

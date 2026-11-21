@@ -1,0 +1,11 @@
+Batch | Transport | Complete median/p95 ms | Partial median/p95 ms | Child CPU s
+large | cyclone | 4.92/5.75 | 43.47/43.83 | 0.850
+large | cdr | 4.60/5.92 | 43.04/44.98 | 0.996
+large | host | 4.64/6.15 | 42.27/43.63 | 1.041
+large | fixed | 4.38/5.51 | 42.15/42.62 | 1.216
+large | zenoh | 4.49/6.13 | 43.04/43.57 | 1.419
+repeat | cyclone | 5.58/6.28 | 43.65/44.17 | 0.815
+repeat | cdr | 4.24/5.79 | 43.09/44.04 | 0.993
+repeat | host | 4.49/5.39 | 42.18/43.07 | 0.968
+repeat | fixed | 5.15/5.44 | 42.44/43.13 | 1.193
+repeat | zenoh | 3.56/4.29 | 42.79/43.97 | 1.311

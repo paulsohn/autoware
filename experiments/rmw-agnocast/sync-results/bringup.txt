@@ -1,0 +1,14 @@
+/ws/src/universe_sync_benchmark/../universe/autoware_universe/sensing/autoware_pointcloud_preprocessor/include/autoware/pointcloud_preprocessor/concatenate_data/concatenate_and_time_sync_node.hpp:48:10: fatal error: 'message_filters/pass_through.h' file not found
+Minimum host MemAvailable: 11145 MiB
+build/universe-sync/trace.log:verified 24 synchronized clouds and metadata, 12 complete and 12 timed out, 61440 transformed/input points
+build/universe-sync/trace.log:double free or corruption (!prev)
+build/universe-sync/trace.log:build/universe-sync/debug.sh: line 18: 2210123 Aborted                    (core dumped) "${child[@]}" "${sync[@]}" --ros-args --params-file "$config" -p 'input_topics:=[/sync/left,/sync/right,/sync/top]' -p is_motion_compensated:=false -p publish_synchronized_pointcloud:=false -p timeout_sec:=0.04
+build/universe-sync/cdr.log:verified 24 synchronized clouds and metadata, 12 complete and 12 timed out, 61440 transformed/input points
+build/universe-sync/cdr.log:experiments/rmw-agnocast/run-sync.sh: line 13: 2206615 Segmentation fault         (core dumped) "${child[@]}" "$bin/concatenate_and_time_sync_node" --ros-args --params-file "$config" -p 'input_topics:=[/sync/left,/sync/right,/sync/top]' -p is_motion_compensated:=false -p publish_synchronized_pointcloud:=false -p timeout_sec:=0.04
+build/universe-sync/host.log:verified 24 synchronized clouds and metadata, 12 complete and 12 timed out, 61440 transformed/input points
+build/universe-sync/host.log:experiments/rmw-agnocast/run-sync.sh: line 13: 2207006 Segmentation fault         (core dumped) "${child[@]}" "$bin/concatenate_and_time_sync_node" --ros-args --params-file "$config" -p 'input_topics:=[/sync/left,/sync/right,/sync/top]' -p is_motion_compensated:=false -p publish_synchronized_pointcloud:=false -p timeout_sec:=0.04
+Summary: 2 packages finished [38.9s]
+Minimum host MemAvailable: 10840 MiB
+verified 24 synchronized clouds and metadata, 12 complete and 12 timed out, 61440 input points
+fixed_wait arms=24 completions=24 native=43 both=2 native_interrupts=0 stop_interrupts=1
+Minimum host MemAvailable: 11401 MiB

@@ -1,0 +1,37 @@
+rmw_agnocast CDR reader /output
+rmw_agnocast CDR writer /sync/left
+rmw_agnocast CDR writer /sync/right
+rmw_agnocast CDR writer /sync/top
+rmw_agnocast CDR writer /output
+rmw_agnocast CDR reader /sync/left
+rmw_agnocast CDR reader /sync/right
+rmw_agnocast CDR reader /sync/top
+fast_source_hz=9.99962
+sample,0,full,22551273
+sample,1,partial,43933294
+sample,2,full,5156555
+sample,3,partial,43305111
+sample,4,full,4890869
+sample,5,partial,43557153
+sample,6,full,5331120
+sample,7,partial,42750316
+sample,8,full,4274158
+sample,9,partial,42761286
+sample,10,full,5924218
+sample,11,partial,43533047
+sample,12,full,5019299
+sample,13,partial,44976862
+sample,14,full,4947144
+sample,15,partial,44568760
+sample,16,full,4022268
+sample,17,partial,42855322
+sample,18,full,4318731
+sample,19,partial,43153679
+sample,20,full,3741323
+sample,21,partial,42923189
+sample,22,full,3805273
+sample,23,partial,42870581
+verified 24 synchronized clouds and metadata, 12 complete and 12 timed out, 1966080 input points
+graph_user_s=0.651 graph_sys_s=0.345
+Minimum host MemAvailable: 11599 MiB
+exit_status=0
