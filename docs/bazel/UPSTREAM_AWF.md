@@ -1497,3 +1497,21 @@ No older-ROS verification or new submission is claimed.
   skips or timestamp shifting. See the
   [exact command and diagnosis](JOURNAL.md#2026-11-22-phase-732--perception-metric-windows-at-ros-time-zero).
   Older ROS is not executed and no submission is claimed.
+
+### CPU occupancy mapping needs Lyrical filter and Nav2 raytrace APIs
+
+- [ ] Associate with a matching upstream fix. Reviewed 2026-11-22: current
+  [CPU costmap source](https://github.com/autowarefoundation/autoware_universe/blob/main/perception/autoware_probabilistic_occupancy_grid_map/lib/costmap_2d/occupancy_grid_map.cpp)
+  retains the inherited raytraceLine call. Scoped occupancy/raytrace and
+  message-filter PR searches find no matching change; #1217 removes logs.
+- Universe 0.53.2, message_filters 7.4.2, Nav2 1.5.2, LLVM/libc++ 21.1.8:
+  selected CPU compilation fails on removed filter/TF headers and the moved
+  raytrace member. Use six .hpp includes and the existing QoS objects directly.
+  Nav2's free helper needs size_x_ as its row stride; preserve the original range
+  limit and declare nav2_util. Keep the old call when the helper is absent,
+  without claiming complete older-ROS compatibility or changing GPU sources.
+- The original CPU launch loads both real components and produces a 300x300,
+  0.5 m grid with occupied wall/free cells, then shuts down cleanly. All 127
+  original SDK/factory cases and both launch cases pass, Cyclone DDS/Agnocast
+  off. [Exact source diagnosis/gate](JOURNAL.md#2026-11-22-phase-732--cpu-occupancy-lyrical-filter-and-raytrace-apis).
+  No older ROS, GPU or full simulator result or submission is claimed.

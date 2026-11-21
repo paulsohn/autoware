@@ -27,6 +27,7 @@
   <depend>laser_geometry</depend>
   <depend>message_filters</depend>
   <depend>nav2_costmap_2d</depend>
+  <depend>nav2_util</depend>
   <depend>nav_msgs</depend>
   <depend>pcl_ros</depend>
   <depend>rclcpp</depend>

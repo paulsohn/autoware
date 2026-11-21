@@ -61,13 +61,11 @@ LaserscanBasedOccupancyGridMapNode::LaserscanBasedOccupancyGridMapNode(
     this->declare_parameter<bool>("input_obstacle_and_raw_pointcloud");
 
   /* Subscriber and publisher */
-  laserscan_sub_.subscribe(
-    this, "~/input/laserscan", rclcpp::SensorDataQoS{}.keep_last(1).get_rmw_qos_profile());
+  laserscan_sub_.subscribe(this, "~/input/laserscan", rclcpp::SensorDataQoS{}.keep_last(1));
   obstacle_pointcloud_sub_.subscribe(
-    this, "~/input/obstacle_pointcloud",
-    rclcpp::SensorDataQoS{}.keep_last(1).get_rmw_qos_profile());
+    this, "~/input/obstacle_pointcloud", rclcpp::SensorDataQoS{}.keep_last(1));
   raw_pointcloud_sub_.subscribe(
-    this, "~/input/raw_pointcloud", rclcpp::SensorDataQoS{}.keep_last(1).get_rmw_qos_profile());
+    this, "~/input/raw_pointcloud", rclcpp::SensorDataQoS{}.keep_last(1));
   // add dummy callback to enable passthrough filter
   laserscan_sub_.registerCallback(
     std::bind(&LaserscanBasedOccupancyGridMapNode::onDummyPointCloud2, this, _1));

@@ -15467,3 +15467,31 @@ combined invocation takes 6.3 seconds; initial dependency materialization took
 longer. CPU/Cyclone DDS, Agnocast off. No SDK source/test edits or skips; no
 Fast DDS, GPU surface or full simulator launch. The following source/module
 tasks complete the actual consumer independently from this provider boundary.
+
+## 2026-11-22: Phase 7.3.2 — CPU occupancy Lyrical filter and raytrace APIs
+
+Purpose: build the current selected CPU consumer against Lyrical/Nav2 without
+changing its ray algorithm, cell values or QoS settings. Inspect its original
+five CPU CPP files, selected header closure, manifest, launch and Nav2's actual
+replacement helper. Keep this source correction separate from Bazel definitions.
+
+Compilation fails on message_filters/pass_through.h and the removed inherited
+raytraceLine member. In the selected laserscan header, replace its four filter
+and two TF forwarding includes with .hpp. Pass the same SensorDataQoS keep_last(1)
+objects directly into all three subscriptions; message_filters 7.4.2 no longer
+accepts their raw rmw profiles. Do not patch the unselected GPU implementations.
+
+Nav2 1.5 moves Bresenham ray tracing to nav2_util/raytrace_line_2d.hpp and requires
+an explicit row stride. Include that helper when available and call it with
+size_x_, preserving the original 10000-cell range limit. Keep the old inherited
+call when that header is absent, and declare the new direct nav2_util dependency
+in package.xml and MODULE. This fallback is not an older-ROS build result; the
+current filter headers/API are validated only in the selected Lyrical surface.
+
+Reviewed 2026-11-22: current AWF main retains the old raytrace call; scoped
+occupancy/raytrace and filter PR searches find no matching change. #1217 is an
+unrelated log-removal change. Validate through the original CPU launch with its
+actual pointcloud converter and exact-synchronized inputs: occupied cells near
+the 2 m test wall, free cells, dimensions/resolution, bounded probabilities and
+clean container shutdown. Both behavior/teardown cases pass, followed by the
+[complete CPU occupancy gate](#2026-11-22-phase-732--cpu-occupancy-grid-pipeline) (129 cases/seven targets). No original tests are edited.

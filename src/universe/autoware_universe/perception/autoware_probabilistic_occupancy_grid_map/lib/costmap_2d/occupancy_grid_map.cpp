@@ -53,6 +53,9 @@
 
 #include "autoware/probabilistic_occupancy_grid_map/cost_value/cost_value.hpp"
 
+#if __has_include(<nav2_util/raytrace_line_2d.hpp>)
+#include <nav2_util/raytrace_line_2d.hpp>
+#endif
 #include <sensor_msgs/point_cloud2_iterator.hpp>
 
 #include <algorithm>
@@ -196,7 +199,11 @@ void OccupancyGridMap::raytraceFreespace(const PointCloud2 & pointcloud, const P
 
     constexpr unsigned int cell_raytrace_range = 10000;  // large number to ignore range threshold
     MarkCell marker(costmap_, cost_value::FREE_SPACE);
+#if __has_include(<nav2_util/raytrace_line_2d.hpp>)
+    nav2_util::raytraceLine(marker, x0, y0, x1, y1, size_x_, cell_raytrace_range);
+#else
     raytraceLine(marker, x0, y0, x1, y1, cell_raytrace_range);
+#endif
   }
 }
 
