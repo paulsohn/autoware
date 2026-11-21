@@ -1342,3 +1342,22 @@ Local source fix: `5eb05315`.
 - No implementation/assertion changes or host installs; no older-ROS/colcon
   validation is claimed. See the
   [source-fix journal](JOURNAL.md#2026-11-22-phase-732--costmap-message-filter-header-compatibility).
+
+### Planning evaluator needs current TF and rclcpp logging APIs
+
+- [ ] Associate with a matching AWF change. Reviewed 2026-11-22: current
+  [obstacle metric header](https://github.com/autowarefoundation/autoware_universe/blob/main/evaluator/autoware_planning_evaluator/include/autoware/planning_evaluator/obstacle_metrics_calculator.hpp)
+  still includes removed tf2/utils.h; current planning/motion evaluator sources
+  still call get_logging_directory(). Scoped evaluator/tf2 and logging-function
+  PR searches plus the Lyrical/toolchain trackers identify no matching AWF fix.
+- Reproducer: build all evaluator sources against TF Lyrical and rclcpp 32.0.3.
+  The include is missing; after fixing it, both output destructors fail to find
+  the old function. Use tf2/utils.hpp and version-gate the logging call: primary
+  [rclcpp 29.0.0 declaration](https://github.com/ros2/rclcpp/blob/29.0.0/rclcpp/include/rclcpp/logger.hpp)
+  offers get_log_directory; 30+ removes the old call. Preserve the older branch
+  for Jazzy. No algorithms, output layout or test assertions change.
+- All 30 original metric cases and both installed executable lifecycles pass,
+  with the complete affected support/costmap gate (51 active cases/12 targets),
+  CPU/Cyclone DDS and Agnocast off. Older ROS/colcon is not executed. See the
+  [source-fix journal](JOURNAL.md#2026-11-22-phase-732--planning-evaluator-lyrical-apis)
+  and following module entry for exact command and limits. No submission is claimed.

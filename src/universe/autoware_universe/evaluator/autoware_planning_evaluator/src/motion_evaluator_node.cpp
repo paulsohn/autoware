@@ -16,6 +16,8 @@
 
 #include <nlohmann/json.hpp>
 
+#include <rclcpp/version.h>
+
 #include <chrono>
 #include <filesystem>
 #include <fstream>
@@ -67,8 +69,12 @@ MotionEvaluatorNode::~MotionEvaluatorNode()
     }
 
     // get output folder
-    const std::string output_folder_str =
-      rclcpp::get_logging_directory().string() + "/autoware_metrics";
+#if RCLCPP_VERSION_MAJOR >= 29
+    const auto log_directory = rclcpp::get_log_directory();
+#else
+    const auto log_directory = rclcpp::get_logging_directory();
+#endif
+    const std::string output_folder_str = log_directory.string() + "/autoware_metrics";
     if (!std::filesystem::exists(output_folder_str)) {
       if (!std::filesystem::create_directories(output_folder_str)) {
         RCLCPP_ERROR(

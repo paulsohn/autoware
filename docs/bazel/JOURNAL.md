@@ -13326,3 +13326,34 @@ existing assertions remain. Original costmap/freespace native tests are unchange
 No Fast DDS, Agnocast kernel matrix, performance or full simulator launch is run.
 This establishes package behavior/startup, not parking manoeuvre completion in
 the simulator. Continue the remaining selected planning helpers and controllers.
+
+## 2026-11-22: Phase 7.3.2 — Planning-evaluator Lyrical APIs
+
+Purpose: build the complete local evaluator package and both executable shapes
+against the selected TF/rclcpp providers. First compilation reports missing
+tf2/utils.h in obstacle_metrics_calculator.hpp. Use its supplied tf2/utils.hpp;
+leave unrelated deprecated TF ROS forwarding includes intact. Continuing the
+complete package compile reports removed rclcpp::get_logging_directory() in
+both planning and motion evaluator JSON-output destructors.
+
+Inspect rclcpp 32.0.3's logger declaration and version header, plus primary
+rclcpp source tags: 29.0.0 exports get_log_directory alongside a deprecated old
+name; 30.0.0/31.0.0/32.0.0 retain only the new function. Jazzy's logger header
+still exports get_logging_directory. Include rclcpp/version.h and use the new
+function for major >=29, preserving the original call for older releases.
+Both return a path whose .string() continues into the original metrics output
+layout; no metric logic or original test assertion changes.
+
+Review AWF Lyrical/toolchain trackers #7404/#13590 and scoped evaluator/tf2 and
+get_logging_directory PR searches on 2026-11-22. Current AWF headers/sources
+retain both issues; no matching AWF fix is identified. The old ROS PR #2438 is
+not a matching merged rename, and #3214 moves the newer function elsewhere;
+neither is a local Autoware fix association. Record the evidence in UPSTREAM_AWF.
+
+The following support-node command passes all 30 original evaluator cases,
+both indexed executable lifecycles and the complete affected adapter/costmap
+gate: 51 active cases in 12 targets, zero failures/errors/skips/disabled cases.
+Native evaluator execution takes 38.7 seconds, complete invocation 154.1 seconds,
+reusing unchanged results. CPU/Cyclone DDS, ENABLE_AGNOCAST=0; no older-ROS/colcon
+runtime claim. Targeted clang-format/flake8/whitespace checks pass. Keep this
+source compatibility fix separate from module declarations.

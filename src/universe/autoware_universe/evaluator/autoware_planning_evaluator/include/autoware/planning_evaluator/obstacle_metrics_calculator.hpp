@@ -21,6 +21,7 @@
 #include <autoware_utils/geometry/geometry.hpp>
 #include <autoware_utils/math/accumulator.hpp>
 #include <autoware_vehicle_info_utils/vehicle_info_utils.hpp>
+#include <tf2/utils.hpp>
 
 #include "autoware_perception_msgs/msg/predicted_objects.hpp"
 #include "autoware_planning_msgs/msg/trajectory.hpp"
@@ -29,8 +30,6 @@
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 
 #include <boost/geometry.hpp>
-
-#include <tf2/utils.h>
 
 #include <array>
 #include <cmath>
