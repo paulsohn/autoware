@@ -1845,6 +1845,12 @@ Phase 7.3 task boundaries (selected 2026-11-21):
   original disabled cases. Its duplicate global TF definition is corrected
   separately from the build definitions.
   [Evidence](JOURNAL.md#2026-11-22-phase-732--local-universe-utility-library).
+  Selected parking costmap/freespace nodes are complete: twenty active original
+  cases plus indexed executable/affected adapter checks pass in eight targets.
+  Two original disabled freespace cases remain disabled. The costmap uses the
+  current message_filters headers; standalone freespace declares logger-service
+  introspection typesupport. These gates do not establish simulator parking.
+  [Parking evidence](JOURNAL.md#2026-11-22-phase-732--costmap-generator).
   Continue in dependency order through shared planner helpers, the
   preset-selected behavior/motion plugins and controller libraries, then
   simulated perception and the selected system/API closure. The selected local
