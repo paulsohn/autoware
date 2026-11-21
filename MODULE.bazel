@@ -1427,3 +1427,9 @@ local_path_override(
     module_name = "autoware_control_validator",
     path = "src/universe/autoware_universe/control/autoware_control_validator",
 )
+
+bazel_dep(name = "autoware_autonomous_emergency_braking", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_autonomous_emergency_braking",
+    path = "src/universe/autoware_universe/control/autoware_autonomous_emergency_braking",
+)
