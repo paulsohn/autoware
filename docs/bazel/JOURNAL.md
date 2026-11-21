@@ -9754,6 +9754,12 @@ reaches _Py_Dealloc → pybind11::handle::dec_ref → SimplePyModel::~SimplePyMo
 submodels vector, so reverse member destruction finalizes Python before releasing
 Python-owned objects. This source lifetime defect is independent of Bazel.
 
+Preserve move construction explicitly when adding the destructor: a user-declared
+destructor suppresses the original implicit move constructor. The extended
+fixture rejects the missing move at compile time, then moves a live model,
+updates it and verifies normal teardown. Defaulting that constructor restores
+the existing ownership transfer; both cases pass, including the moved object.
+
 Fix: explicitly clear submodels in the destructor body while the interpreter
 is alive. Keep member layout, public API and model computations unchanged;
 do not suppress teardown, leak submodels or skip the failing regression.

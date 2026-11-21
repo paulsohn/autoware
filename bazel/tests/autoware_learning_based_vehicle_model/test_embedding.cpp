@@ -7,6 +7,7 @@
 #include <gtest/gtest.h>
 #include <pybind11/embed.h>
 
+#include <utility>
 #include <vector>
 
 namespace model = autoware::simulator::learning_based_vehicle_model;
@@ -54,4 +55,7 @@ class Fixture:
   EXPECT_EQ(vehicle.updatePyModel({4.0}), (std::vector<double>{4.0}));
   vehicle.initState({10.0});
   EXPECT_EQ(vehicle.updatePyModel({-2.0}), (std::vector<double>{9.5}));
+  auto moved_vehicle = std::move(vehicle);
+  moved_vehicle.dtSet(0.5);
+  EXPECT_EQ(moved_vehicle.updatePyModel({2.0}), (std::vector<double>{10.5}));
 }

@@ -61,6 +61,8 @@ public:
     submodels.clear();
   }
 
+  InterconnectedModel(InterconnectedModel &&) = default;
+
   /**
    * @brief constructor
    */

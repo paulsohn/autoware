@@ -1083,7 +1083,9 @@ _Py_Dealloc → pybind11::handle::dec_ref → SimplePyModel::~SimplePyModel →
 InterconnectedModel::~InterconnectedModel. Reverse member destruction destroys
 guard first; submodels then decref objects after interpreter finalization.
 
-Clear submodels in an explicit destructor body before guard destruction. The
+Clear submodels in an explicit destructor body before guard destruction, and
+explicitly default move construction to preserve the original implicit move API.
+The regression also moves and updates a live model before clean teardown. The
 correction preserves member layout, API and calculations and requires no ROS
 version guard. The complete four-source library builds and both root mapping/
 embedding cases pass afterward, with no failure/skip and a normal process exit.
