@@ -834,6 +834,7 @@ extern "C" rmw_ret_t rmw_take_with_info(
   const rmw_subscription_t * sub, void * msg, bool * taken, rmw_message_info_t * info,
   rmw_subscription_allocation_t * a)
 {
+  hop_reader().mark("rmw_entry");
   auto r = lookup(readers, sub->data);
   return r ? take(*r, msg, nullptr, taken, info)
            : CYCLONE(rmw_take_with_info)(sub, msg, taken, info, a);

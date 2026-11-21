@@ -12,8 +12,36 @@
 #include <utility>
 
 #ifdef AGNOCAST_PATH_PROBE
+#include <chrono>
+#include <fstream>
+
+namespace {
+struct ReceiveTrace {
+  struct Event { const char * stage; uint32_t id; int64_t time; };
+  const char * path = std::getenv("BENCH_RECEIVE_EVENTS");
+  std::array<Event, 2048> events{};
+  std::atomic<size_t> used{0};
+  ~ReceiveTrace() {
+    if (!path) return;
+    std::ofstream out(path);
+    for (size_t i = 0; i < std::min(used.load(), events.size()); ++i)
+      out << events[i].stage << ',' << events[i].id << ',' << events[i].time << '\n';
+  }
+};
+void mark_receive(const char * stage, uint32_t id) {
+  static ReceiveTrace trace;
+  if (!trace.path) return;
+  auto time = std::chrono::system_clock::now().time_since_epoch();
+  auto i = trace.used.fetch_add(1, std::memory_order_relaxed);
+  if (i < trace.events.size())
+    trace.events[i] = {stage, id, std::chrono::duration_cast<std::chrono::nanoseconds>(time).count()};
+}
+}
+#define RECEIVE_MARK(stage) mark_receive(stage, callback_info_id)
 // Optional timing hook exported by the matched Path probe.
 extern "C" __attribute__((weak)) void path_probe_loan(uint32_t, int64_t, uintptr_t);
+#else
+#define RECEIVE_MARK(stage) ((void)0)
 #endif
 
 namespace agnocast
@@ -38,6 +66,7 @@ void receive_and_execute_message(
   std::mutex & ready_agnocast_executables_mutex,
   std::vector<AgnocastExecutable> & ready_agnocast_executables)
 {
+  RECEIVE_MARK("receive");
   std::vector<std::pair<int64_t, uint64_t>> entries;  // entry_id, entry_addr
 
   std::array<publisher_shm_info, MAX_PUBLISHER_NUM> pub_shm_infos{};
@@ -54,12 +83,14 @@ void receive_and_execute_message(
     // module, which holds only a topic read lock. See mmap_mtx in agnocast.cpp.
     std::lock_guard<std::mutex> lock(mmap_mtx);
 
+    RECEIVE_MARK("ioctl_in");
     if (ioctl(agnocast_fd, AGNOCAST_RECEIVE_MSG_CMD, &receive_args) < 0) {
       RCLCPP_ERROR(logger, "AGNOCAST_RECEIVE_MSG_CMD failed: %s", strerror(errno));
       close(agnocast_fd);
       exit(EXIT_FAILURE);
     }
 
+    RECEIVE_MARK("ioctl_out");
     // Map the shared memory region with read permissions whenever a new publisher is discovered.
     for (uint32_t i = 0; i < receive_args.ret_pub_shm_num; i++) {
       const pid_t pid = pub_shm_infos[i].pid;
@@ -94,6 +125,7 @@ void receive_and_execute_message(
     }
 #endif
 
+    RECEIVE_MARK("create_loan");
     auto typed_msg = callback_info.message_creator(
       reinterpret_cast<void *>(entry_addr), callback_info.topic_name, callback_info.subscriber_id,
       entry_id);
@@ -104,6 +136,7 @@ void receive_and_execute_message(
     // earlier, we will not change the name in order to avoid requiring changes to be made to the
     // implementation of CARET.
     TRACEPOINT(agnocast_callable_start, callback_addr);
+    RECEIVE_MARK("invoke");
     callback_info.callback(std::move(*typed_msg));
     // NOTE: agnocast_callable_end should be renamed to agnocast_callback_end. As mentioned earlier,
     // we will not change the name in order to avoid requiring changes to be made to the
@@ -196,6 +229,7 @@ void SubscriptionEventHandler::handle(EpollEventLocalID event_local_id)
 {
   // Subscription callback event
   const uint32_t callback_info_id = event_local_id;
+  RECEIVE_MARK("handler");
   CallbackInfo callback_info;
 
   {
@@ -213,7 +247,9 @@ void SubscriptionEventHandler::handle(EpollEventLocalID event_local_id)
   // Drain the counter; the value is unused, the fd is a pure wakeup. EFD_NONBLOCK, so a
   // spurious or coalesced wake returns EAGAIN.
   uint64_t counter = 0;
+  RECEIVE_MARK("read_in");
   const ssize_t ret = read(callback_info.notify_eventfd, &counter, sizeof(counter));
+  RECEIVE_MARK("read_out");
   if (ret < 0) {
     if (errno != EAGAIN) {
       RCLCPP_ERROR_STREAM(

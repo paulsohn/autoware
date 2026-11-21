@@ -1,0 +1,6 @@
+same CPU
+20 ms frames 85 stamp to callback median us 49.0
+100 ms frames 87 stamp to callback median us 83.3
+different CPU
+20 ms frames 15 stamp to callback median us 59.4
+100 ms frames 13 stamp to callback median us 99.1

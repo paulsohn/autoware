@@ -1,0 +1,189 @@
+build/rmw-agnocast/receive-cpu.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/receive-cpu.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/receive-cpu.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/receive-cpu.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/receive-cpu.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/receive-cpu.log:verified fixed wait tap: 59 native wakes
+build/rmw-agnocast/receive-cpu.log:verified fixed wait filter2: 59 native wakes
+build/rmw-agnocast/receive-cpu.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/receive-cpu.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/receive-cpu.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/receive-cpu.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/receive-cpu.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/receive-cpu.log:verified fixed wait tap: 59 native wakes
+build/rmw-agnocast/receive-cpu.log:verified fixed wait filter2: 59 native wakes
+build/rmw-agnocast/receive-cpu.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/receive-cpu.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/receive-cpu.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/receive-cpu.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/receive-cpu.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/receive-cpu.log:verified fixed wait tap: 59 native wakes
+build/rmw-agnocast/receive-cpu.log:verified fixed wait filter2: 59 native wakes
+build/rmw-agnocast/receive-cpu.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/receive-cpu.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/receive-cpu.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/receive-cpu.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/receive-cpu.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/receive-cpu.log:verified fixed wait tap: 59 native wakes
+build/rmw-agnocast/receive-cpu.log:verified fixed wait filter2: 59 native wakes
+build/rmw-agnocast/receive-cpu.log:Minimum host MemAvailable: 11199 MiB
+build/rmw-agnocast/receive-cpu-build.log:Summary: 2 packages finished [3.39s]
+build/rmw-agnocast/receive-cpu-build.log:Minimum host MemAvailable: 11346 MiB
+build/rmw-agnocast/receive-split.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/receive-split.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/receive-split.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/receive-split.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/receive-split.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/receive-split.log:verified fixed wait tap: 59 native wakes
+build/rmw-agnocast/receive-split.log:verified fixed wait filter2: 59 native wakes
+build/rmw-agnocast/receive-split.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/receive-split.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/receive-split.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/receive-split.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/receive-split.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/receive-split.log:verified fixed wait tap: 59 native wakes
+build/rmw-agnocast/receive-split.log:verified fixed wait filter2: 59 native wakes
+build/rmw-agnocast/receive-split.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/receive-split.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/receive-split.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/receive-split.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/receive-split.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/receive-split.log:verified fixed wait tap: 59 native wakes
+build/rmw-agnocast/receive-split.log:verified fixed wait filter2: 59 native wakes
+build/rmw-agnocast/receive-split.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/receive-split.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/receive-split.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/receive-split.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/receive-split.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/receive-split.log:verified fixed wait tap: 59 native wakes
+build/rmw-agnocast/receive-split.log:verified fixed wait filter2: 59 native wakes
+build/rmw-agnocast/receive-split.log:Minimum host MemAvailable: 11410 MiB
+build/rmw-agnocast/receive-split-build.log:Summary: 2 packages finished [2.47s]
+build/rmw-agnocast/receive-split-build.log:Minimum host MemAvailable: 11376 MiB
+build/rmw-agnocast/receive-default.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/receive-default.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/receive-default.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/receive-default.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/receive-default.log:Received 60 distinct stamped diagnostics from /output/debug/published_time
+build/rmw-agnocast/receive-default.log:Minimum host MemAvailable: 11456 MiB
+build/rmw-agnocast/receive-steady.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/receive-steady.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/receive-steady.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/receive-steady.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/receive-steady.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/receive-steady.log:verified fixed wait tap: 59 native wakes
+build/rmw-agnocast/receive-steady.log:verified fixed wait filter2: 59 native wakes
+build/rmw-agnocast/receive-steady.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/receive-steady.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/receive-steady.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/receive-steady.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/receive-steady.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/receive-steady.log:verified fixed wait tap: 59 native wakes
+build/rmw-agnocast/receive-steady.log:verified fixed wait filter2: 59 native wakes
+build/rmw-agnocast/receive-steady.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/receive-steady.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/receive-steady.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/receive-steady.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/receive-steady.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/receive-steady.log:verified fixed wait tap: 59 native wakes
+build/rmw-agnocast/receive-steady.log:verified fixed wait filter2: 59 native wakes
+build/rmw-agnocast/receive-steady.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/receive-steady.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/receive-steady.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/receive-steady.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/receive-steady.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/receive-steady.log:verified fixed wait tap: 59 native wakes
+build/rmw-agnocast/receive-steady.log:verified fixed wait filter2: 59 native wakes
+build/rmw-agnocast/receive-steady.log:Minimum host MemAvailable: 11218 MiB
+build/rmw-agnocast/receive-final-build.log:Summary: 2 packages finished [4.08s]
+build/rmw-agnocast/receive-final-build.log:Minimum host MemAvailable: 11253 MiB
+build/rmw-agnocast/receive-light.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/receive-light.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/receive-light.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/receive-light.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/receive-light.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/receive-light.log:verified fixed wait tap: 59 native wakes
+build/rmw-agnocast/receive-light.log:verified fixed wait filter2: 59 native wakes
+build/rmw-agnocast/receive-light.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/receive-light.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/receive-light.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/receive-light.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/receive-light.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/receive-light.log:verified fixed wait tap: 59 native wakes
+build/rmw-agnocast/receive-light.log:verified fixed wait filter2: 59 native wakes
+build/rmw-agnocast/receive-light.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/receive-light.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/receive-light.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/receive-light.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/receive-light.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/receive-light.log:verified fixed wait tap: 59 native wakes
+build/rmw-agnocast/receive-light.log:verified fixed wait filter2: 59 native wakes
+build/rmw-agnocast/receive-light.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/receive-light.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/receive-light.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/receive-light.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/receive-light.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/receive-light.log:verified fixed wait tap: 59 native wakes
+build/rmw-agnocast/receive-light.log:verified fixed wait filter2: 59 native wakes
+build/rmw-agnocast/receive-light.log:Minimum host MemAvailable: 11199 MiB
+build/rmw-agnocast/receive-final.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/receive-final.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/receive-final.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/receive-final.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/receive-final.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/receive-final.log:verified fixed wait tap: 59 native wakes
+build/rmw-agnocast/receive-final.log:verified fixed wait filter2: 59 native wakes
+build/rmw-agnocast/receive-final.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/receive-final.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/receive-final.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/receive-final.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/receive-final.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/receive-final.log:verified fixed wait tap: 59 native wakes
+build/rmw-agnocast/receive-final.log:verified fixed wait filter2: 59 native wakes
+build/rmw-agnocast/receive-final.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/receive-final.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/receive-final.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/receive-final.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/receive-final.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/receive-final.log:verified fixed wait tap: 59 native wakes
+build/rmw-agnocast/receive-final.log:verified fixed wait filter2: 59 native wakes
+build/rmw-agnocast/receive-final.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/receive-final.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/receive-final.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/receive-final.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/receive-final.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/receive-final.log:verified fixed wait tap: 59 native wakes
+build/rmw-agnocast/receive-final.log:verified fixed wait filter2: 59 native wakes
+build/rmw-agnocast/receive-final.log:Minimum host MemAvailable: 11395 MiB
+build/rmw-agnocast/receive-alternating.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/receive-alternating.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/receive-alternating.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/receive-alternating.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/receive-alternating.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/receive-alternating.log:verified fixed wait tap: 59 native wakes
+build/rmw-agnocast/receive-alternating.log:verified fixed wait filter2: 59 native wakes
+build/rmw-agnocast/receive-alternating.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/receive-alternating.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/receive-alternating.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/receive-alternating.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/receive-alternating.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/receive-alternating.log:verified fixed wait tap: 59 native wakes
+build/rmw-agnocast/receive-alternating.log:verified fixed wait filter2: 59 native wakes
+build/rmw-agnocast/receive-alternating.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/receive-alternating.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/receive-alternating.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/receive-alternating.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/receive-alternating.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/receive-alternating.log:verified fixed wait tap: 59 native wakes
+build/rmw-agnocast/receive-alternating.log:verified fixed wait filter2: 59 native wakes
+build/rmw-agnocast/receive-alternating.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/receive-alternating.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/receive-alternating.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/receive-alternating.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/receive-alternating.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/receive-alternating.log:verified fixed wait tap: 59 native wakes
+build/rmw-agnocast/receive-alternating.log:verified fixed wait filter2: 59 native wakes
+build/rmw-agnocast/receive-alternating.log:Minimum host MemAvailable: 11305 MiB
+build/rmw-agnocast/receive-lib.log:Minimum host MemAvailable: 9726 MiB
+build/rmw-agnocast/receive-rmw.log:Summary: 2 packages finished [6.59s]
+build/rmw-agnocast/receive-rmw.log:Minimum host MemAvailable: 11126 MiB

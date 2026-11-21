@@ -1788,3 +1788,113 @@ measurement is eventfd read through the receive ioctl and callback invocation,
 and separately exposed readiness through ROS dispatch. All 2,640 source
 frames across the timed, profile and confirmation batches passed both
 readers. [Raw observations and summaries](ready-fd-results/).
+
+### Split the default receive handler and ROS take path
+
+Use A (the existing inner epoll path) in the branched crop. Build an isolated
+Agnocast diagnostic library using the existing Path-probe configuration.
+Select it only in the first RMW crop process. Compile-time markers inside the
+normal upstream handler record the eventfd read, entry to the deferred receive
+function, the receive ioctl, and construction/invocation of the loan callback.
+The interval before the ioctl includes receive argument initialization and
+acquisition of the mapping mutex. The interval after the ioctl includes any
+required mapping, traversal of returned entries and tracepoint bookkeeping.
+
+A small preload library in that same first crop records return from a
+successful rcl_wait, entry/return of the subscription loan-capability query,
+and entry to rcl_take. The RMW records entry to rmw_take_with_info separately
+from the existing typed host-cloud take marker. ROS wait return to the
+capability check includes executor selection and early dispatch. From the
+capability check return until rcl_take, rclcpp prepares the local message
+and enters its type-erased subscription take path. The probe does not
+distinguish every operation in those two intervals.
+
+Run four alternating-gap rounds and two steady-rate pairs per transport.
+Counters and userspace timestamps are buffered until teardown. For each
+post-warmup frame require one ordered set of stage events, one callback ID
+between poll and native loan admission, and a matching crop callback stamp.
+Each input graph still verifies every field and point at its two readers.
+Capture native Agnocast in the same session as an end-to-end control.
+
+```bash
+export LYRICAL_ROOT=$(cat build/agnocast-lyrical/universe-root)
+run() { experiments/buffer/run-lyrical.sh "$@"; }
+run bash experiments/rmw-agnocast/build-path-trace.sh
+run bash experiments/rmw-agnocast/build-loadable.sh
+export BUFFER_RUNTIME_ONLY=1 BENCH_RECEIVE_TRACE=1 BENCH_HOP_TRACE=1 AGNOCAST_RMW_READY_FD=0
+bench=experiments/rmw-agnocast/bench-host-cloud.sh
+out=build/rmw-agnocast/receive-reproduction
+mkdir "$out"
+run timeout 160 bash "$bench" "$out/alternating" --gaps --profile
+run timeout 160 bash "$bench" "$out/steady" --steady-gaps
+for t in alternating steady; do
+  python3 experiments/rmw-agnocast/summarize-receive.py "$out/$t"
+  python3 experiments/rmw-agnocast/summarize-hop.py "$out/$t"
+done
+```
+
+| Selected first-crop intervals | Alternating gaps, 20 / 100 ms median (µs) | Steady gaps, 20 / 100 ms median (µs) |
+|---|---:|---:|
+| Eventfd read | 3.1 / 3.2 | 3.2 / 2.9 |
+| Receive ioctl | 6.0 / 7.2 | 5.8 / 7.1 |
+| Eventfd read return through deferred receive function entry | 1.7 / 3.1 | 1.2 / 3.1 |
+| Return from rcl_wait to first loan-capability check | 2.7 / 8.5 | 2.2 / 8.2 |
+| Loan-capability check itself | 0.3 / 0.7 | 0.2 / 0.7 |
+| Check return to rcl_take entry | 1.0 / 2.5 | 0.6 / 2.6 |
+| RMW take entry to identifying the host-cloud sample | 0.2 / 0.4 | 0.2 / 0.3 |
+
+The ioctl consumes several microseconds at either rate, but its median
+increased by only 1.2–1.3 µs in the first two profiles. The larger native
+admission interval accumulated smaller differences in multiple stages. In
+ROS, about 6 µs of additional median latency preceded even the loan check.
+The original broad stamp-to-callback difference remained 31.8 µs for the
+alternating series and 29.0 µs for the first steady series. These are
+differences of medians, not additive per-frame cost estimates. No affinity,
+priority or kernel-module setting was changed.
+
+A separate steady-rate control used the regular Agnocast library and kept
+only the earlier broad RMW and crop timestamps. Set `BENCH_RECEIVE_TRACE=0`
+to reproduce it. Its source-to-callback gap was 30.1 µs, close to 29.0 µs
+with the extra probes, though individual quantiles varied. This control
+provides a check on observer effects at the broad boundary. It cannot
+calibrate the overhead of each individual timestamp.
+
+For a finer steady-rate profile set `BENCH_RECEIVE_TRACE=1 BENCH_EXECUTOR_SPLIT=1`
+and rerun `--steady-gaps` in a fresh directory. This selects a separate
+diagnostic interposer compiled for the pinned x86-64 Lyrical rclcpp ABI.
+It records entry to get_next_ready_executable, the successful return with a
+subscription, and entry to execute_subscription. The analysis requires one
+of each marker, in order, for every post-warmup cloud. Both preload probes
+are local to the first crop in the diagnostic configuration.
+
+The detailed steady repeat gave the following long-minus-short median
+differences (µs). RCL wait return to starting selection was +2.4 in the first
+run set and +3.7 in the repeat. Looking for and selecting the subscription
+itself added +1.0 and +1.5. Selected subscription to entering execution
+added +0.3 and +0.6. Entering execution to the loan check added +0.6 and
++0.7. The first interval includes returning through rclcpp's wait-set code
+and notify-waitable handling before it calls get_next_ready_executable.
+The trace localizes a range of code. It does not identify a particular
+waitable as responsible. The close match of the light and detailed profiles
+at the broad boundary does not imply microsecond-level measurement accuracy
+for every subinterval.
+
+For the CPU-placement observation set `BENCH_RECEIVE_CPU=1` with the
+executor-split interposer in the alternating-gap case. Run
+`python3 experiments/rmw-agnocast/summarize-receive-cpu.py RESULT_DIR`.
+It compares the logical CPU at the first crop's successful wait return for
+successive frames. On the same observed CPU, the short/long medians from
+source stamp to first callback were 49.0/83.3 µs (85/87 frames). On a different
+observed CPU they were 59.4/99.1 µs (15/13 frames). The latter group is
+small and the groups were not randomized. A change of CPU between observations
+is unnecessary for the gap to appear. Migration within an interval and CPU
+power/cache state were not measured. These observations do not establish an
+affinity fix.
+
+Across the six batches, all 2,880 source frames reached both validating
+readers. The original two-edge cold diagnostic delivered all 60 messages.
+Use the existing epoll A path. Before changing the kernel or skipping
+executor correctness checks, compare a fixed amount of CPU work at callback
+entry after the two idle intervals, stratified by observed CPU. That would
+test whether the slowdown generalizes beyond this ROS receive code.
+[Raw observations, stage summaries, CPU groups and checks](receive-results/).

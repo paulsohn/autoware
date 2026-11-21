@@ -21,7 +21,7 @@ for path in runs:
         with path.with_suffix(suffix).open() as f:
             for name, stamp, ts in csv.reader(f):
                 stamp, ts = int(stamp), int(ts)
-                if name in ("poll", "ready"):
+                if name in ("poll", "ready", "rmw_entry"):
                     unkeyed[name].append(ts)
                 else:
                     assert name not in events[stamp]

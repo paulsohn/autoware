@@ -1201,3 +1201,32 @@ poll-to-loan penalty. This isolates redundant epoll discovery as an
 insufficient explanation. Keep A as default and investigate the event handler
 and downstream ROS dispatch separately before another optimization.
 [Commands, controls, measurements and limitations](../rmw-agnocast/README.md#ab-the-ready-subscription-descriptor)
+
+### Trace the existing receive handler and ROS dispatch at 10 and 50 Hz
+
+Kept A as the control following the ready-descriptor A/B. Instrumented an
+isolated Agnocast library at the eventfd read, deferred receive function,
+receive ioctl and loan callback. Loaded it only in the first RMW crop.
+Wrapped the RCL wait, capability check and take APIs there. Joined the
+markers to each original cloud timestamp and required their ordering.
+Added a repeat that separates rclcpp ready-selection and subscription
+execution, and a light-probe control to quantify broad observer effects.
+
+The eventfd read changed by +0.2 µs in alternating gaps and −0.2 µs in the
+first steady comparison. The receive ioctl rose by 1.2–1.3 µs. Several
+smaller costs accumulated on the native receive side. The first two profiles
+both put about 6 µs of extra time between RCL wait return and the loan check.
+The lighter steady profile still measured 30.1 µs additional time from
+source stamp to first callback at 100 ms. These measurements narrow possible
+optimizations while leaving CPU frequency and cache effects open.
+[Build, profiles and evidence](../rmw-agnocast/README.md#split-the-default-receive-handler-and-ros-take-path)
+
+Two detailed steady profiles put +2.4/+3.7 µs between rcl_wait return and
+entering rclcpp ready selection, and +1.0/+1.5 µs inside selection itself.
+An alternating-gap placement check then found the gap even when the first
+crop returned from its wait on the same logical CPU as for the preceding
+frame (49.0 vs 83.3 µs stamp-to-callback). CPU migration alone cannot
+explain the result. Keep the current transport and executor behavior.
+The next discriminating control is a fixed-work timing probe to test sensitivity
+to the interval independent of ROS code. The six batches verified 2,880
+source frames at both readers. The separate original cold diagnostic passed.

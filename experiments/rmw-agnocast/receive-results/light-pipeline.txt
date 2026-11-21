@@ -1,0 +1,22 @@
+agnocast microseconds: metric, short median/p95, long median/p95, per-round long-minus-short median deltas
+gap 19999.2 20058.6 99999.1 100067.5 79995.1 80000.8
+tap 325.9 544.9 355.9 647.8 -14.6 49.7
+sink 552.7 879.2 599.2 1077.0 11.2 57.5
+to_entry 36.4 54.1 42.4 64.0 3.3 4.1
+callback_wall 273.2 490.3 287.0 570.1 -21.0 15.6
+callback_cpu 259.6 480.7 271.4 549.3 -21.5 9.9
+runnable_between 0.0 0.0 0.0 0.0 0.0 0.0
+runnable_inside 0.0 0.0 0.0 0.0 0.0 0.0
+short between-callback run-queue increments above 0 / 25 us, total: 0 0 100
+long between-callback run-queue increments above 0 / 25 us, total: 3 0 100
+fixed microseconds: metric, short median/p95, long median/p95, per-round long-minus-short median deltas
+gap 19997.9 20181.4 100001.6 100062.2 80006.4 79999.7
+tap 394.8 492.5 431.6 524.9 19.7 50.2
+sink 591.1 743.0 678.8 831.3 40.0 118.0
+to_entry 49.3 67.9 79.4 98.9 33.4 25.9
+callback_wall 308.0 376.1 309.1 371.8 -37.4 9.1
+callback_cpu 296.3 359.0 292.4 353.7 -34.5 0.1
+runnable_between 0.0 0.0 0.0 0.0 0.0 0.0
+runnable_inside 0.0 0.0 0.0 0.0 0.0 0.0
+short between-callback run-queue increments above 0 / 25 us, total: 1 0 100
+long between-callback run-queue increments above 0 / 25 us, total: 0 0 100

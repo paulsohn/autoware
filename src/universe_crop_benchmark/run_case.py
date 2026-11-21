@@ -105,6 +105,16 @@ with tempfile.TemporaryDirectory() as tmp:
                 child_env["BENCH_HOP_WRITER"] = str(out.with_suffix(".writer"))
             if label == "filter":
                 child_env["BENCH_HOP_READER"] = str(out.with_suffix(".reader"))
+                if os.getenv("BENCH_RECEIVE_TRACE") == "1":
+                    trace_lib = Path("build/rmw-agnocast/path-trace-lib").resolve()
+                    child_env["LD_LIBRARY_PATH"] = str(trace_lib) + ":" + child_env["LD_LIBRARY_PATH"]
+                    child_env["BENCH_RECEIVE_EVENTS"] = str(out.with_suffix(".receive"))
+                    probe = "receive_executor_trace" if os.getenv("BENCH_EXECUTOR_SPLIT") == "1" else "receive_rcl_trace"
+                    rcl_trace = Path(get_package_prefix("agnocast_rmw_loan_probe")) / "lib" / f"lib{probe}.so"
+                    if not rcl_trace.is_file() or not (trace_lib / "libagnocast.so").is_file():
+                        raise FileNotFoundError("Build the Agnocast receive probe and RCL interposer first")
+                    child_env["LD_PRELOAD"] += ":" + str(rcl_trace)
+                    child_env["BENCH_RCL_EVENTS"] = str(out.with_suffix(".rcl"))
         if args.gap_profile and label == "filter":
             child_env["BENCH_CROP_PROFILE"] = str(out.with_suffix(".profile"))
         if label == "tap":
