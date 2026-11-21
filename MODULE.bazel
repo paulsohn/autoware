@@ -1135,3 +1135,9 @@ local_path_override(
     module_name = "autoware_behavior_velocity_virtual_traffic_light_module",
     path = "src/universe/autoware_universe/planning/behavior_velocity_planner/autoware_behavior_velocity_virtual_traffic_light_module",
 )
+
+bazel_dep(name = "autoware_behavior_velocity_no_stopping_area_module", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_behavior_velocity_no_stopping_area_module",
+    path = "src/universe/autoware_universe/planning/behavior_velocity_planner/autoware_behavior_velocity_no_stopping_area_module",
+)

@@ -1838,6 +1838,9 @@ Phase 7.3 task boundaries (selected 2026-11-21):
   Virtual-traffic-light behavior-velocity support is complete: 11 original cases
   and standard/experimental executable lifecycles pass without skips/failures.
   [Evidence](JOURNAL.md#2026-11-22-phase-732--virtual-traffic-light-behavior-velocity-plugin).
+  No-stopping-area behavior-velocity support is complete: 9 original cases
+  and standard/experimental executable lifecycles pass without skips/failures.
+  [Evidence](JOURNAL.md#2026-11-22-phase-732--no-stopping-area-behavior-velocity-plugin).
   Continue in dependency order through shared planner helpers, the
   preset-selected behavior/motion plugins and controller libraries, then
   simulated perception and the selected system/API closure. CMake-only shims

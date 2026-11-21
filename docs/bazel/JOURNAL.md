@@ -11973,3 +11973,40 @@ skips. The whole four-package group passes 47 cases across twelve targets in
 CPU/Cyclone DDS with ENABLE_AGNOCAST=0; no pre-commit, Fast DDS or full simulator
 launch is run. Remaining selected scenes and motion/controller dependencies
 remain separate gates.
+
+## 2026-11-22: Phase 7.3.2 — No-stopping-area behavior-velocity plugin
+
+Purpose: provide the preset-selected no-stopping-area plugin. Inspect all six production sources, src-local headers,
+factory XML/config, manifest/CMake and every original test source. Preserve the
+complete original executable, covering stuck-object selection, stop-line/polygon geometry, stopping feasibility and normal/empty/off-track node input.
+
+Apply package-owned module/library/shared-plugin/index declarations and the root
+local override after RTC/common dependencies. Export both standard and
+experimental factories under the original library basename. Declare actual local
+helpers and message/TF providers, shared runtime closures, src include roots and
+all original fixtures. Only declare header/source globs that exist; Bazel 9
+rejects each unmatched pattern even when another pattern matches. No original
+implementation/test edits, missing-test exclusions or host installations are
+needed. Reuse the root lifecycle adapter from the RTC step with this package
+index. Check factory/DLL loading, indexed configuration, planner parameters,
+unload/reload and clean shutdown through both real executables. The launch
+selects the experimental factory; the standard check also preserves the API
+exercised by the original node suite.
+
+Verification uses the exact sequential group invocation in the
+[traffic-light entry](#2026-11-22-phase-732--traffic-light-behavior-velocity-plugin),
+including these package-specific targets:
+
+```text
+@autoware_behavior_velocity_no_stopping_area_module//...
+//bazel/tests/autoware_behavior_velocity_no_stopping_area_module:all
+```
+
+All six production sources and the complete original suite build. All 9
+original cases pass in 10.1 seconds; standard/experimental lifecycle checks
+pass in 1.8/1.7 seconds. There are no failures, errors, disabled cases or
+skips. The whole four-package group passes 47 cases across twelve targets in
+423.6 seconds. Targeted flake8 and whitespace checks pass. Configuration is
+CPU/Cyclone DDS with ENABLE_AGNOCAST=0; no pre-commit, Fast DDS or full simulator
+launch is run. Remaining selected scenes and motion/controller dependencies
+remain separate gates.

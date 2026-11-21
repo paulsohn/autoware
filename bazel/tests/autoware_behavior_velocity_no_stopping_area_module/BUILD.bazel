@@ -1,0 +1,35 @@
+load("@rules_python//python:defs.bzl", "py_test")
+
+[
+    py_test(
+        name = mode + "_runtime_test",
+        srcs = ["//bazel/tests/behavior_velocity_planner:test_runtime.py"],
+        args = [
+            "$(rootpath @autoware_behavior_velocity_planner//:" + executable + ")",
+            enabled,
+            "no_stopping_area",
+        ],
+        data = [
+            "@autoware_behavior_velocity_planner//:" + executable,
+            "@autoware_behavior_velocity_planner//:ament_index",
+            "@autoware_behavior_velocity_planner_common//:ament_index",
+            "@autoware_behavior_velocity_no_stopping_area_module//:ament_index",
+            "@autoware_test_utils//:ament_index",
+            "@autoware_velocity_smoother//:ament_index",
+        ],
+        env = {"ENABLE_AGNOCAST": "0", "LD_LIBRARY_PATH": "lib"},
+        main = "//bazel/tests/behavior_velocity_planner:test_runtime.py",
+        precompile = "disabled",
+        tags = ["no-remote", "no-sandbox"],
+        deps = [
+            "@ament_index_python",
+            "@autoware_internal_planning_msgs//:py",
+            "@rcl_interfaces//:py",
+            "@rclpy",
+        ],
+    )
+    for mode, executable, enabled in [
+        ("standard", "autoware_behavior_velocity_planner_node", "0"),
+        ("experimental", "experimental_autoware_behavior_velocity_planner_node", "1"),
+    ]
+]
