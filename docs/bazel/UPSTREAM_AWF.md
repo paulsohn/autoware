@@ -1369,6 +1369,15 @@ Local source fix: `5eb05315`.
   [source-fix journal](JOURNAL.md#2026-11-22-phase-732--planning-evaluator-lyrical-apis)
   and following module entry for exact command and limits. No submission is claimed.
 
+The same removed logging call also blocks control_evaluator. Its
+[current source](https://github.com/autowarefoundation/autoware_universe/blob/main/evaluator/autoware_control_evaluator/src/control_evaluator_node.cpp)
+still uses it, checked 2026-11-22; scoped PR results include the older logging
+feature #9478 and release bumps, not a matching compatibility fix. Apply the
+same version gate independently when this target exposes the failure. All nine
+original control-evaluator cases, installed startup and the complete safety
+group pass. [Control source-fix evidence](JOURNAL.md#2026-11-22-phase-732--control-evaluator-lyrical-logging-api).
+No older-ROS verification or new submission is claimed.
+
 ### Trajectory-checker diagnostic fixture requires constexpr floating abs
 
 - [ ] Associate with a matching upstream change. Reviewed 2026-11-22: the

@@ -14690,3 +14690,46 @@ git diff --check
 These component checks do not establish full simulator engagement or driving.
 No Fast DDS or full simulator launch is run. Product-level interface/typed-bridge
 compilation remains the final accumulated-interface gate before 7.3.2 closes.
+
+## 2026-11-22: Phase 7.3.2 — Control-evaluator Lyrical logging API
+
+Purpose: unblock the original local evaluator and its complete suite. Inspect
+its destructor, original tests, rclcpp version API and AWF Lyrical/toolchain
+trackers before changing source. Compilation against rclcpp 32.0.3 fails because
+get_logging_directory is removed. Follow the already validated evaluator pattern:
+include rclcpp/version.h, use get_log_directory for major 29+, retain the old
+call below 29 and preserve output layout and metric calculations. This source
+fix is independent from the following Bazel declarations.
+
+Checked 2026-11-22: current AWF main retains the old call. A scoped control-
+evaluator/logging PR search returns older feature #9478 and release bumps,
+not a matching compatibility fix. Record it with the existing evaluator API
+finding rather than treating related changes as local validation. All nine
+original evaluator cases pass, including output_metrics=true and teardown.
+Older ROS/colcon is not executed.
+
+Verification selects CPU/Cyclone DDS with ENABLE_AGNOCAST=0, LLVM/libc++ 21.1.8
+and Bazel 9.3.2. The complete group passes all nine targets: 57 active original
+native cases (validator 32, AEB 16, evaluator 9), five installed-node lifecycles
+and one generated status-wire round trip. One original disabled pathological
+validator case remains disabled; there are no failures or introduced skips.
+Final invocation: 6.625 seconds, reusing unchanged passing results.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast \
+  --local_test_jobs=1 --test_output=errors \
+  @autoware_control_validator//... @autoware_autonomous_emergency_braking//... \
+  @autoware_collision_detector//... @autoware_lane_departure_checker//... \
+  @autoware_control_evaluator//... //bazel/tests/control_safety:all
+python3 -m flake8 --max-line-length=150 bazel/tests/control_safety/test_runtime.py
+git diff --check
+```
+
+The runtime profiles execute indexed original binaries with original package
+configs and indexed TestUtils vehicle/common/nearest-search defaults. Verify
+parameter access, each owning component DSO, no heaphook and clean SIGINT.
+They do not prove full-stack safety decisions, simulator driving or real-time
+performance. No Fast DDS or full simulator launch is run. Continue selected
+simulated perception and system/API dependencies; product interface/bridge
+compilation remains the final accumulated gate.
