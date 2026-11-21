@@ -29,9 +29,11 @@ overlay; the private data repository is not a product-level API.
 `@autoware_map_asset//:ament_index` installs the unchanged payload into the
 resource package `autoware_map_asset`. The asset identity is shared by core and
 simulator products; the pinned archive is the current development dataset.
-Consumers declare that target
-and resolve its share directory through ament_index; a launcher can use
-`$(find-pkg-share autoware_map_asset)` as its map_path. Bazel fetches
+Consumers declare that target and resolve its share directory through
+ament_index. The supported core entrypoint uses
+`$(find-pkg-share autoware_map_asset)` internally; its callers supply no map_path
+argument. Native and container products carry the map through the declared
+runtime closure without a separate map mount. Bazel fetches
 the archive during the build; runtime lookup does not download or consult HOME.
 This map asset index is independent of the per-repository model indexes. See
 [the asset/deployer sketch](../README.md) for the proposed selection boundary.

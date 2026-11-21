@@ -37,6 +37,9 @@ class TestBundle(unittest.TestCase):
                 self.assertEqual(archive.extractfile(entry).readline().strip(), b'#!/usr/bin/env bash')
                 self.assertIn(entry + '.runfiles/_repo_mapping', members)
                 self.assertIn(entry + '.runfiles/_main/share/ament_index/resource_index/packages/autoware_core', members)
+                self.assertIn(entry + '.runfiles/_main/share/ament_index/resource_index/packages/autoware_map_asset', members)
+                for name in ('lanelet2_map.osm', 'pointcloud_map.pcd', 'map_projector_info.yaml', 'map_config.yaml'):
+                    self.assertIn(entry + '.runfiles/_main/share/autoware_map_asset/' + name, members)
                 print(f'{filename}: {len(members)} entries, closed links, executable Bash bootstrap')
 
 

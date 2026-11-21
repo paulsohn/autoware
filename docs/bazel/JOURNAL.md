@@ -11106,3 +11106,75 @@ no map argument and resolves the indexed asset from its declared closure.
 CPU/Cyclone DDS with ENABLE_AGNOCAST=0 is the selected profile; no Fast DDS,
 full Universe, GUI or driving result is claimed. Targeted Python/flake8, XML
 syntax and whitespace checks pass. Runtime distribution/service checks follow.
+
+## 2026-11-21: Indexed map delivery across core distribution profiles
+
+Purpose: make the supported native, OCI, s6, systemd and application-only OSTree
+products carry the map selected through autoware_core's declared asset index.
+Prerequisites are the preceding autoware_map_asset and core-launch tasks, the
+existing pinned runtime/image/supervisor inputs, and a working Docker Engine for
+the external runtime gates. Inspect core_bundle/core_bundle_tests, image payload
+assembly, the shared service wrapper, systemd mount/environment declarations,
+and every existing delivery test before changing them. The complete gate is
+all nine existing distribution test targets below, including their nested core
+behavior/shutdown and supervisor readiness/failure/recovery assertions.
+
+Keep packaging driven by the component's transitive ament/runfiles closure:
+the asset already reaches both application and verification companion through
+autoware_core. Do not add another packaging inventory or copy map fixtures into
+the deployed filesystem. Remove map_path injection from the shared service
+wrapper and normal OCI entrypoint test; remove temporary map construction and
+map bind mounts from OCI/supervisor tests. Drop AUTOWARE_MAP_PATH propagation and
+the /maps mount prerequisite from the systemd unit; retain the application
+prefix as a required mount. Writable logs/readiness/state mounts remain separate
+from immutable application resources.
+
+Extend existing archive checks to require the asset package index and all four
+payloads in both application and companion. Extend image structure checks to
+require the asset index. The existing exact native-to-image payload comparison
+then checks the same declared bytes, modes and links without an independent
+map-file mapping. Runtime tests must resolve the asset from the product itself;
+the separately mounted verification companion cannot supply the product index.
+OSTree reuses this supervisor gate for independently selected application
+checkouts, so its update/rollback path must retain the indexed resource closure
+as well. This is transferable to other runtime-only asset providers: declare
+the index at its actual source consumer, then package the resulting closure.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --nocache_test_results --test_output=errors \
+  //bazel/tests:core_bundle_structure_test \
+  //bazel/tests:core_image_structure_test \
+  //bazel/tests:core_image_payload_test \
+  //bazel/tests:core_image_runtime_test \
+  //bazel/tests:core_s6_structure_test \
+  //bazel/tests:core_s6_runtime_test \
+  //bazel/tests:core_systemd_structure_test \
+  //bazel/tests:core_systemd_runtime_test \
+  //bazel/tests:core_ostree_runtime_test
+
+python3 -m flake8 --max-line-length=150 \
+  bazel/tests/runtime/test_bundle.py \
+  bazel/tests/runtime/test_image_runtime.py \
+  bazel/tests/runtime/test_supervised_image.py
+sh -n images/services/core
+git diff --check
+```
+
+All nine targets pass without failures/skips (668.7 seconds total invocation).
+Archive closure passes in 22.9 seconds, OCI payload comparison in 15.3 seconds,
+OCI runtime in 50.1 seconds, s6 runtime in 68.5 seconds and systemd runtime in
+42.8 seconds; their three image structure targets pass too. The application-only
+OSTree update/rollback gate passes in 201.0 seconds, including preserved
+synthetic vehicle records. CPU/Cyclone DDS with ENABLE_AGNOCAST=0 is the selected
+profile. No runtime map argument, fixture copy or map bind mount is supplied.
+Targeted Python style, shell syntax and whitespace checks pass; a blank-line
+style correction after the runtime run changes no behavior. Current developer
+examples now invoke the products without external map provisioning.
+
+This closes indexed-map delivery for the supported core product, not the
+remaining Universe launch/implementation work. Full planning-simulator launch,
+GUI/driving acceptance, alternative deployer-supplied assets, bootable OS updates
+and Fast DDS are outside this gate. External asset injection remains only the
+sketch in assets/README.md.

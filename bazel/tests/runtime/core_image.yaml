@@ -19,6 +19,9 @@ fileExistenceTests:
   - name: Core package index
     path: /opt/autoware/core_headless.runfiles/_main/share/ament_index/resource_index/packages/autoware_core
     shouldExist: true
+  - name: Indexed map asset
+    path: /opt/autoware/core_headless.runfiles/_main/share/ament_index/resource_index/packages/autoware_map_asset
+    shouldExist: true
   - name: Base shell
     path: /usr/bin/bash
     shouldExist: true

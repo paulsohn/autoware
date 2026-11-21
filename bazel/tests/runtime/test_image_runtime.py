@@ -5,7 +5,6 @@ import json
 import os
 from pathlib import Path
 import re
-import shutil
 import subprocess
 import sys
 import tarfile
@@ -42,8 +41,8 @@ class TestImageRuntime(unittest.TestCase):
 
         with tempfile.TemporaryDirectory(prefix='core-image-', dir=os.environ['TEST_TMPDIR']) as temporary:
             root = Path(temporary)
-            checks, results, maps = (root / name for name in ('checks', 'results', 'maps'))
-            for path in (checks, results, maps):
+            checks, results = (root / name for name in ('checks', 'results'))
+            for path in (checks, results):
                 path.mkdir()
             with tarfile.open(COMPANION) as archive:
                 archive.extractall(checks, filter='data')
@@ -68,18 +67,9 @@ class TestImageRuntime(unittest.TestCase):
             for case in cases:
                 self.assertFalse(case.findall('failure') + case.findall('error') + case.findall('skipped'))
 
-            prefix = checks / 'core_system_headless_launch_test.runfiles/_main'
-            for source, destination in (
-                (prefix / 'share/autoware_test_utils/test_map/lanelet2_map.osm', 'lanelet2_map.osm'),
-                (prefix / 'bazel/tests/system_context/projector.yaml', 'map_projector_info.yaml'),
-                (prefix / 'bazel/tests/system_context/single.pcd', 'pointcloud_map.pcd'),
-            ):
-                shutil.copyfile(source, maps / destination)
             name = 'autoware-core-test-' + uuid.uuid4().hex[:12]
             try:
-                docker('run', '--detach', '--name', name, *common,
-                       '--mount', f'type=bind,src={maps},dst=/maps,readonly',
-                       image, 'map_path:=/maps')
+                docker('run', '--detach', '--name', name, *common, image)
                 deadline = time.monotonic() + 60
                 while time.monotonic() < deadline:
                     logs = docker('logs', name)

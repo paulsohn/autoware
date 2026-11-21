@@ -5,7 +5,6 @@ import json
 import os
 from pathlib import Path
 import re
-import shutil
 import subprocess
 import sys
 import tarfile
@@ -68,18 +67,10 @@ class TestSupervisedImage(unittest.TestCase):
         try:
             temp = temporary.name
             root = Path(temp)
-            checks, maps = root / 'checks', root / 'maps'
+            checks = root / 'checks'
             checks.mkdir()
-            maps.mkdir()
             with tarfile.open(COMPANION) as archive:
                 archive.extractall(checks, filter='data')
-            prefix = checks / 'core_system_headless_launch_test.runfiles/_main'
-            for source, destination in (
-                (prefix / 'share/autoware_test_utils/test_map/lanelet2_map.osm', 'lanelet2_map.osm'),
-                (prefix / 'bazel/tests/system_context/projector.yaml', 'map_projector_info.yaml'),
-                (prefix / 'bazel/tests/system_context/single.pcd', 'pointcloud_map.pcd'),
-            ):
-                shutil.copyfile(source, maps / destination)
 
             def start(label, blocked=False):
                 state = root / label
@@ -101,7 +92,6 @@ class TestSupervisedImage(unittest.TestCase):
                        '--read-only', *runtime, '--security-opt=no-new-privileges',
                        '--tmpfs', '/tmp:rw,exec,nosuid,nodev', '--tmpfs', run_mount,
                        '--mount', f'type=bind,src={state},dst=/run/autoware',
-                       '--mount', f'type=bind,src={maps},dst=/maps,readonly',
                        '--mount', f'type=bind,src={checks},dst=/checks,readonly', *flags, image)
 
                 def started():

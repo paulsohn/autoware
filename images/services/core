@@ -5,4 +5,4 @@ set -eu
 test -f /run/autoware/ready
 echo core:starting >> /run/autoware/events
 echo $$ > /run/autoware/core.pid
-exec /opt/autoware/run "map_path:=${AUTOWARE_MAP_PATH:-/maps}" >> /run/autoware/core.log 2>&1
+exec /opt/autoware/run >> /run/autoware/core.log 2>&1

@@ -1780,7 +1780,11 @@ Phase 7.3 task boundaries (selected 2026-11-21):
 - **7.3.3 — Original launch and resources (in progress).** The first resource
   group is complete (2026-11-21): the tutorial's local sample_vehicle_description
   and sample_sensor_kit_description own their original model/calibration/mesh
-  resources, and a root-owned map index selects the official tutorial archive.
+  resources, and the independent autoware_map_asset module owns the official
+  tutorial archive and resource index. Root selects its local override; source
+  consumers may declare its public module/index dependency. The supported core
+  launch and native/OCI/s6/systemd/OSTree products resolve that indexed map
+  without map_path injection or a separate runtime map mount.
   SHA-256 5536fce7bb8db7688fdf94ec004118b898637ad0d5b6175108b10989dd6e93b9
   pins the otherwise mutable map URL; use the documented tutorial input rather
   than a substituted test map. [Map provenance](../../assets/map/README.md).
@@ -1959,7 +1963,7 @@ state explicitly and make its compatibility part of release/rollback design.
 
 1. Inventory existing runtime providers and remaining system/ABI prerequisites.
    Export one native bundle for the original headless core launch, selecting
-   sample vehicle/sensors and declared map fixtures.
+   sample vehicle/sensors and the declared indexed map asset.
 2. Extract/materialize it at a different path. Execute with no source workspace,
    Bazel cache or host ROS installation available and without inherited
    AMENT_PREFIX_PATH, PYTHONPATH, LD_LIBRARY_PATH or LD_PRELOAD. The launcher

@@ -796,7 +796,8 @@ resources stay with their original source packages.
 
 Select the git-tracked module at assets/map through the root local override.
 Its MODULE.bazel owns the pinned archive and BUILD overlay; consume its public
-`@autoware_map_asset//:ament_index` target. Resolve map_path from the `autoware_map_asset` share directory
+`@autoware_map_asset//:ament_index` target. Resolve map resources from the
+`autoware_map_asset` share directory
 using ament_index/FindPackageShare or `$(find-pkg-share ...)`. Its original map
 and projector files are installed together; do not inject workspace or HOME
 paths. Fetching is a build operation, and runtime lookup uses indexed resources.
@@ -843,8 +844,9 @@ bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
   //bazel/tests:core_bundle_structure_test
 ```
 
-The application archive contains the headless original core launch and sample
-vehicle/sensor providers. Its executable-adjacent runfiles preserve the declared
+The application archive contains the headless original core launch, sample
+vehicle/sensor providers and the selected autoware_map_asset. Its
+executable-adjacent runfiles preserve the declared
 ament indexes, libraries, Python and resource closure. Add component runtime
 edges to the owning component's index/data; select concrete product resources
 in bazel/runtime/BUILD.bazel. Do not add a second package-by-package file list.
@@ -868,8 +870,8 @@ the compiler's lower glibc floor covers every runtime input. A graphics vendor
 backend/display stack is outside this headless product's support.
 
 Extract at any directory and invoke its run executable from another working
-directory, passing map_path:=/absolute/path/to/map. The map directory must contain
-the three files described above. The launcher establishes its own runtime paths
+directory without map arguments. The launch resolves the bundled map through
+its ament index. The launcher establishes its own runtime paths
 and fixes the headless sample product to Cyclone DDS with Agnocast disabled.
 Supply writable HOME/ROS_LOG_DIR state separately from the read-only application.
 This product does not contain RViz, GPU execution, a simulator or an Agnocast
@@ -918,15 +920,13 @@ verification companion, then checks the normal entrypoint and docker stop.
 No application bind mount, source/cache mount, installed ROS or OS Python is
 needed. Re-run all three tests when image packaging changes.
 
-For manual execution, set map_dir to an absolute directory containing the three
-map inputs described in the native distribution section, then run:
+For manual execution, run the image directly; its declared map asset is bundled:
 
 ```sh
 docker run --rm --name autoware-core --pull=never --network=none --read-only \
   --cap-drop=ALL --security-opt=no-new-privileges \
   --tmpfs /tmp:rw,exec,nosuid,nodev \
-  --mount "type=bind,src=$map_dir,dst=/maps,readonly" \
-  docker.io/library/autoware-core:bazel map_path:=/maps
+  docker.io/library/autoware-core:bazel
 ```
 
 The image defaults to user 1000:1000, workdir / and HOME=/tmp. Its SIGINT stop
@@ -951,7 +951,6 @@ bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
 docker run --rm --pull=never --network=none --read-only --cap-drop=ALL \
   --security-opt=no-new-privileges --tmpfs /tmp:rw,exec,nosuid,nodev \
   --tmpfs /run:rw,exec,uid=1000,gid=1000,mode=0755 \
-  --mount "type=bind,src=$map_dir,dst=/maps,readonly" \
   docker.io/library/autoware-core:s6
 ```
 
@@ -959,9 +958,9 @@ This variant runs its whole supervision tree as 1000:1000. The writable /run
 mount belongs to that UID; S6_READ_ONLY_ROOT=1 keeps service definitions in the
 image and mutable supervisor state in /run. Core output is recorded at
 /run/autoware/core.log; lifecycle events are in /run/autoware/events. They are
-ephemeral unless the operator explicitly supplies persistent storage. The
-AUTOWARE_MAP_PATH environment variable selects another container-visible map
-directory. AUTOWARE_READY_GATE is a demonstration/testing gate: when supplied,
+ephemeral unless the operator explicitly supplies persistent storage. Map
+selection is the root's declared asset module, shared with the native bundle.
+AUTOWARE_READY_GATE is a demonstration/testing gate: when supplied,
 the prerequisite waits for that file before announcing readiness.
 
 Keep product service edges and failure policies under images/. Preserve each
@@ -994,7 +993,6 @@ docker run --rm --pull=never --network=none --read-only --cgroupns=private -t \
   --cap-add=SYS_ADMIN --security-opt=apparmor=unconfined \
   --security-opt=no-new-privileges --tmpfs /tmp:rw,exec,nosuid,nodev \
   --tmpfs /run:rw,exec \
-  --mount "type=bind,src=$map_dir,dst=/maps,readonly" \
   docker.io/library/autoware-core:systemd
 ```
 
@@ -1007,9 +1005,10 @@ than the s6 variant and must be accepted by the runtime operator. There is no
 host-cgroup bind mount or use of the host's systemd package. The image is a
 container supervision demonstration, not a bootable host OS.
 
-Core output, readiness gating and map selection use the same paths/environment
-as the s6 variant. Docker's SIGRTMIN+3 stop signal requests orderly manager
-shutdown. When stopping services without exiting PID 1, wait for all jobs:
+Core output and readiness gating use the same paths/environment as the s6
+variant; both resolve the bundled indexed map. Docker's SIGRTMIN+3 stop signal
+requests orderly manager shutdown. When stopping services without exiting PID 1,
+wait for all jobs:
 `systemctl stop autoware.target autoware-core.service autoware-prerequisite.service`.
 Stopping the target alone can return before its members finish. See the
 [complete gate](JOURNAL.md#2026-11-21-phase-723--systemd-core-service-supervision).

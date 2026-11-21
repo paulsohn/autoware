@@ -1,7 +1,7 @@
 [Unit]
 Description=Original headless Autoware core launch
 DefaultDependencies=no
-RequiresMountsFor=/tmp /run/autoware /maps
+RequiresMountsFor=/tmp /run/autoware /opt/autoware
 Requires=autoware-prerequisite.service
 BindsTo=autoware-prerequisite.service
 After=autoware-prerequisite.service
@@ -17,7 +17,7 @@ Type=exec
 User=1000
 Group=1000
 Environment=HOME=/tmp LOGNAME=autoware
-PassEnvironment=AUTOWARE_MAP_PATH ROS_DOMAIN_ID
+PassEnvironment=ROS_DOMAIN_ID
 ExecStart=/usr/lib/autoware-services/core
 ExecStopPost=+/usr/lib/autoware-services/service-stopped core
 StandardOutput=null
