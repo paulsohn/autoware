@@ -561,16 +561,16 @@ TEST(TrajectoryCheckerModule, DiagCheckForwardTrajectoryLength)
   constexpr auto trajectory_v = 10.0;
   constexpr size_t trajectory_size = 10;
   constexpr auto ego_v = 10.0;
-  constexpr auto ego_a = std::abs(test_utils::PARAMETER_FORWARD_TRAJECTORY_LENGTH_ACCELERATION);
+  const auto ego_a = std::abs(test_utils::PARAMETER_FORWARD_TRAJECTORY_LENGTH_ACCELERATION);
   constexpr auto margin = test_utils::PARAMETER_FORWARD_TRAJECTORY_LENGTH_MARGIN;
 
   const auto accel = generateDefaultAcceleration();
 
   // Longer trajectory than threshold -> must be OK
   {
-    constexpr auto ok_trajectory_length = ego_v * ego_v / (2.0 * ego_a);  // v1^2 - v0^2 = 2as
+    const auto ok_trajectory_length = ego_v * ego_v / (2.0 * ego_a);  // v1^2 - v0^2 = 2as
     std::cerr << "aaa: " << ok_trajectory_length << std::endl;
-    constexpr auto trajectory_interval = ok_trajectory_length / trajectory_size;
+    const auto trajectory_interval = ok_trajectory_length / trajectory_size;
     const auto ok_trajectory =
       generateTrajectory(trajectory_interval, trajectory_v, 0.0, trajectory_size);
     const auto ego_odom = generateDefaultOdometry(0.0, 0.0, ego_v);
@@ -580,9 +580,9 @@ TEST(TrajectoryCheckerModule, DiagCheckForwardTrajectoryLength)
   // Smaller trajectory than threshold -> must be NG
   {
     // shorter with 1.0m
-    constexpr auto bad_trajectory_length = ego_v * ego_v / (2.0 * ego_a) - margin - 1.0;
+    const auto bad_trajectory_length = ego_v * ego_v / (2.0 * ego_a) - margin - 1.0;
     std::cerr << "bbb: " << bad_trajectory_length << std::endl;
-    constexpr auto trajectory_interval = bad_trajectory_length / trajectory_size;
+    const auto trajectory_interval = bad_trajectory_length / trajectory_size;
     const auto bad_trajectory =
       generateTrajectory(trajectory_interval, trajectory_v, 0.0, trajectory_size);
     const auto ego_odom = generateDefaultOdometry(0.0, 0.0, ego_v);
@@ -591,9 +591,9 @@ TEST(TrajectoryCheckerModule, DiagCheckForwardTrajectoryLength)
 
   // Longer trajectory than threshold, but smaller length from ego -> must be NG
   {
-    constexpr auto bad_trajectory_length = ego_v * ego_v / (2.0 * ego_a);  // v1^2 - v0^2 = 2as
+    const auto bad_trajectory_length = ego_v * ego_v / (2.0 * ego_a);  // v1^2 - v0^2 = 2as
     std::cerr << "ccc: " << bad_trajectory_length << std::endl;
-    constexpr auto trajectory_interval = bad_trajectory_length / trajectory_size;
+    const auto trajectory_interval = bad_trajectory_length / trajectory_size;
     const auto bad_trajectory =
       generateTrajectory(trajectory_interval, trajectory_v, 0.0, trajectory_size);
     const auto & p = bad_trajectory.points.at(trajectory_size - 1).pose.position;

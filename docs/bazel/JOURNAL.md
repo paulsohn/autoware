@@ -13524,3 +13524,27 @@ The native/header and Python surfaces remain distinct providers. No middleware
 behavior is involved; Cyclone DDS/Agnocast-off configuration is retained and
 Fast DDS/pre-commit are not run. Continue the full validator gate with this pin;
 this dependency result does not claim the consumer integration is complete.
+
+## 2026-11-22: Phase 7.3.2 — Trajectory-checker fixture math portability
+
+Purpose: compile the entire existing trajectory-checker suite with LLVM/libc++
+21.1.8 and C++23. The diagnostic forward-length fixture initializes constexpr
+ego_a with std::abs(double); this selected library does not mark that overload
+constexpr. The compiler rejects it and six dependent constant initializers.
+Make these seven locals const instead of constexpr. Keep std::abs, every formula,
+test input and assertion unchanged; do not replace the arithmetic with a hand
+absolute-value implementation or drop the diagnostic tests.
+
+Review the AWF Lyrical/toolchain trackers and current checker test on 2026-11-22.
+Current main retains the same constexpr expression and a scoped checker/constexpr
+PR search finds no matching change. Record this test/compiler portability issue
+in UPSTREAM_AWF.md with an unchecked association; it is not a runtime algorithm
+or ROS-message API change. Keep the source fix separate from build declarations.
+
+The helper entry below gives the complete command: all 25 original checker
+cases pass in 43.2 seconds after declaring the actual node implementation and
+base package's indexed config on its diagnostic test. Seven direct checks and
+eighteen node/diagnostic cases run, zero failures/errors/disabled cases/skips.
+The whole group passes 51 active cases in twelve targets, CPU/Cyclone DDS with
+ENABLE_AGNOCAST=0. Targeted clang-format/flake8/whitespace checks pass; no older
+compiler/colcon or full simulator result is claimed.

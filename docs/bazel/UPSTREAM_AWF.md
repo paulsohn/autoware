@@ -1361,3 +1361,21 @@ Local source fix: `5eb05315`.
   CPU/Cyclone DDS and Agnocast off. Older ROS/colcon is not executed. See the
   [source-fix journal](JOURNAL.md#2026-11-22-phase-732--planning-evaluator-lyrical-apis)
   and following module entry for exact command and limits. No submission is claimed.
+
+### Trajectory-checker diagnostic fixture requires constexpr floating abs
+
+- [ ] Associate with a matching upstream change. Reviewed 2026-11-22: the
+  [current diagnostic test](https://github.com/autowarefoundation/autoware_universe/blob/main/planning/planning_validator/autoware_planning_validator_trajectory_checker/test/test_trajectory_checker_diag.cpp)
+  retains constexpr std::abs for the forward-trajectory acceleration fixture.
+  The Lyrical/toolchain trackers and scoped checker/constexpr PR search identify
+  no matching fix. No submission is claimed.
+- LLVM/libc++ 21.1.8/C++23 rejects that initializer because its floating abs
+  overload is not constexpr, followed by six dependent initializer errors.
+  Make those seven locals const; preserve the original std::abs call, formulas,
+  inputs and every assertion. This avoids an unnecessary compile-time evaluation
+  requirement in a runtime diagnostic test.
+- All 25 original cases (seven direct and eighteen diagnostics) pass in 43.2
+  seconds, followed by the complete 51-case/12-target consumer group, Cyclone
+  DDS/Agnocast off, zero failures/skips/disabled cases. No older-toolchain result
+  is implied. See the
+  [source-fix journal](JOURNAL.md#2026-11-22-phase-732--trajectory-checker-fixture-math-portability).
