@@ -1796,6 +1796,9 @@ Phase 7.3 task boundaries (selected 2026-11-21):
   profiles pass; the combined group passes 27 active cases without runtime
   skips. Original tests and implementation remain unchanged.
   [Evidence](JOURNAL.md#2026-11-22-phase-732--static-obstacle-avoidance-scene-plugin).
+  Sampler-common now builds all four sources and preserves its full original
+  suite: five cases pass and two explicit upstream edge/benchmark skips remain.
+  [Evidence](JOURNAL.md#2026-11-22-phase-732--sampler-common-library).
   Continue in dependency order through shared planner helpers, the
   preset-selected behavior/motion plugins and controller libraries, then
   simulated perception and the selected system/API closure. CMake-only shims
@@ -1805,6 +1808,12 @@ Phase 7.3 task boundaries (selected 2026-11-21):
   declarations. The complete selected closure must pass before 7.3.2 closes.
   Refine each group from the actual selected launch/source declarations;
   do not replace the Universe stack with the smaller core-only launch.
+  Execution scope agreed 2026-11-22: continue through the remaining selected
+  implementation dependencies and their complete component gates, then pause
+  immediately before full simulator composition/startup in 7.3.3. Individual
+  module launches and behavior tests remain part of 7.3.2 validation. This does
+  not authorize substituting a smaller stack or starting the deferred Pixi
+  comparison; preserve the original simulator entrypoint for the next task.
 - **7.3.3 — Original launch and resources (in progress).** The first resource
   group is complete (2026-11-21): the tutorial's local sample_vehicle_description
   and sample_sensor_kit_description own their original model/calibration/mesh

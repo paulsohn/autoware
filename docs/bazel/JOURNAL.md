@@ -11513,3 +11513,34 @@ compatibility patch, pre-commit, Fast DDS, GPU, enabled-Agnocast or unchanged
 packaging matrix is required/run. This completes this plugin's declared gate;
 lane-changing/parking scenes, the remaining planning closure and original
 simulator composition remain pending.
+
+## 2026-11-22: Phase 7.3.2 — Sampler-common library
+
+Purpose: supply the local Frenet/lane-change consumers with their actual spline,
+trajectory, footprint and constraint implementation. Inspect the manifest,
+CMake source-directory registration, all four implementation files/public headers
+and both original test files before adding rules. Add a package-owned module,
+C++ library and ament index; select it through the root local override after its
+existing interpolation/utilities dependencies. Declare real Eigen/Boost/geometry
+inputs and the shared ROS/TF utility runtime closure. No source changes or host
+package installation are required.
+
+Preserve the original test_sampler_common executable with both test sources.
+The source explicitly skips the toFrenet edge-case section after its ordinary
+projection assertions, and skips benchFrenet entirely. Retain these upstream
+GTEST_SKIP statements; they are not dependency-related skips or newly omitted
+test groups. This gate validates supported original behavior, not those skipped
+edge cases or a performance benchmark.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_output=errors @autoware_sampler_common//...
+```
+
+All four library sources build and the full original executable passes in
+0.3 seconds (41.4-second invocation). XML records five passing cases and the two
+explicit upstream skips; no failures/errors or dependency skips. Source/test
+inventory and git diff --check pass. CPU/Cyclone DDS with ENABLE_AGNOCAST=0 is
+the selected configuration; no pre-commit, Fast DDS or unrelated runtime matrix
+is run. Next validate the Frenet library and its lane-change consumers.
