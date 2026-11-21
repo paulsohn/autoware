@@ -11255,3 +11255,22 @@ unchanged distribution matrix is run.
 This completes the common-library task. The behavior-path node and selected
 scene plugins remain subsequent Phase 7.3.2 tasks; this library does not establish
 full planning-simulator launch or lane-driving acceptance.
+
+## 2026-11-22: Defer the direct Pixi comparison until full Universe integration
+
+Purpose: retain the build-system evaluation discussed alongside AWF's Pixi
+report without diverting the ongoing Bazel adoption work. Inspect the current
+Phase 7.3 boundaries and later priorities: the simulator-selected Universe
+closure is a milestone, not full autoware_universe coverage. Record the user's
+prerequisite of full Universe integration before any direct Pixi comparison.
+
+The authoritative scope, comparison criteria and starting references are in
+[the deferred comparison plan](PLAN.md#deferred-bazelpixi-comparison). Keep
+existing phase numbers and package-level validation gates. No Pixi setup,
+benchmark, new packaging pipeline or runtime change is introduced. Future
+measurements must distinguish build-system effects from source, toolchain,
+dependency and acceptance-scope differences.
+
+Documentation-only validation: git diff --check passes, and the local plan
+link/heading is checked. No build, test or behavior suite is rerun. Existing
+passing module results remain applicable; no comparison result is claimed.

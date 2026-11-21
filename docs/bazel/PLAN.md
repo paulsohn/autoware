@@ -1877,6 +1877,36 @@ Potential topics such as OSQP compatibility, OpenMP, CMake parity,
 runtime-image deduplication, and remote caching will be evaluated when a current
 target requires them.
 
+### Deferred Bazel/Pixi comparison
+
+Priority agreed 2026-11-22: complete the full autoware_universe Bazel integration
+before starting a direct Pixi comparison. The selected planning-simulator
+dependency closure alone does not satisfy this prerequisite. Continue Phase 7.3
+and broader Universe adoption in related package groups; keep the comparison
+outside current phase gates and preserve the existing phase identifiers.
+Do not introduce Pixi manifests, recipes, packaging adapters or benchmarks now.
+
+Once full Universe integration is complete, define an equivalent product and
+test scope using the same source revisions, models/maps and behavior checks.
+Record toolchain/dependency differences separately so they are not mistaken
+for build-system effects. Compare:
+
+- Fresh-machine setup, required host inputs and clean-build time.
+- Small-edit rebuild/test time and reuse of cached outputs on another machine.
+- Upstream-update effort and ongoing build-definition/package maintenance.
+- Product/resource selection and native runtime dependency closure.
+- Native deployment and OCI/application-only OSTree assembly, including the
+  same isolation, startup/shutdown and applicable update/rollback checks.
+
+Use [AWF's Pixi report](https://github.com/orgs/autowarefoundation/discussions/7050)
+as a starting reference, alongside the documented
+[ROS package backend](https://pixi.prefix.dev/latest/build/backends/pixi-build-ros/)
+and [native packing tools](https://pixi.prefix.dev/latest/deployment/pixi_pack/).
+Their documented capabilities are not evidence that an equivalent Autoware
+deployment or performance comparison has passed. Decide from measured benefits
+and maintenance cost; no comparative performance or total-cost advantage has
+been established by this experiment.
+
 ## Runtime packaging and deployment requirements
 
 Phase 7 establishes the runtime distribution gates below; incomplete experiments
