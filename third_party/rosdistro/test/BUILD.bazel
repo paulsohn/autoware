@@ -1,0 +1,28 @@
+load("@rosdistro//ament:defs.bzl", "register_ament_files")
+load("@rules_python//python:defs.bzl", "py_binary", "py_library", "py_test")
+
+py_library(name = "fixture_lib", srcs = ["lib/fixture_lib.py"], imports = ["lib"])
+py_binary(
+    name = "entry.py",
+    srcs = ["scripts/entry.py"],
+    main = "scripts/entry.py",
+    data = ["scripts/payload.txt"],
+    deps = [":fixture_lib"],
+    precompile = "disabled",
+)
+register_ament_files(name = "plain", files = [":entry.py"], prefix = "lib/registration_fixture", strip_prefix = "*")
+register_ament_files(
+    name = "renamed",
+    files = [":entry.py"],
+    prefix = "lib/registration_fixture",
+    renames = {":entry.py": "renamed_entry.py"},
+)
+register_ament_files(name = "plain_data", files = ["scripts/payload.txt"], prefix = "share/registration_fixture", strip_prefix = "scripts")
+
+py_test(
+    name = "registration_test",
+    srcs = ["test_registration.py"],
+    main = "test_registration.py",
+    data = [":plain", ":renamed", ":plain_data"],
+    precompile = "disabled",
+)

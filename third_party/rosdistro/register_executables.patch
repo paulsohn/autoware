@@ -1,0 +1,56 @@
+Affected module: rosdistro@lyrical.2026-10-05.rcr.4 (the selected MVS release).
+Failure: register_ament_files iterates every py_binary DefaultInfo output. A main
+source and launcher with the same basename overwrite the installed executable;
+execution reaches the original shebang and loses declared Python imports. The
+registration also drops the executable's transitive runfiles.
+Rationale/scope: register the FilesToRun executable for executable targets, keep
+ordinary file/library registration intact, and forward input default runfiles.
+Use the same selected files when applying explicit renames. No ROS source edits.
+Verification: same-basename and renamed Python launchers execute with declared
+imports/data; ordinary-file registration passes too (registration_test, 2 cases).
+The complete wrapper, path-smoother/scenario and existing mission-launch gate
+passes all eight targets with CPU/Cyclone DDS and ENABLE_AGNOCAST=0.
+Upstream: published rcr.4 overlay still has both defects, checked 2026-11-22;
+https://bazel.ros.org/modules/rosdistro/lyrical.2026-10-05.rcr.4/overlay/ament/ament_resource.bzl
+No unpublished upstream fix association or submission is claimed.
+
+--- a/ament/ament_resource.bzl
++++ b/ament/ament_resource.bzl
+@@ -39,15 +39,20 @@
+     },
+ )
+
++def _registered_files(target):
++    executable = target[DefaultInfo].files_to_run.executable
++    return [executable] if executable else target.files.to_list()
++
+ def _register_ament_files_impl(ctx):
+     package = ctx.attr.package_name if ctx.attr.package_name else ctx.label.workspace_name.removesuffix("+")
+     renames = {}
+     if ctx.attr.renames:
+         for target, new_name in ctx.attr.renames.items():
+-            for f in target.files.to_list():
++            for f in _registered_files(target):
+                 renames[f] = new_name
+     symlinks = {}
+-    for f in ctx.files.files:
++    files = [f for target in ctx.attr.files for f in _registered_files(target)]
++    for f in files:
+         if f in renames:
+             rel_path = renames[f].lstrip("/")
+         else:
+@@ -85,8 +90,12 @@
+         symlinks[path] = f
+     return [
+         DefaultInfo(
+-            files = depset(ctx.files.files),
+-            runfiles = ctx.runfiles(symlinks = symlinks),
++            files = depset(files),
++            runfiles = ctx.runfiles(symlinks = symlinks).merge_all([
++                target[DefaultInfo].default_runfiles
++                for target in ctx.attr.files
++                if target[DefaultInfo].default_runfiles
++            ]),
+         ),
+         AmentIndexInfo(
+             package_name = ctx.label.workspace_name.removesuffix("+"),

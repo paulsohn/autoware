@@ -98,3 +98,25 @@ current compiler/standard-library support boundaries for RCR LLVM users. Do
 not apply these headers broadly or silently enable an unsupported combination;
 retain the policy choice and version-specific complete-suite evidence. This
 finding is not an Autoware implementation or Lyrical source correction.
+
+### Registered Python executables lose their launcher and runfiles
+
+- [ ] Associate with a matching upstream change. Reviewed 2026-11-22: the
+  [latest published version](https://bazel.ros.org/modules/rosdistro/metadata.json)
+  is lyrical.2026-10-05.rcr.4 and its
+  [registration overlay](https://bazel.ros.org/modules/rosdistro/lyrical.2026-10-05.rcr.4/overlay/ament/ament_resource.bzl)
+  still iterates every DefaultInfo file and constructs runfiles without input
+  runfiles. No unpublished fix or new submission is claimed.
+- Input: rosdistro rcr.4, rules_python 2.4.5, Python 3.14.4, Bazel 9.3.2,
+  Ubuntu 24.04 x86_64, --config=runtime. Register a py_binary whose main source
+  and launcher share a basename under lib/<package>, with strip_prefix="*".
+  Executing that indexed path runs the source shebang and fails to import its
+  declared dependencies. Explicit renames have the same multiple-output issue.
+- Select DefaultInfo.files_to_run.executable for executable targets; keep ordinary
+  file lists intact, select renames consistently and merge input default runfiles.
+  The local third_party/rosdistro/register_executables.patch makes only this rule
+  change. The minimal command is bazel test --config=runtime --config=no-agnocast
+  //third_party/rosdistro/test:registration_test. Both executable profiles and
+  ordinary data pass, followed by the affected original planning-node/wrapper
+  suites and installed script/startup checks. Exact commands/results are in the
+  journal. Suggest upstreaming this rule correction with the generic regression.

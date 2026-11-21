@@ -68,6 +68,7 @@ only when your current target demonstrates the need.
   [evidence: stop-line plugin](JOURNAL.md#2026-11-17-phase-525--stop-line-plugin).
 - [ ] Preserve executable contracts and unique library identities in composed indexes.
   [Runtime resource convention](DEVELOPING.md#launch-resource-composition);
+  [Python entrypoint evidence](JOURNAL.md#2026-11-22-phase-732--registered-python-executable-closure);
   [published container providers](JOURNAL.md#2026-11-18-phase-531--default-ad-api);
   [evidence: original core launches](JOURNAL.md#2026-11-17-phase-525--core-planning-launch-composition).
   [Runtime-only dlopen resources and ABI closure](DEVELOPING.md#tensorrt-sdk-and-native-tests);

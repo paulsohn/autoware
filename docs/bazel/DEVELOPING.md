@@ -868,6 +868,12 @@ Conflicting archive destinations fail. Build distributions with --config=runtime
 ordinary Python bootstraps otherwise require python3 before reaching their
 declared interpreter.
 
+Register Python executable targets through register_ament_files, preserving the
+launcher rather than flattening all DefaultInfo files to an executable name.
+Registration must forward the executable's default runfiles as well as its
+installed symlink. Validate the indexed entrypoint with a real subprocess;
+build-tree execution can hide a broken launcher or missing imports/data.
+
 Keep generated standalone mains' runtime providers in their helper package's
 index too. A dependency used by a main can be absent from its component library's
 closure; a working build-tree RPATH or an installed host library can hide that

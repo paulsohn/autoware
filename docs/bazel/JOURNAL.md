@@ -12355,3 +12355,64 @@ regression, with no runtime failures/errors/skips. The final invocation takes
 flake8 and whitespace checks pass. CPU/Cyclone DDS, ENABLE_AGNOCAST=0 is selected;
 no pre-commit, Fast DDS, kernel-dependent gate or full simulator launch is run.
 Next continue the remaining selected planning and control implementation closure.
+
+## 2026-11-22: Phase 7.3.2 — Registered Python executable closure
+
+Purpose: make an installed package script execute its Bazel launcher and declared
+Python/data closure. Prerequisites: Bazel 9.3.2, rules_python 2.4.5, Python 3.14.4,
+and the currently resolved rosdistro Lyrical rcr.4. Inspect the selected MODULE,
+registration implementation and published source.json/overlay. The root formerly
+requested rcr.3 as a minimum; transitive requirements already selected rcr.4.
+Pin that actual version explicitly when applying the patch; this does not select
+a different source from the one used by the preceding gates.
+
+The smoother's installed calculation_time_plotter.py invokes the original source
+shebang and cannot import autoware_internal_debug_msgs. py_binary DefaultInfo
+contains both its launcher and main source; basename stripping maps both to one
+installed path, with the source overwriting the launcher. register_ament_files
+also discards input default runfiles. Fix the generic registry rule once under
+third_party/rosdistro: select files_to_run.executable for executable inputs,
+retain all files for ordinary inputs, use the same selection for renames and
+merge the inputs' default runfiles into registration runfiles. Keep all existing
+path/prefix logic and source packages unchanged.
+
+The minimal regression registers a Python executable whose main and launcher
+share a basename, registers it again under a different name, and executes both.
+Its imported helper and adjacent payload must come from declared runfiles. A
+second case verifies unchanged ordinary-file registration. These generic tests
+belong with the dependency owner. The published latest rcr.4 overlay still has
+the defect, checked 2026-11-22; UPSTREAM_RCR.md records the reproducer and avoids
+claims about unpublished work. The patch preface records version, cause, scope,
+verification and upstream status.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_output=errors //third_party/rosdistro/test:registration_test
+```
+
+Both unittest cases pass (two executable profiles plus ordinary data) in 0.3
+seconds, 2.4-second invocation. The following component gate also passes all
+eight targets in 64.6 seconds, including installed plotter help, both real node
+startups, original module suites, wrapper suites and existing mission launch:
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_output=errors //third_party/rosdistro/test:registration_test \
+  @autoware_agnocast_wrapper//... @autoware_path_smoother//... \
+  @autoware_scenario_selector//... //bazel/tests/planning_nodes:all \
+  //bazel/tests/autoware_mission_planner_universe:launch_test
+python3 -m flake8 --max-line-length=150 \
+  third_party/rosdistro/test/test_registration.py \
+  third_party/rosdistro/test/lib/fixture_lib.py \
+  third_party/rosdistro/test/scripts/entry.py \
+  bazel/tests/planning_nodes/test_runtime.py
+git diff --check
+```
+
+No failures or skips occur. Reuse unchanged wrapper results; its library and
+original tests do not change. CPU/Cyclone DDS with Agnocast off is selected; no
+Fast DDS or full simulator launch is run. The following module commits publish
+the component declarations used for the broader gate. Test the installed/indexed
+entrypoint, not only the build-tree py_binary, when adopting Python scripts.
