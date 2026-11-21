@@ -1439,3 +1439,9 @@ local_path_override(
     module_name = "autoware_collision_detector",
     path = "src/universe/autoware_universe/control/autoware_collision_detector",
 )
+
+bazel_dep(name = "autoware_lane_departure_checker", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_lane_departure_checker",
+    path = "src/universe/autoware_universe/control/autoware_lane_departure_checker",
+)
