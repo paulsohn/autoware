@@ -1,0 +1,29 @@
+load("@rosidl_default_generators//:defs.bzl", "ros_message")
+
+package(default_visibility = ["//visibility:public"])
+
+ros_message(
+    name = "Emergency",
+    src = "Emergency.msg",
+    deps = [
+        "@builtin_interfaces//msg:Time",
+    ],
+)
+
+ros_message(
+    name = "ResponseStatus",
+    src = "ResponseStatus.msg",
+    deps = [],
+)
+
+ros_message(
+    name = "MapHash",
+    src = "MapHash.msg",
+    deps = [],
+)
+
+ros_message(
+    name = "TextFile",
+    src = "TextFile.msg",
+    deps = [],
+)
