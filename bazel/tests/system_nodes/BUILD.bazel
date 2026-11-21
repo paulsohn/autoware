@@ -30,5 +30,6 @@ load("@rules_python//python:defs.bzl", "py_test")
         ("latency", "autoware_pipeline_latency_monitor", "autoware_pipeline_latency_monitor_node", "pipeline_latency_monitor.param.yaml"),
         ("comfortable_stop", "autoware_mrm_comfortable_stop_operator", "autoware_mrm_comfortable_stop_operator_node", "mrm_comfortable_stop_operator.param.yaml"),
         ("emergency_stop", "autoware_mrm_emergency_stop_operator", "autoware_mrm_emergency_stop_operator_node", "mrm_emergency_stop_operator.param.yaml"),
+        ("mrm_handler", "autoware_mrm_handler", "autoware_mrm_handler_node", "mrm_handler.param.yaml"),
     ]
 ]
