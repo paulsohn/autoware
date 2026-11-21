@@ -1301,3 +1301,9 @@ local_path_override(
     module_name = "autoware_planning_evaluator",
     path = "src/universe/autoware_universe/evaluator/autoware_planning_evaluator",
 )
+
+bazel_dep(name = "autoware_planning_validator_test_utils", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_planning_validator_test_utils",
+    path = "src/universe/autoware_universe/planning/planning_validator/autoware_planning_validator_test_utils",
+)
