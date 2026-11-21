@@ -10274,3 +10274,52 @@ This accepts the description resource module, not a vehicle interface driver
 or a complete planning simulation. PLAN.md's detailed 7.2/7.3 sections are also
 reordered numerically; that editorial move needs local-link/whitespace checks
 and has no separate runtime validation requirement.
+
+## 2026-11-21: Phase 7.3.3 — Tutorial sensor description
+
+Purpose: prepare the tutorial's concrete sample_sensor_kit input and demonstrate
+that its description composes with sample_vehicle. Inspect the manifest, CMake,
+original sensors/sensor-kit Xacro, calibration YAML, camera/IMU/VLS templates and
+meshes in the same autoware_launch snapshot as the vehicle entry. No existing
+behavior suite is declared. The required velodyne_description is already local
+and Bazel-supported; retain that provider instead of fetching another version.
+
+Integration: add a local resource module/index covering original config, urdf
+and sensor trees, with the velodyne/Xacro indexes in its runtime dependencies.
+Add the root source override. The root-only resource test copies this package
+and velodyne into an isolated prefix, uses that prefix alone for package lookup,
+expands the original sensors.xacro and verifies the expected top/left/right/rear
+lidars, IMU, calibration transform and every mesh URI. No source implementation,
+Xacro, original calibration or original test is modified.
+
+Extend the existing root description-launch peer with an explicit vehicle-model
+selection, preserving its existing default and core sample/AWSIM rows. Add the
+sample_vehicle/sample_sensor_kit row. The already-supported generic core vehicle
+launch composes these real description providers with the native robot state
+publisher; its dynamic Xacro contract matches the selected model inputs. This
+is a resource/TF test, not a replacement for the pending full Universe launcher.
+Assert real robot_description and transient-local static transforms, calibrated
+base_link -> sensor_kit_base_link translation (0.9, 0, 2), the rear lidar and
+resolvable meshes; require normal process shutdown.
+
+Reproduce sequentially:
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --nocache_test_results --test_output=errors \
+  @sample_sensor_kit_description//... \
+  //bazel/tests/sample_sensor_kit_description:resources_test \
+  //bazel/tests:vehicle_description_sample_launch_test \
+  //bazel/tests:vehicle_description_awsim_launch_test \
+  //bazel/tests:vehicle_description_universe_sample_launch_test
+```
+
+The grouped invocation also included the vehicle module/resource target.
+The sensor relocation case passes in 0.6 seconds; all six launch/shutdown cases
+pass (core sample 1.5 seconds, AWSIM 1.4 seconds, tutorial sample 2.0 seconds),
+without failures/skips. Passing sensor and launch results are reused after the
+vehicle-only COLLADA check correction. Targeted buildifier, Python/flake8 and
+whitespace checks pass. The module gate is complete for CPU/Cyclone DDS with
+Agnocast disabled. Gazebo plugin execution, sensor drivers and full Universe
+startup are outside this description-resource contract; no Fast DDS check runs.

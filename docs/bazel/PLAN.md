@@ -1742,8 +1742,9 @@ Phase 7.3 task boundaries (selected 2026-11-21):
   Refine each group from the actual selected launch/source declarations;
   do not replace the Universe stack with the smaller core-only launch.
 - **7.3.3 — Original launch and resources (in progress).** The local
-  sample_vehicle_description resource module is complete, including its isolated-
-  prefix Xacro/mesh/image check. The tutorial sensor and map providers follow.
+  tutorial vehicle and sensor description modules are complete. Eight cases in
+  five targets validate isolated-prefix resources, combined robot description/
+  calibrated transforms and the existing core sample/AWSIM variants.
   Compose the actual planning_simulator.launch.xml closure and its sample
   map/vehicle/sensor inputs after the remaining 7.3.2 implementations are ready.
   Pin tutorial map/scenario inputs before the behavior gate; preserve default

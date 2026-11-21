@@ -27,7 +27,7 @@ def generate_test_description():
     source = Path(get_package_share_directory('autoware_core_vehicle')) / 'launch/autoware_core_vehicle.launch.xml'
     return launch.LaunchDescription([
         IncludeLaunchDescription(AnyLaunchDescriptionSource(str(source)), launch_arguments={
-            'vehicle_model': 'autoware_sample_vehicle',
+            'vehicle_model': os.environ.get('VEHICLE_MODEL', 'autoware_sample_vehicle'),
             'sensor_model': os.environ['SENSOR_MODEL'],
         }.items()),
         launch_testing.actions.ReadyToTest(),
@@ -63,7 +63,7 @@ class TestVehicleDescription(unittest.TestCase):
             self.assertAlmostEqual(transform.transform.translation.x, 0.9)
             self.assertAlmostEqual(transform.transform.translation.y, 0.0)
             self.assertAlmostEqual(transform.transform.translation.z, 2.0)
-            if os.environ['SENSOR_MODEL'] == 'autoware_sample_sensor_kit':
+            if os.environ['SENSOR_MODEL'] in ('autoware_sample_sensor_kit', 'sample_sensor_kit'):
                 self.assertIn('velodyne_rear_base_link', links)
             # Every mesh URI must resolve to a declared runtime resource.
             for mesh in robot.iter('mesh'):

@@ -1489,11 +1489,12 @@ launch_test(
         src = "vehicle_description/test_launch.py",
         data = [
             "@autoware_core_vehicle//:ament_index",
-            "@autoware_sample_vehicle_description//:ament_index",
+            "@" + vehicle + "_description//:ament_index",
             "@" + model + "_description//:ament_index",
         ],
         env = {
             "SENSOR_MODEL": model,
+            "VEHICLE_MODEL": vehicle,
             "ENABLE_AGNOCAST": "0",
             "LD_LIBRARY_PATH": "lib",
             "ROS_DOMAIN_ID": domain,
@@ -1512,9 +1513,10 @@ launch_test(
             "@tf2_msgs//:py",
         ],
     )
-    for kit, model, domain in [
-        ("sample", "autoware_sample_sensor_kit", "82"),
-        ("awsim", "autoware_awsim_sensor_kit", "83"),
+    for kit, model, vehicle, domain in [
+        ("sample", "autoware_sample_sensor_kit", "autoware_sample_vehicle", "82"),
+        ("awsim", "autoware_awsim_sensor_kit", "autoware_sample_vehicle", "83"),
+        ("universe_sample", "sample_sensor_kit", "sample_vehicle", "94"),
     ]
 ]
 
