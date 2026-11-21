@@ -11621,3 +11621,7 @@ errors or runtime skips. Targeted flake8 and git diff --check pass.
 CPU/Cyclone DDS with ENABLE_AGNOCAST=0 is selected; no pre-commit, Fast DDS or
 full simulator run is performed. Next integrate derived avoidance, then parking
 scenes.
+
+The source header alignment is committed separately as 4120f86e. Package-owned
+Bazel definitions and the root two-factory profile form the following module
+commit, using the same passing gate above without rerunning unchanged actions.

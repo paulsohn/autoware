@@ -34,5 +34,6 @@ load("@rules_python//python:defs.bzl", "py_test")
         "side_shift",
         "bidirectional_traffic",
         "static_obstacle_avoidance",
+        "lane_change",
     ]
 ]

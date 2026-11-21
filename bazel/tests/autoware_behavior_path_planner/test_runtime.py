@@ -31,8 +31,11 @@ CLASS, PARAMETERS, VALUES, UPDATED = {
                                   ['avoidance.resample_interval_for_planning',
                                    'avoidance.target_filtering.max_compensation_time'],
                                   [0.3, 2.0], 2.5),
+    'lane_change': ('LaneChangeLeftModuleManager,LaneChangeRightModuleManager',
+                    ['lane_change.time_limit', 'lane_change.backward_lane_length'],
+                    [50.0, 200.0], 201.0),
 }[MODULE]
-PLUGIN = 'autoware::behavior_path_planner::' + CLASS
+PLUGINS = ['autoware::behavior_path_planner::' + c for c in CLASS.split(',')]
 
 
 class PlannerRuntime(unittest.TestCase):
@@ -55,7 +58,7 @@ class PlannerRuntime(unittest.TestCase):
             share = Path(get_package_share_directory(package))
             for name in files:
                 args += ['--params-file', str(share / 'config' / name)]
-        args += ['-p', 'launch_modules:=[' + PLUGIN + ']']
+        args += ['-p', 'launch_modules:=[' + ','.join(PLUGINS) + ']']
         parameters = node.create_client(GetParameters, prefix + '/get_parameters')
         update = node.create_client(SetParameters, prefix + '/set_parameters')
         try:
@@ -83,8 +86,9 @@ class PlannerRuntime(unittest.TestCase):
 
                 try:
                     wait(lambda: parameters.service_is_ready() and update.service_is_ready())
-                    loaded = "The scene plugin '" + PLUGIN + "' is loaded."
-                    wait(lambda: loaded in output())
+                    for plugin in PLUGINS:
+                        loaded = "The scene plugin '" + plugin + "' is loaded."
+                        wait(lambda: loaded in output())
                     maps = Path('/proc', str(process.pid), 'maps').read_text()
                     self.assertIn('libautoware_behavior_path_' + MODULE + '_module.so', maps)
                     self.assertIn('libautoware_behavior_path_planner_component.so', maps)

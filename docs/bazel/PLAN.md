@@ -1802,6 +1802,11 @@ Phase 7.3 task boundaries (selected 2026-11-21):
   The Frenet library builds both translation units and passes two root consumer
   cases for polynomial boundaries and Cartesian lane-change trajectory output.
   [Evidence](JOURNAL.md#2026-11-22-phase-732--frenet-planning-library).
+  Both lane-change factories are complete: seven implementation sources build,
+  eleven active original cases and all four standalone profiles pass. One
+  original disabled case remains; the direct fmt ranges include matches merged
+  upstream #13594 and is committed separately from Bazel declarations.
+  [Evidence](JOURNAL.md#2026-11-22-phase-732--lane-change-scene-plugins).
   Continue in dependency order through shared planner helpers, the
   preset-selected behavior/motion plugins and controller libraries, then
   simulated perception and the selected system/API closure. CMake-only shims
