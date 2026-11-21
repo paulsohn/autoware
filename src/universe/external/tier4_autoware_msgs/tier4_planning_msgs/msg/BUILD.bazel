@@ -1,0 +1,11 @@
+load("@rosidl_default_generators//:defs.bzl", "ros_message")
+
+package(default_visibility = ["//visibility:public"])
+
+exports_files(["RerouteAvailability.msg"])
+
+ros_message(
+    name = "RerouteAvailability",
+    src = "RerouteAvailability.msg",
+    deps = ["@builtin_interfaces//msg:Time"],
+)

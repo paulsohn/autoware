@@ -10029,3 +10029,42 @@ check is required for this metadata/template gate. Targeted buildifier,
 Python/flake8 and whitespace checks pass. Preserve source-layout independence in
 future all-interface consumers; package/kind/Name is a ROS identity rather than
 a relative source path.
+
+## 2026-11-21: Phase 7.3.2 — Tier IV reroute interface
+
+Purpose: supply the local RerouteAvailability message required by Universe
+mission planning and manual lane selection. Inspect tier4_planning_msgs 0.1.0,
+its manifest/CMake interface list, the message fields and both consuming nodes.
+There is no existing behavior suite, only lint declarations. Register the one
+currently required message; the other unregistered sources remain outside the
+Bazel graph by design.
+
+Integration: add a package-local MODULE.bazel retaining manifest-level interface
+dependencies, msg/BUILD.bazel with ros_message(RerouteAvailability) depending on
+builtin_interfaces/Time, and default_generators at the package root. Its generator
+dependency list contains only builtin_interfaces. Select the local package with
+an adjacent root bazel_dep/local_path_override pair and register its cc/cc_shared
+providers once in bazel/interfaces/BUILD.bazel. The existing generic collector
+and bridge assembly consume this registration without another interface list.
+
+Build and test this provider sequentially in the existing pinned Lyrical/LLVM
+environment (the actual grouped build also selected the preferred-lane provider):
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel build --config=runtime --config=no-agnocast \
+  @tier4_planning_msgs//... \
+  //bazel/interfaces:all_interfaces //bazel/agnocast:plugins
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --nocache_test_results --test_output=errors \
+  //bazel/tests/tier4_planning_msgs:serialization_test
+```
+
+The serialization case passes, preserving timestamp and availability across
+Cyclone DDS CDR serialization/deserialization. Both actual native consumers
+also compile and exchange the availability message in the manual-selection
+launch gate below. All declared generated targets and the expanded plugin library build successfully. No original interface or node source
+is changed. Targeted buildifier, Python/flake8 and whitespace checks pass. This
+accepts the declared interface surface; additional types require explicit BUILD
+registration when their consumers are integrated. No Fast DDS check is run.

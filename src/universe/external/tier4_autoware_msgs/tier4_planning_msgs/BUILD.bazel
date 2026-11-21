@@ -1,0 +1,10 @@
+load("@rosidl_default_generators//:defs.bzl", "default_generators")
+
+package(default_visibility = ["//visibility:public"])
+
+# Supported surface grows when an integrated consumer requires another interface.
+default_generators(
+    dependencies = ["@builtin_interfaces"],
+    package_xml = "package.xml",
+    deps = ["//msg:RerouteAvailability"],
+)

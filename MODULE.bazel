@@ -931,3 +931,9 @@ local_path_override(
     module_name = "autoware_vehicle_door_simulator",
     path = "src/universe/autoware_universe/simulator/autoware_vehicle_door_simulator",
 )
+
+bazel_dep(name = "tier4_planning_msgs", version = "0.0.0")
+local_path_override(
+    module_name = "tier4_planning_msgs",
+    path = "src/universe/external/tier4_autoware_msgs/tier4_planning_msgs",
+)
