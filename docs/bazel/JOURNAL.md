@@ -10697,3 +10697,30 @@ passes. Targeted buildifier and whitespace checks pass; original schemas are
 unchanged. Simulator launch behavior and enabled-Agnocast communication are
 deferred. The existing preferred-lane payload and
 constant check also passes unchanged.
+
+## 2026-11-21: Phase 7.3.2 — Metric report interfaces
+
+Purpose: supply tier4_metric_msgs from its local source snapshot. Inspect the
+package's manifest, CMake rosidl declarations, selected consumer includes and
+referenced message/service fields. Both original interfaces are required by the
+selected planning and perception evaluators.
+
+Use package-local MODULE/BUILD files, root local override selection and explicit
+ros_message/ros_service field dependencies. Keep original schema bytes unchanged.
+The selected provider contains 2 interfaces; manifest dependencies stay in
+MODULE.bazel, while default_generators.dependencies contains only packages
+referenced by generated fields. Add the root-owned wire-test caller described in
+[the shared check](#2026-11-21-phase-732--generated-interface-wire-checks).
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --nocache_test_results --test_output=errors //bazel/tests/tier4_metric_msgs:all
+```
+
+The generated-provider check passes all 2 message/Request/Response/Event
+wire types in 0.7 seconds (the same grouped CPU/Cyclone DDS gate above),
+without failures or skips. The complete expanded plugin-consumer build also
+passes. Targeted buildifier and whitespace checks pass; original schemas are
+unchanged. Simulator launch behavior and enabled-Agnocast communication are
+deferred.
