@@ -1,0 +1,46 @@
+load("@rosdistro//ament:defs.bzl", "ament_index")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "autoware_grid_map_utils",
+    srcs = ["src/polygon_iterator.cpp"],
+    hdrs = ["include/autoware/grid_map_utils/polygon_iterator.hpp"],
+    strip_include_prefix = "include",
+    deps = ["@grid_map//:grid_map_core"],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = ["@grid_map//:grid_map_core_runtime_dynamic_deps"],
+)
+
+ament_index(package_xml = "package.xml")
+
+cc_test(
+    name = "test_polygon_iterator",
+    timeout = "long",
+    srcs = ["test/test_polygon_iterator.cpp"],
+    dynamic_deps = [":runtime_dynamic_deps", "@autoware_utils_debug//:runtime_dynamic_deps"],
+    deps = [":autoware_grid_map_utils", "@autoware_utils", "@googletest//:gtest_main"],
+)
+
+cc_binary(
+    name = "benchmark",
+    testonly = True,
+    srcs = ["test/benchmark.cpp"],
+    dynamic_deps = [
+        ":runtime_dynamic_deps",
+        "@autoware_utils_debug//:runtime_dynamic_deps",
+        "@grid_map//:grid_map_cv_runtime_dynamic_deps",
+        "@rosdistro//cc:opencv",
+    ],
+    deps = [
+        ":autoware_grid_map_utils",
+        "@autoware_utils",
+        "@grid_map//:grid_map_cv",
+        "@rosdistro//cc:opencv_library",
+    ],
+)

@@ -1800,8 +1800,10 @@ Phase 7.3 task boundaries (selected 2026-11-21):
   Remaining selected scenes are crosswalk/walkway, intersection and blind spot.
   The grid-map 2.5.0 provider is complete for core/CV/ROS/messages: all 109
   original-suite/factory cases pass. Its source archive, Eigen hooks and runtime
-  resources are pinned under third_party/grid_map; the local iterator helper
-  precedes crosswalk. [SDK evidence](JOURNAL.md#2026-11-22-phase-732--grid-map-dependency-provider).
+  resources are pinned under third_party/grid_map. The local iterator helper
+  also passes its complete seven-case suite and builds its benchmark; its
+  const-correctness source fix is separate from build rules.
+  [Iterator evidence](JOURNAL.md#2026-11-22-phase-732--local-grid-map-polygon-iterator). [SDK evidence](JOURNAL.md#2026-11-22-phase-732--grid-map-dependency-provider).
   Keep these generic dependency inputs below source components.
   Its concrete interface providers are registered at the root: canonical
   descriptor/template regressions and full 345-interface/398-instantiation

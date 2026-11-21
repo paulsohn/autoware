@@ -1177,6 +1177,8 @@ Local source fix: `4120f86e`, separate from Bazel definitions.
 
 ### Grid-map edge ordering must accept const operands
 
+Local source fix: `73b37641`, separate from Bazel definitions.
+
 - [ ] Associate with a matching upstream fix. Reviewed 2026-11-22: PR/issue
   searches for grid_map_utils/const and PolygonIterator return no matching
   correction; current

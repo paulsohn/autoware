@@ -12167,3 +12167,7 @@ pass; the one-keyword source edit retains existing formatting. CPU/Cyclone DDS
 with ENABLE_AGNOCAST=0 is selected. No pre-commit, Fast DDS, performance timing
 claim or full simulator launch is included. Next validate crosswalk and the
 remaining selected behavior-velocity scene group.
+
+The source const-correctness fix is 73b37641. The following module commit adds
+its already-validated build rules and root selection using the same passing
+gate; no source/test behavior changes follow that result.
