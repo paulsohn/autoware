@@ -1,0 +1,45 @@
+load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "autoware_planning_validator_latency_checker",
+    srcs = glob(["src/**/*.cpp"]),
+    hdrs = glob(["include/**/*.hpp"]),
+    includes = ["include", "src"],
+    deps = [
+        "@autoware_agnocast_wrapper//:autoware_agnocast_wrapper_library",
+        "@autoware_planning_validator",
+        "@autoware_trajectory",
+        "@autoware_utils",
+        "@pluginlib//:pluginlib_library",
+        "@rclcpp//:rclcpp_library",
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = [
+        "@autoware_agnocast_wrapper//:autoware_agnocast_wrapper",
+        "@autoware_planning_validator//:runtime_dynamic_deps",
+        "@autoware_trajectory//:runtime_dynamic_deps",
+        "@pluginlib//:pluginlib",
+        "@rclcpp//:rclcpp",
+    ],
+)
+
+cc_shared_library(
+    name = "latency_checker_plugin",
+    shared_lib_name = "libautoware_planning_validator_latency_checker.so",
+    dynamic_deps = [":runtime_dynamic_deps"],
+    deps = [":autoware_planning_validator_latency_checker"],
+)
+
+ament_index(
+    libraries = [":latency_checker_plugin"],
+    data = glob(["config/**"]),
+    plugin_categories = {"plugins.xml": "autoware_planning_validator"},
+    package_xml = "package.xml",
+)

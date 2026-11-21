@@ -1313,3 +1313,9 @@ local_path_override(
     module_name = "autoware_planning_validator",
     path = "src/universe/autoware_universe/planning/planning_validator/autoware_planning_validator",
 )
+
+bazel_dep(name = "autoware_planning_validator_latency_checker", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_planning_validator_latency_checker",
+    path = "src/universe/autoware_universe/planning/planning_validator/autoware_planning_validator_latency_checker",
+)

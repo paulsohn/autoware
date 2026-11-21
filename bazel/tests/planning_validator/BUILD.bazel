@@ -17,7 +17,7 @@ _CHECKERS = ["latency_checker", "trajectory_checker", "intersection_collision_ch
         tags = ["no-remote", "no-sandbox"],
         deps = ["@ament_index_python", "@rcl_interfaces//:py", "@rclpy"],
     )
-    for profile in ["base", "invalid"]
+    for profile in ["base", "invalid", "latency_checker"]
 ]
 
 interface_serialization_test(package = "autoware_planning_validator")
