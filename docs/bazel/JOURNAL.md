@@ -10231,3 +10231,46 @@ launch/lifecycle cases. The collector regression and bridge-template checks also
 native/interface results are reused while finalizing the launch fixtures. Phase 7.3.2 remains in progress: behavior/
 motion planning, control and the remaining default launch-selected dependencies
 must enter the graph before the original planning-simulator composition gate.
+
+## 2026-11-21: Phase 7.3.3 — Tutorial vehicle description
+
+Purpose: prepare the concrete sample_vehicle input named by AWF's planning
+simulation tutorial. The existing core autoware_sample_vehicle_description has
+a different package identity; do not alias it over this locally available source.
+Inspect sample_vehicle_description's package.xml, CMake install list, Xacro,
+vehicle/simulator YAML and COLLADA/image resources in the local autoware_launch
+snapshot (upstream subtree revision 45bd52eb298a9700c51eef556734c6cb0e4af364).
+CMake declares resource installation and no existing behavior test suite.
+
+Integration: add a package-local module, original resource globs under an ament
+index and the existing pinned Xacro provider. Select this local module with the
+root's adjacent bazel_dep/local_path_override pair. Keep original names and all
+source/config/resource bytes unchanged. Add a root-only resource check that
+materializes the installed share tree into a fresh temporary prefix, creates its
+package marker and replaces AMENT_PREFIX_PATH with that prefix. Render the
+original vehicle Xacro there; require base_link, its wheel-base-derived visual
+offset, its mesh and every COLLADA image reference to resolve in that prefix.
+The simulator YAML must also remain indexed.
+
+Transferable detail: COLLADA library_images/image/init_from contains image file
+references; effect/surface init_from may instead name an image ID such as
+texture0. Checking every init_from as a filesystem path incorrectly rejects a
+valid unchanged asset. Restrict the resource check to image definitions.
+
+Reproduce the module/resource gate:
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --nocache_test_results --test_output=errors \
+  @sample_vehicle_description//... \
+  //bazel/tests/sample_vehicle_description:resources_test
+```
+
+The corrected resource case passes in 0.5 seconds, with no failure or skip.
+Buildifier, Python/flake8 and whitespace checks pass. The combined tutorial
+vehicle/sensor robot-state-publisher gate is recorded in the next entry.
+This accepts the description resource module, not a vehicle interface driver
+or a complete planning simulation. PLAN.md's detailed 7.2/7.3 sections are also
+reordered numerically; that editorial move needs local-link/whitespace checks
+and has no separate runtime validation requirement.

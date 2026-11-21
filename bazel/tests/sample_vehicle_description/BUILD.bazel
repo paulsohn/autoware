@@ -1,0 +1,12 @@
+load("@rules_python//python:defs.bzl", "py_test")
+
+py_test(
+    name = "resources_test",
+    srcs = ["resources_test.py"],
+    data = ["@sample_vehicle_description//:ament_index"],
+    precompile = "disabled",
+    deps = [
+        "@ament_index_python",
+        "@xacro",
+    ],
+)
