@@ -1403,3 +1403,9 @@ local_path_override(
     module_name = "autoware_operation_mode_transition_manager",
     path = "src/universe/autoware_universe/control/autoware_operation_mode_transition_manager",
 )
+
+bazel_dep(name = "autoware_external_cmd_selector", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_external_cmd_selector",
+    path = "src/universe/autoware_universe/control/autoware_external_cmd_selector",
+)
