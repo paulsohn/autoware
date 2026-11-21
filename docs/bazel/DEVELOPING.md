@@ -331,6 +331,22 @@ consistent:
 Do not add a manifest-only dependency to generator inputs when no current
 interface references it.
 
+For a registered interface provider, keep a product-owned serialization check
+under `bazel/tests/<package>/BUILD.bazel`:
+
+```starlark
+load("//bazel/tests/ros_interfaces:defs.bzl", "interface_serialization_test")
+
+interface_serialization_test(package = "your_package")
+```
+
+Run `bazel test --config=runtime --config=no-agnocast
+//bazel/tests/your_package:all` alongside affected native consumers. The helper
+round-trips the generated public message types and service Request/Response/Event
+types through native CDR support. Preserve package-specific payload tests too;
+default-value round trips do not establish nondefault payload or service behavior.
+This check does not inspect undeclared source files or enforce registration.
+
 Build the complete generator surface, not only a C++ consumer:
 
 ```bash

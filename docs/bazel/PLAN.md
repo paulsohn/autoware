@@ -108,6 +108,9 @@ only when your current target demonstrates the need.
   [evidence: CUDA foundation](JOURNAL.md#2026-11-18-phase-61--cuda-utils-and-pinned-toolkit).
 - [ ] Check dependency API and header-layout compatibility before changing source.
   [Evidence: solver input selection](JOURNAL.md#2026-11-17-phase-525--osqp-interface).
+  For interface changes, check generated wire types and compiled consumers.
+  [Developer convention](DEVELOPING.md#editing-interface-packages);
+  [evidence](JOURNAL.md#2026-11-21-phase-732--generated-interface-wire-checks).
 - [ ] Choose validated package boundaries for commits, keeping source fixes
   separate from build declarations.
   [Evidence: first local package module](JOURNAL.md#2026-11-14-build-the-first-local-autoware-package-module).

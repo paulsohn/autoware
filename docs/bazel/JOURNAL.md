@@ -10558,3 +10558,52 @@ endpoint poses and obstacle-distance access using the original binding. Targeted
 buildifier, clang-format, Python/flake8 and whitespace checks pass. This completes
 the CPU/Cyclone DDS, ENABLE_AGNOCAST=0 module gate. Interactive plot rendering,
 optional bag export, full parking behavior and Fast DDS are not claimed.
+
+## 2026-11-21: Phase 7.3.2 — Generated interface wire checks
+
+Purpose: validate the message/service providers needed by the selected simulator
+implementation closure without introducing a source-directory completeness test.
+Inspect the selected planning/control/system/perception source headers and Python
+imports, follow referenced interface fields, and preserve each package's existing
+supported surface. BUILD declarations remain the registration authority;
+undeclared files do not enter the graph. Mixed implementation/interface packages
+retain their own boundaries and enter with their implementation tasks.
+
+Add the small product-owned helper under bazel/tests/ros_interfaces. Each caller
+passes a package name and explicitly depends on that provider's generated Python
+library. The test imports the generated public message/service classes and checks
+CDR encode/decode/encode stability for default messages and every service Request,
+Response and Event. This exercises the native type-support extension and nested
+runtime libraries; it does not scan source directories, enforce registration or
+claim nondefault payload/service behavior. Use LD_LIBRARY_PATH=lib for the
+runfiles runtime layout. Keep existing package-specific payload/constant tests.
+A std_srvs caller also checks the helper against an already-supported provider.
+
+Reproduce the shared checks with CPU/Cyclone DDS and Agnocast disabled:
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --nocache_test_results --test_output=errors \
+  //bazel/tests/ros_interfaces:generated_serialization_test \
+  //bazel/interfaces:descriptor_test //bazel/agnocast:template_tests
+```
+
+The helper's std_srvs check passes all nine Request/Response/Event types. The
+nine new/expanded provider checks pass another 115 generated wire types; the
+existing preferred-lane and reroute nondefault payload tests, descriptor/template
+checks and original RTC suite also pass. The grouped invocation totals 15 passing
+test targets, zero failures/skips, CPU/Cyclone DDS with ENABLE_AGNOCAST=0. Native
+provider libraries are built as dependencies of these checks. The separate full
+plugin-consumer gate is recorded with the collector entry below; it does not
+require rerunning these unchanged tests.
+
+Diagnosis: inspecting classes directly on package.msg/package.srv initially finds
+zero types because the pinned RCR import hook exposes them lazily through
+`__getattr__`, without `__dir__`. Enumerate that provider's generated Python modules,
+import them, then select their message classes/service Request/Response/Event
+classes. Do not replace this with a scan of original schema sources or a copied
+interface registry. Check at least one wire type so an empty discovery cannot
+pass silently. Message-only packages and the service-only std_srvs provider both
+pass. Targeted buildifier, Python/flake8 and whitespace checks pass. No enabled
+Agnocast communication or Fast DDS check is selected.
