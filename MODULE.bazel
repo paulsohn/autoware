@@ -1204,3 +1204,9 @@ local_path_override(
     module_name = "autoware_scenario_selector",
     path = "src/universe/autoware_universe/planning/autoware_scenario_selector",
 )
+
+bazel_dep(name = "autoware_path_optimizer", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_path_optimizer",
+    path = "src/universe/autoware_universe/planning/autoware_path_optimizer",
+)

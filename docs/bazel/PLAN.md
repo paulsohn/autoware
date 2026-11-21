@@ -1825,8 +1825,10 @@ Phase 7.3 task boundaries (selected 2026-11-21):
   Continue in dependency order through shared planner helpers, the
   preset-selected behavior/motion plugins and controller libraries, then
   simulated perception and the selected system/API closure. The selected local
-  path optimizer requires acados solver generation unconditionally; prepare its
-  declared native/code-generation dependency before adopting that node. Preserve
+  path optimizer and its acados native/code-generation dependency are complete:
+  all 6836 SDK assertions in seven native cases, the generated numerical solve,
+  original optimizer node case and installed startup/script checks pass.
+  [Evidence](JOURNAL.md#2026-11-22-phase-732--local-path-optimizer-with-generated-mpc). Preserve
   the control preset's enabled lane-departure, validator, AEB and collision gates;
   obstacle-collision and predicted-path checkers are disabled unless another
   selected implementation actually depends on their libraries. CMake-only shims

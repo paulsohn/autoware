@@ -12602,3 +12602,55 @@ from the broader Lyrical transition. Source fix and Bazel rules are separate
 commits. The complete optimizer gate below builds its production closure and
 passes its original node case plus both installed startup/script cases. Format
 and whitespace checks pass. No colcon/older-distribution claim is made.
+
+## 2026-11-22: Phase 7.3.2 — Local path optimizer with generated MPC
+
+Purpose: adopt the selected default path optimizer using its actual acados MPC,
+not an alternate planner or source-tree IDE stub. Prerequisites are the complete
+acados provider gate, local motion/OSQP/geometry helpers and existing native
+planning-test-manager. Inspect CMake, all nine production sources, original
+node test, config/launch/rviz resources, plotting script and acados_mpc generator.
+The preceding source fix removes one unused production GTest include.
+
+Declare package-local MODULE/BUILD and a root local override after dependencies.
+A component-local py_binary runs the original path_tracking_mpc_spatial.py with
+its bicycle model and symbolic spline helper, importing @acados//:template.
+Declare the same nine C/header outputs as CMake for the 100-stage,
+six-circle curvilinear_bicycle_model_spatial solver. Compile those real generated
+files against @acados, then link acados_interface.cpp and its public header into
+the production library. Export the generated include root transitively; do not
+expose or compile the checked-in IDE stub. The original generator is unchanged.
+
+Preserve the original PathOptimizer component/executable and indexed resource
+names, actual diagnostic/logger-service typesupport and flattened runtime
+providers. Publish the original plotter through the corrected executable
+registration. Keep the complete original node test and its fixtures, which
+publish normal and malformed paths and require output. Add only the root
+planning_nodes profile for indexed startup, parameter access, real DLL mapping,
+no allocator preload, clean SIGINT and installed plotter --help.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_output=errors @acados//:tests @autoware_path_optimizer//... \
+  //bazel/tests/planning_nodes:autoware_path_optimizer_runtime_test
+python3 -m flake8 --max-line-length=150 bazel/tests/planning_nodes/test_runtime.py
+clang-format --dry-run --Werror \
+  src/universe/autoware_universe/planning/autoware_path_optimizer/include/autoware/path_optimizer/mpt_optimizer.hpp
+git diff --check
+```
+
+All four targets pass: complete SDK native/generated gate, the original node
+case in 1.5 seconds, and two root installed-entrypoint cases in 2.6 seconds.
+The final combined invocation takes 99.5 seconds with unchanged SDK results
+reused. No failures/errors/skips occur. The runtime test's 15069-entry runfiles
+manifest contains zero CasADi-wheel, SciPy-wheel or SDK test-model entries:
+Python generation stays in the build-tool closure. No host acados, SDK source
+patch or runtime CMake invocation is required. Targeted formatting, flake8 and
+whitespace checks pass. CPU/Cyclone DDS with ENABLE_AGNOCAST=0 is selected;
+interactive plotting, Fast DDS, allocator/kernel matrices, performance and the
+full simulator are not run. Continue selected planning helpers/motion plugins
+and controller dependencies before closing 7.3.2.
+
+The separate production-header source fix is 88b93365; build declarations and
+root composition follow it without further source changes.

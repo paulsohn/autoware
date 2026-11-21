@@ -14,6 +14,7 @@ load("@rules_python//python:defs.bzl", "py_test")
     )
     for package, executable, config in [
         ("autoware_path_smoother", "elastic_band_smoother", "elastic_band_smoother.param.yaml"),
+        ("autoware_path_optimizer", "path_optimizer_node", "path_optimizer.param.yaml"),
         ("autoware_scenario_selector", "autoware_scenario_selector_node", "scenario_selector.param.yaml"),
     ]
 ]

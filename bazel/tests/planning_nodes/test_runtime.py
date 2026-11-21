@@ -20,7 +20,7 @@ CONFIG = sys.argv.pop(1)
 
 
 class IndexedNode(unittest.TestCase):
-    if PACKAGE == 'autoware_path_smoother':
+    if PACKAGE in ['autoware_path_smoother', 'autoware_path_optimizer']:
         def test_plotter_entrypoint(self):
             binary = Path(get_package_prefix(PACKAGE)) / 'lib' / PACKAGE / 'calculation_time_plotter.py'
             result = subprocess.run([str(binary), '--help'], env=dict(os.environ, MPLBACKEND='Agg'),

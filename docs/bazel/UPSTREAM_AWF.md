@@ -1223,6 +1223,8 @@ Local source fix: `67287e6e`, separate from Bazel definitions.
 
 ### Path optimizer's production header includes unused GTest
 
+Local source fix: `88b93365`.
+
 - [ ] Associate with a matching upstream correction. Reviewed 2026-11-22:
   [current mpt_optimizer.hpp](https://github.com/autowarefoundation/autoware_universe/blob/main/planning/autoware_path_optimizer/include/autoware/path_optimizer/mpt_optimizer.hpp)
   retains gtest/gtest.h. The path_optimizer/gtest PR search returns only the
