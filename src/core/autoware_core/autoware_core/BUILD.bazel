@@ -20,5 +20,6 @@ ament_index(
         "@autoware_core_sensing//:ament_index",
         "@autoware_core_vehicle//:ament_index",
         "@autoware_global_parameter_loader//:ament_index",
+        "@autoware_map_asset//:ament_index",
     ],
 )

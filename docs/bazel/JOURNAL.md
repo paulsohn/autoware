@@ -11066,3 +11066,43 @@ the isolated install prefix; all four files are symlinks and match their recorde
 SHA-256 values. No apt/pip/rosdep installation occurs. XML syntax and whitespace
 checks pass. Indexed launcher consumption belongs to the following task; full
 Universe launch, backend injection and Fast DDS are not tested here.
+
+## 2026-11-21: Core launch consumes the indexed map asset
+
+Purpose: make the supported core entrypoint runnable from its declared resource
+closure, without caller-supplied map_path. Inspect autoware_core's original
+launch, manifest, package-local module/index and the complete root headless
+behavior/shutdown test. The accepted gate remains both existing full-core cases;
+map delivery, shared vehicle parameters, robot description, velocity relay,
+version API, graph endpoints and orderly shutdown must all pass.
+
+Replace the entrypoint's public map_path argument with a private launch let
+resolved by $(find-pkg-share autoware_map_asset). Keep the reusable lower-level
+map loaders' file arguments and derive their paths inside the entrypoint.
+Declare autoware_map_asset in the component MODULE.bazel, ament index deps and
+package.xml runtime dependencies. Move the root asset dependency/override pair
+immediately before its first source consumer. The source package uses logical
+@autoware_map_asset labels, never //assets/ paths or metarepository product rules.
+This is the requested indexed-resource behavior, not a compatibility patch.
+
+Remove temporary map construction and map_path injection from the root full-core
+test, including the fixture-only runtime edges it no longer needs. Exercise the
+same behavior checks against the declared official map. Existing product bundles
+inherit the asset through the component's exported index; do not add a separate
+packaging file list. Update service/image wrappers and their complete delivery
+gates in the following task. The unadopted Universe launch composition remains
+its own pending phase; this task validates the supported core entrypoint.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --nocache_test_results --test_output=errors \
+  @autoware_core//... //bazel/tests:core_system_headless_launch_test
+```
+
+The module/index build and both original full-core behavior/shutdown cases pass
+in the launch target (5.1 seconds), with no failures/skips. The entrypoint receives
+no map argument and resolves the indexed asset from its declared closure.
+CPU/Cyclone DDS with ENABLE_AGNOCAST=0 is the selected profile; no Fast DDS,
+full Universe, GUI or driving result is claimed. Targeted Python/flake8, XML
+syntax and whitespace checks pass. Runtime distribution/service checks follow.

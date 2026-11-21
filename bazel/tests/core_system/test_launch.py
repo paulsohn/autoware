@@ -4,8 +4,6 @@
 from pathlib import Path
 import os
 import re
-import shutil
-import tempfile
 import time
 import unittest
 import xml.etree.ElementTree as ET
@@ -28,28 +26,19 @@ import rclpy
 from rclpy.qos import DurabilityPolicy, QoSProfile
 from std_msgs.msg import String
 
-_MAP = None
 _BUNDLE_CHILDREN = []
 
 
 @pytest.mark.launch_test
 def generate_test_description():
-    global _MAP
-    _MAP = tempfile.TemporaryDirectory(prefix='core-system-')
-    directory = Path(_MAP.name)
-    helper = Path(get_package_share_directory('autoware_test_utils'))
-    fixtures = Path(__file__).parent.parent / 'system_context'
-    shutil.copyfile(helper / 'test_map/lanelet2_map.osm', directory / 'lanelet2_map.osm')
-    shutil.copyfile(fixtures / 'projector.yaml', directory / 'map_projector_info.yaml')
-    shutil.copyfile(fixtures / 'single.pcd', directory / 'pointcloud_map.pcd')
     source = Path(get_package_share_directory('autoware_core')) / 'launch/autoware_core.launch.xml'
     # Preserve the default GUI contract while explicitly exercising headless mode.
     assert ET.parse(source).find("arg[@name='launch_rviz']").get('default') == 'true'
     launcher = os.environ.get('CORE_SYSTEM_BUNDLE_LAUNCHER')
     service_launcher = os.environ.get('CORE_SYSTEM_SERVICE_LAUNCHER', launcher)
-    system = ExecuteProcess(cmd=[service_launcher, 'map_path:=' + str(directory)], output='screen') if launcher else (
+    system = ExecuteProcess(cmd=[service_launcher], output='screen') if launcher else (
         IncludeLaunchDescription(AnyLaunchDescriptionSource(str(source)), launch_arguments={
-            'map_path': str(directory), 'vehicle_model': 'autoware_sample_vehicle',
+            'vehicle_model': 'autoware_sample_vehicle',
             'sensor_model': 'autoware_sample_sensor_kit', 'launch_rviz': 'false',
         }.items()))
     return launch.LaunchDescription([

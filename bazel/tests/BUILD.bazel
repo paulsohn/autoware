@@ -1594,13 +1594,10 @@ launch_test(
     name = "core_system_headless_launch_test",
     src = "core_system/test_launch.py",
     data = [
-        "system_context/projector.yaml",
-        "system_context/single.pcd",
         "//bazel/runtime:native_runtime",
         "@autoware_core//:ament_index",
         "@autoware_sample_sensor_kit_description//:ament_index",
         "@autoware_sample_vehicle_description//:ament_index",
-        "@autoware_test_utils//:ament_index",
         "@graphics_runtime//:copyrights",
     ],
     env = {

@@ -806,6 +806,11 @@ do not establish full planning-simulator or autonomous-driving support.
 
 ## Headless core composition
 
+The core entrypoint resolves its declared `autoware_map_asset` resource package
+through ament_index. Run it without a `map_path` argument; the root selects the
+asset module/revision. Components that use an asset declare both module and
+runtime package/index dependencies, so their exported runtime closure includes it.
+
 The original autoware_core launch accepts `launch_rviz=false`; it defaults to
 true for existing GUI callers. `@autoware_core//:ament_index` supplies the
 headless runtime/resource closure. Include concrete vehicle and sensor indexes

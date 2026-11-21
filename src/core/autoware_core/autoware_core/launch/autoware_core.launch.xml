@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <launch>
-  <!-- Essential parameters -->
-  <arg name="map_path" description="lanelet2 map directory path"/>
+  <!-- The selected asset repository supplies the indexed map resources. -->
+  <let name="map_path" value="$(find-pkg-share autoware_map_asset)"/>
 
   <!-- Global parameters -->
   <arg name="use_sim_time" default="false" description="use_sim_time"/>

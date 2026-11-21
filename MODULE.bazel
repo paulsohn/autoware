@@ -806,6 +806,12 @@ local_path_override(
     path = "src/core/autoware_core/testing/autoware_testing",
 )
 
+bazel_dep(name = "autoware_map_asset", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_map_asset",
+    path = "assets/map",
+)
+
 bazel_dep(name = "autoware_core", version = "0.0.0")
 local_path_override(
     module_name = "autoware_core",
@@ -1032,10 +1038,4 @@ bazel_dep(name = "autoware_rtc_interface", version = "0.0.0")
 local_path_override(
     module_name = "autoware_rtc_interface",
     path = "src/universe/autoware_universe/planning/autoware_rtc_interface",
-)
-
-bazel_dep(name = "autoware_map_asset", version = "0.0.0")
-local_path_override(
-    module_name = "autoware_map_asset",
-    path = "assets/map",
 )
