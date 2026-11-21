@@ -67,8 +67,11 @@ def graph(context):
         {"input_topics": cropped, "is_motion_compensated": False,
          "publish_synchronized_pointcloud": False, "timeout_sec": 0.04},
     ], additional_env=sync_env, output="screen")
+    sink_env = dict(env, SYNC_READY_FILE=ready)
+    if mode == "stock" and os.getenv("SYNC_SINK_TRACE"):
+        sink_env["AGNOCAST_RMW_HANDOFF_FILE"] = os.environ["SYNC_SINK_TRACE"]
     sink = Node(package="universe_sync_benchmark", executable="sync_fixture", name="pipeline_sink",
-                additional_env=dict(env, SYNC_READY_FILE=ready), output="screen")
+                additional_env=sink_env, output="screen")
     source = Node(package="universe_sync_benchmark", executable="sync_fixture", name="pipeline_source",
                   additional_env=dict(env, PIPELINE_SOURCE="1"), output="screen")
     tf = Node(package="tf2_ros", executable="static_transform_publisher",

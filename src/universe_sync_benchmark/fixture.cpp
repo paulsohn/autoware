@@ -150,9 +150,11 @@ int main(int argc, char ** argv)
   std::map<int64_t, Cloud::ConstSharedPtr> clouds;
   std::map<int64_t, int64_t> arrival;
   std::map<int64_t, Info::ConstSharedPtr> infos;
+  const bool slow = directory && std::getenv("SYNC_SLOW_SINK");
   auto receive = [&](Cloud::ConstSharedPtr c) {
     const auto stamp = rclcpp::Time(c->header.stamp).nanoseconds();
     arrival[stamp] = node->now().nanoseconds() - stamp;
+    if (slow) std::this_thread::sleep_for(125ms);
     if (clouds.empty()) {
       if (const char * path = std::getenv("SYNC_READY_FILE")) std::ofstream(path) << "ready";
     }

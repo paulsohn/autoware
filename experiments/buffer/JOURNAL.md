@@ -1626,3 +1626,67 @@ bytes. Runtime peak memory across scopes was 329.67 MiB and minimum host
 MemAvailable was 16,033 MiB. The [results and interpretation](../rmw-agnocast/README.md#top-lidar-arrival-jitter)
 apply to this laptop, matcher and schedule. Next isolate slow-consumer
 behavior with nominal sensor timing before combining both conditions.
+
+### 2026-11-21 — Slow output consumer at nominal LiDAR timing
+
+The question was whether a busy consumer changes synchronization, holds
+Agnocast storage, or loses data before it can drain its queue. Kept the
+previous launched graph, crop ranges, stock executors, 24 acquisition groups
+and 10/10/5 Hz rates. Set SYNC_SLOW_SINK to make the existing single-threaded
+sink sleep for 125 ms on every cloud callback, immediately after recording
+entry latency. Metadata callbacks share the executor. The subscription depth
+is 32. The baseline uses the same binary with the flag unset. Both conditions
+retain delivered CPU cloud objects in the verifier until it checks every
+transformed point, sensor membership, timestamp and metadata record.
+
+On the laptop, reuse the previous milestone's working Lyrical root, kernel
+module and colcon overlays. Build the fixture and experimental RMW sequentially:
+
+```bash
+export LYRICAL_ROOT=$(cat build/agnocast-lyrical/universe-root)
+experiments/buffer/run-lyrical.sh bash -ec '
+  source build/agnocast-lyrical/install/local_setup.bash
+  source build/universe-sync/install/local_setup.bash
+  source build/rmw-agnocast/load-install/local_setup.bash
+  cmake --build build/universe-pipeline/obj/universe_sync_benchmark --target sync_fixture -j1
+  cmake --install build/universe-pipeline/obj/universe_sync_benchmark'
+experiments/buffer/run-lyrical.sh bash -ec '
+  source build/agnocast-lyrical/install/local_setup.bash
+  colcon build --base-paths src/rmw_agnocast --build-base build/rmw-agnocast/load-obj \
+    --install-base build/rmw-agnocast/load-install --executor sequential'
+bash experiments/rmw-agnocast/bench-arrival.sh build/universe-pipeline/new-slow-pairs slow
+```
+
+A direct CMake install of rmw_agnocast overwrote the colcon library-path hook
+registration. The first baseline failed to load librmw_agnocast.so. Installing
+through colcon restored the hook. All timed trials used the repaired overlay.
+
+For separate diagnostics, enable the existing synchronizer input audit and
+send the sink's host-cloud handoff trace to a fresh file per launch. The
+copying sink releases each pending loan when it copies the output and pops
+the queue. The added trace timestamp is taken immediately after that pop.
+Measure the interval from reader admission to that point, including copying
+and scheduling. The sink's later sleep holds its local copy. These timestamps
+do not measure the publisher's complete allocation lifetime.
+
+```bash
+mkdir -p build/universe-pipeline/slow-traces
+for condition in baseline slow; do
+  unset SYNC_SLOW_SINK SYNC_TOP_JITTER
+  if [[ $condition == slow ]]; then export SYNC_SLOW_SINK=1; fi
+  SYNC_AUDIT=1 SYNC_SINK_TRACE="/ws/build/universe-pipeline/slow-traces/$condition.trace" \
+    BUFFER_RUNTIME_ONLY=1 experiments/buffer/run-lyrical.sh timeout -k 5 65 \
+    bash experiments/rmw-agnocast/run-pipeline.sh stock
+done
+python3 experiments/rmw-agnocast/summarize-queue.py build/universe-pipeline/slow-traces/*.trace
+```
+
+All 12 timing launches passed. The 720 raw clouds yielded 288 verified
+outputs, each paired with metadata. The slow consumer drained all queued
+clouds after the finite source stopped. Peak concurrent reader loans in the
+separate stock traces rose from one to five. Both audits released all 60
+synchronizer input views. The largest timed scope peak was 327.89 MiB and
+minimum host MemAvailable was 14,174 MiB. Compare the two rounds per mode
+and the queue lifetime evidence in the [results](../rmw-agnocast/README.md#slow-downstream-consumer).
+Next combine the tested arrival jitter and slow callback and check that the
+late top-only outputs and their metadata survive the larger backlog.

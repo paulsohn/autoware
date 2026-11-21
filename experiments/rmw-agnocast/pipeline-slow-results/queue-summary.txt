@@ -1,0 +1,2 @@
+baseline.trace completed=24 peak=1 hold_ms_p50=0.395 hold_ms_p95=0.543 max=0.611
+slow.trace completed=24 peak=5 hold_ms_p50=327.105 hold_ms_p95=568.497 max=582.290

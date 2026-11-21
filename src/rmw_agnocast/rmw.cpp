@@ -757,7 +757,12 @@ rmw_ret_t take(
       }
       if (ret == RMW_RET_OK && copy && !serialized) hop_reader().mark("restored", cloud_stamp(static_cast<Cloud *>(copy)->header));
       if (ret != RMW_RET_OK) *taken = false;
+      auto row = r.trace && !r.host_view ? r.trace->find(sample) : nullptr;
       r.pending.pop_front();
+      if (row) {
+        row->take_enter = entry;
+        row->taken = HandoffTrace::now();
+      }
       return ret;
     }
     const auto length = static_cast<const size_t *>(sample.get());

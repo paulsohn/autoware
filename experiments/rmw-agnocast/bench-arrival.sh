@@ -4,14 +4,17 @@ set -eu
 out=${1:?fresh results directory}
 mkdir "$out"
 export BUFFER_RUNTIME_ONLY=1
-unset SYNC_AUDIT
+variant=${2:-jitter}
+case "$variant" in slow|jitter) ;; *) exit 2 ;; esac
+unset SYNC_AUDIT SYNC_SINK_TRACE
 for round in 1 2; do
   modes=(stock cyclone zenoh)
-  conditions=(baseline jitter)
-  if [[ $round == 2 ]]; then modes=(zenoh cyclone stock); conditions=(jitter baseline); fi
+  conditions=(baseline "$variant")
+  if [[ $round == 2 ]]; then modes=(zenoh cyclone stock); conditions=("$variant" baseline); fi
   for mode in "${modes[@]}"; do
     for condition in "${conditions[@]}"; do
-      unset SYNC_TOP_JITTER
+      unset SYNC_TOP_JITTER SYNC_SLOW_SINK
+      if [[ $condition == slow ]]; then export SYNC_SLOW_SINK=1; fi
       if [[ $condition == jitter ]]; then export SYNC_TOP_JITTER=1; fi
       experiments/buffer/run-lyrical.sh timeout -k 5 65 bash -ec '
         TIMEFORMAT="graph_user_s=%U graph_sys_s=%S"
@@ -22,4 +25,4 @@ for round in 1 2; do
     done
   done
 done
-python3 experiments/rmw-agnocast/summarize-arrival.py "$out"
+python3 experiments/rmw-agnocast/summarize-arrival.py "$out" "$variant"

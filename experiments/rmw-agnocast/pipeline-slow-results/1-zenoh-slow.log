@@ -1,0 +1,82 @@
+Started Zenoh router with id 938107ef82287a9edb9bcd35ad2134d3
+[INFO] [launch]: All log files can be found below /tmp/tmp.TlegE8Y1YQ/roslog/2026-11-21-12-32-07-509812-paulsohn-tuf-139763
+[INFO] [launch]: Default logging verbosity is set to INFO
+[INFO] [static_transform_publisher-1]: process started with pid [139785]
+[INFO] [component_container-2]: process started with pid [139786]
+[INFO] [concatenate_and_time_sync_node-3]: process started with pid [139787]
+[INFO] [sync_fixture-4]: process started with pid [139788]
+[INFO] [sync_fixture-5]: process started with pid [139789]
+[static_transform_publisher-1] [INFO] [1795264327.598531923] [static_transform_publisher_6gSNMwvuYIx6nIiV]: Spinning until stopped - publishing transform
+[static_transform_publisher-1] translation: ('4.000000', '0.000000', '0.000000')
+[static_transform_publisher-1] rotation: ('0.000000', '0.000000', '0.000000', '1.000000')
+[static_transform_publisher-1] from 'base_link' to 'sync_lidar'
+[component_container-2] [INFO] [1795264327.807902756] [lidar_crops]: Load Library: /ws/build/universe-pipeline/install/universe_crop_benchmark/lib/libuniverse_crop.so
+[sync_fixture-4] [INFO] [1795264327.936037286] [host_endpoint_manager]: Initialized shared memory registry for domain 0 on host paulsohn-tuf
+[sync_fixture-5] [INFO] [1795264327.941885261] [host_endpoint_manager]: Attached to existing shared memory registry for domain 0
+[concatenate_and_time_sync_node-3] [INFO] [1795264327.988897860] [point_cloud_concatenator_component]: Utilize naive matching strategy
+[concatenate_and_time_sync_node-3] [INFO] [1795264328.074584187] [host_endpoint_manager]: Attached to existing shared memory registry for domain 0
+[component_container-2] [INFO] [1795264328.174750596] [lidar_crops]: Found class: rclcpp_components::NodeFactoryTemplate<autoware::pointcloud_preprocessor::CropBoxFilterComponent>
+[component_container-2] [INFO] [1795264328.174801802] [lidar_crops]: Instantiate class: rclcpp_components::NodeFactoryTemplate<autoware::pointcloud_preprocessor::CropBoxFilterComponent>
+[component_container-2] [INFO] [1795264328.190535428] [host_endpoint_manager]: Attached to existing shared memory registry for domain 0
+[INFO] [launch_ros.actions.load_composable_nodes]: Loaded node '/crop_left' in container '/lidar_crops'
+[component_container-2] [INFO] [1795264328.304674647] [lidar_crops]: Found class: rclcpp_components::NodeFactoryTemplate<autoware::pointcloud_preprocessor::CropBoxFilterComponent>
+[component_container-2] [INFO] [1795264328.304701297] [lidar_crops]: Instantiate class: rclcpp_components::NodeFactoryTemplate<autoware::pointcloud_preprocessor::CropBoxFilterComponent>
+[INFO] [launch_ros.actions.load_composable_nodes]: Loaded node '/crop_right' in container '/lidar_crops'
+[component_container-2] [INFO] [1795264328.307793362] [lidar_crops]: Found class: rclcpp_components::NodeFactoryTemplate<autoware::pointcloud_preprocessor::CropBoxFilterComponent>
+[component_container-2] [INFO] [1795264328.307810755] [lidar_crops]: Instantiate class: rclcpp_components::NodeFactoryTemplate<autoware::pointcloud_preprocessor::CropBoxFilterComponent>
+[INFO] [launch_ros.actions.load_composable_nodes]: Loaded node '/crop_top' in container '/lidar_crops'
+[sync_fixture-5] top_release_ns,0,859450
+[sync_fixture-5] top_release_ns,2,725721
+[sync_fixture-5] top_release_ns,4,701666
+[sync_fixture-5] top_release_ns,6,727464
+[sync_fixture-5] top_release_ns,8,716775
+[sync_fixture-5] top_release_ns,10,544273
+[sync_fixture-5] top_release_ns,12,755476
+[sync_fixture-5] top_release_ns,14,539304
+[sync_fixture-5] top_release_ns,16,688962
+[sync_fixture-5] top_release_ns,18,596851
+[sync_fixture-5] top_release_ns,20,1229088
+[sync_fixture-5] top_release_ns,22,1238776
+[sync_fixture-4] sample,0,full,19193167
+[sync_fixture-4] sample,1,partial,45246542
+[sync_fixture-4] sample,2,full,71107319
+[sync_fixture-4] sample,3,partial,96692183
+[sync_fixture-4] sample,4,full,122544054
+[sync_fixture-4] sample,5,partial,148060820
+[sync_fixture-4] sample,6,full,173793930
+[sync_fixture-4] sample,7,partial,199407277
+[sync_fixture-4] sample,8,full,225096295
+[sync_fixture-4] sample,9,partial,250609445
+[sync_fixture-4] sample,10,full,276373542
+[sync_fixture-4] sample,11,partial,301880040
+[sync_fixture-4] sample,12,full,327607739
+[sync_fixture-4] sample,13,partial,353194757
+[sync_fixture-4] sample,14,full,378774060
+[sync_fixture-4] sample,15,partial,404282802
+[sync_fixture-4] sample,16,full,430032482
+[sync_fixture-4] sample,17,partial,455601176
+[sync_fixture-4] sample,18,full,481490306
+[sync_fixture-4] sample,19,partial,507280312
+[sync_fixture-4] sample,20,full,533046393
+[sync_fixture-4] sample,21,partial,558537862
+[sync_fixture-4] sample,22,full,584688529
+[sync_fixture-4] sample,23,partial,610532755
+[sync_fixture-4] fast_source_hz=9.99974
+[sync_fixture-4] verified 24 synchronized clouds and metadata, 12 complete and 12 timed out, 1966080 input points
+[INFO] [sync_fixture-4]: process has finished cleanly [pid 139788]
+[INFO] [sync_fixture-5]: sending signal 'SIGINT' to process[sync_fixture-5]
+[INFO] [concatenate_and_time_sync_node-3]: sending signal 'SIGINT' to process[concatenate_and_time_sync_node-3]
+[INFO] [component_container-2]: sending signal 'SIGINT' to process[component_container-2]
+[INFO] [static_transform_publisher-1]: sending signal 'SIGINT' to process[static_transform_publisher-1]
+[sync_fixture-5] [INFO] [1795264333.315541754] [rclcpp]: signal_handler(signum=2)
+[concatenate_and_time_sync_node-3] [INFO] [1795264333.315990569] [rclcpp]: signal_handler(signum=2)
+[component_container-2] [INFO] [1795264333.316352022] [rclcpp]: signal_handler(signum=2)
+[static_transform_publisher-1] [INFO] [1795264333.316737910] [rclcpp]: signal_handler(signum=2)
+[concatenate_and_time_sync_node-3] sync_input views=0 copies=60
+[INFO] [static_transform_publisher-1]: process has finished cleanly [pid 139785]
+[INFO] [sync_fixture-5]: process has finished cleanly [pid 139789]
+[INFO] [component_container-2]: process has finished cleanly [pid 139786]
+[INFO] [concatenate_and_time_sync_node-3]: process has finished cleanly [pid 139787]
+graph_user_s=1.093 graph_sys_s=1.555
+scope_peak_bytes=316727296
+Minimum host MemAvailable: 14536 MiB

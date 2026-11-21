@@ -2466,3 +2466,32 @@ Stock rmw_agnocast retained all 60 synchronizer inputs, and a separate audit
 verified every loan was released. Native Agnocast on this complete graph
 remains unmeasured. Reproduction is in the [journal](../buffer/JOURNAL.md#2026-11-21--top-lidar-arrives-on-either-side-of-the-synchronizer-timeout).
 [All samples, CPU and memory ranges](pipeline-arrival-results/summary.txt).
+
+### Slow downstream consumer
+
+Each cloud callback slept 125 ms in the single-threaded sink, with nominal
+10/10/5 Hz sensor timing. The sink recorded latency on entry, before sleeping.
+All 12 paired timing launches verified 12 full and 12 expected partial groups
+each, including member stamps, transformed payload and metadata. Each timing
+cell is pooled median / nearest-rank p95 in ms (20 post-warm-up samples per
+group type and condition).
+
+| Middleware | Baseline full | Slow full | Baseline partial | Slow partial |
+|---|---:|---:|---:|---:|
+| rmw_agnocast | 3.02 / 4.88 | 329.23 / 584.64 | 42.03 / 42.97 | 354.87 / 610.18 |
+| Cyclone DDS | 3.96 / 4.67 | 331.18 / 585.67 | 42.62 / 43.13 | 356.96 / 611.25 |
+| Zenoh | 3.50 / 5.03 | 327.61 / 579.51 | 42.50 / 43.19 | 353.20 / 604.84 |
+
+The callback can process at most eight clouds per second while ten arrive.
+Latency therefore grew with sequence number. These percentiles describe
+the 24-group burst and drain. In separate stock rmw_agnocast traces,
+reader admission to pending-loan release rose from 0.395 / 0.543 ms to
+327.105 / 568.497 ms. Concurrent pending loans peaked at one and five
+respectively. Five fits within the depth-32 sink, so loss and eviction
+under sustained overload remain open. Both traces accounted for 24 output
+loans and both synchronizer audits released 60 of 60 retained input views.
+The whole-scope peak includes launch and allocator overhead. Two repeats
+cannot resolve the byte cost of five queued loans from this measure.
+[Timing, CPU and memory](pipeline-slow-results/summary.txt) ·
+[Queue diagnostics](pipeline-slow-results/queue-summary.txt) ·
+[Reproduction](../buffer/JOURNAL.md#2026-11-21--slow-output-consumer-at-nominal-lidar-timing).
