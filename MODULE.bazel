@@ -1361,3 +1361,9 @@ local_path_override(
     module_name = "autoware_pid_longitudinal_controller",
     path = "src/universe/autoware_universe/control/autoware_pid_longitudinal_controller",
 )
+
+bazel_dep(name = "autoware_pure_pursuit", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_pure_pursuit",
+    path = "src/universe/autoware_universe/control/autoware_pure_pursuit",
+)

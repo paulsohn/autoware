@@ -1,0 +1,80 @@
+load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "autoware_pure_pursuit",
+    srcs = glob(["src/**/*.cpp"]),
+    hdrs = glob(["include/**/*.hpp"]),
+    includes = ["include", "src"],
+    deps = [
+        "@autoware_control_msgs//:cc",
+        "@autoware_internal_debug_msgs//:cc",
+        "@autoware_motion_utils",
+        "@autoware_planning_msgs//:cc",
+        "@autoware_trajectory_follower_base",
+        "@autoware_utils",
+        "@autoware_vehicle_info_utils",
+        "@geometry_msgs//:cc",
+        "@nav_msgs//:cc",
+        "@rclcpp//:rclcpp_library",
+        "@rosdistro//cc:boost.geometry",
+        "@rosdistro//cc:fmt",
+        "@sensor_msgs//:cc",
+        "@std_msgs//:cc",
+        "@tf2//:tf2_library",
+        "@tf2_eigen//:tf2_eigen_library",
+        "@tf2_geometry_msgs//:tf2_geometry_msgs_library",
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = [
+        "@autoware_control_msgs//:cc_shared",
+        "@autoware_internal_debug_msgs//:cc_shared",
+        "@autoware_motion_utils//:runtime_dynamic_deps",
+        "@autoware_planning_msgs//:cc_shared",
+        "@autoware_trajectory_follower_base//:runtime_dynamic_deps",
+        "@geometry_msgs//:cc_shared",
+        "@nav_msgs//:cc_shared",
+        "@rclcpp//:rclcpp",
+        "@sensor_msgs//:cc_shared",
+        "@std_msgs//:cc_shared",
+        "@tf2//:tf2",
+        "@tf2_eigen//:tf2_eigen",
+        "@tf2_geometry_msgs//:tf2_geometry_msgs",
+    ],
+)
+
+ament_index(
+    package_xml = "package.xml",
+    data = glob(["config/**"]) + [],
+    components = [],
+)
+
+collect_transitive_dynamic_deps(
+    name = "test_dynamic_deps",
+    dynamic_deps = [
+        ":runtime_dynamic_deps",
+        "@ament_index_cpp//:ament_index_cpp",
+    ],
+)
+
+cc_test(
+    name = "test_autoware_pure_pursuit",
+    timeout = "long",
+    srcs = glob(["test/**/*.cpp"]),
+    data = [
+        ":ament_index",
+    ],
+    dynamic_deps = [":test_dynamic_deps"],
+    env = {"ENABLE_AGNOCAST": "0", "LD_LIBRARY_PATH": "lib", "ROS_DOMAIN_ID": "93"},
+    deps = [
+        ":autoware_pure_pursuit",
+        "@ament_index_cpp//:ament_index_cpp_library",
+        "@googletest//:gtest_main",
+    ],
+)
