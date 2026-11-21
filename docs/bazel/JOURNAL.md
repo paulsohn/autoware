@@ -13071,3 +13071,34 @@ original benchmark builds without a performance claim. Formatting/flake8 and
 whitespace checks pass. No Fast DDS, kernel allocator matrix or full simulator
 launch is run. These checks use component-default YAML, so product override and
 trajectory-driving acceptance remain later gates.
+
+## 2026-11-22: Phase 7.3.2 — Out-of-lane motion plugin
+
+Purpose: expose the selected out_of_lane factory from the local source snapshot.
+Inspect its manifest/CMake, XML, config, every production source (7)
+and complete original suite (5 active cases). Prerequisites are the
+existing common motion planner, locally overridden interface/utility providers
+and CPU/Cyclone DDS with ENABLE_AGNOCAST=0. Expose the original map/footprint overlap, object filtering and slowdown implementation. Preserve its lanelet/grid/trajectory dependency closure and original interval tests.
+
+Add package-owned MODULE/BUILD, a root local override after dependencies,
+all original implementation/header files, a shared plugin with its exact XML
+basename/category and an index owning config resources. Publish flattened shared
+runtime dependencies for native tests. Original tests stay in place; added
+lifecycle coverage stays under bazel/tests. Register this concrete index on the
+root motion-planner test profile. The adapter supplies common fixture YAML plus
+the package's own indexed config; check the expected parameter, actual individual
+DLL, duplicate-load handling, unload/reload and clean SIGINT exit. Interface
+collection and product factory selection remain root-owned.
+
+Run the [run-out group command](#2026-11-22-phase-732--run-out-motion-plugin), including this package wildcard and its root profile.
+
+The full gate passes 16 targets in 117.7 seconds, reusing unchanged results:
+39 original active native cases (37 in the five new packages, two in the
+source-fix-affected cruise/slow-down packages) and ten actual planner lifecycles.
+No failures/errors/skips/disabled cases occur. The nine individual profiles and
+one joint selected profile all pass; the latter checks each factory's reload
+in one process and retains updated cruise/limiter parameters. The limiter's
+original benchmark builds without a performance claim. Formatting/flake8 and
+whitespace checks pass. No Fast DDS, kernel allocator matrix or full simulator
+launch is run. These checks use component-default YAML, so product override and
+trajectory-driving acceptance remain later gates.

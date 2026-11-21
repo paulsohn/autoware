@@ -1246,3 +1246,9 @@ local_path_override(
     module_name = "autoware_motion_velocity_run_out_module",
     path = "src/universe/autoware_universe/planning/motion_velocity_planner/autoware_motion_velocity_run_out_module",
 )
+
+bazel_dep(name = "autoware_motion_velocity_out_of_lane_module", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_motion_velocity_out_of_lane_module",
+    path = "src/universe/autoware_universe/planning/motion_velocity_planner/autoware_motion_velocity_out_of_lane_module",
+)
