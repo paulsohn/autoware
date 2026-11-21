@@ -1,0 +1,78 @@
+load("@rosdistro//ament:defs.bzl", "ament_index")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library")
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "autoware_motion_velocity_boundary_departure_prevention_module",
+    srcs = glob(["src/**/*.cpp"]),
+    hdrs = glob(["src/**/*.hpp"]),
+    includes = ["src"],
+    deps = [
+        "@autoware_deprecated_boundary_departure_checker",
+        "@autoware_control_msgs//:cc",
+        "@autoware_internal_debug_msgs//:cc",
+        "@autoware_internal_planning_msgs//:cc",
+        "@autoware_motion_utils",
+        "@autoware_motion_velocity_planner_common",
+        "@autoware_planning_factor_interface",
+        "@autoware_trajectory",
+        "@autoware_utils",
+        "@autoware_utils_debug",
+        "@autoware_utils_rclcpp",
+        "@autoware_utils_system",
+        "@autoware_utils_uuid",
+        "@autoware_vehicle_info_utils",
+        "@geometry_msgs//:cc",
+        "@nav_msgs//:cc",
+        "@pluginlib//:pluginlib_library",
+        "@rclcpp//:rclcpp_library",
+        "@rosdistro//cc:boost.geometry",
+        "@rosdistro//cc:eigen",
+        "@rosdistro//cc:fmt",
+        "@rosdistro//cc:pcl_common",
+        "@rosdistro//cc:range-v3",
+        "@rosdistro//cc:tl_expected",
+        "@sensor_msgs//:cc",
+        "@tf2_ros//:tf2_ros_library",
+        "@unique_identifier_msgs//:cc",
+        "@visualization_msgs//:cc",
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = [
+        "@autoware_deprecated_boundary_departure_checker//:runtime_dynamic_deps",
+        "@autoware_control_msgs//:cc_shared",
+        "@autoware_internal_debug_msgs//:cc_shared",
+        "@autoware_internal_planning_msgs//:cc_shared",
+        "@autoware_motion_utils//:runtime_dynamic_deps",
+        "@autoware_motion_velocity_planner_common//:runtime_dynamic_deps",
+        "@autoware_planning_factor_interface//:runtime_dynamic_deps",
+        "@autoware_trajectory//:runtime_dynamic_deps",
+        "@autoware_utils_debug//:runtime_dynamic_deps",
+        "@geometry_msgs//:cc_shared",
+        "@nav_msgs//:cc_shared",
+        "@pluginlib//:pluginlib",
+        "@rclcpp//:rclcpp",
+        "@sensor_msgs//:cc_shared",
+        "@tf2_ros//:tf2_ros",
+        "@unique_identifier_msgs//:cc_shared",
+        "@visualization_msgs//:cc_shared",
+    ],
+)
+
+cc_shared_library(
+    name = "boundary_departure_prevention_plugin",
+    shared_lib_name = "libautoware_motion_velocity_boundary_departure_prevention_module.so",
+    dynamic_deps = [":runtime_dynamic_deps"],
+    deps = [":autoware_motion_velocity_boundary_departure_prevention_module"],
+)
+
+ament_index(
+    data = glob(["config/**"]),
+    libraries = [":boundary_departure_prevention_plugin"],
+    package_xml = "package.xml",
+    plugin_categories = {"plugins.xml": "autoware_motion_velocity_planner"},
+)
