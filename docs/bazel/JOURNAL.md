@@ -10514,3 +10514,47 @@ freespace cases and both original RRT cases pass, as do both added Python checks
 there are no failures or skips. Targeted clang-format and whitespace checks pass.
 This demonstrates CPU/Lyrical compilation and unchanged default test execution;
 optional bag export and older ROS distributions are not validated.
+
+## 2026-11-21: Phase 7.3.2 — Freespace planning algorithms and Python binding
+
+Purpose: provide the original A*/RRT implementation used by the selected start
+and goal planners. Inspect CMake, all production sources/public headers, both
+original native test sources, the pybind source, original Python wrappers and
+debug_plot.py. Preserve both original native test executables and the binding;
+do not reduce this package to the C++ library needed by its first consumer.
+
+Integration: add a package-local module/library with explicit local geometry,
+math and vehicle providers plus pinned Boost, JSON and ROS/tf2 providers. Flatten
+the shared runtime dependencies. Expose the original tests: the main freespace
+test supplies its own global main, whereas the RRT source's main is inside a
+namespace and needs gtest_main. This is a build declaration choice, not a reason
+to edit the original test. The separate filesystem correction above resolves
+the actual source compatibility blocker.
+
+Build the original pybind source as the package-nested extension, using the
+selected rules_python interpreter's headers/libraries. Keep the original wrapper
+imports and install both wrappers and extension in that interpreter's Python
+site-packages through the package-owned ament index. Expose/install the original
+debug tool with its declared matplotlib, NumPy and rosbag Python dependencies;
+include the pinned MCAP storage plugin in the index, not a host installation.
+The root owns the dependency version selection. The two added tests under
+bazel/tests/autoware_freespace_planning_algorithms exercise an actual A* plan
+through the Python wrapper/CDR/native boundary and the debug tool's import/help.
+LD_LIBRARY_PATH=lib makes nested ROS C introspection libraries available in the
+test environment; it does not introduce a source-tree or host ROS lookup.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --nocache_test_results --test_output=errors \
+  @autoware_freespace_planning_algorithms//... \
+  //bazel/tests/autoware_freespace_planning_algorithms:binding_test
+```
+
+All 14 cases pass across three targets: ten original freespace cases in 56.7 s,
+two original RRT cases in 6.8 s and two Python checks in 2.2 s, no failures/skips.
+The Python case obtains a greater-than-5 m path from (-3, 0) to (3, 0), checks
+endpoint poses and obstacle-distance access using the original binding. Targeted
+buildifier, clang-format, Python/flake8 and whitespace checks pass. This completes
+the CPU/Cyclone DDS, ENABLE_AGNOCAST=0 module gate. Interactive plot rendering,
+optional bag export, full parking behavior and Fast DDS are not claimed.

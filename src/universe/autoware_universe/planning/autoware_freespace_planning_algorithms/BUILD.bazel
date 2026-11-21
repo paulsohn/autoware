@@ -1,0 +1,141 @@
+load("@pip_ros//:requirements.bzl", "requirement")
+load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library", "cc_test")
+load("@rules_python//python:defs.bzl", "py_binary", "py_library")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "autoware_freespace_planning_algorithms",
+    srcs = glob(["src/*.cpp"]),
+    hdrs = glob(["include/**/*.hpp"]),
+    strip_include_prefix = "include",
+    deps = [
+        "@autoware_utils_geometry",
+        "@autoware_utils_math",
+        "@autoware_vehicle_info_utils",
+        "@geometry_msgs//:cc",
+        "@nav_msgs//:cc",
+        "@rclcpp//:rclcpp_library",
+        "@rosdistro//cc:boost.optional",
+        "@rosdistro//cc:nlohmann_json",
+        "@std_msgs//:cc",
+        "@tf2//:tf2_library",
+        "@tf2_geometry_msgs//:tf2_geometry_msgs_library",
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = [
+        "@geometry_msgs//:cc_shared",
+        "@nav_msgs//:cc_shared",
+        "@std_msgs//:cc_shared",
+        "@tf2//:tf2",
+        "@tf2_geometry_msgs//:tf2_geometry_msgs",
+        "@rclcpp//:rclcpp",
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "test_dynamic_deps",
+    dynamic_deps = [
+        ":runtime_dynamic_deps",
+        "@rosbag2_cpp//:rosbag2_cpp",
+        "@rosbag2_storage//:rosbag2_storage",
+        "@rcutils//:rcutils",
+    ],
+)
+
+cc_binary(
+    name = "autoware_freespace_planning_algorithms/autoware_freespace_planning_algorithms_pybind.so",
+    srcs = ["scripts/bind/astar_search_pybind.cpp"],
+    copts = ["-fvisibility=hidden"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+    linkshared = True,
+    deps = [
+        ":autoware_freespace_planning_algorithms",
+        "@rosdistro//cc:pybind11",
+        "@rules_python//python/cc:current_py_cc_headers",
+        "@rules_python//python/cc:current_py_cc_libs",
+    ],
+)
+
+py_library(
+    name = "python",
+    srcs = glob(["autoware_freespace_planning_algorithms/*.py"]),
+    data = [":autoware_freespace_planning_algorithms/autoware_freespace_planning_algorithms_pybind.so"],
+    imports = ["."],
+    deps = [
+        "@geometry_msgs//:py",
+        "@nav_msgs//:py",
+        "@rclpy",
+    ],
+)
+
+register_ament_files(
+    name = "python_files",
+    files = glob(["autoware_freespace_planning_algorithms/*.py"]) + [":autoware_freespace_planning_algorithms/autoware_freespace_planning_algorithms_pybind.so"],
+    prefix = "lib/python3.14/site-packages/autoware_freespace_planning_algorithms",
+    strip_prefix = "*",
+)
+
+py_binary(
+    name = "debug_plot",
+    srcs = ["test/debug_plot.py"],
+    main = "test/debug_plot.py",
+    precompile = "disabled",
+    deps = [
+        "@geometry_msgs//:py",
+        "@nav_msgs//:py",
+        "@rclpy",
+        "@rosbag2_py",
+        "@rosidl_runtime_py",
+        "@std_msgs//:py",
+        requirement("matplotlib"),
+        requirement("numpy"),
+    ],
+)
+
+register_ament_files(
+    name = "debug_executable",
+    files = [":debug_plot"],
+    prefix = "lib/autoware_freespace_planning_algorithms",
+    renames = {":debug_plot": "debug_plot.py"},
+    strip_prefix = "*",
+)
+
+ament_index(
+    data = [
+        ":debug_executable",
+        ":python_files",
+    ],
+    package_xml = "package.xml",
+    deps = ["@rosbag2_storage_mcap//:ament_package"],
+)
+
+cc_test(
+    name = "test_freespace_planning_algorithms",
+    timeout = "long",
+    srcs = ["test/src/test_freespace_planning_algorithms.cpp"],
+    dynamic_deps = [":test_dynamic_deps"],
+    deps = [
+        ":autoware_freespace_planning_algorithms",
+        "@googletest//:gtest",
+        "@rcutils//:rcutils_library",
+        "@rosbag2_cpp//:rosbag2_cpp_library",
+        "@rosbag2_storage//:rosbag2_storage_library",
+    ],
+)
+
+cc_test(
+    name = "test_rrtstar_core_informed",
+    timeout = "long",
+    srcs = ["test/src/test_rrtstar_core_informed.cpp"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+    deps = [
+        ":autoware_freespace_planning_algorithms",
+        "@googletest//:gtest_main",
+    ],
+)

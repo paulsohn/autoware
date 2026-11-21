@@ -1,0 +1,18 @@
+load("@rules_python//python:defs.bzl", "py_test")
+
+py_test(
+    name = "binding_test",
+    srcs = ["binding_test.py"],
+    args = ["$(rootpath @autoware_freespace_planning_algorithms//:debug_plot)"],
+    data = ["@autoware_freespace_planning_algorithms//:debug_plot"],
+    env = {
+        "LD_LIBRARY_PATH": "lib",
+        "MPLBACKEND": "Agg",
+    },
+    precompile = "disabled",
+    deps = [
+        "@autoware_freespace_planning_algorithms//:python",
+        "@geometry_msgs//:py",
+        "@nav_msgs//:py",
+    ],
+)
