@@ -1,11 +1,15 @@
 load("@rules_python//python:defs.bzl", "py_test")
+load("//bazel/tests/ros_interfaces:defs.bzl", "interface_serialization_test")
 
 py_test(
     name = "serialization_test",
     srcs = ["serialization_test.py"],
+    env = {"LD_LIBRARY_PATH": "lib"},
     precompile = "disabled",
     deps = [
         "@rclpy",
         "@tier4_planning_msgs//:py",
     ],
 )
+
+interface_serialization_test(package = "tier4_planning_msgs")

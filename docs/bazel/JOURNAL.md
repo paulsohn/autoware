@@ -10724,3 +10724,37 @@ without failures or skips. The complete expanded plugin-consumer build also
 passes. Targeted buildifier and whitespace checks pass; original schemas are
 unchanged. Simulator launch behavior and enabled-Agnocast communication are
 deferred.
+
+## 2026-11-21: Phase 7.3.2 — Shared path, avoidance, offset and stop-factor interfaces
+
+Purpose: supply tier4_planning_msgs from its local source snapshot. Inspect the
+package's manifest, CMake rosidl declarations, selected consumer includes and
+referenced message/service fields. Extend the existing reroute-availability
+provider for the selected behavior planners and preserve its original payload
+test. PathWithLaneId uses the local autoware_planning_msgs PathPoint
+definition.
+
+Use package-local MODULE/BUILD files, root local override selection and explicit
+ros_message/ros_service field dependencies. Keep original schema bytes unchanged.
+The selected provider contains 10 interfaces; manifest dependencies stay in
+MODULE.bazel, while default_generators.dependencies contains only packages
+referenced by generated fields. Add the root-owned wire-test caller described in
+[the shared check](#2026-11-21-phase-732--generated-interface-wire-checks).
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --nocache_test_results --test_output=errors //bazel/tests/tier4_planning_msgs:all
+```
+
+The generated-provider check passes all 10 message/Request/Response/Event
+wire types in 0.7 seconds (the same grouped CPU/Cyclone DDS gate above),
+without failures or skips. The complete expanded plugin-consumer build also
+passes. Targeted buildifier and whitespace checks pass; original schemas are
+unchanged. Simulator launch behavior and enabled-Agnocast communication are
+deferred. The existing reroute payload check also
+passes after adding LD_LIBRARY_PATH=lib to its test environment: the expanded
+aggregate introspection library now needs std_msgs type support at dlopen time.
+Keep the runfiles library path, rather than installing host ROS libraries.
+Preserve the existing public RerouteAvailability.msg file export as well as its
+message target while extending the package.

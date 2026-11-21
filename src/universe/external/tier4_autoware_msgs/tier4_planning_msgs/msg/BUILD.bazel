@@ -5,7 +5,82 @@ package(default_visibility = ["//visibility:public"])
 exports_files(["RerouteAvailability.msg"])
 
 ros_message(
+    name = "Approval",
+    src = "Approval.msg",
+    deps = [
+        "@builtin_interfaces//msg:Time",
+    ],
+)
+
+ros_message(
+    name = "AvoidanceDebugMsg",
+    src = "AvoidanceDebugMsg.msg",
+    deps = [],
+)
+
+ros_message(
+    name = "AvoidanceDebugMsgArray",
+    src = "AvoidanceDebugMsgArray.msg",
+    deps = [
+        "//msg:AvoidanceDebugMsg",
+        "@std_msgs//msg:Header",
+    ],
+)
+
+ros_message(
+    name = "LateralOffset",
+    src = "LateralOffset.msg",
+    deps = [
+        "@builtin_interfaces//msg:Time",
+    ],
+)
+
+ros_message(
+    name = "PathChangeModule",
+    src = "PathChangeModule.msg",
+    deps = [
+        "//msg:PathChangeModuleId",
+        "@std_msgs//msg:Header",
+    ],
+)
+
+ros_message(
+    name = "PathChangeModuleId",
+    src = "PathChangeModuleId.msg",
+    deps = [],
+)
+
+ros_message(
+    name = "PathPointWithLaneId",
+    src = "PathPointWithLaneId.msg",
+    deps = [
+        "@autoware_planning_msgs//msg:PathPoint",
+    ],
+)
+
+ros_message(
+    name = "PathWithLaneId",
+    src = "PathWithLaneId.msg",
+    deps = [
+        "//msg:PathPointWithLaneId",
+        "@geometry_msgs//msg:Point",
+        "@std_msgs//msg:Header",
+    ],
+)
+
+ros_message(
     name = "RerouteAvailability",
     src = "RerouteAvailability.msg",
-    deps = ["@builtin_interfaces//msg:Time"],
+    deps = [
+        "@builtin_interfaces//msg:Time",
+    ],
+)
+
+ros_message(
+    name = "StopFactor",
+    src = "StopFactor.msg",
+    deps = [
+        "@geometry_msgs//msg:Point",
+        "@geometry_msgs//msg:Pose",
+    ],
 )

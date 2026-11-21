@@ -2,9 +2,25 @@ load("@rosidl_default_generators//:defs.bzl", "default_generators")
 
 package(default_visibility = ["//visibility:public"])
 
-# Supported surface grows when an integrated consumer requires another interface.
+# Supported interfaces are selected by the integrated consumers.
 default_generators(
-    dependencies = ["@builtin_interfaces"],
+    dependencies = [
+        "@autoware_planning_msgs",
+        "@builtin_interfaces",
+        "@geometry_msgs",
+        "@std_msgs",
+    ],
     package_xml = "package.xml",
-    deps = ["//msg:RerouteAvailability"],
+    deps = [
+        "//msg:Approval",
+        "//msg:AvoidanceDebugMsg",
+        "//msg:AvoidanceDebugMsgArray",
+        "//msg:LateralOffset",
+        "//msg:PathChangeModule",
+        "//msg:PathChangeModuleId",
+        "//msg:PathPointWithLaneId",
+        "//msg:PathWithLaneId",
+        "//msg:RerouteAvailability",
+        "//msg:StopFactor",
+    ],
 )
