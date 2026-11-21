@@ -1433,3 +1433,9 @@ local_path_override(
     module_name = "autoware_autonomous_emergency_braking",
     path = "src/universe/autoware_universe/control/autoware_autonomous_emergency_braking",
 )
+
+bazel_dep(name = "autoware_collision_detector", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_collision_detector",
+    path = "src/universe/autoware_universe/control/autoware_collision_detector",
+)

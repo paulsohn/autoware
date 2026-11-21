@@ -14834,3 +14834,48 @@ They do not prove full-stack safety decisions, simulator driving or real-time
 performance. No Fast DDS or full simulator launch is run. Continue selected
 simulated perception and system/API dependencies; product interface/bridge
 compilation remains the final accumulated gate.
+
+## 2026-11-22: Phase 7.3.2 — Collision detection node
+
+Purpose: adopt this selected local control component and its actual dependency
+closure. Inspect its package manifest, CMake source/test registration, public
+headers, parameter schema where present and original config/launch contracts.
+Add source-owned MODULE/BUILD and root adjacent 0.0.0/local override after its
+prerequisites. New standalone checks belong under bazel/tests/control_safety;
+implementation and original tests stay unchanged apart from the separate
+logging compatibility fix above.
+
+Expose the original production source and public headers with actual native
+Eigen/PCL common inputs and canonical message/TF/runtime providers. The CMake-only
+eigen3_cmake_module supplies discovery rather than implementation: consume the
+pinned Eigen provider directly, preserving its include effects. Keep the
+original wrapper executable and resource metadata. No original behavioral
+suite is registered; installed original-config startup, parameter access,
+own-DSO mapping and clean shutdown pass. No collision-decision accuracy claim
+is inferred from this lifecycle check.
+
+Verification selects CPU/Cyclone DDS with ENABLE_AGNOCAST=0, LLVM/libc++ 21.1.8
+and Bazel 9.3.2. The complete group passes all nine targets: 57 active original
+native cases (validator 32, AEB 16, evaluator 9), five installed-node lifecycles
+and one generated status-wire round trip. One original disabled pathological
+validator case remains disabled; there are no failures or introduced skips.
+Final invocation: 6.625 seconds, reusing unchanged passing results.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast \
+  --local_test_jobs=1 --test_output=errors \
+  @autoware_control_validator//... @autoware_autonomous_emergency_braking//... \
+  @autoware_collision_detector//... @autoware_lane_departure_checker//... \
+  @autoware_control_evaluator//... //bazel/tests/control_safety:all
+python3 -m flake8 --max-line-length=150 bazel/tests/control_safety/test_runtime.py
+git diff --check
+```
+
+The runtime profiles execute indexed original binaries with original package
+configs and indexed TestUtils vehicle/common/nearest-search defaults. Verify
+parameter access, each owning component DSO, no heaphook and clean SIGINT.
+They do not prove full-stack safety decisions, simulator driving or real-time
+performance. No Fast DDS or full simulator launch is run. Continue selected
+simulated perception and system/API dependencies; product interface/bridge
+compilation remains the final accumulated gate.
