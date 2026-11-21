@@ -1391,3 +1391,9 @@ local_path_override(
     module_name = "autoware_raw_vehicle_cmd_converter",
     path = "src/universe/autoware_universe/vehicle/autoware_raw_vehicle_cmd_converter",
 )
+
+bazel_dep(name = "autoware_vehicle_cmd_gate", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_vehicle_cmd_gate",
+    path = "src/universe/autoware_universe/control/autoware_vehicle_cmd_gate",
+)

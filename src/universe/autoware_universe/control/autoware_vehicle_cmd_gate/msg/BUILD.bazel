@@ -1,0 +1,3 @@
+load("@rosidl_default_generators//:defs.bzl", "ros_message")
+package(default_visibility = ["//visibility:public"])
+ros_message(name = "IsFilterActivated", src = "IsFilterActivated.msg", deps = ["@builtin_interfaces//msg:Time"])
