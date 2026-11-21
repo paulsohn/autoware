@@ -1,0 +1,24 @@
+agnocast first-block long minus short CPU by round (us) +0.25 -1.07 +0.25 +0.00
+agnocast arrival long minus short by round (us) +14.77 +8.83 +13.96 +3.31
+all first_wall 20/100 ms counts 100 100 median/p95 us 8.11/10.20 8.19/10.49
+all first_cpu 20/100 ms counts 100 100 median/p95 us 6.91/8.53 6.91/8.55
+all second_wall 20/100 ms counts 100 100 median/p95 us 7.13/8.81 7.14/8.82
+all second_cpu 20/100 ms counts 100 100 median/p95 us 6.40/7.91 6.40/7.91
+all arrival 20/100 ms counts 100 100 median/p95 us 37.37/62.40 45.25/60.57
+same first_wall 20/100 ms counts 94 89 median/p95 us 8.11/10.20 8.24/10.43
+same first_cpu 20/100 ms counts 94 89 median/p95 us 6.89/8.53 6.91/8.54
+same second_wall 20/100 ms counts 94 89 median/p95 us 7.13/8.81 7.14/8.82
+same second_cpu 20/100 ms counts 94 89 median/p95 us 6.40/7.91 6.40/7.91
+same arrival 20/100 ms counts 94 89 median/p95 us 37.01/60.24 44.87/59.78
+fixed first-block long minus short CPU by round (us) -1.64 +0.27 -0.17 +0.37
+fixed arrival long minus short by round (us) +10.66 +30.56 +29.14 +31.41
+all first_wall 20/100 ms counts 100 100 median/p95 us 8.13/10.00 8.18/10.18
+all first_cpu 20/100 ms counts 100 100 median/p95 us 6.81/8.54 6.65/8.35
+all second_wall 20/100 ms counts 100 100 median/p95 us 7.14/8.81 7.07/8.81
+all second_cpu 20/100 ms counts 100 100 median/p95 us 6.41/7.90 6.33/7.89
+all arrival 20/100 ms counts 100 100 median/p95 us 53.21/92.27 83.29/122.73
+same first_wall 20/100 ms counts 87 95 median/p95 us 8.15/10.04 8.17/10.26
+same first_cpu 20/100 ms counts 87 95 median/p95 us 6.92/8.50 6.65/8.50
+same second_wall 20/100 ms counts 87 95 median/p95 us 7.17/8.81 7.06/8.81
+same second_cpu 20/100 ms counts 87 95 median/p95 us 6.43/7.90 6.33/7.91
+same arrival 20/100 ms counts 87 95 median/p95 us 52.58/92.27 82.18/135.30

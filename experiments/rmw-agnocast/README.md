@@ -1898,3 +1898,73 @@ executor correctness checks, compare a fixed amount of CPU work at callback
 entry after the two idle intervals, stratified by observed CPU. That would
 test whether the slowdown generalizes beyond this ROS receive code.
 [Raw observations, stage summaries, CPU groups and checks](receive-results/).
+
+### Fixed CPU work at the first crop callback
+
+Use the existing branched Universe crop benchmark and blocking wait A. The
+first crop records its entry time, then measures two identical blocks of
+4,096 dependent unsigned shift/XOR/multiply iterations. Each block starts at
+one. Its clocks are raw monotonic wall time and callback-thread CPU time.
+The empty control uses the same calls and zero iterations. Observations stay
+in memory until the last frame. The source alternates actual 20 and 100 ms
+intervals within a process. Four rounds reverse the starting phase and
+transport order. Exclude ten warmup frames per run.
+
+From the experimental worktree with the existing Lyrical root and overlays:
+
+```bash
+export LYRICAL_ROOT=$(cat build/agnocast-lyrical/universe-root)
+run=experiments/buffer/run-lyrical.sh
+bench=experiments/rmw-agnocast/bench-host-cloud.sh
+out=build/rmw-agnocast
+"$run" bash experiments/buffer/build-universe-lyrical.sh
+export BUFFER_RUNTIME_ONLY=1 BENCH_HOP_TRACE=0 BENCH_RECEIVE_TRACE=0 AGNOCAST_RMW_READY_FD=0
+for batch in work empty repeat; do
+  export BENCH_FIXED_WORK=work
+  rounds=4096
+  if [[ $batch == empty ]]; then
+    export BENCH_FIXED_WORK=empty
+    rounds=0
+  fi
+  "$run" timeout 160 bash "$bench" "$out/register-$batch" --gaps --profile || exit 1
+  python3 experiments/rmw-agnocast/summarize-fixed-work.py "$out/register-$batch" "$rounds" || exit 1
+done
+unset BENCH_FIXED_WORK
+"$run" timeout 70 bash "$bench" --check-cold
+```
+
+The analysis checks both block results against an independent calculation,
+joins all crop observations to source timestamps and checks both reader
+sequences. The same-CPU subset requires matching CPU observations after the
+previous probe and before and after the current pair. Migrations between
+observations remain possible. Arrival means source stamp to callback entry,
+measured before the probe executes. Probe runs add work to the graph and
+are diagnostic measurements.
+
+| Batch | Transport | Arrival after 20 / 100 ms, median µs | First block after 20 / 100 ms, median thread µs |
+|---|---|---:|---:|
+| Work | Native Agnocast | 37.37 / 45.25 | 6.91 / 6.91 |
+| Work | rmw_agnocast | 53.21 / 83.29 | 6.81 / 6.65 |
+| Empty | Native Agnocast | 38.56 / 44.64 | 1.02 / 1.06 |
+| Empty | rmw_agnocast | 51.98 / 81.28 | 1.15 / 1.21 |
+| Work repeat | Native Agnocast | 35.73 / 44.49 | 6.46 / 5.34 |
+| Work repeat | rmw_agnocast | 66.79 / 79.17 | 6.44 / 6.58 |
+
+Each cell contains 100 post-warmup frames per interval. All 12 RMW rounds
+had positive long-minus-short arrival medians (+7.2 to +32.8 µs). The two
+work batches gave first-block RMW wall medians within 0.22 µs across gaps.
+Restricting to the same observed CPU gave arrival differences of +29.60
+and +11.59 µs, and first-block CPU differences of −0.27 and +0.10 µs.
+The empty probe cost about 1 µs of thread time. There was no repeatable
+long-gap arithmetic penalty at callback entry. The receiver has already
+run the wake and dispatch path by then. Transient effects earlier during
+wake, instruction or data locality, and work specific to the ROS receive
+path remain open.
+
+Keep blocking A. For the next causal test, run the same small probe
+immediately after the first crop returns from its blocking poll, alternating
+empty and work runs. Compare probe duration and the subsequent poll-to-take
+interval separately against the earlier callback-entry control. Report the
+total source-to-callback time as well: work inserted early can move cost
+between stages. Keep this diagnostic off during transport comparisons.
+[Raw samples, per-round differences, p95 and runtime checks](fixed-work-results/).

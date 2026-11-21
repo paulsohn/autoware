@@ -1230,3 +1230,23 @@ explain the result. Keep the current transport and executor behavior.
 The next discriminating control is a fixed-work timing probe to test sensitivity
 to the interval independent of ROS code. The six batches verified 2,880
 source frames at both readers. The separate original cold diagnostic passed.
+
+## 2026-11-21 — Does the idle-gap penalty persist into ordinary callback work?
+
+Built the first-crop fixed-work probe with sequential colcon inside the
+exported Lyrical root. Compared native Agnocast and blocking rmw_agnocast A
+on the branched laptop graph, using 20 and 100 ms gaps in each run. Timed
+two identical arithmetic blocks, repeated with zero iterations, then
+repeated the original work batch. Verified both checksums, actual source
+intervals, and all 1,440 frames at each reader. The separate 10 Hz cold
+diagnostic passed with 60 distinct timestamps. The lowest available host
+memory was 9,867 MiB during build and 10,321 MiB during measurement.
+
+Long gaps increased time to callback entry in every RMW round, by 7.2 to
+32.8 µs. The first block's pooled median thread time changed by −0.16 µs
+and +0.14 µs in the work batches. The same observed CPU subset gave the
+same qualitative result. Keep A and move the diagnostic earlier, to the
+return from blocking poll, where a transient wake effect could still appear.
+This experiment did not change transport behavior or measure sustained
+end-to-end 10 Hz parity.
+[Reproduction, empty control, native comparison and raw data](../rmw-agnocast/README.md#fixed-cpu-work-at-the-first-crop-callback)
