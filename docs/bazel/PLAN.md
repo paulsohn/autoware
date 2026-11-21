@@ -1746,8 +1746,16 @@ Phase 7.3 task boundaries (selected 2026-11-21):
   all 68 original cases pass, with the boundary expected-header correction
   independently verified against matching merged AWF PR #13622.
   [Library evidence](JOURNAL.md#2026-11-21-phase-732--shared-boundary-departure-library).
-  Continue in dependency order through RTC/freespace and shared planner helpers,
-  the preset-selected behavior/motion plugins and controller libraries, then
+  The freespace library/Python binding gate is complete (14 cases), followed by
+  the interface/RTC prerequisite group: nine local Tier IV provider surfaces
+  expose 89 registered interfaces and pass 115 generated wire-type round trips.
+  The standard-service baseline, existing payload/namespace/template checks and
+  the complete original RTC lifecycle suite pass together: 15 test targets,
+  zero failures/skips. The full 339-interface/388-instantiation bridge library
+  also builds, CPU/Cyclone DDS with ENABLE_AGNOCAST=0.
+  [Collector and gate evidence](JOURNAL.md#2026-11-21-phase-732--simulator-interface-collector-and-bridge-compilation).
+  Continue in dependency order through shared planner helpers, the
+  preset-selected behavior/motion plugins and controller libraries, then
   simulated perception and the selected system/API closure. CMake-only shims
   are not standalone implementation targets; preserve their actual effects
   through native providers. Default-disabled planners, monitors and control

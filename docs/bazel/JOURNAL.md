@@ -10901,3 +10901,44 @@ is the original rclcpp-node test, CPU/Cyclone DDS with ENABLE_AGNOCAST=0.
 Enabled-Agnocast communication, operator integration and full behavior-planner
 launch are outside this library gate. Targeted buildifier and whitespace checks
 pass. The selected simulator implementation closure remains open.
+
+## 2026-11-21: Phase 7.3.2 — Simulator interface collector and bridge compilation
+
+Purpose: make the selected planning/control/system interface providers available
+to root-owned typed consumers without repeating their type lists. Add the seven
+new package compile/shared pairs to bazel/interfaces/BUILD.bazel. The existing
+Tier IV planning/external-API pairs automatically pick up their expanded
+registered surfaces. Leave generic collection and bridge-generation rules
+unchanged; the plugin BUILD still takes only all_interfaces.
+
+The collector exposes 339 message/service descriptors, including 49 services.
+The existing bridge rule adds each service's synthesized Event pub/sub factory,
+so this composition requires 388 typed instantiations. These counts describe
+this accepted product set, not a source-completeness requirement. The nine
+Tier IV provider surfaces total 89 registered interfaces and 115 generated wire
+types; new/expanded provider checks and the standard-service baseline all pass,
+alongside the existing payload, namespace/template and RTC checks: 15 test
+targets, no failures/skips. Use the commands in the preceding module entries.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel build --config=runtime --config=no-agnocast //bazel/agnocast:plugins
+```
+
+The full library links successfully at
+bazel-bin/bazel/agnocast/libagnocast_bridge_plugins.so, covering all 388 typed
+instantiations. The final grouped test/build command also includes this target
+and repeats all 15 test targets after the source-export preservation; no failures,
+disabled cases or skips occur. Targeted buildifier, Python/flake8, Markdown-anchor
+and whitespace checks pass. Original implementation, tests and schema bytes are
+unchanged; the planning payload test's library-path change is build support.
+Reuse the accepted compile/runtime results for unchanged code. Adding a provider
+to the combined C++ context can invalidate prior bridge compilation, so collect
+the interfaces required by the current consumers before running this full gate.
+
+This completes the interface/RTC prerequisite group, CPU/Cyclone DDS with
+ENABLE_AGNOCAST=0. It does not close the remaining 7.3.2 shared-planner, selected
+plugin/controller, perception or system/API implementation closure. No enabled
+Agnocast communication matrix, Fast DDS, planning-simulator launch or driving
+acceptance is claimed. Keep the stashed shared-planner and map-launch
+preparations separate and pause before further Phase 7.3.3 work.
