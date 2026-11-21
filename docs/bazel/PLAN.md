@@ -1799,6 +1799,9 @@ Phase 7.3 task boundaries (selected 2026-11-21):
   Sampler-common now builds all four sources and preserves its full original
   suite: five cases pass and two explicit upstream edge/benchmark skips remain.
   [Evidence](JOURNAL.md#2026-11-22-phase-732--sampler-common-library).
+  The Frenet library builds both translation units and passes two root consumer
+  cases for polynomial boundaries and Cartesian lane-change trajectory output.
+  [Evidence](JOURNAL.md#2026-11-22-phase-732--frenet-planning-library).
   Continue in dependency order through shared planner helpers, the
   preset-selected behavior/motion plugins and controller libraries, then
   simulated perception and the selected system/API closure. CMake-only shims

@@ -11544,3 +11544,36 @@ explicit upstream skips; no failures/errors or dependency skips. Source/test
 inventory and git diff --check pass. CPU/Cyclone DDS with ENABLE_AGNOCAST=0 is
 the selected configuration; no pre-commit, Fast DDS or unrelated runtime matrix
 is run. Next validate the Frenet library and its lane-change consumers.
+
+## 2026-11-22: Phase 7.3.2 — Frenet planning library
+
+Purpose: provide the actual Frenet implementation referenced by lane-changing.
+Inspect both production translation units and all four public headers, CMake
+registration and manifest. Add package-local MODULE/BUILD rules and select the
+local module after sampler-common. Build both polynomial and planner sources;
+link sampler-common, math/legacy geometry helpers, Eigen and actual planning/TF
+providers, exporting their shared runtime closure. No host SDK, source patch
+or CMake-only facade is needed. CMake registers no native test executable.
+
+Add a native consumer under bazel/tests/autoware_frenet_planner, preserving all
+original sources. Check quintic position/velocity/acceleration boundary values
+and generate a four-second lane-change trajectory over a straight reference
+spline with 0.25-second resolution. Verify 17 samples, Cartesian/Frenet position
+agreement, endpoints, finite curvature, aligned output arrays and initial speed
+magnitude. This exercises the library API needed by its consumer rather than
+merely compiling headers; lane-change package suites provide additional
+integration coverage next.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_output=errors @autoware_frenet_planner//... \
+  //bazel/tests/autoware_frenet_planner:consumer_test
+```
+
+All package targets build and both consumer cases pass in 0.3 seconds
+(33.5-second invocation), with no failures/errors/skips. Original CMake/test
+inventory and whitespace checks pass. CPU/Cyclone DDS with ENABLE_AGNOCAST=0
+remains selected; no pre-commit, Fast DDS, GPU or unchanged system matrix is
+run. The library is ready for lane-change integration; full simulator assembly
+remains outside the current execution boundary.
