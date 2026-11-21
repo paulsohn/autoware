@@ -9,14 +9,16 @@ if [[ ${1:-} == --check-cold ]]; then
 fi
 out=${1:?fresh results directory}
 mkdir "$out"
-if [[ ${2:-} == --ready-fd || ${2:-} == --ready-fd-profile ]]; then
+if [[ ${2:-} == --ready-fd || ${2:-} == --ready-fd-profile || ${2:-} == --uclamp ]]; then
+  candidate=ready
+  if [[ $2 == --uclamp ]]; then candidate=clamp; fi
   for round in 1 2 3 4; do
     periods=(100 20)
-    modes=(epoll ready agnocast)
+    modes=(epoll "$candidate" agnocast)
     case $round in
-      2) periods=(20 100); modes=(agnocast ready epoll);;
-      3) modes=(ready epoll agnocast);;
-      4) periods=(20 100); modes=(agnocast epoll ready);;
+      2) periods=(20 100); modes=(agnocast "$candidate" epoll);;
+      3) modes=("$candidate" epoll agnocast);;
+      4) periods=(20 100); modes=(agnocast epoll "$candidate");;
     esac
     if [[ ${3:-} == --10hz-only ]]; then periods=(100); fi
     for ms in "${periods[@]}"; do
@@ -33,7 +35,13 @@ if [[ ${2:-} == --ready-fd || ${2:-} == --ready-fd-profile ]]; then
         fi
         flag=0
         if [[ $mode == ready ]]; then flag=1; fi
-        AGNOCAST_RMW_READY_FD=$flag BENCH_HOP_TRACE=$profile python3 src/universe_crop_benchmark/run_case.py \
+        launch=()
+        if [[ $2 == --uclamp ]]; then
+          clamp=0
+          if [[ $mode == clamp ]]; then clamp=512; fi
+          launch=(env BENCH_EXPECT_CLAMP="$clamp" uclampset -m "$clamp" --)
+        fi
+        AGNOCAST_RMW_READY_FD=$flag BENCH_HOP_TRACE=$profile "${launch[@]}" python3 src/universe_crop_benchmark/run_case.py \
           "$transport" "$file.csv" "${opts[@]}" --resources "$file-resources.csv"
       done
     done

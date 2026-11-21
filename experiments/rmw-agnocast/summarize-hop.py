@@ -17,11 +17,15 @@ for path in runs:
     assert len(stamps) == len(set(stamps)) == 60
     events = {t: {} for t in stamps}
     unkeyed = defaultdict(list)
+    work_cpu = {}
     for suffix in (".writer", ".reader"):
         with path.with_suffix(suffix).open() as f:
             for name, stamp, ts in csv.reader(f):
                 stamp, ts = int(stamp), int(ts)
-                if name in ("poll", "ready", "rmw_entry"):
+                if name == "poll_work_end":
+                    work_cpu[ts] = stamp
+                    unkeyed[name].append(ts)
+                elif name in ("poll", "ready", "rmw_entry"):
                     unkeyed[name].append(ts)
                 else:
                     assert name not in events[stamp]
@@ -42,6 +46,12 @@ for path in runs:
         assert long == expected
         names = ("stamp", "publish_entry", "handoff", "poll", "take", "restored", "entry")
         segments = list(zip(names, names[1:]))
+        if work_cpu:
+            end, = [v for v in unkeyed["poll_work_end"] if wake <= v <= e["take"]]
+            e["poll_work_end"] = end
+            segments += [("poll", "poll_work_end"), ("poll_work_end", "take")]
+            assert 0 <= work_cpu[end]
+            groups["probe thread CPU"][long].append(work_cpu[end] / 1000)
         if "admit" in e:
             e["ready"], = [v for v in unkeyed["ready"] if e["admit"] <= v <= e["take"]]
             segments += [("poll", "admit"), ("admit", "ready"), ("ready", "take")]

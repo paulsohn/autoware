@@ -1250,3 +1250,30 @@ return from blocking poll, where a transient wake effect could still appear.
 This experiment did not change transport behavior or measure sustained
 end-to-end 10 Hz parity.
 [Reproduction, empty control, native comparison and raw data](../rmw-agnocast/README.md#fixed-cpu-work-at-the-first-crop-callback)
+
+## 2026-11-21 — Close the crop-only 10 Hz investigation
+
+Used the installed Lyrical overlays, laptop Agnocast module and guarded
+colcon runner to probe the first reader immediately after its blocking poll.
+The 4,096 dependent arithmetic iterations took 5.3/5.2 µs of thread time
+after 20/100 ms gaps. With the work, the median interval from its end to
+take was 30.9/41.5 µs (empty control 30.6/42.6). An arithmetic warm-up
+left the receive-path gap. Tested one scheduling change that can apply at
+wake: a process-scoped utilization minimum of 512, inherited by the whole
+candidate graph. Verified the effective minimum for each application. The
+timed matrix used the ordinary sensor timer and disabled tracing.
+
+Ran two independent, interleaved native/A/candidate matrices with both
+steady rates. The candidate's 10 Hz final-sink median rose from 670 to 676
+µs and from 652 to 668 µs. Its pooled 10 Hz p95 and CPU improved in both
+batches, while 50 Hz p95 reached 1.85 ms in the repeat. Keep blocking A
+and the default scheduler. The low-rate gap remains workload evidence; a
+root cause and an end-to-end fix are still open. Close this line of
+microbenchmark tuning and carry A forward to multi-LiDAR synchronization.
+
+Both readers validated 960 frames across diagnostic runs and another 2,880
+across the timed matrices. The original cold diagnostic delivered all 60
+distinct samples. Sequential builds used the 1,200 MiB limit and runs the
+512 MiB limit. Existing archived uninstrumented ready-FD and light hop
+summaries reproduced byte-for-byte with the updated analysis scripts.
+[Exact commands, paired medians, p95, CPU and raw observations](../rmw-agnocast/README.md#blocking-poll-probe-and-graph-wide-scheduler-hint)

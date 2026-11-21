@@ -1968,3 +1968,88 @@ interval separately against the earlier callback-entry control. Report the
 total source-to-callback time as well: work inserted early can move cost
 between stages. Keep this diagnostic off during transport comparisons.
 [Raw samples, per-round differences, p95 and runtime checks](fixed-work-results/).
+
+### Blocking-poll probe and graph-wide scheduler hint
+
+Question: can the branched graph remove its excess 10 Hz final-sink latency?
+Start with the same blocking RMW path (A) and 512 KiB clouds. For the
+diagnostic only, mark the first crop's return from ppoll after checking its
+native readiness bits, then time zero or 4,096 dependent shift/XOR/multiply
+iterations. Check the checksum and record thread CPU and wall time. Join
+each wake to its exact cloud via the handoff and take markers. Across four
+rounds per transport per condition, discard ten startup frames per run. Each
+RMW column below represents 100 frames per interval. Numbers are medians in
+microseconds. The empty condition precedes work, so batch differences can
+include host drift.
+
+| First crop interval | Empty 20 / 100 ms | Work 20 / 100 ms |
+|---|---:|---:|
+| Probe thread CPU | 1.0 / 1.0 | 5.3 / 5.2 |
+| Probe wall | 2.7 / 3.1 | 7.1 / 7.4 |
+| Probe end to take | 30.6 / 42.6 | 30.9 / 41.5 |
+| Blocking poll return to take | 33.5 / 45.7 | 39.6 / 49.2 |
+| Source stamp to callback | 68.3 / 87.0 | 71.3 / 91.3 |
+
+The probe found a similar arithmetic cost at both gaps. Work after wake
+left the long-gap dispatch penalty visible, and total median arrival rose
+in the work batch. Test one earlier intervention: run the whole candidate
+process tree under Linux uclamp.min 512 (on a 0–1024 scale). The controls
+use minimum 0. All three inherit their ordinary policy, affinity and maximum
+clamp. The runner checks the effective minimum of each launched application
+process. This changes the scheduler's utilization input. The experiment
+does not measure actual clock frequency, idle residency, or energy.
+
+Interleave native Agnocast, default A, and A with the hint at steady 10 and
+50 Hz. Use the ordinary publisher timer and disable hop, crop and receive
+profiling. The same A binary handles both RMW cases. Compare four rounds per
+transport and rate in each of two fresh batches. Pool 200 post-warmup frames
+per cell. Compare final sink, tap, aggregate child CPU including start/stop,
+loan and delivery counts. The per-round excess penalty is the 10 Hz minus
+50 Hz median for the RMW minus that same difference for native.
+
+```bash
+set -e
+export LYRICAL_ROOT=$(cat build/agnocast-lyrical/universe-root)
+run=experiments/buffer/run-lyrical.sh
+bench=experiments/rmw-agnocast/bench-host-cloud.sh
+out=build/rmw-agnocast
+"$run" bash experiments/rmw-agnocast/build-loadable.sh
+export BUFFER_RUNTIME_ONLY=1 AGNOCAST_RMW_READY_FD=0 BENCH_RECEIVE_TRACE=0
+for mode in empty work; do
+  BENCH_HOP_TRACE=1 BENCH_POLL_WORK=$mode "$run" timeout 160 bash "$bench" "$out/poll-$mode" --gaps --profile
+  python3 experiments/rmw-agnocast/summarize-hop.py "$out/poll-$mode"
+done
+unset BENCH_POLL_WORK BENCH_HOP_TRACE BENCH_FIXED_WORK
+for batch in timed repeat; do
+  "$run" timeout 320 bash "$bench" "$out/uclamp-$batch" --uclamp
+  python3 experiments/rmw-agnocast/summarize-ready-fd.py "$out/uclamp-$batch" --uclamp
+done
+"$run" timeout 70 bash "$bench" --check-cold
+```
+
+| Rate | Transport | Batch 1 median / p95 µs | Batch 2 median / p95 µs | Batch 1 / 2 child CPU s |
+|---|---|---:|---:|---:|
+| 10 Hz | Native | 576 / 1316 | 567 / 990 | 1.034 / 1.033 |
+| 10 Hz | A | 670 / 921 | 652 / 964 | 1.175 / 1.148 |
+| 10 Hz | A + clamp | 676 / 905 | 668 / 851 | 1.150 / 1.125 |
+| 50 Hz | Native | 532 / 895 | 542 / 860 | 1.009 / 1.032 |
+| 50 Hz | A | 606 / 853 | 558 / 1172 | 1.129 / 1.117 |
+| 50 Hz | A + clamp | 583 / 849 | 585 / 1852 | 1.144 / 1.190 |
+
+At 10 Hz the hint raised the pooled median by 5.5 and 15.6 µs and improved
+only three of eight round-paired medians. Its 10 Hz pooled p95 and aggregate
+CPU were lower in both batches. At 50 Hz the median changed direction
+between batches and the repeat's p95 reached 1.85 ms. Four short runs per
+cell leave considerable uncertainty about tails. The pooled excess 10 Hz
+penalty above native was about 20 and 69 µs for A, and 48 and 58 µs with
+the hint. The smaller excess for the hint in the repeat coincided with a
+slower 50 Hz median. Absolute 10 Hz performance missed the objective in
+both batches. Keep the ordinary scheduler configuration and blocking A.
+
+Close this crop-only investigation here. The low-rate effect reproduced
+and part of it persists in the receive/dispatch path after wake. Its exact
+cause and a remedy remain open. Move the workload milestone to the Universe
+multi-LiDAR synchronization/concatenation graph, retaining this benchmark as
+a control. Compare at matched delivered sensor rates with native, A, Cyclone
+DDS and Zenoh, and validate synchronized output contents and timestamps.
+[Per-frame observations, resource counters, paired results and checks](poll-clamp-results/).

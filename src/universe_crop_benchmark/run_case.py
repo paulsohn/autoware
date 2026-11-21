@@ -138,6 +138,11 @@ with tempfile.TemporaryDirectory() as tmp:
             child_env.pop("LD_PRELOAD", None)
         proc = subprocess.Popen(argv, env=child_env, stderr=logs.get(label))
         children.append(proc)
+        if "BENCH_EXPECT_CLAMP" in child_env:
+            sched = Path(f"/proc/{proc.pid}/sched").read_text()
+            minimum = re.search(r"^effective uclamp.min\s*:\s*(\d+)", sched, re.MULTILINE)
+            if not minimum or minimum[1] != child_env["BENCH_EXPECT_CLAMP"]:
+                raise RuntimeError(f"{label}: unexpected scheduler utilization minimum")
 
     logs = {role: tempfile.TemporaryFile(mode="w+") for role in ("filter", "sub")} if args.transport == "fixed" else {}
     if args.host_loan:

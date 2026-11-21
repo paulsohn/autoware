@@ -1,0 +1,15 @@
+stage | 20 ms median/p95 us | 100 ms median/p95 us | median delta us
+probe thread CPU | 1.0/1.5 | 1.0/1.6 | +0.1
+stamp to publish_entry | 7.0/18.5 | 10.5/20.8 | +3.5
+publish_entry to handoff | 1.0/2.3 | 1.2/2.3 | +0.2
+handoff to poll | 20.8/294.5 | 24.0/68.0 | +3.2
+poll to take | 33.5/74.9 | 45.7/96.5 | +12.2
+take to restored | 1.6/4.0 | 2.2/4.3 | +0.7
+restored to entry | 2.6/7.3 | 3.9/8.3 | +1.3
+poll to poll_work_end | 2.7/6.1 | 3.1/5.2 | +0.4
+poll_work_end to take | 30.6/71.3 | 42.6/91.4 | +12.0
+poll to admit | 22.7/48.7 | 27.6/54.8 | +4.9
+admit to ready | 1.4/3.5 | 2.0/4.0 | +0.5
+ready to take | 10.4/27.1 | 16.3/32.5 | +6.0
+handoff to publish_return | 7.9/27.4 | 10.6/27.2 | +2.7
+stamp to entry | 68.3/440.5 | 87.0/215.9 | +18.7

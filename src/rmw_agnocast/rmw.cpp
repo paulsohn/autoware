@@ -1063,7 +1063,27 @@ public:
       bool dds_ready = fds.front().revents & POLLIN;
       bool native_ready =
         std::any_of(fds.begin() + 1, fds.end(), [](auto fd) { return fd.revents & POLLIN; });
-      if (native_ready) hop_reader().mark("poll");
+      if (native_ready) {
+        auto & trace = hop_reader();
+        trace.mark("poll");
+        static const char * probe = std::getenv("BENCH_POLL_WORK");
+        if (trace.path && probe) {
+          const bool work = std::strcmp(probe, "work") == 0;
+          if (!work && std::strcmp(probe, "empty") != 0) std::terminate();
+          timespec start{}, end{};
+          if (clock_gettime(CLOCK_THREAD_CPUTIME_ID, &start)) std::terminate();
+          uint64_t value = 1;
+          for (int i = 0; i < (work ? 4096 : 0); ++i) {
+            value ^= value >> 17;
+            value *= UINT64_C(0x9e3779b97f4a7c15);
+            asm volatile("" : "+r"(value));
+          }
+          if (clock_gettime(CLOCK_THREAD_CPUTIME_ID, &end)) std::terminate();
+          if (value != (work ? UINT64_C(11663699708554462312) : 1)) std::terminate();
+          trace.mark("poll_work_end", (end.tv_sec - start.tv_sec) * INT64_C(1000000000)
+            + end.tv_nsec - start.tv_nsec);
+        }
+      }
       native_wakes += native_ready;
       both += native_ready && dds_ready;
       if (dds_ready) {

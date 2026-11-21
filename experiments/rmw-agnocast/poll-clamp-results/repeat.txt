@@ -1,0 +1,12 @@
+10 Hz agnocast: sink median/p95 567.1/990.2 us, native ratios 1.00/1.00, tap 345.2 us, CPU 1.033 s, largest child 133.8 MiB
+10 Hz epoll: sink median/p95 652.1/963.6 us, native ratios 1.15/0.97, tap 402.2 us, CPU 1.148 s, largest child 136.9 MiB
+10 Hz clamp: sink median/p95 667.7/850.6 us, native ratios 1.18/0.86, tap 432.9 us, CPU 1.125 s, largest child 135.6 MiB
+clamp minus epoll median us: -52.5 15.4 -24.1 62.6
+clamp minus epoll p95 us: 3.3 -73.9 -157.2 108.2
+50 Hz agnocast: sink median/p95 541.8/859.8 us, native ratios 1.00/1.00, tap 315.6 us, CPU 1.032 s, largest child 134.4 MiB
+50 Hz epoll: sink median/p95 557.6/1172.4 us, native ratios 1.03/1.36, tap 329.5 us, CPU 1.117 s, largest child 136.5 MiB
+50 Hz clamp: sink median/p95 584.7/1851.9 us, native ratios 1.08/2.15, tap 373.6 us, CPU 1.190 s, largest child 136.8 MiB
+clamp minus epoll median us: -7.1 -26.3 65.4 681.9
+clamp minus epoll p95 us: 407.5 -92.1 2574.2 132.4
+epoll per-round excess 10 Hz median penalty over native (us): +39.7 +105.4 +185.4 +22.6
+clamp per-round excess 10 Hz median penalty over native (us): -5.7 +147.0 +95.9 -596.7

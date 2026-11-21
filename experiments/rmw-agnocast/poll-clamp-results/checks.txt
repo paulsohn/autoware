@@ -1,0 +1,357 @@
+build/rmw-agnocast/uclamp-cold.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/uclamp-cold.log:source_rate_hz=10.00
+build/rmw-agnocast/uclamp-cold.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/uclamp-cold.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/uclamp-cold.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/uclamp-cold.log:Received 60 distinct stamped diagnostics from /output/debug/published_time
+build/rmw-agnocast/uclamp-cold.log:Minimum host MemAvailable: 12382 MiB
+build/rmw-agnocast/poll-empty.log:source_rate_hz=16.86
+build/rmw-agnocast/poll-empty.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/poll-empty.log:source_rate_hz=16.86
+build/rmw-agnocast/poll-empty.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/poll-empty.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/poll-empty.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/poll-empty.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/poll-empty.log:verified fixed wait tap: 59 native wakes
+build/rmw-agnocast/poll-empty.log:verified fixed wait filter2: 59 native wakes
+build/rmw-agnocast/poll-empty.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/poll-empty.log:source_rate_hz=16.48
+build/rmw-agnocast/poll-empty.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/poll-empty.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/poll-empty.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/poll-empty.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/poll-empty.log:verified fixed wait tap: 59 native wakes
+build/rmw-agnocast/poll-empty.log:verified fixed wait filter2: 59 native wakes
+build/rmw-agnocast/poll-empty.log:source_rate_hz=16.48
+build/rmw-agnocast/poll-empty.log:source_rate_hz=16.48
+build/rmw-agnocast/poll-empty.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/poll-empty.log:source_rate_hz=16.48
+build/rmw-agnocast/poll-empty.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/poll-empty.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/poll-empty.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/poll-empty.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/poll-empty.log:verified fixed wait tap: 59 native wakes
+build/rmw-agnocast/poll-empty.log:verified fixed wait filter2: 59 native wakes
+build/rmw-agnocast/poll-empty.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/poll-empty.log:source_rate_hz=16.86
+build/rmw-agnocast/poll-empty.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/poll-empty.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/poll-empty.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/poll-empty.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/poll-empty.log:verified fixed wait tap: 59 native wakes
+build/rmw-agnocast/poll-empty.log:verified fixed wait filter2: 59 native wakes
+build/rmw-agnocast/poll-empty.log:source_rate_hz=16.86
+build/rmw-agnocast/poll-empty.log:Minimum host MemAvailable: 10194 MiB
+build/rmw-agnocast/poll-work-build.log:Summary: 2 packages finished [5.19s]
+build/rmw-agnocast/poll-work-build.log:Minimum host MemAvailable: 9979 MiB
+build/rmw-agnocast/poll-work.log:source_rate_hz=16.86
+build/rmw-agnocast/poll-work.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/poll-work.log:source_rate_hz=16.86
+build/rmw-agnocast/poll-work.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/poll-work.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/poll-work.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/poll-work.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/poll-work.log:verified fixed wait tap: 59 native wakes
+build/rmw-agnocast/poll-work.log:verified fixed wait filter2: 59 native wakes
+build/rmw-agnocast/poll-work.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/poll-work.log:source_rate_hz=16.48
+build/rmw-agnocast/poll-work.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/poll-work.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/poll-work.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/poll-work.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/poll-work.log:verified fixed wait tap: 59 native wakes
+build/rmw-agnocast/poll-work.log:verified fixed wait filter2: 59 native wakes
+build/rmw-agnocast/poll-work.log:source_rate_hz=16.48
+build/rmw-agnocast/poll-work.log:source_rate_hz=16.48
+build/rmw-agnocast/poll-work.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/poll-work.log:source_rate_hz=16.48
+build/rmw-agnocast/poll-work.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/poll-work.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/poll-work.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/poll-work.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/poll-work.log:verified fixed wait tap: 59 native wakes
+build/rmw-agnocast/poll-work.log:verified fixed wait filter2: 59 native wakes
+build/rmw-agnocast/poll-work.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/poll-work.log:source_rate_hz=16.86
+build/rmw-agnocast/poll-work.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/poll-work.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/poll-work.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/poll-work.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/poll-work.log:verified fixed wait tap: 59 native wakes
+build/rmw-agnocast/poll-work.log:verified fixed wait filter2: 59 native wakes
+build/rmw-agnocast/poll-work.log:source_rate_hz=16.86
+build/rmw-agnocast/poll-work.log:Minimum host MemAvailable: 9398 MiB
+build/rmw-agnocast/uclamp-timed.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/uclamp-timed.log:source_rate_hz=10.00
+build/rmw-agnocast/uclamp-timed.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/uclamp-timed.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/uclamp-timed.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/uclamp-timed.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/uclamp-timed.log:verified fixed wait tap: 59 native wakes
+build/rmw-agnocast/uclamp-timed.log:verified fixed wait filter2: 59 native wakes
+build/rmw-agnocast/uclamp-timed.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/uclamp-timed.log:source_rate_hz=10.00
+build/rmw-agnocast/uclamp-timed.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/uclamp-timed.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/uclamp-timed.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/uclamp-timed.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/uclamp-timed.log:verified fixed wait tap: 59 native wakes
+build/rmw-agnocast/uclamp-timed.log:verified fixed wait filter2: 59 native wakes
+build/rmw-agnocast/uclamp-timed.log:source_rate_hz=10.00
+build/rmw-agnocast/uclamp-timed.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/uclamp-timed.log:source_rate_hz=50.01
+build/rmw-agnocast/uclamp-timed.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/uclamp-timed.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/uclamp-timed.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/uclamp-timed.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/uclamp-timed.log:verified fixed wait tap: 59 native wakes
+build/rmw-agnocast/uclamp-timed.log:verified fixed wait filter2: 59 native wakes
+build/rmw-agnocast/uclamp-timed.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/uclamp-timed.log:source_rate_hz=50.02
+build/rmw-agnocast/uclamp-timed.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/uclamp-timed.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/uclamp-timed.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/uclamp-timed.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/uclamp-timed.log:verified fixed wait tap: 59 native wakes
+build/rmw-agnocast/uclamp-timed.log:verified fixed wait filter2: 59 native wakes
+build/rmw-agnocast/uclamp-timed.log:source_rate_hz=50.02
+build/rmw-agnocast/uclamp-timed.log:source_rate_hz=50.01
+build/rmw-agnocast/uclamp-timed.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/uclamp-timed.log:source_rate_hz=50.02
+build/rmw-agnocast/uclamp-timed.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/uclamp-timed.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/uclamp-timed.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/uclamp-timed.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/uclamp-timed.log:verified fixed wait tap: 59 native wakes
+build/rmw-agnocast/uclamp-timed.log:verified fixed wait filter2: 59 native wakes
+build/rmw-agnocast/uclamp-timed.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/uclamp-timed.log:source_rate_hz=50.01
+build/rmw-agnocast/uclamp-timed.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/uclamp-timed.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/uclamp-timed.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/uclamp-timed.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/uclamp-timed.log:verified fixed wait tap: 59 native wakes
+build/rmw-agnocast/uclamp-timed.log:verified fixed wait filter2: 59 native wakes
+build/rmw-agnocast/uclamp-timed.log:source_rate_hz=10.00
+build/rmw-agnocast/uclamp-timed.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/uclamp-timed.log:source_rate_hz=10.00
+build/rmw-agnocast/uclamp-timed.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/uclamp-timed.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/uclamp-timed.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/uclamp-timed.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/uclamp-timed.log:verified fixed wait tap: 59 native wakes
+build/rmw-agnocast/uclamp-timed.log:verified fixed wait filter2: 59 native wakes
+build/rmw-agnocast/uclamp-timed.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/uclamp-timed.log:source_rate_hz=10.00
+build/rmw-agnocast/uclamp-timed.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/uclamp-timed.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/uclamp-timed.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/uclamp-timed.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/uclamp-timed.log:verified fixed wait tap: 59 native wakes
+build/rmw-agnocast/uclamp-timed.log:verified fixed wait filter2: 59 native wakes
+build/rmw-agnocast/uclamp-timed.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/uclamp-timed.log:source_rate_hz=10.00
+build/rmw-agnocast/uclamp-timed.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/uclamp-timed.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/uclamp-timed.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/uclamp-timed.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/uclamp-timed.log:verified fixed wait tap: 59 native wakes
+build/rmw-agnocast/uclamp-timed.log:verified fixed wait filter2: 59 native wakes
+build/rmw-agnocast/uclamp-timed.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/uclamp-timed.log:source_rate_hz=10.00
+build/rmw-agnocast/uclamp-timed.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/uclamp-timed.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/uclamp-timed.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/uclamp-timed.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/uclamp-timed.log:verified fixed wait tap: 59 native wakes
+build/rmw-agnocast/uclamp-timed.log:verified fixed wait filter2: 59 native wakes
+build/rmw-agnocast/uclamp-timed.log:source_rate_hz=10.00
+build/rmw-agnocast/uclamp-timed.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/uclamp-timed.log:source_rate_hz=50.02
+build/rmw-agnocast/uclamp-timed.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/uclamp-timed.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/uclamp-timed.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/uclamp-timed.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/uclamp-timed.log:verified fixed wait tap: 59 native wakes
+build/rmw-agnocast/uclamp-timed.log:verified fixed wait filter2: 59 native wakes
+build/rmw-agnocast/uclamp-timed.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/uclamp-timed.log:source_rate_hz=50.01
+build/rmw-agnocast/uclamp-timed.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/uclamp-timed.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/uclamp-timed.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/uclamp-timed.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/uclamp-timed.log:verified fixed wait tap: 59 native wakes
+build/rmw-agnocast/uclamp-timed.log:verified fixed wait filter2: 59 native wakes
+build/rmw-agnocast/uclamp-timed.log:source_rate_hz=50.02
+build/rmw-agnocast/uclamp-timed.log:source_rate_hz=50.02
+build/rmw-agnocast/uclamp-timed.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/uclamp-timed.log:source_rate_hz=50.02
+build/rmw-agnocast/uclamp-timed.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/uclamp-timed.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/uclamp-timed.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/uclamp-timed.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/uclamp-timed.log:verified fixed wait tap: 59 native wakes
+build/rmw-agnocast/uclamp-timed.log:verified fixed wait filter2: 59 native wakes
+build/rmw-agnocast/uclamp-timed.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/uclamp-timed.log:source_rate_hz=50.01
+build/rmw-agnocast/uclamp-timed.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/uclamp-timed.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/uclamp-timed.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/uclamp-timed.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/uclamp-timed.log:verified fixed wait tap: 59 native wakes
+build/rmw-agnocast/uclamp-timed.log:verified fixed wait filter2: 59 native wakes
+build/rmw-agnocast/uclamp-timed.log:source_rate_hz=10.00
+build/rmw-agnocast/uclamp-timed.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/uclamp-timed.log:source_rate_hz=10.00
+build/rmw-agnocast/uclamp-timed.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/uclamp-timed.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/uclamp-timed.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/uclamp-timed.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/uclamp-timed.log:verified fixed wait tap: 59 native wakes
+build/rmw-agnocast/uclamp-timed.log:verified fixed wait filter2: 59 native wakes
+build/rmw-agnocast/uclamp-timed.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/uclamp-timed.log:source_rate_hz=10.00
+build/rmw-agnocast/uclamp-timed.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/uclamp-timed.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/uclamp-timed.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/uclamp-timed.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/uclamp-timed.log:verified fixed wait tap: 59 native wakes
+build/rmw-agnocast/uclamp-timed.log:verified fixed wait filter2: 59 native wakes
+build/rmw-agnocast/uclamp-timed.log:Minimum host MemAvailable: 9786 MiB
+build/rmw-agnocast/uclamp-repeat.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/uclamp-repeat.log:source_rate_hz=10.00
+build/rmw-agnocast/uclamp-repeat.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/uclamp-repeat.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/uclamp-repeat.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/uclamp-repeat.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/uclamp-repeat.log:verified fixed wait tap: 59 native wakes
+build/rmw-agnocast/uclamp-repeat.log:verified fixed wait filter2: 59 native wakes
+build/rmw-agnocast/uclamp-repeat.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/uclamp-repeat.log:source_rate_hz=10.00
+build/rmw-agnocast/uclamp-repeat.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/uclamp-repeat.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/uclamp-repeat.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/uclamp-repeat.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/uclamp-repeat.log:verified fixed wait tap: 59 native wakes
+build/rmw-agnocast/uclamp-repeat.log:verified fixed wait filter2: 59 native wakes
+build/rmw-agnocast/uclamp-repeat.log:source_rate_hz=10.00
+build/rmw-agnocast/uclamp-repeat.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/uclamp-repeat.log:source_rate_hz=50.02
+build/rmw-agnocast/uclamp-repeat.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/uclamp-repeat.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/uclamp-repeat.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/uclamp-repeat.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/uclamp-repeat.log:verified fixed wait tap: 59 native wakes
+build/rmw-agnocast/uclamp-repeat.log:verified fixed wait filter2: 59 native wakes
+build/rmw-agnocast/uclamp-repeat.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/uclamp-repeat.log:source_rate_hz=50.00
+build/rmw-agnocast/uclamp-repeat.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/uclamp-repeat.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/uclamp-repeat.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/uclamp-repeat.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/uclamp-repeat.log:verified fixed wait tap: 59 native wakes
+build/rmw-agnocast/uclamp-repeat.log:verified fixed wait filter2: 59 native wakes
+build/rmw-agnocast/uclamp-repeat.log:source_rate_hz=50.01
+build/rmw-agnocast/uclamp-repeat.log:source_rate_hz=50.01
+build/rmw-agnocast/uclamp-repeat.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/uclamp-repeat.log:source_rate_hz=50.01
+build/rmw-agnocast/uclamp-repeat.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/uclamp-repeat.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/uclamp-repeat.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/uclamp-repeat.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/uclamp-repeat.log:verified fixed wait tap: 59 native wakes
+build/rmw-agnocast/uclamp-repeat.log:verified fixed wait filter2: 59 native wakes
+build/rmw-agnocast/uclamp-repeat.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/uclamp-repeat.log:source_rate_hz=50.02
+build/rmw-agnocast/uclamp-repeat.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/uclamp-repeat.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/uclamp-repeat.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/uclamp-repeat.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/uclamp-repeat.log:verified fixed wait tap: 59 native wakes
+build/rmw-agnocast/uclamp-repeat.log:verified fixed wait filter2: 59 native wakes
+build/rmw-agnocast/uclamp-repeat.log:source_rate_hz=10.00
+build/rmw-agnocast/uclamp-repeat.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/uclamp-repeat.log:source_rate_hz=10.00
+build/rmw-agnocast/uclamp-repeat.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/uclamp-repeat.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/uclamp-repeat.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/uclamp-repeat.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/uclamp-repeat.log:verified fixed wait tap: 59 native wakes
+build/rmw-agnocast/uclamp-repeat.log:verified fixed wait filter2: 59 native wakes
+build/rmw-agnocast/uclamp-repeat.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/uclamp-repeat.log:source_rate_hz=10.00
+build/rmw-agnocast/uclamp-repeat.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/uclamp-repeat.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/uclamp-repeat.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/uclamp-repeat.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/uclamp-repeat.log:verified fixed wait tap: 59 native wakes
+build/rmw-agnocast/uclamp-repeat.log:verified fixed wait filter2: 59 native wakes
+build/rmw-agnocast/uclamp-repeat.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/uclamp-repeat.log:source_rate_hz=10.00
+build/rmw-agnocast/uclamp-repeat.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/uclamp-repeat.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/uclamp-repeat.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/uclamp-repeat.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/uclamp-repeat.log:verified fixed wait tap: 59 native wakes
+build/rmw-agnocast/uclamp-repeat.log:verified fixed wait filter2: 59 native wakes
+build/rmw-agnocast/uclamp-repeat.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/uclamp-repeat.log:source_rate_hz=10.00
+build/rmw-agnocast/uclamp-repeat.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/uclamp-repeat.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/uclamp-repeat.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/uclamp-repeat.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/uclamp-repeat.log:verified fixed wait tap: 59 native wakes
+build/rmw-agnocast/uclamp-repeat.log:verified fixed wait filter2: 59 native wakes
+build/rmw-agnocast/uclamp-repeat.log:source_rate_hz=10.00
+build/rmw-agnocast/uclamp-repeat.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/uclamp-repeat.log:source_rate_hz=50.01
+build/rmw-agnocast/uclamp-repeat.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/uclamp-repeat.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/uclamp-repeat.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/uclamp-repeat.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/uclamp-repeat.log:verified fixed wait tap: 59 native wakes
+build/rmw-agnocast/uclamp-repeat.log:verified fixed wait filter2: 59 native wakes
+build/rmw-agnocast/uclamp-repeat.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/uclamp-repeat.log:source_rate_hz=50.02
+build/rmw-agnocast/uclamp-repeat.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/uclamp-repeat.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/uclamp-repeat.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/uclamp-repeat.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/uclamp-repeat.log:verified fixed wait tap: 59 native wakes
+build/rmw-agnocast/uclamp-repeat.log:verified fixed wait filter2: 59 native wakes
+build/rmw-agnocast/uclamp-repeat.log:source_rate_hz=50.02
+build/rmw-agnocast/uclamp-repeat.log:source_rate_hz=50.01
+build/rmw-agnocast/uclamp-repeat.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/uclamp-repeat.log:source_rate_hz=50.02
+build/rmw-agnocast/uclamp-repeat.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/uclamp-repeat.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/uclamp-repeat.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/uclamp-repeat.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/uclamp-repeat.log:verified fixed wait tap: 59 native wakes
+build/rmw-agnocast/uclamp-repeat.log:verified fixed wait filter2: 59 native wakes
+build/rmw-agnocast/uclamp-repeat.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/uclamp-repeat.log:source_rate_hz=50.02
+build/rmw-agnocast/uclamp-repeat.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/uclamp-repeat.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/uclamp-repeat.log:verified fixed wait filter: 58 native wakes
+build/rmw-agnocast/uclamp-repeat.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/uclamp-repeat.log:verified fixed wait tap: 59 native wakes
+build/rmw-agnocast/uclamp-repeat.log:verified fixed wait filter2: 59 native wakes
+build/rmw-agnocast/uclamp-repeat.log:source_rate_hz=10.00
+build/rmw-agnocast/uclamp-repeat.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/uclamp-repeat.log:source_rate_hz=10.00
+build/rmw-agnocast/uclamp-repeat.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/uclamp-repeat.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/uclamp-repeat.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/uclamp-repeat.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/uclamp-repeat.log:verified fixed wait tap: 59 native wakes
+build/rmw-agnocast/uclamp-repeat.log:verified fixed wait filter2: 59 native wakes
+build/rmw-agnocast/uclamp-repeat.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/uclamp-repeat.log:source_rate_hz=10.00
+build/rmw-agnocast/uclamp-repeat.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/uclamp-repeat.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/uclamp-repeat.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/uclamp-repeat.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/uclamp-repeat.log:verified fixed wait tap: 59 native wakes
+build/rmw-agnocast/uclamp-repeat.log:verified fixed wait filter2: 59 native wakes
+build/rmw-agnocast/uclamp-repeat.log:Minimum host MemAvailable: 12196 MiB
