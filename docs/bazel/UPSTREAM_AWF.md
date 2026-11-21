@@ -1461,3 +1461,21 @@ No older-ROS verification or new submission is claimed.
   passes 183 active cases in fourteen targets, Cyclone DDS/Agnocast off.
   [Exact reproducer and scope](JOURNAL.md#2026-11-22-phase-732--tracker-dependency-and-numeric-fixture-portability).
   No older-toolchain/colcon result or submission is claimed.
+
+### Local Tier IV pointcloud converter needs current ROS filter APIs
+
+- [ ] Associate with a matching upstream change. Reviewed 2026-11-22:
+  [Tier IV fork](https://github.com/tier4/pointcloud_to_laserscan/tree/tier4/main)
+  retains removed .h forwarding includes and raw-rmw subscribe arguments;
+  its scoped Lyrical PR search finds none. ROS perception rolling has the
+  subscriber.hpp part, not the complete local correction.
+- Input: local d969ec699f84fad827fbadfa3001c9c657482fbe, message_filters 7.4.2,
+  Lyrical TF and LLVM/libc++ 21.1.8. Replace the ten relevant includes in both
+  converters with .hpp and pass the existing SensorDataQoS object directly,
+  preserving its depth and algorithms. New profiles exercise both actual
+  conversion directions and the dummy executable, then clean shutdown.
+- All affected perception targets pass (183 active cases/fourteen targets),
+  CPU/Cyclone DDS/Agnocast off. Jazzy has a different subscriber header/API;
+  older-ROS compatibility is not claimed. See the
+  [source-fix reproducer](JOURNAL.md#2026-11-22-phase-732--pointcloud-converter-lyrical-apis).
+  No new submission is claimed.

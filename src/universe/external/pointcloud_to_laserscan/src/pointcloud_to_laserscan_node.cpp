@@ -56,7 +56,7 @@
 #else
 #include "tf2_sensor_msgs/tf2_sensor_msgs.hpp"
 #endif
-#include "tf2_ros/create_timer_ros.h"
+#include "tf2_ros/create_timer_ros.hpp"
 
 namespace
 {
@@ -194,7 +194,7 @@ void PointCloudToLaserScanNode::subscriptionListenerThreadLoop()
           "Got a subscriber to laserscan, starting pointcloud subscriber");
         rclcpp::SensorDataQoS qos;
         qos.keep_last(input_queue_size_);
-        sub_.subscribe(this, "~/input/pointcloud", qos.get_rmw_qos_profile());
+        sub_.subscribe(this, "~/input/pointcloud", qos);
       }
     } else if (sub_.getSubscriber()) {
       RCLCPP_INFO(
