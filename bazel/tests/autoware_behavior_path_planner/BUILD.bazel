@@ -1,22 +1,36 @@
 load("@rules_python//python:defs.bzl", "py_test")
 
+_SCENES = [
+    "static_obstacle_avoidance",
+    "avoidance_by_lane_change",
+    "lane_change",
+    "goal_planner",
+    "start_planner",
+    "side_shift",
+    "bidirectional_traffic",
+]
+
 [
     py_test(
-        name = "runtime_test" if module == "side_shift" else module + "_runtime_test",
+        name = "selected_scenes_runtime_test" if len(modules) > 1 else (
+            "runtime_test" if modules[0] == "side_shift" else modules[0] + "_runtime_test"
+        ),
         srcs = ["test_runtime.py"],
         args = [
             "$(rootpath @autoware_behavior_path_planner//:autoware_behavior_path_planner_node)",
-            module,
+            ",".join(modules),
         ],
         data = [
             "@autoware_behavior_path_planner//:ament_index",
             "@autoware_behavior_path_planner//:autoware_behavior_path_planner_node",
-            "@autoware_behavior_path_" + module + "_module//:ament_index",
             "@autoware_test_utils//:ament_index",
-        ] + ([
-            "@autoware_behavior_path_lane_change_module//:ament_index",
-            "@autoware_behavior_path_static_obstacle_avoidance_module//:ament_index",
-        ] if module == "avoidance_by_lane_change" else []),
+        ] + [
+            "@autoware_behavior_path_" + module + "_module//:ament_index"
+            for module in _SCENES
+            if module in modules or (
+                "avoidance_by_lane_change" in modules and module in ["lane_change", "static_obstacle_avoidance"]
+            )
+        ],
         env = {
             "ENABLE_AGNOCAST": "0",
             "LD_LIBRARY_PATH": "lib",
@@ -33,12 +47,5 @@ load("@rules_python//python:defs.bzl", "py_test")
             "@rclpy",
         ],
     )
-    for module in [
-        "side_shift",
-        "bidirectional_traffic",
-        "static_obstacle_avoidance",
-        "lane_change",
-        "avoidance_by_lane_change",
-        "start_planner",
-    ]
+    for modules in [[module] for module in _SCENES] + [_SCENES]
 ]

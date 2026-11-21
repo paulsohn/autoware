@@ -1819,6 +1819,12 @@ Phase 7.3 task boundaries (selected 2026-11-21):
   pass. Its original disabled freespace case and optional figure-export default
   remain unchanged.
   [Evidence](JOURNAL.md#2026-11-22-phase-732--start-planner-scene-plugin).
+  Goal-planner is complete: all thirteen sources build with a local libc++ PSTL
+  opt-in; fifteen active original cases and all seven individual scene profiles
+  pass. Two original disabled cases remain. A joint planner also successfully
+  loads all eight selected factories, updates parameters and exits cleanly.
+  The pinned libc++ PSTL backend is serial; no performance claim is made.
+  [Evidence](JOURNAL.md#2026-11-22-phase-732--goal-planner-scene-plugin).
   Continue in dependency order through shared planner helpers, the
   preset-selected behavior/motion plugins and controller libraries, then
   simulated perception and the selected system/API closure. CMake-only shims

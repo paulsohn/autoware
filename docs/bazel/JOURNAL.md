@@ -11737,3 +11737,66 @@ cleanup gate also passes, reusing unchanged profile results and rerunning the
 original suite (7.8 seconds) and start profile (1.4 seconds). CPU/Cyclone DDS with
 ENABLE_AGNOCAST=0 is selected; no pre-commit, Fast DDS or unchanged packaging
 matrix runs. Goal-planner and joint scene loading are the next parking gates.
+
+## 2026-11-22: Phase 7.3.2 — Goal-planner scene plugin
+
+Purpose: provide the preset-selected goal/parking manager with local Bézier,
+freespace and trajectory implementations. Inspect all thirteen production
+sources/public headers, factory XML/config/test_data, CMake/manifest and all
+three original test sources. Preserve all seventeen registered cases, including
+two cases in the original disabled map-utility fixture. Active coverage includes
+lane-change state transitions, map/boundary geometry, sharp-curvature lateral
+acceleration and the blocked-goal planning factor.
+
+Add the package-owned module/library/shared-plugin/index and root local override
+after its sampler dependencies. Reuse planner common and the actual Bézier,
+freespace and trajectory runtime closures. The original tests need their own,
+planner/common, route-handler and test-utils indexes plus the planner's existing
+test helper. Expose original config/test_data and factory basename. Add a root
+standalone profile for GoalPlannerModuleManager, indexed defaults 1/2, stopped-
+time update to 2.5, actual DLL mapping and clean shutdown; retain prior profiles.
+
+The first compile reports five missing std::execution::par declarations. The
+pinned libc++ 21 headers gate PSTL behind experimental support. Inspect its
+execution/__algorithm/pstl.h and generated backend configuration plus LLVM's
+[documented opt-in](https://libcxx.llvm.org/UserDocumentation.html#enabling-experimental-c-library-features).
+Use package-local copts = ["-fexperimental-library"]. This exposes the original
+stable_sort execution-policy overloads without replacing algorithms or modifying
+source. The configured LLVM backend is serial; no parallel-speedup claim follows
+from successful policy compilation. Current upstream main retains the same five
+calls; PR searches and the Lyrical/toolchain trackers reviewed on 2026-11-22 show
+no matching source fix to adopt. A build configuration choice needs no upstream
+source patch. Keep the flag scoped to this consumer rather than changing the
+whole tree's experimental ABI surface.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_output=errors @autoware_behavior_path_goal_planner_module//... \
+  //bazel/tests/autoware_behavior_path_planner:all
+python3 -m flake8 --max-line-length=150 \
+  bazel/tests/autoware_behavior_path_planner/test_runtime.py
+git diff --check
+```
+
+All thirteen production sources and three original test sources build unchanged.
+The complete original suite passes fifteen active cases in 10.4 seconds and
+retains two disabled cases. Goal-planner standalone passes in 1.8 seconds; the
+initial combined eight-target gate passes 22 active cases in 204.8 seconds.
+
+Extend the same root adapter to load all eight preset-selected factories across
+seven scene packages in one actual planner. Require every successful factory
+load, indexed configuration/parameter update, no unavailable-plugin error and
+clean shutdown. Its first DLL assertion wrongly requires a separate base DLL:
+derived avoidance statically includes lane-change factories, and pluginlib can
+supply them from that already-loaded library. A trial explicit base-shared link
+also encounters duplicated private common-library ownership. Retain the existing
+valid static composition; independent profiles prove each package's own DLL,
+while the joint profile checks the actual eight-factory lifecycle. Do not infer
+a source/runtime bug from an overly strict mapping assertion or force an ABI
+redesign without a behavioral need. Final nine-target gate passes 23 active
+cases, including the joint profile (1.4 seconds), with no failures/errors/runtime
+skips; unchanged native results are reused. Flake8 and whitespace checks pass.
+CPU/Cyclone DDS with ENABLE_AGNOCAST=0 is selected. No pre-commit, Fast DDS,
+full simulator assembly or unchanged deployment matrix is run. Selected behavior-
+path scenes are now available; behavior/motion velocity and controllers follow.

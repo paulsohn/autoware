@@ -18,8 +18,9 @@ from rcl_interfaces.srv import GetParameters, SetParameters
 import rclpy
 
 EXECUTABLE = str(Path(sys.argv.pop(1)).resolve())
-MODULE = sys.argv.pop(1)
-CLASS, PARAMETERS, VALUES, UPDATED = {
+MODULES = sys.argv.pop(1).split(',')
+MODULE = MODULES[0]
+PROFILES = {
     'side_shift': ('SideShiftModuleManager',
                    ['side_shift.min_distance_to_start_shifting', 'side_shift.min_drivable_area_margin'],
                    [5.0, 0.3], 0.4),
@@ -41,8 +42,13 @@ CLASS, PARAMETERS, VALUES, UPDATED = {
     'start_planner': ('StartPlannerModuleManager',
                       ['start_planner.th_arrived_distance', 'start_planner.th_stopped_time'],
                       [1.0, 1.0], 1.5),
-}[MODULE]
-PLUGINS = ['autoware::behavior_path_planner::' + c for c in CLASS.split(',')]
+    'goal_planner': ('GoalPlannerModuleManager',
+                     ['goal_planner.th_arrived_distance', 'goal_planner.th_stopped_time'],
+                     [1.0, 2.0], 2.5),
+}
+CLASS, PARAMETERS, VALUES, UPDATED = PROFILES[MODULE]
+PLUGINS = ['autoware::behavior_path_planner::' + c
+           for module in MODULES for c in PROFILES[module][0].split(',')]
 
 
 class PlannerRuntime(unittest.TestCase):
@@ -54,7 +60,8 @@ class PlannerRuntime(unittest.TestCase):
         prefix = namespace + '/behavior_path_planner'
         args = [EXECUTABLE, '--ros-args', '-r', '__ns:=' + namespace,
                 '-r', '__node:=behavior_path_planner', '--log-level', 'debug']
-        configs = ['lane_change', 'static_obstacle_avoidance', MODULE] if MODULE == 'avoidance_by_lane_change' else [MODULE]
+        configs = list(dict.fromkeys(
+            (['lane_change', 'static_obstacle_avoidance'] if 'avoidance_by_lane_change' in MODULES else []) + MODULES))
         for package, files in [
             ('autoware_test_utils', ['test_common.param.yaml', 'test_nearest_search.param.yaml',
                                      'test_vehicle_info.param.yaml']),
@@ -97,7 +104,11 @@ class PlannerRuntime(unittest.TestCase):
                         loaded = "The scene plugin '" + plugin + "' is loaded."
                         wait(lambda: loaded in output())
                     maps = Path('/proc', str(process.pid), 'maps').read_text()
-                    self.assertIn('libautoware_behavior_path_' + MODULE + '_module.so', maps)
+                    scene_libraries = {Path(line.split()[-1]).name for line in maps.splitlines()
+                                       if 'libautoware_behavior_path_' in line}
+                    # Derived plugins can supply statically linked base factories in a joint process.
+                    if len(MODULES) == 1:
+                        self.assertIn('libautoware_behavior_path_' + MODULE + '_module.so', scene_libraries)
                     self.assertIn('libautoware_behavior_path_planner_component.so', maps)
                     self.assertNotIn('libagnocast_heaphook.so', maps)
                     names = ['forward_path_length'] + PARAMETERS
