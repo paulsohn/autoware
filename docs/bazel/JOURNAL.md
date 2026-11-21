@@ -12848,3 +12848,35 @@ or skips occur. Format/flake8/whitespace checks pass. CPU/Cyclone DDS with
 ENABLE_AGNOCAST=0 is selected; no Fast DDS, kernel-dependent matrix, pre-commit
 or full simulator launch is run. Continue remaining selected motion modules
 and their local utility dependency before the controller group.
+
+## 2026-11-22: Phase 7.3.2 — Canonical stamped-pose TF conversion
+
+Purpose: link the locally required Universe utility library with its existing
+core utility dependency. The first complete original-suite link fails with a
+duplicate tf2::fromMsg(PoseStamped, Stamped<Transform>) symbol from both Universe
+geometry.cpp and core autoware_utils_geometry geometry.cpp. Inspect both bodies:
+they are identical, copying stamp/frame, converting pose and assigning transform
+data. This is a global namespace extension, not a distinct Universe API.
+
+Remove only the Universe copy of that definition. Retain its public declaration
+and all Universe-namespaced algorithms; use the existing canonical core geometry
+implementation through an explicit Bazel dependency. The original manifest
+already depends on the autoware_utils compatibility package, which declares the
+geometry dependency; no CMake/manifest changes are needed here. Colcon is not
+newly validated. This fixes the demonstrated static-link closure without changing
+conversion semantics or creating another shared global implementation.
+
+On 2026-11-22 inspect current AWF source and PR searches for universe_utils/
+duplicate and fromMsg. Current source retains the duplicate. Related PR #11754
+is closed without merge and removes old header declarations/Galactic workarounds;
+it does not remove this implementation, so it is not a matching fix association.
+Record the actual scope in UPSTREAM_AWF.md. Keep this source fix separate from
+the following module build definitions.
+
+Verification is the complete module/root regression command below. All 118
+active original cases and the added combined-library case pass; four originally
+disabled geometry cases stay disabled. The root case links both libraries,
+converts a stamped pose and verifies frame, time, translation, rotation and
+agreement between the legacy/core RPY APIs. Thus the fix is checked through
+actual linkage and data behavior. No original test bodies or disabled states
+change. Targeted formatting and whitespace checks pass.

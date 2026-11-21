@@ -1258,3 +1258,25 @@ Local source fix: `15352cbe`.
   Exact commands/results are in the journal. This is a general plugin lifecycle
   defect; the optional optimization branch and other middleware configurations
   are not newly validated. No upstream submission has been made.
+
+### Universe/core utilities duplicate a global TF conversion
+
+- [ ] Associate with a matching upstream correction. Reviewed 2026-11-22:
+  [Universe geometry.cpp](https://github.com/autowarefoundation/autoware_universe/blob/main/common/autoware_universe_utils/src/geometry/geometry.cpp)
+  retains a global tf2::fromMsg(PoseStamped, Stamped<Transform>) definition
+  identical to local autoware_utils_geometry. Related
+  [PR #11754](https://github.com/autowarefoundation/autoware_universe/pull/11754)
+  is closed without merge and changes header/Galactic workarounds, not this
+  implementation. It is not a matching fix association.
+- The complete local Universe utility test executable, LLVM/libc++ 21.1.8/C++23,
+  fails to link with duplicate strong symbols from the two geometry objects.
+  Shared-library builds can conceal this source ownership conflict; this is not
+  a claim that all CMake builds currently fail.
+- Remove the duplicate Universe definition and depend explicitly on the identical
+  canonical core geometry provider. Preserve the public declaration and all
+  namespaced APIs. The existing manifest already depends on the compatibility
+  utility package that declares core geometry. The full 118-active-case original
+  suite and an added joint-library conversion/RPY regression pass. Four original
+  disabled geometry cases remain disabled. See the journal for exact commands.
+  CPU/Cyclone DDS and Agnocast off are validated; no new colcon or older-ROS claim
+  is made, and no upstream submission has been made.

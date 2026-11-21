@@ -23,18 +23,6 @@
 
 #include <string>
 
-namespace tf2
-{
-void fromMsg(const geometry_msgs::msg::PoseStamped & msg, tf2::Stamped<tf2::Transform> & out)
-{
-  out.stamp_ = tf2_ros::fromMsg(msg.header.stamp);
-  out.frame_id_ = msg.header.frame_id;
-  tf2::Transform tmp;
-  fromMsg(msg.pose, tmp);
-  out.setData(tmp);
-}
-}  // namespace tf2
-
 namespace autoware::universe_utils
 {
 geometry_msgs::msg::Vector3 getRPY(const geometry_msgs::msg::Quaternion & quat)
