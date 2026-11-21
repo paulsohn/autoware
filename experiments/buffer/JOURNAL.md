@@ -1515,3 +1515,37 @@ startup. The four archived trace runs each matched all 24 writer and reader
 timestamps. Across the final 14 timing graphs, six writer profiles, four
 paired trace graphs and two padded audits, the sink verified 624 clouds and
 their corresponding metadata.
+
+## 2026-11-21 — Native Agnocast on the three-LiDAR synchronizer
+
+Built a native comparator in a separate colcon prefix. Selecting the native
+build applies a fixture-only transport patch and links the installed Lyrical
+Agnocast library and mixed CIE. The native point-cloud topics carry typed
+PointCloud2 loans. The ordinary ROS metadata and TF paths and the 40 ms ROS
+collector timer are present on both sides of the comparison. Timings include
+source publication and sink dispatch. The native sink retains the output
+loan while the ordinary RMW sink receives a CPU message. Keep this distinction
+when interpreting end-to-end results and comparing them with the crop graph.
+
+The copied node header uses relative sibling includes, so the isolated native
+target needs the original concatenate_data header directory as a fallback.
+The first functional native graph verified all 24 outputs, but the last
+collector loans outlived the native input subscriptions. At teardown the
+kernel rejected a subscriber reference release. In the native build copy,
+declare subscriptions before the collector list so the collectors are
+destroyed first. Release sink loans before destroying the output subscription.
+On padded input the thread-local audit ran when the CIE worker stopped and
+saw two inputs still held. A separate process-lifetime weak-owner audit
+observes release after component destruction. The native wire uses CPU
+vectors directly. The local input facade allows the unmodified collector to
+call Lyrical Buffer methods safely.
+[Build, graph design and validation](../rmw-agnocast/README.md#native-agnocast-comparator-for-the-three-lidar-synchronizer).
+
+All 12 final timing graphs exited cleanly and verified 288 output clouds and
+metadata records. The additional padded native audit verified 24 outputs and
+all 60 retained input owners expired after component teardown. Complete-group
+rmw_agnocast/native median and p95 were 0.974× and 1.271×, respectively.
+Partial-group median was 41.625 ms for the RMW and 52.048 ms for the native
+mixed CIE. The comparison supplies a direct native baseline for this graph.
+Keep the retained-input implementation and defer further tuning. All runs
+used one guarded graph at a time, 512 MiB runtime and 1,200 MiB build caps.

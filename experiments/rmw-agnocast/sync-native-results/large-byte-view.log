@@ -1,0 +1,62 @@
+[INFO] [1795233106.388423325] [static_transform_publisher_dp2VM2JwpD5Rissn]: Spinning until stopped - publishing transform
+translation: ('4.000000', '0.000000', '0.000000')
+rotation: ('0.000000', '0.000000', '0.000000', '1.000000')
+from 'base_link' to 'sync_lidar'
+[WARN] [1795233106.570786385] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[WARN] [1795233106.570981439] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+rmw_agnocast host-cloud reader /output
+[WARN] [1795233106.572560698] [Agnocast]: Agnocast publishers do not honor the BestEffort reliability QoS policy. Messages are delivered through shared memory regardless of this setting.
+[WARN] [1795233106.572581878] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+rmw_agnocast host-cloud writer /sync/left
+[WARN] [1795233106.573027159] [Agnocast]: Agnocast publishers do not honor the BestEffort reliability QoS policy. Messages are delivered through shared memory regardless of this setting.
+[WARN] [1795233106.573041917] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+rmw_agnocast host-cloud writer /sync/right
+[WARN] [1795233106.573422518] [Agnocast]: Agnocast publishers do not honor the BestEffort reliability QoS policy. Messages are delivered through shared memory regardless of this setting.
+[WARN] [1795233106.573436304] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+rmw_agnocast host-cloud writer /sync/top
+[INFO] [1795233106.962910382] [point_cloud_concatenator_component]: Utilize naive matching strategy
+[WARN] [1795233106.964573819] [Agnocast]: Agnocast publishers do not honor the BestEffort reliability QoS policy. Messages are delivered through shared memory regardless of this setting.
+[WARN] [1795233106.964595209] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+rmw_agnocast host-cloud writer /output
+[WARN] [1795233106.965947584] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[WARN] [1795233106.966005212] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+rmw_agnocast host-cloud reader /sync/left
+[WARN] [1795233106.966506087] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[WARN] [1795233106.966545291] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+rmw_agnocast host-cloud reader /sync/right
+[WARN] [1795233106.966995181] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[WARN] [1795233106.967028824] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+rmw_agnocast host-cloud reader /sync/top
+fast_source_hz=9.99963
+sample,0,full,20995942
+sample,1,partial,42433017
+sample,2,full,3120518
+sample,3,partial,41971776
+sample,4,full,2853399
+sample,5,partial,42017342
+sample,6,full,3874276
+sample,7,partial,41711179
+sample,8,full,3042351
+sample,9,partial,41416219
+sample,10,full,2010915
+sample,11,partial,41648803
+sample,12,full,2141038
+sample,13,partial,41154951
+sample,14,full,2471957
+sample,15,partial,41657579
+sample,16,full,2477417
+sample,17,partial,41603519
+sample,18,full,2607139
+sample,19,partial,41797470
+sample,20,full,2415411
+sample,21,partial,41404637
+sample,22,full,2445256
+sample,23,partial,41692865
+verified 24 synchronized clouds and metadata, 12 complete and 12 timed out, 1966080 input points
+[INFO] [1795233110.518441832] [rclcpp]: signal_handler(signum=2)
+[INFO] [1795233110.518466969] [rclcpp]: signal_handler(signum=2)
+fixed_wait arms=24 completions=24 native=57 both=0 native_interrupts=0 stop_interrupts=1
+sync_input views=60 copies=0
+graph_user_s=0.869 graph_sys_s=0.450
+Minimum host MemAvailable: 10820 MiB
+exit_status=0

@@ -4,7 +4,7 @@ out=${1:?fresh output directory}
 mkdir "$out"
 export SYNC_LARGE=1 BUFFER_RUNTIME_ONLY=1
 batches=(large repeat)
-case ${2:-} in --loan-input|--loan-output) batches+=(pair3 pair4 ref1 ref2);; esac
+case ${2:-} in --loan-input|--loan-output|--native) batches+=(pair3 pair4 ref1 ref2);; esac
 for batch in "${batches[@]}"; do
   modes=(cyclone cdr host fixed zenoh)
   if [[ $batch == repeat ]]; then modes=(zenoh fixed host cdr cyclone); fi
@@ -24,6 +24,14 @@ for batch in "${batches[@]}"; do
       repeat) modes=(output-shared output-private byte-view);;
       pair3) modes=(output-shared byte-view);;
       pair4) modes=(byte-view output-shared);;
+      ref1) modes=(cyclone zenoh);;
+      ref2) modes=(zenoh cyclone);;
+    esac
+  fi
+  if [[ ${2:-} == --native ]]; then
+    case $batch in
+      large|pair4) modes=(native byte-view);;
+      repeat|pair3) modes=(byte-view native);;
       ref1) modes=(cyclone zenoh);;
       ref2) modes=(zenoh cyclone);;
     esac

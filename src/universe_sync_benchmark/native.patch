@@ -1,0 +1,103 @@
+--- a/concatenate_and_time_sync_node.cpp
++++ b/concatenate_and_time_sync_node.cpp
+@@ -34,7 +34,7 @@
+   PointCloud2Traits>::initialize_pub_sub()
+ {
+   // Publishers
+-  concatenated_cloud_publisher_ = this->create_publisher<sensor_msgs::msg::PointCloud2>(
++  concatenated_cloud_publisher_ = agnocast::create_publisher<sensor_msgs::msg::PointCloud2>(this,
+     "output", rclcpp::SensorDataQoS().keep_last(params_.maximum_queue_size));
+   concatenation_info_publisher_ =
+     this->create_publisher<autoware_sensing_msgs::msg::ConcatenatedPointCloudInfo>(
+@@ -45,7 +45,7 @@
+     for (auto & topic : params_.input_topics) {
+       std::string new_topic =
+         replace_sync_topic_name_postfix(topic, params_.synchronized_pointcloud_postfix);
+-      auto publisher = this->create_publisher<sensor_msgs::msg::PointCloud2>(
++      auto publisher = agnocast::create_publisher<sensor_msgs::msg::PointCloud2>(this,
+         new_topic, rclcpp::SensorDataQoS().keep_last(params_.maximum_queue_size));
+       topic_to_transformed_cloud_publisher_map_.emplace(topic, publisher);
+     }
+@@ -53,14 +53,11 @@
+
+   // Subscribers
+   for (const std::string & topic : params_.input_topics) {
+-    auto callback = [&](const sensor_msgs::msg::PointCloud2::ConstSharedPtr msg) {
+-      this->cloud_callback(msg, topic);
+-    };
+-
+-    rclcpp::SubscriptionOptions options;
+-    if (std::getenv("SYNC_VIEW_INPUT")) options.acceptable_buffer_backends = "agnocast_host_view";
+-    auto pointcloud_sub = this->create_subscription<sensor_msgs::msg::PointCloud2>(
+-      topic, rclcpp::SensorDataQoS().keep_last(params_.maximum_queue_size), callback, options);
++    auto pointcloud_sub = agnocast::create_subscription<sensor_msgs::msg::PointCloud2>(
++      this, topic, rclcpp::SensorDataQoS().keep_last(params_.maximum_queue_size),
++      [this, topic](native_sync::Loan loan) {
++        this->cloud_callback(native_sync::collector_view(std::move(loan)), topic);
++      });
+     pointcloud_subs_.push_back(pointcloud_sub);
+   }
+
+--- a/autoware/pointcloud_preprocessor/concatenate_data/traits.hpp
++++ b/autoware/pointcloud_preprocessor/concatenate_data/traits.hpp
+@@ -14,6 +14,7 @@
+
+ #pragma once
+
++#include "native_cloud.hpp"
+ #include <rclcpp/rclcpp.hpp>
+
+ #include <sensor_msgs/msg/point_cloud2.hpp>
+@@ -24,8 +25,8 @@
+ struct PointCloud2Traits
+ {
+   using PointCloudMessage = sensor_msgs::msg::PointCloud2;
+-  using PublisherType = rclcpp::Publisher<PointCloudMessage>;
+-  using SubscriberType = rclcpp::Subscription<PointCloudMessage>;
++  using PublisherType = agnocast::Publisher<PointCloudMessage>;
++  using SubscriberType = agnocast::Subscription<PointCloudMessage>;
+ };
+
+ }  // namespace autoware::pointcloud_preprocessor
+--- a/autoware/pointcloud_preprocessor/concatenate_data/concatenate_and_time_sync_node.ipp
++++ b/autoware/pointcloud_preprocessor/concatenate_data/concatenate_and_time_sync_node.ipp
+@@ -353,8 +353,7 @@
+
+   if (publish_pointcloud) {
+     latest_concatenate_cloud_timestamp_ = current_concatenate_cloud_timestamp_;
+-    concatenated_cloud_publisher_->publish(
+-      std::move(concatenated_cloud_result.concatenate_cloud_ptr));
++    native_sync::publish(*concatenated_cloud_publisher_, *concatenated_cloud_result.concatenate_cloud_ptr);
+     // publish transformed raw pointclouds
+     if (
+       params_.publish_synchronized_pointcloud &&
+@@ -364,9 +363,8 @@
+         if (
+           (*concatenated_cloud_result.topic_to_transformed_cloud_map).find(topic) !=
+           (*concatenated_cloud_result.topic_to_transformed_cloud_map).end()) {
+-          topic_to_transformed_cloud_publisher_map_[topic]->publish(
+-            std::move(
+-              (*concatenated_cloud_result.topic_to_transformed_cloud_map).extract(topic).mapped()));
++          native_sync::publish(*topic_to_transformed_cloud_publisher_map_[topic],
++            *concatenated_cloud_result.topic_to_transformed_cloud_map->at(topic));
+         } else {
+           RCLCPP_WARN(
+             this->get_logger(),
+--- a/autoware/pointcloud_preprocessor/concatenate_data/concatenate_and_time_sync_node.hpp
++++ b/autoware/pointcloud_preprocessor/concatenate_data/concatenate_and_time_sync_node.hpp
+@@ -108,6 +108,8 @@
+
+   std::shared_ptr<CombineCloudHandler<typename MsgTraits::PointCloudMessage>>
+     combine_cloud_handler_;
++  // Retained native input loans must be released before deregistering the subscriptions.
++  std::vector<std::shared_ptr<SubscriberType>> pointcloud_subs_;
+   std::list<std::shared_ptr<CloudCollector<MsgTraits>>> cloud_collectors_;
+   std::unique_ptr<CollectorMatcher<MsgTraits>> collector_matcher_;
+   std::unique_ptr<managed_transform_buffer::ManagedTransformBuffer> managed_tf_buffer_;
+@@ -119,6 +121,5 @@
+   static constexpr const char * default_sync_topic_postfix = "_synchronized";
+
+   // subscribers
+-  std::vector<std::shared_ptr<SubscriberType>> pointcloud_subs_;
+   rclcpp::Subscription<geometry_msgs::msg::TwistWithCovarianceStamped>::SharedPtr twist_sub_;
+   rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_sub_;

@@ -1,0 +1,37 @@
+[INFO] [1795233143.344885087] [static_transform_publisher_CIxfoWDVz7uArVmc]: Spinning until stopped - publishing transform
+translation: ('4.000000', '0.000000', '0.000000')
+rotation: ('0.000000', '0.000000', '0.000000', '1.000000')
+from 'base_link' to 'sync_lidar'
+[INFO] [1795233143.723636800] [point_cloud_concatenator_component]: Utilize naive matching strategy
+fast_source_hz=9.99962
+sample,0,full,23384192
+sample,1,partial,43825969
+sample,2,full,5382903
+sample,3,partial,42994085
+sample,4,full,3625391
+sample,5,partial,42391340
+sample,6,full,3412082
+sample,7,partial,43041174
+sample,8,full,4020258
+sample,9,partial,43137533
+sample,10,full,3646079
+sample,11,partial,42729451
+sample,12,full,3926463
+sample,13,partial,43027668
+sample,14,full,3507240
+sample,15,partial,42777290
+sample,16,full,3569126
+sample,17,partial,43008372
+sample,18,full,3898280
+sample,19,partial,42664429
+sample,20,full,3287921
+sample,21,partial,42805924
+sample,22,full,3866762
+sample,23,partial,42895972
+verified 24 synchronized clouds and metadata, 12 complete and 12 timed out, 1966080 input points
+[INFO] [1795233147.279624322] [rclcpp]: signal_handler(signum=2)
+[INFO] [1795233147.279643087] [rclcpp]: signal_handler(signum=2)
+sync_input views=0 copies=60
+graph_user_s=0.612 graph_sys_s=0.394
+Minimum host MemAvailable: 10691 MiB
+exit_status=0

@@ -25,6 +25,10 @@ cleanup() {
 trap cleanup EXIT
 child=()
 case ${1:?cyclone, cdr, host, fixed, byte-copy, byte-view, output-private, output-shared or zenoh} in
+  native)
+    source build/universe-sync-native/install/local_setup.bash
+    export ENABLE_AGNOCAST=1 RMW_IMPLEMENTATION=rmw_cyclonedds_cpp SYNC_BYTE_INPUT=1
+    child=(env LD_PRELOAD="$(ros2 pkg prefix agnocastlib)/lib/libagnocast_heaphook.so");;
   cyclone) export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp;;
   zenoh)
     export RMW_IMPLEMENTATION=rmw_zenoh_cpp
@@ -37,7 +41,7 @@ case ${1:?cyclone, cdr, host, fixed, byte-copy, byte-view, output-private, outpu
     child=(env LD_PRELOAD="$(ros2 pkg prefix agnocastlib)/lib/libagnocast_heaphook.so");;
   *) exit 2;;
 esac
-bin=build/universe-sync/install/universe_sync_benchmark/lib/universe_sync_benchmark
+bin="$(ros2 pkg prefix universe_sync_benchmark)/lib/universe_sync_benchmark"
 config=src/universe/autoware_universe/sensing/autoware_pointcloud_preprocessor/config/concatenate_and_time_sync_node.param.yaml
 "${child[@]}" /opt/ros/lyrical/lib/tf2_ros/static_transform_publisher --x 4 --frame-id base_link --child-frame-id sync_lidar &
 nodes+=("$!")

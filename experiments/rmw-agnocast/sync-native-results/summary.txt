@@ -1,0 +1,18 @@
+Batch | Transport | Complete median/p95 ms | Partial median/p95 ms | Child CPU s
+large | native | 2.54/2.98 | 51.99/52.25 | 1.179
+large | byte-view | 2.47/3.87 | 41.65/42.02 | 1.319
+repeat | native | 2.46/2.83 | 52.06/52.51 | 1.195
+repeat | byte-view | 2.70/3.75 | 41.61/42.49 | 1.315
+pair3 | native | 2.70/3.19 | 52.16/52.64 | 1.185
+pair3 | byte-view | 2.30/3.01 | 41.54/42.12 | 1.285
+pair4 | native | 2.38/2.88 | 51.99/52.53 | 1.183
+pair4 | byte-view | 2.29/4.00 | 41.64/42.47 | 1.354
+ref1 | cyclone | 3.64/4.02 | 42.85/43.14 | 1.006
+ref1 | zenoh | 2.73/3.55 | 42.04/42.42 | 1.545
+ref2 | cyclone | 4.94/5.74 | 43.38/43.74 | 0.992
+ref2 | zenoh | 2.78/3.59 | 42.11/42.92 | 1.447
+Transport | Pooled complete median/p95 ms | Partial median/p95 ms | Complete / native
+native | 2.525/2.980 | 52.048/52.513 | 1.000/1.000
+byte-view | 2.459/3.788 | 41.625/42.121 | 0.974/1.271
+cyclone | 3.973/5.402 | 43.034/43.730 | 1.574/1.813
+zenoh | 2.743/3.550 | 42.091/42.803 | 1.086/1.191

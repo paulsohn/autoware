@@ -1,0 +1,51 @@
+[INFO] [1795233117.079702446] [static_transform_publisher_0rCITFC1uoZtFs25]: Spinning until stopped - publishing transform
+translation: ('4.000000', '0.000000', '0.000000')
+rotation: ('0.000000', '0.000000', '0.000000', '1.000000')
+from 'base_link' to 'sync_lidar'
+[WARN] [1795233117.099656512] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[WARN] [1795233117.100558657] [Agnocast]: Agnocast publishers do not honor the BestEffort reliability QoS policy. Messages are delivered through shared memory regardless of this setting.
+[WARN] [1795233117.100575649] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[WARN] [1795233117.100597890] [Agnocast]: Agnocast publishers do not honor the BestEffort reliability QoS policy. Messages are delivered through shared memory regardless of this setting.
+[WARN] [1795233117.100605966] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[WARN] [1795233117.100620362] [Agnocast]: Agnocast publishers do not honor the BestEffort reliability QoS policy. Messages are delivered through shared memory regardless of this setting.
+[WARN] [1795233117.100628558] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[WARN] [1795233117.102547642] [Agnocast]: Callback group 0x56c694127a20 contains both ROS 2 callbacks and Agnocast callbacks (topics: [/output]). In SingleThreadedAgnocastExecutor, the Agnocast timed wait may block ROS 2 callbacks in the same callback group every spin iteration. Consider separating them into different callback groups.
+[INFO] [1795233117.481768812] [point_cloud_concatenator_component]: Utilize naive matching strategy
+[WARN] [1795233117.482696264] [Agnocast]: Agnocast publishers do not honor the BestEffort reliability QoS policy. Messages are delivered through shared memory regardless of this setting.
+[WARN] [1795233117.482721702] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[WARN] [1795233117.483578101] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[WARN] [1795233117.483638324] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[WARN] [1795233117.483662629] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[WARN] [1795233117.485222743] [Agnocast]: Callback group 0x57ef3901b340 contains both ROS 2 callbacks and Agnocast callbacks (topics: [/sync/top, /sync/right, /sync/left]). In SingleThreadedAgnocastExecutor, the Agnocast timed wait may block ROS 2 callbacks in the same callback group every spin iteration. Consider separating them into different callback groups.
+fast_source_hz=9.99974
+sample,0,full,19247516
+sample,1,partial,52083671
+sample,2,full,2402466
+sample,3,partial,51938900
+sample,4,full,2403569
+sample,5,partial,52395393
+sample,6,full,2825598
+sample,7,partial,52512752
+sample,8,full,2809226
+sample,9,partial,52259970
+sample,10,full,2676118
+sample,11,partial,52436280
+sample,12,full,2517302
+sample,13,partial,51891993
+sample,14,full,2528893
+sample,15,partial,51772530
+sample,16,full,2175173
+sample,17,partial,51973074
+sample,18,full,2269548
+sample,19,partial,52094511
+sample,20,full,2368263
+sample,21,partial,51755999
+sample,22,full,2120982
+sample,23,partial,52034208
+verified 24 synchronized clouds and metadata, 12 complete and 12 timed out, 1966080 input points
+[INFO] [1795233121.114967733] [rclcpp]: signal_handler(signum=2)
+[INFO] [1795233121.115016965] [rclcpp]: signal_handler(signum=2)
+sync_input views=60 copies=0
+graph_user_s=0.784 graph_sys_s=0.411
+Minimum host MemAvailable: 10902 MiB
+exit_status=0

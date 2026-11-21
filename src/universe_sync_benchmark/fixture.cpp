@@ -1,4 +1,11 @@
 #include <rclcpp/rclcpp.hpp>
+#ifdef SYNC_NATIVE
+#include "native_cloud.hpp"
+
+#include <agnocast/agnocast_callback_isolated_executor.hpp>
+
+#include <thread>
+#endif
 
 #include <autoware_sensing_msgs/msg/concatenated_point_cloud_info.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
@@ -83,17 +90,33 @@ int main(int argc, char ** argv)
   std::map<int64_t, Cloud::ConstSharedPtr> clouds;
   std::map<int64_t, int64_t> arrival;
   std::map<int64_t, Info::ConstSharedPtr> infos;
-  auto sub = node->create_subscription<Cloud>("/output", qos, [&](Cloud::ConstSharedPtr c) {
+  auto receive = [&](Cloud::ConstSharedPtr c) {
     const auto stamp = rclcpp::Time(c->header.stamp).nanoseconds();
     arrival[stamp] = node->now().nanoseconds() - stamp;
     if (clouds.empty()) {
       if (const char * path = std::getenv("SYNC_READY_FILE")) std::ofstream(path) << "ready";
     }
     check(clouds.emplace(rclcpp::Time(c->header.stamp).nanoseconds(), c).second, "duplicate cloud");
-  });
+  };
+#ifdef SYNC_NATIVE
+  auto sub = agnocast::create_subscription<Cloud>(
+    node.get(), "/output", qos,
+    [&](native_sync::Loan loan) { receive(native_sync::retain(std::move(loan))); });
+#else
+  auto sub = node->create_subscription<Cloud>("/output", qos, receive);
+#endif
   auto status = node->create_subscription<Info>("/output_info", qos, [&](Info::ConstSharedPtr m) {
     check(infos.emplace(rclcpp::Time(m->header.stamp).nanoseconds(), m).second, "duplicate info");
   });
+#ifdef SYNC_NATIVE
+  std::vector<agnocast::Publisher<Cloud>::SharedPtr> pubs;
+  for (const auto & topic : topics)
+    pubs.push_back(agnocast::create_publisher<Cloud>(node.get(), topic, qos));
+  agnocast::CallbackIsolatedAgnocastExecutor executor;
+  executor.add_node(node);
+  std::thread worker([&] { executor.spin(); });
+  auto spin_until = [](Clock::time_point end) { std::this_thread::sleep_until(end); };
+#else
   std::vector<rclcpp::Publisher<Cloud>::SharedPtr> pubs;
   for (const auto & topic : topics) pubs.push_back(node->create_publisher<Cloud>(topic, qos));
   rclcpp::executors::SingleThreadedExecutor executor;
@@ -105,6 +128,7 @@ int main(int argc, char ** argv)
       executor.spin_once(std::chrono::duration_cast<std::chrono::nanoseconds>(remaining));
     }
   };
+#endif
   auto ready = [&] {
     return sub->get_publisher_count() && status->get_publisher_count() &&
            std::all_of(
@@ -128,19 +152,28 @@ int main(int argc, char ** argv)
     // Two 10 Hz streams and one 5 Hz stream, with a 40 ms collector timeout.
     for (size_t sensor = 0; sensor < inputs.size(); ++sensor) {
       inputs[sensor].header.stamp = rclcpp::Time(stamps.back() + int64_t(sensor) * 1000000);
+#ifdef SYNC_NATIVE
+      native_sync::publish(*pubs[sensor], inputs[sensor]);
+#else
       pubs[sensor]->publish(inputs[sensor]);
+#endif
     }
   }
   spin_until(Clock::now() + 500ms);
+#ifdef SYNC_NATIVE
+  executor.cancel();
+  worker.join();
+#endif
   check(clouds.size() == sets && infos.size() == sets, "missing synchronized output or metadata");
   for (int seq = 0; seq < sets; ++seq) {
     const auto & c = *clouds.at(stamps[seq]);
+    const auto & bytes = static_cast<const std::vector<uint8_t> &>(c.data);
     const auto & m = *infos.at(stamps[seq]);
     const int count = seq % 2 ? 2 : 3;
     check(
       c.header.frame_id == "base_link" && c.width == count * points && c.height == 1 &&
-        c.point_step == sizeof(Point) && c.row_step == c.data.size() &&
-        c.data.size() == c.width * sizeof(Point),
+        c.point_step == sizeof(Point) && c.row_step == bytes.size() &&
+        bytes.size() == c.width * sizeof(Point),
       "invalid cloud frame or shape");
     check(
       m.concatenation_success == (count == 3) && m.source_info.size() == 3,
@@ -169,7 +202,7 @@ int main(int argc, char ** argv)
         if (sensor) expected.x += 4;
         check(
           !std::memcmp(
-            c.data.data() + (source.idx_begin + i) * sizeof(Point), &expected, sizeof(Point)),
+            bytes.data() + (source.idx_begin + i) * sizeof(Point), &expected, sizeof(Point)),
           "source payload or TF mismatch");
       }
     }
@@ -180,5 +213,6 @@ int main(int argc, char ** argv)
               << arrival.at(stamps[i]) << "\n";
   std::cout << "verified 24 synchronized clouds and metadata, 12 complete and 12 timed out, "
             << 60 * points << " input points\n";
+  clouds.clear();
   rclcpp::shutdown();
 }

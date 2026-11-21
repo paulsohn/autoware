@@ -9,10 +9,13 @@ root = Path(sys.argv[1])
 print("Batch | Transport | Complete median/p95 ms | Partial median/p95 ms | Child CPU s")
 loan_input = "--loan-input" in sys.argv[2:]
 loan_output = "--loan-output" in sys.argv[2:]
-for batch in (("large", "repeat", "pair3", "pair4", "ref1", "ref2") if loan_input or loan_output else ("large", "repeat")):
+native = "--native" in sys.argv[2:]
+for batch in (("large", "repeat", "pair3", "pair4", "ref1", "ref2") if loan_input or loan_output or native else ("large", "repeat")):
     modes = ["cyclone", "cdr", "host", "fixed", "zenoh"] if batch in ("large", "repeat") else []
     if batch.startswith("ref"):
         modes = ["cyclone", "zenoh"]
+    elif native:
+        modes = ["native", "byte-view"]
     elif loan_output:
         modes = ["byte-view", "output-shared"]
         if batch in ("large", "repeat"):
@@ -26,6 +29,11 @@ for batch in (("large", "repeat", "pair3", "pair4", "ref1", "ref2") if loan_inpu
         if mode in ("fixed", "byte-copy", "byte-view", "output-private", "output-shared"):
             wakes, = re.findall(r"fixed_wait .*?native=(\d+)", log)
             assert int(wakes) > 0
+        if mode == "native":
+            assert sum(map(int, re.findall(r"sync_input views=(\d+) copies=0", log))) == 60
+            assert "rmw_agnocast host-cloud" not in log
+            assert "[ERROR]" not in log and "[FATAL]" not in log
+            assert "Agnocast callbacks" in log
         if mode.startswith(("byte-", "output-")) or batch.startswith("ref"):
             counts = "views=60 copies=0" if mode in ("byte-view", "output-private", "output-shared") else "views=0 copies=60"
             assert f"sync_input {counts}" in log
@@ -47,6 +55,23 @@ for batch in (("large", "repeat", "pair3", "pair4", "ref1", "ref2") if loan_inpu
             stats.append(f"{statistics.median(values):.2f}/{values[math.ceil(.95*len(values))-1]:.2f}")
         user, system = re.search(r"graph_user_s=([.\d]+) graph_sys_s=([.\d]+)", log).groups()
         print(batch, mode, *stats, f"{float(user) + float(system):.3f}", sep=" | ")
+
+if native:
+    print("Transport | Pooled complete median/p95 ms | Partial median/p95 ms | Complete / native")
+    for mode in ("native", "byte-view", "cyclone", "zenoh"):
+        groups = {"full": [], "partial": []}
+        for path in sorted(root.glob(f"*-{mode}.log")):
+            for i, kind, ns in re.findall(r"^sample,(\d+),(full|partial),(\d+)$", path.read_text(), re.M):
+                if int(i) >= 4:
+                    groups[kind].append(int(ns) / 1e6)
+        stats = []
+        for values in groups.values():
+            assert len(values) == (40 if mode in ("native", "byte-view") else 20)
+            stats.append((statistics.median(values), sorted(values)[math.ceil(.95 * len(values)) - 1]))
+        if mode == "native":
+            reference = stats[0]
+        relative = tuple(value / ref for value, ref in zip(stats[0], reference))
+        print(mode, *("/".join(f"{v:.3f}" for v in pair) for pair in [*stats, relative]), sep=" | ")
 
 if "--profile-output" in sys.argv[2:]:
     print("Pass | Mode | Group | Median reserve/append/publish (us)")

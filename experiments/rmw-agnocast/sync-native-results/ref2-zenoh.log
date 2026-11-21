@@ -1,0 +1,40 @@
+Started Zenoh router with id cb9785403bac9176b3428dd7437ac754
+[INFO] [1795233155.433587715] [static_transform_publisher_iZOYqjz47O8W4Quz]: Spinning until stopped - publishing transform
+translation: ('4.000000', '0.000000', '0.000000')
+rotation: ('0.000000', '0.000000', '0.000000', '1.000000')
+from 'base_link' to 'sync_lidar'
+[INFO] [1795233155.811876744] [point_cloud_concatenator_component]: Utilize naive matching strategy
+[INFO] [1795233155.907705032] [host_endpoint_manager]: Initialized shared memory registry for domain 0 on host paulsohn-tuf
+[INFO] [1795233155.914192718] [host_endpoint_manager]: Attached to existing shared memory registry for domain 0
+fast_source_hz=9.99969
+sample,0,full,18305979
+sample,1,partial,43005526
+sample,2,full,3023176
+sample,3,partial,42209810
+sample,4,full,2737863
+sample,5,partial,42093514
+sample,6,full,2251475
+sample,7,partial,42298757
+sample,8,full,2181624
+sample,9,partial,41929287
+sample,10,full,3239309
+sample,11,partial,42061273
+sample,12,full,2779341
+sample,13,partial,42922331
+sample,14,full,2734777
+sample,15,partial,42803029
+sample,16,full,3586849
+sample,17,partial,42012472
+sample,18,full,2789570
+sample,19,partial,42119091
+sample,20,full,2970778
+sample,21,partial,42087883
+sample,22,full,3314279
+sample,23,partial,42397261
+verified 24 synchronized clouds and metadata, 12 complete and 12 timed out, 1966080 input points
+[INFO] [1795233159.478645811] [rclcpp]: signal_handler(signum=2)
+[INFO] [1795233159.478663724] [rclcpp]: signal_handler(signum=2)
+sync_input views=0 copies=60
+graph_user_s=0.626 graph_sys_s=0.821
+Minimum host MemAvailable: 10644 MiB
+exit_status=0

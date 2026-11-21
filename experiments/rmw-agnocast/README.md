@@ -2298,3 +2298,69 @@ match, per-sensor conversion and transform, and completion of concatenation
 on the same groups. The current evidence cannot distinguish scheduling and
 input-arrival effects from the rest of the construction cost.
 [Per-group timings, CPU, memory, traces and checks](sync-output-results/).
+
+### Native Agnocast comparator for the three-LiDAR synchronizer
+
+Build the native variant into build/universe-sync-native. The existing Agnocast
+kernel, heap hook, Lyrical library and CIE are reused. The isolated target builds
+the sensing message package and the synchronizer fixture. It applies native.patch
+to private build copies. All four PointCloud2 topics use typed native Agnocast
+publishers and subscriptions. Metadata, TF and the collector's original ROS timer
+continue through rclcpp. The native run selects Cyclone for the ROS entities and
+disables the Agnocast bridge. ENABLE_AGNOCAST alone does not implement these
+endpoints.
+
+Both variants generate the same source clouds ahead of the clock, start timing
+at the oldest input stamp and publish the already constructed inputs. Native
+performs one copy from each finished private message into a publisher loan,
+including the finished concatenated output. The native input callback retains
+the native loan behind a local Buffer view so the converter can read the foreign
+CPU vector while running virtual Buffer operations in its own process. The
+RMW path uses its existing retained-input view and ordinary output publication.
+The native sink retains output loans and verifies the native CPU vectors. The
+RMW baseline uses its regular CPU subscriber. Both run the same TF, XYZIRC
+conversion, matching algorithm, source segment checks and timeout assertions.
+
+The native component and sink use the Agnocast mixed callback-isolated executor.
+The fixture drives the native source on its main thread, then joins the executor
+before inspecting results. Blocking A drives the RMW component, and its fixture
+uses single-threaded rclcpp dispatch. This measures deployed graph behavior,
+including executor differences. The 60 inputs per graph are two 10 Hz streams
+and one 5 Hz stream. The alternating 1.5 MiB and 1 MiB outputs represent three
+and two sensors respectively.
+
+```bash
+set -e
+export LYRICAL_ROOT=$(cat build/agnocast-lyrical/universe-root)
+run=experiments/buffer/run-lyrical.sh
+SYNC_NATIVE=ON "$run" bash experiments/rmw-agnocast/build-sync.sh
+"$run" bash experiments/rmw-agnocast/build-sync.sh
+export BUFFER_RUNTIME_ONLY=1
+SYNC_LARGE=1 SYNC_AUDIT=1 SYNC_STRIDED_INPUT=1 "$run" timeout -k 4 45 \
+  bash experiments/rmw-agnocast/run-sync.sh native
+bash experiments/rmw-agnocast/bench-sync.sh build/universe-sync-native/new-matrix --native
+```
+
+Four native/RMW pairs reverse order twice. Two additional pairs reverse the
+ordinary Cyclone DDS and Zenoh references with the same byte converter.
+Discard four groups per graph, then calculate pooled median and nearest-rank
+p95 separately for complete and partial groups. Per-run statistics and whole
+graph user+system CPU time are retained alongside each group's latency.
+
+| Transport | Complete median / p95 ms | Partial median / p95 ms | Complete median / p95 relative to native | Median graph CPU s |
+|---|---:|---:|---:|---:|
+| Native Agnocast with mixed CIE | 2.525 / 2.980 | 52.048 / 52.513 | 1.000 / 1.000 | 1.184 |
+| rmw_agnocast with retained input, blocking A | 2.459 / 3.788 | 41.625 / 42.121 | 0.974 / 1.271 | 1.317 |
+| Cyclone DDS | 3.973 / 5.402 | 43.034 / 43.730 | 1.574 / 1.813 | 0.999 |
+| Zenoh | 2.743 / 3.550 | 42.091 / 42.803 | 1.086 / 1.191 | 1.496 |
+
+All 12 timing graphs verified all points and source metadata in 288 outputs.
+Each native and RMW statistic pools 40 post-warmup groups of the stated kind.
+The RMW complete-group p95 was higher in all four paired runs. Keep this as
+a workload-specific tail finding while tuning is deferred. Timeout groups
+have different executor behavior. The native CIE reported mixed ROS and
+Agnocast callbacks on the cloud group; its default native timed wait is
+50 ms. This is consistent with the 52 ms partial-group latency, although the
+run did not vary that wait to establish causality. The RMW partial median was
+41.625 ms with the same configured 40 ms collector timeout.
+[Verified runs, lifetime audit, CPU and memory readings](sync-native-results/summary.txt).
