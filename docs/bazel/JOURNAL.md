@@ -10428,3 +10428,31 @@ one RTC case. Targeted clang-format/whitespace checks pass. This is Lyrical/
 dependency-header compatibility, not an algorithm change; no colcon, Humble,
 Jazzy or enabled-Agnocast runtime validation is claimed. The matching upstream
 association and scope are recorded in UPSTREAM_AWF.md.
+
+## 2026-11-21: Phase 7.3.2 — Traffic-light utility library
+
+Purpose: provide the shared signal/geometry helpers used by default path and
+velocity-planning modules. Inspect the local package manifest, public header,
+implementation, CMake and its one existing test source. Preserve both original
+cases rather than replacing the library with another message/API generation.
+
+Integration: add a package-local module and header-owning native cc_library,
+using the existing local Autoware/Tier IV perception interface providers and
+RCR lanelet2/tf2. Expose the flattened message/tf2 runtime dependencies for native
+consumers. Add the local root override and an ament index for package identity;
+there are no original runtime resource directories or standalone nodes to add.
+Expose the unchanged existing test source with gtest_main.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --nocache_test_results --test_output=errors @autoware_traffic_light_utils//...
+```
+
+Both original cases pass in 0.1 seconds: unknown-signal conversion retains its
+expected confidence and signal-center geometry yields the mean coordinates.
+The actual grouped invocation also includes RTC and boundary checking. No
+source or original test is changed. Buildifier and whitespace checks pass.
+The module is complete for the selected CPU/Cyclone DDS profile; this library
+check does not establish traffic-light detection or a complete driving stack.
+No Fast DDS run is needed or performed.

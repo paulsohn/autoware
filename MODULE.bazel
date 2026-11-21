@@ -968,3 +968,9 @@ local_path_override(
     module_name = "sample_sensor_kit_description",
     path = "src/launcher/autoware_launch/sensor_kit/sample_sensor_kit_launch/sample_sensor_kit_description",
 )
+
+bazel_dep(name = "autoware_traffic_light_utils", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_traffic_light_utils",
+    path = "src/universe/autoware_universe/common/autoware_traffic_light_utils",
+)
