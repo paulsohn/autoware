@@ -1622,3 +1622,79 @@ and RMW take. CPU frequency, cache state and idle exit remain hypotheses.
 Scheduler tracepoints would be needed to locate the precise wakeup. All
 1,440 source frames across the three batches passed both readers. The
 original cold diagnostic also passed. [Raw frames, profiles and per-round summaries](gap-results/).
+
+### Locate the first-hop cost after a longer gap
+
+Use the same branched graph, scoped loans, fixed blocking wait, real source
+stamps and first crop profile as the preceding experiment. Opt in to
+`BENCH_HOP_TRACE=1` when running the gap-profile cases. Only the RMW source
+and first crop record additional events. Each executor thread buffers
+timestamps in memory, writing them at teardown. The native Agnocast runs
+remain endpoint and callback profile controls. Publisher and reader use the
+same host realtime clock as the ROS fixture. Exclude the first ten frames.
+
+The publish-entry marker follows RMW endpoint and loan lookup. Handoff is
+immediately before Agnocast publish. Writer return can overlap subscriber
+execution and is reported separately. Poll is the first fixed-wait native
+readiness marker after ppoll. Take is the point where the host-cloud sample
+is identified in RMW take. Restored is after setting the local message's
+metadata and Buffer view. Callback entry comes from the existing crop probe.
+Publish, take and callback events are joined by exact source stamp. Require
+exactly one poll between handoff and take for every analyzed frame.
+
+A second steady-rate run subdivides poll-to-take. Admission means the native
+subscription callback has received the loan. Ready means that the mixed RMW
+wait is exposing the subscription to ROS. The last interval includes the
+remaining wait return, ROS executor dispatch and the beginning of RMW take.
+No scheduler or transport setting was changed between the original and
+subdivided profiles.
+
+```bash
+export LYRICAL_ROOT=$(cat build/agnocast-lyrical/universe-root)
+experiments/buffer/run-lyrical.sh bash experiments/rmw-agnocast/build-loadable.sh
+export BUFFER_RUNTIME_ONLY=1 BENCH_HOP_TRACE=1
+bench=experiments/rmw-agnocast/bench-host-cloud.sh
+out=build/rmw-agnocast/first-hop-repeat
+mkdir "$out"
+experiments/buffer/run-lyrical.sh timeout 160 bash "$bench" "$out/alternating" --gaps --profile
+experiments/buffer/run-lyrical.sh timeout 160 bash "$bench" "$out/steady" --steady-gaps
+for test in alternating steady; do
+  python3 experiments/rmw-agnocast/summarize-hop.py "$out/$test"
+  python3 experiments/rmw-agnocast/summarize-gaps.py "$out/$test"
+done
+```
+
+| First-graph-hop median increase at 100 ms, µs | Alternating | Steady | Steady repeat |
+|---|---:|---:|---:|
+| Stamp to publish-entry marker | 5.4 | 5.4 | 7.0 |
+| Publish-entry marker to native handoff | 0.5 | 0.5 | 0.6 |
+| Handoff to poll readiness marker | 5.7 | 10.7 | −3.0 |
+| Poll readiness to take marker | 18.3 | 19.5 | 18.3 |
+| Take marker to restored host-cloud view | 1.0 | 1.0 | 1.0 |
+| Restored view to crop callback entry | 2.1 | 1.7 | 2.3 |
+| Source stamp to crop callback entry | 32.6 | 29.3 | 27.3 |
+
+The most reproducible interval begins after the thread returns from ppoll.
+In the repeat it split into +8.2 µs before the Agnocast subscription callback
+received the loan, +0.8 µs to expose readiness and +10.1 µs from readiness
+to the RMW take marker. These are differences of segment medians. Their sum
+need not equal the difference of end-to-end medians. The native handoff to
+poll interval varied even in sign. Restoring the Buffer was a small part of
+the measured difference. Trace markers locate costs but cannot show whether
+frequency, cache state, executor bookkeeping or another mechanism caused them.
+
+The two profiled 10 Hz batches gave final RMW/native medians of 697/653 µs
+and 713/602 µs (1.07× and 1.18×). The repeat would need about 50 µs to
+reach 1.10× and 110 µs for parity. Even eliminating its entire measured
+first-hop 27 µs idle penalty would leave about 1.14× under an otherwise
+identical latency distribution. This arithmetic illustrates scale only.
+The native comparator itself is sensitive to idle gaps. Measure a real
+intervention at all hops and both endpoints before claiming a ratio.
+
+Next A/B one blocking-path change: use the native descriptor already reported
+ready by the outer wait to avoid rediscovering it in the inner Agnocast
+executor. Retain the existing path as control and preserve coalesced
+notifications, reliability admission, loan ownership and delegated wakeups.
+Compare uninstrumented paired 10 Hz runs, then check 50 Hz, CPU and p95.
+Inspect ROS ready-to-take separately if it remains dominant.
+[Raw observations and per-stage summaries](first-hop-results/).

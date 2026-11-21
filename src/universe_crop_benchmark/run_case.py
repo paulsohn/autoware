@@ -100,6 +100,11 @@ with tempfile.TemporaryDirectory() as tmp:
                 child_env["BENCH_STEADY_GAPS"] = "1"
             if args.gaps == "long-first":
                 child_env["BENCH_LONG_FIRST"] = "1"
+        if args.gap_profile and args.transport == "fixed" and os.getenv("BENCH_HOP_TRACE") == "1":
+            if role == "pub":
+                child_env["BENCH_HOP_WRITER"] = str(out.with_suffix(".writer"))
+            if label == "filter":
+                child_env["BENCH_HOP_READER"] = str(out.with_suffix(".reader"))
         if args.gap_profile and label == "filter":
             child_env["BENCH_CROP_PROFILE"] = str(out.with_suffix(".profile"))
         if label == "tap":

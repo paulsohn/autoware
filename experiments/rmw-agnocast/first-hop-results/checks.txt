@@ -1,0 +1,97 @@
+build/rmw-agnocast/hop2-default.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/hop2-default.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/hop2-default.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/hop2-default.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/hop2-default.log:Received 60 distinct stamped diagnostics from /output/debug/published_time
+build/rmw-agnocast/hop2-default.log:Minimum host MemAvailable: 12077 MiB
+build/rmw-agnocast/hop2-steady.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/hop2-steady.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/hop2-steady.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/hop2-steady.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/hop2-steady.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/hop2-steady.log:verified fixed wait tap: 59 native wakes
+build/rmw-agnocast/hop2-steady.log:verified fixed wait filter2: 59 native wakes
+build/rmw-agnocast/hop2-steady.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/hop2-steady.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/hop2-steady.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/hop2-steady.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/hop2-steady.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/hop2-steady.log:verified fixed wait tap: 59 native wakes
+build/rmw-agnocast/hop2-steady.log:verified fixed wait filter2: 59 native wakes
+build/rmw-agnocast/hop2-steady.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/hop2-steady.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/hop2-steady.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/hop2-steady.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/hop2-steady.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/hop2-steady.log:verified fixed wait tap: 59 native wakes
+build/rmw-agnocast/hop2-steady.log:verified fixed wait filter2: 59 native wakes
+build/rmw-agnocast/hop2-steady.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/hop2-steady.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/hop2-steady.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/hop2-steady.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/hop2-steady.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/hop2-steady.log:verified fixed wait tap: 59 native wakes
+build/rmw-agnocast/hop2-steady.log:verified fixed wait filter2: 59 native wakes
+build/rmw-agnocast/hop2-steady.log:Minimum host MemAvailable: 12226 MiB
+build/rmw-agnocast/hop2-build.log:Summary: 2 packages finished [4.83s]
+build/rmw-agnocast/hop2-build.log:Minimum host MemAvailable: 12040 MiB
+build/rmw-agnocast/hop-build.log:Summary: 2 packages finished [4.89s]
+build/rmw-agnocast/hop-build.log:Minimum host MemAvailable: 12128 MiB
+build/rmw-agnocast/hop-alternating.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/hop-alternating.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/hop-alternating.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/hop-alternating.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/hop-alternating.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/hop-alternating.log:verified fixed wait tap: 59 native wakes
+build/rmw-agnocast/hop-alternating.log:verified fixed wait filter2: 59 native wakes
+build/rmw-agnocast/hop-alternating.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/hop-alternating.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/hop-alternating.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/hop-alternating.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/hop-alternating.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/hop-alternating.log:verified fixed wait tap: 59 native wakes
+build/rmw-agnocast/hop-alternating.log:verified fixed wait filter2: 59 native wakes
+build/rmw-agnocast/hop-alternating.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/hop-alternating.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/hop-alternating.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/hop-alternating.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/hop-alternating.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/hop-alternating.log:verified fixed wait tap: 59 native wakes
+build/rmw-agnocast/hop-alternating.log:verified fixed wait filter2: 59 native wakes
+build/rmw-agnocast/hop-alternating.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/hop-alternating.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/hop-alternating.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/hop-alternating.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/hop-alternating.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/hop-alternating.log:verified fixed wait tap: 59 native wakes
+build/rmw-agnocast/hop-alternating.log:verified fixed wait filter2: 59 native wakes
+build/rmw-agnocast/hop-alternating.log:Minimum host MemAvailable: 12315 MiB
+build/rmw-agnocast/hop-steady.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/hop-steady.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/hop-steady.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/hop-steady.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/hop-steady.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/hop-steady.log:verified fixed wait tap: 59 native wakes
+build/rmw-agnocast/hop-steady.log:verified fixed wait filter2: 59 native wakes
+build/rmw-agnocast/hop-steady.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/hop-steady.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/hop-steady.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/hop-steady.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/hop-steady.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/hop-steady.log:verified fixed wait tap: 59 native wakes
+build/rmw-agnocast/hop-steady.log:verified fixed wait filter2: 59 native wakes
+build/rmw-agnocast/hop-steady.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/hop-steady.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/hop-steady.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/hop-steady.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/hop-steady.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/hop-steady.log:verified fixed wait tap: 59 native wakes
+build/rmw-agnocast/hop-steady.log:verified fixed wait filter2: 59 native wakes
+build/rmw-agnocast/hop-steady.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/hop-steady.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/hop-steady.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/hop-steady.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/hop-steady.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/hop-steady.log:verified fixed wait tap: 59 native wakes
+build/rmw-agnocast/hop-steady.log:verified fixed wait filter2: 59 native wakes
+build/rmw-agnocast/hop-steady.log:Minimum host MemAvailable: 12326 MiB

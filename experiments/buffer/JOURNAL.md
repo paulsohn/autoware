@@ -1163,3 +1163,21 @@ rose by 37 µs. Longer CPU execution and pre-callback delivery both warrant
 investigation. Raising executor priority lacks a measured run-queue bottleneck
 here. Exact kernel wakeup times were unavailable to the unprivileged user.
 [Setup, raw observations, controls and interpretation](../rmw-agnocast/README.md#does-the-preceding-idle-interval-explain-the-branched-latency-gap)
+
+### Localize the first-hop 10 Hz penalty before choosing a fix
+
+Added opt-in buffered timestamps at native publish, blocking wait and
+host-cloud take. Joined writer, reader and first-crop observations by frame
+stamp and uniquely matched each post-warmup poll to its loan. Ran four
+alternating-gap rounds and two steady-gap pairs per transport. Repeated the
+steady pairs with two extra native admission/readiness markers. All 1,440
+source frames passed both readers and the original cold diagnostic passed.
+
+Poll return to the take marker carried a repeatable 18–20 µs median increase.
+In the steady repeat, +8 µs was before loan admission and +10 µs from exposed
+readiness to the take marker. Handoff-to-poll changed sign between batches.
+The steady 10 Hz end-to-end median ratio moved from 1.07× to 1.18× despite
+similar first-hop results. No latency optimization was applied. Next test
+one blocking ready-descriptor dispatch change against the unchanged control
+before attributing a 1.10× or parity result to it.
+[Commands, stage definitions, evidence and target arithmetic](../rmw-agnocast/README.md#locate-the-first-hop-cost-after-a-longer-gap)

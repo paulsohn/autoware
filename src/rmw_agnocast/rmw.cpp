@@ -23,6 +23,30 @@
 
 namespace
 {
+// Each role traces a single endpoint on its executor thread in the gap fixture.
+struct HopTrace {
+  const char * path;
+  struct Event { const char * name; int64_t stamp, time; };
+  std::vector<Event> events;
+  explicit HopTrace(const char * env) : path(std::getenv(env)) {
+    if (path) events.reserve(512);
+  }
+  void mark(const char * name, int64_t stamp = 0) {
+    if (path && events.size() < events.capacity()) {
+      const auto now = std::chrono::system_clock::now().time_since_epoch();
+      events.push_back({name, stamp, std::chrono::duration_cast<std::chrono::nanoseconds>(now).count()});
+    }
+  }
+  ~HopTrace() {
+    if (!path) return;
+    std::ofstream out(path);
+    for (const auto & e : events) out << e.name << ',' << e.stamp << ',' << e.time << '\n';
+  }
+};
+HopTrace & hop_reader() { static thread_local HopTrace trace("BENCH_HOP_READER"); return trace; }
+int64_t cloud_stamp(const Cloud::_header_type & h) {
+  return static_cast<int64_t>(h.stamp.sec) * 1000000000 + h.stamp.nanosec;
+}
 using Members = rosidl_typesupport_introspection_cpp::MessageMembers;
 using Loan = agnocast::ipc_shared_ptr<const void>;
 template <class F>
@@ -349,6 +373,8 @@ struct Reader : std::enable_shared_from_this<Reader>
         node.get(), type.route(topic, reliable), type.name,
         rclcpp::QoS(rclcpp::QoSInitialization::from_rmw(qos), qos),
         [this, depth = qos.depth](Loan sample) {
+          if (hop_reader().path && type.host_cloud)
+            hop_reader().mark("admit", cloud_stamp(static_cast<const HostCloud *>(sample.get())->header));
           auto entry = trace ? HandoffTrace::now() : 0;
           std::lock_guard lock(mutex);
           if (pending.size() == depth) pending.pop_front();
@@ -541,6 +567,9 @@ extern "C" rmw_ret_t rmw_publish_loaned_message(
   if (w->host_loan) {
     auto * cloud = static_cast<Cloud *>(msg);
     if (cloud->data.get_backend_type() != "cpu") return error("publisher loan requires CPU data");
+    static thread_local HopTrace trace("BENCH_HOP_WRITER");
+    const auto stamp = trace.path ? cloud_stamp(cloud->header) : 0;
+    trace.mark("publish_entry", stamp);
     const bool shared = w->owns_payload(*cloud, msg);
     try {
       HostCloud wire = shared ? HostCloud(std::move(*cloud)) : HostCloud(*cloud);
@@ -554,10 +583,12 @@ extern "C" rmw_ret_t rmw_publish_loaned_message(
     }
     if (!shared) ++w->private_copies;
     w->stamp(msg);
+    trace.mark("handoff", stamp);
     w->pub.publish(std::move(it->second), [](void * p) {
       std::destroy_at(static_cast<HostCloud *>(p));
       ::operator delete(p);
     });
+    trace.mark("publish_return", stamp);
     ++w->published_loans;
   } else {
     w->publish(std::move(it->second));
@@ -657,6 +688,7 @@ rmw_ret_t take(
       rmw_ret_t ret = RMW_RET_OK;
       try {
         const auto & cloud = *static_cast<const HostCloud *>(sample.get());
+        hop_reader().mark("take", cloud_stamp(cloud.header));
         if (serialized) {
           Cloud local;
           cloud.restore_metadata(local);
@@ -681,6 +713,7 @@ rmw_ret_t take(
       } catch (const std::exception & e) {
         ret = error(e.what());
       }
+      if (ret == RMW_RET_OK && copy && !serialized) hop_reader().mark("restored", cloud_stamp(static_cast<Cloud *>(copy)->header));
       if (ret != RMW_RET_OK) *taken = false;
       r.pending.pop_front();
       return ret;
@@ -991,6 +1024,7 @@ public:
       bool dds_ready = fds.front().revents & POLLIN;
       bool native_ready =
         std::any_of(fds.begin() + 1, fds.end(), [](auto fd) { return fd.revents & POLLIN; });
+      if (native_ready) hop_reader().mark("poll");
       native_wakes += native_ready;
       both += native_ready && dds_ready;
       if (dds_ready) {
@@ -1086,6 +1120,7 @@ public:
         r->receive_direct();
       auto timing = r->trace && times.wake && (events_for(i) & POLLIN) ? &times : nullptr;
       if (r->ready(0, 0, false, timing)) {
+        if (events_for(i) & POLLIN) hop_reader().mark("ready");
         subs->subscribers[idx] = original[i];
         result = RMW_RET_OK;
       } else
