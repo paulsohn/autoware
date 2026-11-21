@@ -1,0 +1,13 @@
+round,topology,receiver,verified,timed,p50_us,p95_us,min_host_available_mib
+1,blackboard,blackboard,24,20,352.708,386.061,11714
+1,intra,intra,24,20,739.581,778.945,11747
+1,composed,composed,24,20,388.796,426.928,11777
+1,split,sub,24,20,568.201,689.959,11831
+1,mixed,cpu,24,20,839.998,967.777,11736
+1,mixed,sub,24,20,4398.22,4542.59,11736
+2,blackboard,blackboard,24,20,350.034,360.363,11963
+2,intra,intra,24,20,276.245,308.877,11974
+2,composed,composed,24,20,376.093,402.512,11984
+2,split,sub,24,20,3326.13,3404.06,11897
+2,mixed,cpu,24,20,849.546,947.86,11782
+2,mixed,sub,24,20,1048.72,1182.21,11782

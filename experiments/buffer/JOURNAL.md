@@ -1412,3 +1412,65 @@ to 2.60–2.88 ms. Partial-group latency remained dominated by the 40 ms
 collector timeout. The padded audit verified all 60 owner references expired
 at teardown. Use the view for further experiments and keep the Universe
 subtree at its last verified fixes while studying the output publication path.
+
+## 2026-11-21 — One Universe CUDA transform edge on the laptop
+
+The question was whether a GPU-resident LiDAR edge needs CUDA support in
+rmw_agnocast before Autoware nodes can use standard PointCloud2. The colcon
+fixture links the unchanged Universe concatenate transform and the production
+blackboard publisher, subscriber, registry, and allocator sources. Two test
+nodes call the kernel. A writer translates X by the frame sequence directly
+into transport-owned GPU storage. A GPU reader adds three on a second stream.
+The verifier checks every XYZIRC field of all 32,768 points after each frame.
+An independent CPU observer in the mixed topology checks the writer's result.
+The control exercises blackboard negotiation and asserts device address
+identity. The composed rclcpp intra-process Buffer case also asserts identity.
+The split case checks the CUDA backend type, imports its input and runs the
+consumer kernel. Address equality across processes is not meaningful.
+
+Use the exported Lyrical root and the CUDA Buffer overlay described in the
+README. This laptop has an RTX 5070 Laptop GPU, driver 595.99.02 and CUDA 13.0.
+The image's glibc math headers and nvcc disagreed on the exception specifications
+of rsqrt and rsqrtf. The build script compiles just the unchanged .cu object on
+the laptop with GCC 13.3, then builds the ROS C++ endpoints and the blackboard
+sources with colcon in Lyrical. It leaves the toolkit and the Universe tree
+intact. On another GPU select its architecture with GPU_ARCH. Run from the
+experiment worktree, with the guard enabled throughout:
+
+```bash
+export LYRICAL_ROOT=$(cat build/agnocast-lyrical/universe-root)
+bash src/universe_gpu_edge_benchmark/build.sh
+export BUFFER_RUNTIME_ONLY=1 ROS_DOMAIN_ID=183
+for mode in blackboard intra composed split mixed mixed split composed intra blackboard; do
+  experiments/buffer/run-lyrical.sh bash src/universe_gpu_edge_benchmark/run.sh "$mode" || exit 1
+done
+```
+
+All cases select rmw_zenoh_cpp. The blackboard uses its negotiated intra-process
+notification. The Buffer cases exercise the rclcpp intra-process path, composed
+nodes with that optimization disabled, and separate processes on one host. In
+the mixed case only the CPU subscriber asks for CPU storage. Each graph sends
+24 ordered 512 KiB clouds at 10 Hz. Timing starts before message construction
+and ends after the consumer kernel completes, before verification readback.
+CPU observer timing ends at callback access before the verification copy.
+The p50 and p95 are nearest ranks 10 and 19 of the last 20 frames. Scheduling,
+allocation and stream synchronization are included. The blackboard producer
+synchronizes its stream before publish as required by this API. The Buffer
+writer releases its output handle to record readiness. GPU clocks were not fixed.
+
+Both orders passed. All 240 GPU deliveries and all 48 additional CPU
+deliveries matched. GPU-only split median moved from 0.57 to 3.33 ms.
+With a CPU observer the GPU median moved from 4.40 to 1.05 ms. The
+intra-process Buffer median crossed the blackboard median between rounds.
+The measurements establish interoperability and composed device ownership,
+with insufficient repeatability for a latency ranking. The ordinary CPU
+fan-out can stage payload bytes. Timings do not isolate IPC cost.
+
+Close this one-edge milestone and resume the Universe CPU synchronizer
+publication experiment. Keep the CUDA Buffer backend independent of
+rmw_agnocast. Reopen native CUDA descriptor forwarding only for a deployment
+requiring same-host split GPU nodes under that RMW. Qualify ownership from
+enqueue through delayed take, allocation reuse, dropped samples and endpoint
+teardown before relying on that route. This fixture does not run the entire
+Universe GPU component or compare Agnocast and Cyclone GPU transports.
+[Two-round results](../../src/universe_gpu_edge_benchmark/results.csv)

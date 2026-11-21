@@ -3,6 +3,8 @@
 The current pilot decision and latency milestone are recorded in
 [Pilot bridge choice and interpretation of performance](#pilot-bridge-choice-and-interpretation-of-performance).
 
+The [bounded Universe CUDA edge milestone](../buffer/README.md#bounded-cuda-lidar-edge-milestone) tracks GPU transport separately from the CPU synchronizer output experiment.
+
 The target deployment uses standard ROS message types and rclcpp publishers and
 subscriptions, selects an rmw_agnocast library through RMW_IMPLEMENTATION, and
 preloads a matching Agnocast heap hook on hosts with its kernel module. This

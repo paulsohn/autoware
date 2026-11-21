@@ -168,3 +168,22 @@ endpoint restarts, prompt release of a final dropped descriptor, and the
 Universe latency/CPU cost of the per-peer handshake remain open.
 [Reproduction and limits](JOURNAL.md#reserve-the-destination-loan-before-descriptor-publication)
 and [results](../../src/agnocast_buffer_probe/reservation-results.txt).
+
+### Bounded CUDA LiDAR edge milestone
+
+Compare one real Universe CUDA concatenation transform between two GPU
+stages. Use the composed Autoware blackboard path as the control and the
+Lyrical CUDA Buffer backend over Zenoh as the candidate. Verify device
+payloads, a same-host process boundary and CPU fan-out. Record the limits
+of the comparison, then resume the CPU synchronizer output-publication
+experiment. Broader CUDA integration in rmw_agnocast requires a measured
+need plus a delayed-take/pool-reuse qualification.
+
+Completed on the reference laptop. The GPU subscriber verified 240/240
+transformed frames and the simultaneous CPU observer verified 48/48 across
+the two orders. Both composed fast paths preserved the device address.
+Split-process GPU delivery worked over Zenoh. Timing varied enough to leave
+the performance ranking open. The next Universe experiment is synchronizer
+output publication from retained host inputs.
+[Reproduction and decision](JOURNAL.md#2026-11-21--one-universe-cuda-transform-edge-on-the-laptop)
+and [per-round measurements](../../src/universe_gpu_edge_benchmark/results.csv).

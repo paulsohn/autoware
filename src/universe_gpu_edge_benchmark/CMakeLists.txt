@@ -1,0 +1,27 @@
+cmake_minimum_required(VERSION 3.20)
+project(universe_gpu_edge_benchmark)
+find_package(ament_cmake REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(sensor_msgs REQUIRED)
+find_package(std_msgs REQUIRED)
+find_package(negotiated REQUIRED)
+find_package(cuda_buffer REQUIRED)
+find_package(CUDAToolkit REQUIRED)
+set(bb ${CMAKE_CURRENT_SOURCE_DIR}/../core/cuda/cuda_blackboard)
+set(pre ${CMAKE_CURRENT_SOURCE_DIR}/../universe/autoware_universe/sensing/autoware_cuda_pointcloud_preprocessor)
+set(KERNEL_OBJECT "" CACHE FILEPATH "Universe CUDA transform compiled with the matching host toolkit")
+if(NOT EXISTS "${KERNEL_OBJECT}")
+  message(FATAL_ERROR "Build the Universe transform object first using this fixture's build.sh")
+endif()
+add_library(blackboard STATIC
+  ${bb}/src/cuda_blackboard.cpp ${bb}/src/cuda_image.cpp ${bb}/src/cuda_pointcloud2.cpp
+  ${bb}/src/cuda_message_impl_detail.cpp ${bb}/src/cuda_mem_pool_context.cpp
+  ${bb}/src/cuda_blackboard_publisher.cpp ${bb}/src/cuda_blackboard_subscriber.cpp)
+target_include_directories(blackboard PUBLIC ${bb}/include)
+target_link_libraries(blackboard PUBLIC rclcpp::rclcpp ${sensor_msgs_TARGETS} ${std_msgs_TARGETS}
+  negotiated::negotiated CUDA::cudart)
+add_executable(edge edge.cpp ${KERNEL_OBJECT})
+target_include_directories(edge PRIVATE ${pre}/include)
+target_link_libraries(edge PRIVATE blackboard cuda_buffer::cuda_buffer)
+install(TARGETS edge DESTINATION lib/${PROJECT_NAME})
+ament_package()
