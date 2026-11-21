@@ -9914,3 +9914,43 @@ prediction stacks are not established by this fixture. No source implementation
 or original test is changed. Buildifier, Python/flake8 and whitespace checks
 pass. The module task is complete for CPU/Cyclone DDS with Agnocast disabled;
 Fast DDS, GPU and pre-commit are not run.
+
+## 2026-11-21: Phase 7.3.1 — Vehicle door simulator
+
+Purpose: support the Universe door simulator selected by the original planning
+simulator's default launch_dummy_doors=true. There is no existing behavior suite
+in its CMake/test declarations. Inspect the original node and launch first;
+the root gate requires four-door layout/roles, transient-local status delivery,
+opening/opened/closing/closed transitions, invalid index/command rejection and
+normal shutdown through the original XML launch.
+
+Integration: add a package-local module, full standalone binary and ament index
+for the original XML. Reuse the already-supported local ADAPI door interfaces;
+no new interface declarations or source implementation changes are needed.
+Flatten the ADAPI/rclcpp shared closure for inline ROS API calls, matching the
+standalone dependency pattern exposed by the related perception executable.
+The root-only peer checks real services and status updates rather than calling
+private C++ methods. Reproduce its complete behavior gate after the grouped
+package build above:
+
+```sh
+bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --nocache_test_results --test_output=errors \
+  @autoware_vehicle_door_simulator//... \
+  //bazel/tests/autoware_vehicle_door_simulator:launch_test
+```
+
+Both root cases pass in 12.0 seconds, zero failures/skips: four doors and their
+roles, initial closed state, opening/opened/closing/closed reports, explicit
+failure messages for invalid index/command, and clean exit through the original
+XML. No source implementation is changed. Buildifier, Python/flake8 and whitespace
+checks pass. This module task is complete for CPU/Cyclone DDS with Agnocast
+disabled; Fast DDS, GPU and pre-commit are not run.
+
+Phase 7.3.1 closes with four local modules and 20 passing cases in six targets:
+two connector cases, ten original simulator cases, two original SDF cases and
+six root launch/lifecycle cases. Passing results for unchanged perception/door
+code are reused after the simulator fixture correction; the complete simulator
+suite and connector are revalidated after their affected changes. Next is
+7.3.2's selected Universe implementation closure. This does not yet establish
+an autonomous planning-simulator session or the original RViz workflow.

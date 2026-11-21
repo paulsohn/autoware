@@ -1,0 +1,28 @@
+load("@launch_testing//:defs.bzl", "launch_test")
+load("@pip_ros//:requirements.bzl", "requirement")
+
+launch_test(
+    name = "launch_test",
+    src = "test_launch.py",
+    data = ["@autoware_vehicle_door_simulator//:ament_index"],
+    env = {
+        "ENABLE_AGNOCAST": "0",
+        "ROS_DOMAIN_ID": "89",
+        "LD_LIBRARY_PATH": "lib",
+    },
+    precompile = "disabled",
+    tags = [
+        "no-remote",
+        "no-sandbox",
+    ],
+    deps = [
+        "@ament_index_python",
+        "@autoware_adapi_v1_msgs//:py",
+        "@launch",
+        "@launch_ros",
+        "@launch_testing",
+        "@launch_xml",
+        "@rclpy",
+        requirement("pytest"),
+    ],
+)

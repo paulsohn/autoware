@@ -534,6 +534,30 @@ bazel test --config=runtime --config=no-agnocast --nocache_test_results \
   //bazel/tests/autoware_learning_based_vehicle_model:embedding_test
 ```
 
+## Simulation primitives
+
+The simulator, dummy perception and door simulator expose their original native
+executables and launch/parameter resources through package-owned ament indexes.
+Run each module's complete original suite and its root launch gate together:
+
+```sh
+bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --nocache_test_results --test_output=errors \
+  @autoware_simple_planning_simulator//... \
+  @autoware_dummy_perception_publisher//... @autoware_vehicle_door_simulator//... \
+  //bazel/tests/autoware_simple_planning_simulator:launch_test \
+  //bazel/tests/autoware_dummy_perception_publisher:launch_test \
+  //bazel/tests/autoware_vehicle_door_simulator:launch_test
+```
+
+Use the separate embedded-Python command above for the learning connector.
+When including simple_planning_simulator.launch.py, supply its caller-owned
+initial_engage_state, motion_publish_mode and vehicle_model_pkg configurations,
+and the vehicle_info_param_file from the selected indexed description. Keep
+these choices in launch composition. The primitive fixture uses the core
+sample description; original AWF workflow adoption belongs to the
+[simulator milestone](PLAN.md#awf-planning-simulator-milestone).
+
 ## Editing Python and launch packages
 
 Declare the Python library's complete source set and direct runtime imports in

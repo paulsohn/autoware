@@ -1,0 +1,38 @@
+load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_binary")
+
+package(default_visibility = ["//visibility:public"])
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = [
+        "@autoware_adapi_v1_msgs//:cc_shared",
+        "@rclcpp//:rclcpp",
+    ],
+)
+
+cc_binary(
+    name = "autoware_vehicle_door_simulator_node",
+    srcs = [
+        "src/dummy_doors.cpp",
+        "src/dummy_doors.hpp",
+    ],
+    dynamic_deps = [":runtime_dynamic_deps"],
+    deps = [
+        "@autoware_adapi_v1_msgs//:cc",
+        "@rclcpp//:rclcpp_library",
+    ],
+)
+
+register_ament_files(
+    name = "node_executables",
+    files = [":autoware_vehicle_door_simulator_node"],
+    prefix = "lib/autoware_vehicle_door_simulator",
+    strip_prefix = "*",
+)
+
+ament_index(
+    data = glob(["launch/*"]) + [":node_executables"],
+    package_xml = "package.xml",
+)

@@ -1635,12 +1635,14 @@ Complete each distribution boundary before expanding the application closure.
 
 Phase 7.3 task boundaries (selected 2026-11-21):
 
-- **7.3.1 — Simulation primitives (in progress).** Add local Bazel definitions
-  for autoware_learning_based_vehicle_model, autoware_simple_planning_simulator,
+- **7.3.1 — Simulation primitives (complete, 2026-11-21).** Integrated local
+  autoware_learning_based_vehicle_model, autoware_simple_planning_simulator,
   autoware_dummy_perception_publisher and autoware_vehicle_door_simulator.
-  Preserve the complete existing ten-case simulator and two-case SDF suites.
-  Add root-owned embedding, launch/motion, simulated-perception and door-service
-  checks. Keep package commits separate; validate related consumers together.
+  All ten original simulator and both original SDF cases pass, alongside root
+  embedding/move/teardown and original-launch motion/perception/door checks:
+  20 cases in six targets, zero failures/skips. Interpreter lifetime corrections
+  are separate source commits; package build boundaries are committed separately.
+  [Evidence](JOURNAL.md#2026-11-21-phase-731--vehicle-door-simulator).
 - **7.3.2 — Selected Universe implementation closure.** Adopt the default
   rule-based planning, control, simulated perception and supporting system/API
   dependencies in related groups, starting from their actual local launch and

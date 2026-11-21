@@ -925,3 +925,9 @@ local_path_override(
     module_name = "autoware_dummy_perception_publisher",
     path = "src/core/autoware_simple_planning_simulator/autoware_dummy_perception_publisher",
 )
+
+bazel_dep(name = "autoware_vehicle_door_simulator", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_vehicle_door_simulator",
+    path = "src/universe/autoware_universe/simulator/autoware_vehicle_door_simulator",
+)
