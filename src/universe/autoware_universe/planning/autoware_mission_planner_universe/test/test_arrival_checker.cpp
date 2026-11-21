@@ -15,11 +15,11 @@
 #include "../src/mission_planner/arrival_checker.hpp"
 
 #include <rclcpp/time.hpp>
+#include <tf2/LinearMath/Quaternion.hpp>
 
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 
 #include <gtest/gtest.h>
-#include <tf2/LinearMath/Quaternion.h>
 
 #include <string>
 

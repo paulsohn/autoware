@@ -9954,3 +9954,34 @@ code are reused after the simulator fixture correction; the complete simulator
 suite and connector are revalidated after their affected changes. Next is
 7.3.2's selected Universe implementation closure. This does not yet establish
 an autonomous planning-simulator session or the original RViz workflow.
+
+## 2026-11-21: Phase 7.3.2 — Universe arrival-checker tf2 compatibility
+
+Purpose: compile the complete existing Universe mission-planner suite against
+Lyrical before accepting its Bazel module. Inspect its CMake test declarations,
+the original test sources and the pinned tf2 include tree. There are 15 planner/
+utility cases and 21 arrival-checker cases in two executables.
+
+The initial build fails in test/test_arrival_checker.cpp because
+`tf2/LinearMath/Quaternion.h` is absent from the selected tf2. Replace that include
+with `Quaternion.hpp`, retaining every assertion and implementation. Apply the
+existing clang-format include grouping. This is a source compatibility change;
+keep it separate from the Bazel definitions. The arrival executable supplies its
+own main, so its Bazel rule links gtest rather than gtest_main.
+
+With the module declarations in the following mission-planner entry, reproduce:
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --nocache_test_results --test_output=errors \
+  @autoware_mission_planner_universe//:test_autoware_mission_planner_universe_arrival_checker
+```
+
+All 21 original arrival cases pass in 0.2 seconds; all 15 planner/utility cases
+also pass. The final include grouping passes targeted clang-format. No assertion,
+algorithm or original CMake build is changed. The upstream main file still uses
+the .h spelling when checked on 2026-11-21; the Lyrical tracker and scoped PR
+searches identify no matching fix. Association/status are recorded in
+UPSTREAM_AWF.md. Local verification is CPU/Cyclone DDS with Agnocast disabled;
+Humble/Jazzy and colcon are not tested.

@@ -1094,3 +1094,25 @@ backtrace. These results establish the tested Python 3.14 configuration; older
 Python/ROS versions and upstream CMake are untested. This is interpreter lifetime,
 not a Lyrical-only algorithm change. Keep the source fix separate from its
 package-local Bazel definitions.
+
+## Universe mission-planner arrival test: tf2 header compatibility
+
+Observed 2026-11-21 with the local autoware_mission_planner_universe 0.53.0
+snapshot and Lyrical RCR lyrical.2026-10-05.rcr.3: building its original arrival
+suite fails with `tf2/LinearMath/Quaternion.h file not found`. The selected tf2
+exports Quaternion.hpp. Change the include spelling and preserve all 21
+original arrival assertions; the complete suite passes after this correction.
+This is test-source compatibility, without a planner behavior change.
+
+- [ ] Associated with a matching AWF PR. Checked 2026-11-21: upstream
+  [main test source](https://github.com/autowarefoundation/autoware_universe/blob/main/planning/autoware_mission_planner_universe/test/test_arrival_checker.cpp)
+  still includes Quaternion.h. Searches scoped to Universe for Quaternion.hpp
+  and arrival_checker/Lyrical find no matching PR. Not submitted.
+- [x] Related upstream work identified:
+  [Autoware Lyrical tracker](https://github.com/autowarefoundation/autoware/issues/7404)
+  and [Universe Lyrical tracker](https://github.com/autowarefoundation/autoware_universe/issues/13620).
+  The linked dependency/CMake/Qt work does not correct this test include.
+- [x] Local evidence: all 36 original mission-planner cases pass (15 planner/
+  utility and 21 arrival), CPU/Cyclone DDS, ENABLE_AGNOCAST=0. See the
+  [source-fix journal](JOURNAL.md#2026-11-21-phase-732--universe-arrival-checker-tf2-compatibility)
+  for the command. No Humble/Jazzy or colcon validation is claimed.
