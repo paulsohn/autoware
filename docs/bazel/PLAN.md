@@ -1783,6 +1783,11 @@ Phase 7.3 task boundaries (selected 2026-11-21):
   loading, indexed configuration, a runtime parameter update and clean shutdown.
   The combined planner/plugin gate passes all 13 cases with no failures/skips.
   [Evidence](JOURNAL.md#2026-11-22-phase-732--side-shift-scene-plugin-and-executable-loading).
+  The default-enabled bidirectional-traffic plugin is complete: all three
+  original lanelet/keep-left/give-way cases pass, alongside isolated standalone
+  loading/default-parameter/shutdown and side-shift regression checks. Its
+  original empty parameter-update callback is not an implemented capability.
+  [Evidence](JOURNAL.md#2026-11-22-phase-732--bidirectional-traffic-scene-plugin).
   Continue in dependency order through shared planner helpers, the
   preset-selected behavior/motion plugins and controller libraries, then
   simulated perception and the selected system/API closure. CMake-only shims

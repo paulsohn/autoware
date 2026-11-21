@@ -1,7 +1,7 @@
 # Copyright 2026 Taeseung Sohn
 # SPDX-License-Identifier: Apache-2.0
 
-"""Exercise the side-shift plugin through the real behavior-path executable."""
+"""Exercise selected scene plugins through the real behavior-path executable."""
 
 import os
 from pathlib import Path
@@ -18,7 +18,17 @@ from rcl_interfaces.srv import GetParameters, SetParameters
 import rclpy
 
 EXECUTABLE = str(Path(sys.argv.pop(1)).resolve())
-PLUGIN = 'autoware::behavior_path_planner::SideShiftModuleManager'
+MODULE = sys.argv.pop(1)
+CLASS, PARAMETERS, VALUES, UPDATED = {
+    'side_shift': ('SideShiftModuleManager',
+                   ['side_shift.min_distance_to_start_shifting', 'side_shift.min_drivable_area_margin'],
+                   [5.0, 0.3], 0.4),
+    'bidirectional_traffic': ('BidirectionalTrafficModuleManager',
+                              ['bidirectional_traffic.min_distance_from_roadside',
+                               'bidirectional_traffic.wait_time_for_oncoming_car'],
+                              [0.2, 15.0], None),
+}[MODULE]
+PLUGIN = 'autoware::behavior_path_planner::' + CLASS
 
 
 class PlannerRuntime(unittest.TestCase):
@@ -36,7 +46,7 @@ class PlannerRuntime(unittest.TestCase):
             ('autoware_behavior_path_planner', ['behavior_path_planner.param.yaml',
                                                 'drivable_area_expansion.param.yaml',
                                                 'scene_module_manager.param.yaml']),
-            ('autoware_behavior_path_side_shift_module', ['side_shift.param.yaml']),
+            ('autoware_behavior_path_' + MODULE + '_module', [MODULE + '.param.yaml']),
         ]:
             share = Path(get_package_share_directory(package))
             for name in files:
@@ -72,20 +82,21 @@ class PlannerRuntime(unittest.TestCase):
                     loaded = "The scene plugin '" + PLUGIN + "' is loaded."
                     wait(lambda: loaded in output())
                     maps = Path('/proc', str(process.pid), 'maps').read_text()
-                    self.assertIn('libautoware_behavior_path_side_shift_module.so', maps)
+                    self.assertIn('libautoware_behavior_path_' + MODULE + '_module.so', maps)
                     self.assertIn('libautoware_behavior_path_planner_component.so', maps)
                     self.assertNotIn('libagnocast_heaphook.so', maps)
-                    names = ['forward_path_length', 'side_shift.min_distance_to_start_shifting',
-                             'side_shift.min_drivable_area_margin']
+                    names = ['forward_path_length'] + PARAMETERS
                     response = call(parameters, GetParameters.Request(names=names))
-                    self.assertEqual([v.double_value for v in response.values], [300.0, 5.0, 0.3])
-                    response = call(update, SetParameters.Request(parameters=[Parameter(
-                        name=names[-1], value=ParameterValue(
-                            type=ParameterType.PARAMETER_DOUBLE, double_value=0.4))]))
-                    self.assertEqual(len(response.results), 1)
-                    self.assertTrue(response.results[0].successful, response.results[0].reason)
-                    response = call(parameters, GetParameters.Request(names=[names[-1]]))
-                    self.assertEqual(response.values[0].double_value, 0.4)
+                    self.assertEqual([v.double_value for v in response.values], [300.0] + VALUES)
+                    # Bidirectional traffic currently has no runtime parameter-update implementation.
+                    if UPDATED is not None:
+                        response = call(update, SetParameters.Request(parameters=[Parameter(
+                            name=names[-1], value=ParameterValue(
+                                type=ParameterType.PARAMETER_DOUBLE, double_value=UPDATED))]))
+                        self.assertEqual(len(response.results), 1)
+                        self.assertTrue(response.results[0].successful, response.results[0].reason)
+                        response = call(parameters, GetParameters.Request(names=[names[-1]]))
+                        self.assertEqual(response.values[0].double_value, UPDATED)
                     self.assertNotIn('is not available', output())
                 finally:
                     if process.poll() is None:

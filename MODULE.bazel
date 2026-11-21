@@ -1057,3 +1057,9 @@ local_path_override(
     module_name = "autoware_behavior_path_side_shift_module",
     path = "src/universe/autoware_universe/planning/behavior_path_planner/autoware_behavior_path_side_shift_module",
 )
+
+bazel_dep(name = "autoware_behavior_path_bidirectional_traffic_module", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_behavior_path_bidirectional_traffic_module",
+    path = "src/universe/autoware_universe/planning/behavior_path_planner/autoware_behavior_path_bidirectional_traffic_module",
+)

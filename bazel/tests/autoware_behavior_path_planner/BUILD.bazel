@@ -1,28 +1,37 @@
 load("@rules_python//python:defs.bzl", "py_test")
 
-py_test(
-    name = "runtime_test",
-    srcs = ["test_runtime.py"],
-    args = ["$(rootpath @autoware_behavior_path_planner//:autoware_behavior_path_planner_node)"],
-    data = [
-        "@autoware_behavior_path_planner//:ament_index",
-        "@autoware_behavior_path_planner//:autoware_behavior_path_planner_node",
-        "@autoware_behavior_path_side_shift_module//:ament_index",
-        "@autoware_test_utils//:ament_index",
-    ],
-    env = {
-        "ENABLE_AGNOCAST": "0",
-        "LD_LIBRARY_PATH": "lib",
-    },
-    main = "test_runtime.py",
-    precompile = "disabled",
-    tags = [
-        "no-remote",
-        "no-sandbox",
-    ],
-    deps = [
-        "@ament_index_python",
-        "@rcl_interfaces//:py",
-        "@rclpy",
-    ],
-)
+[
+    py_test(
+        name = "runtime_test" if module == "side_shift" else module + "_runtime_test",
+        srcs = ["test_runtime.py"],
+        args = [
+            "$(rootpath @autoware_behavior_path_planner//:autoware_behavior_path_planner_node)",
+            module,
+        ],
+        data = [
+            "@autoware_behavior_path_planner//:ament_index",
+            "@autoware_behavior_path_planner//:autoware_behavior_path_planner_node",
+            "@autoware_behavior_path_" + module + "_module//:ament_index",
+            "@autoware_test_utils//:ament_index",
+        ],
+        env = {
+            "ENABLE_AGNOCAST": "0",
+            "LD_LIBRARY_PATH": "lib",
+        },
+        main = "test_runtime.py",
+        precompile = "disabled",
+        tags = [
+            "no-remote",
+            "no-sandbox",
+        ],
+        deps = [
+            "@ament_index_python",
+            "@rcl_interfaces//:py",
+            "@rclpy",
+        ],
+    )
+    for module in [
+        "side_shift",
+        "bidirectional_traffic",
+    ]
+]

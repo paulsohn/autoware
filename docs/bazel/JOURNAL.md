@@ -11405,3 +11405,51 @@ No pre-commit, Fast DDS, GPU, enabled-Agnocast or unchanged packaging matrix is
 run. This completes the side-shift package and paired standalone gate; remaining
 selected scene plugins, the full Universe planning closure and original
 simulator composition remain pending.
+
+## 2026-11-22: Phase 7.3.2 — Bidirectional-traffic scene plugin
+
+Purpose: add the default-enabled bidirectional-traffic scene plugin to the
+existing behavior-path planner. Inspect package.xml, the CMake-recursive source
+and test lists, eight implementation files, three original test sources plus
+test_helper.hpp, plugins.xml, parameter YAML and indexed test_map/test_data.
+The full original suite is one executable with three cases: bidirectional
+lanelet discovery, keep-left path generation and give-way behavior.
+
+Use the established package-owned plugin pattern: MODULE/BUILD declarations,
+root local override, reusable C++ library, original plugin SONAME and
+ament_index plugin category autoware_behavior_path_planner. Preserve all three
+CMake-installed resource directories. The map/path fixture helpers resolve
+package shares at runtime, so register those files through the owning index
+rather than copying fixtures or using source-tree paths. Link the already-local
+trajectory/common/geometry/system utilities and their shared runtime providers;
+use existing registry fmt/Eigen/Boost/Lanelet providers. No implementation,
+manifest, original test or map payload changes are introduced.
+
+Extend the root standalone adapter with a concrete module profile and retain
+its side-shift target as a regression check. Each target supplies only its own
+plugin index; require the real executable's successful class-load log, exact
+plugin/component DSOs, original parameter values and clean SIGINT exit.
+BidirectionalTrafficModuleManager::updateModuleParams is an existing empty
+implementation. Its adapter checks the original roadside/wait defaults, not a
+parameter-store write presented as an implemented behavior update. All original
+behavior cases remain required; no runtime test is skipped for dependencies.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_output=errors @autoware_behavior_path_bidirectional_traffic_module//... \
+  //bazel/tests/autoware_behavior_path_planner:bidirectional_traffic_runtime_test \
+  //bazel/tests/autoware_behavior_path_planner:runtime_test
+```
+
+All eight implementation sources build and all three original cases pass in
+1.3 seconds. The isolated commit gate passes three targets/five cases in
+35.8 seconds: it reuses the unchanged original-suite result and reruns both
+standalone profiles (bidirectional 1.2 seconds, side-shift 1.4 seconds).
+The planner reads the original 0.2-metre roadside margin and 15-second wait
+setting, loads the exact plugin/component DSOs and exits zero on SIGINT.
+There are no failures, errors, disabled cases or runtime skips in this module.
+Targeted Python style, source/test inventory and whitespace checks pass.
+No implementation or original test changes are needed. Other selected scene
+modules and full simulator startup remain pending; no Fast DDS, GPU,
+enabled-Agnocast or unchanged distribution matrix is run.
