@@ -1,0 +1,27 @@
+load("@rosidl_default_generators//:defs.bzl", "ros_service")
+
+package(default_visibility = ["//visibility:public"])
+
+ros_service(
+    name = "ExternalCommandSelect",
+    src = "ExternalCommandSelect.srv",
+    deps = [
+        "//msg:ExternalCommandSelectorMode",
+    ],
+)
+
+ros_service(
+    name = "SetPause",
+    src = "SetPause.srv",
+    deps = [
+        "@autoware_common_msgs//msg:ResponseStatus",
+    ],
+)
+
+ros_service(
+    name = "SetStop",
+    src = "SetStop.srv",
+    deps = [
+        "@autoware_common_msgs//msg:ResponseStatus",
+    ],
+)

@@ -1,0 +1,22 @@
+load("@rosidl_default_generators//:defs.bzl", "default_generators")
+
+package(default_visibility = ["//visibility:public"])
+
+# Supported interfaces are selected by the integrated consumers.
+default_generators(
+    dependencies = [
+        "@autoware_common_msgs",
+        "@builtin_interfaces",
+    ],
+    package_xml = "package.xml",
+    deps = [
+        "//msg:ExternalCommandSelectorMode",
+        "//msg:GateMode",
+        "//msg:IsPaused",
+        "//msg:IsStartRequested",
+        "//msg:IsStopped",
+        "//srv:ExternalCommandSelect",
+        "//srv:SetPause",
+        "//srv:SetStop",
+    ],
+)

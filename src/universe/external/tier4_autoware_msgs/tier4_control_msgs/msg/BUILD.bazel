@@ -1,0 +1,39 @@
+load("@rosidl_default_generators//:defs.bzl", "ros_message")
+
+package(default_visibility = ["//visibility:public"])
+
+ros_message(
+    name = "ExternalCommandSelectorMode",
+    src = "ExternalCommandSelectorMode.msg",
+    deps = [],
+)
+
+ros_message(
+    name = "GateMode",
+    src = "GateMode.msg",
+    deps = [],
+)
+
+ros_message(
+    name = "IsPaused",
+    src = "IsPaused.msg",
+    deps = [
+        "@builtin_interfaces//msg:Time",
+    ],
+)
+
+ros_message(
+    name = "IsStartRequested",
+    src = "IsStartRequested.msg",
+    deps = [
+        "@builtin_interfaces//msg:Time",
+    ],
+)
+
+ros_message(
+    name = "IsStopped",
+    src = "IsStopped.msg",
+    deps = [
+        "@builtin_interfaces//msg:Time",
+    ],
+)

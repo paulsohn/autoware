@@ -986,3 +986,9 @@ local_path_override(
     module_name = "autoware_freespace_planning_algorithms",
     path = "src/universe/autoware_universe/planning/autoware_freespace_planning_algorithms",
 )
+
+bazel_dep(name = "tier4_control_msgs", version = "0.0.0")
+local_path_override(
+    module_name = "tier4_control_msgs",
+    path = "src/universe/external/tier4_autoware_msgs/tier4_control_msgs",
+)

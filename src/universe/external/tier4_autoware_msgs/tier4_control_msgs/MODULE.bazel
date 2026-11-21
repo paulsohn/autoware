@@ -1,0 +1,9 @@
+module(
+    name = "tier4_control_msgs",
+    version = "0.0.0",
+)
+
+bazel_dep(name = "autoware_common_msgs", version = "0.0.0")
+bazel_dep(name = "builtin_interfaces", version = "0.0.0")
+bazel_dep(name = "rosidl_default_generators", version = "0.0.0")
+bazel_dep(name = "std_msgs", version = "0.0.0")
