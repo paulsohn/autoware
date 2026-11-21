@@ -1117,3 +1117,21 @@ Local source fix: f8acc3b6 (include spelling/grouping only).
   utility and 21 arrival), CPU/Cyclone DDS, ENABLE_AGNOCAST=0. See the
   [source-fix journal](JOURNAL.md#2026-11-21-phase-732--universe-arrival-checker-tf2-compatibility)
   for the command. No Humble/Jazzy or colcon validation is claimed.
+
+## Boundary-departure checker: expected header/provider compatibility
+
+- [x] Associated with matching merged
+  [AWF PR #13622](https://github.com/autowarefoundation/autoware_universe/pull/13622).
+  Checked 2026-11-21: the PR is merged and its actual boundary-checker changes
+  match these four tl/expected.hpp includes plus libexpected-dev in package.xml.
+- [x] Independently reproduced locally: the initial library compile cannot find
+  tl_expected/expected.hpp with the pinned native tl-expected 1.3.1 provider.
+  The complete 66-case original suite passes after the package-scoped fix,
+  CPU/Cyclone DDS with ENABLE_AGNOCAST=0; no assertions are edited or skipped.
+
+This correction applies only to autoware_deprecated_boundary_departure_checker.
+Other packages in the upstream PR enter their own compatibility work only when
+a current target exposes the need. No host libexpected-dev installation, older
+ROS validation or colcon result is implied by this manifest alignment. See the
+[source-fix journal](JOURNAL.md#2026-11-21-phase-732--boundary-checker-expected-compatibility)
+for the failure, integration context and exact command.

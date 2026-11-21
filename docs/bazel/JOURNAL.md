@@ -10396,3 +10396,35 @@ Full original planning_simulator.launch.xml composition still requires its
 remaining selected behavior/motion-planning, control and system/API dependency
 closure. Neither 7.3.2 nor 7.3.3 is declared complete by these resource gates;
 7.3.4 retains full original workflow/RViz and autonomous-driving acceptance.
+
+## 2026-11-21: Phase 7.3.2 — Boundary-checker expected compatibility
+
+Purpose: compile the shared boundary-departure library required by default
+Universe path-planning and control modules. The first native build fails on
+its removed tl_expected/expected.hpp wrapper include. Inspect all four include
+sites, the manifest, the pinned RCR provider and AWF's actual PR #13622 files;
+check the merged PR status on 2026-11-21. The native tl-expected provider is
+1.3.1 and exports tl/expected.hpp.
+
+Apply only this package's matching upstream correction: replace the four
+includes with tl/expected.hpp and change the manifest dependency from the ROS
+wrapper to libexpected-dev. The original implementation and assertions are
+unchanged. Keep these five source/manifest edits in their own source-fix commit;
+Bazel still builds the pinned native provider, without installing a host package.
+The broader PR's controller/perception changes are not pre-applied.
+
+With the module declarations in the following library entry, reproduce:
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --nocache_test_results --test_output=errors \
+  @autoware_deprecated_boundary_departure_checker//...
+```
+
+All 66 original cases pass, including parameterized resampling cases, without
+failure or skip. The grouped invocation also passes the two traffic-light and
+one RTC case. Targeted clang-format/whitespace checks pass. This is Lyrical/
+dependency-header compatibility, not an algorithm change; no colcon, Humble,
+Jazzy or enabled-Agnocast runtime validation is claimed. The matching upstream
+association and scope are recorded in UPSTREAM_AWF.md.
