@@ -1851,6 +1851,12 @@ Phase 7.3 task boundaries (selected 2026-11-21):
   current message_filters headers; standalone freespace declares logger-service
   introspection typesupport. These gates do not establish simulator parking.
   [Parking evidence](JOURNAL.md#2026-11-22-phase-732--costmap-generator).
+  Remaining-distance/time, hazard-light selection and planning evaluation are
+  available. The complete 30-case original evaluator suite, both evaluator
+  executables, live hazard arbitration and affected indexed-node/costmap checks
+  pass 51 active cases in 12 targets. The remaining-distance startup gate does
+  not establish full-route numeric accuracy. Keep that distinction for driving
+  acceptance. [Support group evidence](JOURNAL.md#2026-11-22-phase-732--planning-evaluator).
   Continue in dependency order through shared planner helpers, the
   preset-selected behavior/motion plugins and controller libraries, then
   simulated perception and the selected system/API closure. The selected local

@@ -13,6 +13,7 @@ load("@rules_python//python:defs.bzl", "py_test")
         deps = ["@ament_index_python", "@rcl_interfaces//:py", "@rclpy"] + (["@autoware_vehicle_msgs//:py"] if package == "autoware_hazard_lights_selector" else []),
     )
     for package, executable, config in [
+        ("autoware_planning_evaluator", "planning_evaluator", "planning_evaluator.param.yaml"),
         ("autoware_hazard_lights_selector", "autoware_hazard_lights_selector_node", "hazard_lights_selector.param.yaml"),
         ("autoware_remaining_distance_time_calculator", "autoware_remaining_distance_time_calculator_node", "remaining_distance_time_calculator.param.yaml"),
         ("autoware_freespace_planner", "freespace_planner", "freespace_planner.param.yaml"),
@@ -22,3 +23,15 @@ load("@rules_python//python:defs.bzl", "py_test")
         ("autoware_scenario_selector", "autoware_scenario_selector_node", "scenario_selector.param.yaml"),
     ]
 ]
+
+py_test(
+    name = "autoware_planning_evaluator_motion_runtime_test",
+    srcs = ["test_runtime.py"],
+    main = "test_runtime.py",
+    args = ["autoware_planning_evaluator", "motion_evaluator", "planning_evaluator.param.yaml"],
+    data = ["@autoware_planning_evaluator//:ament_index", "@autoware_test_utils//:ament_index"],
+    env = {"ENABLE_AGNOCAST": "0", "LD_LIBRARY_PATH": "lib", "ROS_DOMAIN_ID": "80"},
+    precompile = "disabled",
+    tags = ["no-remote", "no-sandbox"],
+    deps = ["@ament_index_python", "@rcl_interfaces//:py", "@rclpy"],
+)

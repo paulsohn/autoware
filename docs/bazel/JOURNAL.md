@@ -13443,3 +13443,51 @@ native suite takes 38.7 seconds; standalone profiles take 0.8–3.1 seconds each
 Formatting/flake8/whitespace checks pass. No Fast DDS, kernel matrix, full
 simulator launch or GUI driving test is run. Continue the selected validator
 plugins and controller closure before composing the full simulator.
+
+## 2026-11-22: Phase 7.3.2 — Planning evaluator
+
+Purpose: expose the selected local planning-support component. Inspect its
+manifest/CMake, original launch/config and complete original test registration
+before choosing the package gate. Prerequisites are the existing local
+message/utility/route dependencies and CPU/Cyclone DDS with ENABLE_AGNOCAST=0.
+
+Compile all original metric, accumulator, planning-node and motion-node
+sources. Expose the complete thirty-case original evaluator suite, retaining its
+ROS setup/teardown and output_metrics=true assertions. Declare local planning,
+perception, vehicle and Tier IV metric interfaces, TF, Eigen/Boost/JSON and
+planning-factor/route dependencies; publish actual dynamic type-support closure.
+The demonstrated TF/logging compatibility correction is separate d3473f36.
+Register both planning_evaluator and motion_evaluator under the indexed package,
+using the wrapper only for the wrapper-based planning node and the ordinary
+component entrypoint for the ROS motion node. Test both executables. Supply
+output_metrics=false as the original launch files do; the standalone motion
+profile explicitly selects velocity/acceleration metrics. No JSON export-path
+or motion-input accuracy claim is inferred solely from executable startup.
+
+Add package-owned MODULE/BUILD and a root local override after dependencies.
+Keep original source/test bodies in place, put added checks under bazel/tests,
+and retain installed executable names under lib/<package>. Index original config
+and launch resources, register the real component factory and publish flattened
+shared runtime dependencies. Extend the existing root indexed-node adapter with
+this concrete executable/config profile; it checks a responsive parameter service,
+its actual component DSO, no preloaded heaphook and clean SIGINT shutdown.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_output=errors @autoware_remaining_distance_time_calculator//... \
+  @autoware_hazard_lights_selector//... @autoware_planning_evaluator//... \
+  @autoware_costmap_generator//... //bazel/tests/planning_nodes:all
+python3 -m flake8 --max-line-length=150 bazel/tests/planning_nodes/test_runtime.py
+git diff --check
+```
+
+The complete group passes 51 active cases across 12 targets in 154.1 seconds:
+all thirty original evaluator cases, all ten original costmap cases and eleven
+root executable/script/behavior cases. There are zero failures/errors/skips or
+disabled cases in this command; the earlier freespace native result (including
+two original disabled cases) is unchanged and not rerun here. The evaluator's
+native suite takes 38.7 seconds; standalone profiles take 0.8–3.1 seconds each.
+Formatting/flake8/whitespace checks pass. No Fast DDS, kernel matrix, full
+simulator launch or GUI driving test is run. Continue the selected validator
+plugins and controller closure before composing the full simulator.

@@ -1294,3 +1294,9 @@ local_path_override(
     module_name = "autoware_hazard_lights_selector",
     path = "src/universe/autoware_universe/planning/autoware_hazard_lights_selector",
 )
+
+bazel_dep(name = "autoware_planning_evaluator", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_planning_evaluator",
+    path = "src/universe/autoware_universe/evaluator/autoware_planning_evaluator",
+)
