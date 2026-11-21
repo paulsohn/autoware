@@ -1,0 +1,169 @@
+[INFO] [launch]: All log files can be found below /tmp/tmp.fTEPKKIBRT/roslog/2026-11-21-16-39-00-729447-paulsohn-tuf-545801
+[INFO] [launch]: Default logging verbosity is set to INFO
+[INFO] [static_transform_publisher-1]: process started with pid [545833]
+[INFO] [component_container-2]: process started with pid [545834]
+[INFO] [concatenate_and_time_sync_node-3]: process started with pid [545835]
+[INFO] [crop-4]: process started with pid [545836]
+[INFO] [crop-5]: process started with pid [545837]
+[INFO] [sync_fixture-6]: process started with pid [545838]
+[INFO] [sync_fixture-7]: process started with pid [545839]
+[static_transform_publisher-1] [INFO] [1795279140.831580583] [static_transform_publisher_xFLjR92L85i0jcS8]: Spinning until stopped - publishing transform
+[static_transform_publisher-1] translation: ('4.000000', '0.000000', '0.000000')
+[static_transform_publisher-1] rotation: ('0.000000', '0.000000', '0.000000', '1.000000')
+[static_transform_publisher-1] from 'base_link' to 'sync_lidar'
+[sync_fixture-6] [WARN] [1795279140.842686907] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[sync_fixture-7] [WARN] [1795279140.842715881] [Agnocast]: Agnocast publishers do not honor the BestEffort reliability QoS policy. Messages are delivered through shared memory regardless of this setting.
+[sync_fixture-7] [WARN] [1795279140.842757429] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[sync_fixture-7] rmw_agnocast host-cloud writer /raw/sync/left
+[sync_fixture-6] [WARN] [1795279140.842900296] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[sync_fixture-6] rmw_agnocast host-cloud reader /output
+[sync_fixture-7] [WARN] [1795279140.843328476] [Agnocast]: Agnocast publishers do not honor the BestEffort reliability QoS policy. Messages are delivered through shared memory regardless of this setting.
+[sync_fixture-7] [WARN] [1795279140.843338785] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[sync_fixture-7] rmw_agnocast host-cloud writer /raw/sync/right
+[sync_fixture-6] [WARN] [1795279140.843663772] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[sync_fixture-6] [WARN] [1795279140.843704308] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[sync_fixture-6] rmw_agnocast host-cloud reader /region/near
+[sync_fixture-7] [WARN] [1795279140.843835112] [Agnocast]: Agnocast publishers do not honor the BestEffort reliability QoS policy. Messages are delivered through shared memory regardless of this setting.
+[sync_fixture-7] [WARN] [1795279140.843845672] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[sync_fixture-7] rmw_agnocast host-cloud writer /raw/sync/top
+[sync_fixture-6] [WARN] [1795279140.844352619] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[sync_fixture-6] [WARN] [1795279140.844392683] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[sync_fixture-6] rmw_agnocast host-cloud reader /region/far
+[component_container-2] [INFO] [1795279141.032766523] [lidar_crops]: Load Library: /ws/build/universe-pipeline/install/universe_crop_benchmark/lib/libuniverse_crop.so
+[crop-4] [WARN] [1795279141.218773862] [Agnocast]: Agnocast publishers do not honor the BestEffort reliability QoS policy. Messages are delivered through shared memory regardless of this setting.
+[crop-4] [WARN] [1795279141.218820689] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[crop-5] [WARN] [1795279141.218777679] [Agnocast]: Agnocast publishers do not honor the BestEffort reliability QoS policy. Messages are delivered through shared memory regardless of this setting.
+[crop-5] [WARN] [1795279141.218820809] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[crop-4] rmw_agnocast host-cloud writer /region/near
+[crop-5] rmw_agnocast host-cloud writer /region/far
+[crop-5] [WARN] [1795279141.219569327] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[crop-4] [WARN] [1795279141.219570800] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[crop-4] [WARN] [1795279141.219626194] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[crop-5] [WARN] [1795279141.219628328] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[crop-5] rmw_agnocast host-cloud reader /output
+[crop-4] rmw_agnocast host-cloud reader /output
+[concatenate_and_time_sync_node-3] [INFO] [1795279141.219899935] [point_cloud_concatenator_component]: Utilize naive matching strategy
+[concatenate_and_time_sync_node-3] [WARN] [1795279141.221577268] [Agnocast]: Agnocast publishers do not honor the BestEffort reliability QoS policy. Messages are delivered through shared memory regardless of this setting.
+[concatenate_and_time_sync_node-3] [WARN] [1795279141.221595101] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[concatenate_and_time_sync_node-3] rmw_agnocast host-cloud writer /output
+[concatenate_and_time_sync_node-3] [WARN] [1795279141.222930826] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[concatenate_and_time_sync_node-3] [WARN] [1795279141.222992000] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[concatenate_and_time_sync_node-3] rmw_agnocast host-cloud reader /sync/left
+[concatenate_and_time_sync_node-3] [WARN] [1795279141.223527350] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[concatenate_and_time_sync_node-3] [WARN] [1795279141.223569228] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[concatenate_and_time_sync_node-3] rmw_agnocast host-cloud reader /sync/right
+[concatenate_and_time_sync_node-3] [WARN] [1795279141.224044987] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[concatenate_and_time_sync_node-3] [WARN] [1795279141.224082587] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[concatenate_and_time_sync_node-3] rmw_agnocast host-cloud reader /sync/top
+[component_container-2] [INFO] [1795279141.409759730] [lidar_crops]: Found class: rclcpp_components::NodeFactoryTemplate<autoware::pointcloud_preprocessor::CropBoxFilterComponent>
+[component_container-2] [INFO] [1795279141.409812688] [lidar_crops]: Instantiate class: rclcpp_components::NodeFactoryTemplate<autoware::pointcloud_preprocessor::CropBoxFilterComponent>
+[component_container-2] [WARN] [1795279141.416309643] [Agnocast]: Agnocast publishers do not honor the BestEffort reliability QoS policy. Messages are delivered through shared memory regardless of this setting.
+[component_container-2] [WARN] [1795279141.416326274] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[component_container-2] rmw_agnocast host-cloud writer /sync/left
+[component_container-2] [WARN] [1795279141.417162877] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[component_container-2] [WARN] [1795279141.417250861] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[component_container-2] rmw_agnocast host-cloud reader /raw/sync/left
+[INFO] [launch_ros.actions.load_composable_nodes]: Loaded node '/crop_left' in container '/lidar_crops'
+[component_container-2] [INFO] [1795279141.420077621] [lidar_crops]: Found class: rclcpp_components::NodeFactoryTemplate<autoware::pointcloud_preprocessor::CropBoxFilterComponent>
+[component_container-2] [INFO] [1795279141.420095244] [lidar_crops]: Instantiate class: rclcpp_components::NodeFactoryTemplate<autoware::pointcloud_preprocessor::CropBoxFilterComponent>
+[component_container-2] [WARN] [1795279141.425274698] [Agnocast]: Agnocast publishers do not honor the BestEffort reliability QoS policy. Messages are delivered through shared memory regardless of this setting.
+[component_container-2] [WARN] [1795279141.425288934] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[component_container-2] rmw_agnocast host-cloud writer /sync/right
+[component_container-2] [WARN] [1795279141.425907941] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[component_container-2] [WARN] [1795279141.425955069] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[component_container-2] rmw_agnocast host-cloud reader /raw/sync/right
+[INFO] [launch_ros.actions.load_composable_nodes]: Loaded node '/crop_right' in container '/lidar_crops'
+[component_container-2] [INFO] [1795279141.429210810] [lidar_crops]: Found class: rclcpp_components::NodeFactoryTemplate<autoware::pointcloud_preprocessor::CropBoxFilterComponent>
+[component_container-2] [INFO] [1795279141.429228042] [lidar_crops]: Instantiate class: rclcpp_components::NodeFactoryTemplate<autoware::pointcloud_preprocessor::CropBoxFilterComponent>
+[component_container-2] [WARN] [1795279141.434478148] [Agnocast]: Agnocast publishers do not honor the BestEffort reliability QoS policy. Messages are delivered through shared memory regardless of this setting.
+[component_container-2] [WARN] [1795279141.434491082] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[component_container-2] rmw_agnocast host-cloud writer /sync/top
+[component_container-2] [WARN] [1795279141.435005563] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[component_container-2] [WARN] [1795279141.435042602] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[component_container-2] rmw_agnocast host-cloud reader /raw/sync/top
+[INFO] [launch_ros.actions.load_composable_nodes]: Loaded node '/crop_top' in container '/lidar_crops'
+[sync_fixture-7] top_release_ns,0,728220
+[sync_fixture-7] top_release_ns,2,771691
+[sync_fixture-7] top_release_ns,4,861389
+[sync_fixture-7] top_release_ns,6,831964
+[sync_fixture-7] top_release_ns,8,649894
+[sync_fixture-7] top_release_ns,10,793713
+[sync_fixture-7] top_release_ns,12,621211
+[sync_fixture-7] top_release_ns,14,702582
+[sync_fixture-7] top_release_ns,16,651928
+[sync_fixture-7] top_release_ns,18,674841
+[sync_fixture-7] top_release_ns,20,625879
+[sync_fixture-7] top_release_ns,22,718281
+[sync_fixture-6] regions,0,full,26529741
+[sync_fixture-6] sample,0,full,24459194
+[sync_fixture-6] regions,1,partial,43054707
+[sync_fixture-6] sample,1,partial,42383623
+[sync_fixture-6] regions,2,full,3860180
+[sync_fixture-6] sample,2,full,3307658
+[sync_fixture-6] regions,3,partial,42635854
+[sync_fixture-6] sample,3,partial,42049088
+[sync_fixture-6] regions,4,full,3392507
+[sync_fixture-6] sample,4,full,3056850
+[sync_fixture-6] regions,5,partial,42669517
+[sync_fixture-6] sample,5,partial,41973337
+[sync_fixture-6] regions,6,full,3351009
+[sync_fixture-6] sample,6,full,3015092
+[sync_fixture-6] regions,7,partial,42362223
+[sync_fixture-6] sample,7,partial,42037406
+[sync_fixture-6] regions,8,full,3065636
+[sync_fixture-6] sample,8,full,2608793
+[sync_fixture-6] regions,9,partial,42306729
+[sync_fixture-6] sample,9,partial,41848183
+[sync_fixture-6] regions,10,full,2696336
+[sync_fixture-6] sample,10,full,2305596
+[sync_fixture-6] regions,11,partial,42022448
+[sync_fixture-6] sample,11,partial,41544536
+[sync_fixture-6] regions,12,full,2565031
+[sync_fixture-6] sample,12,full,2327558
+[sync_fixture-6] regions,13,partial,41909488
+[sync_fixture-6] sample,13,partial,41431906
+[sync_fixture-6] regions,14,full,2679986
+[sync_fixture-6] sample,14,full,2107186
+[sync_fixture-6] regions,15,partial,42125190
+[sync_fixture-6] sample,15,partial,41597204
+[sync_fixture-6] regions,16,full,2526228
+[sync_fixture-6] sample,16,full,2194910
+[sync_fixture-6] regions,17,partial,41864533
+[sync_fixture-6] sample,17,partial,41539196
+[sync_fixture-6] regions,18,full,2400554
+[sync_fixture-6] sample,18,full,2156438
+[sync_fixture-6] regions,19,partial,41929024
+[sync_fixture-6] sample,19,partial,41321419
+[sync_fixture-6] regions,20,full,2434857
+[sync_fixture-6] sample,20,full,2085695
+[sync_fixture-6] regions,21,partial,41964179
+[sync_fixture-6] sample,21,partial,41388724
+[sync_fixture-6] regions,22,full,2529444
+[sync_fixture-6] sample,22,full,2030823
+[sync_fixture-6] regions,23,partial,41804221
+[sync_fixture-6] sample,23,partial,41238875
+[sync_fixture-6] fast_source_hz=19.999
+[sync_fixture-6] verified 24 synchronized clouds and metadata, 12 complete and 12 timed out, 1966080 input points
+[INFO] [sync_fixture-6]: process has finished cleanly [pid 545838]
+[INFO] [sync_fixture-7]: sending signal 'SIGINT' to process[sync_fixture-7]
+[INFO] [crop-5]: sending signal 'SIGINT' to process[crop-5]
+[INFO] [crop-4]: sending signal 'SIGINT' to process[crop-4]
+[INFO] [concatenate_and_time_sync_node-3]: sending signal 'SIGINT' to process[concatenate_and_time_sync_node-3]
+[INFO] [component_container-2]: sending signal 'SIGINT' to process[component_container-2]
+[INFO] [static_transform_publisher-1]: sending signal 'SIGINT' to process[static_transform_publisher-1]
+[sync_fixture-7] [INFO] [1795279144.646702116] [rclcpp]: signal_handler(signum=2)
+[crop-5] [INFO] [1795279144.647098026] [rclcpp]: signal_handler(signum=2)
+[crop-4] [INFO] [1795279144.647402274] [rclcpp]: signal_handler(signum=2)
+[concatenate_and_time_sync_node-3] [INFO] [1795279144.647672348] [rclcpp]: signal_handler(signum=2)
+[component_container-2] [INFO] [1795279144.647930651] [rclcpp]: signal_handler(signum=2)
+[static_transform_publisher-1] [INFO] [1795279144.648220292] [rclcpp]: signal_handler(signum=2)
+[concatenate_and_time_sync_node-3] sync_input views=60 copies=0
+[INFO] [static_transform_publisher-1]: process has finished cleanly [pid 545833]
+[INFO] [sync_fixture-7]: process has finished cleanly [pid 545839]
+[INFO] [crop-4]: process has finished cleanly [pid 545836]
+[INFO] [crop-5]: process has finished cleanly [pid 545837]
+[INFO] [component_container-2]: process has finished cleanly [pid 545834]
+[INFO] [concatenate_and_time_sync_node-3]: process has finished cleanly [pid 545835]
+graph_user_s=1.705 graph_sys_s=0.827
+scope_peak_bytes=270168064
+Minimum host MemAvailable: 10686 MiB

@@ -21,6 +21,7 @@ def graph(context):
     sensors = ("left", "right", "top")
     cropped = [f"/sync/{sensor}" for sensor in sensors]
     raw = ["/raw" + topic for topic in cropped]
+    region_topics = ["/region/near", "/region/far"] if os.getenv("SYNC_REGIONS") else []
     use_agnocast = mode in ("plain", "stock", "runner")
     env = {"ENABLE_AGNOCAST": "0", "SYNC_LARGE": "1", "PIPELINE_DIR": directory}
     if use_agnocast:
@@ -28,7 +29,7 @@ def graph(context):
             RMW_IMPLEMENTATION="rmw_agnocast",
             LD_PRELOAD=str(Path(get_package_prefix("agnocastlib")) / "lib/libagnocast_heaphook.so"),
             AGNOCAST_BRIDGE_MODE="OFF", AGNOCAST_NO_DISCOVERY_AGENT="1",
-            AGNOCAST_RMW_HOST_CLOUD="1", AGNOCAST_RMW_TOPIC=":".join(raw + cropped + ["/output"]),
+            AGNOCAST_RMW_HOST_CLOUD="1", AGNOCAST_RMW_TOPIC=":".join(raw + cropped + ["/output"] + region_topics),
         )
     if mode == "native":
         env.update(ENABLE_AGNOCAST="1", RMW_IMPLEMENTATION="rmw_cyclonedds_cpp",
@@ -89,13 +90,21 @@ def graph(context):
     tf = Node(package="tf2_ros", executable="static_transform_publisher",
               arguments=["--x", "4", "--frame-id", "base_link", "--child-frame-id", "sync_lidar"],
               additional_env=env, output="screen")
+    regions = []
+    for topic, (low, high) in zip(region_topics, [(11999.5, 17999.5), (15999.5, 22999.5)]):
+        regions.append(Node(package="universe_crop_benchmark", executable="crop",
+                            name="region_" + topic.split("/")[-1], output="screen",
+                            additional_env=env, remappings=[("input", "/output"), ("output", topic)],
+                            parameters=[config, {"input_frame": "base_link", "output_frame": "base_link",
+                                                "min_x": low, "max_x": high, "min_y": -1.0,
+                                                "max_y": 24.0, "min_z": -1.0, "max_z": 3.0}]))
     def finished(event, _context):
         if event.returncode:
             raise RuntimeError(f"pipeline verifier exited with status {event.returncode}")
         return [EmitEvent(event=Shutdown(reason="pipeline verification finished"))]
 
     return [RegisterEventHandler(OnProcessExit(target_action=sink, on_exit=finished)),
-        tf, container, synchronizer, sink, source]
+        tf, container, synchronizer, *regions, sink, source]
 
 
 def generate_launch_description():

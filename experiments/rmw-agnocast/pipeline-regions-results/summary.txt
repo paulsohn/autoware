@@ -1,0 +1,16 @@
+native control runs=2 full_n=20 fusion_full=2.292/3.239 full=2.292/3.239 partial=41.661/42.239 cpu_s=1.66..1.91 peak_MiB=211.1..313.2 min_host_MiB=10757
+native regions runs=6 full_n=60 fusion_full=2.367/3.694 full=2.797/4.350 partial=42.017/43.069 cpu_s=2.34..2.76 peak_MiB=259.4..296.9 min_host_MiB=10026
+native fast runs=6 full_n=60 fusion_full=2.246/2.991 full=2.576/3.814 partial=41.911/42.549 cpu_s=2.39..2.53 peak_MiB=258.9..289.9 min_host_MiB=10122
+native jitter runs=2 full_n=10 fusion_full=16.754/17.385 full=17.376/18.109 late_pair=42.112/43.142 late_top=90.221/90.611 partial=41.962/42.529 cpu_s=2.32..2.54 peak_MiB=258.6..260.2 min_host_MiB=10646
+stock control runs=2 full_n=20 fusion_full=2.207/3.078 full=2.207/3.078 partial=41.555/41.882 cpu_s=1.61..1.70 peak_MiB=198.3..201.1 min_host_MiB=10692
+stock regions runs=6 full_n=60 fusion_full=2.476/3.308 full=2.815/3.991 partial=42.045/42.555 cpu_s=2.46..2.93 peak_MiB=253.7..329.1 min_host_MiB=10177
+stock fast runs=6 full_n=60 fusion_full=2.234/3.015 full=2.603/3.438 partial=42.035/42.685 cpu_s=2.50..2.82 peak_MiB=253.8..257.7 min_host_MiB=10502
+stock jitter runs=2 full_n=10 fusion_full=17.088/17.440 full=17.512/18.083 late_pair=41.719/42.615 late_top=89.591/89.720 partial=41.727/42.090 cpu_s=2.42..3.14 peak_MiB=255.6..265.8 min_host_MiB=10582
+cyclone control runs=2 full_n=20 fusion_full=3.266/9.598 full=3.266/9.598 partial=45.345/48.296 cpu_s=1.59..2.31 peak_MiB=164.6..165.2 min_host_MiB=10659
+cyclone regions runs=2 full_n=20 fusion_full=3.502/4.186 full=3.893/4.459 partial=42.954/43.353 cpu_s=2.48..2.54 peak_MiB=219.6..221.9 min_host_MiB=10718
+cyclone fast runs=2 full_n=20 fusion_full=3.594/4.397 full=3.947/4.676 partial=42.884/43.464 cpu_s=2.61..2.65 peak_MiB=220.9..235.0 min_host_MiB=9903
+cyclone jitter runs=2 full_n=10 fusion_full=18.239/20.467 full=18.670/21.512 late_pair=42.872/45.666 late_top=90.329/91.109 partial=43.098/46.671 cpu_s=2.55..2.55 peak_MiB=219.4..223.6 min_host_MiB=10515
+zenoh control runs=2 full_n=20 fusion_full=2.550/3.100 full=2.550/3.100 partial=41.945/42.131 cpu_s=2.57..2.64 peak_MiB=298.8..301.7 min_host_MiB=10319
+zenoh regions runs=2 full_n=20 fusion_full=3.053/3.402 full=3.251/3.603 partial=42.375/42.617 cpu_s=4.24..4.28 peak_MiB=428.2..431.1 min_host_MiB=10123
+zenoh fast runs=2 full_n=20 fusion_full=3.125/3.443 full=3.345/3.709 partial=42.467/42.735 cpu_s=4.22..4.47 peak_MiB=423.0..471.3 min_host_MiB=9408
+zenoh jitter runs=2 full_n=10 fusion_full=17.880/19.298 full=17.923/19.518 late_pair=42.388/42.869 late_top=89.806/90.183 partial=42.446/42.852 cpu_s=4.26..4.50 peak_MiB=427.9..437.3 min_host_MiB=10037

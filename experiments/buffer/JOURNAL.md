@@ -1875,3 +1875,57 @@ metadata records. Both stock RMW runs delivered 123 pairs, with 123 clouds
 and 130 metadata records. All implementations paired the last 12 groups.
 The [comparison table and per-launch measurements](../rmw-agnocast/README.md#native-agnocast-on-the-full-three-lidar-processing-graph)
 record the engineering milestone and resource ranges.
+
+### 2026-11-22 — Two downstream region filters on the synchronized cloud
+
+Extended the five-process, three-LiDAR Universe graph with two separate
+Universe CropBoxFilterComponent executables in the base_link frame. Both
+subscribe to the entire synchronized /output, alongside the original sink,
+and publish /region/near and /region/far. Each executable scans every point.
+The synthetic regions keep X in [12000,18000) and [16000,23000) respectively.
+These ranges are chosen to verify different overlapping subsets of the test
+coordinates. They do not represent production vehicle distances. The sink
+compares each region, in order, against the independently filtered bytes of
+the already verified synchronized cloud. It checks frame, stamp, fields, row
+stride, point count, and delivery of both outputs for every acquisition.
+The end-to-end measurement is the later of the two region callback entry
+times measured against the oldest contributing acquisition stamp. Data
+validation runs after collection. The one verifier consumes three cloud
+streams and metadata; its scheduling and receiver copies are included.
+
+Reuse the preceding milestone's Lyrical overlays and Agnocast module. Rebuild
+only the verification package, using each overlay's cached colcon configuration.
+
+```bash
+export LYRICAL_ROOT=$(cat build/agnocast-lyrical/universe-root)
+experiments/buffer/run-lyrical.sh bash -ec '
+  source build/agnocast-lyrical/install/local_setup.bash
+  source build/universe-sync/install/local_setup.bash
+  source build/rmw-agnocast/load-install/local_setup.bash
+  for ws in universe-pipeline universe-pipeline-native; do
+    if [[ $ws == universe-pipeline-native ]]; then export ENABLE_AGNOCAST=1; else export ENABLE_AGNOCAST=0; fi
+    colcon build --base-paths src/universe_sync_benchmark --build-base "build/$ws/obj" \
+      --install-base "build/$ws/install" --executor sequential
+  done'
+mkdir -p build/universe-pipeline-regions
+out=build/universe-pipeline-regions/pairs
+bash experiments/rmw-agnocast/bench-native-graph.sh "$out" regions
+bash experiments/rmw-agnocast/bench-native-graph.sh "$out/double-rate" regions-fast
+python3 experiments/rmw-agnocast/summarize-regions.py "$out"
+```
+
+Use the native mixed-executor wait of 1 ms established by the preceding
+native comparison. Native discovery must see one writer and three readers
+on /output and one reader and writer on each region topic. Ordinary ROS
+and native use the same crop implementations. The timed runner reverses
+order, checks actual source cadence, and runs a single graph per 512 MiB
+scope with swap disabled and host memory monitoring. Keep all cloud and
+metadata streams local and the bridge off. The 20/20/10 Hz condition changes
+only the inter-acquisition interval from 100 to 50 ms. Jitter is tested
+separately at 10/10/5 Hz, using the previous 15/50 ms top release pattern.
+
+All 48 timed launches passed, verifying 1,200 fused clouds and metadata
+records plus 2,016 filtered outputs. The joint region completion stock/native
+median / p95 ratio was 1.01× / 0.92× at 10 Hz and 1.01× / 0.90× at 20 Hz.
+Peak scope memory across the timed runs was 471.3 MiB and minimum host
+MemAvailable was 9,408 MiB. [Per-middleware results](../rmw-agnocast/README.md#two-region-filters-downstream-of-three-lidar-synchronization).

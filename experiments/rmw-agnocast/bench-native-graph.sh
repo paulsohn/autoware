@@ -4,10 +4,11 @@ set -eu
 out=${1:?fresh result directory}
 mkdir "$out"
 export BUFFER_RUNTIME_ONLY=1 SYNC_SHORT_WAIT=1
-unset SYNC_AUDIT SYNC_SINK_TRACE SYNC_EXTENDED SYNC_TOP_JITTER SYNC_SLOW_SINK
+unset SYNC_REGIONS SYNC_DOUBLE_RATE SYNC_AUDIT SYNC_SINK_TRACE SYNC_EXTENDED SYNC_TOP_JITTER SYNC_SLOW_SINK
 failed=0
 rounds=(1 2)
 if [[ ${2:-} == confirmation ]]; then rounds=(3 4 5 6); fi
+if [[ ${2:-} == regions || ${2:-} == regions-fast ]]; then rounds=(1 2 3 4 5 6); fi
 for round in "${rounds[@]}"; do
   modes=(native-default native stock cyclone zenoh)
   conditions=(nominal overflow)
@@ -16,6 +17,20 @@ for round in "${rounds[@]}"; do
     conditions=(nominal)
     modes=(native stock)
     if ((round % 2 == 0)); then modes=(stock native); fi
+  fi
+  if [[ ${2:-} == regions ]]; then
+    if ((round <= 2)); then
+      modes=(native stock cyclone zenoh)
+      conditions=(control regions jitter)
+      if ((round == 2)); then modes=(zenoh cyclone stock native); conditions=(jitter regions control); fi
+    else
+      conditions=(regions)
+    fi
+  fi
+  if [[ ${2:-} == regions-fast ]]; then
+    conditions=(fast)
+    if ((round == 1)); then modes=(native stock cyclone zenoh); fi
+    if ((round == 2)); then modes=(zenoh cyclone stock native); fi
   fi
   for mode in "${modes[@]}"; do
     launch_mode=$mode
@@ -27,7 +42,10 @@ for round in "${rounds[@]}"; do
     fi
     for condition in "${conditions[@]}"; do
       if [[ $mode == native-default && $condition == overflow ]]; then continue; fi
-      unset SYNC_EXTENDED SYNC_TOP_JITTER SYNC_SLOW_SINK
+      unset SYNC_REGIONS SYNC_EXTENDED SYNC_TOP_JITTER SYNC_SLOW_SINK
+      if [[ $condition == regions || $condition == jitter ]]; then export SYNC_REGIONS=1; fi
+      if [[ $condition == fast ]]; then export SYNC_REGIONS=1 SYNC_DOUBLE_RATE=1; fi
+      if [[ $condition == jitter ]]; then export SYNC_TOP_JITTER=1; fi
       if [[ $condition == overflow ]]; then export SYNC_EXTENDED=1 SYNC_TOP_JITTER=1 SYNC_SLOW_SINK=1; fi
       if ! experiments/buffer/run-lyrical.sh timeout -k 5 65 bash -ec '
         TIMEFORMAT="graph_user_s=%U graph_sys_s=%S"

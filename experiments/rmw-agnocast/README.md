@@ -2610,3 +2610,37 @@ checked every surviving payload and metadata record independently and all
 
 [Raw measurements and missing sequence numbers](pipeline-native-results/summary.txt) ·
 [Reproduction](../buffer/JOURNAL.md#2026-11-22--native-agnocast-on-the-three-crop-universe-graph).
+
+### Two region filters downstream of three-LiDAR synchronization
+
+Five Universe crop instances and the synchronizer run in a seven-process
+local graph. Three crops prepare individual sensors; two further crops in
+independent processes scan the synchronized output and keep different
+overlapping point ranges. A common sink consumes the fused cloud, metadata
+and both region clouds. The control omits the downstream processes.
+
+| Middleware | Control, fused at 10 Hz | Both regions at 10 Hz | Both regions at 20 Hz | Late top only, both regions at 10 Hz |
+|---|---:|---:|---:|---:|
+| rmw_agnocast | 2.207/3.078 | 2.815/3.991 | 2.603/3.438 | 89.591/89.720 |
+| Native Agnocast (1 ms wait) | 2.292/3.239 | 2.797/4.350 | 2.576/3.814 | 90.221/90.611 |
+| Cyclone DDS | 3.266/9.598 | 3.893/4.459 | 3.947/4.676 | 90.329/91.109 |
+| Zenoh | 2.550/3.100 | 3.251/3.603 | 3.345/3.709 | 89.806/90.183 |
+
+Cells give median / nearest-rank p95 in ms from acquisition. For the regions,
+each sample ends when the sink has received both filtered clouds. Nominal
+complete-cloud rows for native and stock pool 60 post-warm-up samples per
+rate across six launches, while Cyclone and Zenoh pool 20 per rate across
+two launches. The jitter-only case has ten post-warm-up late-top samples
+per middleware. The stock/native complete-cloud ratios were 1.01× / 0.92×
+at 10 Hz and 1.01× / 0.90× at 20 Hz. The fast sensors set the reported rate;
+the third sensor runs at half that rate. Each input cloud has 32,768 points.
+
+All nominal and jitter cases kept the verifier active on the original output
+and checked each returned region's full point payload. Each complete cloud
+contained 49,152 points after synchronization. The two regions selected 11,996
+and 13,996 of those points respectively. The experiment uses synthetic spatial
+data and a finite burst with an active consumer; overload with a slow branch
+is a different condition.
+
+[All timing, CPU and memory measurements](pipeline-regions-results/summary.txt) ·
+[Reproduction](../buffer/JOURNAL.md#2026-11-22--two-downstream-region-filters-on-the-synchronized-cloud).

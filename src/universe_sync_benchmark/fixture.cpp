@@ -28,6 +28,8 @@ using Info = autoware_sensing_msgs::msg::ConcatenatedPointCloudInfo;
 using Clock = std::chrono::steady_clock;
 using namespace std::chrono_literals;
 const bool extended = std::getenv("PIPELINE_DIR") && std::getenv("SYNC_EXTENDED");
+const bool regions = std::getenv("PIPELINE_DIR") && std::getenv("SYNC_REGIONS");
+const std::array<std::string, 2> region_topics{"/region/near", "/region/far"};
 const int sets = extended ? 104 : 24;
 const int points = std::getenv("SYNC_LARGE") ? 32768 : 1024;
 const std::array<std::string, 3> topics{"/sync/left", "/sync/right", "/sync/top"};
@@ -108,6 +110,11 @@ int pipeline_source(rclcpp::Node::SharedPtr node, const std::filesystem::path & 
   const auto deadline = Clock::now() + 20s;
   auto matched = [&] {
     return std::filesystem::exists(directory / "sink-ready") &&
+#ifdef SYNC_NATIVE
+           (!regions || agnocast::get_subscription_count_core("/output") == 3) &&
+#else
+           (!regions || node->count_subscribers("/output") == 3) &&
+#endif
            std::all_of(
              pubs.begin(), pubs.end(),
              [](const auto & p) { return p->get_subscription_count() > 0; }) &&
@@ -125,9 +132,11 @@ int pipeline_source(rclcpp::Node::SharedPtr node, const std::filesystem::path & 
     std::this_thread::sleep_for(20ms);
   }
 #ifdef SYNC_NATIVE
-  for (const auto & t :
-       {"/raw/sync/left", "/raw/sync/right", "/raw/sync/top", "/sync/left", "/sync/right",
-        "/sync/top", "/output"}) {
+  std::vector<std::string> routes{"/raw/sync/left", "/raw/sync/right", "/raw/sync/top",
+                                  "/sync/left",     "/sync/right",     "/sync/top",
+                                  "/output"};
+  if (regions) routes.insert(routes.end(), region_topics.begin(), region_topics.end());
+  for (const auto & t : routes) {
     const auto writers = agnocast::get_publisher_count_core(t);
     const auto readers = agnocast::get_subscription_count_core(t);
     check(writers && readers, "native cloud endpoints missing");
@@ -137,6 +146,7 @@ int pipeline_source(rclcpp::Node::SharedPtr node, const std::filesystem::path & 
 #endif
   std::this_thread::sleep_for(500ms);
   const bool jitter = std::getenv("SYNC_TOP_JITTER") != nullptr;
+  const auto period = std::getenv("SYNC_DOUBLE_RATE") ? 50ms : 100ms;
   const auto start = Clock::now();
   std::vector<int64_t> top_release_ns(sets);
   std::vector<int64_t> stamps(sets);
@@ -145,7 +155,7 @@ int pipeline_source(rclcpp::Node::SharedPtr node, const std::filesystem::path & 
       for (int sensor = 0; sensor < (seq % 2 ? 2 : 3); ++sensor)
         inputs[seq].push_back(cloud(seq, sensor));
     }
-    std::this_thread::sleep_until(start + seq * 100ms);
+    std::this_thread::sleep_until(start + seq * period);
     const auto group_start = Clock::now();
     stamps[seq] = node->now().nanoseconds();
     for (size_t sensor = 0; sensor < inputs[seq].size(); ++sensor) {
@@ -213,6 +223,26 @@ int main(int argc, char ** argv)
 #else
   auto sub = node->create_subscription<Cloud>("/output", qos, receive);
 #endif
+  std::array<std::map<int64_t, Cloud::ConstSharedPtr>, 2> region_clouds;
+  std::array<std::map<int64_t, int64_t>, 2> region_ages;
+  std::atomic<size_t> region_count{0};
+  std::vector<decltype(sub)> region_subs;
+  for (size_t i = 0; regions && i < region_topics.size(); ++i) {
+    auto record = [&, i](Cloud::ConstSharedPtr c) {
+      const auto stamp = rclcpp::Time(c->header.stamp).nanoseconds();
+      region_ages[i][stamp] = node->now().nanoseconds() - stamp;
+      check(region_clouds[i].emplace(stamp, std::move(c)).second, "duplicate region");
+      ++region_count;
+    };
+#ifdef SYNC_NATIVE
+    region_subs.push_back(
+      agnocast::create_subscription<Cloud>(
+        node.get(), region_topics[i], qos,
+        [record](native_sync::Loan loan) { record(native_sync::cpu_copy(std::move(loan))); }));
+#else
+    region_subs.push_back(node->create_subscription<Cloud>(region_topics[i], qos, record));
+#endif
+  }
   auto status = node->create_subscription<Info>("/output_info", qos, [&](Info::ConstSharedPtr m) {
     check(infos.emplace(rclcpp::Time(m->header.stamp).nanoseconds(), m).second, "duplicate info");
     ++info_count;
@@ -244,6 +274,9 @@ int main(int argc, char ** argv)
   auto ready = [&] {
     return sub->get_publisher_count() && status->get_publisher_count() &&
            std::all_of(
+             region_subs.begin(), region_subs.end(),
+             [](const auto & s) { return s->get_publisher_count(); }) &&
+           std::all_of(
              pubs.begin(), pubs.end(), [](auto & p) { return p->get_subscription_count(); });
   };
   auto deadline = Clock::now() + 10s;
@@ -257,6 +290,7 @@ int main(int argc, char ** argv)
     const auto end = Clock::now() + 25s;
     while (Clock::now() < end && ((!extended && (cloud_count.load() < size_t(expected_outputs) ||
                                                  info_count.load() < size_t(expected_outputs))) ||
+                                  (regions && region_count.load() < 2 * size_t(expected_outputs)) ||
                                   !std::filesystem::exists(path / "stamps")))
       spin_until(Clock::now() + 20ms);
     std::ifstream in(path / "stamps");
@@ -317,6 +351,32 @@ int main(int argc, char ** argv)
           c.point_step == sizeof(Point) && c.row_step == bytes.size() &&
           bytes.size() == c.width * sizeof(Point),
         "invalid cloud frame or shape");
+      if (regions) {
+        int64_t both = 0;
+        for (size_t j = 0; j < region_topics.size(); ++j) {
+          const auto & roi = *region_clouds[j].at(stamp);
+          const auto & data = static_cast<const std::vector<uint8_t> &>(roi.data);
+          check(
+            roi.header.frame_id == c.header.frame_id && roi.fields == c.fields && roi.height == 1 &&
+              roi.point_step == sizeof(Point) && roi.row_step == data.size() &&
+              data.size() == size_t(roi.width) * sizeof(Point),
+            "bad region shape");
+          size_t offset = 0;
+          for (size_t n = 0; n < bytes.size(); n += sizeof(Point)) {
+            Point pt;
+            std::memcpy(&pt, bytes.data() + n, sizeof(Point));
+            if (pt.x < (j ? 16000 : 12000) || pt.x >= (j ? 23000 : 18000)) continue;
+            check(
+              offset + sizeof(Point) <= data.size() &&
+                !std::memcmp(data.data() + offset, bytes.data() + n, sizeof(Point)),
+              "wrong region payload");
+            offset += sizeof(Point);
+          }
+          check(offset && offset == data.size(), "region count mismatch");
+          both = std::max(both, region_ages[j].at(stamp));
+        }
+        std::cout << "regions," << seq << "," << kind << "," << both << "\n";
+      }
       for (int part = 0; part < count; ++part) {
         unsigned offset = part * segment_points;
         Point prefix;
@@ -381,6 +441,7 @@ int main(int argc, char ** argv)
     std::cout << "verified " << expected_outputs << " synchronized clouds and metadata, "
               << (jitter ? 6 : 12) << " complete and " << (jitter ? 24 : 12) << " timed out, "
               << 60 * points << " input points\n";
+  if (regions) check(region_count == 2 * size_t(expected_outputs), "unexpected region outputs");
   clouds.clear();
   rclcpp::shutdown();
 }
