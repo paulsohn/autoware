@@ -1858,6 +1858,17 @@ Phase 7.3 task boundaries (selected 2026-11-21):
   pass 51 active cases in 12 targets. The remaining-distance startup gate does
   not establish full-route numeric accuracy. Keep that distinction for driving
   acceptance. [Support group evidence](JOURNAL.md#2026-11-22-phase-732--planning-evaluator).
+  Planning validation and all four default-enabled checker factories are
+  complete for the selected component gate: 27 original validator/checker cases,
+  sixteen angles cases, seven individual/joint executable checks and the status
+  wire round trip pass in twelve targets. Plugin API and node entrypoint have
+  separate native libraries inside the same source module; generated status
+  interfaces share its owning resource index. The only source change is the
+  diagnostic fixture's constant-initializer compatibility fix.
+  [Validator group and limits](JOURNAL.md#2026-11-22-phase-732--planning-validator-node-and-status-interface).
+  Product interface registration/full typed-bridge compilation remains a final
+  accumulated-interface gate before 7.3.2 closes; do not infer that result from
+  component suites or the status wire check.
   Continue in dependency order through shared planner helpers, the
   preset-selected behavior/motion plugins and controller libraries, then
   simulated perception and the selected system/API closure. The selected local

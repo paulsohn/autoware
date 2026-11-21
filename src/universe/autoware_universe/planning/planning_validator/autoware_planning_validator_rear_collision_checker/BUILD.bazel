@@ -1,0 +1,97 @@
+load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
+load("@generate_parameter_library//:defs.bzl", "generate_parameter_library")
+
+package(default_visibility = ["//visibility:public"])
+
+generate_parameter_library(name = "rear_collision_checker_node_parameters", yaml_file = "param/rear_collision_checker_node_parameters.yaml")
+
+cc_library(
+    name = "autoware_planning_validator_rear_collision_checker",
+    srcs = glob(["src/**/*.cpp"]),
+    hdrs = glob(["src/**/*.hpp"]),
+    includes = ["include", "src", "include/autoware_planning_validator_rear_collision_checker"],
+    deps = [
+        ":rear_collision_checker_node_parameters",
+        "@angles",
+        "@autoware_agnocast_wrapper//:autoware_agnocast_wrapper_library",
+        "@autoware_internal_debug_msgs//:cc",
+        "@autoware_internal_planning_msgs//:cc",
+        "@autoware_lanelet2_extension//:autoware_lanelet2_extension_lib_library",
+        "@autoware_lanelet2_utils",
+        "@autoware_motion_utils",
+        "@autoware_planning_factor_interface",
+        "@autoware_planning_msgs//:cc",
+        "@autoware_planning_test_manager",
+        "@autoware_planning_validator",
+        "@autoware_route_handler",
+        "@autoware_signal_processing",
+        "@autoware_utils",
+        "@autoware_utils_geometry",
+        "@autoware_vehicle_info_utils",
+        "@diagnostic_msgs//:cc",
+        "@pcl_conversions//:pcl_conversions_library",
+        "@rclcpp//:rclcpp_library",
+        "@rclcpp_components//:rclcpp_components_library",
+        "@rosdistro//cc:eigen",
+        "@rosdistro//cc:pcl_common",
+        "@rosdistro//cc:boost.assign",
+        "@rosdistro//cc:boost.format",
+        "@rosdistro//cc:boost.geometry",
+        "@rosdistro//cc:magic_enum",
+        "@sensor_msgs//:cc",
+        "@std_msgs//:cc",
+        "@tf2//:tf2_library",
+        "@tf2_eigen//:tf2_eigen_library",
+        "@tf2_geometry_msgs//:tf2_geometry_msgs_library",
+        "@tf2_ros//:tf2_ros_library",
+        "@tier4_planning_msgs//:cc",
+        "@visualization_msgs//:cc",
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = [
+        "@autoware_agnocast_wrapper//:autoware_agnocast_wrapper",
+        "@autoware_internal_debug_msgs//:cc_shared",
+        "@autoware_internal_planning_msgs//:cc_shared",
+        "@autoware_lanelet2_extension//:autoware_lanelet2_extension_lib",
+        "@autoware_lanelet2_utils//:runtime_dynamic_deps",
+        "@autoware_motion_utils//:runtime_dynamic_deps",
+        "@autoware_planning_factor_interface//:runtime_dynamic_deps",
+        "@autoware_planning_msgs//:cc_shared",
+        "@autoware_planning_test_manager//:runtime_dynamic_deps",
+        "@autoware_planning_validator//:runtime_dynamic_deps",
+        "@autoware_route_handler//:runtime_dynamic_deps",
+        "@diagnostic_msgs//:cc_shared",
+        "@generate_parameter_library//:rclcpp_lifecycle",
+        "@generate_parameter_library//:rsl",
+        "@pcl_conversions//:pcl_conversions",
+        "@rclcpp//:rclcpp",
+        "@rclcpp_components//:rclcpp_components",
+        "@sensor_msgs//:cc_shared",
+        "@std_msgs//:cc_shared",
+        "@tf2//:tf2",
+        "@tf2_eigen//:tf2_eigen",
+        "@tf2_geometry_msgs//:tf2_geometry_msgs",
+        "@tf2_ros//:tf2_ros",
+        "@tier4_planning_msgs//:cc_shared",
+        "@visualization_msgs//:cc_shared",
+    ],
+)
+
+cc_shared_library(
+    name = "rear_collision_checker_plugin",
+    shared_lib_name = "libautoware_planning_validator_rear_collision_checker.so",
+    dynamic_deps = [":runtime_dynamic_deps"],
+    deps = [":autoware_planning_validator_rear_collision_checker"],
+)
+
+ament_index(
+    libraries = [":rear_collision_checker_plugin"],
+    data = glob(["config/**"]),
+    plugin_categories = {"plugins.xml": "autoware_planning_validator"},
+    package_xml = "package.xml",
+)

@@ -1331,3 +1331,9 @@ local_path_override(
     module_name = "autoware_planning_validator_intersection_collision_checker",
     path = "src/universe/autoware_universe/planning/planning_validator/autoware_planning_validator_intersection_collision_checker",
 )
+
+bazel_dep(name = "autoware_planning_validator_rear_collision_checker", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_planning_validator_rear_collision_checker",
+    path = "src/universe/autoware_universe/planning/planning_validator/autoware_planning_validator_rear_collision_checker",
+)

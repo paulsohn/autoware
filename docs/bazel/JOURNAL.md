@@ -13819,3 +13819,56 @@ and exits cleanly; it uses component-default YAML and does not establish driving
 or all collision-checker scenario behavior. Source/test assertions remain intact
 apart from the documented constant-initializer compatibility correction.
 Formatting/flake8/whitespace checks pass. No Fast DDS or full simulator is run.
+
+## 2026-11-22: Phase 7.3.2 — Planning validator rear collision checker
+
+Purpose: expose this selected local validator package. Inspect its manifest,
+CMake, all 2 implementation sources, public headers and complete original
+test registration (0 active cases). Prerequisites are local planning/
+message/route/vehicle utilities, the published angles 1.16.1-3.rcr.2 pin and the
+existing wrapper/generated-parameter providers. Select CPU/Cyclone DDS with
+ENABLE_AGNOCAST=0 for this group.
+
+Generate rear_collision_checker_node_parameters from the original schema.
+Declare original local planning/control/vehicle/route dependencies, native PCL,
+magic_enum and Boost assign/format/geometry used by the actual sources, plus
+TF/PCL conversion runtime providers. Missing magic_enum/boost.assign headers
+are build-dependency omissions, not reasons to modify implementation includes.
+Preserve the XML basename/category and own indexed config. The package has no
+original native suite; individual and joint executable gates check factory
+load, parameters, library ownership and teardown, not rear-collision accuracy.
+Refresh the resolved extension-usage digest after the complete group; registry
+versions are unchanged by these local module declarations.
+
+Add package-owned MODULE/BUILD and an adjacent root local override after its
+actual prerequisites. Components do not depend on root product/test labels.
+Keep original tests in place and added profiles under bazel/tests. Publish the
+flattened runtime dependency closure and keep config resources indexed with
+their owning package. Generate interfaces and parameters in the build graph;
+no ament-prefix scanning, host install or post-build generation is involved.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast \
+  --local_test_jobs=1 --test_output=errors @angles//test:all \
+  @autoware_planning_validator_test_utils//... \
+  @autoware_planning_validator//... \
+  @autoware_planning_validator_latency_checker//... \
+  @autoware_planning_validator_trajectory_checker//... \
+  @autoware_planning_validator_intersection_collision_checker//... \
+  @autoware_planning_validator_rear_collision_checker//... \
+  //bazel/tests/planning_validator:all
+python3 -m flake8 --max-line-length=150 bazel/tests/planning_validator/test_runtime.py
+git diff --check
+```
+
+All twelve targets pass (final invocation 45.4 seconds, reusing unchanged
+results): 27 original validator/checker cases, 16 original angles cases, seven
+indexed-node/factory lifecycles and one generated-status wire type. The native
+checker runs 25 cases in 43.2 seconds; base node cases take 8.1 seconds; root
+profiles take 1.3–1.8 seconds. Zero failures/errors/disabled cases/skips occur.
+The joint profile loads all four default-enabled factories in one real validator
+and exits cleanly; it uses component-default YAML and does not establish driving
+or all collision-checker scenario behavior. Source/test assertions remain intact
+apart from the documented constant-initializer compatibility correction.
+Formatting/flake8/whitespace checks pass. No Fast DDS or full simulator is run.
