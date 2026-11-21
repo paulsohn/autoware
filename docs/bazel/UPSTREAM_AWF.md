@@ -1203,6 +1203,8 @@ Local source fix: `73b37641`, separate from Bazel definitions.
 
 ### Intersection UUID construction with modern Boost
 
+Local source fix: `67287e6e`, separate from Bazel definitions.
+
 - [x] Associated with open [universe#13605](https://github.com/autowarefoundation/autoware_universe/pull/13605),
   reviewed 2026-11-22 at head c4e36a66e05eef83f000a4d28e59c9cab648c71d.
   The intersection edit matches; the PR also changes the unselected roundabout

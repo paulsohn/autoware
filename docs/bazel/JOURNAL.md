@@ -12197,3 +12197,54 @@ real planner lifecycles. All pass. Targeted clang-format and git diff --check
 also pass. Older Boost distributions are not exercised. This is alignment with
 an existing upstream PR, not a new submission; UPSTREAM_AWF.md records the
 association. The next commit supplies the reusable local module declarations.
+
+## 2026-11-22: Phase 7.3.2 — Crosswalk behavior-velocity plugin
+
+Purpose: provide the preset-selected crosswalk scene. Inspect CMake, manifest,
+original plugin XML/config, every production source/header and original test
+registration. This module has 9 production sources and 5 compatible original
+cases covering interpolation utilities, node input handling and pedestrian planning factors.
+
+Use package-owned MODULE/BUILD rules, original shared-library basename and
+plugin category, indexed config/fixtures, and a root local override after its
+local dependencies. Export both standard and experimental factories. Declare
+actual C++/message dependencies and flattened shared runtime providers; keep
+source components independent of root labels. Reuse the root RTC-step adapter
+for indexed configuration, factory/DLL loading, parameter service, unload/reload
+and clean SIGINT shutdown through both real planner executables. The selected
+launch profile uses the experimental factory. Original production/test bodies
+remain unchanged except for the separate documented intersection UUID fix.
+
+Dependencies include the local iterator and pinned grid-map core/ROS providers.
+A first planning-factor run throws YAML bad-file and crashes during failed-test
+teardown: the test fixture directory is missing. CMake installs test/test_config
+as test_config, so declare those files in ament_index and data_strip_prefix=test.
+This fixes resource lookup without changing the test or its expectations.
+
+The exact combined command for this and the following three module entries is:
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_output=errors \
+  @autoware_behavior_velocity_crosswalk_module//... \
+  @autoware_behavior_velocity_walkway_module//... \
+  @autoware_behavior_velocity_intersection_module//... \
+  @autoware_behavior_velocity_blind_spot_module//... \
+  //bazel/tests/autoware_behavior_velocity_crosswalk_module:all \
+  //bazel/tests/autoware_behavior_velocity_walkway_module:all \
+  //bazel/tests/autoware_behavior_velocity_intersection_module:all \
+  //bazel/tests/autoware_behavior_velocity_blind_spot_module:all
+python3 -m flake8 --max-line-length=150 \
+  bazel/tests/behavior_velocity_planner/test_runtime.py
+git diff --check
+```
+
+All 5 compatible original cases and both lifecycle profiles pass. The
+complete group passes 23 cases across thirteen targets, including the UUID
+regression, with no runtime failures/errors/skips. The final invocation takes
+26.8 seconds, reusing unchanged passing results; the native suites take crosswalk
+14.7, walkway 10.1, intersection 20.7 and blind-spot 10.1 seconds. Targeted format,
+flake8 and whitespace checks pass. CPU/Cyclone DDS, ENABLE_AGNOCAST=0 is selected;
+no pre-commit, Fast DDS, kernel-dependent gate or full simulator launch is run.
+Next continue the remaining selected planning and control implementation closure.
