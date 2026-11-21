@@ -13,6 +13,7 @@ load("@rules_python//python:defs.bzl", "py_test")
         deps = ["@ament_index_python", "@rcl_interfaces//:py", "@rclpy"],
     )
     for package, executable, config in [
+        ("autoware_remaining_distance_time_calculator", "autoware_remaining_distance_time_calculator_node", "remaining_distance_time_calculator.param.yaml"),
         ("autoware_freespace_planner", "freespace_planner", "freespace_planner.param.yaml"),
         ("autoware_costmap_generator", "costmap_generator", "costmap_generator.param.yaml"),
         ("autoware_path_smoother", "elastic_band_smoother", "elastic_band_smoother.param.yaml"),

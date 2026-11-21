@@ -1282,3 +1282,9 @@ local_path_override(
     module_name = "autoware_freespace_planner",
     path = "src/universe/autoware_universe/planning/autoware_freespace_planner",
 )
+
+bazel_dep(name = "autoware_remaining_distance_time_calculator", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_remaining_distance_time_calculator",
+    path = "src/universe/autoware_universe/planning/autoware_remaining_distance_time_calculator",
+)
