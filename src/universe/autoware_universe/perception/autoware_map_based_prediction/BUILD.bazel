@@ -1,0 +1,106 @@
+load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
+load("@autoware_agnocast_wrapper//:defs.bzl", "autoware_agnocast_node")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "autoware_map_based_prediction",
+    srcs = glob(["src/**/*.cpp", "lib/**/*.cpp"]),
+    hdrs = glob(["include/**/*.hpp", "src/**/*.hpp"]),
+    includes = ["include", "src"],
+    deps = [
+        "@autoware_agnocast_wrapper//:autoware_agnocast_wrapper_library",
+        "@autoware_internal_debug_msgs//:cc",
+        "@autoware_interpolation",
+        "@autoware_lanelet2_extension//:autoware_lanelet2_extension_lib_library",
+        "@autoware_lanelet2_utils",
+        "@autoware_map_msgs//:cc",
+        "@autoware_motion_utils",
+        "@autoware_object_recognition_utils",
+        "@autoware_perception_msgs//:cc",
+        "@autoware_utils",
+        "@rclcpp//:rclcpp_library",
+        "@rclcpp_components//:rclcpp_components_library",
+        "@rosdistro//cc:eigen",
+        "@rosdistro//cc:fmt",
+        "@tf2//:tf2_library",
+        "@tf2_geometry_msgs//:tf2_geometry_msgs_library",
+        "@tf2_ros//:tf2_ros_library",
+        "@unique_identifier_msgs//:cc",
+        "@visualization_msgs//:cc",
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = [
+        "@autoware_agnocast_wrapper//:autoware_agnocast_wrapper",
+        "@autoware_internal_debug_msgs//:cc_shared",
+        "@autoware_lanelet2_extension//:autoware_lanelet2_extension_lib",
+        "@autoware_lanelet2_utils//:runtime_dynamic_deps",
+        "@autoware_map_msgs//:cc_shared",
+        "@autoware_motion_utils//:runtime_dynamic_deps",
+        "@autoware_object_recognition_utils//:runtime_dynamic_deps",
+        "@autoware_perception_msgs//:cc_shared",
+        "@rclcpp//:rclcpp",
+        "@rclcpp_components//:rclcpp_components",
+        "@tf2//:tf2",
+        "@tf2_geometry_msgs//:tf2_geometry_msgs",
+        "@tf2_ros//:tf2_ros",
+        "@unique_identifier_msgs//:cc_shared",
+        "@visualization_msgs//:cc_shared",
+    ],
+)
+
+cc_shared_library(
+    name = "autoware_map_based_prediction_component",
+    dynamic_deps = [":runtime_dynamic_deps"],
+    deps = [":autoware_map_based_prediction"],
+)
+
+autoware_agnocast_node(
+    name = "map_based_prediction",
+    package_name = "autoware_map_based_prediction",
+    component = ":autoware_map_based_prediction_component",
+    plugin = "autoware::map_based_prediction::MapBasedPredictionNode",
+    agnocast_only = True,
+)
+
+register_ament_files(
+    name = "node_executables",
+    files = [":map_based_prediction"],
+    prefix = "lib/autoware_map_based_prediction",
+    strip_prefix = "*",
+)
+
+ament_index(
+    package_xml = "package.xml",
+    data = glob(["config/**", "launch/**"]) + [":map_based_prediction_plugin", ":node_executables"],
+    components = [":map_based_prediction_components"],
+)
+
+collect_transitive_dynamic_deps(
+    name = "test_dynamic_deps",
+    dynamic_deps = [
+        ":runtime_dynamic_deps",
+        "@ament_index_cpp//:ament_index_cpp",
+    ],
+)
+
+cc_test(
+    name = "test_autoware_map_based_prediction",
+    timeout = "long",
+    srcs = glob(["test/**/*.cpp"]),
+    data = [
+        ":ament_index",
+    ],
+    dynamic_deps = [":test_dynamic_deps"],
+    env = {"ENABLE_AGNOCAST": "0", "LD_LIBRARY_PATH": "lib", "ROS_DOMAIN_ID": "95"},
+    deps = [
+        ":autoware_map_based_prediction",
+        "@ament_index_cpp//:ament_index_cpp_library",
+        "@googletest//:gtest",
+    ],
+)

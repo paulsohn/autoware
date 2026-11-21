@@ -1471,3 +1471,9 @@ local_path_override(
     module_name = "autoware_multi_object_tracker",
     path = "src/universe/autoware_universe/perception/autoware_multi_object_tracker",
 )
+
+bazel_dep(name = "autoware_map_based_prediction", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_map_based_prediction",
+    path = "src/universe/autoware_universe/perception/autoware_map_based_prediction",
+)
