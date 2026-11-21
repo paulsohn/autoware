@@ -1562,3 +1562,9 @@ local_path_override(
     module_name = "autoware_dummy_diag_publisher",
     path = "src/universe/autoware_universe/simulator/autoware_dummy_diag_publisher",
 )
+
+bazel_dep(name = "autoware_default_adapi_universe", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_default_adapi_universe",
+    path = "src/universe/autoware_universe/system/autoware_default_adapi_universe",
+)

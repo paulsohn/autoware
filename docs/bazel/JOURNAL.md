@@ -15780,3 +15780,68 @@ checks the owned component DSO/no heaphook and asserts clean SIGINT exit. Inputs
 are indexed/declared, and temporary ROS_LOG_DIR confines metrics output. Further
 API integration and the accumulated interface compilation gate remain before
 full simulator composition.
+
+## 2026-11-22: Phase 7.3.2 — Universe default AD API
+
+Purpose: expose the selected Universe API implementation through its original
+launch, native standalone entrypoints and installed web executable. Inspect the
+original CMake, manifest, sixteen production CPPs, headers, scoped YAML, Python
+launcher/dictionary and web_server.py. CMake registers fifteen wrapper classes,
+with MultiThreadedExecutor and AgnocastOnlyCallbackIsolatedExecutor, and no
+functional tests. Preserve the existing core API's full fifteen-case conversion
+suite when exercising their combined launch.
+
+Add one local MODULE/BUILD, selected by an adjacent root override. Use current
+local native utility/spec/interface providers and concrete ROS shared libraries;
+keep one unique Universe component DSO and the original fifteen executable names.
+The manifest retains old tier4_api/control/planning message dependencies, but
+these implementation/spec headers use the current AD API messages. A literal
+manifest-derived tier4_api_msgs@0.0.0 request fails registry resolution. Inspect
+the source/spec closure, omit those unused build edges, and validate every native
+CPP and entrypoint instead of adopting an unrelated legacy interface surface.
+The original manifest/source stay unchanged.
+
+Its index owns config, launch, registrations and executables; static core API,
+wrapper, global parameter loader and published ROS container providers belong
+in index deps, not data. The caller supplies the dynamically selected vehicle
+index (the local tutorial sample_vehicle_description), as with core. Preserve
+the original global loader and test_default_adapi.launch.xml; do not replace the
+API composition with a custom node list. The original dictionary selects nineteen
+nodes: three core, fifteen Universe classes and a second manual-control instance.
+
+Expose web_server.py as py_binary and register its executable launcher/runfiles.
+The component owns a rules_python pip hub and hash-pinned Flask 3.1.2, Werkzeug
+3.1.3, Blinker 1.9.0, Click 8.1.8, ItsDangerous 2.2.0, Jinja2 3.1.6 and MarkupSafe
+3.0.3 closure in requirements_lock.txt. Artifact hashes come from each exact
+PyPI version's JSON endpoint (all published wheels/sdist); no host pip install
+or source shebang fallback. Configure the RCR default Python 3.12 and selected
+3.14 hub variants; execution evidence here is Python 3.14.4 only.
+
+Place added tests under bazel/tests/universe_adapi. One standalone profile per
+Universe dictionary entry (sixteen, including both manual modes) uses the
+original scoped config and declared vehicle YAML. Check parameter service,
+component DSO/no heaphook and clean shutdown. The launch test includes the
+original XML and installed web server. Require all nineteen node parameter
+services, version 1.9.1, sample wheelbase/footprint, both configured MRM
+descriptions, sequential heartbeats and the HTTP /interface/version response.
+The initial heartbeat subscriber's reliable QoS cannot match the specified
+best-effort publisher: match that contract in the test, preserving production.
+Assert clean exit of both actual processes.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast \
+  --local_test_jobs=1 --test_output=errors \
+  @autoware_default_adapi_universe//... @autoware_default_adapi//... \
+  //bazel/tests/universe_adapi:all
+python3 -m flake8 --max-line-length=150 bazel/tests/universe_adapi/*.py
+git diff --check
+```
+
+All three targets pass: fifteen original core conversions, sixteen installed
+profiles and two launch/teardown cases (33 active cases). Final invocation 6.7
+seconds, launch 2.8 seconds and cached standalone suite 7.1 seconds; initial
+native materialization/compilation took longer. No failures or introduced skips,
+CPU/Cyclone DDS with ENABLE_AGNOCAST=0. No source edits, Fast DDS, Agnocast-enabled
+runtime, older ROS/colcon, full simulator or real-time performance claim. Complete
+the accumulated typed-interface gate next, before full simulator composition.

@@ -1,0 +1,293 @@
+load("@pip_adapi//:requirements.bzl", "requirement")
+load("@rules_python//python:defs.bzl", "py_binary")
+load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library")
+load("@autoware_agnocast_wrapper//:defs.bzl", "autoware_agnocast_node")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "autoware_default_adapi_universe",
+    srcs = glob(["src/**/*.cpp"]),
+    hdrs = glob(["src/**/*.hpp"]),
+    includes = ["src"],
+    deps = [
+        "@autoware_adapi_specs",
+        "@autoware_adapi_v1_msgs//:cc",
+        "@autoware_adapi_version_msgs//:cc",
+        "@autoware_agnocast_wrapper//:autoware_agnocast_wrapper_library",
+        "@autoware_component_interface_specs",
+        "@autoware_component_interface_specs_universe",
+        "@autoware_component_interface_utils",
+        "@autoware_geography_utils",
+        "@autoware_internal_planning_msgs//:cc",
+        "@autoware_motion_utils",
+        "@autoware_perception_msgs//:cc",
+        "@autoware_planning_msgs//:cc",
+        "@autoware_system_msgs//:cc",
+        "@autoware_utils_diagnostics",
+        "@autoware_utils_rclcpp",
+        "@autoware_vehicle_info_utils",
+        "@autoware_vehicle_msgs//:cc",
+        "@builtin_interfaces//:cc",
+        "@diagnostic_msgs//:cc",
+        "@diagnostic_updater//:diagnostic_updater_library",
+        "@geographic_msgs//:cc",
+        "@geometry_msgs//:cc",
+        "@nav_msgs//:cc",
+        "@rclcpp//:rclcpp_library",
+        "@rclcpp_components//:rclcpp_components_library",
+        "@shape_msgs//:cc",
+        "@std_srvs//:cc",
+        "@tier4_system_msgs//:cc",
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = [
+        "@autoware_adapi_specs//:runtime_dynamic_deps",
+        "@autoware_adapi_v1_msgs//:cc_shared",
+        "@autoware_adapi_version_msgs//:cc_shared",
+        "@autoware_agnocast_wrapper//:autoware_agnocast_wrapper",
+        "@autoware_component_interface_specs//:runtime_dynamic_deps",
+        "@autoware_component_interface_specs_universe//:runtime_dynamic_deps",
+        "@autoware_component_interface_utils//:runtime_dynamic_deps",
+        "@autoware_geography_utils//:runtime_dynamic_deps",
+        "@autoware_internal_planning_msgs//:cc_shared",
+        "@autoware_motion_utils//:runtime_dynamic_deps",
+        "@autoware_perception_msgs//:cc_shared",
+        "@autoware_planning_msgs//:cc_shared",
+        "@autoware_system_msgs//:cc_shared",
+        "@autoware_vehicle_msgs//:cc_shared",
+        "@builtin_interfaces//:cc_shared",
+        "@diagnostic_msgs//:cc_shared",
+        "@diagnostic_updater//:diagnostic_updater",
+        "@geographic_msgs//:cc_shared",
+        "@geometry_msgs//:cc_shared",
+        "@nav_msgs//:cc_shared",
+        "@rclcpp//:rclcpp",
+        "@rclcpp_components//:rclcpp_components",
+        "@shape_msgs//:cc_shared",
+        "@std_srvs//:cc_shared",
+        "@tier4_system_msgs//:cc_shared",
+    ],
+)
+
+cc_shared_library(
+    name = "autoware_default_adapi_universe_component",
+    dynamic_deps = [":runtime_dynamic_deps"],
+    deps = [":autoware_default_adapi_universe"],
+)
+
+autoware_agnocast_node(
+    name = "autoware_state_node",
+    package_name = "autoware_default_adapi_universe",
+    component = ":autoware_default_adapi_universe_component",
+    plugin = "autoware::default_adapi::AutowareStateNode",
+    agnocast_only = True,
+    ros2_executor = "MultiThreadedExecutor",
+)
+
+autoware_agnocast_node(
+    name = "diagnostics_node",
+    package_name = "autoware_default_adapi_universe",
+    component = ":autoware_default_adapi_universe_component",
+    plugin = "autoware::default_adapi::DiagnosticsNode",
+    agnocast_only = True,
+    ros2_executor = "MultiThreadedExecutor",
+)
+
+autoware_agnocast_node(
+    name = "fail_safe_node",
+    package_name = "autoware_default_adapi_universe",
+    component = ":autoware_default_adapi_universe_component",
+    plugin = "autoware::default_adapi::FailSafeNode",
+    agnocast_only = True,
+    ros2_executor = "MultiThreadedExecutor",
+)
+
+autoware_agnocast_node(
+    name = "heartbeat_node",
+    package_name = "autoware_default_adapi_universe",
+    component = ":autoware_default_adapi_universe_component",
+    plugin = "autoware::default_adapi::HeartbeatNode",
+    agnocast_only = True,
+    ros2_executor = "MultiThreadedExecutor",
+)
+
+autoware_agnocast_node(
+    name = "manual_control_node",
+    package_name = "autoware_default_adapi_universe",
+    component = ":autoware_default_adapi_universe_component",
+    plugin = "autoware::default_adapi::ManualControlNode",
+    agnocast_only = True,
+    ros2_executor = "MultiThreadedExecutor",
+)
+
+autoware_agnocast_node(
+    name = "motion_node",
+    package_name = "autoware_default_adapi_universe",
+    component = ":autoware_default_adapi_universe_component",
+    plugin = "autoware::default_adapi::MotionNode",
+    agnocast_only = True,
+    ros2_executor = "MultiThreadedExecutor",
+)
+
+autoware_agnocast_node(
+    name = "mrm_request_node",
+    package_name = "autoware_default_adapi_universe",
+    component = ":autoware_default_adapi_universe_component",
+    plugin = "autoware::default_adapi::MrmRequestNode",
+    agnocast_only = True,
+    ros2_executor = "MultiThreadedExecutor",
+)
+
+autoware_agnocast_node(
+    name = "operation_mode_node",
+    package_name = "autoware_default_adapi_universe",
+    component = ":autoware_default_adapi_universe_component",
+    plugin = "autoware::default_adapi::OperationModeNode",
+    agnocast_only = True,
+    ros2_executor = "MultiThreadedExecutor",
+)
+
+autoware_agnocast_node(
+    name = "perception_node",
+    package_name = "autoware_default_adapi_universe",
+    component = ":autoware_default_adapi_universe_component",
+    plugin = "autoware::default_adapi::PerceptionNode",
+    agnocast_only = True,
+    ros2_executor = "MultiThreadedExecutor",
+)
+
+autoware_agnocast_node(
+    name = "planning_node",
+    package_name = "autoware_default_adapi_universe",
+    component = ":autoware_default_adapi_universe_component",
+    plugin = "autoware::default_adapi::PlanningNode",
+    agnocast_only = True,
+    ros2_executor = "MultiThreadedExecutor",
+)
+
+autoware_agnocast_node(
+    name = "vehicle_command_node",
+    package_name = "autoware_default_adapi_universe",
+    component = ":autoware_default_adapi_universe_component",
+    plugin = "autoware::default_adapi::VehicleCommandNode",
+    agnocast_only = True,
+    ros2_executor = "MultiThreadedExecutor",
+)
+
+autoware_agnocast_node(
+    name = "vehicle_door_node",
+    package_name = "autoware_default_adapi_universe",
+    component = ":autoware_default_adapi_universe_component",
+    plugin = "autoware::default_adapi::VehicleDoorNode",
+    agnocast_only = True,
+    ros2_executor = "MultiThreadedExecutor",
+)
+
+autoware_agnocast_node(
+    name = "vehicle_info_node",
+    package_name = "autoware_default_adapi_universe",
+    component = ":autoware_default_adapi_universe_component",
+    plugin = "autoware::default_adapi::VehicleInfoNode",
+    agnocast_only = True,
+    ros2_executor = "MultiThreadedExecutor",
+)
+
+autoware_agnocast_node(
+    name = "vehicle_metrics_node",
+    package_name = "autoware_default_adapi_universe",
+    component = ":autoware_default_adapi_universe_component",
+    plugin = "autoware::default_adapi::VehicleMetricsNode",
+    agnocast_only = True,
+    ros2_executor = "MultiThreadedExecutor",
+)
+
+autoware_agnocast_node(
+    name = "vehicle_status_node",
+    package_name = "autoware_default_adapi_universe",
+    component = ":autoware_default_adapi_universe_component",
+    plugin = "autoware::default_adapi::VehicleStatusNode",
+    agnocast_only = True,
+    ros2_executor = "MultiThreadedExecutor",
+)
+
+py_binary(
+    name = "web_server.py",
+    srcs = ["script/web_server.py"],
+    main = "script/web_server.py",
+    deps = ["@autoware_adapi_version_msgs//:py", "@rclpy", requirement("flask")],
+)
+
+register_ament_files(
+    name = "node_executables",
+    files = [
+        ":web_server.py",
+        ":autoware_state_node",
+        ":diagnostics_node",
+        ":fail_safe_node",
+        ":heartbeat_node",
+        ":manual_control_node",
+        ":motion_node",
+        ":mrm_request_node",
+        ":operation_mode_node",
+        ":perception_node",
+        ":planning_node",
+        ":vehicle_command_node",
+        ":vehicle_door_node",
+        ":vehicle_info_node",
+        ":vehicle_metrics_node",
+        ":vehicle_status_node",
+    ],
+    prefix = "lib/autoware_default_adapi_universe",
+    strip_prefix = "*",
+)
+
+ament_index(
+    package_xml = "package.xml",
+    deps = [
+        "@autoware_default_adapi//:ament_index",
+        "@autoware_agnocast_wrapper//:ament_package",
+        "@autoware_global_parameter_loader//:ament_index",
+        "@rclcpp_components//:ament_package",
+    ],
+    data = glob(["config/**", "launch/**"]) + [
+        ":autoware_state_node_plugin",
+        ":diagnostics_node_plugin",
+        ":fail_safe_node_plugin",
+        ":heartbeat_node_plugin",
+        ":manual_control_node_plugin",
+        ":motion_node_plugin",
+        ":mrm_request_node_plugin",
+        ":operation_mode_node_plugin",
+        ":perception_node_plugin",
+        ":planning_node_plugin",
+        ":vehicle_command_node_plugin",
+        ":vehicle_door_node_plugin",
+        ":vehicle_info_node_plugin",
+        ":vehicle_metrics_node_plugin",
+        ":vehicle_status_node_plugin",
+        ":node_executables",
+    ],
+    components = [
+        ":autoware_state_node_components",
+        ":diagnostics_node_components",
+        ":fail_safe_node_components",
+        ":heartbeat_node_components",
+        ":manual_control_node_components",
+        ":motion_node_components",
+        ":mrm_request_node_components",
+        ":operation_mode_node_components",
+        ":perception_node_components",
+        ":planning_node_components",
+        ":vehicle_command_node_components",
+        ":vehicle_door_node_components",
+        ":vehicle_info_node_components",
+        ":vehicle_metrics_node_components",
+        ":vehicle_status_node_components",
+    ],
+)
