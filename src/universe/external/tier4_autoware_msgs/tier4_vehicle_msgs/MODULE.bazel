@@ -1,0 +1,10 @@
+module(
+    name = "tier4_vehicle_msgs",
+    version = "0.0.0",
+)
+
+bazel_dep(name = "builtin_interfaces", version = "0.0.0")
+bazel_dep(name = "geometry_msgs", version = "0.0.0")
+bazel_dep(name = "rosidl_default_generators", version = "0.0.0")
+bazel_dep(name = "std_msgs", version = "0.0.0")
+bazel_dep(name = "tier4_control_msgs", version = "0.0.0")

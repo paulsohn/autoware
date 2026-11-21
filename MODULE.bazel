@@ -1022,3 +1022,9 @@ local_path_override(
     module_name = "tier4_v2x_msgs",
     path = "src/universe/external/tier4_autoware_msgs/tier4_v2x_msgs",
 )
+
+bazel_dep(name = "tier4_vehicle_msgs", version = "0.0.0")
+local_path_override(
+    module_name = "tier4_vehicle_msgs",
+    path = "src/universe/external/tier4_autoware_msgs/tier4_vehicle_msgs",
+)

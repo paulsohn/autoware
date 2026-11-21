@@ -1,0 +1,20 @@
+load("@rosidl_default_generators//:defs.bzl", "default_generators")
+
+package(default_visibility = ["//visibility:public"])
+
+# Supported interfaces are selected by the integrated consumers.
+default_generators(
+    dependencies = [
+        "@builtin_interfaces",
+        "@std_msgs",
+    ],
+    package_xml = "package.xml",
+    deps = [
+        "//msg:ActuationCommand",
+        "//msg:ActuationCommandStamped",
+        "//msg:ActuationStatus",
+        "//msg:ActuationStatusStamped",
+        "//msg:BatteryStatus",
+        "//msg:VehicleEmergencyStamped",
+    ],
+)

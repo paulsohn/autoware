@@ -1,0 +1,49 @@
+load("@rosidl_default_generators//:defs.bzl", "ros_message")
+
+package(default_visibility = ["//visibility:public"])
+
+ros_message(
+    name = "ActuationCommand",
+    src = "ActuationCommand.msg",
+    deps = [],
+)
+
+ros_message(
+    name = "ActuationCommandStamped",
+    src = "ActuationCommandStamped.msg",
+    deps = [
+        "//msg:ActuationCommand",
+        "@std_msgs//msg:Header",
+    ],
+)
+
+ros_message(
+    name = "ActuationStatus",
+    src = "ActuationStatus.msg",
+    deps = [],
+)
+
+ros_message(
+    name = "ActuationStatusStamped",
+    src = "ActuationStatusStamped.msg",
+    deps = [
+        "//msg:ActuationStatus",
+        "@std_msgs//msg:Header",
+    ],
+)
+
+ros_message(
+    name = "BatteryStatus",
+    src = "BatteryStatus.msg",
+    deps = [
+        "@builtin_interfaces//msg:Time",
+    ],
+)
+
+ros_message(
+    name = "VehicleEmergencyStamped",
+    src = "VehicleEmergencyStamped.msg",
+    deps = [
+        "@builtin_interfaces//msg:Time",
+    ],
+)
