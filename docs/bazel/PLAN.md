@@ -64,6 +64,7 @@ only when your current target demonstrates the need.
   [Canonical interface identity](DEVELOPING.md#interface-declarations-and-bridge-plugins);
   [evidence: nested source categories](JOURNAL.md#2026-11-21-phase-732--nested-interface-source-namespaces).
   [Native plugin registration](DEVELOPING.md#native-plugin-libraries);
+  [combined-plugin type identity](JOURNAL.md#2026-11-22-phase-732--distinct-motion-plugin-internal-types);
   [node-owned parameter lifetime](JOURNAL.md#2026-11-22-phase-732--cruise-pid-plugin-reload);
   [multi-package dependency identity and link closure](../../third_party/grid_map/README.md);
   [evidence: stop-line plugin](JOURNAL.md#2026-11-17-phase-525--stop-line-plugin).

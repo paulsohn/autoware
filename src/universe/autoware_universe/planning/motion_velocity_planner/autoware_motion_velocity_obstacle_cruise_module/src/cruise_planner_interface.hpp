@@ -33,7 +33,7 @@ class CruisePlannerInterface
 {
 public:
   CruisePlannerInterface(
-    rclcpp::Node & node, const CommonParam & common_param,
+    rclcpp::Node & node, const CruiseCommonParam & common_param,
     const CruisePlanningParam & cruise_planning_param)
   {
     clock_ = node.get_clock();
@@ -47,7 +47,7 @@ public:
   virtual std::vector<TrajectoryPoint> plan_cruise(
     const std::shared_ptr<const PlannerData> planner_data,
     const std::vector<TrajectoryPoint> & stop_traj_points,
-    const std::vector<CruiseObstacle> & obstacles, std::shared_ptr<DebugData> debug_data_ptr,
+    const std::vector<CruiseObstacle> & obstacles, std::shared_ptr<CruiseDebugData> debug_data_ptr,
     std::unique_ptr<autoware::planning_factor_interface::PlanningFactorInterface> &
       planning_factor_interface,
     std::optional<VelocityLimit> & velocity_limit) = 0;
@@ -63,7 +63,7 @@ public:
 protected:
   rclcpp::Clock::SharedPtr clock_{};
   rclcpp::Logger logger_{rclcpp::get_logger("")};
-  CommonParam common_param_;
+  CruiseCommonParam common_param_;
   CruisePlanningParam cruise_planning_param_;
 
   static double calc_distance_to_collisionPoint(

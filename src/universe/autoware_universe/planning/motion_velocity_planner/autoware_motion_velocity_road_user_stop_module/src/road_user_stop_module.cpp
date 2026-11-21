@@ -100,7 +100,7 @@ void RoadUserStopModule::init(rclcpp::Node & node, const std::string & module_na
   param_listener_ = std::make_shared<::road_user_stop::ParamListener>(
     node.get_node_parameters_interface(), logger_, "road_user_stop");
 
-  common_param_ = CommonParam(node);
+  common_param_ = RoadUserStopCommonParam(node);
 
   virtual_wall_publisher_ = node.create_publisher<MarkerArray>("~/road_user_stop/virtual_walls", 1);
   planning_factor_interface_ =
@@ -322,7 +322,7 @@ bool RoadUserStopModule::is_object_stopped_for_duration_after_ego_arrival(
   return is_stopped_long_enough;
 }
 
-std::vector<StopObstacle> RoadUserStopModule::filter_stop_obstacles(
+std::vector<RoadUserStopStopObstacle> RoadUserStopModule::filter_stop_obstacles(
   const std::shared_ptr<const PlannerData> planner_data,
   const std::vector<TrajectoryPoint> & traj_points,
   const std::vector<TrajectoryPoint> & decimated_traj_points,
@@ -339,7 +339,7 @@ std::vector<StopObstacle> RoadUserStopModule::filter_stop_obstacles(
     param.stopped_object_tracking.stopped_duration_after_ego_arrival;
 
   std::set<std::string> current_object_ids;
-  std::vector<StopObstacle> stop_obstacles;
+  std::vector<RoadUserStopStopObstacle> stop_obstacles;
   for (const auto & object : planner_data->objects) {
     if (
       auto stop_obstacle = pick_stop_obstacle_from_predicted_object(
@@ -418,7 +418,7 @@ std::vector<StopObstacle> RoadUserStopModule::filter_stop_obstacles(
 
     if (!already_exists) {
       // Create a lost object placeholder with fixed position
-      StopObstacle lost_obstacle = prev_obstacle;
+      RoadUserStopStopObstacle lost_obstacle = prev_obstacle;
       lost_obstacle.is_lost = true;
       lost_obstacle.lost_time = tracked_it->second.last_detected_time;
 
@@ -453,7 +453,7 @@ VelocityPlanningResult RoadUserStopModule::plan(
 
   // Initialize
   VelocityPlanningResult result;
-  debug_data_ = DebugData();
+  debug_data_ = RoadUserStopDebugData();
   trajectory_polygon_for_inside_map_.clear();
   debug_data_.object_polygons.clear();
 
@@ -851,7 +851,7 @@ RelevantLaneletData RoadUserStopModule::get_relevant_lanelet_data(
 std::optional<Point> RoadUserStopModule::plan_stop(
   const std::shared_ptr<const PlannerData> planner_data,
   const std::vector<TrajectoryPoint> & trajectory_points,
-  const std::vector<StopObstacle> & stop_obstacles, const double dist_to_bumper)
+  const std::vector<RoadUserStopStopObstacle> & stop_obstacles, const double dist_to_bumper)
 {
   autoware_utils_debug::ScopedTimeTrack st(__func__, *time_keeper_);
   if (stop_obstacles.empty()) {
@@ -864,7 +864,7 @@ std::optional<Point> RoadUserStopModule::plan_stop(
     return std::nullopt;
   }
 
-  std::optional<StopObstacle> determined_stop_obstacle{};
+  std::optional<RoadUserStopStopObstacle> determined_stop_obstacle{};
   std::optional<double> determined_zero_vel_dist{};
   std::optional<double> determined_desired_stop_margin{};
 
@@ -931,7 +931,8 @@ std::optional<Point> RoadUserStopModule::plan_stop(
   return stop_point;
 }
 
-std::optional<StopObstacle> RoadUserStopModule::pick_stop_obstacle_from_predicted_object(
+std::optional<RoadUserStopStopObstacle>
+RoadUserStopModule::pick_stop_obstacle_from_predicted_object(
   const std::shared_ptr<const PlannerData> planner_data,
   const std::shared_ptr<PlannerData::Object> object,
   const std::vector<TrajectoryPoint> & traj_points,
@@ -1019,7 +1020,7 @@ std::optional<StopObstacle> RoadUserStopModule::pick_stop_obstacle_from_predicte
       logger_, "object %s is in no-margin polygon (certain collision)", object_id_str.c_str());
   }
 
-  const StopObstacle stop_obstacle{
+  const RoadUserStopStopObstacle stop_obstacle{
     predicted_object.object_id,
     predicted_objects_stamp,
     is_opposing_traffic,
@@ -1067,7 +1068,7 @@ void RoadUserStopModule::hold_previous_stop_if_necessary(
 std::optional<Point> RoadUserStopModule::calc_stop_point(
   const std::shared_ptr<const PlannerData> planner_data,
   const std::vector<TrajectoryPoint> & traj_points,
-  const std::optional<StopObstacle> & determined_stop_obstacle,
+  const std::optional<RoadUserStopStopObstacle> & determined_stop_obstacle,
   const std::optional<double> & determined_zero_vel_dist)
 {
   auto output_traj_points = traj_points;
@@ -1135,7 +1136,7 @@ std::optional<Point> RoadUserStopModule::calc_stop_point(
 
 double RoadUserStopModule::calc_desired_stop_margin(
   const std::shared_ptr<const PlannerData> planner_data,
-  const std::vector<TrajectoryPoint> & traj_points, const StopObstacle & stop_obstacle,
+  const std::vector<TrajectoryPoint> & traj_points, const RoadUserStopStopObstacle & stop_obstacle,
   const double dist_to_bumper, const size_t ego_segment_idx,
   const double dist_to_collide_on_ref_traj) const
 {
@@ -1293,7 +1294,7 @@ std::vector<Polygon2d> RoadUserStopModule::get_trajectory_polygons(
 
 double RoadUserStopModule::calc_margin_from_obstacle_on_curve(
   const std::shared_ptr<const PlannerData> planner_data,
-  const std::vector<TrajectoryPoint> & traj_points, const StopObstacle & stop_obstacle,
+  const std::vector<TrajectoryPoint> & traj_points, const RoadUserStopStopObstacle & stop_obstacle,
   const double dist_to_bumper, const double default_stop_margin) const
 {
   const auto param = param_listener_->get_params();

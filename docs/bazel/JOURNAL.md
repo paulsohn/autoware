@@ -12974,3 +12974,44 @@ the complete group is 49 active cases/16 targets, zero failures/skips/disabled
 cases, CPU/Cyclone DDS with ENABLE_AGNOCAST=0. Original collision benchmark
 builds but is not run for a performance claim. Targeted formatting/whitespace
 checks pass. Keep this source fix separate from Bazel definitions.
+
+## 2026-11-22: Phase 7.3.2 — Distinct motion-plugin internal types
+
+Purpose: safely compose the nine selected factories in one actual planner.
+All individual lifecycles pass, but the combined process segfaults unloading
+cruise. Run that same root test with a temporary gdb child wrapper; the trace
+shows free(0x3fc999999999999a) in ObstacleCruiseModule's destructor. Inspect
+local types and nm -D -C output: stop, slow-down, cruise and road-user-stop
+publish different CommonParam/ObstacleFilteringParam/DebugData definitions in
+the same namespace; stop and road-user-stop also publish different StopObstacle.
+Weak constructors/destructors and shared_ptr control blocks can bind across
+DSOs, interpreting a double as a pointer. Individual tests cannot detect this.
+
+Give the three Universe plugins' conflicting internal types distinct Cruise,
+SlowDown and RoadUserStop prefixes, updating their production references in
+sixteen files. Preserve core's types, exported factory class names, XML,
+parameter keys, message interfaces and algorithms. No original test bodies or
+assertions change; no blanket visibility/linker interposition workaround is
+introduced. Remove the temporary debugger wrapper after diagnosis.
+
+Current upstream cruise/slow-down/road-user-stop type sources still expose the
+conflicting names; scoped motion_velocity DebugData/ODR/segmentation PR searches
+find no matching association on 2026-11-22. Record this independently useful
+runtime defect in UPSTREAM_AWF.md, without claiming it is Lyrical-specific.
+
+The [run-out group command](#2026-11-22-phase-732--run-out-motion-plugin) rebuilds all affected implementations, their complete
+original native suites and individual/joint lifecycle gates. All 16 targets
+pass in 117.7 seconds (reusing unchanged results): 39 active native cases and
+ten real planner cases, zero failures/errors/skips/disabled cases. The combined
+profile loads all nine factories, exercises duplicate load and each reload,
+checks cruise/limiter parameter retention and exits cleanly. Existing dynamic
+stop native results are unchanged and were passed in the preceding group.
+This checks selected factory composition with package-default configs, not the
+full simulator, trajectory-driving behavior or every product override.
+Targeted clang-format/flake8/diff checks pass; CPU/Cyclone DDS, Agnocast off.
+
+A separate adapter issue causes false log timeouts: seeking a TemporaryFile
+shared with child stdout changes its shared open-file-description offset and
+can overwrite capture. Read it with os.pread instead, preserving the writer's
+offset and the lifecycle assertions. Consolidate these diagnoses into this
+module group rather than journaling every rerun.

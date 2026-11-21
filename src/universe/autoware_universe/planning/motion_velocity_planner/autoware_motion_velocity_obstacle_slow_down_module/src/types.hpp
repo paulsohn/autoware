@@ -164,9 +164,9 @@ struct SlowDownConditionCounter
   std::vector<UUID> current_uuids_{};
 };
 
-struct DebugData
+struct SlowDownDebugData
 {
-  DebugData() = default;
+  SlowDownDebugData() = default;
   std::vector<SlowDownObstacle> obstacles_to_slow_down{};
   std::vector<Polygon2d> decimated_traj_polys{};
   MarkerArray slow_down_debug_wall_marker{};

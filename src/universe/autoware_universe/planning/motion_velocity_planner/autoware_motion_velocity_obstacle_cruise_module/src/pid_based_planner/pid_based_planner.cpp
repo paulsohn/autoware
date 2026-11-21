@@ -70,7 +70,7 @@ T getSign(const T val)
 }  // namespace
 
 PIDBasedPlanner::PIDBasedPlanner(
-  rclcpp::Node & node, const CommonParam & common_param,
+  rclcpp::Node & node, const CruiseCommonParam & common_param,
   const CruisePlanningParam & cruise_planning_param)
 : CruisePlannerInterface(node, common_param, cruise_planning_param)
 {
@@ -192,7 +192,7 @@ PIDBasedPlanner::PIDBasedPlanner(
 std::vector<TrajectoryPoint> PIDBasedPlanner::plan_cruise(
   const std::shared_ptr<const PlannerData> planner_data,
   const std::vector<TrajectoryPoint> & stop_traj_points,
-  const std::vector<CruiseObstacle> & obstacles, std::shared_ptr<DebugData> debug_data_ptr,
+  const std::vector<CruiseObstacle> & obstacles, std::shared_ptr<CruiseDebugData> debug_data_ptr,
   std::unique_ptr<autoware::planning_factor_interface::PlanningFactorInterface> &
     planning_factor_interface,
   std::optional<VelocityLimit> & velocity_limit)
@@ -337,7 +337,8 @@ std::optional<PIDBasedPlanner::CruiseObstacleInfo> PIDBasedPlanner::calc_obstacl
 
 std::vector<TrajectoryPoint> PIDBasedPlanner::plan_cruise_trajectory(
   const std::shared_ptr<const PlannerData> planner_data,
-  const std::vector<TrajectoryPoint> & stop_traj_points, std::shared_ptr<DebugData> debug_data_ptr,
+  const std::vector<TrajectoryPoint> & stop_traj_points,
+  std::shared_ptr<CruiseDebugData> debug_data_ptr,
   std::unique_ptr<autoware::planning_factor_interface::PlanningFactorInterface> &
     planning_factor_interface,
   std::optional<VelocityLimit> & velocity_limit,

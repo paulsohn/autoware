@@ -30,7 +30,7 @@ namespace autoware::motion_velocity_planner
 {
 using autoware_utils::get_or_declare_parameter;
 
-struct CommonParam
+struct SlowDownCommonParam
 {
   double max_accel{};
   double min_accel{};
@@ -41,8 +41,8 @@ struct CommonParam
   double limit_max_jerk{};
   double limit_min_jerk{};
 
-  CommonParam() = default;
-  explicit CommonParam(rclcpp::Node & node)
+  SlowDownCommonParam() = default;
+  explicit SlowDownCommonParam(rclcpp::Node & node)
   {
     max_accel = get_or_declare_parameter<double>(node, "normal.max_acc");
     min_accel = get_or_declare_parameter<double>(node, "normal.min_acc");
@@ -55,7 +55,7 @@ struct CommonParam
   }
 };
 
-struct ObstacleFilteringParam
+struct SlowDownObstacleFilteringParam
 {
   std::vector<uint8_t> object_types{};
 
@@ -70,8 +70,8 @@ struct ObstacleFilteringParam
   int successive_num_to_entry_slow_down_condition{};
   int successive_num_to_exit_slow_down_condition{};
 
-  ObstacleFilteringParam() = default;
-  explicit ObstacleFilteringParam(rclcpp::Node & node)
+  SlowDownObstacleFilteringParam() = default;
+  explicit SlowDownObstacleFilteringParam(rclcpp::Node & node)
   {
     use_pointcloud = get_or_declare_parameter<bool>(
       node, "obstacle_slow_down.obstacle_filtering.object_type.pointcloud");

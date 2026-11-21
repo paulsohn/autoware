@@ -745,6 +745,13 @@ unload/reload, initialize parameters with read-or-declare semantics and preserve
 current values. Verify a real reload after a parameter update; constructing a
 plugin only once cannot expose repeated-declaration failures.
 
+Keep plugin-private C++ types unique within the process, using a module namespace
+or a distinct type name. Separate DSOs do not isolate incompatible definitions
+with the same C++ identity: exported weak constructors/destructors can bind to
+another plugin's layout. Validate selected factories together as well as alone.
+For subprocess log capture, read a shared regular-file descriptor with os.pread;
+seeking it also changes the child's write offset and can corrupt captured output.
+
 ## Launch resource composition
 
 Keep ROS executable names stable even when Bazel target labels differ. Use

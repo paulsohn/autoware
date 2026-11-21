@@ -90,9 +90,9 @@ void ObstacleCruiseModule::init(rclcpp::Node & node, const std::string & module_
   // ros parameters
   planning_algorithm_ =
     get_or_declare_parameter<std::string>(node, "obstacle_cruise.option.planning_algorithm");
-  common_param_ = CommonParam(node);
+  common_param_ = CruiseCommonParam(node);
   cruise_planning_param_ = CruisePlanningParam(node);
-  obstacle_filtering_param_ = ObstacleFilteringParam(node);
+  obstacle_filtering_param_ = CruiseObstacleFilteringParam(node);
 
   // common publisher
   virtual_wall_publisher_ =
@@ -138,7 +138,7 @@ VelocityPlanningResult ObstacleCruiseModule::plan(
   autoware_utils::ScopedTimeTrack st(__func__, *time_keeper_);
 
   // 1. init variables
-  debug_data_ptr_ = std::make_shared<DebugData>();
+  debug_data_ptr_ = std::make_shared<CruiseDebugData>();
 
   // filter obstacles of predicted objects
   const auto cruise_obstacles = filter_cruise_obstacle_for_predicted_object(

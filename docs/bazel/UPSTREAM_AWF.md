@@ -1305,3 +1305,24 @@ Local source fix: `5eb05315`.
   not a Lyrical-specific algorithm issue. See the
   [source-fix journal](JOURNAL.md#2026-11-22-phase-732--velocity-limiter-plugin-reload)
   for exact verification and scope.
+
+### Motion factories publish incompatible internal C++ type identities
+
+- [ ] Associate with a matching upstream change. Reviewed 2026-11-22: current
+  [cruise types](https://github.com/autowarefoundation/autoware_universe/blob/main/planning/motion_velocity_planner/autoware_motion_velocity_obstacle_cruise_module/src/types.hpp),
+  [slow-down types](https://github.com/autowarefoundation/autoware_universe/blob/main/planning/motion_velocity_planner/autoware_motion_velocity_obstacle_slow_down_module/src/types.hpp)
+  and [road-user-stop types](https://github.com/autowarefoundation/autoware_universe/blob/main/planning/motion_velocity_planner/autoware_motion_velocity_road_user_stop_module/src/types.hpp)
+  retain common names in autoware::motion_velocity_planner. Scoped
+  motion_velocity DebugData/ODR/segmentation PR searches find no matching fix.
+- LLVM/libc++ 21.1.8, native ELF shared plugins, CPU/Cyclone DDS: every factory
+  passes alone, but jointly unloading cruise segfaults in its destructor;
+  gdb records free(0x3fc999999999999a). nm shows exported weak conflicting type
+  destructors and shared_ptr control blocks. Different DebugData and filtering
+  layouts share one C++ identity, also colliding with core stop types.
+- Give Universe's conflicting CommonParam/ObstacleFilteringParam/DebugData and
+  road-user StopObstacle distinct module-prefixed identities. Keep registered
+  plugin classes/configuration unchanged. All complete affected native suites,
+  individual lifecycles and joint nine-factory reload pass (49 active cases,
+  16 targets). No source test assertions change. See the
+  [diagnosis and command](JOURNAL.md#2026-11-22-phase-732--distinct-motion-plugin-internal-types).
+  This is a composition/ODR defect, not a ROS release-specific API fix.

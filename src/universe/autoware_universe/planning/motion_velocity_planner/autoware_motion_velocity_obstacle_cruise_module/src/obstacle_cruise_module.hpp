@@ -64,9 +64,9 @@ private:
 
   // ros parameters
   std::string planning_algorithm_;
-  CommonParam common_param_;
+  CruiseCommonParam common_param_;
   CruisePlanningParam cruise_planning_param_;
-  ObstacleFilteringParam obstacle_filtering_param_;
+  CruiseObstacleFilteringParam obstacle_filtering_param_;
 
   // common publisher
   rclcpp::Publisher<Float32MultiArrayStamped>::SharedPtr debug_cruise_planning_info_pub_;
@@ -81,7 +81,7 @@ private:
 
   // internal variables
   std::vector<CruiseObstacle> prev_cruise_object_obstacles_;
-  mutable std::shared_ptr<DebugData> debug_data_ptr_;
+  mutable std::shared_ptr<CruiseDebugData> debug_data_ptr_;
   bool need_to_clear_velocity_limit_{false};
   mutable std::shared_ptr<autoware_utils::TimeKeeper> time_keeper_;
 

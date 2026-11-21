@@ -35,7 +35,7 @@ namespace autoware::motion_velocity_planner
 {
 using autoware_utils::get_or_declare_parameter;
 
-struct CommonParam
+struct CruiseCommonParam
 {
   double max_accel{};
   double min_accel{};
@@ -46,8 +46,8 @@ struct CommonParam
   double limit_max_jerk{};
   double limit_min_jerk{};
 
-  CommonParam() = default;
-  explicit CommonParam(rclcpp::Node & node)
+  CruiseCommonParam() = default;
+  explicit CruiseCommonParam(rclcpp::Node & node)
   {
     max_accel = get_or_declare_parameter<double>(node, "normal.max_acc");
     min_accel = get_or_declare_parameter<double>(node, "normal.min_acc");
@@ -60,7 +60,7 @@ struct CommonParam
   }
 };
 
-struct ObstacleFilteringParam
+struct CruiseObstacleFilteringParam
 {
   std::vector<uint8_t> inside_object_types{};
   std::vector<uint8_t> outside_object_types{};
@@ -87,8 +87,8 @@ struct ObstacleFilteringParam
   double obstacle_velocity_threshold_from_cruise{};
   double obstacle_velocity_threshold_to_cruise{};
 
-  ObstacleFilteringParam() = default;
-  explicit ObstacleFilteringParam(rclcpp::Node & node)
+  CruiseObstacleFilteringParam() = default;
+  explicit CruiseObstacleFilteringParam(rclcpp::Node & node)
   {
     inside_object_types =
       utils::get_target_object_type(node, "obstacle_cruise.obstacle_filtering.object_type.inside.");

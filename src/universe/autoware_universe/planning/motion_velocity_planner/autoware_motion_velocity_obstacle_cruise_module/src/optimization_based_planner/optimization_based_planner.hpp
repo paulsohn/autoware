@@ -34,13 +34,13 @@ class OptimizationBasedPlanner : public CruisePlannerInterface
 {
 public:
   OptimizationBasedPlanner(
-    rclcpp::Node & node, const CommonParam & common_param,
+    rclcpp::Node & node, const CruiseCommonParam & common_param,
     const CruisePlanningParam & cruise_planning_param);
 
   std::vector<TrajectoryPoint> plan_cruise(
     const std::shared_ptr<const PlannerData> planner_data,
     const std::vector<TrajectoryPoint> & stop_traj_points,
-    const std::vector<CruiseObstacle> & obstacles, std::shared_ptr<DebugData> debug_data_ptr,
+    const std::vector<CruiseObstacle> & obstacles, std::shared_ptr<CruiseDebugData> debug_data_ptr,
     std::unique_ptr<autoware::planning_factor_interface::PlanningFactorInterface> &
       planning_factor_interface,
     std::optional<VelocityLimit> & velocity_limit) override;

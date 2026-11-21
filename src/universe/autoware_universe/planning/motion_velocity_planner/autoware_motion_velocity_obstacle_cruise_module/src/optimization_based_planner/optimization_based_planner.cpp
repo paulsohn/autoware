@@ -42,7 +42,7 @@ constexpr double ZERO_VEL_THRESHOLD = 0.01;
 constexpr double CLOSE_S_DIST_THRESHOLD = 1e-3;
 
 OptimizationBasedPlanner::OptimizationBasedPlanner(
-  rclcpp::Node & node, const CommonParam & common_param,
+  rclcpp::Node & node, const CruiseCommonParam & common_param,
   const CruisePlanningParam & cruise_planning_param)
 : CruisePlannerInterface(node, common_param, cruise_planning_param)
 {
@@ -107,7 +107,7 @@ std::vector<TrajectoryPoint> OptimizationBasedPlanner::plan_cruise(
   const std::shared_ptr<const PlannerData> planner_data,
   const std::vector<TrajectoryPoint> & stop_traj_points,
   const std::vector<CruiseObstacle> & obstacles,
-  [[maybe_unused]] std::shared_ptr<DebugData> debug_data_ptr,
+  [[maybe_unused]] std::shared_ptr<CruiseDebugData> debug_data_ptr,
   [[maybe_unused]] std::unique_ptr<autoware::planning_factor_interface::PlanningFactorInterface> &
     planning_factor_interface,
   [[maybe_unused]] std::optional<VelocityLimit> & velocity_limit)

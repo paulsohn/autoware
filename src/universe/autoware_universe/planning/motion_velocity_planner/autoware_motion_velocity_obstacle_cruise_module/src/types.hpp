@@ -53,9 +53,9 @@ struct CruiseObstacle
   bool is_yield_obstacle{};
 };
 
-struct DebugData
+struct CruiseDebugData
 {
-  DebugData() = default;
+  CruiseDebugData() = default;
   std::vector<std::shared_ptr<PlannerData::Object>> intentionally_ignored_obstacles{};
   std::vector<CruiseObstacle> obstacles_to_cruise{};
   std::vector<Polygon2d> decimated_traj_polys{};

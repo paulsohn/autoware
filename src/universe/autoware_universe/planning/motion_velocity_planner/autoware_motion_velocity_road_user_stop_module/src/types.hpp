@@ -39,7 +39,7 @@ namespace autoware::motion_velocity_planner
 {
 
 using autoware_utils_rclcpp::get_or_declare_parameter;
-struct CommonParam
+struct RoadUserStopCommonParam
 {
   double max_accel{};
   double min_accel{};
@@ -50,8 +50,8 @@ struct CommonParam
   double limit_max_jerk{};
   double limit_min_jerk{};
 
-  CommonParam() = default;
-  explicit CommonParam(rclcpp::Node & node)
+  RoadUserStopCommonParam() = default;
+  explicit RoadUserStopCommonParam(rclcpp::Node & node)
   {
     max_accel = get_or_declare_parameter<double>(node, "normal.max_acc");
     min_accel = get_or_declare_parameter<double>(node, "normal.min_acc");
@@ -64,9 +64,9 @@ struct CommonParam
   }
 };
 
-struct StopObstacle
+struct RoadUserStopStopObstacle
 {
-  StopObstacle(
+  RoadUserStopStopObstacle(
     const UUID & arg_uuid, const rclcpp::Time & arg_stamp, const bool arg_is_opposite_traffic,
     const autoware_perception_msgs::msg::PredictedObject & arg_predicted_object,
     const ObjectClassification & object_classification, const geometry_msgs::msg::Pose & arg_pose,
@@ -168,7 +168,7 @@ struct TrackedObject
   }
 };
 
-struct DebugData
+struct RoadUserStopDebugData
 {
   // Lanelet
   lanelet::ConstLanelets ego_lanelets;

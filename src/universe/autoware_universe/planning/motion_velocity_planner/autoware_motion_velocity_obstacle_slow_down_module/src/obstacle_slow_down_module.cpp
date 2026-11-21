@@ -174,9 +174,9 @@ void ObstacleSlowDownModule::init(rclcpp::Node & node, const std::string & modul
   logger_ = node.get_logger();
 
   // ros parameters
-  common_param_ = CommonParam(node);
+  common_param_ = SlowDownCommonParam(node);
   slow_down_planning_param_ = SlowDownPlanningParam(node);
-  obstacle_filtering_param_ = ObstacleFilteringParam(node);
+  obstacle_filtering_param_ = SlowDownObstacleFilteringParam(node);
 
   objects_of_interest_marker_interface_ = std::make_unique<
     autoware::objects_of_interest_marker_interface::ObjectsOfInterestMarkerInterface>(
@@ -302,7 +302,7 @@ VelocityPlanningResult ObstacleSlowDownModule::plan(
 {
   autoware_utils::ScopedTimeTrack st(__func__, *time_keeper_);
 
-  debug_data_ptr_ = std::make_shared<DebugData>();
+  debug_data_ptr_ = std::make_shared<SlowDownDebugData>();
   trajectory_polygon_for_lateral_dist_map_.clear();
 
   // calculate collision points with trajectory with lateral stop margin

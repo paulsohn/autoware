@@ -73,9 +73,9 @@ private:
   rclcpp::Clock::SharedPtr clock_{};
 
   // ros parameters
-  CommonParam common_param_;
+  SlowDownCommonParam common_param_;
   SlowDownPlanningParam slow_down_planning_param_;
-  ObstacleFilteringParam obstacle_filtering_param_;
+  SlowDownObstacleFilteringParam obstacle_filtering_param_;
 
   // module publisher
   rclcpp::Publisher<Float32MultiArrayStamped>::SharedPtr debug_slow_down_planning_info_pub_;
@@ -90,7 +90,7 @@ private:
   std::vector<SlowDownOutput> prev_slow_down_output_;
   SlowDownConditionCounter slow_down_condition_counter_;
   Float32MultiArrayStamped slow_down_debug_multi_array_;
-  mutable std::shared_ptr<DebugData> debug_data_ptr_;
+  mutable std::shared_ptr<SlowDownDebugData> debug_data_ptr_;
   bool need_to_clear_velocity_limit_{false};
   mutable std::shared_ptr<autoware_utils::TimeKeeper> time_keeper_;
   mutable std::unordered_map<double, std::vector<Polygon2d>>

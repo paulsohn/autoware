@@ -65,7 +65,7 @@ public:
 private:
   // parameter listener
   std::shared_ptr<road_user_stop::ParamListener> param_listener_;
-  CommonParam common_param_{};
+  RoadUserStopCommonParam common_param_{};
   rclcpp::Clock::SharedPtr clock_{};
 
   std::string module_name_;
@@ -74,10 +74,10 @@ private:
   mutable std::shared_ptr<autoware_utils_debug::TimeKeeper> time_keeper_{};
 
   mutable std::unordered_map<std::string, TrackedObject> tracked_objects_;
-  mutable DebugData debug_data_;
+  mutable RoadUserStopDebugData debug_data_;
 
   mutable std::unordered_map<double, std::vector<Polygon2d>> trajectory_polygon_for_inside_map_{};
-  std::vector<StopObstacle> prev_stop_obstacles_{};
+  std::vector<RoadUserStopStopObstacle> prev_stop_obstacles_{};
 
   // Previous stop distance info for holding stop position
   std::optional<std::pair<std::vector<TrajectoryPoint>, double>> prev_stop_distance_info_{
@@ -110,9 +110,9 @@ private:
   std::optional<Point> plan_stop(
     const std::shared_ptr<const PlannerData> planner_data,
     const std::vector<TrajectoryPoint> & trajectory_points,
-    const std::vector<StopObstacle> & stop_obstacles, const double dist_to_bumper);
+    const std::vector<RoadUserStopStopObstacle> & stop_obstacles, const double dist_to_bumper);
 
-  std::vector<StopObstacle> filter_stop_obstacles(
+  std::vector<RoadUserStopStopObstacle> filter_stop_obstacles(
     const std::shared_ptr<const PlannerData> planner_data,
     const std::vector<TrajectoryPoint> & traj_points,
     const std::vector<TrajectoryPoint> & decimated_traj_points,
@@ -140,7 +140,7 @@ private:
     const std::string & object_id, const rclcpp::Time & current_time,
     const geometry_msgs::msg::Pose & ego_pose, const double duration_threshold) const;
 
-  std::optional<StopObstacle> pick_stop_obstacle_from_predicted_object(
+  std::optional<RoadUserStopStopObstacle> pick_stop_obstacle_from_predicted_object(
     const std::shared_ptr<const PlannerData> planner_data,
     const std::shared_ptr<PlannerData::Object> object,
     const std::vector<TrajectoryPoint> & traj_points,
@@ -159,15 +159,15 @@ private:
   std::optional<Point> calc_stop_point(
     const std::shared_ptr<const PlannerData> planner_data,
     const std::vector<TrajectoryPoint> & traj_points,
-    const std::optional<StopObstacle> & determined_stop_obstacle,
+    const std::optional<RoadUserStopStopObstacle> & determined_stop_obstacle,
     const std::optional<double> & determined_zero_vel_dist);
 
   // Stop margin calculation
   double calc_desired_stop_margin(
     const std::shared_ptr<const PlannerData> planner_data,
-    const std::vector<TrajectoryPoint> & traj_points, const StopObstacle & stop_obstacle,
-    const double dist_to_bumper, const size_t ego_segment_idx,
-    const double dist_to_collide_on_ref_traj) const;
+    const std::vector<TrajectoryPoint> & traj_points,
+    const RoadUserStopStopObstacle & stop_obstacle, const double dist_to_bumper,
+    const size_t ego_segment_idx, const double dist_to_collide_on_ref_traj) const;
 
   std::optional<double> calc_candidate_zero_vel_dist(
     const std::shared_ptr<const PlannerData> planner_data,
@@ -176,8 +176,9 @@ private:
 
   double calc_margin_from_obstacle_on_curve(
     const std::shared_ptr<const PlannerData> planner_data,
-    const std::vector<TrajectoryPoint> & traj_points, const StopObstacle & stop_obstacle,
-    const double dist_to_bumper, const double default_stop_margin) const;
+    const std::vector<TrajectoryPoint> & traj_points,
+    const RoadUserStopStopObstacle & stop_obstacle, const double dist_to_bumper,
+    const double default_stop_margin) const;
 
   MarkerArray create_debug_marker_array() const;
   void publish_debug_info();
