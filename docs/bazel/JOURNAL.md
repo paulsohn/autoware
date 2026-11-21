@@ -13222,7 +13222,10 @@ The complete command in the next costmap journal entry passes 27 active cases
 in eight targets, including all ten original costmap cases and its installed
 executable startup/shutdown. Freespace retains two original disabled cases;
 there are no introduced skips or failures. CPU/Cyclone DDS, ENABLE_AGNOCAST=0.
-Targeted clang-format/flake8/diff checks pass. No colcon/Jazzy or full simulator
+The migrated .hpp includes also move into the formatter's C++ header group.
+A final targeted clang-format check passes after that ordering correction; the
+support-node gate rebuilds the costmap and rechecks its complete original suite
+and installed lifecycle. Flake8/whitespace checks pass. No colcon/Jazzy or full simulator
 result is implied.
 
 ## 2026-11-22: Phase 7.3.2 — Costmap generator

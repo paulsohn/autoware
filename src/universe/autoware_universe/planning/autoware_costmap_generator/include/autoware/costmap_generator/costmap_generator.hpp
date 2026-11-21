@@ -55,6 +55,8 @@
 #include <autoware_utils/system/time_keeper.hpp>
 #include <grid_map_ros/GridMapRosConverter.hpp>
 #include <grid_map_ros/grid_map_ros.hpp>
+#include <message_filters/subscriber.hpp>
+#include <message_filters/time_synchronizer.hpp>
 #include <rclcpp/rclcpp.hpp>
 
 #include <autoware_internal_debug_msgs/msg/float64_stamped.hpp>
@@ -65,8 +67,6 @@
 
 #include <grid_map_msgs/msg/grid_map.h>
 #include <lanelet2_core/LaneletMap.h>
-#include <message_filters/subscriber.hpp>
-#include <message_filters/time_synchronizer.hpp>
 #include <tf2_ros/buffer.h>
 #include <tf2_ros/transform_listener.h>
 
