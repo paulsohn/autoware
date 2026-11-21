@@ -30,30 +30,42 @@ def graph(context):
             AGNOCAST_BRIDGE_MODE="OFF", AGNOCAST_NO_DISCOVERY_AGENT="1",
             AGNOCAST_RMW_HOST_CLOUD="1", AGNOCAST_RMW_TOPIC=":".join(raw + cropped + ["/output"]),
         )
+    if mode == "native":
+        env.update(ENABLE_AGNOCAST="1", RMW_IMPLEMENTATION="rmw_cyclonedds_cpp",
+                   LD_PRELOAD=str(Path(get_package_prefix("agnocastlib")) / "lib/libagnocast_heaphook.so"),
+                   AGNOCAST_BRIDGE_MODE="OFF", AGNOCAST_NO_DISCOVERY_AGENT="1")
     sync_env = dict(env, SYNC_BYTE_INPUT="1")
     if use_agnocast and mode != "plain":
         sync_env.update(SYNC_VIEW_INPUT="1", AGNOCAST_RMW_HOST_VIEW="1")
 
     share = Path(get_package_share_directory("universe_sync_benchmark"))
     crop_nodes = []
+    native_args = []
     for i, sensor in enumerate(sensors):
         frame = "base_link" if i == 0 else "sync_lidar"
+        config = str(share / "config/crop_box_filter_node.param.yaml")
+        bounds = {"input_frame": frame, "output_frame": frame,
+                  "min_x": i * 8192 - 0.5, "max_x": i * 8192 + 16383.5,
+                  "min_y": -1.0, "max_y": 24.0, "min_z": -1.0, "max_z": 3.0}
         crop_nodes.append(ComposableNode(
             package="universe_crop_benchmark",
             plugin="autoware::pointcloud_preprocessor::CropBoxFilterComponent",
-            name="crop_" + sensor,
-            parameters=[str(share / "config/crop_box_filter_node.param.yaml"), {
-                "input_frame": frame, "output_frame": frame,
-                "min_x": i * 8192 - 0.5, "max_x": i * 8192 + 16383.5,
-                "min_y": -1.0, "max_y": 24.0, "min_z": -1.0, "max_z": 3.0,
-            }],
+            name="crop_" + sensor, parameters=[config, bounds],
             remappings=[("input", raw[i]), ("output", cropped[i])],
         ))
+        native_args.extend(["--crop", "--ros-args", "-r", "__node:=crop_" + sensor,
+                            "-r", "input:=" + raw[i], "-r", "output:=" + cropped[i],
+                            "--params-file", config])
+        for key, value in bounds.items():
+            native_args.extend(["-p", f"{key}:={value}"])
     container = ComposableNodeContainer(
         name="lidar_crops", namespace="", package="rclcpp_components",
         executable="component_container", composable_node_descriptions=crop_nodes,
         additional_env=env, output="screen",
     )
+    if mode == "native":
+        container = Node(package="universe_crop_benchmark", executable="native_crop_container",
+                         arguments=native_args, additional_env=env, output="screen")
     sync = {"package": "universe_sync_benchmark", "executable": "concatenate_and_time_sync_node"}
     ready = os.path.join(directory, "first-output")
     if mode == "runner":
@@ -88,7 +100,7 @@ def graph(context):
 
 def generate_launch_description():
     return LaunchDescription([
-        DeclareLaunchArgument("mode", choices=["plain", "stock", "runner", "cyclone", "zenoh"], default_value="stock"),
+        DeclareLaunchArgument("mode", choices=["plain", "stock", "runner", "cyclone", "zenoh", "native"], default_value="stock"),
         DeclareLaunchArgument("fixture_directory", description="Fresh directory for source timestamps and readiness"),
         OpaqueFunction(function=graph),
     ])

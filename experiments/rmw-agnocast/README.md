@@ -2558,3 +2558,55 @@ cloud. A consumer joining the two streams needs a bounded wait keyed by stamp.
 
 [Per-run losses, recovery and loan accounting](pipeline-overflow-results/summary.txt) ·
 [Reproduction](../buffer/JOURNAL.md#2026-11-21--overflow-and-recovery-of-the-depth-32-universe-output-reader).
+
+### Native Agnocast on the full three-LiDAR processing graph
+
+All cases use five application processes, three crops in one process and
+the same verified CPU payload. Native Agnocast uses its Stage-2 crop host,
+mixed-capable bundled CIE for the synchronizer and sink, and ordinary ROS
+for metadata and TF. The crop wrapper build marker is 1 for native and 0
+for the stock RMW graph. The seven cloud routes in each native launch had
+one producing and one consuming endpoint. Both sinks materialize a local
+CPU copy of each output before the latency timestamp. Both synchronizers
+consume retained inputs; actual transport, executors and startup differ.
+
+| Middleware and native mixed-executor wait | Full median / p95 ms | Partial median / p95 ms | Whole-launch CPU seconds | Peak scope MiB |
+|---|---:|---:|---:|---:|
+| Native Agnocast, default 50 ms | 2.395/3.179 | 51.858/52.468 | 1.55..1.59 | 200.0..201.1 |
+| Native Agnocast, 1 ms | 2.346/3.170 | 41.605/42.259 | 1.59..1.64 | 199.8..201.4 |
+| rmw_agnocast | 2.343/3.019 | 41.552/41.975 | 1.56..1.65 | 198.3..203.1 |
+| Cyclone DDS | 2.825/3.076 | 42.090/42.263 | 1.62..1.64 | 165.3..165.3 |
+| Zenoh | 2.492/3.255 | 41.905/42.562 | 2.64..2.67 | 299.6..328.2 |
+
+Nominal workload. The 1 ms native and stock rmw_agnocast rows each pool
+60 complete and 60 partial samples across six launches; the other rows
+each pool 20 of each across two launches. Four warm-up acquisitions per
+launch are excluded. The primary pair alternated order in the four extra launches.
+On complete clouds, stock rmw_agnocast/native median and p95 ratios were
+1.00× and 0.95× against the 1 ms configuration and 0.98×
+and 0.95× against the default. The 1.2× target is an engineering
+milestone. These laptop runs establish behavior on this workload.
+
+| Overload, two runs | Delivered clouds / 130 | Delivered metadata / 130 | Matched pairs | Recovery ms |
+|---|---:|---:|---:|---:|
+| Native Agnocast, 1 ms | 96, 96 | 72, 72 | 57, 57 | 1.4, 1.1 |
+| rmw_agnocast | 123, 123 | 130, 130 | 123, 123 | 9.3, 9.0 |
+| Cyclone DDS | 123, 123 | 130, 130 | 123, 123 | 7.9, 6.8 |
+| Zenoh | 123, 123 | 130, 130 | 123, 123 | 8.0, 9.0 |
+
+With the default 50 ms mixed-executor wait, acquisition group 2 had 49,152
+points at the left/right output stamp instead of the expected 32,768. Its top
+cloud had arrived outside the configured 40 ms window. Reducing the native
+synchronizer and sink CIE wait to 1 ms restored the expected split. The CIE's
+mixed callback group waits for Agnocast work before checking ROS work, which
+includes the collector timer. The test changed the wait in both processes.
+The nominal default row remains a separate reference.
+
+The overload source sent 260 raw clouds in 104 acquisition groups. The sink
+slept 125 ms on its first 68 callbacks. Recovery measures time from the
+last sleep until subsequent cloud ages stay below 100 ms. The verifier
+checked every surviving payload and metadata record independently and all
+12 final acquisition groups arrived paired.
+
+[Raw measurements and missing sequence numbers](pipeline-native-results/summary.txt) ·
+[Reproduction](../buffer/JOURNAL.md#2026-11-22--native-agnocast-on-the-three-crop-universe-graph).

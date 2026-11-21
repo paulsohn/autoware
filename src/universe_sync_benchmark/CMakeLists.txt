@@ -64,7 +64,7 @@ foreach(pkg IN LISTS deps)
   endif()
 endforeach()
 if(SYNC_NATIVE)
-  set(executor EXECUTOR agnocast::CallbackIsolatedAgnocastExecutor)
+  set(executor EXECUTOR native_sync::Executor)
 endif()
 rclcpp_components_register_node(universe_sync ${executor}
   PLUGIN "autoware::pointcloud_preprocessor::PointCloudConcatenateDataSynchronizerComponent"
@@ -75,7 +75,7 @@ target_link_libraries(sync_fixture ${rclcpp_TARGETS} ${sensor_msgs_TARGETS} ${au
 install(TARGETS sync_fixture DESTINATION lib/${PROJECT_NAME})
 if(SYNC_NATIVE)
   target_include_directories(universe_sync PRIVATE "${pre}/include/autoware/pointcloud_preprocessor/concatenate_data")
-  target_compile_options(concatenate_and_time_sync_node PRIVATE -include agnocast/agnocast_callback_isolated_executor.hpp)
+  target_compile_options(concatenate_and_time_sync_node PRIVATE -include "${CMAKE_CURRENT_SOURCE_DIR}/native_executor.hpp")
   target_link_libraries(concatenate_and_time_sync_node ${agnocastlib_TARGETS})
   target_compile_definitions(sync_fixture PRIVATE SYNC_NATIVE)
   target_include_directories(sync_fixture PRIVATE ${rmw_agnocast_INCLUDE_DIRS})

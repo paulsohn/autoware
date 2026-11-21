@@ -8,6 +8,7 @@ source build/universe-sync/install/local_setup.bash
 source build/universe-pipeline/install/local_setup.bash
 mode=${1:?plain, stock, runner, cyclone or zenoh}
 if [[ $mode == plain ]]; then source build/universe-pipeline-plain/install/local_setup.bash; fi
+if [[ $mode == native ]]; then source build/universe-pipeline-native/install/local_setup.bash; fi
 dir=$(mktemp -d)
 export ENABLE_AGNOCAST=0 ROS_LOG_DIR="$dir/roslog"
 export CYCLONEDDS_URI='<CycloneDDS><Domain><General><Interfaces><NetworkInterface name="lo"/></Interfaces><AllowMulticast>false</AllowMulticast></General><Discovery><ParticipantIndex>auto</ParticipantIndex><Peers><Peer Address="127.0.0.1"/></Peers></Discovery></Domain></CycloneDDS>'

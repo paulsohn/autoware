@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+# Run from the colcon worktree with LYRICAL_ROOT set to its installed Lyrical root.
+set -eu
+out=${1:?fresh result directory}
+mkdir "$out"
+export BUFFER_RUNTIME_ONLY=1 SYNC_SHORT_WAIT=1
+unset SYNC_AUDIT SYNC_SINK_TRACE SYNC_EXTENDED SYNC_TOP_JITTER SYNC_SLOW_SINK
+failed=0
+rounds=(1 2)
+if [[ ${2:-} == confirmation ]]; then rounds=(3 4 5 6); fi
+for round in "${rounds[@]}"; do
+  modes=(native-default native stock cyclone zenoh)
+  conditions=(nominal overflow)
+  if [[ $round == 2 ]]; then modes=(zenoh cyclone stock native native-default); conditions=(overflow nominal); fi
+  if ((round > 2)); then
+    conditions=(nominal)
+    modes=(native stock)
+    if ((round % 2 == 0)); then modes=(stock native); fi
+  fi
+  for mode in "${modes[@]}"; do
+    launch_mode=$mode
+    if [[ $mode == native-default ]]; then
+      launch_mode=native
+      unset SYNC_SHORT_WAIT
+    else
+      export SYNC_SHORT_WAIT=1
+    fi
+    for condition in "${conditions[@]}"; do
+      if [[ $mode == native-default && $condition == overflow ]]; then continue; fi
+      unset SYNC_EXTENDED SYNC_TOP_JITTER SYNC_SLOW_SINK
+      if [[ $condition == overflow ]]; then export SYNC_EXTENDED=1 SYNC_TOP_JITTER=1 SYNC_SLOW_SINK=1; fi
+      if ! experiments/buffer/run-lyrical.sh timeout -k 5 65 bash -ec '
+        TIMEFORMAT="graph_user_s=%U graph_sys_s=%S"
+        time bash experiments/rmw-agnocast/run-pipeline.sh "$1"
+        scope=$(sed -n "s,^0::,,p" /proc/self/cgroup)
+        case "$scope" in */aw-buffer-*.scope) sed "s/^/scope_peak_bytes=/" "/sys/fs/cgroup$scope/memory.peak";; *) exit 2;; esac
+      ' bash "$launch_mode" >"$out/$round-$mode-$condition.log" 2>&1; then
+        echo "$round $mode $condition failed" >&2
+        failed=1
+      fi
+    done
+  done
+done
+exit "$failed"

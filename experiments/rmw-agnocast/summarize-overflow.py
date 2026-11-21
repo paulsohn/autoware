@@ -11,10 +11,12 @@ def check(ok, message):
 
 def read(path, slow):
     log = path.read_text()
+    native = "-native-" in path.name
     for sensor in ("left", "right", "top"):
-        check(f"Loaded node '/crop_{sensor}'" in log, path)
+        marker = f"native_crop /crop_{sensor}" if native else f"Loaded node '/crop_{sensor}'"
+        check(marker in log, path)
     check(log.count("process has finished cleanly") == 5 and "[ERROR]" not in log, path)
-    check("views=260 copies=0" in log if "stock" in path.name else "views=0 copies=260" in log, path)
+    check("views=260 copies=0" in log if native or "stock" in path.name else "views=0 copies=260" in log, path)
     counts = re.search(r"extended expected=130 clouds=(\d+) metadata=(\d+) paired=(\d+) resume_ns=(\d+)", log)
     clouds, infos, paired, resume = map(int, counts.groups())
     expected = [(i, k) for i in range(104) for k in
@@ -33,7 +35,7 @@ def read(path, slow):
     if not slow:
         check(resume == 0 and paired == 130, path)
         return rows
-    check(resume and clouds < 130, path)
+    check(resume and (native or clouds < 130), path)
     # Recovery is the first post-resume callback after which every cloud is <100 ms old.
     callbacks = sorted((stamp + age, age) for _, _, c, _, stamp, age in rows if c and stamp + age >= resume)
     last_stale = max((n for n, (_, age) in enumerate(callbacks) if age >= 100000000), default=-1)

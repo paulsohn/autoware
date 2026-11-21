@@ -20,6 +20,27 @@ inline Cloud::ConstSharedPtr retain(Loan loan)
   return Cloud::ConstSharedPtr(std::make_shared<Loan>(std::move(loan)), address);
 }
 
+inline Cloud::SharedPtr metadata(const Cloud & src)
+{
+  auto local = std::make_shared<Cloud>();
+  local->header = src.header;
+  local->fields = src.fields;
+  local->height = src.height;
+  local->width = src.width;
+  local->row_step = src.row_step;
+  local->point_step = src.point_step;
+  local->is_bigendian = src.is_bigendian;
+  local->is_dense = src.is_dense;
+  return local;
+}
+
+inline Cloud::SharedPtr cpu_copy(Loan loan)
+{
+  auto local = metadata(*loan);
+  local->data = static_cast<const std::vector<uint8_t> &>(loan->data);
+  return local;
+}
+
 // Lyrical's Buffer implementation has a process-local vtable. Retain the native
 // CPU vector and construct only the message metadata and Buffer facade locally.
 inline Cloud::ConstSharedPtr collector_view(Loan loan)
@@ -40,15 +61,7 @@ inline Cloud::ConstSharedPtr collector_view(Loan loan)
     static Audit audit;
     audit.owners.push_back(owner);
   }
-  auto local = std::make_shared<Cloud>();
-  local->header = owner->header;
-  local->fields = owner->fields;
-  local->height = owner->height;
-  local->width = owner->width;
-  local->row_step = owner->row_step;
-  local->point_step = owner->point_step;
-  local->is_bigendian = owner->is_bigendian;
-  local->is_dense = owner->is_dense;
+  auto local = metadata(*owner);
   const auto & bytes = static_cast<const std::vector<uint8_t> &>(owner->data);
   local->data = rosidl::Buffer<uint8_t>(std::make_unique<rmw_agnocast::HostCloudView>(
     std::shared_ptr<const std::vector<uint8_t>>(owner, &bytes)));

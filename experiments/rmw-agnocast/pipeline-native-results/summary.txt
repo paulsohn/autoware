@@ -1,0 +1,48 @@
+Nominal times in ms, pooled nearest-rank median/p95 after four warm-up groups per launch
+trial=1 native-default nominal_full_ms=2.137/3.102
+trial=2 native-default nominal_full_ms=2.441/3.808
+native-default full=2.395/3.179 partial=51.858/52.468 launch_cpu_s=1.55..1.59 peak_MiB=200.0..201.1
+trial=1 native nominal_full_ms=1.970/3.386
+1-native-overflow clouds=96 metadata=72 paired=57 cloud_only=39 metadata_only=15 recovery_ms=1.4 oldest_ms=640.0
+missing_cloud 10/late_pair 10/late_top 15/partial 16/full 17/partial 22/late_pair 22/late_top 23/partial 28/full 29/partial 34/late_pair 34/late_top 35/partial 36/full 41/partial 42/late_pair 46/late_top 47/partial 48/full 53/partial 54/late_pair 54/late_top 59/partial 60/full 65/partial 66/late_pair 66/late_top 67/partial 72/full 73/partial 78/late_pair 78/late_top 79/partial 80/full
+missing_metadata 6/late_top 7/partial 9/partial 10/late_pair 10/late_top 11/partial 12/full 13/partial 14/late_pair 14/late_top 16/full 17/partial 18/late_pair 18/late_top 19/partial 20/full 22/late_pair 22/late_top 23/partial 24/full 25/partial 26/late_pair 26/late_top 28/full 29/partial 30/late_pair 30/late_top 31/partial 32/full 33/partial 34/late_top 35/partial 36/full 37/partial 38/late_pair 38/late_top 40/full 41/partial 42/late_pair 42/late_top 43/partial 44/full 45/partial 46/late_pair 47/partial 48/full 49/partial 50/late_pair 50/late_top 51/partial 53/partial 54/late_pair 54/late_top 55/partial 56/full 57/partial 58/late_pair 58/late_top
+trial=2 native nominal_full_ms=2.395/3.501
+2-native-overflow clouds=96 metadata=72 paired=57 cloud_only=39 metadata_only=15 recovery_ms=1.1 oldest_ms=640.5
+missing_cloud 10/late_pair 10/late_top 15/partial 16/full 17/partial 22/late_pair 22/late_top 23/partial 28/full 29/partial 34/late_pair 34/late_top 35/partial 36/full 41/partial 42/late_pair 46/late_top 47/partial 48/full 53/partial 54/late_pair 54/late_top 59/partial 60/full 65/partial 66/late_pair 66/late_top 67/partial 72/full 73/partial 78/late_pair 78/late_top 79/partial 80/full
+missing_metadata 6/late_top 7/partial 9/partial 10/late_pair 10/late_top 11/partial 12/full 13/partial 14/late_pair 14/late_top 16/full 17/partial 18/late_pair 18/late_top 19/partial 20/full 22/late_pair 22/late_top 23/partial 24/full 25/partial 26/late_pair 26/late_top 28/full 29/partial 30/late_pair 30/late_top 31/partial 32/full 33/partial 34/late_top 35/partial 36/full 37/partial 38/late_pair 38/late_top 40/full 41/partial 42/late_pair 42/late_top 43/partial 44/full 45/partial 46/late_pair 47/partial 48/full 49/partial 50/late_pair 50/late_top 51/partial 53/partial 54/late_pair 54/late_top 55/partial 56/full 57/partial 58/late_pair 58/late_top
+trial=3 native nominal_full_ms=2.563/3.353
+trial=4 native nominal_full_ms=2.138/2.958
+trial=5 native nominal_full_ms=2.346/3.170
+trial=6 native nominal_full_ms=2.113/2.856
+native full=2.346/3.170 partial=41.605/42.259 launch_cpu_s=1.59..1.64 peak_MiB=199.8..201.4
+trial=1 stock nominal_full_ms=2.478/3.269
+1-stock-overflow clouds=123 metadata=130 paired=123 cloud_only=0 metadata_only=7 recovery_ms=9.3 oldest_ms=2627.7
+missing_cloud 46/late_pair 49/partial 50/late_pair 53/partial 54/late_top 57/partial 58/late_top
+missing_metadata -
+trial=2 stock nominal_full_ms=2.132/3.210
+2-stock-overflow clouds=123 metadata=130 paired=123 cloud_only=0 metadata_only=7 recovery_ms=9.0 oldest_ms=2628.2
+missing_cloud 46/late_pair 49/partial 50/late_pair 53/partial 54/late_top 57/partial 58/late_top
+missing_metadata -
+trial=3 stock nominal_full_ms=2.323/3.189
+trial=4 stock nominal_full_ms=2.271/2.989
+trial=5 stock nominal_full_ms=2.379/2.992
+trial=6 stock nominal_full_ms=2.372/3.019
+stock full=2.343/3.019 partial=41.552/41.975 launch_cpu_s=1.56..1.65 peak_MiB=198.3..203.1
+trial=1 cyclone nominal_full_ms=2.869/3.076
+1-cyclone-overflow clouds=123 metadata=130 paired=123 cloud_only=0 metadata_only=7 recovery_ms=7.9 oldest_ms=2622.0
+missing_cloud 46/late_pair 49/partial 50/late_pair 53/partial 54/late_top 57/partial 58/late_top
+missing_metadata -
+trial=2 cyclone nominal_full_ms=2.771/3.128
+2-cyclone-overflow clouds=123 metadata=130 paired=123 cloud_only=0 metadata_only=7 recovery_ms=6.8 oldest_ms=2623.1
+missing_cloud 46/late_pair 49/partial 50/late_pair 53/partial 54/late_top 57/partial 58/late_top
+missing_metadata -
+cyclone full=2.825/3.076 partial=42.090/42.263 launch_cpu_s=1.62..1.64 peak_MiB=165.3..165.3
+trial=1 zenoh nominal_full_ms=2.278/2.736
+1-zenoh-overflow clouds=123 metadata=130 paired=123 cloud_only=0 metadata_only=7 recovery_ms=8.0 oldest_ms=2620.4
+missing_cloud 46/late_pair 49/partial 50/late_pair 53/partial 54/late_top 57/partial 58/late_top
+missing_metadata -
+trial=2 zenoh nominal_full_ms=2.810/3.773
+2-zenoh-overflow clouds=123 metadata=130 paired=123 cloud_only=0 metadata_only=7 recovery_ms=9.0 oldest_ms=2623.3
+missing_cloud 46/late_pair 49/partial 50/late_pair 53/partial 54/late_top 57/partial 58/late_top
+missing_metadata -
+zenoh full=2.492/3.255 partial=41.905/42.562 launch_cpu_s=2.64..2.67 peak_MiB=299.6..328.2

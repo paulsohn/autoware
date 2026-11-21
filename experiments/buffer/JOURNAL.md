@@ -1781,3 +1781,97 @@ The separate stock audit matched every evicted stamp to a missing cloud.
 All 260 synchronizer input loans were released. The original 24-group stock
 baseline and combined fixtures also passed after updating the verifier.
 [Timing, resource usage and exact loss records](../rmw-agnocast/README.md#depth-32-reader-overflow-and-recovery).
+
+### 2026-11-22 — Native Agnocast on the three-crop Universe graph
+
+The earlier native synchronizer test omitted the crops. Reused the previous
+five-process graph, input generator, distinct crop ranges, static transform,
+synchronizer, verifier and sensor QoS. For the native case, build the wrapper
+crop with ENABLE_AGNOCAST=1 and the existing native synchronizer adapter
+with SYNC_NATIVE=ON in a separate overlay. Keep UNIVERSE_BUFFER_MATRIX=OFF
+for both crop builds. The native crop host loads the same three component
+classes into one Agnocast-only single-threaded executor, using the launch
+file's common bounds, frames and remappings. The normal ROS host uses its
+standard component container. Native synchronization and the sink use the
+bundled mixed-capable CIE, with cloud topics on Agnocast and metadata and
+TF on ROS. The sink materializes a local CPU payload before timestamping
+callback entry, matching the copying RMW sink. The seven native cloud
+routes must each report an actual reader and writer from the kernel graph
+with bridges disabled. The fixture checks the transformed bytes, group
+membership, acquisition stamps, metadata and recovery as in the preceding
+experiment. This measures the deployed stacks, including executor costs.
+
+Reproduce on the laptop with the preceding milestone installed:
+
+```bash
+export LYRICAL_ROOT=$(cat build/agnocast-lyrical/universe-root)
+experiments/buffer/run-lyrical.sh bash -ec '
+  source build/agnocast-lyrical/install/local_setup.bash
+  source build/universe-sync/install/local_setup.bash
+  source build/rmw-agnocast/load-install/local_setup.bash
+  export ENABLE_AGNOCAST=1 CC=/usr/bin/clang-21 CXX=/usr/bin/clang++-21
+  colcon build --base-paths src/universe_crop_benchmark src/universe_sync_benchmark \
+    --build-base build/universe-pipeline-native/obj --install-base build/universe-pipeline-native/install \
+    --executor sequential --cmake-args -DSYNC_NATIVE=ON -DUNIVERSE_BUFFER_MATRIX=OFF \
+    -DAUTOWARE_ENABLE_AGNOCAST_HOST_VIEW=ON -DBUILD_TESTING=OFF \
+    "-DCMAKE_CXX_FLAGS=--gcc-install-dir=/usr/lib/gcc/x86_64-linux-gnu/15" \
+    -DCMAKE_BUILD_TYPE=Release "-DCMAKE_CXX_FLAGS_RELEASE=-O1 -DNDEBUG"'
+```
+
+Rebuild the stock fixture from the same checkout with colcon and its existing
+stock cache. A direct CMake install during diagnosis replaced the generated
+package.dsv and removed the library-path hook. In that state an older
+synchronizer library was selected and native endpoint discovery failed.
+Restoring both hooks with colcon fixed discovery. Exclude those setup
+attempts from timing. For reuse, preserve the colcon-generated environment
+with the following commands.
+
+```bash
+experiments/buffer/run-lyrical.sh bash -ec '
+  source build/agnocast-lyrical/install/local_setup.bash
+  source build/universe-sync/install/local_setup.bash
+  source build/rmw-agnocast/load-install/local_setup.bash
+  export ENABLE_AGNOCAST=0
+  colcon build --base-paths src/universe_sync_benchmark \
+    --build-base build/universe-pipeline/obj --install-base build/universe-pipeline/install \
+    --executor sequential'
+bash experiments/rmw-agnocast/bench-native-graph.sh build/universe-pipeline-native/pairs
+bash experiments/rmw-agnocast/bench-native-graph.sh build/universe-pipeline-native/pairs/confirmation confirmation
+python3 experiments/rmw-agnocast/summarize-native-graph.py build/universe-pipeline-native/pairs
+```
+
+For the native executor A/B, set SYNC_EXTENDED=1, SYNC_TOP_JITTER=1,
+SYNC_SLOW_SINK=1, SYNC_AUDIT=1 and BUFFER_RUNTIME_ONLY=1. Run
+`experiments/buffer/run-lyrical.sh timeout -k 5 65 bash experiments/rmw-agnocast/run-pipeline.sh native`
+once with SYNC_SHORT_WAIT unset and again with SYNC_SHORT_WAIT=1. Only the
+bundled mixed CIE's constructor wait changes (50 or 1 ms, in the native
+synchronizer and sink). The sensor offsets, matcher timeout, crop executor,
+queue depth and slow callback are identical.
+
+The native default-wait run with working native discovery reproduced a
+semantic difference at group 2. Its left/right-stamped output contained
+49,152 points, a full three-sensor cloud, even though the 50 ms top
+publication was outside the 40 ms matching window. This fails the
+configured-timeout expectation. The native nominal run passed with the
+same default. With a 1 ms wait, the matched overload run passed the
+membership checks. Mixed CIE groups invoke an Agnocast timed wait before
+servicing a ROS callback; both the synchronizer and sink emitted the mixed
+group warning. This A/B identifies sensitivity to the native executor
+configuration. It does not isolate the precise timer dispatch time.
+
+The separate 1 ms audit observed 260 retained synchronizer inputs. The
+per-thread conversion audit saw 258 expired views at its own teardown;
+the final native owner audit saw 260 of 260 released. Keep both counters
+and their observation points in the record. The RMW comparison uses the
+stock executor throughout. With slow callbacks, compare usable pairs and
+maximum age together: earlier recovery can follow more aggressive loss.
+
+All 26 measured launches passed their respective checks. Six alternating
+nominal launches per primary implementation supplied 60 post-warm-up
+complete-cloud samples each. Cyclone DDS, Zenoh and native default-wait
+nominal controls contributed two launches per mode. Under overload both
+timed 1 ms native runs delivered 57 matched pairs, with 96 clouds and 72
+metadata records. Both stock RMW runs delivered 123 pairs, with 123 clouds
+and 130 metadata records. All implementations paired the last 12 groups.
+The [comparison table and per-launch measurements](../rmw-agnocast/README.md#native-agnocast-on-the-full-three-lidar-processing-graph)
+record the engineering milestone and resource ranges.

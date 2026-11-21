@@ -50,6 +50,12 @@ endforeach()
 autoware_agnocast_wrapper_register_node(universe_crop
   PLUGIN "autoware::pointcloud_preprocessor::CropBoxFilterComponent" EXECUTABLE crop
   AGNOCAST_EXECUTOR AgnocastOnlyCallbackIsolatedExecutor ROS2_EXECUTOR SingleThreadedExecutor)
+if("$ENV{ENABLE_AGNOCAST}" STREQUAL "1")
+  add_executable(native_crop_container native_crop_container.cpp)
+  target_include_directories(native_crop_container PRIVATE ${autoware_agnocast_wrapper_INCLUDE_DIRS})
+  target_link_libraries(native_crop_container PRIVATE universe_crop ${agnocastlib_TARGETS} ${rclcpp_components_TARGETS})
+  install(TARGETS native_crop_container DESTINATION lib/${PROJECT_NAME})
+endif()
 add_library(universe_endpoint SHARED endpoint.cpp)
 target_link_libraries(universe_endpoint ${rclcpp_TARGETS} ${rclcpp_components_TARGETS}
   ${sensor_msgs_TARGETS} ${agnocastlib_TARGETS} ${autoware_agnocast_wrapper_LIBRARIES})

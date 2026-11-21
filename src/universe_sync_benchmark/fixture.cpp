@@ -1,8 +1,7 @@
 #include <rclcpp/rclcpp.hpp>
 #ifdef SYNC_NATIVE
 #include "native_cloud.hpp"
-
-#include <agnocast/agnocast_callback_isolated_executor.hpp>
+#include "native_executor.hpp"
 
 #endif
 
@@ -11,6 +10,7 @@
 
 #include <algorithm>
 #include <array>
+#include <atomic>
 #include <chrono>
 #include <cstdlib>
 #include <cstring>
@@ -89,10 +89,18 @@ Cloud cloud(int seq, int sensor)
 int pipeline_source(rclcpp::Node::SharedPtr node, const std::filesystem::path & directory)
 {
   auto qos = rclcpp::SensorDataQoS().keep_last(32);
+#ifdef SYNC_NATIVE
+  std::vector<agnocast::Publisher<Cloud>::SharedPtr> pubs;
+#else
   std::vector<rclcpp::Publisher<Cloud>::SharedPtr> pubs;
+#endif
   std::vector<std::vector<Cloud>> inputs(sets);
   for (const auto & topic : topics)
+#ifdef SYNC_NATIVE
+    pubs.push_back(agnocast::create_publisher<Cloud>(node.get(), "/raw" + topic, qos));
+#else
     pubs.push_back(node->create_publisher<Cloud>("/raw" + topic, qos));
+#endif
   for (int seq = 0; !extended && seq < sets; ++seq) {
     for (int sensor = 0; sensor < (seq % 2 ? 2 : 3); ++sensor)
       inputs[seq].push_back(cloud(seq, sensor));
@@ -104,13 +112,29 @@ int pipeline_source(rclcpp::Node::SharedPtr node, const std::filesystem::path & 
              pubs.begin(), pubs.end(),
              [](const auto & p) { return p->get_subscription_count() > 0; }) &&
            std::all_of(topics.begin(), topics.end(), [&](const auto & t) {
+#ifdef SYNC_NATIVE
+             return agnocast::get_publisher_count_core(t) &&
+                    agnocast::get_subscription_count_core(t);
+#else
              return node->count_publishers(t) && node->count_subscribers(t);
+#endif
            });
   };
   while (!matched()) {
     check(Clock::now() < deadline, "pipeline discovery timeout");
     std::this_thread::sleep_for(20ms);
   }
+#ifdef SYNC_NATIVE
+  for (const auto & t :
+       {"/raw/sync/left", "/raw/sync/right", "/raw/sync/top", "/sync/left", "/sync/right",
+        "/sync/top", "/output"}) {
+    const auto writers = agnocast::get_publisher_count_core(t);
+    const auto readers = agnocast::get_subscription_count_core(t);
+    check(writers && readers, "native cloud endpoints missing");
+    std::cout << "native_route " << t << " writers=" << writers << " readers=" << readers
+              << std::endl;
+  }
+#endif
   std::this_thread::sleep_for(500ms);
   const bool jitter = std::getenv("SYNC_TOP_JITTER") != nullptr;
   const auto start = Clock::now();
@@ -130,7 +154,11 @@ int pipeline_source(rclcpp::Node::SharedPtr node, const std::filesystem::path & 
         if (jitter) std::this_thread::sleep_until(group_start + (seq % 4 == 0 ? 15ms : 50ms));
         top_release_ns[seq] = node->now().nanoseconds() - stamps[seq];
       }
+#ifdef SYNC_NATIVE
+      native_sync::publish(*pubs[sensor], inputs[seq][sensor]);
+#else
       pubs[sensor]->publish(inputs[seq][sensor]);
+#endif
     }
     if (extended) inputs[seq].clear();
   }
@@ -158,6 +186,7 @@ int main(int argc, char ** argv)
   std::map<int64_t, int64_t> arrival;
   std::map<int64_t, Info::ConstSharedPtr> infos;
   const bool slow = directory && std::getenv("SYNC_SLOW_SINK");
+  std::atomic<size_t> cloud_count{0}, info_count{0};
   int64_t resume_ns = 0;
   int delayed = 0;
   auto receive = [&](Cloud::ConstSharedPtr c) {
@@ -171,22 +200,29 @@ int main(int argc, char ** argv)
       if (const char * path = std::getenv("SYNC_READY_FILE")) std::ofstream(path) << "ready";
     }
     check(clouds.emplace(rclcpp::Time(c->header.stamp).nanoseconds(), c).second, "duplicate cloud");
+    ++cloud_count;
   };
 #ifdef SYNC_NATIVE
-  auto sub = agnocast::create_subscription<Cloud>(
-    node.get(), "/output", qos,
-    [&](native_sync::Loan loan) { receive(native_sync::retain(std::move(loan))); });
+  auto sub =
+    agnocast::create_subscription<Cloud>(node.get(), "/output", qos, [&](native_sync::Loan loan) {
+      if (directory)
+        receive(native_sync::cpu_copy(std::move(loan)));
+      else
+        receive(native_sync::retain(std::move(loan)));
+    });
 #else
   auto sub = node->create_subscription<Cloud>("/output", qos, receive);
 #endif
   auto status = node->create_subscription<Info>("/output_info", qos, [&](Info::ConstSharedPtr m) {
     check(infos.emplace(rclcpp::Time(m->header.stamp).nanoseconds(), m).second, "duplicate info");
+    ++info_count;
   });
 #ifdef SYNC_NATIVE
   std::vector<agnocast::Publisher<Cloud>::SharedPtr> pubs;
-  for (const auto & topic : topics)
-    pubs.push_back(agnocast::create_publisher<Cloud>(node.get(), topic, qos));
-  agnocast::CallbackIsolatedAgnocastExecutor executor;
+  if (!directory)
+    for (const auto & topic : topics)
+      pubs.push_back(agnocast::create_publisher<Cloud>(node.get(), topic, qos));
+  native_sync::Executor executor;
   executor.add_node(node);
   std::thread worker([&] { executor.spin(); });
   auto spin_until = [](Clock::time_point end) { std::this_thread::sleep_until(end); };
@@ -219,8 +255,8 @@ int main(int argc, char ** argv)
     const auto path = std::filesystem::path(directory);
     std::ofstream(path / "sink-ready") << "ready";
     const auto end = Clock::now() + 25s;
-    while (Clock::now() < end && ((!extended && (clouds.size() < size_t(expected_outputs) ||
-                                                 infos.size() < size_t(expected_outputs))) ||
+    while (Clock::now() < end && ((!extended && (cloud_count.load() < size_t(expected_outputs) ||
+                                                 info_count.load() < size_t(expected_outputs))) ||
                                   !std::filesystem::exists(path / "stamps")))
       spin_until(Clock::now() + 20ms);
     std::ifstream in(path / "stamps");
@@ -273,6 +309,9 @@ int main(int argc, char ** argv)
     if (has_cloud) {
       const auto & c = *clouds.at(stamp);
       const auto & bytes = static_cast<const std::vector<uint8_t> &>(c.data);
+      if (c.width != unsigned(count * segment_points))
+        std::cerr << "width mismatch group=" << seq << " kind=" << kind
+                  << " expected=" << count * segment_points << " received=" << c.width << std::endl;
       check(
         c.header.frame_id == "base_link" && c.width == count * segment_points && c.height == 1 &&
           c.point_step == sizeof(Point) && c.row_step == bytes.size() &&
