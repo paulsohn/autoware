@@ -12171,3 +12171,29 @@ remaining selected behavior-velocity scene group.
 The source const-correctness fix is 73b37641. The following module commit adds
 its already-validated build rules and root selection using the same passing
 gate; no source/test behavior changes follow that result.
+
+## 2026-11-22: Phase 7.3.2 — Intersection UUID construction compatibility
+
+Purpose: unblock the selected intersection implementation with Boost.UUID 1.90,
+LLVM/libc++ 21.1.8, C++23 and RCR Lyrical on Ubuntu 24.04. The first real module
+compile rejects the old sixteen-element aggregate initialization: modern uuid
+has constructors and no such sixteen-argument overload. Inspect the UUID hash
+specialization and its unordered-map consumers, AWF's Lyrical/toolchain trackers,
+current main and matching PR #13605. Main retains the old initializer; the PR is
+open at c4e36a66e05eef83f000a4d28e59c9cab648c71d, reviewed 2026-11-22.
+
+Align the intersection portion exactly: include algorithm, value-initialize the
+UUID and std::copy all sixteen message bytes into its iterator range. Preserve
+the hash function, byte order and keys. Do not apply the PR's optional roundabout
+change before that module enters the selected graph. Commit this source fix
+separately from the following package-owned build definitions. An added root
+regression constructs equal UUID copies and sixteen one-byte variants, then
+checks independent unordered-map insertion/lookup; it belongs to the module's
+build commit. No original test bodies change.
+
+Verification uses the exact combined scene gate in the following crosswalk
+entry, including the intersection original executable, UUID regression and both
+real planner lifecycles. All pass. Targeted clang-format and git diff --check
+also pass. Older Boost distributions are not exercised. This is alignment with
+an existing upstream PR, not a new submission; UPSTREAM_AWF.md records the
+association. The next commit supplies the reusable local module declarations.

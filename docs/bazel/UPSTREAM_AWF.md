@@ -1200,3 +1200,21 @@ Local source fix: `73b37641`, separate from Bazel definitions.
   source-level Clang/libc++ portability, not an older-GCC runtime claim.
   No upstream submission has been made; source fix and build definitions are
   committed separately.
+
+### Intersection UUID construction with modern Boost
+
+- [x] Associated with open [universe#13605](https://github.com/autowarefoundation/autoware_universe/pull/13605),
+  reviewed 2026-11-22 at head c4e36a66e05eef83f000a4d28e59c9cab648c71d.
+  The intersection edit matches; the PR also changes the unselected roundabout
+  module. Current main still contains the failing initializer. The
+  [Lyrical tracker](https://github.com/autowarefoundation/autoware/issues/7404) and
+  [toolchain tracker](https://github.com/autowarefoundation/autoware_universe/issues/13590)
+  provide context. This is not a new upstream submission.
+- Input: local Universe 0.53.2 snapshot, object_manager.hpp in the intersection
+  module; Boost.UUID 1.90.0, LLVM/libc++ 21.1.8/C++23 and RCR Lyrical on Ubuntu
+  24.04. Sixteen-byte brace initialization fails with no matching constructor.
+- Value-initialize boost::uuids::uuid and copy the ROS message's sixteen bytes
+  through begin(). Keep boost::hash and key semantics. The journal's complete
+  module gate passes its original suite, added UUID lookup regression and both
+  standard/experimental lifecycle checks with CPU/Cyclone DDS and Agnocast off.
+  Older Boost builds and enabled-Agnocast runtime are not claimed.
