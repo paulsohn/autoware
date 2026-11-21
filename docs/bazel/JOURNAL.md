@@ -12949,3 +12949,28 @@ This package has no original native suite; no such suite is invented or claimed.
 Targeted clang-format and whitespace checks pass. No host expected package or
 colcon result is required/claimed. Keep this source correction separate from
 the following package build declaration.
+
+## 2026-11-22: Phase 7.3.2 — Velocity-limiter plugin reload
+
+Purpose: preserve the supported module unload/reload lifecycle in a node that
+retains parameters after unloading. Native collision tests and initial startup
+pass; reloading aborts on ParameterAlreadyDeclaredException for
+trajectory_preprocessing.downsample_factor. Inspect every initializer: 22
+header declarations (including the nested string-vector static_map_tags call)
+and distance_buffer in the module source all redeclare node-owned parameters.
+Changing only scalar calls leaves a second abort on obstacles.static_map_tags.
+
+Use the existing autoware_utils::get_or_declare_parameter utility for all 23
+calls, with its explicit header. Keep parameter keys, types and planning logic.
+The root lifecycle test sets downsample_factor=4 before unload and verifies 4
+is retained after reload, both alone and with all selected motion factories.
+Do not add a test body inside the source package.
+
+Current upstream source still declares these parameters; a scoped PR search
+for obstacle_velocity_limiter/reload finds no matching change on 2026-11-22.
+UPSTREAM_AWF.md records an unchecked association. The [run-out group command](#2026-11-22-phase-732--run-out-motion-plugin) passes all
+19 original limiter cases plus its standalone and combined real planner gates;
+the complete group is 49 active cases/16 targets, zero failures/skips/disabled
+cases, CPU/Cyclone DDS with ENABLE_AGNOCAST=0. Original collision benchmark
+builds but is not run for a performance claim. Targeted formatting/whitespace
+checks pass. Keep this source fix separate from Bazel definitions.

@@ -23,6 +23,7 @@
 #include <autoware/motion_utils/marker/virtual_wall_marker_creator.hpp>
 #include <autoware/motion_utils/trajectory/trajectory.hpp>
 #include <autoware_utils/geometry/geometry.hpp>
+#include <autoware_utils/ros/parameter.hpp>
 #include <autoware_utils/ros/update_param.hpp>
 #include <autoware_utils/system/stop_watch.hpp>
 #include <autoware_vehicle_info_utils/vehicle_info_utils.hpp>
@@ -61,7 +62,7 @@ void ObstacleVelocityLimiterModule::init(rclcpp::Node & node, const std::string 
   const auto vehicle_info = vehicle_info_utils::VehicleInfoUtils(node).getVehicleInfo();
   vehicle_lateral_offset_ = static_cast<double>(vehicle_info.max_lateral_offset_m);
   vehicle_front_offset_ = static_cast<double>(vehicle_info.max_longitudinal_offset_m);
-  distance_buffer_ = node.declare_parameter<double>("distance_buffer");
+  distance_buffer_ = autoware_utils::get_or_declare_parameter<double>(node, "distance_buffer");
 
   projection_params_.wheel_base = vehicle_info.wheel_base_m;
   projection_params_.extra_length = vehicle_front_offset_ + distance_buffer_;

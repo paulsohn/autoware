@@ -1287,3 +1287,21 @@ Local source fix: `5eb05315`.
   disabled geometry cases remain disabled. See the journal for exact commands.
   CPU/Cyclone DDS and Agnocast off are validated; no new colcon or older-ROS claim
   is made, and no upstream submission has been made.
+
+### Velocity-limiter plugin redeclares node-owned parameters
+
+- [ ] Associate with a matching upstream change. Reviewed 2026-11-22: current
+  [parameter source](https://github.com/autowarefoundation/autoware_universe/blob/main/planning/motion_velocity_planner/autoware_motion_velocity_obstacle_velocity_limiter_module/src/parameters.hpp)
+  retains unconditional declarations; a scoped limiter/reload PR search finds
+  no matching fix. No new submission is claimed.
+- Reproducer: load the limiter in the actual motion planner, set
+  trajectory_preprocessing.downsample_factor=4, unload and reload through its
+  services. First initialization passes; reload aborts on that existing key.
+  Fixing scalars alone then aborts on obstacles.static_map_tags (string vector).
+- Use read-or-declare initialization for all 22 header calls and the source's
+  distance_buffer call. Retain current values and public names/types. All 19
+  original cases plus standalone and joint nine-plugin reload/retention pass,
+  CPU/Cyclone DDS, ENABLE_AGNOCAST=0. This is a persistent-node lifecycle defect,
+  not a Lyrical-specific algorithm issue. See the
+  [source-fix journal](JOURNAL.md#2026-11-22-phase-732--velocity-limiter-plugin-reload)
+  for exact verification and scope.

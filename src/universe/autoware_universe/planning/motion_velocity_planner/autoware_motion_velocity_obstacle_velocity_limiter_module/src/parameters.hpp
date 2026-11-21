@@ -17,6 +17,7 @@
 
 #include "types.hpp"
 
+#include <autoware_utils/ros/parameter.hpp>
 #include <rclcpp/logger.hpp>
 #include <rclcpp/node.hpp>
 #include <tf2/utils.hpp>
@@ -55,19 +56,27 @@ struct ObstacleParameters
   ObstacleParameters() = default;
   explicit ObstacleParameters(rclcpp::Node & node)
   {
-    updateType(node.get_logger(), node.declare_parameter<std::string>(DYN_SOURCE_PARAM));
-    occupancy_grid_threshold =
-      static_cast<int8_t>(node.declare_parameter<int>(OCC_GRID_THRESH_PARAM));
-    dynamic_obstacles_buffer = static_cast<double>(node.declare_parameter<double>(BUFFER_PARAM));
-    dynamic_obstacles_min_vel = static_cast<double>(node.declare_parameter<double>(MIN_VEL_PARAM));
-    static_map_tags = node.declare_parameter<std::vector<std::string>>(MAP_TAGS_PARAM);
-    filter_envelope = node.declare_parameter<bool>(FILTERING_PARAM);
-    ignore_on_path = node.declare_parameter<bool>(IGNORE_ON_PATH_PARAM);
-    ignore_extra_distance = static_cast<double>(node.declare_parameter<double>(IGNORE_DIST_PARAM));
+    updateType(
+      node.get_logger(),
+      autoware_utils::get_or_declare_parameter<std::string>(node, DYN_SOURCE_PARAM));
+    occupancy_grid_threshold = static_cast<int8_t>(
+      autoware_utils::get_or_declare_parameter<int>(node, OCC_GRID_THRESH_PARAM));
+    dynamic_obstacles_buffer =
+      static_cast<double>(autoware_utils::get_or_declare_parameter<double>(node, BUFFER_PARAM));
+    dynamic_obstacles_min_vel =
+      static_cast<double>(autoware_utils::get_or_declare_parameter<double>(node, MIN_VEL_PARAM));
+    static_map_tags =
+      autoware_utils::get_or_declare_parameter<std::vector<std::string>>(node, MAP_TAGS_PARAM);
+    filter_envelope = autoware_utils::get_or_declare_parameter<bool>(node, FILTERING_PARAM);
+    ignore_on_path = autoware_utils::get_or_declare_parameter<bool>(node, IGNORE_ON_PATH_PARAM);
+    ignore_extra_distance = static_cast<double>(
+      autoware_utils::get_or_declare_parameter<double>(node, IGNORE_DIST_PARAM));
     updateRtreeMinPoints(
-      node.get_logger(), static_cast<int>(node.declare_parameter<int>(RTREE_POINTS_PARAM)));
+      node.get_logger(),
+      static_cast<int>(autoware_utils::get_or_declare_parameter<int>(node, RTREE_POINTS_PARAM)));
     updateRtreeMinSegments(
-      node.get_logger(), static_cast<int>(node.declare_parameter<int>(RTREE_SEGMENTS_PARAM)));
+      node.get_logger(),
+      static_cast<int>(autoware_utils::get_or_declare_parameter<int>(node, RTREE_SEGMENTS_PARAM)));
   }
 
   // cppcheck-suppress functionStatic
@@ -134,11 +143,13 @@ struct ProjectionParameters
   explicit ProjectionParameters(rclcpp::Node & node)
   {
     const auto & logger = node.get_logger();
-    updateModel(logger, node.declare_parameter<std::string>(MODEL_PARAM));
-    updateDistanceMethod(logger, node.declare_parameter<std::string>(DISTANCE_METHOD_PARAM));
-    updateNbPoints(logger, node.declare_parameter<int>(NB_POINTS_PARAM));
-    steering_angle_offset = node.declare_parameter<double>(STEER_OFFSET_PARAM);
-    duration = node.declare_parameter<double>(DURATION_PARAM);
+    updateModel(logger, autoware_utils::get_or_declare_parameter<std::string>(node, MODEL_PARAM));
+    updateDistanceMethod(
+      logger, autoware_utils::get_or_declare_parameter<std::string>(node, DISTANCE_METHOD_PARAM));
+    updateNbPoints(logger, autoware_utils::get_or_declare_parameter<int>(node, NB_POINTS_PARAM));
+    steering_angle_offset =
+      autoware_utils::get_or_declare_parameter<double>(node, STEER_OFFSET_PARAM);
+    duration = autoware_utils::get_or_declare_parameter<double>(node, DURATION_PARAM);
   }
 
   // cppcheck-suppress functionStatic
@@ -204,8 +215,10 @@ struct VelocityParameters
   VelocityParameters() = default;
   explicit VelocityParameters(rclcpp::Node & node)
   {
-    min_velocity = static_cast<double>(node.declare_parameter<double>(MIN_VEL_PARAM));
-    max_deceleration = static_cast<double>(node.declare_parameter<double>(MAX_DECEL_PARAM));
+    min_velocity =
+      static_cast<double>(autoware_utils::get_or_declare_parameter<double>(node, MIN_VEL_PARAM));
+    max_deceleration =
+      static_cast<double>(autoware_utils::get_or_declare_parameter<double>(node, MAX_DECEL_PARAM));
   }
 };
 
@@ -226,11 +239,13 @@ struct PreprocessingParameters
   PreprocessingParameters() = default;
   explicit PreprocessingParameters(rclcpp::Node & node)
   {
-    downsample_factor = node.declare_parameter<int>(DOWNSAMPLING_PARAM);
-    start_distance = static_cast<double>(node.declare_parameter<double>(START_DIST_PARAM));
-    calculate_steering_angles = node.declare_parameter<bool>(CALC_STEER_PARAM);
-    max_length = node.declare_parameter<double>(MAX_LENGTH_PARAM);
-    max_duration = node.declare_parameter<double>(MAX_DURATION_PARAM);
+    downsample_factor = autoware_utils::get_or_declare_parameter<int>(node, DOWNSAMPLING_PARAM);
+    start_distance =
+      static_cast<double>(autoware_utils::get_or_declare_parameter<double>(node, START_DIST_PARAM));
+    calculate_steering_angles =
+      autoware_utils::get_or_declare_parameter<bool>(node, CALC_STEER_PARAM);
+    max_length = autoware_utils::get_or_declare_parameter<double>(node, MAX_LENGTH_PARAM);
+    max_duration = autoware_utils::get_or_declare_parameter<double>(node, MAX_DURATION_PARAM);
   }
   bool updateDownsampleFactor(const int64_t new_downsample_factor)
   {
