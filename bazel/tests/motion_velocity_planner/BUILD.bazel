@@ -1,2 +1,34 @@
+load("@rules_python//python:defs.bzl", "py_test")
+
 package(default_visibility = ["//visibility:public"])
 exports_files(["test_runtime.py"])
+
+_SELECTED = [
+    "obstacle_stop",
+    "obstacle_slow_down",
+    "obstacle_cruise",
+    "dynamic_obstacle_stop",
+    "out_of_lane",
+    "obstacle_velocity_limiter",
+    "run_out",
+    "boundary_departure_prevention",
+    "road_user_stop",
+]
+
+py_test(
+    name = "selected_runtime_test",
+    srcs = ["test_runtime.py"],
+    main = "test_runtime.py",
+    args = [
+        "$(rootpath @autoware_motion_velocity_planner//:autoware_motion_velocity_planner_node)",
+        ",".join(_SELECTED),
+    ],
+    data = [
+        "@autoware_motion_velocity_planner//:autoware_motion_velocity_planner_node",
+        "@autoware_motion_velocity_planner//:ament_index",
+    ] + ["@autoware_motion_velocity_" + module + "_module//:ament_index" for module in _SELECTED],
+    env = {"ENABLE_AGNOCAST": "0", "LD_LIBRARY_PATH": "lib"},
+    precompile = "disabled",
+    tags = ["no-remote", "no-sandbox"],
+    deps = ["@ament_index_python", "@autoware_internal_planning_msgs//:py", "@rcl_interfaces//:py", "@rclpy"],
+)

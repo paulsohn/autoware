@@ -1831,6 +1831,15 @@ Phase 7.3 task boundaries (selected 2026-11-21):
   complete: their seven original cases and four real planner profiles pass.
   Cruise preserves updated node parameters across plugin reload.
   [Evidence](JOURNAL.md#2026-11-22-phase-732--obstacle-slow-down-motion-plugin).
+  The remaining five motion factories are complete: run-out, out-of-lane,
+  obstacle velocity limiter, experimental boundary prevention and road-user
+  stop. Their original suites plus affected cruise/slow-down suites and nine
+  individual/one joint planner profiles pass 49 cases in 16 targets. Distinct
+  internal type identities prevent cross-plugin destructor collisions; limiter
+  parameters survive reload. The joint gate uses component-default configs and
+  does not establish simulator driving behavior.
+  [Complete motion group](JOURNAL.md#2026-11-22-phase-732--run-out-motion-plugin),
+  [composition defect](JOURNAL.md#2026-11-22-phase-732--distinct-motion-plugin-internal-types).
   The local Universe utility dependency is complete: 118 active original
   cases and the core/Universe conversion regression pass, preserving four
   original disabled cases. Its duplicate global TF definition is corrected

@@ -1,0 +1,12 @@
+load("@rules_python//python:defs.bzl", "py_test")
+py_test(
+    name = "runtime_test",
+    srcs = ["//bazel/tests/motion_velocity_planner:test_runtime.py"],
+    main = "//bazel/tests/motion_velocity_planner:test_runtime.py",
+    args = ["$(rootpath @autoware_motion_velocity_planner//:autoware_motion_velocity_planner_node)", "road_user_stop"],
+    data = ["@autoware_motion_velocity_planner//:autoware_motion_velocity_planner_node", "@autoware_motion_velocity_planner//:ament_index", "@autoware_motion_velocity_road_user_stop_module//:ament_index"],
+    env = {"ENABLE_AGNOCAST": "0", "LD_LIBRARY_PATH": "lib"},
+    precompile = "disabled",
+    tags = ["no-remote", "no-sandbox"],
+    deps = ["@ament_index_python", "@autoware_internal_planning_msgs//:py", "@rcl_interfaces//:py", "@rclpy"],
+)
