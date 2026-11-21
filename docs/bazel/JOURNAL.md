@@ -11178,3 +11178,80 @@ remaining Universe launch/implementation work. Full planning-simulator launch,
 GUI/driving acceptance, alternative deployer-supplied assets, bootable OS updates
 and Fast DDS are outside this gate. External asset injection remains only the
 sketch in assets/README.md.
+
+## 2026-11-21: Phase 7.3.2 — Shared behavior-path planning library
+
+Purpose: supply the common implementation required by the default-selected
+Universe behavior-path planner and its scene modules. Inspect the local
+autoware_behavior_path_planner_common package manifest, CMake source/test lists,
+public headers, and fixture lookups. Its existing dependencies now have local
+Bazel providers: RTC, freespace planning, traffic-light utilities, boundary
+departure checking, routing, planning factors, marker interfaces and core
+geometry/motion utilities. No optional sampling planner is required by this
+library; do not adopt default-disabled modules solely to grow the graph.
+
+Add package-owned MODULE.bazel and BUILD.bazel. Build all 18 existing library
+translation units and expose the public include tree. Declare the actual
+message/library dependencies and collect their shared runtime providers, with
+the test-only ament-index/test-utils providers composed separately. Select this
+local module with an adjacent version-0.0.0 bazel_dep/local_path_override pair
+after its dependencies at the root. No implementation, manifest or original
+test source is changed; components acquire no dependency on metarepository labels.
+Consumers link @autoware_behavior_path_planner_common and compose its
+:runtime_dynamic_deps provider; :ament_index exposes the package/test resources.
+
+Preserve CMake's seven test executable boundaries, covering all 12 original
+test source files: utilities (path and traffic-light utilities included),
+drivable-area expansion/footprints/static boundaries, occupancy-grid collision
+detection, safety/object filtering, parking/departure, path shifting and turn
+signals. Google Test's Bazel gtest_main target includes Google Mock; a separate
+gmock_main target does not exist in the selected release. Export the original
+test_data directory through this package's ament index and declare the
+autoware_test_utils index for its map fixtures. Tests consume indexed resources,
+not source-workspace paths. Give the tests the declared shared-library directory
+and run sequentially on a dedicated ROS domain with Agnocast disabled.
+Use the same runtime Python bootstrap configuration as the preceding validated
+gates so generator actions can reuse their cached outputs.
+
+The original sources contain two explicitly disabled cases:
+DISABLED_StaticDrivableArea.generateDrivableArea and
+CalcInterpolatedPoseWithVelocityTest.DISABLED_SpecialCases. The former has an
+upstream TODO identifying a failing boundary-intersection assertion. Preserve
+their existing status; distinguish these from failures/skips caused by missing
+Bazel dependencies. The acceptance gate is every original executable with its
+normal upstream test selection, with no extra test filters or omitted groups.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 --test_output=errors \
+  @autoware_behavior_path_planner_common//...
+```
+
+All 18 library translation units build and all seven test executables pass
+(497.9 seconds total invocation). Inspect their test.xml files beneath
+bazel-testlogs/external/autoware_behavior_path_planner_common+ to distinguish
+executed cases from the two upstream-disabled declarations:
+
+| Original executable group | Active cases passed | Upstream-disabled cases |
+| --- | ---: | ---: |
+| Utilities | 36 | 0 |
+| Drivable-area expansion | 14 | 1 |
+| Occupancy-grid collision detection | 6 | 0 |
+| Safety/object filtering | 34 | 1 |
+| Parking/departure | 7 | 0 |
+| Path shifter | 8 | 0 |
+| Turn signals | 6 | 0 |
+| Total | 111 | 2 |
+
+There are zero failures, errors or runtime skips. CPU/Cyclone DDS with
+ENABLE_AGNOCAST=0 is the selected profile. Test runtimes range from 0.5 to
+1.7 seconds. No implementation or original-test compatibility fix is needed;
+existing header/deprecation warnings are nonfatal. A targeted CMake/Bazel
+inventory comparison confirms all 18 library sources, all 12 test sources and
+the original seven executable groups are represented. Bazel parses/analyzes
+the declarations, and git diff --check passes. No pre-commit, Fast DDS or
+unchanged distribution matrix is run.
+
+This completes the common-library task. The behavior-path node and selected
+scene plugins remain subsequent Phase 7.3.2 tasks; this library does not establish
+full planning-simulator launch or lane-driving acceptance.

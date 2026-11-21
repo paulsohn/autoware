@@ -1768,6 +1768,11 @@ Phase 7.3 task boundaries (selected 2026-11-21):
   zero failures/skips. The full 339-interface/388-instantiation bridge library
   also builds, CPU/Cyclone DDS with ENABLE_AGNOCAST=0.
   [Collector and gate evidence](JOURNAL.md#2026-11-21-phase-732--simulator-interface-collector-and-bridge-compilation).
+  Shared behavior-path support is complete: all 18 library sources build and
+  the seven original test executables pass 111 active cases with zero failures
+  or runtime skips. Two explicitly upstream-disabled cases retain that status;
+  no source compatibility patch or new dependency module is required.
+  [Evidence](JOURNAL.md#2026-11-21-phase-732--shared-behavior-path-planning-library).
   Continue in dependency order through shared planner helpers, the
   preset-selected behavior/motion plugins and controller libraries, then
   simulated perception and the selected system/API closure. CMake-only shims
