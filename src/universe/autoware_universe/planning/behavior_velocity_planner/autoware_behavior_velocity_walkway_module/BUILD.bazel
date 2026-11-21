@@ -1,0 +1,94 @@
+load("@rosdistro//ament:defs.bzl", "ament_index")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "autoware_behavior_velocity_walkway_module",
+    srcs = glob(["src/**/*.cpp"]),
+    hdrs = glob(["src/**/*.hpp"]),
+    includes = ["src"],
+    deps = [
+        "@ament_index_cpp//:ament_index_cpp_library",
+        "@autoware_behavior_velocity_crosswalk_module",
+        "@autoware_behavior_velocity_planner",
+        "@autoware_behavior_velocity_planner_common",
+        "@autoware_internal_planning_msgs//:cc",
+        "@autoware_lanelet2_extension//:autoware_lanelet2_extension_lib_library",
+        "@autoware_lanelet2_utils",
+        "@autoware_motion_utils",
+        "@autoware_planning_msgs//:cc",
+        "@autoware_route_handler",
+        "@autoware_trajectory",
+        "@autoware_utils",
+        "@autoware_utils_geometry",
+        "@autoware_vehicle_info_utils",
+        "@geometry_msgs//:cc",
+        "@lanelet2_core//:lanelet2_core_library",
+        "@lanelet2_routing//:lanelet2_routing_library",
+        "@pluginlib//:pluginlib_library",
+        "@rclcpp//:rclcpp_library",
+        "@rosdistro//cc:boost.geometry",
+        "@visualization_msgs//:cc",
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = [
+        "@ament_index_cpp//:ament_index_cpp",
+        "@autoware_behavior_velocity_planner//:runtime_dynamic_deps",
+        "@autoware_behavior_velocity_planner_common//:runtime_dynamic_deps",
+        "@autoware_internal_planning_msgs//:cc_shared",
+        "@autoware_lanelet2_extension//:autoware_lanelet2_extension_lib",
+        "@autoware_lanelet2_utils//:runtime_dynamic_deps",
+        "@autoware_motion_utils//:runtime_dynamic_deps",
+        "@autoware_planning_msgs//:cc_shared",
+        "@autoware_route_handler//:runtime_dynamic_deps",
+        "@autoware_trajectory//:runtime_dynamic_deps",
+        "@geometry_msgs//:cc_shared",
+        "@lanelet2_core//:lanelet2_core",
+        "@lanelet2_routing//:lanelet2_routing",
+        "@pluginlib//:pluginlib",
+        "@rclcpp//:rclcpp",
+        "@visualization_msgs//:cc_shared",
+    ],
+)
+
+cc_shared_library(
+    name = "walkway_plugin",
+    dynamic_deps = [":runtime_dynamic_deps"],
+    shared_lib_name = "libautoware_behavior_velocity_walkway_module.so",
+    deps = [":autoware_behavior_velocity_walkway_module"],
+)
+
+ament_index(
+    data = glob(["config/**"]),
+    libraries = [":walkway_plugin"],
+    package_xml = "package.xml",
+    plugin_categories = {"plugins.xml": "autoware_behavior_velocity_planner"},
+)
+
+cc_test(
+    name = "test_autoware_behavior_velocity_walkway_module",
+    timeout = "long",
+    srcs = glob(["test/**/*.cpp"]),
+    data = [
+        ":ament_index",
+        "@autoware_behavior_velocity_planner//:ament_index",
+        "@autoware_behavior_velocity_planner_common//:ament_index",
+        "@autoware_lanelet2_utils//:ament_index",
+        "@autoware_route_handler//:ament_index",
+        "@autoware_test_utils//:ament_index",
+        "@autoware_vehicle_info_utils//:ament_index",
+        "@autoware_velocity_smoother//:ament_index",
+    ],
+    dynamic_deps = [":runtime_dynamic_deps"],
+    env = {"ENABLE_AGNOCAST": "0", "LD_LIBRARY_PATH": "lib", "ROS_DOMAIN_ID": "76"},
+    deps = [
+        ":autoware_behavior_velocity_walkway_module",
+        "@autoware_behavior_velocity_planner//:test_utils",
+        "@googletest//:gtest_main",
+    ],
+)
