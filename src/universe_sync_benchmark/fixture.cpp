@@ -110,16 +110,25 @@ int pipeline_source(rclcpp::Node::SharedPtr node, const std::filesystem::path & 
     std::this_thread::sleep_for(20ms);
   }
   std::this_thread::sleep_for(500ms);
+  const bool jitter = std::getenv("SYNC_TOP_JITTER") != nullptr;
   const auto start = Clock::now();
+  std::array<int64_t, sets> top_release_ns{};
   std::array<int64_t, sets> stamps;
   for (int seq = 0; seq < sets; ++seq) {
     std::this_thread::sleep_until(start + seq * 100ms);
+    const auto group_start = Clock::now();
     stamps[seq] = node->now().nanoseconds();
     for (size_t sensor = 0; sensor < inputs[seq].size(); ++sensor) {
       inputs[seq][sensor].header.stamp = rclcpp::Time(stamps[seq] + int64_t(sensor) * 1000000);
+      if (sensor == 2) {
+        if (jitter) std::this_thread::sleep_until(group_start + (seq % 4 == 0 ? 15ms : 50ms));
+        top_release_ns[seq] = node->now().nanoseconds() - stamps[seq];
+      }
       pubs[sensor]->publish(inputs[seq][sensor]);
     }
   }
+  for (int seq = 0; seq < sets; seq += 2)
+    std::cout << "top_release_ns," << seq << "," << top_release_ns[seq] << std::endl;
   std::ofstream out(directory / "stamps.tmp");
   out.exceptions(std::ios::badbit | std::ios::failbit);
   for (auto stamp : stamps) out << stamp << '\n';
@@ -134,6 +143,8 @@ int main(int argc, char ** argv)
   auto node = std::make_shared<rclcpp::Node>("sync_fixture");
   const char * directory = std::getenv("PIPELINE_DIR");
   if (directory && std::getenv("PIPELINE_SOURCE")) return pipeline_source(node, directory);
+  const bool jitter = directory && std::getenv("SYNC_TOP_JITTER");
+  const int expected_outputs = jitter ? sets + sets / 4 : sets;
   const int segment_points = directory ? points / 2 : points;
   auto qos = rclcpp::SensorDataQoS().keep_last(32);
   std::map<int64_t, Cloud::ConstSharedPtr> clouds;
@@ -194,8 +205,9 @@ int main(int argc, char ** argv)
     const auto path = std::filesystem::path(directory);
     std::ofstream(path / "sink-ready") << "ready";
     const auto end = Clock::now() + 25s;
-    while (Clock::now() < end && (clouds.size() < sets || infos.size() < sets ||
-                                  !std::filesystem::exists(path / "stamps")))
+    while (Clock::now() < end &&
+           (clouds.size() < size_t(expected_outputs) || infos.size() < size_t(expected_outputs) ||
+            !std::filesystem::exists(path / "stamps")))
       spin_until(Clock::now() + 20ms);
     std::ifstream in(path / "stamps");
     for (int64_t stamp; in >> stamp;) stamps.push_back(stamp);
@@ -228,12 +240,14 @@ int main(int argc, char ** argv)
   executor.cancel();
   worker.join();
 #endif
-  check(clouds.size() == sets && infos.size() == sets, "missing synchronized output or metadata");
-  for (int seq = 0; seq < sets; ++seq) {
-    const auto & c = *clouds.at(stamps[seq]);
+  check(
+    clouds.size() == size_t(expected_outputs) && infos.size() == size_t(expected_outputs),
+    "unexpected number of clouds or metadata records");
+  auto verify_group = [&](int seq, int first, int count, const char * kind) {
+    const auto stamp = stamps[seq] + int64_t(first) * 1000000;
+    const auto & c = *clouds.at(stamp);
     const auto & bytes = static_cast<const std::vector<uint8_t> &>(c.data);
-    const auto & m = *infos.at(stamps[seq]);
-    const int count = seq % 2 ? 2 : 3;
+    const auto & m = *infos.at(stamp);
     check(
       c.header.frame_id == "base_link" && c.width == count * segment_points && c.height == 1 &&
         c.point_step == sizeof(Point) && c.row_step == bytes.size() &&
@@ -248,7 +262,7 @@ int main(int argc, char ** argv)
       auto it = std::find(topics.begin(), topics.end(), source.topic);
       check(it != topics.end() && seen.insert(source.topic).second, "unknown or duplicate sensor");
       int sensor = it - topics.begin();
-      if (sensor >= count) {
+      if (sensor < first || sensor >= first + count) {
         check(
           source.status == source.STATUS_TIMEOUT && source.length == 0, "expected sensor timeout");
         continue;
@@ -271,12 +285,19 @@ int main(int argc, char ** argv)
           "source payload or TF mismatch");
       }
     }
+    std::cout << "sample," << seq << "," << kind << "," << arrival.at(stamp) << "\n";
+  };
+  for (int seq = 0; seq < sets; ++seq) {
+    if (jitter && seq % 4 == 2) {
+      verify_group(seq, 0, 2, "late_pair");
+      verify_group(seq, 2, 1, "late_top");
+    } else {
+      verify_group(seq, 0, seq % 2 ? 2 : 3, seq % 2 ? "partial" : "full");
+    }
   }
   std::cout << "fast_source_hz=" << 1e9 * (sets - 1) / (stamps.back() - stamps.front()) << "\n";
-  for (int i = 0; i < sets; ++i)
-    std::cout << "sample," << i << "," << (i % 2 ? "partial" : "full") << ","
-              << arrival.at(stamps[i]) << "\n";
-  std::cout << "verified 24 synchronized clouds and metadata, 12 complete and 12 timed out, "
+  std::cout << "verified " << expected_outputs << " synchronized clouds and metadata, "
+            << (jitter ? 6 : 12) << " complete and " << (jitter ? 24 : 12) << " timed out, "
             << 60 * points << " input points\n";
   clouds.clear();
   rclcpp::shutdown();

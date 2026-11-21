@@ -2438,3 +2438,31 @@ control. The earlier native synchronizer measurement has a shorter graph
 and is not a denominator for these results.
 [Timing samples and verification](pipeline-launch-results/summary.txt)
 and [build selections](pipeline-launch-results/build-checks.txt).
+
+### Top LiDAR arrival jitter
+
+Two paired launches per middleware used the same three crops, synchronizer,
+10/10/5 Hz input and nominal acquisition stamps. Baseline top publications
+started 0.38–4.22 ms after group start. Under jitter they started at
+15.04–15.07 or 50.05–50.07 ms. These offsets were measured at the raw
+publisher. Synchronizer ingress was not instrumented.
+
+| Middleware | Baseline full | 15 ms full | 50 ms left/right | 50 ms top only |
+|---|---:|---:|---:|---:|
+| rmw_agnocast, retained inputs and stock launch | 2.483 / 3.023 | 17.135 / 17.649 | 41.580 / 42.168 | 89.368 / 89.590 |
+| Cyclone DDS | 2.925 / 3.761 | 17.256 / 17.693 | 41.983 / 42.246 | 89.467 / 89.798 |
+| Zenoh | 2.811 / 3.519 | 17.056 / 17.423 | 41.806 / 42.351 | 89.489 / 89.841 |
+
+Values are median / nearest-rank p95 in ms from the oldest contributing
+acquisition stamp to the sink callback. First four acquisition groups per
+launch are excluded from timing only. Baseline full has 20 measured outputs
+per middleware and each jitter column has 10, so its p95 is the observed
+maximum. Every launch verified all 60 inputs through payload and metadata.
+At 15 ms the top joined its pair. At 50 ms the pair timed out and the top
+formed a second timed-out output before the next group. The roughly 89 ms
+top-only result includes the imposed delay and its own matching window.
+Odd groups with the top absent had similar median latency across conditions.
+Stock rmw_agnocast retained all 60 synchronizer inputs, and a separate audit
+verified every loan was released. Native Agnocast on this complete graph
+remains unmeasured. Reproduction is in the [journal](../buffer/JOURNAL.md#2026-11-21--top-lidar-arrives-on-either-side-of-the-synchronizer-timeout).
+[All samples, CPU and memory ranges](pipeline-arrival-results/summary.txt).

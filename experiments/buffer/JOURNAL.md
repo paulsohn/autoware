@@ -1591,3 +1591,38 @@ propagation for the verifier. Rebuilt and reran the original synchronizer-only
 fixture in retained-input and native Agnocast modes. Both verified all 24
 groups with 60 retained inputs and clean shutdown. The native regression uses
 the shorter graph and is excluded from the launch timing table.
+
+### 2026-11-21 — Top LiDAR arrives on either side of the synchronizer timeout
+
+Used the preceding installed three-crop Universe graph, laptop and 40 ms naive
+synchronizer timeout. Changed only the source and sink fixture. Each 100 ms
+group retains its acquisition stamps at 0/1/2 ms for left/right/top. On
+alternate top publications the source waits until 15 or 50 ms from group
+start. It logs when it enters publish, upstream of the crop. Odd groups still
+have no top sample. The sink checks membership, source stamps, transformed
+points and timeout metadata, including a top-only output if the pair has
+already timed out. No Universe implementation changes were needed.
+
+From the worktree with the previous milestone's overlays installed:
+
+```bash
+export LYRICAL_ROOT=$(cat build/agnocast-lyrical/universe-root)
+experiments/buffer/run-lyrical.sh bash -ec '
+  source build/agnocast-lyrical/install/local_setup.bash
+  source build/universe-sync/install/local_setup.bash
+  source build/rmw-agnocast/load-install/local_setup.bash
+  cmake --build build/universe-pipeline/obj/universe_sync_benchmark --target sync_fixture -j1
+  cmake --install build/universe-pipeline/obj/universe_sync_benchmark'
+bash experiments/rmw-agnocast/bench-arrival.sh build/universe-pipeline/new-arrival-pairs
+SYNC_AUDIT=1 SYNC_TOP_JITTER=1 BUFFER_RUNTIME_ONLY=1 experiments/buffer/run-lyrical.sh \
+  timeout -k 5 65 bash experiments/rmw-agnocast/run-pipeline.sh stock
+```
+
+Ran two rounds in reverse order, sequentially, with 512 MiB runtime scopes.
+All 12 launches verified every cloud and metadata record. The 36 top inputs
+released outside the timeout each produced a separate top-only output.
+The independent stock audit recorded 60 loans, 60 releases and 15,728,640
+bytes. Runtime peak memory across scopes was 329.67 MiB and minimum host
+MemAvailable was 16,033 MiB. The [results and interpretation](../rmw-agnocast/README.md#top-lidar-arrival-jitter)
+apply to this laptop, matcher and schedule. Next isolate slow-consumer
+behavior with nominal sensor timing before combining both conditions.
