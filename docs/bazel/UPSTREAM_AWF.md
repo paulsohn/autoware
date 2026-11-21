@@ -1153,3 +1153,22 @@ CPU/Cyclone DDS with ENABLE_AGNOCAST=0 is validated; optional bag export and
 older ROS distributions are not. The
 [journal](JOURNAL.md#2026-11-21-phase-732--freespace-test-filesystem-compatibility)
 records the diagnosis and the following module entry gives the full command.
+
+### Lane-change fmt::join needs its declaring header
+
+- [x] Associated with merged [universe#13594](https://github.com/autowarefoundation/autoware_universe/pull/13594),
+  reviewed 2026-11-22 (merge 0aca0ea44d6ebba9600f753bb561f423591459c8).
+  The one-line source fix is identical. The broader
+  [toolchain tracker #13590](https://github.com/autowarefoundation/autoware_universe/issues/13590)
+  is also linked from the Lyrical transition tracker; no unrelated fixes are applied.
+- Input: local Universe 0.53.2 snapshot imported by 7fbc81af,
+  planning/behavior_path_planner/autoware_behavior_path_lane_change_module/src/interface.cpp.
+  LLVM/libc++ 21.1.8, C++23, RCR Lyrical and fmt 12.2.0 on Ubuntu 24.04.
+  Compiling the real module reports two missing fmt::join declarations in
+  LaneChangeInterface::isExecutionRequested even with the fmt library declared.
+- Include fmt/ranges.h next to fmt/format.h. The former declares the range join
+  API with modern fmt; changing the Bazel dependency alone cannot provide that
+  declaration. Preserve lane-ID formatting and runtime behavior. Upstream's PR
+  reports older fmt compatibility; this branch does not claim an older-fmt run.
+- Reproducer and local module-gate results are in the lane-change journal entry.
+  This is alignment with an existing upstream fix, not a new upstream submission.

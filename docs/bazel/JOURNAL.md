@@ -11577,3 +11577,47 @@ inventory and whitespace checks pass. CPU/Cyclone DDS with ENABLE_AGNOCAST=0
 remains selected; no pre-commit, Fast DDS, GPU or unchanged system matrix is
 run. The library is ready for lane-change integration; full simulator assembly
 remains outside the current execution boundary.
+
+## 2026-11-22: Phase 7.3.2 — Lane-change scene plugins
+
+Purpose: provide both selected left/right lane-change managers through the actual
+behavior-path executable. Inspect CMake, manifest, all seven implementation
+sources, public headers, plugin XML, config/test_data and all four original test
+sources. Preserve the complete single test executable: geometry/acceleration,
+node normal/empty-route/off-track, filtered-object/scene and planning-factor
+coverage, including its one upstream-disabled filtered-object case.
+
+Use the preceding package-owned library/shared-plugin/index pattern, retaining
+both factory classes in one original-basename shared library. Declare the local
+Frenet implementation and real map/TF/messages/helpers; expose config/test_data
+through the package index and preserve planner test-helper/index dependencies.
+Add a root standalone profile loading both factories into one actual planner,
+checking defaults 50/200, backward-lane-length update to 201, mapped plugin DLL
+and clean shutdown. Do not equate parameter coverage with full driving behavior.
+
+The first compile fails twice at fmt::join in src/interface.cpp. fmt 12.2.0
+requires fmt/ranges.h; declaring the fmt dependency is insufficient. Add that
+single direct include, matching merged universe#13594 exactly after inspecting
+the actual PR diff, current main and Lyrical/toolchain trackers on 2026-11-22.
+Keep this source compatibility fix separate from Bazel declarations. Other
+packages' related toolchain issues are outside this task.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_output=errors @autoware_behavior_path_lane_change_module//... \
+  //bazel/tests/autoware_behavior_path_planner:all
+python3 -m flake8 --max-line-length=150 \
+  bazel/tests/autoware_behavior_path_planner/test_runtime.py
+git diff --check
+```
+
+All seven production sources build. The complete original suite passes eleven
+active cases in 17.8 seconds; its one upstream-disabled filtered-object case
+remains disabled. All four standalone profiles pass, including both lane-change
+factories, the 50/200 defaults, update to 201 and clean exit. The combined
+five-target gate passes 15 active cases in 107.3 seconds with no failures,
+errors or runtime skips. Targeted flake8 and git diff --check pass.
+CPU/Cyclone DDS with ENABLE_AGNOCAST=0 is selected; no pre-commit, Fast DDS or
+full simulator run is performed. Next integrate derived avoidance, then parking
+scenes.
