@@ -1,0 +1,26 @@
+load("@rosidl_default_generators//:defs.bzl", "default_generators")
+
+package(default_visibility = ["//visibility:public"])
+
+# Supported interfaces are selected by the integrated consumers.
+default_generators(
+    dependencies = [
+        "@builtin_interfaces",
+        "@unique_identifier_msgs",
+    ],
+    package_xml = "package.xml",
+    deps = [
+        "//msg:AutoModeStatus",
+        "//msg:AutoModeStatusArray",
+        "//msg:Command",
+        "//msg:CooperateCommand",
+        "//msg:CooperateResponse",
+        "//msg:CooperateStatus",
+        "//msg:CooperateStatusArray",
+        "//msg:Module",
+        "//msg:State",
+        "//srv:AutoMode",
+        "//srv:AutoModeWithModule",
+        "//srv:CooperateCommands",
+    ],
+)

@@ -1,0 +1,78 @@
+load("@rosidl_default_generators//:defs.bzl", "ros_message")
+
+package(default_visibility = ["//visibility:public"])
+
+ros_message(
+    name = "AutoModeStatus",
+    src = "AutoModeStatus.msg",
+    deps = [
+        "//msg:Module",
+    ],
+)
+
+ros_message(
+    name = "AutoModeStatusArray",
+    src = "AutoModeStatusArray.msg",
+    deps = [
+        "//msg:AutoModeStatus",
+        "@builtin_interfaces//msg:Time",
+    ],
+)
+
+ros_message(
+    name = "Command",
+    src = "Command.msg",
+    deps = [],
+)
+
+ros_message(
+    name = "CooperateCommand",
+    src = "CooperateCommand.msg",
+    deps = [
+        "//msg:Command",
+        "//msg:Module",
+        "@unique_identifier_msgs//msg:UUID",
+    ],
+)
+
+ros_message(
+    name = "CooperateResponse",
+    src = "CooperateResponse.msg",
+    deps = [
+        "//msg:Module",
+        "@unique_identifier_msgs//msg:UUID",
+    ],
+)
+
+ros_message(
+    name = "CooperateStatus",
+    src = "CooperateStatus.msg",
+    deps = [
+        "//msg:Command",
+        "//msg:Module",
+        "//msg:State",
+        "@builtin_interfaces//msg:Time",
+        "@unique_identifier_msgs//msg:UUID",
+    ],
+)
+
+ros_message(
+    name = "CooperateStatusArray",
+    src = "CooperateStatusArray.msg",
+    deps = [
+        "//msg:CooperateStatus",
+        "@builtin_interfaces//msg:Time",
+    ],
+)
+
+ros_message(
+    name = "Module",
+    src = "Module.msg",
+    deps = [],
+)
+
+ros_message(
+    name = "State",
+    src = "State.msg",
+    deps = [],
+)

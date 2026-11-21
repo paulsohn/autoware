@@ -1,0 +1,27 @@
+load("@rosidl_default_generators//:defs.bzl", "ros_service")
+
+package(default_visibility = ["//visibility:public"])
+
+ros_service(
+    name = "AutoMode",
+    src = "AutoMode.srv",
+    deps = [],
+)
+
+ros_service(
+    name = "AutoModeWithModule",
+    src = "AutoModeWithModule.srv",
+    deps = [
+        "//msg:Module",
+    ],
+)
+
+ros_service(
+    name = "CooperateCommands",
+    src = "CooperateCommands.srv",
+    deps = [
+        "//msg:CooperateCommand",
+        "//msg:CooperateResponse",
+        "@builtin_interfaces//msg:Time",
+    ],
+)

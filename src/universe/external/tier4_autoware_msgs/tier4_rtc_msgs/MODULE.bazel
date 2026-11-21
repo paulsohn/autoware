@@ -1,0 +1,8 @@
+module(
+    name = "tier4_rtc_msgs",
+    version = "0.0.0",
+)
+
+bazel_dep(name = "builtin_interfaces", version = "0.0.0")
+bazel_dep(name = "rosidl_default_generators", version = "0.0.0")
+bazel_dep(name = "unique_identifier_msgs", version = "0.0.0")

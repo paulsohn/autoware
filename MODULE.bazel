@@ -1004,3 +1004,9 @@ local_path_override(
     module_name = "tier4_metric_msgs",
     path = "src/universe/external/tier4_autoware_msgs/tier4_metric_msgs",
 )
+
+bazel_dep(name = "tier4_rtc_msgs", version = "0.0.0")
+local_path_override(
+    module_name = "tier4_rtc_msgs",
+    path = "src/universe/external/tier4_autoware_msgs/tier4_rtc_msgs",
+)
