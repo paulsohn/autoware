@@ -1,0 +1,96 @@
+load("@rosdistro//ament:defs.bzl", "ament_index")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "autoware_deprecated_boundary_departure_checker",
+    srcs = glob(["src/**/*.cpp"]),
+    hdrs = glob(["include/**/*.hpp"]),
+    strip_include_prefix = "include",
+    deps = [
+        "@autoware_adapi_v1_msgs//:cc",
+        "@autoware_internal_debug_msgs//:cc",
+        "@autoware_internal_planning_msgs//:cc",
+        "@autoware_interpolation",
+        "@autoware_map_msgs//:cc",
+        "@autoware_motion_utils",
+        "@autoware_planning_msgs//:cc",
+        "@autoware_trajectory",
+        "@autoware_utils_debug",
+        "@autoware_utils_geometry",
+        "@autoware_utils_math",
+        "@autoware_utils_system",
+        "@autoware_utils_uuid",
+        "@autoware_utils_visualization",
+        "@autoware_vehicle_info_utils",
+        "@autoware_vehicle_msgs//:cc",
+        "@diagnostic_updater//:diagnostic_updater_library",
+        "@geometry_msgs//:cc",
+        "@lanelet2_core//:lanelet2_core_library",
+        "@nav_msgs//:cc",
+        "@rclcpp//:rclcpp_library",
+        "@rclcpp_components//:rclcpp_components_library",
+        "@rosdistro//cc:boost.geometry",
+        "@rosdistro//cc:eigen",
+        "@rosdistro//cc:fmt",
+        "@rosdistro//cc:magic_enum",
+        "@rosdistro//cc:range-v3",
+        "@rosdistro//cc:tl_expected",
+        "@std_msgs//:cc",
+        "@tf2//:tf2_library",
+        "@tf2_eigen//:tf2_eigen_library",
+        "@tf2_geometry_msgs//:tf2_geometry_msgs_library",
+        "@tf2_ros//:tf2_ros_library",
+        "@visualization_msgs//:cc",
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = [
+        "@autoware_adapi_v1_msgs//:cc_shared",
+        "@autoware_internal_debug_msgs//:cc_shared",
+        "@autoware_internal_planning_msgs//:cc_shared",
+        "@autoware_map_msgs//:cc_shared",
+        "@autoware_motion_utils//:runtime_dynamic_deps",
+        "@autoware_planning_msgs//:cc_shared",
+        "@autoware_trajectory//:runtime_dynamic_deps",
+        "@autoware_utils_debug//:runtime_dynamic_deps",
+        "@autoware_vehicle_msgs//:cc_shared",
+        "@geometry_msgs//:cc_shared",
+        "@nav_msgs//:cc_shared",
+        "@std_msgs//:cc_shared",
+        "@visualization_msgs//:cc_shared",
+        "@rclcpp//:rclcpp",
+        "@rclcpp_components//:rclcpp_components",
+        "@tf2//:tf2",
+        "@tf2_geometry_msgs//:tf2_geometry_msgs",
+        "@tf2_ros//:tf2_ros",
+        "@tf2_eigen//:tf2_eigen",
+        "@diagnostic_updater//:diagnostic_updater",
+    ],
+)
+
+ament_index(package_xml = "package.xml")
+
+cc_test(
+    name = "test_autoware_deprecated_boundary_departure_checker",
+    srcs = glob([
+        "test/**/*.cpp",
+        "test/**/*.hpp",
+    ]),
+    data = [":ament_index"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+    includes = [
+        "src",
+        "test",
+    ],
+    local_defines = ["TEST_PACKAGE_NAME=\"autoware_deprecated_boundary_departure_checker\""],
+    deps = [
+        ":autoware_deprecated_boundary_departure_checker",
+        "@autoware_pyplot",
+        "@googletest//:gtest_main",
+    ],
+)

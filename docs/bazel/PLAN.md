@@ -1739,8 +1739,17 @@ Phase 7.3 task boundaries (selected 2026-11-21):
   Runtime coverage is CPU/Cyclone DDS with ENABLE_AGNOCAST=0, including real
   routing, goal echo, arrival, preferred-primitive update/reset and shutdown.
   [Evidence](JOURNAL.md#2026-11-21-phase-732--manual-lane-selection).
-  Next: trace and integrate the default behavior/motion-planning dependencies
-  in related groups, followed by the remaining control/system/API closure.
+  Shared traffic-light and boundary-departure libraries are also complete:
+  all 68 original cases pass, with the boundary expected-header correction
+  independently verified against matching merged AWF PR #13622.
+  [Library evidence](JOURNAL.md#2026-11-21-phase-732--shared-boundary-departure-library).
+  Continue in dependency order through RTC/freespace and shared planner helpers,
+  the preset-selected behavior/motion plugins and controller libraries, then
+  simulated perception and the selected system/API closure. CMake-only shims
+  are not standalone implementation targets; preserve their actual effects
+  through native providers. Default-disabled planners, monitors and control
+  checkers do not enter the selected profile merely because they have launch
+  declarations. The complete selected closure must pass before 7.3.2 closes.
   Refine each group from the actual selected launch/source declarations;
   do not replace the Universe stack with the smaller core-only launch.
 - **7.3.3 — Original launch and resources (in progress).** The first resource

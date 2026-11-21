@@ -10456,3 +10456,39 @@ source or original test is changed. Buildifier and whitespace checks pass.
 The module is complete for the selected CPU/Cyclone DDS profile; this library
 check does not establish traffic-light detection or a complete driving stack.
 No Fast DDS run is needed or performed.
+
+## 2026-11-21: Phase 7.3.2 — Shared boundary-departure library
+
+Purpose: supply the complete local boundary/footprint implementation needed by
+the default Universe path-planning and control dependency closure. Inspect its
+three CMake library definitions, public headers, source files, all nine original
+test sources and plotting option. The existing default suite has 66 cases once
+parameterized tests are instantiated; visualization export defaults to OFF.
+
+Integration: expose the original production sources/public headers through a
+native package cc_library with explicit local trajectory/motion/vehicle/utility
+and message dependencies. Keep the selected SDK headers native: Boost, Eigen,
+fmt, range-v3, magic_enum and tl-expected come from the pinned RCR providers.
+Declare the complete flattened ROS/tf2/diagnostic shared dependency closure.
+The test rule includes every original test source and its helper headers, the
+original src/test include roots and TEST_PACKAGE_NAME definition, plus the
+already-supported pyplot/Python embedding headers and libraries. Preserve the
+upstream default of no figure export; no assertion or test group is disabled.
+Use the conversion library provider for tf2_geometry_msgs, whose name does not
+make it a generated message package.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --nocache_test_results --test_output=errors \
+  @autoware_deprecated_boundary_departure_checker//...
+```
+
+After the separate expected-header correction above, all 66 existing cases pass
+in 0.2 seconds, zero failures/skips. Coverage includes boundary crossing,
+footprint generators, passing areas, trajectory cuts/projections/search ranges
+and parameterized resampling. There is no dependency-based test omission or
+source behavior change. Targeted buildifier/clang-format and whitespace checks
+pass. This completes the library's selected default suite, CPU/Cyclone DDS with
+Agnocast disabled; figure-output tooling and full driving acceptance are not
+claimed. The remaining 7.3.2 dependency groups continue before 7.3.3 composition.

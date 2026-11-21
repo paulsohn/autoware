@@ -974,3 +974,9 @@ local_path_override(
     module_name = "autoware_traffic_light_utils",
     path = "src/universe/autoware_universe/common/autoware_traffic_light_utils",
 )
+
+bazel_dep(name = "autoware_deprecated_boundary_departure_checker", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_deprecated_boundary_departure_checker",
+    path = "src/universe/autoware_universe/common/autoware_deprecated_boundary_departure_checker",
+)
