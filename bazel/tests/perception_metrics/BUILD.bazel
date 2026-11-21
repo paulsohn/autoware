@@ -1,0 +1,9 @@
+load("@rules_cc//cc:defs.bzl", "cc_test")
+
+cc_test(
+    name = "time_window_test",
+    srcs = ["time_window_test.cpp"],
+    dynamic_deps = ["@autoware_perception_online_evaluator//:runtime_dynamic_deps"],
+    env = {"ENABLE_AGNOCAST": "0", "LD_LIBRARY_PATH": "lib"},
+    deps = ["@autoware_perception_online_evaluator", "@googletest//:gtest_main"],
+)
