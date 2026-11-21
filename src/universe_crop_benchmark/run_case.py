@@ -21,6 +21,7 @@ parser.add_argument("--payload-scope", action="store_true", help="allocate share
 parser.add_argument("--host-loan", action="store_true", help="transfer both outputs through publisher loans")
 parser.add_argument("--host-view", action="store_true", help="read host-cloud payloads through a retained loan")
 parser.add_argument("--host-cloud", action="store_true", help="use the same-host CPU PointCloud2 representation")
+parser.add_argument("--bridge", choices=["idle", "active"], help="mirror the native crop output to Cyclone DDS")
 parser.add_argument("--resources", type=Path)
 parser.add_argument("--buffer", choices=["cpu", "shmem", "cuda"], default="cpu")
 parser.add_argument("--ros-cie", action="store_true", help="use the mixed-capable CIE for the ROS crop")
@@ -29,6 +30,8 @@ if args.ros_cie and args.transport == "agnocast":
     parser.error("native Agnocast already uses its Agnocast-only CIE")
 if args.buffer != "cpu" and args.transport != "zenoh":
     parser.error("the explicit buffer matrix uses the Zenoh descriptor transport")
+if args.bridge and not args.payload_scope:
+    parser.error("--bridge requires --payload-scope")
 if args.payload_scope:
     args.host_loan = True
 if args.host_loan:
@@ -76,6 +79,7 @@ if args.transport in ("mixed", "fixed"):
 children = []
 with tempfile.TemporaryDirectory() as tmp:
     samples = Path(tmp) / "samples.csv"
+    mirror = Path(tmp) / "mirror.csv"
     def launch(argv, role):
         child_env = dict(env, BENCH_ROLE=role, BENCH_CSV=str(samples))
         if (args.typed_input or args.host_view) and role in ("sub", "filter"):
@@ -91,13 +95,23 @@ with tempfile.TemporaryDirectory() as tmp:
             argv = [runner, *component, *argv[1:]]
             if args.transport == "fixed":
                 child_env["AGNOCAST_FIXED_PROBE"] = "1"
+        if role == "observer":
+            child_env["RMW_IMPLEMENTATION"] = "rmw_cyclonedds_cpp"
+            child_env["BENCH_CSV"] = str(mirror)
+            child_env.pop("LD_PRELOAD", None)
         proc = subprocess.Popen(argv, env=child_env, stderr=logs.get(role))
         children.append(proc)
 
     logs = {role: tempfile.TemporaryFile(mode="w+") for role in ("filter", "sub")} if args.transport == "fixed" else {}
     if args.host_loan:
         logs["pub"] = tempfile.TemporaryFile(mode="w+")
+    if args.bridge:
+        logs["bridge"] = tempfile.TemporaryFile(mode="w+")
     try:
+        if args.bridge:
+            launch([runner.with_name("route_bridge"), "a2r", "cloud", "/output", "/mirror/output"], "bridge")
+            if args.bridge == "active":
+                launch([bin_dir / "endpoint", "--ros-args", "-r", "output:=/mirror/output"], "observer")
         if args.transport == "zenoh":
             launch([Path(get_package_prefix(rmw)) / "lib/rmw_zenoh_cpp/rmw_zenohd"], "router")
             time.sleep(0.6)
@@ -117,7 +131,9 @@ with tempfile.TemporaryDirectory() as tmp:
                 with samples.open() as f:
                     rows = list(csv.reader(f))
                 if len(rows) == 60 and [int(r[0]) for r in rows] == list(range(60)):
-                    break
+                    if args.bridge != "active" or (mirror.exists() and
+                            [int(row[0]) for row in csv.reader(mirror.read_text().splitlines())] == list(range(60))):
+                        break
             time.sleep(0.1)
         else:
             raise TimeoutError("missing one or more verified frames")
@@ -138,6 +154,12 @@ with tempfile.TemporaryDirectory() as tmp:
             log.seek(0)
             output = log.read()
             print(output, end="", flush=True)
+            if role == "bridge":
+                expected = 60 if args.bridge == "active" else 0
+                if not re.search(rf"received=60 forwarded={expected}$", output, re.MULTILINE):
+                    raise RuntimeError("bridge counts differ from verified frame counts")
+                log.close()
+                continue
             matches = re.findall(r"fixed_wait arms=\d+ completions=\d+ native=(\d+) both=\d+ native_interrupts=(\d+) stop_interrupts=(\d+)", output)
             log.close()
             if args.host_loan and role in ("pub", "filter"):
@@ -155,6 +177,9 @@ with tempfile.TemporaryDirectory() as tmp:
     for child in children:
         if child.returncode not in (0, -signal.SIGINT):
             raise RuntimeError(f"{child.args} exited {child.returncode} during shutdown")
+    if args.bridge == "active":
+        with out.with_name(out.stem + "-observer.csv").open("xb") as f:
+            f.write(mirror.read_bytes())
     with out.open("xb") as f:
         f.write(samples.read_bytes())
 

@@ -1352,3 +1352,102 @@ versioned native Path route to ordinary ROS in both directions and verify the
 identity exposed at each side of the bridge. Keep the explicit legacy bridge
 as a control.
 [Raw latency, resources and contract checks](native-matching-v2-results/).
+
+### Crossing the versioned native boundary
+
+The experimental `route_bridge` is a standard typed rclcpp subscriber and
+publisher in a single rmw_agnocast process. The bridge selects native
+transport independently for its subscriber and publisher at startup. An empty
+directional list delegates that side to Cyclone. Other processes can continue
+to use `AGNOCAST_RMW_TOPIC` for both directions. The bridge gets the native
+object through the versioned RMW and publishes a new ROS sample. It needs the
+same kernel device and heaphook as a native peer. Ordinary Cyclone peers need
+neither. The native and DDS topic names may be identical or distinct.
+
+Start one process per directed route with the same Lyrical overlay and
+heaphook setup as `run-loadable.sh`. Its positional arguments are direction
+(`a2r` or `r2a`), type (`path` or `cloud`), absolute input topic and absolute
+output topic. Path uses reliable KeepLast(4). PointCloud2 uses SensorDataQoS.
+For example, with the benchmark's host-cloud representation enabled, the
+outbound point-cloud route is `route_bridge a2r cloud /output /mirror/output`.
+Select one direction on a given topic. Reciprocal routes can form a forwarding
+loop. Multi-route supervision, deduplication, late join/replay and cross-host
+transport still need qualification.
+
+For each Path direction the native and ordinary Cyclone endpoints use the
+same name, an extra best-effort writer offers an incompatible Path, and the
+receiver verifies the compatible message body and exact callback count.
+With the route absent it receives zero. With the route present it receives
+one. The bridge's native ingress reports the original native writer GID on
+a2r. On r2a the native reader reports the bridge publisher GID. Byte equality
+is asserted on that native leg. On the DDS leg Cyclone reports a receiver-local
+GID. Message provenance beyond the republishing endpoint requires additional
+application metadata. Native timing metadata retains its earlier limitations.
+The upstream legacy bridge was separately exercised in both directions.
+
+For the crop benchmark an active native subscriber always validates and times
+the local output. The idle bridge subscribes to the live output and takes all
+60 messages. Its distinct DDS output has zero matched readers so it skips
+publication. Active mode adds a stock Cyclone subscriber (without the
+heaphook) on that DDS output, checks all 60 full point payloads in order,
+and records its own end-to-end latency. The measured DDS crossing includes
+materializing the CPU PointCloud2 and DDS transport. The local crop uses the
+same allocator and blocking wait settings across all three modes.
+
+To reproduce, start with the built Universe, native Agnocast, patched rclcpp
+and Lyrical overlays from the scoped-payload experiment. Build the two probe
+packages sequentially, then run each case under the 512 MiB runtime limit.
+Use fresh output directories. The reference batch rotates native Agnocast,
+Cyclone DDS CPU and Zenoh CPU. The separate profile batch timestamps only
+the bridge callback entry and return from publishing, using the ROS clock
+of the benchmark on this host. It stores the first 60 records until shutdown.
+
+```bash
+export LYRICAL_ROOT=$(cat build/agnocast-lyrical/universe-root)
+experiments/buffer/run-lyrical.sh bash experiments/rmw-agnocast/build-loadable.sh
+export BUFFER_RUNTIME_ONLY=1
+run() { experiments/buffer/run-lyrical.sh timeout 190s bash "$@"; }
+probe=experiments/rmw-agnocast/run-loadable.sh
+bench=experiments/rmw-agnocast/bench-host-cloud.sh
+out=build/rmw-agnocast/my-route-results
+mkdir "$out"
+run "$probe" route-bridge
+run "$probe" bridge
+run "$probe" matching native flood
+run "$bench" "$out/forward" --bridge
+run "$bench" "$out/reverse" --bridge --reverse
+run "$bench" "$out/profile" --profile-bridge
+run "$bench" "$out/references" --references
+python3 experiments/rmw-agnocast/summarize-route.py "$out"
+```
+
+| Universe crop, laptop | Runs | Median ms | p95 ms | Child CPU s | Largest child peak MiB |
+|---|---:|---:|---:|---:|---:|
+| Native Agnocast | 3 | 0.373 | 1.037 | 0.546 | 137.1 |
+| rmw_agnocast, bridge off | 6 | 0.438 | 0.695 | 0.616 | 139.8 |
+| rmw_agnocast, bridge idle | 6 | 0.436 | 0.706 | 0.765 | 139.1 |
+| rmw_agnocast, active, local sink | 6 | 0.437 | 0.653 | 0.941 | 139.3 |
+| Same active runs, Cyclone observer | 6 | 0.990 | 1.323 | shared with local sink | shared with local sink |
+| Cyclone DDS CPU pipeline | 3 | 1.344 | 1.609 | 0.730 | 130.8 |
+| Zenoh CPU pipeline | 3 | 1.014 | 1.199 | 1.457 | 289.0 |
+
+Latency pools the final 50 frames per run. CPU includes startup and teardown
+of all children, including the observer or Zenoh router where present. Peak
+RSS is the largest child's peak. The paired observer-minus-local latency was
+0.551 ms median and 0.694 ms p95. The active-minus-off differences in run
+medians ranged from −37 to +15 µs. Differences in run p95 ranged from −108
+to +125 µs. The lower pooled active p95 therefore supplies little evidence
+for a local speedup. All original local writers still reported 60 loans and
+zero private payload copies on each edge. Bridge conversion and DDS handling
+incur additional work outside those counters.
+
+Three separate active runs gave the following median/p95 intervals in ms over
+150 post-warmup frames. Source stamp to relay callback was 0.538/0.807,
+callback entry through return from publish was 0.334/0.404, and callback
+entry to Cyclone observer was 0.429/0.555. The last interval includes work
+that overlaps the publish call. The timestamps cannot isolate serialization,
+scheduler delay or memory copies individually. The first optimization to test
+is avoiding idle payload materialization. Measure CPU together with the first
+sample received after an external subscriber joins. For active traffic, use
+the measured callback-to-observer interval as the comparison point.
+[Per-frame latency, resource counters, profiles and contract evidence](route-bridge-results/).

@@ -29,8 +29,8 @@ if [[ ${1:-} == matching ]]; then
   exit "$status"
 fi
 
-if [[ ${1:-} == bridge ]]; then
-  export AGNOCAST_RMW_LEGACY_WIRE=1
+if [[ ${1:-} == bridge || ${1:-} == route-bridge ]]; then
+  if [[ $1 == bridge ]]; then export AGNOCAST_RMW_LEGACY_WIRE=1; else unset AGNOCAST_RMW_LEGACY_WIRE; export V2_BOUNDARY=1; fi
   for direction in a2r r2a; do
     for active in off on; do
       cd "$(mktemp -d)"
@@ -43,7 +43,11 @@ if [[ ${1:-} == bridge ]]; then
       pids=()
       trap 'for pid in "${pids[@]}"; do kill -INT "$pid" 2>/dev/null || true; done' EXIT
       if [[ $active == on ]]; then
-        RMW_IMPLEMENTATION=rmw_cyclonedds_cpp LD_PRELOAD="$hook" "$(dirname "$probe")/manual_bridge" "$direction" &
+        if [[ $1 == route-bridge ]]; then
+          BRIDGE_READY_FILE=bridge_ready LD_PRELOAD="$hook" "$(dirname "$probe")/route_bridge" "$direction" path /trajectory_loan_probe /trajectory_loan_probe > relay.log 2>&1 &
+        else
+          RMW_IMPLEMENTATION=rmw_cyclonedds_cpp LD_PRELOAD="$hook" "$(dirname "$probe")/manual_bridge" "$direction" &
+        fi
         pids+=("$!")
         for ((i=0;i<80;i++)); do
           [[ -f bridge_ready ]] && break
@@ -59,6 +63,17 @@ if [[ ${1:-} == bridge ]]; then
       if [[ $active == on ]]; then
         kill -INT "${pids[0]}"
         wait "${pids[0]}"
+        if [[ $1 == route-bridge ]]; then
+          cat relay.log
+          grep -q 'received=1 forwarded=1$' relay.log
+          if [[ $direction == a2r ]]; then
+            grep -Fq "ingress_gid=$(cat source_gid) " relay.log
+          else
+            grep -Fq "egress_gid=$(cat destination_gid)" relay.log
+          fi
+          grep -Eq '^rmw_cyclonedds_cpp/[0-9a-f]*[1-9a-f][0-9a-f]*$' destination_gid
+          [[ $(cat source_gid) != "$(cat destination_gid)" ]]
+        fi
       fi
       trap - EXIT
       echo "$direction $active passed"

@@ -1,0 +1,166 @@
+build/rmw-agnocast/route2-route-bridge.log:source_gid=rmw_cyclonedds_cpp/0b3756e5faec71230000000000000000
+build/rmw-agnocast/route2-route-bridge.log:Path boundary callbacks=0
+build/rmw-agnocast/route2-route-bridge.log:a2r off passed
+build/rmw-agnocast/route2-route-bridge.log:source_gid=rmw_cyclonedds_cpp/2150fc0354aef4ab0000000000000000
+build/rmw-agnocast/route2-route-bridge.log:destination_gid=rmw_cyclonedds_cpp/e1776407dc28a54b0000000000000000
+build/rmw-agnocast/route2-route-bridge.log:Path boundary callbacks=1
+build/rmw-agnocast/route2-route-bridge.log:[INFO] [1795220119.886938200] [agnocast_route_bridge]: ingress_gid=rmw_cyclonedds_cpp/2150fc0354aef4ab0000000000000000 egress_gid=rmw_cyclonedds_cpp/fd7a35a314562ad70000000000000000
+build/rmw-agnocast/route2-route-bridge.log:[INFO] [1795220122.116154953] [agnocast_route_bridge]: received=1 forwarded=1
+build/rmw-agnocast/route2-route-bridge.log:a2r on passed
+build/rmw-agnocast/route2-route-bridge.log:source_gid=rmw_cyclonedds_cpp/75fb68a837b31b7a0000000000000000
+build/rmw-agnocast/route2-route-bridge.log:Path boundary callbacks=0
+build/rmw-agnocast/route2-route-bridge.log:r2a off passed
+build/rmw-agnocast/route2-route-bridge.log:source_gid=rmw_cyclonedds_cpp/d4678866e1deffdf0000000000000000
+build/rmw-agnocast/route2-route-bridge.log:destination_gid=rmw_cyclonedds_cpp/697dd103e5028a0e0000000000000000
+build/rmw-agnocast/route2-route-bridge.log:Path boundary callbacks=1
+build/rmw-agnocast/route2-route-bridge.log:[INFO] [1795220123.606171419] [agnocast_route_bridge]: ingress_gid=rmw_cyclonedds_cpp/50b5f4637fd6d7bd0000000000000000 egress_gid=rmw_cyclonedds_cpp/697dd103e5028a0e0000000000000000
+build/rmw-agnocast/route2-route-bridge.log:[INFO] [1795220125.814051495] [agnocast_route_bridge]: received=1 forwarded=1
+build/rmw-agnocast/route2-route-bridge.log:r2a on passed
+build/rmw-agnocast/route2-route-bridge.log:Minimum host MemAvailable: 17578 MiB
+build/rmw-agnocast/route2-bridge.log:Path boundary callbacks=0
+build/rmw-agnocast/route2-bridge.log:a2r off passed
+build/rmw-agnocast/route2-bridge.log:destination_gid=rmw_cyclonedds_cpp/1f604608d4760ddb0000000000000000
+build/rmw-agnocast/route2-bridge.log:Path boundary callbacks=1
+build/rmw-agnocast/route2-bridge.log:a2r on passed
+build/rmw-agnocast/route2-bridge.log:Path boundary callbacks=0
+build/rmw-agnocast/route2-bridge.log:r2a off passed
+build/rmw-agnocast/route2-bridge.log:destination_gid=(null)/00000000000000000000000000000000
+build/rmw-agnocast/route2-bridge.log:Path boundary callbacks=1
+build/rmw-agnocast/route2-bridge.log:r2a on passed
+build/rmw-agnocast/route2-bridge.log:Minimum host MemAvailable: 17558 MiB
+build/rmw-agnocast/route2-reverse.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/route2-reverse.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/route2-reverse.log:[INFO] [1795220212.669437053] [agnocast_route_bridge]: ingress_gid=rmw_cyclonedds_cpp/ca6c8920ee8c122c0000000000000000 egress_gid=rmw_cyclonedds_cpp/a0fe1c7477c14f3c0000000000000000
+build/rmw-agnocast/route2-reverse.log:[INFO] [1795220218.603880955] [agnocast_route_bridge]: received=60 forwarded=60
+build/rmw-agnocast/route2-reverse.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/route2-reverse.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/route2-reverse.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/route2-reverse.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/route2-reverse.log:[INFO] [1795220226.990144752] [agnocast_route_bridge]: received=60 forwarded=0
+build/rmw-agnocast/route2-reverse.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/route2-reverse.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/route2-reverse.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/route2-reverse.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/route2-reverse.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/route2-reverse.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/route2-reverse.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/route2-reverse.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/route2-reverse.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/route2-reverse.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/route2-reverse.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/route2-reverse.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/route2-reverse.log:[INFO] [1795220246.233780327] [agnocast_route_bridge]: ingress_gid=rmw_cyclonedds_cpp/fd311124c498fa780000000000000000 egress_gid=rmw_cyclonedds_cpp/ae0f7427edcd42170000000000000000
+build/rmw-agnocast/route2-reverse.log:[INFO] [1795220252.144533891] [agnocast_route_bridge]: received=60 forwarded=60
+build/rmw-agnocast/route2-reverse.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/route2-reverse.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/route2-reverse.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/route2-reverse.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/route2-reverse.log:[INFO] [1795220260.532511075] [agnocast_route_bridge]: received=60 forwarded=0
+build/rmw-agnocast/route2-reverse.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/route2-reverse.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/route2-reverse.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/route2-reverse.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/route2-reverse.log:[INFO] [1795220268.923462528] [agnocast_route_bridge]: received=60 forwarded=0
+build/rmw-agnocast/route2-reverse.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/route2-reverse.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/route2-reverse.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/route2-reverse.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/route2-reverse.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/route2-reverse.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/route2-reverse.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/route2-reverse.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/route2-reverse.log:[INFO] [1795220279.791525221] [agnocast_route_bridge]: ingress_gid=rmw_cyclonedds_cpp/01a487315467fbea0000000000000000 egress_gid=rmw_cyclonedds_cpp/7fa2de0966275bb40000000000000000
+build/rmw-agnocast/route2-reverse.log:[INFO] [1795220285.699406527] [agnocast_route_bridge]: received=60 forwarded=60
+build/rmw-agnocast/route2-reverse.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/route2-reverse.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/route2-reverse.log:Minimum host MemAvailable: 17658 MiB
+build/rmw-agnocast/route2-forward.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/route2-forward.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/route2-forward.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/route2-forward.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/route2-forward.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/route2-forward.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/route2-forward.log:[INFO] [1795220150.931190358] [agnocast_route_bridge]: received=60 forwarded=0
+build/rmw-agnocast/route2-forward.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/route2-forward.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/route2-forward.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/route2-forward.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/route2-forward.log:[INFO] [1795220153.411394138] [agnocast_route_bridge]: ingress_gid=rmw_cyclonedds_cpp/3ac573786644e1fc0000000000000000 egress_gid=rmw_cyclonedds_cpp/c908d84416b3e99b0000000000000000
+build/rmw-agnocast/route2-forward.log:[INFO] [1795220159.319751852] [agnocast_route_bridge]: received=60 forwarded=60
+build/rmw-agnocast/route2-forward.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/route2-forward.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/route2-forward.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/route2-forward.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/route2-forward.log:[INFO] [1795220167.703632624] [agnocast_route_bridge]: received=60 forwarded=0
+build/rmw-agnocast/route2-forward.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/route2-forward.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/route2-forward.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/route2-forward.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/route2-forward.log:[INFO] [1795220170.189854972] [agnocast_route_bridge]: ingress_gid=rmw_cyclonedds_cpp/1c18db83376f7bde0000000000000000 egress_gid=rmw_cyclonedds_cpp/6159a228858d8f200000000000000000
+build/rmw-agnocast/route2-forward.log:[INFO] [1795220176.098827113] [agnocast_route_bridge]: received=60 forwarded=60
+build/rmw-agnocast/route2-forward.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/route2-forward.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/route2-forward.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/route2-forward.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/route2-forward.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/route2-forward.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/route2-forward.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/route2-forward.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/route2-forward.log:[INFO] [1795220186.941113506] [agnocast_route_bridge]: ingress_gid=rmw_cyclonedds_cpp/7686ee233fc85e780000000000000000 egress_gid=rmw_cyclonedds_cpp/cb1e876541cecfbb0000000000000000
+build/rmw-agnocast/route2-forward.log:[INFO] [1795220192.850027959] [agnocast_route_bridge]: received=60 forwarded=60
+build/rmw-agnocast/route2-forward.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/route2-forward.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/route2-forward.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/route2-forward.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/route2-forward.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/route2-forward.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/route2-forward.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/route2-forward.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/route2-forward.log:[INFO] [1795220209.629133837] [agnocast_route_bridge]: received=60 forwarded=0
+build/rmw-agnocast/route2-forward.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/route2-forward.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/route2-forward.log:Minimum host MemAvailable: 17536 MiB
+build/rmw-agnocast/route3-profile-bridge.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/route3-profile-bridge.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/route3-profile-bridge.log:[INFO] [1795220308.074263260] [agnocast_route_bridge]: ingress_gid=rmw_cyclonedds_cpp/317b1884153b36280000000000000000 egress_gid=rmw_cyclonedds_cpp/11a13205c445f4550000000000000000
+build/rmw-agnocast/route3-profile-bridge.log:[INFO] [1795220314.007640702] [agnocast_route_bridge]: received=60 forwarded=60
+build/rmw-agnocast/route3-profile-bridge.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/route3-profile-bridge.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/route3-profile-bridge.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/route3-profile-bridge.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/route3-profile-bridge.log:[INFO] [1795220316.486838566] [agnocast_route_bridge]: ingress_gid=rmw_cyclonedds_cpp/b2bcadb94613b85a0000000000000000 egress_gid=rmw_cyclonedds_cpp/3b1326a15c1a55e00000000000000000
+build/rmw-agnocast/route3-profile-bridge.log:[INFO] [1795220322.396963837] [agnocast_route_bridge]: received=60 forwarded=60
+build/rmw-agnocast/route3-profile-bridge.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/route3-profile-bridge.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/route3-profile-bridge.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/route3-profile-bridge.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/route3-profile-bridge.log:[INFO] [1795220324.876412418] [agnocast_route_bridge]: ingress_gid=rmw_cyclonedds_cpp/3fff58be766662990000000000000000 egress_gid=rmw_cyclonedds_cpp/07667dc61b75608e0000000000000000
+build/rmw-agnocast/route3-profile-bridge.log:[INFO] [1795220330.785757274] [agnocast_route_bridge]: received=60 forwarded=60
+build/rmw-agnocast/route3-profile-bridge.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/route3-profile-bridge.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/route3-profile-bridge.log:Minimum host MemAvailable: 17658 MiB
+build/rmw-agnocast/route3-route-bridge.log:source_gid=rmw_cyclonedds_cpp/a7b8e867305e8a480000000000000000
+build/rmw-agnocast/route3-route-bridge.log:a2r off passed
+build/rmw-agnocast/route3-route-bridge.log:source_gid=rmw_cyclonedds_cpp/e531058cc3c56df80000000000000000
+build/rmw-agnocast/route3-route-bridge.log:destination_gid=rmw_cyclonedds_cpp/7a96d0824006061a0000000000000000
+build/rmw-agnocast/route3-route-bridge.log:[INFO] [1795220297.676781561] [agnocast_route_bridge]: ingress_gid=rmw_cyclonedds_cpp/e531058cc3c56df80000000000000000 egress_gid=rmw_cyclonedds_cpp/226533c326e92fab0000000000000000
+build/rmw-agnocast/route3-route-bridge.log:[INFO] [1795220299.905750121] [agnocast_route_bridge]: received=1 forwarded=1
+build/rmw-agnocast/route3-route-bridge.log:a2r on passed
+build/rmw-agnocast/route3-route-bridge.log:source_gid=rmw_cyclonedds_cpp/b5547ca68e05fa300000000000000000
+build/rmw-agnocast/route3-route-bridge.log:r2a off passed
+build/rmw-agnocast/route3-route-bridge.log:source_gid=rmw_cyclonedds_cpp/cf99040673ef3bec0000000000000000
+build/rmw-agnocast/route3-route-bridge.log:destination_gid=rmw_cyclonedds_cpp/a9581148a417c58d0000000000000000
+build/rmw-agnocast/route3-route-bridge.log:[INFO] [1795220301.391718545] [agnocast_route_bridge]: ingress_gid=rmw_cyclonedds_cpp/8ca1f40e3aae8ac40000000000000000 egress_gid=rmw_cyclonedds_cpp/a9581148a417c58d0000000000000000
+build/rmw-agnocast/route3-route-bridge.log:[INFO] [1795220303.607909647] [agnocast_route_bridge]: received=1 forwarded=1
+build/rmw-agnocast/route3-route-bridge.log:r2a on passed
+build/rmw-agnocast/route3-route-bridge.log:Minimum host MemAvailable: 17665 MiB
+build/rmw-agnocast/route3-matching.log:discovered=2 matched writers=1 reliable_gid=rmw_cyclonedds_cpp/75e4e68954f48bc00000000000000000 best_effort_gid=rmw_cyclonedds_cpp/9e92577e15b3a7410000000000000000
+build/rmw-agnocast/route3-matching.log:received seq=6 gid=rmw_cyclonedds_cpp/75e4e68954f48bc00000000000000000
+build/rmw-agnocast/route3-matching.log:compatible callbacks=1 incompatible callbacks=0 calibrated writer identity=1 receiver GIDs reliable=rmw_cyclonedds_cpp/75e4e68954f48bc00000000000000000 best_effort=rmw_cyclonedds_cpp/9e92577e15b3a7410000000000000000
+build/rmw-agnocast/route3-matching.log:Minimum host MemAvailable: 17725 MiB
+build/rmw-agnocast/route3-build.log:Summary: 2 packages finished [7.50s]
+build/rmw-agnocast/route3-build.log:Minimum host MemAvailable: 17296 MiB
+agnocast,all,150,0.373,1.037,1.808
+cyclone,all,150,1.344,1.609,3.112
+zenoh,all,150,1.014,1.199,1.330
+Minimum host MemAvailable: 15860 MiB

@@ -1085,3 +1085,35 @@ the reliable sample. All 1,440 crop frames across 24 timed runs passed. The
 new wire reached 1.23× native median and 1.17× p95. Paired p95 deltas against
 the legacy wire varied from −72 to +151 µs. Keep tracking that spread as we
 implement a bridge for the versioned format.
+
+### Bridge the versioned native wire to ordinary Cyclone DDS
+
+The previous raw bridge needed legacy mode and lost native writer attribution
+and reliability filtering. Built a typed startup route on top of the v2 RMW.
+The RMW now accepts separate native topic lists for publisher and subscriber
+creation. A single relay process uses a native endpoint on one side and a
+delegated Cyclone endpoint on the other. No modification to the kernel module,
+heaphook or ROS message definitions was needed.
+
+On the laptop, Path tests passed on the same public topic in both directions.
+The disabled route delivered zero messages. The enabled route forwarded
+one reliable Path and excluded the incompatible Path. Native GID equality
+held between the original writer and the bridge ingress for outbound traffic,
+and between the bridge publisher and native reader for inbound traffic.
+The Cyclone leg exposed receiver-local GIDs. The legacy bridge controls and
+the native depth-one incompatibility flood also passed.
+
+The Universe crop compared a local sink alone, a live subscribed bridge with
+zero external readers, and a bridge forwarding to an additional stock Cyclone
+sink. Both sinks validated point content and order. The biggest visible
+difference was at the external reader. Across the six paired rounds it saw
+the same frame 0.551 ms later at median. The local median ranged from
+0.436 to 0.438 ms across configurations. Idle bridging still consumed CPU
+because it took native clouds before checking the external match count.
+The separate profile measured 0.538 ms median from source stamp to bridge
+callback, 0.334 ms inside that callback through publication and 0.429 ms
+from callback entry to observer. The latter two intervals overlap.
+The next candidate is avoiding idle payload materialization while qualifying
+delivery to a newly attached reader.
+
+[Build, test commands, complete matrix and limitations](../rmw-agnocast/README.md#crossing-the-versioned-native-boundary)

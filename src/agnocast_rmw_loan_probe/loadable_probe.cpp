@@ -264,13 +264,15 @@ void pressure_reader(rclcpp::Node::SharedPtr node, const std::string & role)
   mark("slow_released");
 }
 
+std::string gid_text(const rmw_gid_t & gid);
+
 void bridge_peer(bool writer, bool active, bool dds)
 {
   auto node = std::make_shared<rclcpp::Node>(writer ? "boundary_writer" : "boundary_reader");
   constexpr auto topic = "trajectory_loan_probe";
   auto deadline = std::chrono::steady_clock::now() + 8s;
   auto wait_matches = [&](auto count) {
-    const size_t target = active && dds ? 2 : 1;
+    const size_t target = active && (dds || std::getenv("V2_BOUNDARY")) ? 2 : 1;
     while (count() < target) {
       check(std::chrono::steady_clock::now() < deadline, "missing graph match at boundary");
       std::this_thread::sleep_for(10ms);
@@ -284,6 +286,14 @@ void bridge_peer(bool writer, bool active, bool dds)
     wait_file("discovered");
     Path msg;
     fill(msg, 3);
+    if (std::getenv("V2_BOUNDARY")) {
+      auto noise = node->create_publisher<Path>(topic, rclcpp::QoS(4).best_effort());
+      Path wrong;
+      fill(wrong, 2);
+      noise->publish(wrong);
+      std::ofstream("source_gid") << gid_text(pub->get_gid());
+      std::cout << "source_gid=" << gid_text(pub->get_gid()) << std::endl;
+    }
     pub->publish(msg);
     mark("sent");
     wait_file("checked");
@@ -299,6 +309,8 @@ void bridge_peer(bool writer, bool active, bool dds)
                       : "(null)")
                 << " source_ns " << info.source_timestamp << " received_ns "
                 << info.received_timestamp << std::endl;
+      if (std::getenv("V2_BOUNDARY")) std::ofstream("destination_gid") << gid_text(info.publisher_gid);
+      std::cout << "destination_gid=" << gid_text(info.publisher_gid) << std::endl;
       verify(*msg, 3, false);
       ++calls;
     });

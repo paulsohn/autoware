@@ -51,9 +51,10 @@ rmw_ret_t measure_codec(const char * operation, F && call)
     static_cast<long long>(elapsed));
   return ret;
 }
-bool selected(const char * topic)
+bool selected(const char * topic, const char * direction)
 {
-  const char * enabled = std::getenv("AGNOCAST_RMW_TOPIC");
+  const char * enabled = std::getenv(direction);
+  if (!enabled) enabled = std::getenv("AGNOCAST_RMW_TOPIC");
   if (!enabled || !topic) return false;
   std::string_view names(enabled);
   while (!names.empty()) {
@@ -427,7 +428,7 @@ extern "C" rmw_publisher_t * rmw_create_publisher(
   const rmw_qos_profile_t * qos, const rmw_publisher_options_t * options)
 {
   auto fn = CYCLONE(rmw_create_publisher);
-  if (!selected(topic)) return fn(node, ts, topic, qos, options);
+  if (!selected(topic, "AGNOCAST_RMW_PUBLISH_TOPICS")) return fn(node, ts, topic, qos, options);
   if (!supported(qos)) {
     error("native topic requires volatile KeepLast");
     return nullptr;
@@ -461,7 +462,7 @@ extern "C" rmw_subscription_t * rmw_create_subscription(
   const rmw_qos_profile_t * qos, const rmw_subscription_options_t * options)
 {
   auto fn = CYCLONE(rmw_create_subscription);
-  if (!selected(topic)) return fn(node, ts, topic, qos, options);
+  if (!selected(topic, "AGNOCAST_RMW_SUBSCRIBE_TOPICS")) return fn(node, ts, topic, qos, options);
   if (!supported(qos)) {
     error("native topic requires volatile KeepLast");
     return nullptr;
