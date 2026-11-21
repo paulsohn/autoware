@@ -126,6 +126,12 @@ include("//third_party/ostree:ostree.MODULE.bazel")
 include("//images:images.MODULE.bazel")
 
 # Reusable dependency provider; selected before application source modules.
+bazel_dep(name = "acados", version = "0.0.0")
+local_path_override(
+    module_name = "acados",
+    path = "third_party/acados",
+)
+
 bazel_dep(name = "grid_map", version = "0.0.0")
 local_path_override(module_name = "grid_map", path = "third_party/grid_map")
 

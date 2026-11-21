@@ -1194,6 +1194,20 @@ The original suite has eighteen cases; the added suite has two, covering all
 eleven creator names and an actual serialized Argsort engine. These do not
 establish numerical coverage for every sparse plugin or ARM compatibility.
 
+## MPC solver generation
+
+Depend on `@acados` for native solver CcInfo. Keep the original model generator
+inside the consuming source repository and declare it as a py_binary depending
+on `@acados//:template`. Use `acados_codegen` from `@acados//:codegen.bzl` with
+that executable and its explicit relative C/header outputs, then compile those
+outputs into a package-owned library. Put the generated include root before any
+source-tree IDE stubs. Code generation belongs to the build graph; application
+startup must not invoke Python compilation or fetch solver dependencies.
+
+The [dependency provider](../../third_party/acados/README.md) documents native
+configuration, builder constraints, controlled GNU runtime and its full gate.
+Keep code-generation wheels/tools out of the native consumer's runtime closure.
+
 ## Perception utilities
 
 Consumers using only mask run-length encoding depend on

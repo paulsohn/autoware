@@ -12510,3 +12510,78 @@ wrapper 37 native/66 Python and existing mission launch results also pass.
 Targeted flake8/whitespace checks pass. CPU/Cyclone DDS and ENABLE_AGNOCAST=0
 is selected; no Fast DDS, pre-commit or full simulator launch is run. Next
 prepare the selected path optimizer and remaining motion/control closure.
+
+## 2026-11-22: Phase 7.3.2 — acados native and code-generation provider
+
+Purpose: supply the selected local path optimizer's unconditional acados solver
+without /opt installation, a virtual environment, host CMake or in-action
+package downloads. Inspect its CMake solver-generation contract and original
+Python model, acados' native CMake source/test lists, submodule gitlinks,
+Python template imports and binary dependencies. acados/BLASFEO/HPIPM are absent
+locally and their registry metadata lookups return 404. The existing Ansible
+reference suggests v0.5.3, renderer v0.2.0 and CasADi 3.7.2; treat them as inputs
+to validate, not evidence. Do not extend the Ansible role.
+
+Create the independent third_party/acados module. Pin acados v0.5.3 at
+7e1d1152c1babd6ea04af1c9d73444fe8381057b, its BLASFEO
+22b5a67753781879c1d2d61969ac28c87e00e3ff, HPIPM
+57c5dba41909787ea5460aebf7fa03f384f871be and Catch
+f3da715b4a4d075ea2f03b5908b360c64bff8cb0 archives by SHA-256. Overlay native
+Bazel declarations for the default HPIPM solver configuration: 106 BLASFEO,
+104 HPIPM and 53 acados/interface C sources. Preserve generic panel-major
+kernels, optional-backend exclusions, original included C templates and public
+flat/upstream-prefixed header layouts. Export CcInfo through @acados; root owns
+its local override and architecture selection.
+
+A first BLAS compile lacks K_MAX_STACK; restore CMake's default 300 as a private
+compile definition. The acados source also includes hpipm/include/...; provide
+that prefix alongside flat include search rather than rewriting SDK source.
+Upstream's enabled native unit_tests uses seven C++ cases plus C model fixtures.
+Its bundled Catch does not compile as C++23 (removed uncaught_exception and old
+Clara constructors). Split the C fixtures into a library and compile only the
+legacy C++ test executable as C++14, compatible with selected Eigen. Autoware
+keeps its root C++23 setting. Do not disable test cases or replace Catch APIs.
+The acados build disables the BLASFEO/HPIPM independent test targets itself;
+all sources of its enabled native unit_tests target are retained.
+
+For code generation, expose the original acados_template Python sources with
+pinned Linux x86_64 CPython 3.14 CasADi 3.7.2/SciPy 1.17.1 wheels and the registry's
+hashed numpy/matplotlib/deprecated inputs. Pin the executable renderer and use an
+execution-platform constraint. A generic acados_codegen action takes a caller's
+component-local py_binary and concrete relative output list. It supplies source
+and renderer paths, runs in a temporary directory with a private matplotlib
+cache, and copies only declared C/header outputs. No Python solver compilation
+or generator invocation is deferred to application startup.
+
+ELF inspection shows CasADi also needs libstdc++.so.6 and libgcc_s.so.1, and the
+renderer needs libgcc_s.so.1. The wheel does not contain these. Pin the same
+GNU 12.2 payload revisions/checksums already validated by native dependency
+consumers, owned here for this tool closure; pass their declared library paths
+to the generator. The scalar-model generator asserts /proc/self/maps resolves
+both GNU libraries to the exact declared input files. Compare resolved files,
+not directory parents: Bazel's sandbox symlinks files into a real sandbox
+directory while mappings name their repository-cache targets. This removes an
+otherwise hidden builder-host dependency. System glibc/loader remain the stated
+Ubuntu builder baseline; no claim of arbitrary OS compatibility is made.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_output=errors @acados//:tests
+python3 -m flake8 --max-line-length=150 \
+  third_party/acados/generate.py third_party/acados/test_model.py
+clang-format --dry-run --Werror third_party/acados/solver_test.c
+git diff --check
+```
+
+Both SDK targets pass: all 6836 assertions in seven original native cases, plus
+one generated/compiled scalar-integrator solve from x0=1 with status 0 and
+terminal 9.7119e-11 (required absolute value below 0.01). Native cases take 2.1
+seconds. The initial complete native/codegen gate takes 106.2 seconds; after GNU
+runtime declaration, the updated generator and both SDK targets pass within the
+following consumer gate, and the final SDK-only invocation reuses both passing
+results in 1.5 seconds. Targeted format/flake8/whitespace checks pass. No SDK
+source patches or host installations are needed. Scope is the default native
+HPIPM configuration and declared Python-to-C generation; optional solver
+backends, MATLAB/Octave examples, alternate builder architectures and real-time
+performance are not claimed. Next validate the local optimizer consumer.

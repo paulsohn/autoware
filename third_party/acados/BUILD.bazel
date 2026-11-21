@@ -1,0 +1,28 @@
+load(":codegen.bzl", "acados_codegen")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_test")
+load("@rules_python//python:defs.bzl", "py_binary")
+package(default_visibility = ["//visibility:public"])
+exports_files(["BUILD.sdk.bazel", "BUILD.blasfeo.bazel", "BUILD.hpipm.bazel", "BUILD.wheel.bazel"])
+alias(name = "acados", actual = "@acados_source//:acados")
+alias(name = "unit_tests", actual = "@acados_source//:unit_tests")
+
+alias(name = "template", actual = "@acados_source//:template")
+py_binary(name = "codegen_runner", srcs = ["generate.py"], main = "generate.py", precompile = "disabled")
+exports_files(["codegen.bzl"])
+
+py_binary(name = "test_model", srcs = ["test_model.py"], main = "test_model.py", deps = [":template"], precompile = "disabled")
+acados_codegen(
+    name = "test_solver",
+    generator = ":test_model",
+    outputs = [
+        "c_generated_code/acados_solver_integrator.c",
+        "c_generated_code/acados_solver_integrator.h",
+        "c_generated_code/integrator_model/integrator_expl_ode_fun.c",
+        "c_generated_code/integrator_model/integrator_expl_vde_adj.c",
+        "c_generated_code/integrator_model/integrator_expl_vde_forw.c",
+        "c_generated_code/integrator_model/integrator_model.h",
+    ],
+)
+cc_library(name = "generated_solver", srcs = [":test_solver"], includes = ["test_solver"], deps = [":acados"])
+cc_test(name = "generated_solver_test", srcs = ["solver_test.c"], deps = [":generated_solver"])
+test_suite(name = "tests", tests = ["@acados_source//:unit_tests", ":generated_solver_test"])

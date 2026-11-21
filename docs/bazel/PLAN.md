@@ -88,6 +88,9 @@ only when your current target demonstrates the need.
   middleware configurations before implementing each task.
   [Backend executor convention](DEVELOPING.md#switchable-standalone-nodes);
   [evidence: complete Agnocast test inventory](JOURNAL.md#2026-11-15-phase-41--adopt-the-complete-agnocast-library-test-inventory).
+- [ ] Declare solver generation and its tool/runtime inputs in the build graph.
+  [Developer convention](DEVELOPING.md#mpc-solver-generation);
+  [evidence](JOURNAL.md#2026-11-22-phase-732--acados-native-and-code-generation-provider).
 - [ ] Declare embedded-Python runtimes and preserve interpreter/object ownership
   through shutdown. [Embedding convention](DEVELOPING.md#embedded-python-and-plotting-tests);
   [evidence: model lifetime](JOURNAL.md#2026-11-21-phase-731--embedded-model-interpreter-lifetime).

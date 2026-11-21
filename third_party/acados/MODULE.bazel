@@ -1,0 +1,90 @@
+module(name = "acados", version = "0.0.0")
+
+bazel_dep(name = "platforms", version = "1.1.0")
+bazel_dep(name = "bazel_skylib", version = "1.9.2")
+bazel_dep(name = "rules_cc", version = "0.2.26.rcr.0")
+bazel_dep(name = "rules_python", version = "2.4.5")
+bazel_dep(name = "rosdistro", version = "0.0.0")
+
+pip_ros = use_extension("@rosdistro//python:defs.bzl", "pip_ros")
+use_repo(pip_ros, "pip_ros")
+
+http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+http_file = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_file")
+
+http_archive(
+    name = "acados_source",
+    type = "tar.gz",
+    build_file = "//:BUILD.sdk.bazel",
+    sha256 = "8abc06c55d7b5aaa353e09fae2072fe062892b2d8ce0ea23c1f5d9b965b4f488",
+    strip_prefix = "acados-7e1d1152c1babd6ea04af1c9d73444fe8381057b",
+    urls = ["https://codeload.github.com/acados/acados/tar.gz/7e1d1152c1babd6ea04af1c9d73444fe8381057b"],
+)
+
+http_archive(
+    name = "blasfeo_source",
+    type = "tar.gz",
+    build_file = "//:BUILD.blasfeo.bazel",
+    sha256 = "c1df37049af4d7184cccac547446085e2813bcf92fbf01ad778c0ae1925fbde7",
+    strip_prefix = "blasfeo-22b5a67753781879c1d2d61969ac28c87e00e3ff",
+    urls = ["https://codeload.github.com/giaf/blasfeo/tar.gz/22b5a67753781879c1d2d61969ac28c87e00e3ff"],
+)
+
+http_archive(
+    name = "hpipm_source",
+    type = "tar.gz",
+    build_file = "//:BUILD.hpipm.bazel",
+    sha256 = "a527504183b6edd4937ccc35d4d75a4a1a5b6df003f1969aae66655d17a7e8b4",
+    strip_prefix = "hpipm-57c5dba41909787ea5460aebf7fa03f384f871be",
+    urls = ["https://codeload.github.com/giaf/hpipm/tar.gz/57c5dba41909787ea5460aebf7fa03f384f871be"],
+)
+
+http_archive(
+    name = "catch_source",
+    type = "tar.gz",
+    sha256 = "681f755f744b0f11f63530dfd2cd6505871355d1eaf8794c05fc30d65191c306",
+    strip_prefix = "Catch2-f3da715b4a4d075ea2f03b5908b360c64bff8cb0",
+    urls = ["https://codeload.github.com/catchorg/Catch2/tar.gz/f3da715b4a4d075ea2f03b5908b360c64bff8cb0"],
+    build_file_content = """load("@rules_cc//cc:defs.bzl", "cc_library")
+cc_library(name = "catch", hdrs = glob(["include/**/*.hpp", "include/**/*.h"]), include_prefix = "catch", visibility = ["//visibility:public"])
+""",
+)
+
+http_file(
+    name = "tera_renderer",
+    executable = True,
+    downloaded_file_path = "t_renderer",
+    sha256 = "1973ddd1b536dcd4a059a22f7259c3b0e6b6c878cbfbe7e9b962eba195f361d9",
+    urls = ["https://github.com/acados/tera_renderer/releases/download/v0.2.0/t_renderer-v0.2.0-linux-amd64"],
+)
+
+http_archive(
+    name = "casadi_wheel",
+    type = "zip",
+    sha256 = "8861213b7fc605a67cf9b46b29c05337b70c773c0b9615939a7c8a3361cabed1",
+    urls = ["https://files.pythonhosted.org/packages/92/50/8834ae629e425802b66505c9861061439b4510d1aca1c94ea067b129e3b5/casadi-3.7.2-cp314-none-manylinux2014_x86_64.whl"],
+    build_file = "//:BUILD.wheel.bazel",
+)
+
+http_archive(
+    name = "scipy_wheel",
+    type = "zip",
+    sha256 = "eee2cfda04c00a857206a4330f0c5e3e56535494e30ca445eb19ec624ae75118",
+    urls = ["https://files.pythonhosted.org/packages/0b/2e/7eea398450457ecb54e18e9d10110993fa65561c4f3add5e8eccd2b9cd41/scipy-1.17.1-cp314-cp314-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl"],
+    build_file = "//:BUILD.wheel.bazel",
+)
+
+
+# The CasADi wheel and renderer need a GNU runtime independent of the host install.
+http_archive(
+    name = "acados_libstdcxx",
+    build_file_content = "filegroup(name = \"runtime\", srcs = glob([\"lib/libstdc++.so*\"]), visibility = [\"//visibility:public\"])\n",
+    sha256 = "0289e6a7b9a5249161a3967909e12dcfb4ab4475cdede984635d3fb65c606f08",
+    urls = ["https://conda.anaconda.org/conda-forge/linux-64/libstdcxx-ng-12.2.0-h46fd767_19.tar.bz2"],
+)
+http_archive(
+    name = "acados_libgcc",
+    build_file_content = "filegroup(name = \"runtime\", srcs = glob([\"lib/libgcc_s.so*\"]), visibility = [\"//visibility:public\"])\n",
+    sha256 = "f3899c26824cee023f1e360bd0859b0e149e2b3e8b1668bc6dd04bfc70dcd659",
+    urls = ["https://conda.anaconda.org/conda-forge/linux-64/libgcc-ng-12.2.0-h65d4601_19.tar.bz2"],
+)
