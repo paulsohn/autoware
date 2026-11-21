@@ -12880,3 +12880,48 @@ converts a stamped pose and verifies frame, time, translation, rotation and
 agreement between the legacy/core RPY APIs. Thus the fix is checked through
 actual linkage and data behavior. No original test bodies or disabled states
 change. Targeted formatting and whitespace checks pass.
+
+## 2026-11-22: Phase 7.3.2 — Local Universe utility library
+
+Purpose: provide the local implementation required by the selected run-out
+plugin. Inspect CMake/manifest, every public header, all eighteen production
+sources and all nineteen test sources. The original test owns main and ROS
+context startup/shutdown; link gtest, not a second gtest_main. Preserve all four
+originally disabled alt/intersection geometry cases and the default-disabled
+examples. The enabled suite covers geometry/polygons, path helpers, transforms,
+math/trigonometry, diagnostics, logger configuration, processing time and ROS
+utility behavior.
+
+Add package-owned MODULE/BUILD and a root local override after its actual local
+message/utility dependencies. Expose all implementation sources and original
+suite, with existing namespace/include layout. Select pcl_ros_tf's real static
+and shared providers, local interfaces, logger-service typesupport, TF and the
+required Boost/Eigen/fmt/PCL surfaces; publish a flattened runtime dependency
+provider. Existing source and original tests stay in place. The only source
+change is the preceding canonical-TF ownership correction; declare its core
+geometry dependency explicitly. Added integration coverage belongs under bazel/.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_output=errors @autoware_universe_utils//... \
+  //bazel/tests/autoware_universe_utils:all
+clang-format --dry-run --Werror \
+  src/universe/autoware_universe/common/autoware_universe_utils/src/geometry/geometry.cpp \
+  bazel/tests/autoware_universe_utils/tf_conversion_test.cpp
+git diff --check
+```
+
+All 118 active original cases pass in 12.1 seconds; their XML records 122 total
+with four original disabled cases and zero failures/errors/skips. The added
+joint-library conversion case passes in 0.4 seconds. The complete post-fix
+native build/gate takes 168.2 seconds; the final two-target invocation takes
+7.3 seconds, reusing that unchanged original suite while building the added
+regression. Targeted formatting and whitespace checks pass. CPU/Cyclone DDS
+with ENABLE_AGNOCAST=0 is selected; no pre-commit, Fast DDS, allocator/kernel
+matrix, optional examples or full simulator is run. The library is ready for
+the next selected motion-plugin group; no claim is made for that consumer until
+its complete suite passes.
+
+The separate source ownership fix is 5eb05315. Next complete the five remaining
+selected motion factories, then the remaining planning/controller closure.

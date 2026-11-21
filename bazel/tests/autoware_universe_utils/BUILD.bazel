@@ -1,0 +1,7 @@
+load("@rules_cc//cc:defs.bzl", "cc_test")
+cc_test(
+    name = "tf_conversion_test",
+    srcs = ["tf_conversion_test.cpp"],
+    dynamic_deps = ["@autoware_universe_utils//:runtime_dynamic_deps"],
+    deps = ["@autoware_universe_utils", "@autoware_utils_geometry", "@googletest//:gtest_main"],
+)

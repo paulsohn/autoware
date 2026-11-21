@@ -1830,6 +1830,11 @@ Phase 7.3 task boundaries (selected 2026-11-21):
   complete: their seven original cases and four real planner profiles pass.
   Cruise preserves updated node parameters across plugin reload.
   [Evidence](JOURNAL.md#2026-11-22-phase-732--obstacle-slow-down-motion-plugin).
+  The local Universe utility dependency is complete: 118 active original
+  cases and the core/Universe conversion regression pass, preserving four
+  original disabled cases. Its duplicate global TF definition is corrected
+  separately from the build definitions.
+  [Evidence](JOURNAL.md#2026-11-22-phase-732--local-universe-utility-library).
   Continue in dependency order through shared planner helpers, the
   preset-selected behavior/motion plugins and controller libraries, then
   simulated perception and the selected system/API closure. The selected local

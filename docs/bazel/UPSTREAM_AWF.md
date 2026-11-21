@@ -1261,6 +1261,8 @@ Local source fix: `15352cbe`.
 
 ### Universe/core utilities duplicate a global TF conversion
 
+Local source fix: `5eb05315`.
+
 - [ ] Associate with a matching upstream correction. Reviewed 2026-11-22:
   [Universe geometry.cpp](https://github.com/autowarefoundation/autoware_universe/blob/main/common/autoware_universe_utils/src/geometry/geometry.cpp)
   retains a global tf2::fromMsg(PoseStamped, Stamped<Transform>) definition
