@@ -1,0 +1,65 @@
+load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "autoware_component_interface_specs_universe",
+    srcs = [],
+    hdrs = glob(["include/**/*.hpp"]),
+    includes = ["include"],
+    deps = [
+        "@autoware_adapi_v1_msgs//:cc",
+        "@autoware_component_interface_specs",
+        "@rcl//:rcl_library",
+        "@rclcpp//:rclcpp_library",
+        "@rosidl_runtime_cpp//:rosidl_runtime_cpp_library",
+        "@tier4_control_msgs//:cc",
+        "@tier4_planning_msgs//:cc",
+        "@tier4_vehicle_msgs//:cc",
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = [
+        "@autoware_adapi_v1_msgs//:cc_shared",
+        "@autoware_component_interface_specs//:runtime_dynamic_deps",
+        "@rcl//:rcl",
+        "@rclcpp//:rclcpp",
+        "@tier4_control_msgs//:cc_shared",
+        "@tier4_planning_msgs//:cc_shared",
+        "@tier4_vehicle_msgs//:cc_shared",
+    ],
+)
+
+ament_index(
+    package_xml = "package.xml",
+    data = [],
+    components = [],
+)
+
+collect_transitive_dynamic_deps(
+    name = "test_dynamic_deps",
+    dynamic_deps = [
+        ":runtime_dynamic_deps",
+        "@ament_index_cpp//:ament_index_cpp",
+    ],
+)
+
+cc_test(
+    name = "test_autoware_component_interface_specs_universe",
+    timeout = "long",
+    srcs = glob(["test/**/*.cpp"]),
+    data = [
+        ":ament_index",
+    ],
+    dynamic_deps = [":test_dynamic_deps"],
+    env = {"ENABLE_AGNOCAST": "0", "LD_LIBRARY_PATH": "lib", "ROS_DOMAIN_ID": "95"},
+    deps = [
+        ":autoware_component_interface_specs_universe",
+        "@ament_index_cpp//:ament_index_cpp_library",
+        "@googletest//:gtest",
+    ],
+)

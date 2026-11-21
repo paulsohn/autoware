@@ -1373,3 +1373,9 @@ local_path_override(
     module_name = "autoware_trajectory_follower_node",
     path = "src/universe/autoware_universe/control/autoware_trajectory_follower_node",
 )
+
+bazel_dep(name = "autoware_component_interface_specs_universe", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_component_interface_specs_universe",
+    path = "src/universe/autoware_universe/common/autoware_component_interface_specs_universe",
+)
