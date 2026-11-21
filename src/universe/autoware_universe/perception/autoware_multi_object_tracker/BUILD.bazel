@@ -1,0 +1,116 @@
+load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
+load("@autoware_agnocast_wrapper//:defs.bzl", "autoware_agnocast_node")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "autoware_multi_object_tracker",
+    srcs = glob(["src/**/*.cpp", "lib/**/*.cpp"]),
+    hdrs = glob(["include/**/*.hpp", "src/**/*.hpp"]),
+    includes = ["include", "src"],
+    deps = [
+        "@autoware_agnocast_wrapper//:autoware_agnocast_wrapper_library",
+        "@autoware_perception_msgs//:cc",
+        "@autoware_utils_debug",
+        "@autoware_utils_geometry",
+        "@autoware_utils_math",
+        "@diagnostic_updater//:diagnostic_updater_library",
+        "@mussp",
+        "@nav_msgs//:cc",
+        "@rclcpp//:rclcpp_library",
+        "@rclcpp_components//:rclcpp_components_library",
+        "@rosbag2_cpp//:rosbag2_cpp_library",
+        "@rosdistro//cc:eigen",
+        "@rosdistro//cc:fmt",
+        "@rosdistro//cc:boost.circular_buffer",
+        "@rosdistro//cc:boost.uuid",
+        "@boost.container_hash",
+        "@tf2//:tf2_library",
+        "@tf2_geometry_msgs//:tf2_geometry_msgs_library",
+        "@tf2_ros//:tf2_ros_library",
+        "@unique_identifier_msgs//:cc",
+        "@visualization_msgs//:cc",
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = [
+        "@autoware_agnocast_wrapper//:autoware_agnocast_wrapper",
+        "@autoware_perception_msgs//:cc_shared",
+        "@autoware_utils_debug//:runtime_dynamic_deps",
+        "@diagnostic_updater//:diagnostic_updater",
+        "@mussp//:runtime_dynamic_deps",
+        "@nav_msgs//:cc_shared",
+        "@rclcpp//:rclcpp",
+        "@rclcpp_components//:rclcpp_components",
+        "@rosbag2_cpp//:rosbag2_cpp",
+        "@tf2//:tf2",
+        "@tf2_geometry_msgs//:tf2_geometry_msgs",
+        "@tf2_ros//:tf2_ros",
+        "@unique_identifier_msgs//:cc_shared",
+        "@visualization_msgs//:cc_shared",
+    ],
+)
+
+cc_shared_library(
+    name = "autoware_multi_object_tracker_component",
+    dynamic_deps = [":runtime_dynamic_deps"],
+    deps = [":autoware_multi_object_tracker"],
+)
+
+autoware_agnocast_node(
+    name = "multi_object_tracker_node",
+    package_name = "autoware_multi_object_tracker",
+    component = ":autoware_multi_object_tracker_component",
+    plugin = "autoware::multi_object_tracker::MultiObjectTracker",
+    agnocast_only = True,
+)
+
+register_ament_files(
+    name = "node_executables",
+    files = [":multi_object_tracker_node"],
+    prefix = "lib/autoware_multi_object_tracker",
+    strip_prefix = "*",
+)
+
+ament_index(
+    package_xml = "package.xml",
+    data = glob(["config/**", "launch/**"]) + [":multi_object_tracker_node_plugin", ":node_executables"],
+    components = [":multi_object_tracker_node_components"],
+)
+
+collect_transitive_dynamic_deps(
+    name = "test_dynamic_deps",
+    dynamic_deps = [
+        ":runtime_dynamic_deps",
+        "@ament_index_cpp//:ament_index_cpp",
+    ],
+)
+
+cc_test(
+    name = "test_autoware_multi_object_tracker",
+    timeout = "long",
+    # Resolve the original fixture macro from a declared runfile, not the checkout.
+    copts = ["-D_SRC_RESOURCES_DIR_PATH=std::filesystem::path(\\\"$(rootpath test/data/test_data1/test_data1.db3)\\\").parent_path().parent_path()"],
+    srcs = glob(["test/**/*.cpp", "test/**/*.hpp"]),
+    data = [
+        ":ament_index",
+        ":test_data",
+        "test/data/test_data1/test_data1.db3",
+        "@rosbag2_storage_sqlite3//:ament_package",
+        "@rosbag2_cpp//:ament_index",
+    ],
+    dynamic_deps = [":test_dynamic_deps"],
+    env = {"ENABLE_AGNOCAST": "0", "LD_LIBRARY_PATH": "lib", "ROS_DOMAIN_ID": "95"},
+    deps = [
+        ":autoware_multi_object_tracker",
+        "@ament_index_cpp//:ament_index_cpp_library",
+        "@googletest//:gtest_main",
+        "@rosbag2_storage//:rosbag2_storage_library",
+    ],
+)
+
+filegroup(name = "test_data", srcs = glob(["test/data/**"]))

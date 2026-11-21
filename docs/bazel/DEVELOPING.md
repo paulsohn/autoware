@@ -811,6 +811,11 @@ runtime data/arguments. The interface-lint suite uses
 `//bazel/tests:interface_spec_lint_tests`; it includes all original cases and
 its committed-spec/manifest checks. Its original config determines active gates.
 
+For a C++ fixture-path macro, derive its value from a declared $(rootpath file)
+input and the expected parent directories. Keep quoted C++ strings intact
+through copts tokenization; do not embed checkout paths or canonical repository
+names. Declare runtime class-loader resource indexes as well as fixture bytes.
+
 When an original C++ test textually includes a .cpp implementation, expose that
 file through textual_hdrs on a test-only cc_library and add that library to the
 test's deps. This supplies the sandbox input while preserving the original

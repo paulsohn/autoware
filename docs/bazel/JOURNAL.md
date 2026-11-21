@@ -15221,3 +15221,67 @@ tracker benchmarks stay disabled; no introduced skips or failures. The final
 evaluator suite. CPU/Cyclone DDS, ENABLE_AGNOCAST=0, LLVM/libc++ 21.1.8, Boost 1.90,
 Python 3.14.4 and Bazel 9.3.2 are selected. No Fast DDS, full simulator launch,
 older-ROS/colcon execution or real-time performance acceptance is claimed.
+
+## 2026-11-22: Phase 7.3.2 — Multi-object tracking
+
+Purpose: adopt this selected local perception dependency. Inspect source-owned
+package.xml/CMake, production/public headers, complete original test registration,
+fixtures and executable/configuration contracts. Prerequisites are the pinned
+RCR/LLVM providers and existing local core/Universe utilities and interfaces;
+source provenance is repositories/autoware.repos (Universe 0.53.2, with separate
+immutable external-repository refs). Add package-owned MODULE/BUILD, select its
+adjacent root 0.0.0/local override after prerequisites and keep added integration
+checks under bazel/tests. Keep original source/test changes restricted to the
+separately documented demonstrated blockers.
+
+Expose all forty original production CPP files and all seven registered test
+CPP files, with public/private headers. Declare actual Boost geometry/optional,
+circular-buffer, UUID and container-hash inputs plus local muSSP and utility
+providers, ROS messages, TF and rosbag native/shared providers. The BCR container-
+hash version 1.90.0.bcr.1 is already selected transitively; add an explicit root
+selection and source-module requirement rather than changing the whole Boost
+version. Keep root architecture settings authoritative: no host ISA autodetection
+or new real-time performance acceptance is introduced.
+
+Preserve original config/launch and the wrapper executable. The root profile
+passes original matrix/channel settings, detection01=detected_objects and the
+eleven original XML defaults detection02..12=none. Omitting those string defaults
+causes expected string / not set at standalone construction. All 59 active
+original cases pass; four originally disabled benchmarks remain disabled.
+
+Register the actual bag fixture as test data and supply its existing CMake macro
+through test-only copts derived from $(rootpath test/data/test_data1/test_data1.db3),
+using filesystem parent paths. Preserve quoted C++ strings through Bazel's
+Bourne tokenization; a single escaping layer loses quotes and gives expected
+expression. Do not hardcode a checkout or canonical repository path. Declare
+both the SQLite plugin's ament package and rosbag2_cpp's own resource index:
+the latter is required by its serialization class loader even when no converter
+is requested. Without it, real-data loading throws package not found and teardown
+can fault. The final test opens the declared database READ_ONLY and passes,
+alongside input failover, overlap merging, UUID/motion/shape/covariance cases.
+The independent header/numeric source corrections are recorded above.
+
+Reproduce the complete affected gate with the following command after adding
+the source-owned declarations and root adapters described in the module entries:
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast \
+  --local_test_jobs=1 --test_output=errors \
+  @mussp//... @pointcloud_to_laserscan//... \
+  @autoware_multi_object_tracker//... @autoware_map_based_prediction//... \
+  @autoware_perception_online_evaluator//... \
+  @autoware_dummy_traffic_light_publisher//... \
+  //bazel/tests/perception_nodes:all //bazel/tests/perception_metrics:all
+python3 -m flake8 --max-line-length=150 bazel/tests/perception_nodes/test_runtime.py
+git diff --check
+```
+
+All fourteen targets pass: 173 active original cases (tracker 59, prediction 43,
+traffic helpers 33, evaluator 38), eight installed executable/behavior profiles
+and two added time-window regressions: 183 active cases. Four original disabled
+tracker benchmarks stay disabled; no introduced skips or failures. The final
+39.3-second invocation reuses unchanged results, including the full 134.5-second
+evaluator suite. CPU/Cyclone DDS, ENABLE_AGNOCAST=0, LLVM/libc++ 21.1.8, Boost 1.90,
+Python 3.14.4 and Bazel 9.3.2 are selected. No Fast DDS, full simulator launch,
+older-ROS/colcon execution or real-time performance acceptance is claimed.

@@ -85,6 +85,7 @@ only when your current target demonstrates the need.
   [evidence: official map](JOURNAL.md#2026-11-21-phase-733--official-tutorial-map-and-scenario-resources).
 - [ ] Preserve original suites' source-layout and tool prerequisites in declared fixtures.
   [Test adapter convention](DEVELOPING.md#original-test-source-layout);
+  [C++ bag-fixture evidence](JOURNAL.md#2026-11-22-phase-732--multi-object-tracking);
   [evidence: interface lint](JOURNAL.md#2026-11-18-phase-534--interface-spec-lint).
   [Evidence: textually included C++ implementation](JOURNAL.md#2026-11-22-phase-732--static-obstacle-avoidance-scene-plugin).
 - [ ] Inventory complete module suites, runtime prerequisites and required
