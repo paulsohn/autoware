@@ -949,3 +949,9 @@ local_path_override(
     module_name = "autoware_mission_planner_universe",
     path = "src/universe/autoware_universe/planning/autoware_mission_planner_universe",
 )
+
+bazel_dep(name = "autoware_manual_lane_change_handler", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_manual_lane_change_handler",
+    path = "src/universe/autoware_universe/planning/autoware_manual_lane_change_handler",
+)

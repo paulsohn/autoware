@@ -1,0 +1,69 @@
+load("@rclcpp_components//:defs.bzl", "rclcpp_components_register_node")
+load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "autoware_manual_lane_change_handler",
+    srcs = ["src/manual_lane_change_handler.cpp"],
+    hdrs = ["src/manual_lane_change_handler.hpp"],
+    deps = [
+        "@autoware_internal_debug_msgs//:cc",
+        "@autoware_lanelet2_extension//:autoware_lanelet2_extension_lib_library",
+        "@autoware_map_msgs//:cc",
+        "@autoware_mission_planner_universe//:service_utils",
+        "@autoware_planning_msgs//:cc",
+        "@autoware_route_handler",
+        "@autoware_utils",
+        "@nav_msgs//:cc",
+        "@rclcpp//:rclcpp_library",
+        "@rclcpp_components//:rclcpp_components_library",
+        "@rosdistro//cc:boost.uuid",
+        "@tier4_external_api_msgs//:cc",
+        "@tier4_planning_msgs//:cc",
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = [
+        "@autoware_route_handler//:runtime_dynamic_deps",
+        "@autoware_internal_debug_msgs//:cc_shared",
+        "@autoware_map_msgs//:cc_shared",
+        "@autoware_planning_msgs//:cc_shared",
+        "@autoware_lanelet2_extension//:autoware_lanelet2_extension_lib",
+        "@nav_msgs//:cc_shared",
+        "@rclcpp//:rclcpp",
+        "@rclcpp_components//:rclcpp_components",
+        "@tier4_planning_msgs//:cc_shared",
+        "@tier4_external_api_msgs//:cc_shared",
+    ],
+)
+
+cc_shared_library(
+    name = "autoware_manual_lane_change_handler_component",
+    dynamic_deps = [":runtime_dynamic_deps"],
+    deps = [":autoware_manual_lane_change_handler"],
+)
+
+rclcpp_components_register_node(
+    name = "autoware_manual_lane_change_handler_node",
+    component = ":autoware_manual_lane_change_handler_component",
+    node_name = "autoware_manual_lane_change_handler_node",
+    plugin = "autoware::manual_lane_change_handler::ManualLaneChangeHandler",
+)
+
+register_ament_files(
+    name = "node_executables",
+    files = [":autoware_manual_lane_change_handler_node"],
+    prefix = "lib/autoware_manual_lane_change_handler",
+    strip_prefix = "*",
+)
+
+ament_index(
+    components = [":autoware_manual_lane_change_handler_node_record"],
+    data = glob(["launch/**"]) + [":node_executables"],
+    package_xml = "package.xml",
+)

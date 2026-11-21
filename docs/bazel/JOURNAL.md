@@ -10172,3 +10172,62 @@ of all seven processes. Unchanged native results are reused after fixture-only
 corrections. Targeted buildifier, Python/flake8, clang-format and whitespace
 checks pass. The module gate is complete for CPU/Cyclone DDS, ENABLE_AGNOCAST=0;
 no Fast DDS, enabled-Agnocast runtime, GPU, RViz or full simulator gate is claimed.
+
+## 2026-11-21: Phase 7.3.2 — Manual lane selection
+
+Purpose: integrate the manual lane handler included by the default Universe
+planning launch. Inspect all source/CMake/manifest/XML inputs. It has no original
+behavior test suite. The declared gate requires the original component/executable
+and launch, no-route and unavailable-reroute rejection, one actual preferred-
+primitive update, AUTO restoration and clean shutdown against the real Universe
+mission planner. This checks preference metadata, not physical lane-change safety
+or vehicle execution.
+
+Integration: add a local module/root override, native library and package-specific
+shared component; use the ordinary RCR rclcpp component executable because this
+source derives directly from rclcpp::Node. Preserve its executable/plugin names
+and index original XML. Depend on the mission package's service_utils API,
+existing local route/map/utilities and the two new Tier IV interface providers.
+Flatten the native ROS/type-support shared closure. The root test reuses the
+mission fixture; the component has no dependency on root test labels.
+
+Fixture know-how: lane 9102 has no adjacent road lane. The test map has lane
+10310 to the left of 9178, separated by a solid boundary; the waypoint planner
+correctly omits it from its alternatives. First exercise normal waypoint routing,
+then clear and supply that explicit alternative using SetLaneletRoute. Position
+the stationary peer inside 9178 at (3753.36, 73739.80). This deliberately tests
+the handler's explicit-route preference API, without asserting that a crossing
+of that solid boundary is a feasible driving maneuver. Do not modify the
+original map or planner to make the fixture pass. Publish availability repeatedly;
+service discovery alone does not mean its polling subscription has consumed it.
+Retry only the explicit 'Not in lane driving state' readiness response, then
+submit exactly one successful shift. Wait for both the debug shift and the
+mission planner's changed route, because the handler acknowledges before its
+asynchronous planner request completes. AUTO must restore the full original
+preference vector and preserve the UUID.
+
+Reproduce after the mission provider is built:
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel build --config=runtime --config=no-agnocast \
+  @autoware_manual_lane_change_handler//...
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --nocache_test_results --test_output=errors \
+  //bazel/tests/autoware_manual_lane_change_handler:launch_test
+```
+
+Both final launch cases pass in 2.5 seconds: correct rejection messages, shift
+9178 -> 10310 with debug count -1, AUTO restoration/count 0, retained UUID,
+clearing and clean exit of all eight processes. No source implementation or
+original test is changed. Buildifier, Python/flake8 and whitespace checks pass.
+The module gate is complete for CPU/Cyclone DDS, ENABLE_AGNOCAST=0; this ordinary
+rclcpp node has no Agnocast backend switch. No Fast DDS check is run.
+
+This first 7.3.2 group adds four local modules and passes 42 cases across six
+targets: 36 original mission cases, two wire-serialization cases and four root
+launch/lifecycle cases. The collector regression and bridge-template checks also pass. Passing unchanged
+native/interface results are reused while finalizing the launch fixtures. Phase 7.3.2 remains in progress: behavior/
+motion planning, control and the remaining default launch-selected dependencies
+must enter the graph before the original planning-simulator composition gate.

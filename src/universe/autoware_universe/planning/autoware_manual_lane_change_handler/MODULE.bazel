@@ -1,0 +1,19 @@
+module(
+    name = "autoware_manual_lane_change_handler",
+    version = "0.0.0",
+)
+
+bazel_dep(name = "autoware_internal_debug_msgs", version = "0.0.0")
+bazel_dep(name = "autoware_lanelet2_extension", version = "0.0.0")
+bazel_dep(name = "autoware_map_msgs", version = "0.0.0")
+bazel_dep(name = "autoware_mission_planner_universe", version = "0.0.0")
+bazel_dep(name = "autoware_planning_msgs", version = "0.0.0")
+bazel_dep(name = "autoware_route_handler", version = "0.0.0")
+bazel_dep(name = "autoware_utils", version = "0.0.0")
+bazel_dep(name = "nav_msgs", version = "0.0.0")
+bazel_dep(name = "rclcpp", version = "0.0.0")
+bazel_dep(name = "rclcpp_components", version = "0.0.0")
+bazel_dep(name = "rosdistro", version = "0.0.0")
+bazel_dep(name = "rules_cc", version = "0.2.26.rcr.0")
+bazel_dep(name = "tier4_external_api_msgs", version = "0.0.0")
+bazel_dep(name = "tier4_planning_msgs", version = "0.0.0")

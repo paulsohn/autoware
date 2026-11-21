@@ -1,0 +1,32 @@
+load("@launch_testing//:defs.bzl", "launch_test")
+load("@pip_ros//:requirements.bzl", "requirement")
+
+launch_test(
+    name = "launch_test",
+    src = "test_launch.py",
+    data = ["@autoware_manual_lane_change_handler//:ament_index"],
+    env = {
+        "ENABLE_AGNOCAST": "0",
+        "ROS_DOMAIN_ID": "92",
+        "LD_LIBRARY_PATH": "lib",
+    },
+    precompile = "disabled",
+    tags = [
+        "no-remote",
+        "no-sandbox",
+    ],
+    deps = [
+        "//bazel/tests/autoware_mission_planner_universe:fixture",
+        "@autoware_internal_debug_msgs//:py",
+        "@autoware_planning_msgs//:py",
+        "@launch",
+        "@launch_ros",
+        "@launch_testing",
+        "@launch_xml",
+        "@launch_yaml",
+        "@rclpy",
+        "@tier4_external_api_msgs//:py",
+        "@tier4_planning_msgs//:py",
+        requirement("pytest"),
+    ],
+)

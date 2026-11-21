@@ -1648,7 +1648,17 @@ Phase 7.3 task boundaries (selected 2026-11-21):
 - **7.3.2 — Selected Universe implementation closure.** Adopt the default
   rule-based planning, control, simulated perception and supporting system/API
   dependencies in related groups, starting from their actual local launch and
-  source declarations. Refine groups as each required dependency is inspected;
+  source declarations. The mission-planning group is complete (2026-11-21):
+  local tier4_planning_msgs/RerouteAvailability, tier4_external_api_msgs/SetPreferredLane,
+  autoware_mission_planner_universe and autoware_manual_lane_change_handler.
+  Its complete gate passes 42 cases in six targets, plus collector/template
+  regression checks and the full 252-interface/289-instantiation plugin build.
+  Runtime coverage is CPU/Cyclone DDS with ENABLE_AGNOCAST=0, including real
+  routing, goal echo, arrival, preferred-primitive update/reset and shutdown.
+  [Evidence](JOURNAL.md#2026-11-21-phase-732--manual-lane-selection).
+  Next: trace and integrate the default behavior/motion-planning dependencies
+  in related groups, followed by the remaining control/system/API closure.
+  Refine each group from the actual selected launch/source declarations;
   do not replace the Universe stack with the smaller core-only launch.
 - **7.3.3 — Original launch and resources.** Compose the actual
   planning_simulator.launch.xml closure and its sample map/vehicle/sensor inputs.
