@@ -140,8 +140,8 @@ DetectionCounter::getAverageCount(double seconds) const
   if (unique_timestamps_.size() == 0) {
     return averages;
   }
-  const rclcpp::Time cutoff_time =
-    *unique_timestamps_.rbegin() - rclcpp::Duration::from_seconds(seconds);
+  const auto latest_time = *unique_timestamps_.rbegin();
+  const auto window = rclcpp::Duration::from_seconds(seconds);
 
   for (auto & [classification, range_map] : time_series_counts_) {
     if (
@@ -153,12 +153,12 @@ DetectionCounter::getAverageCount(double seconds) const
       // Calculate the number of detections within the given time window
       const size_t count = std::count_if(
         timestamps.begin(), timestamps.end(),
-        [&](const rclcpp::Time & time) { return time >= cutoff_time; });
+        [&](const rclcpp::Time & time) { return latest_time - time <= window; });
 
       // Calculate the number of unique frames within the given time window
       const size_t frame_count = std::count_if(
         unique_timestamps_.begin(), unique_timestamps_.end(),
-        [&](const rclcpp::Time & time) { return time >= cutoff_time; });
+        [&](const rclcpp::Time & time) { return latest_time - time <= window; });
 
       if (frame_count > 0) {
         averages[classification][range] = static_cast<double>(count) / frame_count;
@@ -216,8 +216,7 @@ DetectionCounter::getTotalCount() const
 
 void DetectionCounter::purgeOldRecords(rclcpp::Time current_time)
 {
-  const rclcpp::Time cutoff_time =
-    current_time - rclcpp::Duration::from_seconds(parameters_->detection_count_purge_seconds);
+  const auto retention = rclcpp::Duration::from_seconds(parameters_->detection_count_purge_seconds);
 
   // Remove timestamps older than purge_seconds_ from time_series_counts_
   for (auto & [classification, range_map] : time_series_counts_) {
@@ -225,13 +224,13 @@ void DetectionCounter::purgeOldRecords(rclcpp::Time current_time)
       timestamps.erase(
         std::remove_if(
           timestamps.begin(), timestamps.end(),
-          [&](const rclcpp::Time & time) { return time < cutoff_time; }),
+          [&](const rclcpp::Time & time) { return current_time - time > retention; }),
         timestamps.end());
     }
   }
 
   // Remove timestamps older than purge_seconds_ from unique_timestamps_
-  while (!unique_timestamps_.empty() && *unique_timestamps_.begin() < cutoff_time) {
+  while (!unique_timestamps_.empty() && current_time - *unique_timestamps_.begin() > retention) {
     unique_timestamps_.erase(unique_timestamps_.begin());
   }
 }

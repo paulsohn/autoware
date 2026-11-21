@@ -692,6 +692,10 @@ or explicitly scoped milestones, and run Fast DDS only with approval. Reuse
 passing results when code and configuration are unchanged. Document the actual
 scope; an interrupted sweep is not a passing sweep.
 
+For ROS time-window behavior, cover the epoch and exact horizon/retention
+boundaries. Preserve zero-based fixtures. Compare ages as signed Durations;
+avoid creating negative absolute Time cutoffs while history is warming up.
+
 Run only targeted format and static checks for files changed by the task. Do
 not run pre-commit for this experiment.
 

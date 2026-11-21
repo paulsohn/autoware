@@ -89,6 +89,7 @@ only when your current target demonstrates the need.
   [Evidence: textually included C++ implementation](JOURNAL.md#2026-11-22-phase-732--static-obstacle-avoidance-scene-plugin).
 - [ ] Inventory complete module suites, runtime prerequisites and required
   middleware configurations before implementing each task.
+  [ROS-time boundary evidence](JOURNAL.md#2026-11-22-phase-732--perception-metric-windows-at-ros-time-zero);
   [Backend executor convention](DEVELOPING.md#switchable-standalone-nodes);
   [evidence: complete Agnocast test inventory](JOURNAL.md#2026-11-15-phase-41--adopt-the-complete-agnocast-library-test-inventory).
 - [ ] Declare solver generation and its tool/runtime inputs in the build graph.

@@ -42,7 +42,11 @@ std::optional<MetricsMap> MetricsCalculator::calculate(const Metric & metric) co
     }
     // time delay is max element of parameters_->prediction_time_horizons
     const double time_delay = getTimeDelay();
-    const auto target_stamp = current_stamp_ - rclcpp::Duration::from_seconds(time_delay);
+    const auto delay = rclcpp::Duration::from_seconds(time_delay);
+    if (current_stamp_.nanoseconds() < delay.nanoseconds()) {
+      return {};
+    }
+    const auto target_stamp = current_stamp_ - delay;
     if (!hasPassedTime(target_stamp)) {
       return {};
     }
@@ -512,7 +516,7 @@ void MetricsCalculator::deleteOldObjects(const rclcpp::Time stamp)
   const double time_delay = getTimeDelay();
   for (auto & [uuid, stamp_and_objects] : object_map_) {
     for (auto it = stamp_and_objects.begin(); it != stamp_and_objects.end();) {
-      if (it->first < stamp - rclcpp::Duration::from_seconds(time_delay * 2)) {
+      if (stamp - it->first > rclcpp::Duration::from_seconds(time_delay * 2)) {
         it = stamp_and_objects.erase(it);
       } else {
         break;

@@ -15074,3 +15074,52 @@ tracker benchmarks stay disabled; no introduced skips or failures. The final
 evaluator suite. CPU/Cyclone DDS, ENABLE_AGNOCAST=0, LLVM/libc++ 21.1.8, Boost 1.90,
 Python 3.14.4 and Bazel 9.3.2 are selected. No Fast DDS, full simulator launch,
 older-ROS/colcon execution or real-time performance acceptance is claimed.
+
+## 2026-11-22: Phase 7.3.2 — Perception metric windows at ROS time zero
+
+Purpose: run all 38 original evaluator cases without changing their zero-based
+clock fixtures or expectations. Every case originally throws cannot store a
+negative time point in rclcpp::Time. Inspect every horizon/window/purge
+subtraction in metrics_calculator.cpp and metrics/detection_count.cpp: valid
+nonnegative input stamps near the epoch produce invalid absolute cutoffs before
+there is enough history. This is a valid-input implementation defect, not a
+reason to offset timestamps or skip the suite.
+
+Compare timestamp ages as signed Durations for detection windows, purging and
+history retention. Preserve inclusive averaging and strict older-than retention
+boundaries, including out-of-order input semantics. Before forming a prediction
+target Time, return no metric until the current timestamp reaches the horizon.
+Keep every original source test unchanged. Add two public-API cases outside the
+source package: zero-time counting, inclusive ten-second windows/one-nanosecond
+expiry, prediction warm-up and twice-horizon retention. Their TF listener owns
+an actual worker thread so timeout-capable buffer lookups have their prerequisite.
+
+Reviewed 2026-11-22: current AWF main retains the offending subtractions. Scoped
+negative-time/zero-time evaluator PR searches return no matching fix; #6667 is
+an older yaw-rate feature. Record this independently from build definitions.
+All 38 original cases pass in 134.5 seconds; both added edge cases pass too.
+
+Reproduce the complete affected gate with the following command after adding
+the source-owned declarations and root adapters described in the module entries:
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast \
+  --local_test_jobs=1 --test_output=errors \
+  @mussp//... @pointcloud_to_laserscan//... \
+  @autoware_multi_object_tracker//... @autoware_map_based_prediction//... \
+  @autoware_perception_online_evaluator//... \
+  @autoware_dummy_traffic_light_publisher//... \
+  //bazel/tests/perception_nodes:all //bazel/tests/perception_metrics:all
+python3 -m flake8 --max-line-length=150 bazel/tests/perception_nodes/test_runtime.py
+git diff --check
+```
+
+All fourteen targets pass: 173 active original cases (tracker 59, prediction 43,
+traffic helpers 33, evaluator 38), eight installed executable/behavior profiles
+and two added time-window regressions: 183 active cases. Four original disabled
+tracker benchmarks stay disabled; no introduced skips or failures. The final
+39.3-second invocation reuses unchanged results, including the full 134.5-second
+evaluator suite. CPU/Cyclone DDS, ENABLE_AGNOCAST=0, LLVM/libc++ 21.1.8, Boost 1.90,
+Python 3.14.4 and Bazel 9.3.2 are selected. No Fast DDS, full simulator launch,
+older-ROS/colcon execution or real-time performance acceptance is claimed.

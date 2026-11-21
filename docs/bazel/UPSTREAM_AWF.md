@@ -1479,3 +1479,21 @@ No older-ROS verification or new submission is claimed.
   older-ROS compatibility is not claimed. See the
   [source-fix reproducer](JOURNAL.md#2026-11-22-phase-732--pointcloud-converter-lyrical-apis).
   No new submission is claimed.
+
+### Perception metric windows construct negative ROS timestamps
+
+- [ ] Associate with a matching upstream fix. Reviewed 2026-11-22: current
+  [metrics calculator](https://github.com/autowarefoundation/autoware_universe/blob/main/evaluator/autoware_perception_online_evaluator/src/metrics_calculator.cpp)
+  and [detection counter](https://github.com/autowarefoundation/autoware_universe/blob/main/evaluator/autoware_perception_online_evaluator/src/metrics/detection_count.cpp)
+  retain absolute horizon/window/purge subtraction. Scoped negative/zero-time
+  PR searches find no matching change; #6667 concerns an older yaw-rate feature.
+- Universe 0.53.2, rclcpp 32.0.3, CPU/Cyclone DDS: all 38 original evaluator cases
+  throw at valid ROS time zero before evaluating metrics. Compare durations for
+  windows/retention and wait for the horizon before forming a prediction Time;
+  preserve inclusive versus strict boundaries. This is an early-timestamp
+  behavior defect, not a Lyrical-only API rename.
+- All original cases pass unchanged in 134.5 seconds, plus two added epoch/
+  exact-boundary regressions and the complete perception group. No dependency
+  skips or timestamp shifting. See the
+  [exact command and diagnosis](JOURNAL.md#2026-11-22-phase-732--perception-metric-windows-at-ros-time-zero).
+  Older ROS is not executed and no submission is claimed.
