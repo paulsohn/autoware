@@ -1326,3 +1326,19 @@ Local source fix: `5eb05315`.
   16 targets). No source test assertions change. See the
   [diagnosis and command](JOURNAL.md#2026-11-22-phase-732--distinct-motion-plugin-internal-types).
   This is a composition/ODR defect, not a ROS release-specific API fix.
+
+### Costmap generator includes removed message_filters forwarding headers
+
+- [ ] Associate with a matching upstream change. Reviewed 2026-11-22: the
+  [current header](https://github.com/autowarefoundation/autoware_universe/blob/main/planning/autoware_costmap_generator/include/autoware/costmap_generator/costmap_generator.hpp)
+  still includes subscriber.h/time_synchronizer.h. The Lyrical/toolchain trackers
+  autoware#7404 and universe#13590 do not identify a matching fix; the scoped
+  costmap/message_filters PR result #5954 concerns another feature.
+- Lyrical message_filters exports the .hpp files and removes both .h forwarding
+  headers. Building the original costmap node fails at subscriber.h. Change just
+  these two includes to .hpp. All ten original costmap cases, its indexed
+  executable lifecycle and the full parking/affected adapter gate pass with
+  Cyclone DDS and Agnocast off (27 active cases/eight targets).
+- No implementation/assertion changes or host installs; no older-ROS/colcon
+  validation is claimed. See the
+  [source-fix journal](JOURNAL.md#2026-11-22-phase-732--costmap-message-filter-header-compatibility).

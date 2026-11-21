@@ -65,8 +65,8 @@
 
 #include <grid_map_msgs/msg/grid_map.h>
 #include <lanelet2_core/LaneletMap.h>
-#include <message_filters/subscriber.h>
-#include <message_filters/time_synchronizer.h>
+#include <message_filters/subscriber.hpp>
+#include <message_filters/time_synchronizer.hpp>
 #include <tf2_ros/buffer.h>
 #include <tf2_ros/transform_listener.h>
 

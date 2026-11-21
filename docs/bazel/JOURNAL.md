@@ -13201,3 +13201,26 @@ same preset order, keeping component modules independent of root labels. This
 closes the selected motion-factory group, not Phase 7.3.2. Continue parking,
 remaining planner helpers, controllers and the selected perception/system/API
 closure before full simulator composition.
+
+## 2026-11-22: Phase 7.3.2 — Costmap message-filter header compatibility
+
+Purpose: compile the selected parking costmap node with Lyrical's message_filters.
+The complete costmap/freespace gate fails in the original costmap public header:
+message_filters/subscriber.h is absent. Inspect the selected dependency: both
+subscriber.hpp and time_synchronizer.hpp exist, while both old .h headers are
+absent. Update those two includes only. Leave algorithms, original tests and
+unrelated deprecated headers unchanged; no host dependency install is needed.
+
+Review AWF Lyrical tracker autoware#7404 and its related universe#13590, current
+costmap header and scoped costmap/message_filters PR results on 2026-11-22.
+Current main retains the old headers; the search's reaction-analyzer PR #5954
+is unrelated. No matching fix association or submission is claimed. Record the
+reproducer in UPSTREAM_AWF.md and keep this source correction separate from the
+following package definitions.
+
+The complete command in the next costmap journal entry passes 27 active cases
+in eight targets, including all ten original costmap cases and its installed
+executable startup/shutdown. Freespace retains two original disabled cases;
+there are no introduced skips or failures. CPU/Cyclone DDS, ENABLE_AGNOCAST=0.
+Targeted clang-format/flake8/diff checks pass. No colcon/Jazzy or full simulator
+result is implied.
