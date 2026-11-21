@@ -10871,3 +10871,33 @@ without failures or skips. The complete expanded plugin-consumer build also
 passes. Targeted buildifier and whitespace checks pass; original schemas are
 unchanged. Simulator launch behavior and enabled-Agnocast communication are
 deferred.
+
+## 2026-11-21: Phase 7.3.2 — Shared RTC coordination library
+
+Purpose: supply the original shared RTC state machine used by selected behavior
+modules. Inspect the manifest, public headers, implementation, CMake and the
+single original test source. Its one lifecycle case covers registration/removal,
+activation and forced activation/deactivation, terminal states, clear/reset and
+operator-request guards; do not mistake the single case for a UUID-only test.
+
+Add the package-local module and native library with the local wrapper, QoS,
+legacy utility, UUID and tier4_rtc_msgs providers. Compile the original explicit
+instantiations for both rclcpp::Node and the Agnocast wrapper node. Export the
+flattened shared dependency closure and package-owned ament identity. Expose the
+unchanged original test with gtest_main; no added package-local test source,
+original implementation edit or CMake change is needed.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --nocache_test_results --test_output=errors @autoware_rtc_interface//...
+```
+
+The complete original suite passes its lifecycle case in 0.1 seconds, zero
+failures/disabled cases/skips. This result is repeated in the successful
+15-target interface/RTC gate; tier4_rtc_msgs separately round-trips all 18
+message/service wire types. Both native node forms compile; runtime execution
+is the original rclcpp-node test, CPU/Cyclone DDS with ENABLE_AGNOCAST=0.
+Enabled-Agnocast communication, operator integration and full behavior-planner
+launch are outside this library gate. Targeted buildifier and whitespace checks
+pass. The selected simulator implementation closure remains open.
