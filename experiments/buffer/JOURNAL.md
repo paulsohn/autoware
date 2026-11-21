@@ -2048,3 +2048,58 @@ the archived sleep logs with the original analyzer arguments reproduced
 the original summary exactly. A synthetic out-of-order arrival check
 confirmed that an older arrival does not reset the latest observation age.
 [CPU and freshness results](../rmw-agnocast/README.md#freshness-of-the-near-region-under-overload).
+
+## 2026-11-22 — Replay near-cloud losses through Universe Euclidean clustering
+
+Determine whether the extra near-cloud losses can change which objects
+a real perception consumer detects. Build the unmodified EuclideanClusterNode,
+EuclideanCluster and conversion sources from autoware_euclidean_cluster.
+The small colcon package uses the same utility header layout as the crop
+benchmark. It builds only this component from the perception package.
+The node uses its production YAML (2D, tolerance 0.7 m, 10–1000 points
+per cluster), subscribes to PointCloud2 and publishes DetectedObjectsWithFeature.
+Use the source message packages from this checkout with the existing Lyrical
+underlay. Run the builds sequentially under the laptop memory guard:
+
+```bash
+export LYRICAL_ROOT=$(cat build/agnocast-lyrical/universe-root)
+experiments/buffer/run-lyrical.sh bash -ec '
+  colcon build --base-paths src/core/autoware_msgs/autoware_perception_msgs \
+    src/universe/external/tier4_autoware_msgs/tier4_perception_msgs \
+    --executor sequential --build-base build/perception-replay/obj \
+    --install-base build/perception-replay/install --cmake-args -DBUILD_TESTING=OFF \
+    -DCMAKE_CXX_STANDARD=17 -DCMAKE_POLICY_VERSION_MINIMUM=3.5'
+experiments/buffer/run-lyrical.sh bash -ec '
+  source build/perception-replay/install/local_setup.bash
+  export CC=/usr/bin/clang-21 CXX=/usr/bin/clang++-21
+  colcon build --base-paths src/universe_detection_replay --executor sequential \
+    --build-base build/perception-replay/obj --install-base build/perception-replay/install \
+    --cmake-args -DCMAKE_BUILD_TYPE=Release \
+    "-DCMAKE_CXX_FLAGS=--gcc-install-dir=/usr/lib/gcc/x86_64-linux-gnu/15" \
+    "-DCMAKE_CXX_FLAGS_RELEASE=-O1 -DNDEBUG"'
+BUFFER_RUNTIME_ONLY=1 experiments/buffer/run-lyrical.sh timeout -k 5 180 \
+  bash experiments/rmw-agnocast/run-cluster-replay.sh
+```
+
+For each of 32 acquisitions, generate a persistent 12-point landmark and
+12-point targets visible for three consecutive acquisitions. Sweep all
+30 possible target onsets in the same scene. Targets are separated by
+4 m. Replay only the acquisitions each near branch delivered, in recorded
+arrival order. Every input retains its recorded stamp. Wait for each output
+and verify its header, complete list of centroids and feature-cloud sizes.
+All replays use Cyclone DDS to reach the same node. Delivery differences
+come from the previously measured native, RMW, Cyclone and Zenoh traces.
+There is no additional queue overflow during replay. The on-time estimate
+uses recorded input arrival minus the target's first acquisition stamp and
+excludes cluster computation and output transport. It is an upper bound
+on the number of detections available within 100 ms in a live graph.
+
+Both build steps passed, with at least 8,718 MiB host memory available.
+All 64 traces and 1,816 inputs passed twice with identical per-trace results.
+The 32 controls detected every target. With the near branch impaired, native
+alone detected onset 9, while the three ordinary-ROS paths alone detected
+onsets 13 and 14. All four missed onset 15. Exactly 13 of 30 targets had
+a cluster supported by an input arriving within 100 ms of appearance for
+every impaired trace. This replay establishes a geometric detection effect.
+Tracking identity, motion prediction and live scheduling remain open.
+[Per-trace results](../rmw-agnocast/cluster-replay-results.txt).

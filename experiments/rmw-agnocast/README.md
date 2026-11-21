@@ -2723,3 +2723,31 @@ whether a missing acquisition changes a detection or track.
 
 [CPU-busy measurements and per-run losses](pipeline-busy-results/summary.txt) ·
 [Reproduction](../buffer/JOURNAL.md#2026-11-22--fresh-observations-during-cpu-busy-and-sleeping-crop-callbacks).
+
+### Detection consequences of the near-branch losses
+
+The unmodified Universe Euclidean clustering node received a controlled
+scene in the observed near-cloud delivery order from each of the 64 previous
+runs. Each of 30 transient targets appeared for three consecutive 20 Hz
+acquisitions, one target per possible onset. The counts below are per
+trace. Both the sleeping and CPU-busy stalls reproduced the same results.
+
+| Input delivery trace | Impaired traces | Targets eventually clustered | Targets whose first detecting input arrived within 100 ms of appearance | Missed target onsets |
+|---|---:|---:|---:|---|
+| Native Agnocast | 12 | 27/30 | 13/30 | 13, 14, 15 |
+| rmw_agnocast | 12 | 28/30 | 13/30 | 9, 15 |
+| Cyclone DDS | 4 | 28/30 | 13/30 | 9, 15 |
+| Zenoh | 4 | 28/30 | 13/30 | 9, 15 |
+| Healthy controls across transports | 32 | 30/30 | 30/30 | none |
+
+Native's delayed frames 9–11 preserved the historical detection for the
+target that appeared at group 9. The RMW's frame 14 preserved the targets
+that appeared at groups 13 and 14. Every stack lost groups 15–17. A consumer
+that can act on late history therefore sees a real difference even though
+the on-time counts were equal. The cluster node ran on a single replay
+transport with one outstanding input. The 100 ms calculation uses the
+original near-branch arrival times. A live detector or tracker would add
+latency and could change the graph's scheduling.
+
+[Per-trace detections](cluster-replay-results.txt) ·
+[Build and replay instructions](../buffer/JOURNAL.md#2026-11-22--replay-near-cloud-losses-through-universe-euclidean-clustering).
