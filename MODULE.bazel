@@ -1288,3 +1288,9 @@ local_path_override(
     module_name = "autoware_remaining_distance_time_calculator",
     path = "src/universe/autoware_universe/planning/autoware_remaining_distance_time_calculator",
 )
+
+bazel_dep(name = "autoware_hazard_lights_selector", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_hazard_lights_selector",
+    path = "src/universe/autoware_universe/planning/autoware_hazard_lights_selector",
+)

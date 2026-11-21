@@ -39,6 +39,19 @@ class IndexedNode(unittest.TestCase):
         for config in ['test_common.param.yaml', 'test_nearest_search.param.yaml', 'test_vehicle_info.param.yaml']:
             args += ['--params-file', str(common / config)]
         args += ['--params-file', str(Path(get_package_share_directory(PACKAGE)) / 'config' / CONFIG)]
+        if PACKAGE == 'autoware_planning_evaluator':
+            args += ['-p', 'output_metrics:=false']
+            if EXECUTABLE == 'motion_evaluator':
+                args += ['-p', 'selected_metrics:=[velocity,acceleration]']
+        if PACKAGE == 'autoware_hazard_lights_selector':
+            from autoware_vehicle_msgs.msg import HazardLightsCommand
+            topic = '/bazel_hazard_' + str(os.getpid())
+            for direction in ['input/planning', 'input/system', 'output']:
+                args += ['-r', direction + '/hazard_lights_command:=' + topic + '/' + direction]
+            planning = peer.create_publisher(HazardLightsCommand, topic + '/input/planning', 1)
+            system = peer.create_publisher(HazardLightsCommand, topic + '/input/system', 1)
+            received = []
+            subscription = peer.create_subscription(HazardLightsCommand, topic + '/output', received.append, 1)
         client = peer.create_client(GetParameters, '/' + name + '/get_parameters')
         try:
             with tempfile.TemporaryFile(mode='w+') as log:
@@ -65,6 +78,22 @@ class IndexedNode(unittest.TestCase):
                     maps = Path('/proc', str(process.pid), 'maps').read_text()
                     self.assertIn('lib' + PACKAGE + '_component.so', maps)
                     self.assertNotIn('libagnocast_heaphook.so', maps)
+                    if PACKAGE == 'autoware_hazard_lights_selector':
+                        wait(lambda: planning.get_subscription_count() > 0 and system.get_subscription_count() > 0
+                             and subscription.get_publisher_count() > 0)
+                        # Exercise each source independently, then both enabled together.
+                        for left, right, expected in [(1, 1, 1), (2, 1, 2), (1, 1, 1),
+                                                      (1, 2, 2), (1, 1, 1), (2, 2, 2),
+                                                      (1, 2, 2), (1, 1, 1)]:
+                            received.clear()
+
+                            def publish_and_observe():
+                                planning.publish(HazardLightsCommand(command=left))
+                                system.publish(HazardLightsCommand(command=right))
+                                return len(received) >= 3 and all(
+                                    message.command == expected for message in received[-3:])
+
+                            wait(publish_and_observe)
                 finally:
                     if process.poll() is None:
                         process.send_signal(signal.SIGINT)

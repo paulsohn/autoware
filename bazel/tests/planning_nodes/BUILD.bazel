@@ -10,9 +10,10 @@ load("@rules_python//python:defs.bzl", "py_test")
         env = {"ENABLE_AGNOCAST": "0", "LD_LIBRARY_PATH": "lib", "ROS_DOMAIN_ID": "80"},
         precompile = "disabled",
         tags = ["no-remote", "no-sandbox"],
-        deps = ["@ament_index_python", "@rcl_interfaces//:py", "@rclpy"],
+        deps = ["@ament_index_python", "@rcl_interfaces//:py", "@rclpy"] + (["@autoware_vehicle_msgs//:py"] if package == "autoware_hazard_lights_selector" else []),
     )
     for package, executable, config in [
+        ("autoware_hazard_lights_selector", "autoware_hazard_lights_selector_node", "hazard_lights_selector.param.yaml"),
         ("autoware_remaining_distance_time_calculator", "autoware_remaining_distance_time_calculator_node", "remaining_distance_time_calculator.param.yaml"),
         ("autoware_freespace_planner", "freespace_planner", "freespace_planner.param.yaml"),
         ("autoware_costmap_generator", "costmap_generator", "costmap_generator.param.yaml"),
