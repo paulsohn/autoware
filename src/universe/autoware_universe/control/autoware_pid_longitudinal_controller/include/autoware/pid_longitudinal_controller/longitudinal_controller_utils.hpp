@@ -23,7 +23,6 @@
 
 #include <Eigen/Core>
 #include <Eigen/Geometry>
-#include <experimental/optional>  // NOLINT
 #include <tf2/utils.hpp>
 
 #include "autoware_planning_msgs/msg/trajectory.hpp"

@@ -1386,3 +1386,21 @@ Local source fix: `5eb05315`.
   DDS/Agnocast off, zero failures/skips/disabled cases. No older-toolchain result
   is implied. See the
   [source-fix journal](JOURNAL.md#2026-11-22-phase-732--trajectory-checker-fixture-math-portability).
+
+### PID controller retains unused experimental optional headers
+
+- [ ] Associate with a matching upstream change. Reviewed 2026-11-22: current
+  [longitudinal utility header](https://github.com/autowarefoundation/autoware_universe/blob/main/control/autoware_pid_longitudinal_controller/include/autoware/pid_longitudinal_controller/longitudinal_controller_utils.hpp)
+  and its source still include experimental/optional alongside standard optional.
+  A scoped PID/optional PR search finds no matching fix. No submission is claimed.
+- libc++ 21.1.8 removes that experimental header, blocking the original PID
+  source/suite. All implementation uses standard optional already. Delete only
+  the two unused experimental includes; retain the existing standard include,
+  types, algorithms and assertions. This is compiler portability, separate from
+  the expected-header changes matching merged AWF #13622.
+- All 43 original PID cases and the full follower group pass (139 active cases
+  in seven targets, one original disabled pure-pursuit case preserved),
+  CPU/Cyclone DDS with Agnocast off. See the
+  [source-fix journal](JOURNAL.md#2026-11-22-phase-732--pid-controller-dependency-headers)
+  and following module entries for exact commands. No older-compiler/colcon
+  runtime verification is claimed.
