@@ -1,0 +1,18 @@
+load("@rules_python//python:defs.bzl", "py_test")
+
+[
+    py_test(
+        name = package + "_runtime_test",
+        srcs = ["test_runtime.py"],
+        main = "test_runtime.py",
+        args = [package, executable, config],
+        data = ["@" + package + "//:ament_index", "@autoware_test_utils//:ament_index"],
+        env = {"ENABLE_AGNOCAST": "0", "LD_LIBRARY_PATH": "lib", "ROS_DOMAIN_ID": "80"},
+        precompile = "disabled",
+        tags = ["no-remote", "no-sandbox"],
+        deps = ["@ament_index_python", "@rcl_interfaces//:py", "@rclpy"],
+    )
+    for package, executable, config in [
+        ("autoware_path_smoother", "elastic_band_smoother", "elastic_band_smoother.param.yaml"),
+    ]
+]

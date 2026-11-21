@@ -12440,3 +12440,40 @@ validates compilation and the CPU/Cyclone DDS ROS fallback for both shapes.
 Enabled-Agnocast execution of the newly exposed shape is not claimed and is not
 the Phase 7 selected configuration. No kernel-dependent matrix, Fast DDS,
 pre-commit or full simulator launch is run. Targeted whitespace checks pass.
+
+## 2026-11-22: Phase 7.3.2 — Path smoother
+
+Purpose: expose the selected local path smoother with its original executable,
+public headers, indexed config/launch resources and complete native suite.
+Inspect all 4 production sources, CMake/manifest, node inheritance/executor
+contract and every original test. Keep the planning-test-manager dependency in
+the test closure, not the production library. Compose actual shared message,
+route/geometry or OSQP providers without source-to-root labels.
+
+Use RCR component registration with node_name to emit the standalone binary,
+not only the component record. The native suite exercises normal, empty, single
+and overlapping paths and requires actual output. The standalone gate exposes
+a missing logging_demo introspection DLL used by LoggerLevelConfigure; add that
+real runtime typesupport dependency rather than altering implementation. Publish
+the original calculation_time_plotter.py as a py_binary with rclpy, debug-message
+and matplotlib dependencies, and register its executable through the corrected
+registry rule. Its installed --help entrypoint passes with a noninteractive
+backend; interactive plotting itself is not an acceptance claim.
+
+The root planning_nodes adapter resolves lib/<package>/<executable> through
+the ament package prefix, supplies original/common fixture parameters, requests
+a parameter through the real ROS service, checks the component DLL/no allocator
+preload and requires clean SIGINT exit. Original implementation and tests stay
+unchanged; added startup adapters remain under bazel/.
+
+Verification is the exact eight-target command in the
+[registered-executable entry](#2026-11-22-phase-732--registered-python-executable-closure),
+including @autoware_path_smoother//... and
+//bazel/tests/planning_nodes:autoware_path_smoother_runtime_test.
+All 1 original native cases pass; the indexed startup and plotter-help cases pass.
+The native suite takes 1.5 seconds and root runtime takes 2.5 seconds.
+The full group passes all eight targets in 64.6 seconds with no failures/skips;
+wrapper 37 native/66 Python and existing mission launch results also pass.
+Targeted flake8/whitespace checks pass. CPU/Cyclone DDS and ENABLE_AGNOCAST=0
+is selected; no Fast DDS, pre-commit or full simulator launch is run. Next
+prepare the selected path optimizer and remaining motion/control closure.
