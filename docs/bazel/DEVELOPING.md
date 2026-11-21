@@ -722,6 +722,14 @@ unloading uses the module name (stop_line). Run
 Keep existing test helper sources in testonly libraries rather than linking
 planning test managers into production components.
 
+For dependency repositories containing several ROS packages, give each ament
+index and interface declaration an explicit ROS package identity (`export_name`
+and `package` in RCR rules). Keep original package/library names independent
+of Bzlmod repository names. Publish a transitive dynamic-dependency provider for
+native consumers of inline/plugin APIs; a raw shared-library target alone need
+not link their direct references to its dependencies. See the
+[grid-map provider conventions](../../third_party/grid_map/README.md).
+
 For the motion planner, the configured fully-qualified class name is also its
 module name: use it for both load and unload. Run
 //bazel/tests:motion_velocity_planner_runtime_test with --config=no-agnocast

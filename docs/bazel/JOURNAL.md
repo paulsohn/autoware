@@ -12010,3 +12010,77 @@ skips. The whole four-package group passes 47 cases across twelve targets in
 CPU/Cyclone DDS with ENABLE_AGNOCAST=0; no pre-commit, Fast DDS or full simulator
 launch is run. Remaining selected scenes and motion/controller dependencies
 remain separate gates.
+
+## 2026-11-22: Phase 7.3.2 — Grid-map dependency provider
+
+Purpose: prepare the actual grid-map libraries needed by crosswalk and its local
+iterator helper. No grid-map source snapshot exists locally. The RCR metadata
+URLs for grid_map_core, grid_map_cv, grid_map_ros and grid_map_msgs return HTTP
+404 on 2026-11-22. Inspect upstream ROS 2 tag 2.5.0 and its immutable commit
+0ece1b53ca03199527d0d42913cf2567d0d6a913, manifests/CMake, source/header layouts,
+message/service declarations, all original test registrations, Eigen extras and
+ROS bag fixtures. The archive SHA-256 is
+c621063445ee59e73495528ee3a00022f435accc20cd5c0cf2a494e998d9b82b.
+
+Keep reusable acquisition/build support under third_party/grid_map. Root selects
+this module through a local override; component modules use its public providers.
+Apply one BUILD overlay inside the immutable source archive for the nineteen
+core/CV/ROS implementation sources. Use explicit package/export identities for
+multiple ROS packages in that repository, including both messages and all four
+services, and preserve the original shared-library basenames. Root pins required
+registry inputs: filters 2.2.2-3.rcr.2, nav2_msgs 1.5.2-2.rcr.0 and SQLite storage
+0.33.4-1.rcr.0. Do not replace these sources with host dependency installation.
+
+Inspect the CMake-only helper's effects before omitting it as a module. Native
+C++ selection belongs to the root; the core Eigen extras additionally export
+EIGEN_DENSEBASE_PLUGIN and EIGEN_FUNCTORS_PLUGIN. Preserve both on the owning
+C++ provider so consumers compile the same Eigen extensions. The initial
+defines lose unescaped include-file quotes during Bazel tokenization, producing
+expected-FILENAME errors in Eigen. Preserve escaped quotes in the defines
+values; do not change the SDK headers. Declare archive
+format tar.gz explicitly because the codeload URL ends in a hash.
+
+Preserve all twenty original test translation units across three suites. Core
+and CV use their original test mains; a generic dependency-owned adapter runs
+the ROS test executable with writable copies of both declared SQLite bag
+fixtures and the actual storage plugin/index. Resolve runtime paths before
+changing to a temporary directory and forward GTest XML. Native tests using
+inline plugin/OpenCV APIs initially fail to link through a raw shared-library
+provider alone. Publish per-library collect_transitive_dynamic_deps aggregates
+that flatten the full declared dynamic closure, and use them for binary links;
+do not rely on indirect ELF dependencies satisfying direct references. Add an indexed original
+CV filter factory check; do not modify upstream tests merely to replace their
+expected working directory. No suite is excluded because of setup work.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_output=errors @grid_map//:tests
+python3 -m flake8 --max-line-length=120 third_party/grid_map/test_ros.py
+clang-format --dry-run --Werror third_party/grid_map/filter_factory_test.cpp
+git diff --check
+```
+
+GridMapMsgHelpers initially cannot find boost/assign.hpp: add its real
+Boost.Assign header dependency rather than patching the existing include. All
+ROS conversion cases then run, but four bag cases throw because the converter
+factory cannot find package rosbag2_cpp. A shared-library link and SQLite index
+do not supply that package identity; include the actual rosbag2_cpp package
+provider in the ROS runtime index. Retain both writable fixture bags and the
+pinned SQLite provider. All four bag cases then pass unchanged.
+
+All nineteen implementation sources and all twenty original test translation
+units build. The full gate passes 109 cases across four targets: 91 core, six
+CV, eleven ROS and one filter-factory case. There are zero failures, errors,
+disabled cases or skips. The final invocation takes 7.5 seconds, reusing unchanged
+core/CV/factory results after the bag resource fix; the initial registry interface
+closure required a cold build. Targeted flake8, clang-format and whitespace
+checks pass. Source compatibility patches and host packages are unnecessary.
+Scope is these four source packages; other upstream grid-map packages have no
+Bazel declaration here. CPU/Cyclone DDS with ENABLE_AGNOCAST=0 is selected; no
+pre-commit, Fast DDS or enabled-Agnocast/kernel runtime gate is run.
+
+Next expose the SDK's concrete interface targets to the root collection and
+validate descriptor/template/plugin compilation, then the local polygon-iterator
+helper and selected crosswalk consumer. SDK task success is the complete
+four-target gate above, independently of later product composition.

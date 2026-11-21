@@ -64,6 +64,7 @@ only when your current target demonstrates the need.
   [Canonical interface identity](DEVELOPING.md#interface-declarations-and-bridge-plugins);
   [evidence: nested source categories](JOURNAL.md#2026-11-21-phase-732--nested-interface-source-namespaces).
   [Native plugin registration](DEVELOPING.md#native-plugin-libraries);
+  [multi-package dependency identity and link closure](../../third_party/grid_map/README.md);
   [evidence: stop-line plugin](JOURNAL.md#2026-11-17-phase-525--stop-line-plugin).
 - [ ] Preserve executable contracts and unique library identities in composed indexes.
   [Runtime resource convention](DEVELOPING.md#launch-resource-composition);
@@ -1769,81 +1770,48 @@ Phase 7.3 task boundaries (selected 2026-11-21):
   zero failures/skips. The full 339-interface/388-instantiation bridge library
   also builds, CPU/Cyclone DDS with ENABLE_AGNOCAST=0.
   [Collector and gate evidence](JOURNAL.md#2026-11-21-phase-732--simulator-interface-collector-and-bridge-compilation).
-  Shared behavior-path support is complete: all 18 library sources build and
-  the seven original test executables pass 111 active cases with zero failures
-  or runtime skips. Two explicitly upstream-disabled cases retain that status;
-  no source compatibility patch or new dependency module is required.
-  [Evidence](JOURNAL.md#2026-11-21-phase-732--shared-behavior-path-planning-library).
-  The behavior-path planner node/component now builds and passes all six
-  original utility and node-interface cases, including normal/empty routes and
-  off-track odometry. Its test helpers are available to scene-module suites;
-  its logging-service typesupport is exported for standalone use.
-  [Evidence](JOURNAL.md#2026-11-22-phase-732--behavior-path-planner-node).
-  The default-enabled side-shift plugin is complete: all six original cases
-  and a standalone planner gate pass. The latter verifies actual plugin DLL
-  loading, indexed configuration, a runtime parameter update and clean shutdown.
-  The combined planner/plugin gate passes all 13 cases with no failures/skips.
-  [Evidence](JOURNAL.md#2026-11-22-phase-732--side-shift-scene-plugin-and-executable-loading).
-  The default-enabled bidirectional-traffic plugin is complete: all three
-  original lanelet/keep-left/give-way cases pass, alongside isolated standalone
-  loading/default-parameter/shutdown and side-shift regression checks. Its
-  original empty parameter-update callback is not an implemented capability.
-  [Evidence](JOURNAL.md#2026-11-22-phase-732--bidirectional-traffic-scene-plugin).
-  Static-obstacle avoidance is complete: all five implementation sources build
-  and all 21 active original cases pass, including predicted-object planning
-  factors. One upstream-disabled moving-time case remains disabled. Its
-  standalone loading/parameter-update/shutdown gate and both earlier runtime
-  profiles pass; the combined group passes 27 active cases without runtime
-  skips. Original tests and implementation remain unchanged.
-  [Evidence](JOURNAL.md#2026-11-22-phase-732--static-obstacle-avoidance-scene-plugin).
-  Sampler-common now builds all four sources and preserves its full original
-  suite: five cases pass and two explicit upstream edge/benchmark skips remain.
-  [Evidence](JOURNAL.md#2026-11-22-phase-732--sampler-common-library).
-  The Frenet library builds both translation units and passes two root consumer
-  cases for polynomial boundaries and Cartesian lane-change trajectory output.
-  [Evidence](JOURNAL.md#2026-11-22-phase-732--frenet-planning-library).
-  Both lane-change factories are complete: seven implementation sources build,
-  eleven active original cases and all four standalone profiles pass. One
-  original disabled case remains; the direct fmt ranges include matches merged
-  upstream #13594 and is committed separately from Bazel declarations.
-  [Evidence](JOURNAL.md#2026-11-22-phase-732--lane-change-scene-plugins).
-  Avoidance-by-lane-change is complete: all three sources, both original
-  route/off-track cases and the five standalone profiles pass. Its inherited
-  YAML and parameter-update dependencies are explicit runtime resources.
-  [Evidence](JOURNAL.md#2026-11-22-phase-732--avoidance-by-lane-change-scene-plugin).
-  The Bézier sampler builds both production sources and passes two consumer
-  cases for boundary states, curve evaluation and candidate-family generation.
-  [Evidence](JOURNAL.md#2026-11-22-phase-732--bézier-sampler-library).
-  Start-planner is complete: all nine implementation sources and six original
-  test/helper sources build; four active cases and all six standalone profiles
-  pass. Its original disabled freespace case and optional figure-export default
-  remain unchanged.
-  [Evidence](JOURNAL.md#2026-11-22-phase-732--start-planner-scene-plugin).
-  Goal-planner is complete: all thirteen sources build with a local libc++ PSTL
-  opt-in; fifteen active original cases and all seven individual scene profiles
-  pass. Two original disabled cases remain. A joint planner also successfully
-  loads all eight selected factories, updates parameters and exits cleanly.
-  The pinned libc++ PSTL backend is serial; no performance claim is made.
-  [Evidence](JOURNAL.md#2026-11-22-phase-732--goal-planner-scene-plugin).
-  Behavior-velocity RTC support builds both original implementations and passes
-  its root state consumer. The reusable executable adapter retains passing
-  standard/experimental stop-line lifecycle gates.
-  [Evidence](JOURNAL.md#2026-11-22-phase-732--behavior-velocity-rtc-scene-support).
-  Traffic-light behavior-velocity support is complete: 13 original cases
-  and standard/experimental executable lifecycles pass without skips/failures.
-  [Evidence](JOURNAL.md#2026-11-22-phase-732--traffic-light-behavior-velocity-plugin).
-  Detection-area behavior-velocity support is complete: 6 original cases
-  and standard/experimental executable lifecycles pass without skips/failures.
-  [Evidence](JOURNAL.md#2026-11-22-phase-732--detection-area-behavior-velocity-plugin).
-  Virtual-traffic-light behavior-velocity support is complete: 11 original cases
-  and standard/experimental executable lifecycles pass without skips/failures.
-  [Evidence](JOURNAL.md#2026-11-22-phase-732--virtual-traffic-light-behavior-velocity-plugin).
-  No-stopping-area behavior-velocity support is complete: 9 original cases
-  and standard/experimental executable lifecycles pass without skips/failures.
-  [Evidence](JOURNAL.md#2026-11-22-phase-732--no-stopping-area-behavior-velocity-plugin).
+  Behavior-path planning is complete for the selected profile: the shared
+  library, planner node/test helpers and all eight factories (static avoidance,
+  avoidance-by-lane-change, left/right lane-change, goal/start planning,
+  side-shift and bidirectional traffic) pass their complete original suites and
+  individual executable gates. The joint gate loads all factories in one actual
+  planner, checks configuration updates and clean shutdown. Preserve the original
+  disabled cases; bidirectional traffic has no implemented parameter-update
+  callback. [Shared-library evidence](JOURNAL.md#2026-11-21-phase-732--shared-behavior-path-planning-library),
+  [planner](JOURNAL.md#2026-11-22-phase-732--behavior-path-planner-node),
+  [selected-scene composition](JOURNAL.md#2026-11-22-phase-732--goal-planner-scene-plugin).
+  Its sampler-common/Frenet/Bézier prerequisites are complete. Sampler-common
+  preserves two original explicit edge/benchmark skips; the added native
+  consumers exercise actual trajectory generation. Goal-planner opts into
+  libc++ PSTL locally; its pinned backend is serial. Lane-change's direct fmt
+  include matches merged AWF #13594 and is a separate source fix.
+  [Sampler evidence](JOURNAL.md#2026-11-22-phase-732--sampler-common-library),
+  [Frenet](JOURNAL.md#2026-11-22-phase-732--frenet-planning-library),
+  [Bézier](JOURNAL.md#2026-11-22-phase-732--bézier-sampler-library),
+  [header alignment](JOURNAL.md#2026-11-22-phase-732--lane-change-scene-plugins).
+
+  Behavior-velocity planning has its existing core planner/stop-line support,
+  the local RTC scene helper and four selected plugins available: traffic light,
+  detection area, virtual traffic light and no-stopping area. Complete original
+  suites and both standard/experimental executable lifecycles pass; the launcher
+  selects the experimental factories. The four-plugin group passes 47 active
+  cases without failures/skips. [RTC evidence](JOURNAL.md#2026-11-22-phase-732--behavior-velocity-rtc-scene-support),
+  [signal/area group and command](JOURNAL.md#2026-11-22-phase-732--traffic-light-behavior-velocity-plugin).
+  Remaining selected scenes are crosswalk/walkway, intersection and blind spot.
+  The grid-map 2.5.0 provider is complete for core/CV/ROS/messages: all 109
+  original-suite/factory cases pass. Its source archive, Eigen hooks and runtime
+  resources are pinned under third_party/grid_map; the local iterator helper
+  precedes crosswalk. [SDK evidence](JOURNAL.md#2026-11-22-phase-732--grid-map-dependency-provider).
+  Keep these generic dependency inputs below source components.
+
   Continue in dependency order through shared planner helpers, the
   preset-selected behavior/motion plugins and controller libraries, then
-  simulated perception and the selected system/API closure. CMake-only shims
+  simulated perception and the selected system/API closure. The selected local
+  path optimizer requires acados solver generation unconditionally; prepare its
+  declared native/code-generation dependency before adopting that node. Preserve
+  the control preset's enabled lane-departure, validator, AEB and collision gates;
+  obstacle-collision and predicted-path checkers are disabled unless another
+  selected implementation actually depends on their libraries. CMake-only shims
   are not standalone implementation targets; preserve their actual effects
   through native providers. Default-disabled planners, monitors and control
   checkers do not enter the selected profile merely because they have launch

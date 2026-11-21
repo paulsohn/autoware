@@ -57,6 +57,9 @@ bazel_dep(name = "topic_tools", version = "1.5.0-1.rcr.2")
 bazel_dep(name = "xacro", version = "2.1.1-3.rcr.3")
 bazel_dep(name = "robot_state_publisher", version = "3.5.6-1.rcr.0")
 bazel_dep(name = "ament_copyright", version = "0.20.6-1.rcr.2")
+bazel_dep(name = "filters", version = "2.2.2-3.rcr.2")
+bazel_dep(name = "nav2_msgs", version = "1.5.2-2.rcr.0")
+bazel_dep(name = "rosbag2_storage_sqlite3", version = "0.33.4-1.rcr.0")
 
 # Keep the existing solver API separate from RCR's OSQP 1.x consumers.
 # shortcut: current consumers link only 0.6; revisit before mixing both ABIs in one process.
@@ -113,6 +116,10 @@ include("//third_party/s6:s6.MODULE.bazel")
 include("//third_party/systemd:systemd.MODULE.bazel")
 include("//third_party/ostree:ostree.MODULE.bazel")
 include("//images:images.MODULE.bazel")
+
+# Reusable dependency provider; selected before application source modules.
+bazel_dep(name = "grid_map", version = "0.0.0")
+local_path_override(module_name = "grid_map", path = "third_party/grid_map")
 
 # Local source dependencies, ordered by their package-local MODULE declarations.
 # Overrides select the source; root declarations need no registry release version.

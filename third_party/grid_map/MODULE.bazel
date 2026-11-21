@@ -1,0 +1,33 @@
+module(name = "grid_map", version = "0.0.0")
+
+bazel_dep(name = "builtin_interfaces", version = "0.0.0")
+bazel_dep(name = "cv_bridge", version = "0.0.0")
+bazel_dep(name = "filters", version = "0.0.0")
+bazel_dep(name = "geometry_msgs", version = "0.0.0")
+bazel_dep(name = "nav2_msgs", version = "0.0.0")
+bazel_dep(name = "nav_msgs", version = "0.0.0")
+bazel_dep(name = "pluginlib", version = "0.0.0")
+bazel_dep(name = "rclcpp", version = "0.0.0")
+bazel_dep(name = "rcutils", version = "0.0.0")
+bazel_dep(name = "rosbag2_cpp", version = "0.0.0")
+bazel_dep(name = "rosbag2_storage_sqlite3", version = "0.0.0")
+bazel_dep(name = "rosidl_default_generators", version = "0.0.0")
+bazel_dep(name = "rosdistro", version = "0.0.0")
+bazel_dep(name = "sensor_msgs", version = "0.0.0")
+bazel_dep(name = "std_msgs", version = "0.0.0")
+bazel_dep(name = "tf2", version = "0.0.0")
+bazel_dep(name = "visualization_msgs", version = "0.0.0")
+bazel_dep(name = "googletest", version = "1.18.0.bcr.1")
+bazel_dep(name = "rules_cc", version = "0.2.26.rcr.0")
+bazel_dep(name = "rules_python", version = "2.4.5")
+
+http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
+http_archive(
+    name = "grid_map_source",
+    type = "tar.gz",
+    build_file = "//:BUILD.sdk.bazel",
+    sha256 = "c621063445ee59e73495528ee3a00022f435accc20cd5c0cf2a494e998d9b82b",
+    strip_prefix = "grid_map-0ece1b53ca03199527d0d42913cf2567d0d6a913",
+    urls = ["https://codeload.github.com/ANYbotics/grid_map/tar.gz/0ece1b53ca03199527d0d42913cf2567d0d6a913"],
+)

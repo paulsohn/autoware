@@ -1,0 +1,68 @@
+load("@rules_cc//cc:defs.bzl", "cc_test")
+load("@rules_python//python:defs.bzl", "py_test")
+
+package(default_visibility = ["//visibility:public"])
+
+exports_files(["BUILD.sdk.bazel"])
+
+alias(name = "grid_map_core", actual = "@grid_map_source//:grid_map_core")
+alias(name = "grid_map_core_shared", actual = "@grid_map_source//:grid_map_core_shared")
+alias(name = "grid_map_core_index", actual = "@grid_map_source//:grid_map_core_index")
+alias(name = "grid_map_cv", actual = "@grid_map_source//:grid_map_cv")
+alias(name = "grid_map_cv_shared", actual = "@grid_map_source//:grid_map_cv_shared")
+alias(name = "grid_map_cv_index", actual = "@grid_map_source//:grid_map_cv_index")
+alias(name = "grid_map_ros", actual = "@grid_map_source//:grid_map_ros")
+alias(name = "grid_map_ros_shared", actual = "@grid_map_source//:grid_map_ros_shared")
+alias(name = "grid_map_ros_index", actual = "@grid_map_source//:grid_map_ros_index")
+alias(name = "grid_map_msgs_cc", actual = "@grid_map_source//:cc")
+alias(name = "grid_map_msgs_cc_shared", actual = "@grid_map_source//:cc_shared")
+alias(name = "grid_map_msgs_py", actual = "@grid_map_source//:py")
+alias(name = "grid_map_msgs_ament_index", actual = "@grid_map_source//:ament_index")
+
+alias(name = "grid_map_core_runtime_dynamic_deps", actual = "@grid_map_source//:grid_map_core_runtime_dynamic_deps")
+alias(name = "grid_map_cv_runtime_dynamic_deps", actual = "@grid_map_source//:grid_map_cv_runtime_dynamic_deps")
+alias(name = "grid_map_ros_runtime_dynamic_deps", actual = "@grid_map_source//:grid_map_ros_runtime_dynamic_deps")
+
+py_test(
+    name = "test_grid_map_ros",
+    timeout = "long",
+    srcs = ["test_ros.py"],
+    main = "test_ros.py",
+    args = [
+        "$(rootpath @grid_map_source//:grid_map_ros_test_binary)",
+        "$(rootpath @grid_map_source//:grid_map_ros/resource/double_chatter/metadata.yaml)",
+    ],
+    data = [
+        "@grid_map_source//:grid_map_ros_test_binary",
+        "@grid_map_source//:ros_bag_fixtures",
+        "@grid_map_source//:grid_map_ros/resource/double_chatter/metadata.yaml",
+        ":grid_map_ros_index",
+        "@rosbag2_storage_sqlite3//:ament_package",
+    ],
+    env = {"LD_LIBRARY_PATH": "lib"},
+    precompile = "disabled",
+)
+
+cc_test(
+    name = "filter_factory_test",
+    srcs = ["filter_factory_test.cpp"],
+    data = [":grid_map_cv_index"],
+    dynamic_deps = [":grid_map_cv_runtime_dynamic_deps"],
+    env = {"LD_LIBRARY_PATH": "lib"},
+    deps = [
+        ":grid_map_core",
+        "@filters//:filter_base",
+        "@pluginlib//:pluginlib_library",
+        "@googletest//:gtest_main",
+    ],
+)
+
+test_suite(
+    name = "tests",
+    tests = [
+        "@grid_map_source//:test_grid_map_core",
+        "@grid_map_source//:test_grid_map_cv",
+        ":test_grid_map_ros",
+        ":filter_factory_test",
+    ],
+)

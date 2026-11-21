@@ -1,0 +1,243 @@
+load("@rosdistro//ament:defs.bzl", "ament_index")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rosidl_default_generators//:defs.bzl", "default_generators", "ros_message", "ros_service")
+load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library", "cc_shared_library", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+ros_message(
+    name = "GridMapInfo",
+    src = "grid_map_msgs/msg/GridMapInfo.msg",
+    package = "grid_map_msgs",
+    deps = [
+        "@geometry_msgs//msg:Pose",
+    ],
+)
+
+ros_message(
+    name = "GridMap",
+    src = "grid_map_msgs/msg/GridMap.msg",
+    package = "grid_map_msgs",
+    deps = [
+        ":GridMapInfo",
+        "@std_msgs//msg:Header",
+        "@std_msgs//msg:Float32MultiArray",
+    ],
+)
+
+ros_service(
+    name = "SetGridMap",
+    src = "grid_map_msgs/srv/SetGridMap.srv",
+    package = "grid_map_msgs",
+    deps = [
+        ":GridMap",
+    ],
+)
+
+ros_service(
+    name = "GetGridMap",
+    src = "grid_map_msgs/srv/GetGridMap.srv",
+    package = "grid_map_msgs",
+    deps = [
+        ":GridMap",
+    ],
+)
+
+ros_service(
+    name = "GetGridMapInfo",
+    src = "grid_map_msgs/srv/GetGridMapInfo.srv",
+    package = "grid_map_msgs",
+    deps = [
+        ":GridMapInfo",
+    ],
+)
+
+ros_service(
+    name = "ProcessFile",
+    src = "grid_map_msgs/srv/ProcessFile.srv",
+    package = "grid_map_msgs",
+    deps = [
+    ],
+)
+
+default_generators(
+    export_name = "grid_map_msgs",
+    package_xml = "grid_map_msgs/package.xml",
+    dependencies = ["@geometry_msgs", "@std_msgs"],
+    deps = [
+        ":GridMapInfo",
+        ":GridMap",
+        ":SetGridMap",
+        ":GetGridMap",
+        ":GetGridMapInfo",
+        ":ProcessFile",
+    ],
+)
+
+cc_library(
+    name = "grid_map_core",
+    srcs = glob(["grid_map_core/src/**/*.cpp"]),
+    hdrs = glob(["grid_map_core/include/**/*.hpp"]),
+    strip_include_prefix = "grid_map_core/include",
+    # Export both Eigen extension hooks from grid_map_core-extras.cmake.
+    defines = [
+        "EIGEN_DENSEBASE_PLUGIN=\\\"grid_map_core/eigen_plugins/DenseBasePlugin.hpp\\\"",
+        "EIGEN_FUNCTORS_PLUGIN=\\\"grid_map_core/eigen_plugins/FunctorsPlugin.hpp\\\"",
+    ],
+    deps = ["@rosdistro//cc:eigen"],
+)
+
+cc_shared_library(
+    name = "grid_map_core_shared",
+    shared_lib_name = "libgrid_map_core.so",
+    deps = [":grid_map_core"],
+)
+
+ament_index(
+    name = "grid_map_core_index",
+    export_name = "grid_map_core",
+    package_xml = "grid_map_core/package.xml",
+    libraries = [":grid_map_core_shared"],
+)
+
+cc_library(
+    name = "grid_map_cv",
+    srcs = glob(["grid_map_cv/src/*.cpp"]),
+    hdrs = glob(["grid_map_cv/include/**/*.hpp"]),
+    strip_include_prefix = "grid_map_cv/include",
+    deps = [
+        ":grid_map_core",
+        "@cv_bridge//:cv_bridge_library",
+        "@filters//:filter_base",
+        "@pluginlib//:pluginlib_library",
+        "@rclcpp//:rclcpp_library",
+        "@rosdistro//cc:opencv_library",
+        "@sensor_msgs//:cc",
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "grid_map_cv_runtime",
+    dynamic_deps = [
+        ":grid_map_core_shared",
+        "@cv_bridge//:cv_bridge",
+        "@pluginlib//:pluginlib",
+        "@rclcpp//:rclcpp",
+        "@rosdistro//cc:opencv",
+        "@sensor_msgs//:cc_shared",
+    ],
+)
+
+cc_shared_library(
+    name = "grid_map_cv_shared",
+    shared_lib_name = "libgrid_map_cv.so",
+    dynamic_deps = [":grid_map_cv_runtime"],
+    deps = [":grid_map_cv"],
+)
+
+ament_index(
+    name = "grid_map_cv_index",
+    export_name = "grid_map_cv",
+    package_xml = "grid_map_cv/package.xml",
+    libraries = [":grid_map_cv_shared"],
+    plugin_categories = {"grid_map_cv/filter_plugins.xml": "filters"},
+    deps = [":grid_map_core_index", "@filters//:ament_index"],
+)
+
+cc_library(
+    name = "grid_map_ros",
+    srcs = glob(["grid_map_ros/src/*.cpp"]),
+    hdrs = glob(["grid_map_ros/include/**/*.hpp"]),
+    strip_include_prefix = "grid_map_ros/include",
+    deps = [
+        "@rosdistro//cc:boost.assign",
+        ":grid_map_core",
+        ":grid_map_cv",
+        ":cc",
+        "@cv_bridge//:cv_bridge_library",
+        "@rclcpp//:rclcpp_library",
+        "@rcutils//:rcutils_library",
+        "@rosbag2_cpp//:rosbag2_cpp_library",
+        "@tf2//:tf2_library",
+        "@geometry_msgs//:cc",
+        "@nav2_msgs//:cc",
+        "@nav_msgs//:cc",
+        "@sensor_msgs//:cc",
+        "@std_msgs//:cc",
+        "@visualization_msgs//:cc",
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "grid_map_ros_runtime",
+    dynamic_deps = [
+        ":grid_map_core_shared",
+        ":grid_map_cv_shared",
+        ":cc_shared",
+        "@cv_bridge//:cv_bridge",
+        "@rclcpp//:rclcpp",
+        "@rcutils//:rcutils",
+        "@rosbag2_cpp//:rosbag2_cpp",
+        "@tf2//:tf2",
+        "@geometry_msgs//:cc_shared",
+        "@nav2_msgs//:cc_shared",
+        "@nav_msgs//:cc_shared",
+        "@sensor_msgs//:cc_shared",
+        "@std_msgs//:cc_shared",
+        "@visualization_msgs//:cc_shared",
+    ],
+)
+
+cc_shared_library(
+    name = "grid_map_ros_shared",
+    shared_lib_name = "libgrid_map_ros.so",
+    dynamic_deps = [":grid_map_ros_runtime"],
+    deps = [":grid_map_ros"],
+)
+
+ament_index(
+    name = "grid_map_ros_index",
+    export_name = "grid_map_ros",
+    package_xml = "grid_map_ros/package.xml",
+    libraries = [":grid_map_ros_shared"],
+    deps = [":grid_map_cv_index", ":ament_index", "@rosbag2_cpp//:ament_package"],
+)
+
+[
+    collect_transitive_dynamic_deps(
+        name = "grid_map_" + part + "_runtime_dynamic_deps",
+        dynamic_deps = [":grid_map_" + part + "_shared"],
+    )
+    for part in ["core", "cv", "ros"]
+]
+
+cc_test(
+    name = "test_grid_map_core",
+    timeout = "long",
+    srcs = glob(["grid_map_core/test/*.cpp"]) + ["grid_map_core/test/test_helpers.hpp"],
+    dynamic_deps = [":grid_map_core_runtime_dynamic_deps"],
+    deps = [":grid_map_core", "@googletest//:gtest"],
+)
+
+cc_test(
+    name = "test_grid_map_cv",
+    timeout = "long",
+    srcs = glob(["grid_map_cv/test/*.cpp"]),
+    dynamic_deps = [":grid_map_cv_runtime_dynamic_deps"],
+    deps = [":grid_map_cv", "@googletest//:gtest"],
+)
+
+cc_binary(
+    name = "grid_map_ros_test_binary",
+    testonly = True,
+    srcs = glob(["grid_map_ros/test/*.cpp"]),
+    dynamic_deps = [":grid_map_ros_runtime_dynamic_deps"],
+    deps = [":grid_map_ros", "@googletest//:gtest"],
+)
+
+filegroup(
+    name = "ros_bag_fixtures",
+    srcs = glob(["grid_map_ros/resource/**"]),
+)
+
+exports_files(["grid_map_ros/resource/double_chatter/metadata.yaml"])
