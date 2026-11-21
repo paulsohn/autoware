@@ -1730,3 +1730,54 @@ and accounted for 30 output loans. Minimum timed host MemAvailable was
 14,358 MiB. See the [latency and queue results](../rmw-agnocast/README.md#combined-lidar-jitter-and-slow-consumer).
 The depth-32 queue absorbed this burst; sustained overload beyond that depth
 and native Agnocast on this complete graph remain open.
+
+### 2026-11-21 — Overflow and recovery of the depth-32 Universe output reader
+
+Kept the combined milestone's three crops, synchronizer, 40 ms matcher
+timeout, 10/10/5 Hz input, alternating 15/50 ms top release offsets, and
+separate cloud and metadata topics. Extended the fixture to 104 acquisitions
+(260 raw clouds and 130 expected outputs). Both long-run conditions prepare
+one acquisition's inputs before its scheduled start and free them after
+publication to bound source memory. The synthetic Y coordinate cycles within
+the existing crop bounds; point intensity still identifies the acquisition.
+In the overload condition, the single-threaded sink sleeps for 125 ms on
+each of its first 68 cloud callbacks. It records the clock at the end of the
+last sleep and resumes normal processing while the sensors continue. The
+control runs the identical binary and traffic with a fast sink throughout.
+
+The verifier records cloud and metadata presence independently for every
+expected output stamp. It checks every surviving cloud's sensor segments
+and transformed bytes, every surviving metadata record's membership/offsets,
+and agreement for matched pairs. The last 12 acquisition groups must all
+arrive paired. The analysis checks duplicates, the jitter pattern, source
+rate and a preselected freshness criterion: time since the last sleep until
+the first callback after which every remaining cloud is under 100 ms old at
+callback entry. That includes normal matcher waiting. One extra stock run
+traces output evictions at the reader and input loan release independently
+of the timed runs. No production queue policy changes.
+
+Reproduce from the preceding milestone's installed laptop overlays. The guard
+caps builds at 1200 MiB and each sequential launch at 512 MiB with swap disabled.
+
+```bash
+export LYRICAL_ROOT=$(cat build/agnocast-lyrical/universe-root)
+experiments/buffer/run-lyrical.sh bash -ec '
+  source build/agnocast-lyrical/install/local_setup.bash
+  source build/universe-sync/install/local_setup.bash
+  source build/rmw-agnocast/load-install/local_setup.bash
+  cmake --build build/universe-pipeline/obj/universe_sync_benchmark --target sync_fixture -j1
+  cmake --install build/universe-pipeline/obj/universe_sync_benchmark
+  colcon build --base-paths src/rmw_agnocast --build-base build/rmw-agnocast/load-obj \
+    --install-base build/rmw-agnocast/load-install --executor sequential'
+mkdir -p build/universe-pipeline/overflow
+bash experiments/rmw-agnocast/bench-arrival.sh build/universe-pipeline/overflow/timing overflow
+```
+
+Two opposite-order rounds completed for all three middleware implementations.
+All six fast controls verified 130 pairs. The six overload runs yielded
+738 clouds and 780 metadata
+records out of 780 of each, with every recovered tail paired and fresh.
+The separate stock audit matched every evicted stamp to a missing cloud.
+All 260 synchronizer input loans were released. The original 24-group stock
+baseline and combined fixtures also passed after updating the verifier.
+[Timing, resource usage and exact loss records](../rmw-agnocast/README.md#depth-32-reader-overflow-and-recovery).

@@ -1,0 +1,353 @@
+[INFO] [launch]: All log files can be found below /tmp/tmp.AaqJyAFBn2/roslog/2026-11-21-13-49-11-883137-paulsohn-tuf-253210
+[INFO] [launch]: Default logging verbosity is set to INFO
+[INFO] [static_transform_publisher-1]: process started with pid [253225]
+[INFO] [component_container-2]: process started with pid [253226]
+[INFO] [concatenate_and_time_sync_node-3]: process started with pid [253227]
+[INFO] [sync_fixture-4]: process started with pid [253228]
+[INFO] [sync_fixture-5]: process started with pid [253229]
+[static_transform_publisher-1] [INFO] [1795268951.990347539] [static_transform_publisher_49Y5Gts4UhXizla3]: Spinning until stopped - publishing transform
+[static_transform_publisher-1] translation: ('4.000000', '0.000000', '0.000000')
+[static_transform_publisher-1] rotation: ('0.000000', '0.000000', '0.000000', '1.000000')
+[static_transform_publisher-1] from 'base_link' to 'sync_lidar'
+[component_container-2] [INFO] [1795268952.201982181] [lidar_crops]: Load Library: /ws/build/universe-pipeline/install/universe_crop_benchmark/lib/libuniverse_crop.so
+[concatenate_and_time_sync_node-3] [INFO] [1795268952.386818742] [point_cloud_concatenator_component]: Utilize naive matching strategy
+[component_container-2] [INFO] [1795268952.580770253] [lidar_crops]: Found class: rclcpp_components::NodeFactoryTemplate<autoware::pointcloud_preprocessor::CropBoxFilterComponent>
+[component_container-2] [INFO] [1795268952.580813504] [lidar_crops]: Instantiate class: rclcpp_components::NodeFactoryTemplate<autoware::pointcloud_preprocessor::CropBoxFilterComponent>
+[INFO] [launch_ros.actions.load_composable_nodes]: Loaded node '/crop_left' in container '/lidar_crops'
+[component_container-2] [INFO] [1795268952.592775197] [lidar_crops]: Found class: rclcpp_components::NodeFactoryTemplate<autoware::pointcloud_preprocessor::CropBoxFilterComponent>
+[component_container-2] [INFO] [1795268952.592796877] [lidar_crops]: Instantiate class: rclcpp_components::NodeFactoryTemplate<autoware::pointcloud_preprocessor::CropBoxFilterComponent>
+[INFO] [launch_ros.actions.load_composable_nodes]: Loaded node '/crop_right' in container '/lidar_crops'
+[component_container-2] [INFO] [1795268952.599463178] [lidar_crops]: Found class: rclcpp_components::NodeFactoryTemplate<autoware::pointcloud_preprocessor::CropBoxFilterComponent>
+[component_container-2] [INFO] [1795268952.599477575] [lidar_crops]: Instantiate class: rclcpp_components::NodeFactoryTemplate<autoware::pointcloud_preprocessor::CropBoxFilterComponent>
+[INFO] [launch_ros.actions.load_composable_nodes]: Loaded node '/crop_top' in container '/lidar_crops'
+[sync_fixture-5] top_release_ns,0,15053743
+[sync_fixture-5] top_release_ns,2,50058569
+[sync_fixture-5] top_release_ns,4,15054104
+[sync_fixture-5] top_release_ns,6,50060393
+[sync_fixture-5] top_release_ns,8,15051218
+[sync_fixture-5] top_release_ns,10,50060753
+[sync_fixture-5] top_release_ns,12,15053232
+[sync_fixture-5] top_release_ns,14,50059441
+[sync_fixture-5] top_release_ns,16,15058232
+[sync_fixture-5] top_release_ns,18,50058379
+[sync_fixture-5] top_release_ns,20,15054224
+[sync_fixture-5] top_release_ns,22,50060262
+[sync_fixture-5] top_release_ns,24,15056128
+[sync_fixture-5] top_release_ns,26,50064500
+[sync_fixture-5] top_release_ns,28,15054384
+[sync_fixture-5] top_release_ns,30,50055624
+[sync_fixture-5] top_release_ns,32,15056538
+[sync_fixture-5] top_release_ns,34,50059600
+[sync_fixture-5] top_release_ns,36,15057500
+[sync_fixture-5] top_release_ns,38,50057507
+[sync_fixture-5] top_release_ns,40,15055607
+[sync_fixture-5] top_release_ns,42,50061084
+[sync_fixture-5] top_release_ns,44,15061137
+[sync_fixture-5] top_release_ns,46,50068007
+[sync_fixture-5] top_release_ns,48,15052962
+[sync_fixture-5] top_release_ns,50,50069860
+[sync_fixture-5] top_release_ns,52,15077768
+[sync_fixture-5] top_release_ns,54,50070721
+[sync_fixture-5] top_release_ns,56,15057120
+[sync_fixture-5] top_release_ns,58,50060393
+[sync_fixture-5] top_release_ns,60,15063912
+[sync_fixture-5] top_release_ns,62,50058329
+[sync_fixture-5] top_release_ns,64,15057390
+[sync_fixture-5] top_release_ns,66,50080099
+[sync_fixture-5] top_release_ns,68,15062069
+[sync_fixture-5] top_release_ns,70,50064309
+[sync_fixture-5] top_release_ns,72,15064653
+[sync_fixture-5] top_release_ns,74,50069169
+[sync_fixture-5] top_release_ns,76,15055707
+[sync_fixture-5] top_release_ns,78,50084718
+[sync_fixture-5] top_release_ns,80,15740204
+[sync_fixture-5] top_release_ns,82,50082473
+[sync_fixture-5] top_release_ns,84,15101422
+[sync_fixture-5] top_release_ns,86,50072274
+[sync_fixture-5] top_release_ns,88,15083098
+[sync_fixture-5] top_release_ns,90,50070050
+[sync_fixture-5] top_release_ns,92,15066637
+[sync_fixture-5] top_release_ns,94,50058108
+[sync_fixture-5] top_release_ns,96,15069262
+[sync_fixture-5] top_release_ns,98,50053991
+[sync_fixture-5] top_release_ns,100,15052751
+[sync_fixture-5] top_release_ns,102,50065892
+[sync_fixture-4] delivery,0,full,1,1,1795268953405884858,21522455
+[sync_fixture-4] sample,0,full,21522455
+[sync_fixture-4] delivery,1,partial,1,1,1795268953505102187,42621560
+[sync_fixture-4] sample,1,partial,42621560
+[sync_fixture-4] delivery,2,late_pair,1,1,1795268953605105503,42941777
+[sync_fixture-4] sample,2,late_pair,42941777
+[sync_fixture-4] delivery,2,late_top,1,1,1795268953607105503,89897198
+[sync_fixture-4] sample,2,late_top,89897198
+[sync_fixture-4] delivery,3,partial,1,1,1795268953705101234,42292336
+[sync_fixture-4] sample,3,partial,42292336
+[sync_fixture-4] delivery,4,full,1,1,1795268953805107846,17078432
+[sync_fixture-4] sample,4,full,17078432
+[sync_fixture-4] delivery,5,partial,1,1,1795268953905100913,42164797
+[sync_fixture-4] sample,5,partial,42164797
+[sync_fixture-4] delivery,6,late_pair,1,1,1795268954005100421,42132437
+[sync_fixture-4] sample,6,late_pair,42132437
+[sync_fixture-4] delivery,6,late_top,1,1,1795268954007100421,89742920
+[sync_fixture-4] sample,6,late_top,89742920
+[sync_fixture-4] delivery,7,partial,1,1,1795268954105101753,42741955
+[sync_fixture-4] sample,7,partial,42741955
+[sync_fixture-4] delivery,8,full,1,1,1795268954205097144,16974047
+[sync_fixture-4] sample,8,full,16974047
+[sync_fixture-4] delivery,9,partial,1,1,1795268954305102874,42025578
+[sync_fixture-4] sample,9,partial,42025578
+[sync_fixture-4] delivery,10,late_pair,1,1,1795268954405103445,42470949
+[sync_fixture-4] sample,10,late_pair,42470949
+[sync_fixture-4] delivery,10,late_top,1,1,1795268954407103445,89819954
+[sync_fixture-4] sample,10,late_top,89819954
+[sync_fixture-4] delivery,11,partial,1,1,1795268954505120967,42444389
+[sync_fixture-4] sample,11,partial,42444389
+[sync_fixture-4] delivery,12,full,1,1,1795268954605103945,17003211
+[sync_fixture-4] sample,12,full,17003211
+[sync_fixture-4] delivery,13,partial,1,1,1795268954705102932,41967059
+[sync_fixture-4] sample,13,partial,41967059
+[sync_fixture-4] delivery,14,late_pair,1,1,1795268954805101108,42032732
+[sync_fixture-4] sample,14,late_pair,42032732
+[sync_fixture-4] delivery,14,late_top,1,1,1795268954807101108,89610694
+[sync_fixture-4] sample,14,late_top,89610694
+[sync_fixture-4] delivery,15,partial,1,1,1795268954905097241,42396289
+[sync_fixture-4] sample,15,partial,42396289
+[sync_fixture-4] delivery,16,full,1,1,1795268955005099374,17259019
+[sync_fixture-4] sample,16,full,17259019
+[sync_fixture-4] delivery,17,partial,1,1,1795268955105097971,42075401
+[sync_fixture-4] sample,17,partial,42075401
+[sync_fixture-4] delivery,18,late_pair,1,1,1795268955205100525,42044564
+[sync_fixture-4] sample,18,late_pair,42044564
+[sync_fixture-4] delivery,18,late_top,1,1,1795268955207100525,89590927
+[sync_fixture-4] sample,18,late_top,89590927
+[sync_fixture-4] delivery,19,partial,1,1,1795268955305099623,42538345
+[sync_fixture-4] sample,19,partial,42538345
+[sync_fixture-4] delivery,20,full,1,1,1795268955405103650,17306397
+[sync_fixture-4] sample,20,full,17306397
+[sync_fixture-4] delivery,21,partial,1,1,1795268955505100584,42255577
+[sync_fixture-4] sample,21,partial,42255577
+[sync_fixture-4] delivery,22,late_pair,1,1,1795268955605102457,42089788
+[sync_fixture-4] sample,22,late_pair,42089788
+[sync_fixture-4] delivery,22,late_top,1,1,1795268955607102457,89678490
+[sync_fixture-4] sample,22,late_top,89678490
+[sync_fixture-4] delivery,23,partial,1,1,1795268955705101845,42377855
+[sync_fixture-4] sample,23,partial,42377855
+[sync_fixture-4] delivery,24,full,1,1,1795268955805101043,17345801
+[sync_fixture-4] sample,24,full,17345801
+[sync_fixture-4] delivery,25,partial,1,1,1795268955905102515,41998237
+[sync_fixture-4] sample,25,partial,41998237
+[sync_fixture-4] delivery,26,late_pair,1,1,1795268956005103106,41940419
+[sync_fixture-4] sample,26,late_pair,41940419
+[sync_fixture-4] delivery,26,late_top,1,1,1795268956007103106,89728323
+[sync_fixture-4] sample,26,late_top,89728323
+[sync_fixture-4] delivery,27,partial,1,1,1795268956105107263,42284591
+[sync_fixture-4] sample,27,partial,42284591
+[sync_fixture-4] delivery,28,full,1,1,1795268956205113695,17038367
+[sync_fixture-4] sample,28,full,17038367
+[sync_fixture-4] delivery,29,partial,1,1,1795268956305100019,41914089
+[sync_fixture-4] sample,29,partial,41914089
+[sync_fixture-4] delivery,30,late_pair,1,1,1795268956405100589,42072486
+[sync_fixture-4] sample,30,late_pair,42072486
+[sync_fixture-4] delivery,30,late_top,1,1,1795268956407100589,89652031
+[sync_fixture-4] sample,30,late_top,89652031
+[sync_fixture-4] delivery,31,partial,1,1,1795268956505102623,42284761
+[sync_fixture-4] sample,31,partial,42284761
+[sync_fixture-4] delivery,32,full,1,1,1795268956605100919,17010986
+[sync_fixture-4] sample,32,full,17010986
+[sync_fixture-4] delivery,33,partial,1,1,1795268956705101309,41813101
+[sync_fixture-4] sample,33,partial,41813101
+[sync_fixture-4] delivery,34,late_pair,1,1,1795268956805102912,42168113
+[sync_fixture-4] sample,34,late_pair,42168113
+[sync_fixture-4] delivery,34,late_top,1,1,1795268956807102912,89888732
+[sync_fixture-4] sample,34,late_top,89888732
+[sync_fixture-4] delivery,35,partial,1,1,1795268956905102260,42654682
+[sync_fixture-4] sample,35,partial,42654682
+[sync_fixture-4] delivery,36,full,1,1,1795268957005100256,17180261
+[sync_fixture-4] sample,36,full,17180261
+[sync_fixture-4] delivery,37,partial,1,1,1795268957105099974,41786933
+[sync_fixture-4] sample,37,partial,41786933
+[sync_fixture-4] delivery,38,late_pair,1,1,1795268957205102599,41972890
+[sync_fixture-4] sample,38,late_pair,41972890
+[sync_fixture-4] delivery,38,late_top,1,1,1795268957207102599,89711912
+[sync_fixture-4] sample,38,late_top,89711912
+[sync_fixture-4] delivery,39,partial,1,1,1795268957305102468,42416428
+[sync_fixture-4] sample,39,partial,42416428
+[sync_fixture-4] delivery,40,full,1,1,1795268957405103129,17179961
+[sync_fixture-4] sample,40,full,17179961
+[sync_fixture-4] delivery,41,partial,1,1,1795268957505102948,42004979
+[sync_fixture-4] sample,41,partial,42004979
+[sync_fixture-4] delivery,42,late_pair,1,1,1795268957605102186,41987247
+[sync_fixture-4] sample,42,late_pair,41987247
+[sync_fixture-4] delivery,42,late_top,1,1,1795268957607102186,89633005
+[sync_fixture-4] sample,42,late_top,89633005
+[sync_fixture-4] delivery,43,partial,1,1,1795268957705104079,42824860
+[sync_fixture-4] sample,43,partial,42824860
+[sync_fixture-4] delivery,44,full,1,1,1795268957805104630,17288874
+[sync_fixture-4] sample,44,full,17288874
+[sync_fixture-4] delivery,45,partial,1,1,1795268957905104519,42156542
+[sync_fixture-4] sample,45,partial,42156542
+[sync_fixture-4] delivery,46,late_pair,1,1,1795268958005105270,42408152
+[sync_fixture-4] sample,46,late_pair,42408152
+[sync_fixture-4] delivery,46,late_top,1,1,1795268958007105270,89716080
+[sync_fixture-4] sample,46,late_top,89716080
+[sync_fixture-4] delivery,47,partial,1,1,1795268958105110559,42665592
+[sync_fixture-4] sample,47,partial,42665592
+[sync_fixture-4] delivery,48,full,1,1,1795268958205098837,17197083
+[sync_fixture-4] sample,48,full,17197083
+[sync_fixture-4] delivery,49,partial,1,1,1795268958305104026,42209551
+[sync_fixture-4] sample,49,partial,42209551
+[sync_fixture-4] delivery,50,late_pair,1,1,1795268958405083217,42454698
+[sync_fixture-4] sample,50,late_pair,42454698
+[sync_fixture-4] delivery,50,late_top,1,1,1795268958407083217,89813011
+[sync_fixture-4] sample,50,late_top,89813011
+[sync_fixture-4] delivery,51,partial,1,1,1795268958505105318,43027186
+[sync_fixture-4] sample,51,partial,43027186
+[sync_fixture-4] delivery,52,full,1,1,1795268958605117510,17369745
+[sync_fixture-4] sample,52,full,17369745
+[sync_fixture-4] delivery,53,partial,1,1,1795268958705115626,42379338
+[sync_fixture-4] sample,53,partial,42379338
+[sync_fixture-4] delivery,54,late_pair,1,1,1795268958805104064,42044142
+[sync_fixture-4] sample,54,late_pair,42044142
+[sync_fixture-4] delivery,54,late_top,1,1,1795268958807104064,89711902
+[sync_fixture-4] sample,54,late_top,89711902
+[sync_fixture-4] delivery,55,partial,1,1,1795268958905100857,42822295
+[sync_fixture-4] sample,55,partial,42822295
+[sync_fixture-4] delivery,56,full,1,1,1795268959005102980,17290027
+[sync_fixture-4] sample,56,full,17290027
+[sync_fixture-4] delivery,57,partial,1,1,1795268959105106597,42470378
+[sync_fixture-4] sample,57,partial,42470378
+[sync_fixture-4] delivery,58,late_pair,1,1,1795268959205103490,42000522
+[sync_fixture-4] sample,58,late_pair,42000522
+[sync_fixture-4] delivery,58,late_top,1,1,1795268959207103490,89605394
+[sync_fixture-4] sample,58,late_top,89605394
+[sync_fixture-4] delivery,59,partial,1,1,1795268959305101156,42514660
+[sync_fixture-4] sample,59,partial,42514660
+[sync_fixture-4] delivery,60,full,1,1,1795268959405117446,17149313
+[sync_fixture-4] sample,60,full,17149313
+[sync_fixture-4] delivery,61,partial,1,1,1795268959505092458,41935039
+[sync_fixture-4] sample,61,partial,41935039
+[sync_fixture-4] delivery,62,late_pair,1,1,1795268959605100172,42275084
+[sync_fixture-4] sample,62,late_pair,42275084
+[sync_fixture-4] delivery,62,late_top,1,1,1795268959607100172,89530374
+[sync_fixture-4] sample,62,late_top,89530374
+[sync_fixture-4] delivery,63,partial,1,1,1795268959705097046,42425264
+[sync_fixture-4] sample,63,partial,42425264
+[sync_fixture-4] delivery,64,full,1,1,1795268959805110881,17110311
+[sync_fixture-4] sample,64,full,17110311
+[sync_fixture-4] delivery,65,partial,1,1,1795268959905108076,42186367
+[sync_fixture-4] sample,65,partial,42186367
+[sync_fixture-4] delivery,66,late_pair,1,1,1795268960005113746,42087413
+[sync_fixture-4] sample,66,late_pair,42087413
+[sync_fixture-4] delivery,66,late_top,1,1,1795268960007113746,89523781
+[sync_fixture-4] sample,66,late_top,89523781
+[sync_fixture-4] delivery,67,partial,1,1,1795268960105098767,42430864
+[sync_fixture-4] sample,67,partial,42430864
+[sync_fixture-4] delivery,68,full,1,1,1795268960205102834,17389152
+[sync_fixture-4] sample,68,full,17389152
+[sync_fixture-4] delivery,69,partial,1,1,1795268960305103986,42118942
+[sync_fixture-4] sample,69,partial,42118942
+[sync_fixture-4] delivery,70,late_pair,1,1,1795268960405099938,42042620
+[sync_fixture-4] sample,70,late_pair,42042620
+[sync_fixture-4] delivery,70,late_top,1,1,1795268960407099938,89618488
+[sync_fixture-4] sample,70,late_top,89618488
+[sync_fixture-4] delivery,71,partial,1,1,1795268960505101390,42752034
+[sync_fixture-4] sample,71,partial,42752034
+[sync_fixture-4] delivery,72,full,1,1,1795268960605104896,17733444
+[sync_fixture-4] sample,72,full,17733444
+[sync_fixture-4] delivery,73,partial,1,1,1795268960705106709,42107841
+[sync_fixture-4] sample,73,partial,42107841
+[sync_fixture-4] delivery,74,late_pair,1,1,1795268960805101909,42090980
+[sync_fixture-4] sample,74,late_pair,42090980
+[sync_fixture-4] delivery,74,late_top,1,1,1795268960807101909,90064611
+[sync_fixture-4] sample,74,late_top,90064611
+[sync_fixture-4] delivery,75,partial,1,1,1795268960905100967,42620789
+[sync_fixture-4] sample,75,partial,42620789
+[sync_fixture-4] delivery,76,full,1,1,1795268961005102289,17234543
+[sync_fixture-4] sample,76,full,17234543
+[sync_fixture-4] delivery,77,partial,1,1,1795268961105196344,46356260
+[sync_fixture-4] sample,77,partial,46356260
+[sync_fixture-4] delivery,78,late_pair,1,1,1795268961205103210,44554788
+[sync_fixture-4] sample,78,late_pair,44554788
+[sync_fixture-4] delivery,78,late_top,1,1,1795268961207103210,92757736
+[sync_fixture-4] sample,78,late_top,92757736
+[sync_fixture-4] delivery,79,partial,1,1,1795268961305104351,45298116
+[sync_fixture-4] sample,79,partial,45298116
+[sync_fixture-4] delivery,80,full,1,1,1795268961405125881,20549329
+[sync_fixture-4] sample,80,full,20549329
+[sync_fixture-4] delivery,81,partial,1,1,1795268961505132603,45368607
+[sync_fixture-4] sample,81,partial,45368607
+[sync_fixture-4] delivery,82,late_pair,1,1,1795268961605118727,43813334
+[sync_fixture-4] sample,82,late_pair,43813334
+[sync_fixture-4] delivery,82,late_top,1,1,1795268961607118727,93415484
+[sync_fixture-4] sample,82,late_top,93415484
+[sync_fixture-4] delivery,83,partial,1,1,1795268961705124507,48724810
+[sync_fixture-4] sample,83,partial,48724810
+[sync_fixture-4] delivery,84,full,1,1,1795268961805117413,24949691
+[sync_fixture-4] sample,84,full,24949691
+[sync_fixture-4] delivery,85,partial,1,1,1795268961905110500,44618787
+[sync_fixture-4] sample,85,partial,44618787
+[sync_fixture-4] delivery,86,late_pair,1,1,1795268962006214029,45766629
+[sync_fixture-4] sample,86,late_pair,45766629
+[sync_fixture-4] delivery,86,late_top,1,1,1795268962008214029,97348614
+[sync_fixture-4] sample,86,late_top,97348614
+[sync_fixture-4] delivery,87,partial,1,1,1795268962105121299,46313290
+[sync_fixture-4] sample,87,partial,46313290
+[sync_fixture-4] delivery,88,full,1,1,1795268962205119104,20988088
+[sync_fixture-4] sample,88,full,20988088
+[sync_fixture-4] delivery,89,partial,1,1,1795268962305118272,47341118
+[sync_fixture-4] sample,89,partial,47341118
+[sync_fixture-4] delivery,90,late_pair,1,1,1795268962405117821,44486921
+[sync_fixture-4] sample,90,late_pair,44486921
+[sync_fixture-4] delivery,90,late_top,1,1,1795268962407117821,90938622
+[sync_fixture-4] sample,90,late_top,90938622
+[sync_fixture-4] delivery,91,partial,1,1,1795268962505118412,45596121
+[sync_fixture-4] sample,91,partial,45596121
+[sync_fixture-4] delivery,92,full,1,1,1795268962605105487,18274293
+[sync_fixture-4] sample,92,full,18274293
+[sync_fixture-4] delivery,93,partial,1,1,1795268962705117329,44129754
+[sync_fixture-4] sample,93,partial,44129754
+[sync_fixture-4] delivery,94,late_pair,1,1,1795268962805106638,42531202
+[sync_fixture-4] sample,94,late_pair,42531202
+[sync_fixture-4] delivery,94,late_top,1,1,1795268962807106638,89747519
+[sync_fixture-4] sample,94,late_top,89747519
+[sync_fixture-4] delivery,95,partial,1,1,1795268962905107309,42682043
+[sync_fixture-4] sample,95,partial,42682043
+[sync_fixture-4] delivery,96,full,1,1,1795268963005094334,17776084
+[sync_fixture-4] sample,96,full,17776084
+[sync_fixture-4] delivery,97,partial,1,1,1795268963105091248,42359451
+[sync_fixture-4] sample,97,partial,42359451
+[sync_fixture-4] delivery,98,late_pair,1,1,1795268963205102017,42350865
+[sync_fixture-4] sample,98,late_pair,42350865
+[sync_fixture-4] delivery,98,late_top,1,1,1795268963207102017,89562474
+[sync_fixture-4] sample,98,late_top,89562474
+[sync_fixture-4] delivery,99,partial,1,1,1795268963305094473,42355233
+[sync_fixture-4] sample,99,partial,42355233
+[sync_fixture-4] delivery,100,full,1,1,1795268963405105403,17477667
+[sync_fixture-4] sample,100,full,17477667
+[sync_fixture-4] delivery,101,partial,1,1,1795268963505089793,42084067
+[sync_fixture-4] sample,101,partial,42084067
+[sync_fixture-4] delivery,102,late_pair,1,1,1795268963605101595,42086872
+[sync_fixture-4] sample,102,late_pair,42086872
+[sync_fixture-4] delivery,102,late_top,1,1,1795268963607101595,89861100
+[sync_fixture-4] sample,102,late_top,89861100
+[sync_fixture-4] delivery,103,partial,1,1,1795268963705096434,42567099
+[sync_fixture-4] sample,103,partial,42567099
+[sync_fixture-4] fast_source_hz=10.0008
+[sync_fixture-4] extended expected=130 clouds=130 metadata=130 paired=130 resume_ns=0
+[INFO] [sync_fixture-4]: process has finished cleanly [pid 253228]
+[INFO] [sync_fixture-5]: sending signal 'SIGINT' to process[sync_fixture-5]
+[INFO] [concatenate_and_time_sync_node-3]: sending signal 'SIGINT' to process[concatenate_and_time_sync_node-3]
+[INFO] [component_container-2]: sending signal 'SIGINT' to process[component_container-2]
+[INFO] [static_transform_publisher-1]: sending signal 'SIGINT' to process[static_transform_publisher-1]
+[sync_fixture-5] [INFO] [1795268964.817213041] [rclcpp]: signal_handler(signum=2)
+[concatenate_and_time_sync_node-3] [INFO] [1795268964.817490619] [rclcpp]: signal_handler(signum=2)
+[component_container-2] [INFO] [1795268964.817679231] [rclcpp]: signal_handler(signum=2)
+[static_transform_publisher-1] [INFO] [1795268964.817838749] [rclcpp]: signal_handler(signum=2)
+[concatenate_and_time_sync_node-3] sync_input views=0 copies=260
+[INFO] [static_transform_publisher-1]: process has finished cleanly [pid 253225]
+[INFO] [sync_fixture-5]: process has finished cleanly [pid 253229]
+[INFO] [component_container-2]: process has finished cleanly [pid 253226]
+[INFO] [concatenate_and_time_sync_node-3]: process has finished cleanly [pid 253227]
+graph_user_s=1.422 graph_sys_s=0.780
+scope_peak_bytes=208842752
+Minimum host MemAvailable: 13494 MiB

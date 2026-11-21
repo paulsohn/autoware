@@ -1,0 +1,388 @@
+[INFO] [launch]: All log files can be found below /tmp/tmp.ytrfzKShoQ/roslog/2026-11-21-13-47-14-451406-paulsohn-tuf-246825
+[INFO] [launch]: Default logging verbosity is set to INFO
+[INFO] [static_transform_publisher-1]: process started with pid [246844]
+[INFO] [component_container-2]: process started with pid [246845]
+[INFO] [concatenate_and_time_sync_node-3]: process started with pid [246846]
+[INFO] [sync_fixture-4]: process started with pid [246847]
+[INFO] [sync_fixture-5]: process started with pid [246848]
+[static_transform_publisher-1] [INFO] [1795268834.554210215] [static_transform_publisher_EE7Y5bdcpkxyUWnw]: Spinning until stopped - publishing transform
+[static_transform_publisher-1] translation: ('4.000000', '0.000000', '0.000000')
+[static_transform_publisher-1] rotation: ('0.000000', '0.000000', '0.000000', '1.000000')
+[static_transform_publisher-1] from 'base_link' to 'sync_lidar'
+[sync_fixture-5] [WARN] [1795268834.566674751] [Agnocast]: Agnocast publishers do not honor the BestEffort reliability QoS policy. Messages are delivered through shared memory regardless of this setting.
+[sync_fixture-5] [WARN] [1795268834.566714685] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[sync_fixture-5] rmw_agnocast host-cloud writer /raw/sync/left
+[sync_fixture-5] [WARN] [1795268834.567290248] [Agnocast]: Agnocast publishers do not honor the BestEffort reliability QoS policy. Messages are delivered through shared memory regardless of this setting.
+[sync_fixture-5] [WARN] [1795268834.567300787] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[sync_fixture-5] rmw_agnocast host-cloud writer /raw/sync/right
+[sync_fixture-4] [WARN] [1795268834.567316126] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[sync_fixture-4] [WARN] [1795268834.567499838] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[sync_fixture-4] rmw_agnocast host-cloud reader /output
+[sync_fixture-5] [WARN] [1795268834.567727012] [Agnocast]: Agnocast publishers do not honor the BestEffort reliability QoS policy. Messages are delivered through shared memory regardless of this setting.
+[sync_fixture-5] [WARN] [1795268834.567735718] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[sync_fixture-5] rmw_agnocast host-cloud writer /raw/sync/top
+[component_container-2] [INFO] [1795268834.754757373] [lidar_crops]: Load Library: /ws/build/universe-pipeline/install/universe_crop_benchmark/lib/libuniverse_crop.so
+[concatenate_and_time_sync_node-3] [INFO] [1795268834.958556241] [point_cloud_concatenator_component]: Utilize naive matching strategy
+[concatenate_and_time_sync_node-3] [WARN] [1795268834.960771238] [Agnocast]: Agnocast publishers do not honor the BestEffort reliability QoS policy. Messages are delivered through shared memory regardless of this setting.
+[concatenate_and_time_sync_node-3] [WARN] [1795268834.960794782] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[concatenate_and_time_sync_node-3] rmw_agnocast host-cloud writer /output
+[concatenate_and_time_sync_node-3] [WARN] [1795268834.962348407] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[concatenate_and_time_sync_node-3] [WARN] [1795268834.962413188] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[concatenate_and_time_sync_node-3] rmw_agnocast host-cloud reader /sync/left
+[concatenate_and_time_sync_node-3] [WARN] [1795268834.963013496] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[concatenate_and_time_sync_node-3] [WARN] [1795268834.963046598] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[concatenate_and_time_sync_node-3] rmw_agnocast host-cloud reader /sync/right
+[concatenate_and_time_sync_node-3] [WARN] [1795268834.963600841] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[concatenate_and_time_sync_node-3] [WARN] [1795268834.963631869] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[concatenate_and_time_sync_node-3] rmw_agnocast host-cloud reader /sync/top
+[component_container-2] [INFO] [1795268835.139965678] [lidar_crops]: Found class: rclcpp_components::NodeFactoryTemplate<autoware::pointcloud_preprocessor::CropBoxFilterComponent>
+[component_container-2] [INFO] [1795268835.140007346] [lidar_crops]: Instantiate class: rclcpp_components::NodeFactoryTemplate<autoware::pointcloud_preprocessor::CropBoxFilterComponent>
+[component_container-2] [WARN] [1795268835.145859591] [Agnocast]: Agnocast publishers do not honor the BestEffort reliability QoS policy. Messages are delivered through shared memory regardless of this setting.
+[component_container-2] [WARN] [1795268835.145874789] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[component_container-2] rmw_agnocast host-cloud writer /sync/left
+[component_container-2] [WARN] [1795268835.146617924] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[component_container-2] [WARN] [1795268835.146672185] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[component_container-2] rmw_agnocast host-cloud reader /raw/sync/left
+[INFO] [launch_ros.actions.load_composable_nodes]: Loaded node '/crop_left' in container '/lidar_crops'
+[component_container-2] [INFO] [1795268835.149528678] [lidar_crops]: Found class: rclcpp_components::NodeFactoryTemplate<autoware::pointcloud_preprocessor::CropBoxFilterComponent>
+[component_container-2] [INFO] [1795268835.149561118] [lidar_crops]: Instantiate class: rclcpp_components::NodeFactoryTemplate<autoware::pointcloud_preprocessor::CropBoxFilterComponent>
+[component_container-2] [WARN] [1795268835.155300653] [Agnocast]: Agnocast publishers do not honor the BestEffort reliability QoS policy. Messages are delivered through shared memory regardless of this setting.
+[component_container-2] [WARN] [1795268835.155319148] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[component_container-2] rmw_agnocast host-cloud writer /sync/right
+[component_container-2] [WARN] [1795268835.155927441] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[component_container-2] [WARN] [1795268835.155969620] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[component_container-2] rmw_agnocast host-cloud reader /raw/sync/right
+[INFO] [launch_ros.actions.load_composable_nodes]: Loaded node '/crop_right' in container '/lidar_crops'
+[component_container-2] [INFO] [1795268835.158698184] [lidar_crops]: Found class: rclcpp_components::NodeFactoryTemplate<autoware::pointcloud_preprocessor::CropBoxFilterComponent>
+[component_container-2] [INFO] [1795268835.158721899] [lidar_crops]: Instantiate class: rclcpp_components::NodeFactoryTemplate<autoware::pointcloud_preprocessor::CropBoxFilterComponent>
+[component_container-2] [WARN] [1795268835.164431077] [Agnocast]: Agnocast publishers do not honor the BestEffort reliability QoS policy. Messages are delivered through shared memory regardless of this setting.
+[component_container-2] [WARN] [1795268835.164449832] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[component_container-2] rmw_agnocast host-cloud writer /sync/top
+[component_container-2] [WARN] [1795268835.164938452] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[component_container-2] [WARN] [1795268835.164976193] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[component_container-2] rmw_agnocast host-cloud reader /raw/sync/top
+[INFO] [launch_ros.actions.load_composable_nodes]: Loaded node '/crop_top' in container '/lidar_crops'
+[sync_fixture-5] top_release_ns,0,15057398
+[sync_fixture-5] top_release_ns,2,50045184
+[sync_fixture-5] top_release_ns,4,15056967
+[sync_fixture-5] top_release_ns,6,50040896
+[sync_fixture-5] top_release_ns,8,15039504
+[sync_fixture-5] top_release_ns,10,50011301
+[sync_fixture-5] top_release_ns,12,15058129
+[sync_fixture-5] top_release_ns,14,50048360
+[sync_fixture-5] top_release_ns,16,15039305
+[sync_fixture-5] top_release_ns,18,50008726
+[sync_fixture-5] top_release_ns,20,15057969
+[sync_fixture-5] top_release_ns,22,50060302
+[sync_fixture-5] top_release_ns,24,15057067
+[sync_fixture-5] top_release_ns,26,50012643
+[sync_fixture-5] top_release_ns,28,15060153
+[sync_fixture-5] top_release_ns,30,50009097
+[sync_fixture-5] top_release_ns,32,15060734
+[sync_fixture-5] top_release_ns,34,50015729
+[sync_fixture-5] top_release_ns,36,15014128
+[sync_fixture-5] top_release_ns,38,50020127
+[sync_fixture-5] top_release_ns,40,15055674
+[sync_fixture-5] top_release_ns,42,50053299
+[sync_fixture-5] top_release_ns,44,15055194
+[sync_fixture-5] top_release_ns,46,50055082
+[sync_fixture-5] top_release_ns,48,15027522
+[sync_fixture-5] top_release_ns,50,50015118
+[sync_fixture-5] top_release_ns,52,15049704
+[sync_fixture-5] top_release_ns,54,50008656
+[sync_fixture-5] top_release_ns,56,15029556
+[sync_fixture-5] top_release_ns,58,50017142
+[sync_fixture-5] top_release_ns,60,15009569
+[sync_fixture-5] top_release_ns,62,50014106
+[sync_fixture-5] top_release_ns,64,15048842
+[sync_fixture-5] top_release_ns,66,50015910
+[sync_fixture-5] top_release_ns,68,15003968
+[sync_fixture-5] top_release_ns,70,50022602
+[sync_fixture-5] top_release_ns,72,15015870
+[sync_fixture-5] top_release_ns,74,50008917
+[sync_fixture-5] top_release_ns,76,15005671
+[sync_fixture-5] top_release_ns,78,50011912
+[sync_fixture-5] top_release_ns,80,15003969
+[sync_fixture-5] top_release_ns,82,50010910
+[sync_fixture-5] top_release_ns,84,15062617
+[sync_fixture-5] top_release_ns,86,50018354
+[sync_fixture-5] top_release_ns,88,15011783
+[sync_fixture-5] top_release_ns,90,50030537
+[sync_fixture-5] top_release_ns,92,15011031
+[sync_fixture-5] top_release_ns,94,50045334
+[sync_fixture-5] top_release_ns,96,15000913
+[sync_fixture-5] top_release_ns,98,50002284
+[sync_fixture-5] top_release_ns,100,15051487
+[sync_fixture-5] top_release_ns,102,50057287
+[sync_fixture-4] delivery,0,full,1,1,1795268835972115282,23836316
+[sync_fixture-4] sample,0,full,23836316
+[sync_fixture-4] delivery,1,partial,1,1,1795268836071175270,50363737
+[sync_fixture-4] sample,1,partial,50363737
+[sync_fixture-4] delivery,2,late_pair,1,1,1795268836171178545,75837576
+[sync_fixture-4] sample,2,late_pair,75837576
+[sync_fixture-4] delivery,2,late_top,1,1,1795268836173178545,199142348
+[sync_fixture-4] sample,2,late_top,199142348
+[sync_fixture-4] delivery,3,partial,1,1,1795268836271175158,226674555
+[sync_fixture-4] sample,3,partial,226674555
+[sync_fixture-4] delivery,4,full,1,1,1795268836371175258,252237769
+[sync_fixture-4] sample,4,full,252237769
+[sync_fixture-4] delivery,5,partial,1,1,1795268836471182271,277620176
+[sync_fixture-4] sample,5,partial,277620176
+[sync_fixture-4] delivery,6,late_pair,1,1,1795268836571168084,303195012
+[sync_fixture-4] sample,6,late_pair,303195012
+[sync_fixture-4] delivery,6,late_top,1,1,1795268836573168084,426528758
+[sync_fixture-4] sample,6,late_top,426528758
+[sync_fixture-4] delivery,7,partial,1,1,1795268836671176048,454012575
+[sync_fixture-4] sample,7,partial,454012575
+[sync_fixture-4] delivery,8,full,1,1,1795268836771187389,479651570
+[sync_fixture-4] sample,8,full,479651570
+[sync_fixture-4] delivery,9,partial,1,1,1795268836871177830,505213803
+[sync_fixture-4] sample,9,partial,505213803
+[sync_fixture-4] delivery,10,late_pair,1,1,1795268836971184552,530647657
+[sync_fixture-4] sample,10,late_pair,530647657
+[sync_fixture-4] delivery,10,late_top,1,1,1795268836973184552,653990139
+[sync_fixture-4] sample,10,late_top,653990139
+[sync_fixture-4] delivery,11,partial,1,1,1795268837071188499,681392223
+[sync_fixture-4] sample,11,partial,681392223
+[sync_fixture-4] delivery,12,full,1,1,1795268837171188519,707171790
+[sync_fixture-4] sample,12,full,707171790
+[sync_fixture-4] delivery,13,partial,1,1,1795268837271184551,732756194
+[sync_fixture-4] sample,13,partial,732756194
+[sync_fixture-4] delivery,14,late_pair,1,1,1795268837371167849,758231585
+[sync_fixture-4] sample,14,late_pair,758231585
+[sync_fixture-4] delivery,14,late_top,1,1,1795268837373167849,881681117
+[sync_fixture-4] sample,14,late_top,881681117
+[sync_fixture-4] delivery,15,partial,1,1,1795268837471185101,909173479
+[sync_fixture-4] sample,15,partial,909173479
+[sync_fixture-4] delivery,16,full,1,1,1795268837571186112,934697170
+[sync_fixture-4] sample,16,full,934697170
+[sync_fixture-4] delivery,17,partial,1,1,1795268837671187755,960220520
+[sync_fixture-4] sample,17,partial,960220520
+[sync_fixture-4] delivery,18,late_pair,1,1,1795268837771185871,985658311
+[sync_fixture-4] sample,18,late_pair,985658311
+[sync_fixture-4] delivery,18,late_top,1,1,1795268837773185871,1108948326
+[sync_fixture-4] sample,18,late_top,1108948326
+[sync_fixture-4] delivery,19,partial,1,1,1795268837871189708,1136434476
+[sync_fixture-4] sample,19,partial,1136434476
+[sync_fixture-4] delivery,20,full,1,1,1795268837971194787,1162019331
+[sync_fixture-4] sample,20,full,1162019331
+[sync_fixture-4] delivery,21,partial,1,1,1795268838071191861,1187657635
+[sync_fixture-4] sample,21,partial,1187657635
+[sync_fixture-4] delivery,22,late_pair,1,1,1795268838171190097,1213163192
+[sync_fixture-4] sample,22,late_pair,1213163192
+[sync_fixture-4] delivery,22,late_top,1,1,1795268838173190097,1336528728
+[sync_fixture-4] sample,22,late_top,1336528728
+[sync_fixture-4] delivery,23,partial,1,1,1795268838271177783,1364230651
+[sync_fixture-4] sample,23,partial,1364230651
+[sync_fixture-4] delivery,24,full,1,1,1795268838371186349,1389830233
+[sync_fixture-4] sample,24,full,1389830233
+[sync_fixture-4] delivery,25,partial,1,1,1795268838471178814,1415306676
+[sync_fixture-4] sample,25,partial,1415306676
+[sync_fixture-4] delivery,26,late_pair,1,1,1795268838571184294,1440822792
+[sync_fixture-4] sample,26,late_pair,1440822792
+[sync_fixture-4] delivery,26,late_top,1,1,1795268838573184294,1564224545
+[sync_fixture-4] sample,26,late_top,1564224545
+[sync_fixture-4] delivery,27,partial,1,1,1795268838671186448,1591610529
+[sync_fixture-4] sample,27,partial,1591610529
+[sync_fixture-4] delivery,28,full,1,1,1795268838771186447,1617148877
+[sync_fixture-4] sample,28,full,1617148877
+[sync_fixture-4] delivery,29,partial,1,1,1795268838871191306,1642540251
+[sync_fixture-4] sample,29,partial,1642540251
+[sync_fixture-4] delivery,30,late_pair,1,1,1795268838971186676,1667977421
+[sync_fixture-4] sample,30,late_pair,1667977421
+[sync_fixture-4] delivery,30,late_top,1,1,1795268838973186676,1791378804
+[sync_fixture-4] sample,30,late_top,1791378804
+[sync_fixture-4] delivery,31,partial,1,1,1795268839071177920,1818798510
+[sync_fixture-4] sample,31,partial,1818798510
+[sync_fixture-4] delivery,32,full,1,1,1795268839171177999,1844335225
+[sync_fixture-4] sample,32,full,1844335225
+[sync_fixture-4] delivery,33,partial,1,1,1795268839271175895,1869814423
+[sync_fixture-4] sample,33,partial,1869814423
+[sync_fixture-4] delivery,34,late_pair,1,1,1795268839371183879,1895231906
+[sync_fixture-4] sample,34,late_pair,1895231906
+[sync_fixture-4] delivery,34,late_top,1,1,1795268839373183879,2018622458
+[sync_fixture-4] sample,34,late_top,2018622458
+[sync_fixture-4] delivery,35,partial,1,1,1795268839471177497,2046080957
+[sync_fixture-4] sample,35,partial,2046080957
+[sync_fixture-4] delivery,36,full,1,1,1795268839571176394,2071771108
+[sync_fixture-4] sample,36,full,2071771108
+[sync_fixture-4] delivery,37,partial,1,1,1795268839671177135,2097285041
+[sync_fixture-4] sample,37,partial,2097285041
+[sync_fixture-4] delivery,38,late_pair,1,1,1795268839771176814,2122826204
+[sync_fixture-4] sample,38,late_pair,2122826204
+[sync_fixture-4] delivery,38,late_top,1,1,1795268839773176814,2246141205
+[sync_fixture-4] sample,38,late_top,2246141205
+[sync_fixture-4] delivery,39,partial,1,1,1795268839871187684,2273551765
+[sync_fixture-4] sample,39,partial,2273551765
+[sync_fixture-4] delivery,40,full,1,1,1795268839971185670,2299239661
+[sync_fixture-4] sample,40,full,2299239661
+[sync_fixture-4] delivery,41,partial,1,1,1795268840071187813,2324644361
+[sync_fixture-4] sample,41,partial,2324644361
+[sync_fixture-4] delivery,42,late_pair,1,1,1795268840171194245,2350120673
+[sync_fixture-4] sample,42,late_pair,2350120673
+[sync_fixture-4] delivery,42,late_top,1,1,1795268840173194245,2473461582
+[sync_fixture-4] sample,42,late_top,2473461582
+[sync_fixture-4] delivery,43,partial,1,1,1795268840271175109,2500994620
+[sync_fixture-4] sample,43,partial,2500994620
+[sync_fixture-4] delivery,44,full,1,1,1795268840371152496,2526504766
+[sync_fixture-4] sample,44,full,2526504766
+[sync_fixture-4] delivery,45,partial,1,1,1795268840471171220,2551960100
+[sync_fixture-4] sample,45,partial,2551960100
+[sync_fixture-4] delivery,46,late_pair,0,1,1795268840571186879,-1
+[sync_fixture-4] delivery,46,late_top,1,1,1795268840573186879,2575329182
+[sync_fixture-4] sample,46,late_top,2575329182
+[sync_fixture-4] delivery,47,partial,1,1,1795268840671168043,2602838086
+[sync_fixture-4] sample,47,partial,2602838086
+[sync_fixture-4] delivery,48,full,1,1,1795268840771176168,2628496317
+[sync_fixture-4] sample,48,full,2628496317
+[sync_fixture-4] delivery,49,partial,0,1,1795268840871196255,-1
+[sync_fixture-4] delivery,50,late_pair,0,1,1795268840971178511,-1
+[sync_fixture-4] delivery,50,late_top,1,1,1795268840973178511,2551826548
+[sync_fixture-4] sample,50,late_top,2551826548
+[sync_fixture-4] delivery,51,partial,1,1,1795268841071185514,2579387728
+[sync_fixture-4] sample,51,partial,2579387728
+[sync_fixture-4] delivery,52,full,1,1,1795268841171185403,2605065747
+[sync_fixture-4] sample,52,full,2605065747
+[sync_fixture-4] delivery,53,partial,0,1,1795268841271177668,-1
+[sync_fixture-4] delivery,54,late_pair,1,1,1795268841371185292,2530498528
+[sync_fixture-4] sample,54,late_pair,2530498528
+[sync_fixture-4] delivery,54,late_top,0,1,1795268841373185292,-1
+[sync_fixture-4] delivery,55,partial,1,1,1795268841471171075,2556001861
+[sync_fixture-4] sample,55,partial,2556001861
+[sync_fixture-4] delivery,56,full,1,1,1795268841571186894,2581590272
+[sync_fixture-4] sample,56,full,2581590272
+[sync_fixture-4] delivery,57,partial,0,1,1795268841671186503,-1
+[sync_fixture-4] delivery,58,late_pair,1,1,1795268841771177225,2506996435
+[sync_fixture-4] sample,58,late_pair,2506996435
+[sync_fixture-4] delivery,58,late_top,0,1,1795268841773177225,-1
+[sync_fixture-4] delivery,59,partial,1,1,1795268841871178437,2532369535
+[sync_fixture-4] sample,59,partial,2532369535
+[sync_fixture-4] delivery,60,full,1,1,1795268841971185379,2558063192
+[sync_fixture-4] sample,60,full,2558063192
+[sync_fixture-4] delivery,61,partial,1,1,1795268842071178135,2458471474
+[sync_fixture-4] sample,61,partial,2458471474
+[sync_fixture-4] delivery,62,late_pair,1,1,1795268842171177504,2358762376
+[sync_fixture-4] sample,62,late_pair,2358762376
+[sync_fixture-4] delivery,62,late_top,1,1,1795268842173177504,2356936620
+[sync_fixture-4] sample,62,late_top,2356936620
+[sync_fixture-4] delivery,63,partial,1,1,1795268842271177954,2259228916
+[sync_fixture-4] sample,63,partial,2259228916
+[sync_fixture-4] delivery,64,full,1,1,1795268842371185097,2159584419
+[sync_fixture-4] sample,64,full,2159584419
+[sync_fixture-4] delivery,65,partial,1,1,1795268842471186248,2059918983
+[sync_fixture-4] sample,65,partial,2059918983
+[sync_fixture-4] delivery,66,late_pair,1,1,1795268842571184304,1960188416
+[sync_fixture-4] sample,66,late_pair,1960188416
+[sync_fixture-4] delivery,66,late_top,1,1,1795268842573184304,1958357230
+[sync_fixture-4] sample,66,late_top,1958357230
+[sync_fixture-4] delivery,67,partial,1,1,1795268842671192208,1860614100
+[sync_fixture-4] sample,67,partial,1860614100
+[sync_fixture-4] delivery,68,full,1,1,1795268842771191447,1761176056
+[sync_fixture-4] sample,68,full,1761176056
+[sync_fixture-4] delivery,69,partial,1,1,1795268842871187669,1661540346
+[sync_fixture-4] sample,69,partial,1661540346
+[sync_fixture-4] delivery,70,late_pair,1,1,1795268842971177019,1561903333
+[sync_fixture-4] sample,70,late_pair,1561903333
+[sync_fixture-4] delivery,70,late_top,1,1,1795268842973177019,1560144983
+[sync_fixture-4] sample,70,late_top,1560144983
+[sync_fixture-4] delivery,71,partial,1,1,1795268843071178481,1462501658
+[sync_fixture-4] sample,71,partial,1462501658
+[sync_fixture-4] delivery,72,full,1,1,1795268843171177659,1362985420
+[sync_fixture-4] sample,72,full,1362985420
+[sync_fixture-4] delivery,73,partial,1,1,1795268843271186395,1263237260
+[sync_fixture-4] sample,73,partial,1263237260
+[sync_fixture-4] delivery,74,late_pair,1,1,1795268843371184360,1163509939
+[sync_fixture-4] sample,74,late_pair,1163509939
+[sync_fixture-4] delivery,74,late_top,1,1,1795268843373184360,1161674546
+[sync_fixture-4] sample,74,late_top,1161674546
+[sync_fixture-4] delivery,75,partial,1,1,1795268843471178449,1063947765
+[sync_fixture-4] sample,75,partial,1063947765
+[sync_fixture-4] delivery,76,full,1,1,1795268843571185171,964372346
+[sync_fixture-4] sample,76,full,964372346
+[sync_fixture-4] delivery,77,partial,1,1,1795268843671175713,864670012
+[sync_fixture-4] sample,77,partial,864670012
+[sync_fixture-4] delivery,78,late_pair,1,1,1795268843771186923,765020425
+[sync_fixture-4] sample,78,late_pair,765020425
+[sync_fixture-4] delivery,78,late_top,1,1,1795268843773186923,763184271
+[sync_fixture-4] sample,78,late_top,763184271
+[sync_fixture-4] delivery,79,partial,1,1,1795268843871189628,665446559
+[sync_fixture-4] sample,79,partial,665446559
+[sync_fixture-4] delivery,80,full,1,1,1795268843971186000,565853098
+[sync_fixture-4] sample,80,full,565853098
+[sync_fixture-4] delivery,81,partial,1,1,1795268844071188214,466228207
+[sync_fixture-4] sample,81,partial,466228207
+[sync_fixture-4] delivery,82,late_pair,1,1,1795268844171179748,366505444
+[sync_fixture-4] sample,82,late_pair,366505444
+[sync_fixture-4] delivery,82,late_top,1,1,1795268844173179748,364672455
+[sync_fixture-4] sample,82,late_top,364672455
+[sync_fixture-4] delivery,83,partial,1,1,1795268844271175720,266939043
+[sync_fixture-4] sample,83,partial,266939043
+[sync_fixture-4] delivery,84,full,1,1,1795268844371189956,167301939
+[sync_fixture-4] sample,84,full,167301939
+[sync_fixture-4] delivery,85,partial,1,1,1795268844471192129,67565662
+[sync_fixture-4] sample,85,partial,67565662
+[sync_fixture-4] delivery,86,late_pair,1,1,1795268844571175498,41125092
+[sync_fixture-4] sample,86,late_pair,41125092
+[sync_fixture-4] delivery,86,late_top,1,1,1795268844573175498,89001682
+[sync_fixture-4] sample,86,late_top,89001682
+[sync_fixture-4] delivery,87,partial,1,1,1795268844671175738,41077273
+[sync_fixture-4] sample,87,partial,41077273
+[sync_fixture-4] delivery,88,full,1,1,1795268844771177130,16147589
+[sync_fixture-4] sample,88,full,16147589
+[sync_fixture-4] delivery,89,partial,1,1,1795268844871178752,41118480
+[sync_fixture-4] sample,89,partial,41118480
+[sync_fixture-4] delivery,90,late_pair,1,1,1795268844971177259,41122748
+[sync_fixture-4] sample,90,late_pair,41122748
+[sync_fixture-4] delivery,90,late_top,1,1,1795268844973177259,88818741
+[sync_fixture-4] sample,90,late_top,88818741
+[sync_fixture-4] delivery,91,partial,1,1,1795268845071176998,40984220
+[sync_fixture-4] sample,91,partial,40984220
+[sync_fixture-4] delivery,92,full,1,1,1795268845171178020,16126560
+[sync_fixture-4] sample,92,full,16126560
+[sync_fixture-4] delivery,93,partial,1,1,1795268845271185533,41254914
+[sync_fixture-4] sample,93,partial,41254914
+[sync_fixture-4] delivery,94,late_pair,1,1,1795268845371178540,41029233
+[sync_fixture-4] sample,94,late_pair,41029233
+[sync_fixture-4] delivery,94,late_top,1,1,1795268845373178540,89004607
+[sync_fixture-4] sample,94,late_top,89004607
+[sync_fixture-4] delivery,95,partial,1,1,1795268845471176114,41130683
+[sync_fixture-4] sample,95,partial,41130683
+[sync_fixture-4] delivery,96,full,1,1,1795268845571187094,15989135
+[sync_fixture-4] sample,96,full,15989135
+[sync_fixture-4] delivery,97,partial,1,1,1795268845671178949,41315597
+[sync_fixture-4] sample,97,partial,41315597
+[sync_fixture-4] delivery,98,late_pair,1,1,1795268845771189588,41259703
+[sync_fixture-4] sample,98,late_pair,41259703
+[sync_fixture-4] delivery,98,late_top,1,1,1795268845773189588,89394494
+[sync_fixture-4] sample,98,late_top,89394494
+[sync_fixture-4] delivery,99,partial,1,1,1795268845871200197,42174528
+[sync_fixture-4] sample,99,partial,42174528
+[sync_fixture-4] delivery,100,full,1,1,1795268845971205727,16789255
+[sync_fixture-4] sample,100,full,16789255
+[sync_fixture-4] delivery,101,partial,1,1,1795268846071194897,41779882
+[sync_fixture-4] sample,101,partial,41779882
+[sync_fixture-4] delivery,102,late_pair,1,1,1795268846171190107,41098112
+[sync_fixture-4] sample,102,late_pair,41098112
+[sync_fixture-4] delivery,102,late_top,1,1,1795268846173190107,88962279
+[sync_fixture-4] sample,102,late_top,88962279
+[sync_fixture-4] delivery,103,partial,1,1,1795268846271176391,41088304
+[sync_fixture-4] sample,103,partial,41088304
+[sync_fixture-4] fast_source_hz=10.0009
+[sync_fixture-4] extended expected=130 clouds=123 metadata=130 paired=123 resume_ns=1795268844528625100
+[INFO] [sync_fixture-4]: process has finished cleanly [pid 246847]
+[INFO] [sync_fixture-5]: sending signal 'SIGINT' to process[sync_fixture-5]
+[INFO] [concatenate_and_time_sync_node-3]: sending signal 'SIGINT' to process[concatenate_and_time_sync_node-3]
+[INFO] [component_container-2]: sending signal 'SIGINT' to process[component_container-2]
+[INFO] [static_transform_publisher-1]: sending signal 'SIGINT' to process[static_transform_publisher-1]
+[sync_fixture-5] [INFO] [1795268847.377631524] [rclcpp]: signal_handler(signum=2)
+[concatenate_and_time_sync_node-3] [INFO] [1795268847.377892661] [rclcpp]: signal_handler(signum=2)
+[component_container-2] [INFO] [1795268847.378127829] [rclcpp]: signal_handler(signum=2)
+[static_transform_publisher-1] [INFO] [1795268847.378360853] [rclcpp]: signal_handler(signum=2)
+[concatenate_and_time_sync_node-3] sync_input views=260 copies=0
+[INFO] [static_transform_publisher-1]: process has finished cleanly [pid 246844]
+[INFO] [sync_fixture-5]: process has finished cleanly [pid 246848]
+[INFO] [concatenate_and_time_sync_node-3]: process has finished cleanly [pid 246846]
+[INFO] [component_container-2]: process has finished cleanly [pid 246845]
+graph_user_s=1.381 graph_sys_s=0.611
+scope_peak_bytes=290820096
+Minimum host MemAvailable: 13794 MiB

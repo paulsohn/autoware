@@ -1,0 +1,22 @@
+1-stock-overflow clouds=123 metadata=130 paired=123 cloud_only=0 metadata_only=7 recovery_ms=10.1 oldest_ms=2628.5
+missing_cloud 46/late_pair 49/partial 50/late_pair 53/partial 54/late_top 57/partial 58/late_top
+missing_metadata -
+2-stock-overflow clouds=123 metadata=130 paired=123 cloud_only=0 metadata_only=7 recovery_ms=9.4 oldest_ms=2626.3
+missing_cloud 46/late_pair 49/partial 50/late_pair 53/partial 54/late_top 57/partial 58/late_top
+missing_metadata -
+1-cyclone-overflow clouds=123 metadata=130 paired=123 cloud_only=0 metadata_only=7 recovery_ms=7.5 oldest_ms=2623.9
+missing_cloud 46/late_pair 49/partial 50/late_pair 53/partial 54/late_top 57/partial 58/late_top
+missing_metadata -
+2-cyclone-overflow clouds=123 metadata=130 paired=123 cloud_only=0 metadata_only=7 recovery_ms=7.8 oldest_ms=2622.8
+missing_cloud 46/late_pair 49/partial 50/late_pair 53/partial 54/late_top 57/partial 58/late_top
+missing_metadata -
+1-zenoh-overflow clouds=123 metadata=130 paired=123 cloud_only=0 metadata_only=7 recovery_ms=8.4 oldest_ms=2619.9
+missing_cloud 46/late_pair 49/partial 50/late_pair 53/partial 54/late_top 57/partial 58/late_top
+missing_metadata -
+2-zenoh-overflow clouds=123 metadata=130 paired=123 cloud_only=0 metadata_only=7 recovery_ms=8.2 oldest_ms=2619.0
+missing_cloud 46/late_pair 49/partial 50/late_pair 53/partial 54/late_top 57/partial 58/late_top
+missing_metadata -
+audit-stock clouds=123 metadata=130 paired=123 cloud_only=0 metadata_only=7 recovery_ms=11.7 oldest_ms=2626.7
+missing_cloud 46/late_pair 49/partial 50/late_pair 53/partial 54/late_top 57/partial 58/late_top
+missing_metadata -
+stock output loans admitted=130 taken_and_released=123 evicted_at_depth_32=7

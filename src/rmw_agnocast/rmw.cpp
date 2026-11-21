@@ -396,7 +396,15 @@ struct Reader : std::enable_shared_from_this<Reader>
             hop_reader().mark("admit", cloud_stamp(static_cast<const HostCloud *>(sample.get())->header));
           auto entry = trace ? HandoffTrace::now() : 0;
           std::lock_guard lock(mutex);
-          if (pending.size() == depth) pending.pop_front();
+          if (pending.size() == depth) {
+            if (trace && type.host_cloud) {
+              const auto & oldest = pending.front();
+              std::fprintf(stderr, "queue_evict id=%ld stamp=%ld depth=%zu\n",
+                static_cast<long>(oldest.get_entry_id()),
+                static_cast<long>(cloud_stamp(static_cast<const HostCloud *>(oldest.get())->header)), pending.size());
+            }
+            pending.pop_front();
+          }
           pending.emplace_back(std::move(sample));
           HandoffTrace::Row * row = nullptr;
           if (trace && trace->rows.size() < trace->rows.capacity()) {

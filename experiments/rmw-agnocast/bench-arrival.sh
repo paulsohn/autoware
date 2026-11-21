@@ -5,10 +5,11 @@ out=${1:?fresh results directory}
 mkdir "$out"
 export BUFFER_RUNTIME_ONLY=1
 variant=${2:-jitter}
-case "$variant" in slow|jitter|combined) ;; *) exit 2 ;; esac
+case "$variant" in slow|jitter|combined|overflow) ;; *) exit 2 ;; esac
 control=baseline
 if [[ $variant == combined ]]; then control=jitter; fi
-unset SYNC_AUDIT SYNC_SINK_TRACE
+if [[ $variant == overflow ]]; then control=extended; fi
+unset SYNC_EXTENDED SYNC_AUDIT SYNC_SINK_TRACE
 for round in 1 2; do
   modes=(stock cyclone zenoh)
   conditions=("$control" "$variant")
@@ -16,8 +17,9 @@ for round in 1 2; do
   for mode in "${modes[@]}"; do
     for condition in "${conditions[@]}"; do
       unset SYNC_TOP_JITTER SYNC_SLOW_SINK
-      if [[ $condition == slow || $condition == combined ]]; then export SYNC_SLOW_SINK=1; fi
-      if [[ $condition == jitter || $condition == combined ]]; then export SYNC_TOP_JITTER=1; fi
+      if [[ $variant == overflow ]]; then export SYNC_EXTENDED=1; fi
+      if [[ $condition == slow || $condition == combined || $condition == overflow ]]; then export SYNC_SLOW_SINK=1; fi
+      if [[ $condition == jitter || $condition == combined || $variant == overflow ]]; then export SYNC_TOP_JITTER=1; fi
       experiments/buffer/run-lyrical.sh timeout -k 5 65 bash -ec '
         TIMEFORMAT="graph_user_s=%U graph_sys_s=%S"
         time bash experiments/rmw-agnocast/run-pipeline.sh "$1"
@@ -27,4 +29,11 @@ for round in 1 2; do
     done
   done
 done
-python3 experiments/rmw-agnocast/summarize-arrival.py "$out" "$variant"
+if [[ $variant == overflow ]]; then
+  export SYNC_EXTENDED=1 SYNC_TOP_JITTER=1 SYNC_SLOW_SINK=1 SYNC_AUDIT=1
+  SYNC_SINK_TRACE="/ws/${out:?}/audit.trace" experiments/buffer/run-lyrical.sh timeout -k 5 65 \
+    bash experiments/rmw-agnocast/run-pipeline.sh stock >"$out/audit-stock.log" 2>&1
+  python3 experiments/rmw-agnocast/summarize-overflow.py "$out"
+else
+  python3 experiments/rmw-agnocast/summarize-arrival.py "$out" "$variant"
+fi

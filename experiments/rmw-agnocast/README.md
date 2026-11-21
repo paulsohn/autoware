@@ -2528,3 +2528,33 @@ launch and 303.08 MiB across combined launches.
 [All timing, CPU and memory measurements](pipeline-combined-results/summary.txt) ·
 [Queue diagnostics](pipeline-combined-results/queue-summary.txt) ·
 [Reproduction](../buffer/JOURNAL.md#2026-11-21--combined-top-lidar-jitter-and-slow-output-callback).
+
+### Depth-32 reader overflow and recovery
+
+Each run published 260 raw clouds in 104 acquisition groups. Under extended
+jitter the six fast-sink controls each verified all 130 output pairs. Under
+overload the 125 ms sleep ended after callback 68, with the source still at
+10 Hz. The table gives delivered records out of 130 in rounds 1 and 2 and
+the range across those rounds.
+
+| Middleware | Clouds | Metadata | Paired | Oldest cloud at entry (s) | Recovery (ms) |
+|---|---:|---:|---:|---:|---:|
+| rmw_agnocast | 123, 123 | 130, 130 | 123, 123 | 2.626–2.628 | 9.4–10.1 |
+| Cyclone DDS | 123, 123 | 130, 130 | 123, 123 | 2.623–2.624 | 7.5–7.8 |
+| Zenoh | 123, 123 | 130, 130 | 123, 123 | 2.619–2.620 | 8.2–8.4 |
+
+Recovery is measured from the end of the final sleep to the first callback
+after which all remaining clouds were under 100 ms old. Each run verified
+the last 12 groups in full. These two repeats describe one laptop and one
+finite burst. The largest timed scope used 396.2 MiB and minimum host
+MemAvailable was 13,148 MiB.
+
+A separate stock audit compared exact evicted stamps against missing cloud
+stamps and correlated loan IDs with the take/release trace. The sink copies
+output payloads on take. Evicted pending loans leave through the oldest-entry
+pop at depth 32. The synchronizer's input views have a separate release audit.
+Independent topic histories permit a metadata record to survive a missing
+cloud. A consumer joining the two streams needs a bounded wait keyed by stamp.
+
+[Per-run losses, recovery and loan accounting](pipeline-overflow-results/summary.txt) ·
+[Reproduction](../buffer/JOURNAL.md#2026-11-21--overflow-and-recovery-of-the-depth-32-universe-output-reader).
