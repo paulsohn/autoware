@@ -1141,3 +1141,25 @@ fan-out, multiple stages and higher offered load. Next add heterogeneous
 sensor inputs and synchronization on a real Universe sensing path under
 sustained replay before expanding to the full launch.
 [Setup, commands, measurements and limits](../rmw-agnocast/README.md#item-5-first-branched-universe-workload)
+
+### Separate the preceding gap from the sustained rate
+
+The previous 10 and 50 Hz batches changed the rate for a whole process
+lifetime. Tested both intervals inside the same process using the branched
+Universe workload. Reversed starting phase and transport order over four
+runs, first without callback probes and then with a first-crop thread
+profile. Also ran constant-gap controls with the same publisher code.
+The first native smoke timed out because the fixture checked the rclcpp
+context in a native Agnocast-only process. Bounded the diagnostic publisher
+loop by the existing 60-frame contract and reran from fresh directories.
+
+Without callback profiling, the final median after a 100 ms gap exceeded
+the median after a 20 ms gap in all four RMW runs (56–98 µs). The pooled
+medians were 678 and 592 µs. Native Agnocast also slowed after the longer
+gap (604 and 554 µs). The first RMW crop's thread accumulated no reported
+between-callback runnable delay in any of the 200 profiled post-warmup
+intervals. Its stamp-to-entry median rose by 32 µs and its callback CPU time
+rose by 37 µs. Longer CPU execution and pre-callback delivery both warrant
+investigation. Raising executor priority lacks a measured run-queue bottleneck
+here. Exact kernel wakeup times were unavailable to the unprivileged user.
+[Setup, raw observations, controls and interpretation](../rmw-agnocast/README.md#does-the-preceding-idle-interval-explain-the-branched-latency-gap)

@@ -14,6 +14,7 @@
 #include <cstring>
 #include <fstream>
 #include <vector>
+#include <thread>
 
 namespace benchmark {
 using Cloud = sensor_msgs::msg::PointCloud2;
@@ -45,7 +46,28 @@ public:
       pub_ = create_publisher<Cloud>("input", rclcpp::SensorDataQoS());
       const auto period = declare_parameter<int>("period_ms", 100);
       if (period <= 0) throw std::invalid_argument("period_ms must be positive");
-      timer_ = create_wall_timer(std::chrono::milliseconds(period), [this] { send(); });
+      timer_ = create_wall_timer(std::chrono::milliseconds(period), [this, period] {
+        const char * path = std::getenv("BENCH_GAP_STAMPS");
+        if (!path || frame_ == frames || !pub_->get_subscription_count()) return send();
+        auto due = std::chrono::steady_clock::now();
+        const bool long_first = std::getenv("BENCH_LONG_FIRST") != nullptr;
+        std::array<int64_t, frames> stamps{};
+        while (frame_ < frames) {
+          auto index = frame_;
+          send();
+          if (index == frame_) throw std::runtime_error("lost publisher match in gap test");
+          stamps[index] = last_stamp_ns_;
+          if (frame_ != frames) {
+            const auto gap = std::getenv("BENCH_STEADY_GAPS") ? period :
+              ((index % 2 == 0) == long_first ? 100 : 20);
+            due += std::chrono::milliseconds(gap);
+            std::this_thread::sleep_until(due);
+          }
+        }
+        std::ofstream out(path);
+        out.exceptions(std::ios::badbit | std::ios::failbit);
+        for (unsigned i = 0; i < frame_; ++i) out << stamps[i] << '\n';
+      });
     } else {
       csv_.open(std::getenv("BENCH_CSV"));
       if (!csv_) throw std::runtime_error("could not open sample log");
@@ -97,6 +119,7 @@ private:
 #endif
     const auto stamp = now();
     msg->header.stamp = stamp;
+    last_stamp_ns_ = stamp.nanoseconds();
     if (frame_ == 0) first_stamp_ns_ = stamp.nanoseconds();
     pub_->publish(std::move(msg));
     if (++frame_ == frames)
@@ -123,6 +146,7 @@ private:
     csv_ << frame_++ << ',' << latency << std::endl;
   }
 
+  int64_t last_stamp_ns_ = 0;
   int64_t first_stamp_ns_ = 0;
   unsigned frame_ = 0;
   AUTOWARE_PUBLISHER_PTR(Cloud) pub_;

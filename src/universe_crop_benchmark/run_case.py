@@ -24,6 +24,8 @@ parser.add_argument("--host-cloud", action="store_true", help="use the same-host
 parser.add_argument("--bridge", choices=["idle", "active"], help="mirror the native crop output to Cyclone DDS")
 parser.add_argument("--branched", action="store_true", help="tap the first crop and validate a second crop downstream")
 parser.add_argument("--period-ms", type=int, default=100, help="requested sensor publication period in milliseconds")
+parser.add_argument("--gaps", choices=["short-first", "long-first", "steady"])
+parser.add_argument("--gap-profile", action="store_true")
 parser.add_argument("--resources", type=Path)
 parser.add_argument("--buffer", choices=["cpu", "shmem", "cuda"], default="cpu")
 parser.add_argument("--ros-cie", action="store_true", help="use the mixed-capable CIE for the ROS crop")
@@ -32,6 +34,8 @@ if args.ros_cie and args.transport == "agnocast":
     parser.error("native Agnocast already uses its Agnocast-only CIE")
 if args.buffer != "cpu" and args.transport != "zenoh":
     parser.error("the explicit buffer matrix uses the Zenoh descriptor transport")
+if args.gap_profile and not args.gaps:
+    parser.error("--gap-profile requires --gaps")
 if args.period_ms <= 0:
     parser.error("--period-ms must be positive")
 if args.branched and args.bridge:
@@ -90,6 +94,14 @@ with tempfile.TemporaryDirectory() as tmp:
     def launch(argv, role, label=None):
         label = label or role
         child_env = dict(env, BENCH_ROLE=role, BENCH_CSV=str(samples))
+        if args.gaps and role == "pub":
+            child_env["BENCH_GAP_STAMPS"] = str(out.with_suffix(".stamps"))
+            if args.gaps == "steady":
+                child_env["BENCH_STEADY_GAPS"] = "1"
+            if args.gaps == "long-first":
+                child_env["BENCH_LONG_FIRST"] = "1"
+        if args.gap_profile and label == "filter":
+            child_env["BENCH_CROP_PROFILE"] = str(out.with_suffix(".profile"))
         if label == "tap":
             child_env["BENCH_CSV"] = str(tap)
         if (args.typed_input or args.host_view) and role in ("sub", "filter"):

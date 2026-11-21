@@ -9,6 +9,37 @@ if [[ ${1:-} == --check-cold ]]; then
 fi
 out=${1:?fresh results directory}
 mkdir "$out"
+if [[ ${2:-} == --steady-gaps ]]; then
+  for round in 1 2; do
+    periods=(20 100)
+    modes=(fixed agnocast)
+    if [[ $round == 2 ]]; then periods=(100 20); fi
+    for period in "${periods[@]}"; do
+      for mode in "${modes[@]}"; do
+        opts=(--branched --gaps steady --period-ms "$period" --gap-profile)
+        if [[ $mode == fixed ]]; then opts+=(--payload-scope); fi
+        python3 src/universe_crop_benchmark/run_case.py "$mode" "$out/$period-$mode-$round.csv" "${opts[@]}"
+      done
+      modes=(agnocast fixed)
+    done
+  done
+  exit 0
+fi
+if [[ ${2:-} == --gaps ]]; then
+  for round in 1 2 3 4; do
+    modes=(agnocast fixed)
+    if (( round % 2 == 0 )); then modes=(fixed agnocast); fi
+    phase=short-first
+    if (( round == 2 || round == 3 )); then phase=long-first; fi
+    for mode in "${modes[@]}"; do
+      opts=(--branched --gaps "$phase")
+      if [[ $mode == fixed ]]; then opts+=(--payload-scope); fi
+      if [[ ${3:-} == --profile ]]; then opts+=(--gap-profile); fi
+      python3 src/universe_crop_benchmark/run_case.py "$mode" "$out/$mode-$round.csv" "${opts[@]}"
+    done
+  done
+  exit 0
+fi
 baseline=agnocast
 control=host
 variant=fixed

@@ -1540,3 +1540,85 @@ sensor-to-consumer latency against native at the same delivered workload.
 Keep the branched and simple crops as controls. Revisit the low-rate wakeup
 path if the gap persists there. The bridge already has a separate CPU and
 delivery baseline. [Raw samples and checks](branched-results/).
+
+### Does the preceding idle interval explain the branched latency gap?
+
+Run the same five-process graph with alternating 20 and 100 ms gaps **inside**
+each publisher lifetime. One publisher timer callback drives 60 frames against
+absolute steady-clock deadlines. It uses the original message preparation and
+publish path for both phases. The fixture records the actual ROS stamp just
+before publication. The original per-frame timer remains the default for other
+benchmarks. Reverse the starting phase and transport order across four runs.
+Run once without crop instrumentation and again with it. A third batch drives
+constant 20 or 100 ms gaps using this same publisher loop and profile. Compare
+two runs per rate/transport with the order reversed.
+
+The opt-in first-crop callback wrapper samples wall time, thread CPU time and
+the second field of Linux `/proc/thread-self/schedstat` (cumulative runnable
+queue delay, ns). It checks thread identity, buffers records in memory and
+writes them after the last callback. Match all 60 first-crop records to the
+publisher by exact source stamp. Discard the first ten frames, validate the
+remaining gaps against the expected pattern and retain the two existing sink
+payload checks. Each alternating run supplies 25 frames per gap. The
+unprofiled runs retain the same publisher stamp capture.
+
+* **Stamp to entry** includes publication, transport notification, wakeup,
+  take and dispatch up to the first crop callback.
+* **Callback CPU and wall** cover the first filter callback including output
+  publication. Wall also includes preemption and instrumentation. The
+  intermediate and final readers can run concurrently with its return.
+* **Runnable between callbacks** is the change in this callback thread's
+  runnable-delay counter since its previous callback finished. It can include
+  other work on that thread and does not include sleeping time. It cannot
+  locate the exact notification or account for another thread's delay.
+
+The unprivileged host rejected perf access to the scheduler switch tracepoint.
+This measurement uses per-thread accounting without changing host tracing
+permissions, affinity, frequency settings or executor priorities.
+
+```bash
+export LYRICAL_ROOT=$(cat build/agnocast-lyrical/universe-root)
+experiments/buffer/run-lyrical.sh bash experiments/buffer/build-universe-lyrical.sh
+export BUFFER_RUNTIME_ONLY=1
+bench=experiments/rmw-agnocast/bench-host-cloud.sh
+run() { experiments/buffer/run-lyrical.sh timeout 160s bash "$bench" "$@"; }
+root=build/rmw-agnocast/gap-reproduction
+mkdir "$root"
+run "$root/untraced" --gaps
+run "$root/traced" --gaps --profile
+run "$root/steady" --steady-gaps
+for t in untraced traced steady; do
+  python3 experiments/rmw-agnocast/summarize-gaps.py "$root/$t"
+done
+run --check-cold
+```
+
+| Median, µs | Native, 20 ms | Native, 100 ms | RMW, 20 ms | RMW, 100 ms |
+|---|---:|---:|---:|---:|
+| Final reader, uninstrumented crop | 554 | 604 | 592 | 678 |
+| Final reader, profiled crop | 556 | 629 | 589 | 685 |
+| Source stamp to first crop callback | 29 | 44 | 49 | 80 |
+| First callback wall time | 260 | 310 | 291 | 329 |
+| First callback thread CPU | 251 | 292 | 277 | 314 |
+| Thread runnable delay between callbacks | 0 | 0 | 0 | 0 |
+
+The uninstrumented RMW long-minus-short median increased in each run (+56,
++86, +78 and +98 µs). Its pooled p95 increased from 1055 to 1208 µs.
+In the alternating profile, every one of the 200 RMW between-callback
+run-queue counter deltas was zero. Native had two positive increments, both
+under 25 µs. The counter advanced under a separate same-CPU contention
+control. First-crop CPU time grew after a longer gap for both transports.
+Stamp-to-entry grew more on the RMW. These are separate observations in a
+pipeline with concurrent stages. Median differences do not sum to an exact
+decomposition of the final latency.
+
+With **constant gaps**, final RMW medians were 583 and 692 µs. Stamp-to-entry
+was 51 and 78 µs, again higher at 100 ms. Callback CPU was 294 and 292 µs,
+so the alternating callback CPU effect did not reproduce consistently between
+steady batches. Only six of 200 between-callback run-queue increments were
+positive for the RMW in those controls, all under 25 µs. Prioritize splitting
+the repeatable pre-entry interval at writer publication, native wait return
+and RMW take. CPU frequency, cache state and idle exit remain hypotheses.
+Scheduler tracepoints would be needed to locate the precise wakeup. All
+1,440 source frames across the three batches passed both readers. The
+original cold diagnostic also passed. [Raw frames, profiles and per-round summaries](gap-results/).

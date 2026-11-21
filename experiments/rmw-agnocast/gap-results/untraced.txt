@@ -1,0 +1,8 @@
+agnocast microseconds: metric, short median/p95, long median/p95, per-round long-minus-short median deltas
+gap 19992.8 20078.2 100005.2 100060.2 80011.7 79977.3 80014.2 80017.8
+tap 339.8 537.8 357.6 542.6 -12.7 35.5 50.5 3.6
+sink 554.4 860.1 603.9 856.4 68.4 15.7 54.7 72.7
+fixed microseconds: metric, short median/p95, long median/p95, per-round long-minus-short median deltas
+gap 19985.2 20122.1 100008.2 100170.3 80042.3 79999.5 80022.5 80042.6
+tap 348.6 637.8 417.7 763.7 30.2 64.3 37.5 64.0
+sink 592.0 1055.1 678.0 1207.6 56.3 86.3 78.0 98.4

@@ -10,18 +10,25 @@
    PublisherPtr pub_output_;
 --- a/src/filter.cpp
 +++ b/src/filter.cpp
-@@ -50,6 +50,7 @@
+@@ -50,6 +50,8 @@
   */
 
  #include "autoware/pointcloud_preprocessor/filter.hpp"
 +#include "buffer_io.hpp"
++#include "gap_profile.hpp"
 
  #include "autoware/pointcloud_preprocessor/utility/memory.hpp"
 
-@@ -184,6 +185,15 @@
+@@ -184,6 +186,21 @@
      // CAN'T use auto-type here.
      std::function<void(const PointCloud2ConstPtr)> cb =
        std::bind(callback, this, std::placeholders::_1, PointIndicesConstPtr());
++    if (const char * path = std::getenv("BENCH_CROP_PROFILE")) {
++      auto profile = std::make_shared<benchmark::GapProfile>(path);
++      cb = [profile, inner = cb](const PointCloud2ConstPtr msg) {
++        profile->measure(rclcpp::Time(msg->header.stamp).nanoseconds(), [&] { inner(msg); });
++      };
++    }
 +    if constexpr (kIsAgnocastNode) {
 +      if (benchmark::explicit_subscription()) {
 +        rclcpp::SubscriptionOptions options;
@@ -34,7 +41,7 @@
      sub_input_ = this->template create_subscription<PointCloud2>(
        "input", rclcpp::SensorDataQoS().keep_last(max_queue_size_), cb);
    }
-@@ -202,6 +212,7 @@
+@@ -202,6 +219,7 @@
        sync_input_indices_e_.reset();
      }
    } else {

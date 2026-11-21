@@ -1,0 +1,97 @@
+build/rmw-agnocast/gap2-counter.log:single-CPU contention control, thread delay 176.0 ms
+build/rmw-agnocast/gap2-counter.log:single-CPU contention control, thread delay 174.3 ms
+build/rmw-agnocast/gap2-counter.log:Minimum host MemAvailable: 12623 MiB
+build/rmw-agnocast/gap2-default.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/gap2-default.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/gap2-default.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/gap2-default.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/gap2-default.log:Received 60 distinct stamped diagnostics from /output/debug/published_time
+build/rmw-agnocast/gap2-default.log:Minimum host MemAvailable: 12568 MiB
+build/rmw-agnocast/gap2-untraced.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/gap2-untraced.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/gap2-untraced.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/gap2-untraced.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/gap2-untraced.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/gap2-untraced.log:verified fixed wait tap: 59 native wakes
+build/rmw-agnocast/gap2-untraced.log:verified fixed wait filter2: 59 native wakes
+build/rmw-agnocast/gap2-untraced.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/gap2-untraced.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/gap2-untraced.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/gap2-untraced.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/gap2-untraced.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/gap2-untraced.log:verified fixed wait tap: 59 native wakes
+build/rmw-agnocast/gap2-untraced.log:verified fixed wait filter2: 59 native wakes
+build/rmw-agnocast/gap2-untraced.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/gap2-untraced.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/gap2-untraced.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/gap2-untraced.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/gap2-untraced.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/gap2-untraced.log:verified fixed wait tap: 59 native wakes
+build/rmw-agnocast/gap2-untraced.log:verified fixed wait filter2: 59 native wakes
+build/rmw-agnocast/gap2-untraced.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/gap2-untraced.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/gap2-untraced.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/gap2-untraced.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/gap2-untraced.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/gap2-untraced.log:verified fixed wait tap: 59 native wakes
+build/rmw-agnocast/gap2-untraced.log:verified fixed wait filter2: 59 native wakes
+build/rmw-agnocast/gap2-untraced.log:Minimum host MemAvailable: 12301 MiB
+build/rmw-agnocast/gap2-build.log:Minimum host MemAvailable: 12123 MiB
+build/rmw-agnocast/gap2-steady.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/gap2-steady.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/gap2-steady.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/gap2-steady.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/gap2-steady.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/gap2-steady.log:verified fixed wait tap: 59 native wakes
+build/rmw-agnocast/gap2-steady.log:verified fixed wait filter2: 59 native wakes
+build/rmw-agnocast/gap2-steady.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/gap2-steady.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/gap2-steady.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/gap2-steady.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/gap2-steady.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/gap2-steady.log:verified fixed wait tap: 59 native wakes
+build/rmw-agnocast/gap2-steady.log:verified fixed wait filter2: 59 native wakes
+build/rmw-agnocast/gap2-steady.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/gap2-steady.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/gap2-steady.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/gap2-steady.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/gap2-steady.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/gap2-steady.log:verified fixed wait tap: 59 native wakes
+build/rmw-agnocast/gap2-steady.log:verified fixed wait filter2: 59 native wakes
+build/rmw-agnocast/gap2-steady.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/gap2-steady.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/gap2-steady.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/gap2-steady.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/gap2-steady.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/gap2-steady.log:verified fixed wait tap: 59 native wakes
+build/rmw-agnocast/gap2-steady.log:verified fixed wait filter2: 59 native wakes
+build/rmw-agnocast/gap2-steady.log:Minimum host MemAvailable: 12270 MiB
+build/rmw-agnocast/gap2-traced.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/gap2-traced.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/gap2-traced.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/gap2-traced.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/gap2-traced.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/gap2-traced.log:verified fixed wait tap: 59 native wakes
+build/rmw-agnocast/gap2-traced.log:verified fixed wait filter2: 59 native wakes
+build/rmw-agnocast/gap2-traced.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/gap2-traced.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/gap2-traced.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/gap2-traced.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/gap2-traced.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/gap2-traced.log:verified fixed wait tap: 59 native wakes
+build/rmw-agnocast/gap2-traced.log:verified fixed wait filter2: 59 native wakes
+build/rmw-agnocast/gap2-traced.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/gap2-traced.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/gap2-traced.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/gap2-traced.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/gap2-traced.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/gap2-traced.log:verified fixed wait tap: 59 native wakes
+build/rmw-agnocast/gap2-traced.log:verified fixed wait filter2: 59 native wakes
+build/rmw-agnocast/gap2-traced.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/gap2-traced.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/gap2-traced.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/gap2-traced.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/gap2-traced.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/gap2-traced.log:verified fixed wait tap: 59 native wakes
+build/rmw-agnocast/gap2-traced.log:verified fixed wait filter2: 59 native wakes
+build/rmw-agnocast/gap2-traced.log:Minimum host MemAvailable: 12373 MiB
