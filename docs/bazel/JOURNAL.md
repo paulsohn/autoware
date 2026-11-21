@@ -12774,3 +12774,43 @@ or skips occur. Format/flake8/whitespace checks pass. CPU/Cyclone DDS with
 ENABLE_AGNOCAST=0 is selected; no Fast DDS, kernel-dependent matrix, pre-commit
 or full simulator launch is run. Continue remaining selected motion modules
 and their local utility dependency before the controller group.
+
+## 2026-11-22: Phase 7.3.2 — Obstacle-cruise motion plugin
+
+Purpose: expose the default-preset obstacle-cruise factory. Inspect manifest/CMake,
+all 4 production sources and local headers, original XML/config and complete
+original suite (1 cases covering predicted-object planning-factor and cruise decisions).
+
+Add package-local module/library/shared-plugin/index declarations and a root
+local override after the common planner and actual local dependencies. Preserve
+the original plugin basename and category. Declare direct message, PCL, TF,
+planning-factor/marker helpers and flattened shared runtime providers. Expose
+every original test source with its indexed fixtures and actual test utility
+closure; do not add a new in-package test body.
+
+Reuse the root motion-planner adapter with a concrete module profile. The
+adapter loads the actual factory and its own indexed config, checks the expected
+module parameter and DLL, duplicate-load behavior, unload/reload and clean exit.
+Keep the existing obstacle-stop profile as a regression. Moving the shared script
+into its own root test package requires updating the baseline BUILD source/main
+labels together; its assertions remain intact.
+
+Use the exact group command in the
+[slow-down entry](#2026-11-22-phase-732--obstacle-slow-down-motion-plugin),
+including @autoware_motion_velocity_obstacle_cruise_module//... and
+//bazel/tests/autoware_motion_velocity_obstacle_cruise_module:all.
+
+Reload initially exposes the separate PID declaration defect; source fix 15352cbe
+uses current node-owned parameters. The root profile changes the minimum PID
+acceleration to -1.25 before unload and checks retention after reload. Preserve
+the selected pid_base behavior; no optional optimization-mode runtime claim is
+made. The complete original planning-factor case passes after the fix.
+
+All 1 original cases and this real planner lifecycle pass. The complete
+group passes eleven cases across seven targets in 52.1 seconds, reusing unchanged
+results: native slow-down/cruise 0.4 seconds each, dynamic-stop 0.4 seconds, and
+all four planner profiles 1.2–1.3 seconds each. No failures/errors, disabled cases
+or skips occur. Format/flake8/whitespace checks pass. CPU/Cyclone DDS with
+ENABLE_AGNOCAST=0 is selected; no Fast DDS, kernel-dependent matrix, pre-commit
+or full simulator launch is run. Continue remaining selected motion modules
+and their local utility dependency before the controller group.
