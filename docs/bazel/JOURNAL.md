@@ -12585,3 +12585,20 @@ source patches or host installations are needed. Scope is the default native
 HPIPM configuration and declared Python-to-C generation; optional solver
 backends, MATLAB/Octave examples, alternate builder architectures and real-time
 performance are not claimed. Next validate the local optimizer consumer.
+
+## 2026-11-22: Phase 7.3.2 — Optimizer production header dependency
+
+Purpose: compile the actual path optimizer without a test-framework dependency
+in its public production interface. The first debug_marker.cpp compile fails
+on gtest/gtest.h included by mpt_optimizer.hpp. Inspect all production headers
+and implementation: no GTest macros, testing types or assertions use that
+include. Delete only the unused include; keep the original native test's
+explicit GTest dependency. No algorithm, class layout or test expectation changes.
+
+Review current AWF main and PR search for path_optimizer/gtest on 2026-11-22.
+Main retains the include; the only returned PR is the original optimizer feature,
+not a correction. Record this as an unassociated source hygiene finding, distinct
+from the broader Lyrical transition. Source fix and Bazel rules are separate
+commits. The complete optimizer gate below builds its production closure and
+passes its original node case plus both installed startup/script cases. Format
+and whitespace checks pass. No colcon/older-distribution claim is made.

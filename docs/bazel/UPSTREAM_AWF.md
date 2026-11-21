@@ -1220,3 +1220,18 @@ Local source fix: `67287e6e`, separate from Bazel definitions.
   module gate passes its original suite, added UUID lookup regression and both
   standard/experimental lifecycle checks with CPU/Cyclone DDS and Agnocast off.
   Older Boost builds and enabled-Agnocast runtime are not claimed.
+
+### Path optimizer's production header includes unused GTest
+
+- [ ] Associate with a matching upstream correction. Reviewed 2026-11-22:
+  [current mpt_optimizer.hpp](https://github.com/autowarefoundation/autoware_universe/blob/main/planning/autoware_path_optimizer/include/autoware/path_optimizer/mpt_optimizer.hpp)
+  retains gtest/gtest.h. The path_optimizer/gtest PR search returns only the
+  original feature PR #11479, which is not a fix association.
+- Local Universe 0.53.2, LLVM/libc++ 21.1.8/C++23: compiling production
+  debug_marker.cpp fails to find gtest/gtest.h through this public header.
+  No production header or implementation uses GTest declarations/macros.
+- Remove the unused include; retain the original node test's declared GTest
+  dependency. The complete local optimizer suite and indexed startup/script
+  checks pass with CPU/Cyclone DDS and Agnocast off. Exact commands are in the
+  optimizer journal. This is production/test dependency separation, not a claim
+  of a Lyrical-specific API change or a new upstream submission.

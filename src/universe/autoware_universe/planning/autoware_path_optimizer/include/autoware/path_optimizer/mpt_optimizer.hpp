@@ -26,7 +26,6 @@
 #include "autoware_utils/geometry/geometry.hpp"
 #include "autoware_utils/system/time_keeper.hpp"
 #include "autoware_vehicle_info_utils/vehicle_info_utils.hpp"
-#include "gtest/gtest.h"
 
 #include <Eigen/Core>
 #include <Eigen/Sparse>
