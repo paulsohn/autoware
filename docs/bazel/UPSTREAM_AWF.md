@@ -1515,3 +1515,20 @@ No older-ROS verification or new submission is claimed.
   original SDK/factory cases and both launch cases pass, Cyclone DDS/Agnocast
   off. [Exact source diagnosis/gate](JOURNAL.md#2026-11-22-phase-732--cpu-occupancy-lyrical-filter-and-raytrace-apis).
   No older ROS, GPU or full simulator result or submission is claimed.
+
+
+### Processing-time checker needs the current rclcpp logging API
+
+- [ ] Associate with a matching upstream change. Reviewed 2026-11-22: the
+  [current source](https://github.com/autowarefoundation/autoware_universe/blob/main/system/autoware_processing_time_checker/src/processing_time_checker.cpp)
+  still calls get_logging_directory; the scoped processing_time_checker/logging
+  PR search returns no match. The [Lyrical tracker](https://github.com/autowarefoundation/autoware/issues/7404)
+  remains open. This has the same API cause as the evaluator findings above.
+- Reproducer: compile the original CPP against rclcpp 32.0.3. Select
+  get_log_directory at RCLCPP_VERSION_MAJOR >=29, preserving the old branch
+  otherwise. No timing/statistics or file format changes.
+- The installed monitor consumes an actual 12.5 ms Float64Stamped, publishes
+  MetricArray and writes the expected JSON on shutdown; the complete system
+  gate passes sixteen targets/92 cases with CPU/Cyclone DDS and Agnocast off.
+  [Commands and limits](JOURNAL.md#2026-11-22-phase-732--dummy-diagnostic-publication-and-system-gate).
+  No older-ROS/colcon execution or submission is claimed.

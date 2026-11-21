@@ -15548,3 +15548,22 @@ Targeted C++ formatting, Python style and whitespace checks pass. CPU/Cyclone DD
 with ENABLE_AGNOCAST=0; no Fast DDS or full simulator launch. Continue the
 preset-selected system/API implementation closure, then the accumulated typed-
 interface compilation gate before full simulator composition.
+
+## 2026-11-22: Phase 7.3.2 — Processing-time logging API compatibility
+
+Purpose: prepare the selected processing-time monitor for Lyrical without
+changing its timing/statistics or output format. Compiling its original single
+CPP against rclcpp 32.0.3 fails because get_logging_directory was removed.
+Inspect logger.hpp/version.h and the already validated evaluator correction;
+include version.h and use get_log_directory for major >=29, preserving the
+older call below that version. Keep this source correction separate from rules.
+
+Reviewed 2026-11-22: AWF's Lyrical tracker #7404 remains open; current Universe
+processing_time_checker still calls the old function and a scoped logging PR
+search returns no matching change. Associate this independently in UPSTREAM_AWF.
+
+Verification: the complete [system gate](#2026-11-22-phase-732--dummy-diagnostic-publication-and-system-gate)
+passes all sixteen targets (92 cases), including the processing profile's actual
+12.5 ms MetricArray and shutdown JSON minimum/count assertions in an isolated
+ROS_LOG_DIR. Targeted clang-format and whitespace checks pass. CPU/Cyclone DDS,
+Agnocast off; older ROS and colcon are not executed. No upstream submission.
