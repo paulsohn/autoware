@@ -1698,3 +1698,93 @@ notifications, reliability admission, loan ownership and delegated wakeups.
 Compare uninstrumented paired 10 Hz runs, then check 50 Hz, CPU and p95.
 Inspect ROS ready-to-take separately if it remains dominant.
 [Raw observations and per-stage summaries](first-hop-results/).
+
+### A/B the ready subscription descriptor
+
+Both variants use the same binary and blocking outer wait. A goes through
+the inner Agnocast executor, which searches its ready queue and calls
+zero-time epoll when it needs to discover the event. B maps each native
+route's notification FD to its registered callback ID once, while creating
+the reader. On POLLIN it invokes the existing Agnocast subscription event
+handler for that ID, then executes the resulting work and continuation
+batches through the existing callback-group machinery. It processes each
+signalled reliability route under the reader's receive lock. The ordinary
+take fallback still supports callers that take without a preceding wait.
+The switch is `AGNOCAST_RMW_READY_FD=1` with direct wait enabled. A teardown
+counter records actual ready-descriptor dispatches.
+
+At each of 10 and 50 Hz, compare A, B and native Agnocast in four rounds,
+reversing transport and period order. Both RMW cases use the scoped loan
+and fixed blocking wait. The ordinary publisher timer drives all unprofiled
+runs. Each reader validates all 60 frames per run. Latency pools the final
+50. CPU includes all five application children through teardown. An
+independent profile uses the steady-gap fixture, two rounds per period and
+RMW variant, with first-hop timestamps joined by exact source stamp.
+These profiles use a different publisher loop and support stage attribution.
+
+```bash
+export LYRICAL_ROOT=$(cat build/agnocast-lyrical/universe-root)
+experiments/buffer/run-lyrical.sh bash experiments/rmw-agnocast/build-loadable.sh
+export BUFFER_RUNTIME_ONLY=1
+bench=experiments/rmw-agnocast/bench-host-cloud.sh
+probe=experiments/rmw-agnocast/run-loadable.sh
+out=build/rmw-agnocast/ready-fd-repeat
+mkdir "$out"
+run() { experiments/buffer/run-lyrical.sh timeout 280 bash "$@"; }
+for spec in 'matching native normal' 'matching native flood' pressure host-loan contract; do
+  AGNOCAST_RMW_READY_FD=1 AGNOCAST_RMW_DIRECT_WAIT=1 run "$probe" $spec
+done
+AGNOCAST_RMW_READY_FD=1 run "$bench" --check-cold
+run "$bench" "$out/timed" --ready-fd
+run "$bench" "$out/profile" --ready-fd-profile
+python3 experiments/rmw-agnocast/summarize-ready-fd.py "$out/timed"
+for mode in epoll ready; do
+  python3 experiments/rmw-agnocast/summarize-hop.py "$out/profile" "$mode"
+done
+```
+
+The depth-one reliable subscriber retained its single compatible sample
+across a 64-sample incompatible burst. The two-route best-effort reader
+attributed both writers. Queue pressure, reader restart, retained loans,
+reader-death cleanup, serialized cloud reads and the delegated diagnostic
+passed with B. In the first timed batch each of the four RMW readers in
+every B run reported 60 known-descriptor dispatches.
+
+| Rate and mode | Final median / p95 µs | Relative to native | Child CPU s |
+|---|---:|---:|---:|
+| 10 Hz native | 594 / 937 | 1.00 / 1.00 | 1.033 |
+| 10 Hz A, inner epoll | 684 / 884 | 1.15 / 0.94 | 1.166 |
+| 10 Hz B, known descriptor | 641 / 927 | 1.08 / 0.99 | 1.208 |
+| 50 Hz native | 508 / 822 | 1.00 / 1.00 | 1.037 |
+| 50 Hz A | 556 / 821 | 1.09 / 1.00 | 1.126 |
+| 50 Hz B | 540 / 738 | 1.06 / 0.90 | 1.111 |
+
+In the first 10 Hz batch the four same-round final median differences
+(B minus A) were −124, +24, +3 and −86 µs. At 50 Hz B had a lower
+median in all four rounds. At 10 Hz the profiled first-reader poll-to-loan
+median moved from 23.9 to 23.2 µs, while poll-to-take was 41.4 µs in both
+variants. The ready-to-take median was also 15.6 µs in both. The long-gap
+poll-to-loan penalty persisted (+9.6 µs A, +11.1 µs B). These measurements
+rule out the extra ready-queue check and zero-time epoll as a sufficient
+explanation of the recurring first-hop latency gap. Work shared by both
+variants includes draining eventfd, receiving a kernel loan, executing the
+Agnocast callback and dispatching the regular ROS subscription. Their
+individual costs still need measurement.
+
+The independent 10 Hz confirmation uses the same unprofiled runner. Append
+`--10hz-only` after `--ready-fd` and pass the same option to
+`summarize-ready-fd.py`. Keep B opt-in pending a reproducible end-to-end
+benefit and tail/CPU evidence. The first batch's 1.08× median alone does
+not establish the mechanism.
+
+The 10 Hz repeat gave native 599/1045 µs median/p95, A 689/930 µs
+(1.15×/0.89×) and B 717/915 µs (1.20×/0.88×). B minus A median by round
+was +43, +18, +93 and −5 µs. Across both batches B won three of eight
+paired medians. Median child CPU rose from 1.250 to 1.292 s in the repeat
+and from 1.166 to 1.208 s in the first batch. The narrower poll-to-loan
+metric in the profiled 10 Hz pairs also changed in both directions
+(24.1→21.3 and 23.8→24.6 µs). Leave the default on A. The next discriminating
+measurement is eventfd read through the receive ioctl and callback invocation,
+and separately exposed readiness through ROS dispatch. All 2,640 source
+frames across the timed, profile and confirmation batches passed both
+readers. [Raw observations and summaries](ready-fd-results/).

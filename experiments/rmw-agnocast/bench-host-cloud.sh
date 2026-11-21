@@ -9,6 +9,37 @@ if [[ ${1:-} == --check-cold ]]; then
 fi
 out=${1:?fresh results directory}
 mkdir "$out"
+if [[ ${2:-} == --ready-fd || ${2:-} == --ready-fd-profile ]]; then
+  for round in 1 2 3 4; do
+    periods=(100 20)
+    modes=(epoll ready agnocast)
+    case $round in
+      2) periods=(20 100); modes=(agnocast ready epoll);;
+      3) modes=(ready epoll agnocast);;
+      4) periods=(20 100); modes=(agnocast epoll ready);;
+    esac
+    if [[ ${3:-} == --10hz-only ]]; then periods=(100); fi
+    for ms in "${periods[@]}"; do
+      for mode in "${modes[@]}"; do
+        file="$out/$ms-$mode-$round"
+        transport=fixed
+        opts=(--period-ms "$ms" --branched)
+        if [[ $mode == agnocast ]]; then transport=agnocast; else opts+=(--payload-scope); fi
+        profile=0
+        if [[ $2 == --ready-fd-profile ]]; then
+          if [[ $mode == agnocast || $round -gt 2 ]]; then continue; fi
+          opts+=(--gaps steady --gap-profile)
+          profile=1
+        fi
+        flag=0
+        if [[ $mode == ready ]]; then flag=1; fi
+        AGNOCAST_RMW_READY_FD=$flag BENCH_HOP_TRACE=$profile python3 src/universe_crop_benchmark/run_case.py \
+          "$transport" "$file.csv" "${opts[@]}" --resources "$file-resources.csv"
+      done
+    done
+  done
+  exit 0
+fi
 if [[ ${2:-} == --steady-gaps ]]; then
   for round in 1 2; do
     periods=(20 100)

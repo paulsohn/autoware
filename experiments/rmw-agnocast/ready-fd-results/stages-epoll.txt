@@ -1,0 +1,12 @@
+stage | 20 ms median/p95 us | 100 ms median/p95 us | median delta us
+stamp to publish_entry | 3.6/10.6 | 10.0/13.4 | +6.4
+publish_entry to handoff | 0.6/1.3 | 1.2/1.6 | +0.6
+handoff to poll | 16.8/32.0 | 27.4/41.0 | +10.5
+poll to take | 20.2/41.4 | 41.4/53.0 | +21.3
+take to restored | 1.0/2.2 | 2.2/3.1 | +1.2
+restored to entry | 1.1/3.3 | 3.7/5.4 | +2.6
+poll to admit | 14.4/30.6 | 23.9/32.7 | +9.6
+admit to ready | 0.8/2.1 | 1.9/2.3 | +1.1
+ready to take | 4.2/16.5 | 15.6/19.6 | +11.4
+handoff to publish_return | 6.7/16.5 | 10.7/15.0 | +4.0
+stamp to entry | 45.2/91.1 | 83.9/114.8 | +38.7

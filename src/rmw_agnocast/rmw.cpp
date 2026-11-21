@@ -309,6 +309,14 @@ bool direct_wait_enabled()
   }();
   return enabled;
 }
+bool ready_fd_enabled()
+{
+  static const bool enabled = [] {
+    const char * flag = std::getenv("AGNOCAST_RMW_READY_FD");
+    return flag && std::strcmp(flag, "1") == 0;
+  }();
+  return enabled;
+}
 class NativeSubscription : public agnocast::Subscription<void>
 {
 public:
@@ -323,6 +331,13 @@ public:
     add_callback_groups_from_nodes_associated_to_executor();
     epoll_manager_->prepare_epoll(
       [this](const auto & group) { return is_callback_group_associated(group); });
+  }
+  void receive_known(uint32_t callback_id)
+  {
+    agnocast::SubscriptionEventHandler handler(my_pid_, &ready_agnocast_executables_mutex_, &ready_agnocast_executables_);
+    handler.handle(callback_id);
+    agnocast::AgnocastExecutable executable;
+    while (get_next_ready_agnocast_executable(executable)) execute_agnocast_executable(executable);
   }
   void receive()
   {
@@ -348,6 +363,8 @@ struct Reader : std::enable_shared_from_this<Reader>
   std::map<void *, Loan> held;
   std::vector<std::shared_ptr<NativeSubscription>> routes;
   std::mutex receive_mutex;
+  std::vector<uint32_t> route_ids;
+  size_t known_dispatches = 0;
   NativeExecutor exec;
   std::thread thread;
   Reader(
@@ -394,6 +411,15 @@ struct Reader : std::enable_shared_from_this<Reader>
     };
     subscribe(true);
     if (!type.legacy && qos.reliability == RMW_QOS_POLICY_RELIABILITY_BEST_EFFORT) subscribe(false);
+    if (direct_wait_enabled() && ready_fd_enabled()) {
+      std::lock_guard lock(agnocast::id2_callback_info_mtx);
+      for (const auto & route : routes) {
+        auto id = std::find_if(agnocast::id2_callback_info.begin(), agnocast::id2_callback_info.end(),
+          [&](const auto & item) { return item.second.notify_eventfd == route->notification_fd(); });
+        if (id == agnocast::id2_callback_info.end()) throw std::runtime_error("missing Agnocast route ID");
+        route_ids.push_back(id->first);
+      }
+    }
     exec.add_node(node);
     if (direct_wait_enabled())
       exec.prepare();
@@ -402,11 +428,23 @@ struct Reader : std::enable_shared_from_this<Reader>
   }
   ~Reader()
   {
+    if (known_dispatches) std::fprintf(stderr, "ready_fd dispatches=%zu\n", known_dispatches);
     exec.cancel();
     if (thread.joinable()) thread.join();
     // Release kernel references before unregistering the native subscriber.
     held.clear();
     pending.clear();
+  }
+  void receive_polled(const pollfd * descriptors)
+  {
+    if (route_ids.empty()) return receive_direct();
+    std::lock_guard lock(receive_mutex);
+    for (size_t i = 0; i < route_ids.size(); ++i) {
+      if (descriptors[i].revents & POLLIN) {
+        exec.receive_known(route_ids[i]);
+        ++known_dispatches;
+      }
+    }
   }
   void receive_direct()
   {
@@ -1089,7 +1127,7 @@ public:
       std::exception_ptr failure;
       try {
         for (size_t i = 0; i < native.size(); ++i)
-          if (events_for(i) & POLLIN) native[i].second->receive_direct();
+          if (events_for(i) & POLLIN) native[i].second->receive_polled(&fds[fd_starts[i]]);
       } catch (...) {
         failure = std::current_exception();
       }
@@ -1117,7 +1155,7 @@ public:
       if (events_for(i) & (POLLERR | POLLHUP | POLLNVAL))
         return error("native notification fd failed");
       if ((fixed_probe || native_only || queued || (timeout && !timeout->sec && !timeout->nsec)) && (events_for(i) & POLLIN))
-        r->receive_direct();
+        r->receive_polled(&fds[fd_starts[i]]);
       auto timing = r->trace && times.wake && (events_for(i) & POLLIN) ? &times : nullptr;
       if (r->ready(0, 0, false, timing)) {
         if (events_for(i) & POLLIN) hop_reader().mark("ready");

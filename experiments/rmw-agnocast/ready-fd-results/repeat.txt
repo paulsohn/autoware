@@ -1,0 +1,5 @@
+10 Hz agnocast: sink median/p95 599.3/1045.2 us, native ratios 1.00/1.00, tap 350.3 us, CPU 1.116 s, largest child 134.3 MiB
+10 Hz epoll: sink median/p95 688.8/929.6 us, native ratios 1.15/0.89, tap 428.7 us, CPU 1.250 s, largest child 137.7 MiB
+10 Hz ready: sink median/p95 716.8/915.3 us, native ratios 1.20/0.88, tap 443.6 us, CPU 1.292 s, largest child 136.9 MiB
+ready minus epoll median us: 43.2 17.5 92.9 -5.1
+ready minus epoll p95 us: 356.4 29.2 -179.9 -403.9

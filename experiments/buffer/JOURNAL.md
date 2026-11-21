@@ -1181,3 +1181,23 @@ similar first-hop results. No latency optimization was applied. Next test
 one blocking ready-descriptor dispatch change against the unchanged control
 before attributing a 1.10× or parity result to it.
 [Commands, stage definitions, evidence and target arithmetic](../rmw-agnocast/README.md#locate-the-first-hop-cost-after-a-longer-gap)
+
+### A/B dispatch from the already-ready subscription descriptor
+
+Implemented an opt-in RMW path that resolves each route FD to its registered
+Agnocast callback ID at reader creation and hands the known POLLIN route to
+the stock event handler. It drains deferred work and continuations using the
+same executor machinery. Compared with zero-time inner epoll in the same
+binary, preserving the blocking outer wait and DDS delegation. Reliability
+flood, pressure/restart, retention, crash cleanup, host-cloud loan and cold
+DDS diagnostics passed. Dispatch counts verified the new path on both crop
+stages and both readers. All 2,640 frames from 44 runs passed both sinks.
+
+At 10 Hz the first unprofiled result moved from 1.15× to 1.08× native median.
+A separate repeat moved from 1.15× to 1.20×. B won three of eight same-round
+median comparisons and used more child CPU in both batches. Both variants
+measured 41.4 µs median from poll to take at 10 Hz. B retained the longer-gap
+poll-to-loan penalty. This isolates redundant epoll discovery as an
+insufficient explanation. Keep A as default and investigate the event handler
+and downstream ROS dispatch separately before another optimization.
+[Commands, controls, measurements and limitations](../rmw-agnocast/README.md#ab-the-ready-subscription-descriptor)

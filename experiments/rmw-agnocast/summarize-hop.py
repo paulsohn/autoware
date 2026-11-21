@@ -8,8 +8,9 @@ import sys
 
 root = Path(sys.argv[1])
 groups = defaultdict(lambda: [[], []])
-steady = (root / "100-fixed-1.stamps").exists()
-runs = sorted(root.glob("*fixed-*.stamps"))
+mode = sys.argv[2] if len(sys.argv) > 2 else "fixed"
+steady = (root / f"100-{mode}-1.stamps").exists()
+runs = sorted(root.glob(f"*{mode}-*.stamps"))
 assert len(runs) == 4
 for path in runs:
     stamps = list(map(int, path.read_text().splitlines()))

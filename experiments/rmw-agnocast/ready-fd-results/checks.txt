@@ -1,0 +1,322 @@
+build/rmw-agnocast/ab-ready-fd-profile.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/ab-ready-fd-profile.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/ab-ready-fd-profile.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/ab-ready-fd-profile.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/ab-ready-fd-profile.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/ab-ready-fd-profile.log:verified fixed wait tap: 59 native wakes
+build/rmw-agnocast/ab-ready-fd-profile.log:verified fixed wait filter2: 59 native wakes
+build/rmw-agnocast/ab-ready-fd-profile.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/ab-ready-fd-profile.log:ready_fd dispatches=60
+build/rmw-agnocast/ab-ready-fd-profile.log:ready_fd dispatches=60
+build/rmw-agnocast/ab-ready-fd-profile.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/ab-ready-fd-profile.log:ready_fd dispatches=60
+build/rmw-agnocast/ab-ready-fd-profile.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/ab-ready-fd-profile.log:ready_fd dispatches=60
+build/rmw-agnocast/ab-ready-fd-profile.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/ab-ready-fd-profile.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/ab-ready-fd-profile.log:verified fixed wait tap: 59 native wakes
+build/rmw-agnocast/ab-ready-fd-profile.log:verified fixed wait filter2: 59 native wakes
+build/rmw-agnocast/ab-ready-fd-profile.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/ab-ready-fd-profile.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/ab-ready-fd-profile.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/ab-ready-fd-profile.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/ab-ready-fd-profile.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/ab-ready-fd-profile.log:verified fixed wait tap: 59 native wakes
+build/rmw-agnocast/ab-ready-fd-profile.log:verified fixed wait filter2: 59 native wakes
+build/rmw-agnocast/ab-ready-fd-profile.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/ab-ready-fd-profile.log:ready_fd dispatches=60
+build/rmw-agnocast/ab-ready-fd-profile.log:ready_fd dispatches=60
+build/rmw-agnocast/ab-ready-fd-profile.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/ab-ready-fd-profile.log:ready_fd dispatches=60
+build/rmw-agnocast/ab-ready-fd-profile.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/ab-ready-fd-profile.log:ready_fd dispatches=60
+build/rmw-agnocast/ab-ready-fd-profile.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/ab-ready-fd-profile.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/ab-ready-fd-profile.log:verified fixed wait tap: 59 native wakes
+build/rmw-agnocast/ab-ready-fd-profile.log:verified fixed wait filter2: 59 native wakes
+build/rmw-agnocast/ab-ready-fd-profile.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/ab-ready-fd-profile.log:ready_fd dispatches=60
+build/rmw-agnocast/ab-ready-fd-profile.log:ready_fd dispatches=60
+build/rmw-agnocast/ab-ready-fd-profile.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/ab-ready-fd-profile.log:ready_fd dispatches=60
+build/rmw-agnocast/ab-ready-fd-profile.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/ab-ready-fd-profile.log:ready_fd dispatches=60
+build/rmw-agnocast/ab-ready-fd-profile.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/ab-ready-fd-profile.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/ab-ready-fd-profile.log:verified fixed wait tap: 59 native wakes
+build/rmw-agnocast/ab-ready-fd-profile.log:verified fixed wait filter2: 59 native wakes
+build/rmw-agnocast/ab-ready-fd-profile.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/ab-ready-fd-profile.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/ab-ready-fd-profile.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/ab-ready-fd-profile.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/ab-ready-fd-profile.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/ab-ready-fd-profile.log:verified fixed wait tap: 59 native wakes
+build/rmw-agnocast/ab-ready-fd-profile.log:verified fixed wait filter2: 59 native wakes
+build/rmw-agnocast/ab-ready-fd-profile.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/ab-ready-fd-profile.log:ready_fd dispatches=60
+build/rmw-agnocast/ab-ready-fd-profile.log:ready_fd dispatches=60
+build/rmw-agnocast/ab-ready-fd-profile.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/ab-ready-fd-profile.log:ready_fd dispatches=60
+build/rmw-agnocast/ab-ready-fd-profile.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/ab-ready-fd-profile.log:ready_fd dispatches=60
+build/rmw-agnocast/ab-ready-fd-profile.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/ab-ready-fd-profile.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/ab-ready-fd-profile.log:verified fixed wait tap: 59 native wakes
+build/rmw-agnocast/ab-ready-fd-profile.log:verified fixed wait filter2: 59 native wakes
+build/rmw-agnocast/ab-ready-fd-profile.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/ab-ready-fd-profile.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/ab-ready-fd-profile.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/ab-ready-fd-profile.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/ab-ready-fd-profile.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/ab-ready-fd-profile.log:verified fixed wait tap: 59 native wakes
+build/rmw-agnocast/ab-ready-fd-profile.log:verified fixed wait filter2: 59 native wakes
+build/rmw-agnocast/ab-ready-fd-profile.log:Minimum host MemAvailable: 11331 MiB
+build/rmw-agnocast/fd-ab-matching-native-flood.log:compatible callbacks=1 incompatible callbacks=0 calibrated writer identity=1 receiver GIDs reliable=rmw_cyclonedds_cpp/558a84a7b2d6478d0000000000000000 best_effort=rmw_cyclonedds_cpp/e458ac8129096e580000000000000000
+build/rmw-agnocast/fd-ab-matching-native-flood.log:ready_fd dispatches=2
+build/rmw-agnocast/fd-ab-matching-native-flood.log:ready_fd dispatches=2
+build/rmw-agnocast/fd-ab-matching-native-flood.log:Minimum host MemAvailable: 11435 MiB
+build/rmw-agnocast/fd-ab-pressure.log:ready_fd dispatches=2
+build/rmw-agnocast/fd-ab-pressure.log:ready_fd dispatches=1
+build/rmw-agnocast/fd-ab-pressure.log:ready_fd dispatches=11
+build/rmw-agnocast/fd-ab-pressure.log:Pressure passed: fast 1..11, slow 1/8/9, restarted 11; retained 1 through teardown
+build/rmw-agnocast/fd-ab-pressure.log:Minimum host MemAvailable: 11486 MiB
+build/rmw-agnocast/fd-ab-host-loan.log:ready_fd dispatches=8
+build/rmw-agnocast/fd-ab-host-loan.log:ready_fd dispatches=8
+build/rmw-agnocast/fd-ab-host-loan.log:ready_fd dispatches=8
+build/rmw-agnocast/fd-ab-host-loan.log:view addresses, independent mutation, retention and final release passed
+build/rmw-agnocast/fd-ab-host-loan.log:host-cloud publisher loans=8 private_copies=1
+build/rmw-agnocast/fd-ab-host-loan.log:Minimum host MemAvailable: 11508 MiB
+build/rmw-agnocast/ab-ready-fd.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/ab-ready-fd.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/ab-ready-fd.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/ab-ready-fd.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/ab-ready-fd.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/ab-ready-fd.log:verified fixed wait tap: 59 native wakes
+build/rmw-agnocast/ab-ready-fd.log:verified fixed wait filter2: 59 native wakes
+build/rmw-agnocast/ab-ready-fd.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/ab-ready-fd.log:ready_fd dispatches=60
+build/rmw-agnocast/ab-ready-fd.log:ready_fd dispatches=60
+build/rmw-agnocast/ab-ready-fd.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/ab-ready-fd.log:ready_fd dispatches=60
+build/rmw-agnocast/ab-ready-fd.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/ab-ready-fd.log:ready_fd dispatches=60
+build/rmw-agnocast/ab-ready-fd.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/ab-ready-fd.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/ab-ready-fd.log:verified fixed wait tap: 59 native wakes
+build/rmw-agnocast/ab-ready-fd.log:verified fixed wait filter2: 59 native wakes
+build/rmw-agnocast/ab-ready-fd.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/ab-ready-fd.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/ab-ready-fd.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/ab-ready-fd.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/ab-ready-fd.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/ab-ready-fd.log:verified fixed wait tap: 59 native wakes
+build/rmw-agnocast/ab-ready-fd.log:verified fixed wait filter2: 59 native wakes
+build/rmw-agnocast/ab-ready-fd.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/ab-ready-fd.log:ready_fd dispatches=60
+build/rmw-agnocast/ab-ready-fd.log:ready_fd dispatches=60
+build/rmw-agnocast/ab-ready-fd.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/ab-ready-fd.log:ready_fd dispatches=60
+build/rmw-agnocast/ab-ready-fd.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/ab-ready-fd.log:ready_fd dispatches=60
+build/rmw-agnocast/ab-ready-fd.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/ab-ready-fd.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/ab-ready-fd.log:verified fixed wait tap: 59 native wakes
+build/rmw-agnocast/ab-ready-fd.log:verified fixed wait filter2: 59 native wakes
+build/rmw-agnocast/ab-ready-fd.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/ab-ready-fd.log:ready_fd dispatches=60
+build/rmw-agnocast/ab-ready-fd.log:ready_fd dispatches=60
+build/rmw-agnocast/ab-ready-fd.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/ab-ready-fd.log:ready_fd dispatches=60
+build/rmw-agnocast/ab-ready-fd.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/ab-ready-fd.log:ready_fd dispatches=60
+build/rmw-agnocast/ab-ready-fd.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/ab-ready-fd.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/ab-ready-fd.log:verified fixed wait tap: 59 native wakes
+build/rmw-agnocast/ab-ready-fd.log:verified fixed wait filter2: 59 native wakes
+build/rmw-agnocast/ab-ready-fd.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/ab-ready-fd.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/ab-ready-fd.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/ab-ready-fd.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/ab-ready-fd.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/ab-ready-fd.log:verified fixed wait tap: 59 native wakes
+build/rmw-agnocast/ab-ready-fd.log:verified fixed wait filter2: 59 native wakes
+build/rmw-agnocast/ab-ready-fd.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/ab-ready-fd.log:ready_fd dispatches=60
+build/rmw-agnocast/ab-ready-fd.log:ready_fd dispatches=60
+build/rmw-agnocast/ab-ready-fd.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/ab-ready-fd.log:ready_fd dispatches=60
+build/rmw-agnocast/ab-ready-fd.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/ab-ready-fd.log:ready_fd dispatches=60
+build/rmw-agnocast/ab-ready-fd.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/ab-ready-fd.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/ab-ready-fd.log:verified fixed wait tap: 59 native wakes
+build/rmw-agnocast/ab-ready-fd.log:verified fixed wait filter2: 59 native wakes
+build/rmw-agnocast/ab-ready-fd.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/ab-ready-fd.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/ab-ready-fd.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/ab-ready-fd.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/ab-ready-fd.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/ab-ready-fd.log:verified fixed wait tap: 59 native wakes
+build/rmw-agnocast/ab-ready-fd.log:verified fixed wait filter2: 59 native wakes
+build/rmw-agnocast/ab-ready-fd.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/ab-ready-fd.log:ready_fd dispatches=60
+build/rmw-agnocast/ab-ready-fd.log:ready_fd dispatches=60
+build/rmw-agnocast/ab-ready-fd.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/ab-ready-fd.log:ready_fd dispatches=60
+build/rmw-agnocast/ab-ready-fd.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/ab-ready-fd.log:ready_fd dispatches=60
+build/rmw-agnocast/ab-ready-fd.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/ab-ready-fd.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/ab-ready-fd.log:verified fixed wait tap: 59 native wakes
+build/rmw-agnocast/ab-ready-fd.log:verified fixed wait filter2: 59 native wakes
+build/rmw-agnocast/ab-ready-fd.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/ab-ready-fd.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/ab-ready-fd.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/ab-ready-fd.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/ab-ready-fd.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/ab-ready-fd.log:verified fixed wait tap: 59 native wakes
+build/rmw-agnocast/ab-ready-fd.log:verified fixed wait filter2: 59 native wakes
+build/rmw-agnocast/ab-ready-fd.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/ab-ready-fd.log:ready_fd dispatches=60
+build/rmw-agnocast/ab-ready-fd.log:ready_fd dispatches=60
+build/rmw-agnocast/ab-ready-fd.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/ab-ready-fd.log:ready_fd dispatches=60
+build/rmw-agnocast/ab-ready-fd.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/ab-ready-fd.log:ready_fd dispatches=60
+build/rmw-agnocast/ab-ready-fd.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/ab-ready-fd.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/ab-ready-fd.log:verified fixed wait tap: 59 native wakes
+build/rmw-agnocast/ab-ready-fd.log:verified fixed wait filter2: 59 native wakes
+build/rmw-agnocast/ab-ready-fd.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/ab-ready-fd.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/ab-ready-fd.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/ab-ready-fd.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/ab-ready-fd.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/ab-ready-fd.log:verified fixed wait tap: 59 native wakes
+build/rmw-agnocast/ab-ready-fd.log:verified fixed wait filter2: 59 native wakes
+build/rmw-agnocast/ab-ready-fd.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/ab-ready-fd.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/ab-ready-fd.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/ab-ready-fd.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/ab-ready-fd.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/ab-ready-fd.log:verified fixed wait tap: 59 native wakes
+build/rmw-agnocast/ab-ready-fd.log:verified fixed wait filter2: 59 native wakes
+build/rmw-agnocast/ab-ready-fd.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/ab-ready-fd.log:ready_fd dispatches=60
+build/rmw-agnocast/ab-ready-fd.log:ready_fd dispatches=60
+build/rmw-agnocast/ab-ready-fd.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/ab-ready-fd.log:ready_fd dispatches=60
+build/rmw-agnocast/ab-ready-fd.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/ab-ready-fd.log:ready_fd dispatches=60
+build/rmw-agnocast/ab-ready-fd.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/ab-ready-fd.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/ab-ready-fd.log:verified fixed wait tap: 59 native wakes
+build/rmw-agnocast/ab-ready-fd.log:verified fixed wait filter2: 59 native wakes
+build/rmw-agnocast/ab-ready-fd.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/ab-ready-fd.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/ab-ready-fd.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/ab-ready-fd.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/ab-ready-fd.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/ab-ready-fd.log:verified fixed wait tap: 59 native wakes
+build/rmw-agnocast/ab-ready-fd.log:verified fixed wait filter2: 59 native wakes
+build/rmw-agnocast/ab-ready-fd.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/ab-ready-fd.log:ready_fd dispatches=60
+build/rmw-agnocast/ab-ready-fd.log:ready_fd dispatches=60
+build/rmw-agnocast/ab-ready-fd.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/ab-ready-fd.log:ready_fd dispatches=60
+build/rmw-agnocast/ab-ready-fd.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/ab-ready-fd.log:ready_fd dispatches=60
+build/rmw-agnocast/ab-ready-fd.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/ab-ready-fd.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/ab-ready-fd.log:verified fixed wait tap: 59 native wakes
+build/rmw-agnocast/ab-ready-fd.log:verified fixed wait filter2: 59 native wakes
+build/rmw-agnocast/ab-ready-fd.log:Minimum host MemAvailable: 10996 MiB
+build/rmw-agnocast/fd-ab-contract.log:writer reused held sample address after SIGKILL
+build/rmw-agnocast/fd-ab-contract.log:Minimum host MemAvailable: 11477 MiB
+build/rmw-agnocast/fd-ab-matching-native-normal.log:compatible callbacks=3 incompatible callbacks=0 calibrated writer identity=1 receiver GIDs reliable=rmw_cyclonedds_cpp/ae57f93d1ab5658b0000000000000000 best_effort=rmw_cyclonedds_cpp/b9d5834e8bf1af0b0000000000000000
+build/rmw-agnocast/fd-ab-matching-native-normal.log:ready_fd dispatches=2
+build/rmw-agnocast/fd-ab-matching-native-normal.log:ready_fd dispatches=2
+build/rmw-agnocast/fd-ab-matching-native-normal.log:Minimum host MemAvailable: 11415 MiB
+build/rmw-agnocast/fd-ab-cold.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/fd-ab-cold.log:ready_fd dispatches=60
+build/rmw-agnocast/fd-ab-cold.log:ready_fd dispatches=60
+build/rmw-agnocast/fd-ab-cold.log:host-cloud publisher loans=60 private_copies=0
+build/rmw-agnocast/fd-ab-cold.log:verified fixed wait filter: 59 native wakes
+build/rmw-agnocast/fd-ab-cold.log:verified fixed wait sub: 59 native wakes
+build/rmw-agnocast/fd-ab-cold.log:Received 60 distinct stamped diagnostics from /output/debug/published_time
+build/rmw-agnocast/fd-ab-cold.log:Minimum host MemAvailable: 11454 MiB
+build/rmw-agnocast/fd-ab-build.log:Summary: 2 packages finished [4.91s]
+build/rmw-agnocast/fd-ab-build.log:Minimum host MemAvailable: 11225 MiB
+host-cloud publisher loans=60 private_copies=0
+host-cloud publisher loans=60 private_copies=0
+host-cloud publisher loans=60 private_copies=0
+verified fixed wait filter: 59 native wakes
+verified fixed wait sub: 59 native wakes
+verified fixed wait tap: 59 native wakes
+verified fixed wait filter2: 59 native wakes
+host-cloud publisher loans=60 private_copies=0
+ready_fd dispatches=60
+ready_fd dispatches=60
+host-cloud publisher loans=60 private_copies=0
+ready_fd dispatches=60
+host-cloud publisher loans=60 private_copies=0
+ready_fd dispatches=60
+verified fixed wait filter: 59 native wakes
+verified fixed wait sub: 59 native wakes
+verified fixed wait tap: 59 native wakes
+verified fixed wait filter2: 59 native wakes
+host-cloud publisher loans=60 private_copies=0
+ready_fd dispatches=60
+ready_fd dispatches=60
+host-cloud publisher loans=60 private_copies=0
+ready_fd dispatches=60
+host-cloud publisher loans=60 private_copies=0
+ready_fd dispatches=60
+verified fixed wait filter: 59 native wakes
+verified fixed wait sub: 59 native wakes
+verified fixed wait tap: 59 native wakes
+verified fixed wait filter2: 59 native wakes
+host-cloud publisher loans=60 private_copies=0
+host-cloud publisher loans=60 private_copies=0
+host-cloud publisher loans=60 private_copies=0
+verified fixed wait filter: 59 native wakes
+verified fixed wait sub: 59 native wakes
+verified fixed wait tap: 59 native wakes
+verified fixed wait filter2: 59 native wakes
+host-cloud publisher loans=60 private_copies=0
+ready_fd dispatches=60
+ready_fd dispatches=60
+host-cloud publisher loans=60 private_copies=0
+ready_fd dispatches=60
+host-cloud publisher loans=60 private_copies=0
+ready_fd dispatches=60
+verified fixed wait filter: 59 native wakes
+verified fixed wait sub: 59 native wakes
+verified fixed wait tap: 59 native wakes
+verified fixed wait filter2: 59 native wakes
+host-cloud publisher loans=60 private_copies=0
+host-cloud publisher loans=60 private_copies=0
+host-cloud publisher loans=60 private_copies=0
+verified fixed wait filter: 59 native wakes
+verified fixed wait sub: 59 native wakes
+verified fixed wait tap: 59 native wakes
+verified fixed wait filter2: 59 native wakes
+host-cloud publisher loans=60 private_copies=0
+host-cloud publisher loans=60 private_copies=0
+host-cloud publisher loans=60 private_copies=0
+verified fixed wait filter: 59 native wakes
+verified fixed wait sub: 59 native wakes
+verified fixed wait tap: 59 native wakes
+verified fixed wait filter2: 59 native wakes
+host-cloud publisher loans=60 private_copies=0
+ready_fd dispatches=60
+ready_fd dispatches=60
+host-cloud publisher loans=60 private_copies=0
+ready_fd dispatches=60
+host-cloud publisher loans=60 private_copies=0
+ready_fd dispatches=60
+verified fixed wait filter: 59 native wakes
+verified fixed wait sub: 59 native wakes
+verified fixed wait tap: 59 native wakes
+verified fixed wait filter2: 59 native wakes
+Minimum host MemAvailable: 11305 MiB
