@@ -1,0 +1,78 @@
+load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library")
+load("@autoware_agnocast_wrapper//:defs.bzl", "autoware_agnocast_node")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "autoware_diagnostic_graph_utils",
+    srcs = glob(["src/lib/*.cpp"]),
+    hdrs = glob(["include/**/*.hpp", "src/**/*.hpp"]),
+    includes = ["include", "src"],
+    deps = [
+        "@autoware_agnocast_wrapper//:autoware_agnocast_wrapper_library",
+        "@autoware_internal_debug_msgs//:cc",
+        "@diagnostic_msgs//:cc",
+        "@rclcpp//:rclcpp_library",
+        "@rclcpp_components//:rclcpp_components_library",
+        "@tier4_system_msgs//:cc",
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = [
+        "@autoware_agnocast_wrapper//:autoware_agnocast_wrapper",
+        "@autoware_internal_debug_msgs//:cc_shared",
+        "@diagnostic_msgs//:cc_shared",
+        "@rclcpp//:rclcpp",
+        "@rclcpp_components//:rclcpp_components",
+        "@tier4_system_msgs//:cc_shared",
+    ],
+)
+
+cc_library(name = "node_library", srcs = glob(["src/node/*.cpp"]), deps = [":autoware_diagnostic_graph_utils"])
+
+cc_shared_library(
+    name = "autoware_diagnostic_graph_utils_component",
+    dynamic_deps = [":runtime_dynamic_deps"],
+    deps = [":node_library"],
+)
+
+autoware_agnocast_node(
+    name = "dump_node",
+    package_name = "autoware_diagnostic_graph_utils",
+    component = ":autoware_diagnostic_graph_utils_component",
+    plugin = "autoware::diagnostic_graph_utils::DumpNode",
+    agnocast_only = True,
+)
+
+autoware_agnocast_node(
+    name = "converter_node",
+    package_name = "autoware_diagnostic_graph_utils",
+    component = ":autoware_diagnostic_graph_utils_component",
+    plugin = "autoware::diagnostic_graph_utils::ConverterNode",
+    agnocast_only = True,
+)
+
+autoware_agnocast_node(
+    name = "logging_node",
+    package_name = "autoware_diagnostic_graph_utils",
+    component = ":autoware_diagnostic_graph_utils_component",
+    plugin = "autoware::diagnostic_graph_utils::LoggingNode",
+    agnocast_only = True,
+)
+
+register_ament_files(
+    name = "node_executables",
+    files = [":dump_node", ":converter_node", ":logging_node"],
+    prefix = "lib/autoware_diagnostic_graph_utils",
+    strip_prefix = "*",
+)
+
+ament_index(
+    package_xml = "package.xml",
+    data = glob(["launch/**"]) + [":dump_node_plugin", ":converter_node_plugin", ":logging_node_plugin", ":node_executables"],
+    components = [":dump_node_components", ":converter_node_components", ":logging_node_components"],
+)

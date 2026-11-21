@@ -34,5 +34,8 @@ load("@rules_python//python:defs.bzl", "py_test")
         ("aggregator", "autoware_diagnostic_graph_aggregator", "aggregator_node", "default.param.yaml"),
         ("mode_converter", "autoware_diagnostic_graph_aggregator", "converter_node", "converter.param.yaml"),
         ("tree", "autoware_diagnostic_graph_aggregator", "tree", "-"),
+        ("dump", "autoware_diagnostic_graph_utils", "dump_node", "-"),
+        ("graph_converter", "autoware_diagnostic_graph_utils", "converter_node", "-"),
+        ("logging", "autoware_diagnostic_graph_utils", "logging_node", "-"),
     ]
 ]

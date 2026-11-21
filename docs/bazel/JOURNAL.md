@@ -15702,3 +15702,21 @@ The complete gate passes all sixteen targets/92 active cases: 77 original graph
 cases and fifteen root executable/behavior profiles. No failures or introduced
 skips. CPU/Cyclone DDS, ENABLE_AGNOCAST=0, LLVM/libc++ 21.1.8 and Python 3.14.4.
 No Fast DDS, full simulator launch, older ROS/colcon or real-time acceptance.
+
+## 2026-11-22: Phase 7.3.2 — Diagnostic graph utilities
+
+Purpose: make autoware_diagnostic_graph_utils part of the selected CPU system implementation
+closure with declared build/runtime inputs. Inspect the original five CPPs: two reusable graph/subscription files and three component nodes. Export the reusable library separately from node registration so hazard conversion can depend on it without embedding unrelated factories. Declare diagnostic/system/debug and wrapper native/shared providers, three original executables and one indexed owner. Logging parameters come from the original XML contract and are supplied as typed CLI values in the root fixture.
+
+Feed a retained graph structure and matching ERROR status to the real subscriptions: dump prints its path/error table, converter emits DiagnosticArray, and logging publishes error text containing the root path and ERROR. All three processes exit cleanly.
+
+There are no original functional tests in this package (CMake only registers lint or no tests). Preserve that inventory and add the behavior check outside the source package.
+
+Verification: run the package's complete @autoware_diagnostic_graph_utils//... target pattern and //bazel/tests/system_nodes:dump_runtime_test using
+the exact clean-environment command and shared configuration recorded in the
+[system gate](#2026-11-22-phase-732--dummy-diagnostic-publication-and-system-gate).
+For this module also select graph_converter_runtime_test and logging_runtime_test.
+The complete gate passes all sixteen targets/92 active cases: 77 original graph
+cases and fifteen root executable/behavior profiles. No failures or introduced
+skips. CPU/Cyclone DDS, ENABLE_AGNOCAST=0, LLVM/libc++ 21.1.8 and Python 3.14.4.
+No Fast DDS, full simulator launch, older ROS/colcon or real-time acceptance.
