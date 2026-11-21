@@ -12,6 +12,7 @@ Arrows below mean "supplies inputs to":
 
 ```text
 BCR/RCR modules + third_party/ -> src/ -> bazel/
+assets/ -> src/
 assets/ --------------------------------> bazel/
 ```
 
@@ -21,6 +22,12 @@ deployable artifacts. Generic registry/third-party build rules can serve both.
 Keep source-owned defaults, meshes and original fixtures with their components;
 existing model repositories retain their `src/models/` ownership. Asset
 providers must not depend on application implementations or product targets.
+Name asset modules/resource packages with the `_asset` suffix; the current map
+provider is `autoware_map_asset`. Components under `src/` may consume its public
+module targets and ament index, declaring that dependency in their own module
+and package metadata. Use logical names, not metarepository `//assets/` paths.
+The root selects the concrete repository/revision; `bazel/` remains the primary
+product/validation/packaging consumer.
 
 ## Proposed selection and packaging
 

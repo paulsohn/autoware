@@ -58,7 +58,8 @@ only when your current target demonstrates the need.
   [Dependency layers and root selection](DEVELOPING.md#repository-dependency-layers);
   [evidence: reusable dependency relocation](JOURNAL.md#2026-11-18-reusable-dependency-layers-under-third_party).
   [Deployment-selectable asset convention](../../assets/README.md);
-  [evidence: map relocation](JOURNAL.md#2026-11-21-deployment-asset-boundary-and-map-provider-relocation).
+  [evidence: map relocation](JOURNAL.md#2026-11-21-deployment-asset-boundary-and-map-provider-relocation);
+  [logical asset dependencies and colcon](JOURNAL.md#2026-11-21-general-map-asset-identity-and-colcon-resource-installation).
   [Evidence: root-owned interface consumers](JOURNAL.md#2026-11-15-build-root-owned-typed-agnocast-plugins-from-the-interface-graph).
   [Canonical interface identity](DEVELOPING.md#interface-declarations-and-bridge-plugins);
   [evidence: nested source categories](JOURNAL.md#2026-11-21-phase-732--nested-interface-source-namespaces).
@@ -123,7 +124,7 @@ only when your current target demonstrates the need.
 ## Current decisions
 
 - With arrows meaning "supplies inputs to", keep dependency direction
-  (BCR/RCR modules + third_party/) -> src/ -> bazel/, plus assets/ -> bazel/.
+  (BCR/RCR modules + third_party/) -> src/ -> bazel/, plus assets/ -> src/ and bazel/.
   Deployment-selectable resource providers and metadata live under assets/;
   the current git-tracked map module owns its index, archive pin and overlay.
   The root selects that module with an adjacent bazel_dep/local_path_override
@@ -134,6 +135,9 @@ only when your current target demonstrates the need.
   patches belong to third_party/. Direct product-to-third-party dependencies
   are allowed; reverse dependencies are not. Assets may use generic build rules
   but must not depend on application implementations or product targets.
+  Asset module/resource package names use the _asset suffix. Components may
+  consume their public targets/indexes through logical module dependencies;
+  the root selects the concrete repository/revision.
   Source-owned resources and model repository ownership remain unchanged.
   The root owns version selection from third_party/, registry releases and
   local source overrides and architecture/product configuration. See

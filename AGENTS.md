@@ -34,12 +34,15 @@ experiments, and milestones belong in PLAN.md and JOURNAL.md.
   the existing build and deployment. Do not extend them for Bazel integration.
 - With arrows meaning "supplies inputs to", keep dependency direction
   `(BCR/RCR modules + third_party/)` -> `src/` -> `bazel/`, plus
-  `assets/` -> `bazel/`. Deployment-selectable resource providers and metadata
+  `assets/` -> `src/` and `bazel/`. Deployment-selectable resource providers and metadata
   belong under `assets/`; source-owned resources remain with their components.
   Keep the current `assets/map/` integration git-tracked as its own module,
   owning acquisition and its resource index; root selects its local override.
-  External asset
-  injection and deployer responsibilities remain a sketch in `assets/README.md`;
+  Name asset modules and their resource packages with the `_asset` suffix.
+  Components may depend on public asset-module targets and indexed resources,
+  using logical module names rather than metarepository paths; root selects
+  the concrete asset repository/revision. External asset injection and deployer
+  responsibilities remain a sketch in `assets/README.md`;
   do not introduce a backend or provisioning framework without a concrete task.
   `bazel/` owns product composition, standalone integration tests and interface
   collections; it may also consume third-party providers directly. `src/`

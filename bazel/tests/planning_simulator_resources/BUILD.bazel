@@ -6,7 +6,7 @@ load("@rules_python//python:defs.bzl", "py_test")
 py_test(
     name = "resources_test",
     srcs = ["resources_test.py"],
-    data = ["@autoware_planning_simulator_map//:ament_index"],
+    data = ["@autoware_map_asset//:ament_index"],
     precompile = "disabled",
     deps = [
         "@ament_index_python",
@@ -29,7 +29,7 @@ cc_test(
     args = ["$(rootpath :scenario.yaml)"],
     data = [
         "scenario.yaml",
-        "@autoware_planning_simulator_map//:ament_index",
+        "@autoware_map_asset//:ament_index",
         "@sample_vehicle_description//:ament_index",
     ],
     dynamic_deps = [":route_test_dynamic_deps"],

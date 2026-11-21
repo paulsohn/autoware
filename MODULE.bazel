@@ -1034,8 +1034,8 @@ local_path_override(
     path = "src/universe/autoware_universe/planning/autoware_rtc_interface",
 )
 
-bazel_dep(name = "autoware_planning_simulator_map", version = "0.0.0")
+bazel_dep(name = "autoware_map_asset", version = "0.0.0")
 local_path_override(
-    module_name = "autoware_planning_simulator_map",
+    module_name = "autoware_map_asset",
     path = "assets/map",
 )

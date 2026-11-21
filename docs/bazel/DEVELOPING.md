@@ -237,12 +237,15 @@ reference implementations for the existing build and deployment.
 | Location | Owns | May depend on |
 | --- | --- | --- |
 | bazel/ | Product composition, interface collections and standalone integration tests | src/ component modules, assets/ resource providers and third_party/ providers |
-| src/ | Component-specific source/build definitions and original upstream tests | Other component modules and reusable third-party providers |
+| src/ | Component-specific source/build definitions and original upstream tests | Other component modules, public asset modules and reusable third-party providers |
 | assets/ | Deployment-selectable resource inputs, metadata and resource indexes | Generic registry/build providers; no application or product targets |
 | third_party/ | Independent SDK/dependency definitions, generic runtime/test helpers and dependency patches | Registry/toolchain dependencies and other reusable providers |
 
 With arrows meaning "supplies inputs to", the layers are
-(BCR/RCR + third_party/) -> src/ -> bazel/, plus assets/ -> bazel/.
+(BCR/RCR + third_party/) -> src/ -> bazel/, plus assets/ -> src/ and bazel/.
+Asset modules/resource packages use the `_asset` suffix. A component may declare
+a logical asset-module dependency and consume its public index; keep physical
+asset paths/revision selection in root overrides, with no component-to-root labels.
 See the [asset convention and deployment sketch](../../assets/README.md).
 
 The root owns version selection from third_party/, registry releases and local
@@ -793,7 +796,7 @@ resources stay with their original source packages.
 
 Select the git-tracked module at assets/map through the root local override.
 Its MODULE.bazel owns the pinned archive and BUILD overlay; consume its public
-`@autoware_planning_simulator_map//:ament_index` target. Resolve map_path from the `autoware_planning_simulator_map` share directory
+`@autoware_map_asset//:ament_index` target. Resolve map_path from the `autoware_map_asset` share directory
 using ament_index/FindPackageShare or `$(find-pkg-share ...)`. Its original map
 and projector files are installed together; do not inject workspace or HOME
 paths. Fetching is a build operation, and runtime lookup uses indexed resources.

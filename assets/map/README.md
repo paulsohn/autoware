@@ -1,6 +1,6 @@
-# Planning-simulator map resources
+# Autoware map asset
 
-The product root selects the local `autoware_planning_simulator_map` module
+The product root selects the local `autoware_map_asset` module
 with `bazel_dep` and `local_path_override(path = "assets/map")`. This module
 owns the official sample-map-planning archive used by AWF's
 [planning-simulation preparation](https://docs.autoware.org/main/simulation/planning-simulation/).
@@ -26,10 +26,12 @@ in this source tree.
 
 Its MODULE.bazel pins/fetches the archive and applies the module-owned BUILD
 overlay; the private data repository is not a product-level API.
-`@autoware_planning_simulator_map//:ament_index` installs the unchanged payload into the
-resource package `autoware_planning_simulator_map`. Consumers declare that target
+`@autoware_map_asset//:ament_index` installs the unchanged payload into the
+resource package `autoware_map_asset`. The asset identity is shared by core and
+simulator products; the pinned archive is the current development dataset.
+Consumers declare that target
 and resolve its share directory through ament_index; a launcher can use
-`$(find-pkg-share autoware_planning_simulator_map)` as its map_path. Bazel fetches
+`$(find-pkg-share autoware_map_asset)` as its map_path. Bazel fetches
 the archive during the build; runtime lookup does not download or consult HOME.
 This map asset index is independent of the per-repository model indexes. See
 [the asset/deployer sketch](../README.md) for the proposed selection boundary.
@@ -46,3 +48,20 @@ Its Universe DefaultPlanner gate checks route feasibility with the indexed
 sample vehicle dimensions. This establishes resource/geometry preparation;
 full simulator startup, autonomous motion, RViz and packaged driving acceptance
 have separate gates.
+
+
+## Colcon resource installation
+
+The package also supplies package.xml and minimal ament_cmake support. With a
+ROS/colcon environment sourced, include this asset alongside the source packages:
+
+```sh
+colcon build --base-paths assets/map --packages-select autoware_map_asset --symlink-install
+source install/setup.bash
+```
+
+CMake 3.24 or newer fetches the same checksum-pinned archive into the build tree
+and installs the four original files plus the package index. With symlink install,
+the large files remain in the build tree. Include assets/map in colcon's discovery
+paths when building components that declare this runtime dependency. Backend
+injection and alternative datasets remain the sketch in ../README.md.

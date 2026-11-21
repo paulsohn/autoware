@@ -11011,3 +11011,58 @@ against the existing declaration style; Bazel successfully parses/builds them.
 Updated local Markdown links/anchors, active labels and whitespace checks pass.
 The external-injection sketch is not an implemented or tested deployment feature;
 planning-simulator launch work and stashed preparations remain deferred.
+
+## 2026-11-21: General map asset identity and colcon resource installation
+
+Purpose: give the map a deployment-selectable identity shared by core and
+simulator products. Name asset modules/resource packages with the _asset suffix;
+rename this module/index from autoware_planning_simulator_map to
+autoware_map_asset. Inspect the existing module, archive overlay, resource
+registration, four payload hashes and root native/resource consumers. Keep the
+archive URL/digest and physical assets/map directory unchanged; rename the
+private data repository to map_data and use the package manifest to identify
+its ament index. Root retains adjacent version-0.0.0 dependency/local override
+selection; consumers use @autoware_map_asset//:ament_index.
+
+Revise the dependency sketch: assets may supply public module/resource APIs to
+src/ components as well as bazel/ product composition. Components declare logical
+module/package dependencies; root selects the concrete repository/revision.
+Components still must not reference metarepository //assets/ or //bazel/ labels.
+Asset providers retain generic dependencies and must not depend back on source
+implementations or product targets. Product composition remains the primary
+consumer. This allows source launchers to find a declared indexed asset rather
+than requiring external map_path command-line injection.
+
+Add minimal package.xml/ament_cmake support to the resource repository. CMake
+3.24 FetchContent downloads the same SHA-256-pinned archive into its build tree;
+install exactly the four unchanged payloads and let ament_package export the
+index/config. Update both frontends and provenance together when changing this
+accepted dataset. No custom fetch service, generator or host dependency install
+is needed. Colcon --symlink-install points the large installed files at the
+materialized build-tree data. This is a resource-only interoperability check,
+not an Autoware C++ build under a second ROS distribution.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --nocache_test_results --test_output=errors \
+  @autoware_map_asset//:ament_index \
+  //bazel/tests/planning_simulator_resources:resources_test \
+  //bazel/tests/planning_simulator_resources:route_test
+
+# In a sourced ROS/colcon environment, use isolated writable build/install roots:
+asset_check_root=$(mktemp -d)
+colcon --log-base "$asset_check_root/log" build --base-paths assets/map \
+  --build-base "$asset_check_root/build" --install-base "$asset_check_root/install" \
+  --packages-select autoware_map_asset --symlink-install
+source "$asset_check_root/install/setup.bash"
+```
+
+All four existing Bazel cases pass: Python payload/relocation (0.6 seconds) and
+native route/PCL (0.7 seconds), CPU/Cyclone DDS with ENABLE_AGNOCAST=0, no skips.
+The existing ROS Jazzy/colcon environment builds the resource package in
+16.9 seconds. After sourcing the generated setup, ament_index_python resolves
+the isolated install prefix; all four files are symlinks and match their recorded
+SHA-256 values. No apt/pip/rosdep installation occurs. XML syntax and whitespace
+checks pass. Indexed launcher consumption belongs to the following task; full
+Universe launch, backend injection and Fast DDS are not tested here.

@@ -12,7 +12,7 @@ import xml.etree.ElementTree as ET
 from ament_index_python.packages import get_package_share_directory
 import yaml
 
-PACKAGE = 'autoware_planning_simulator_map'
+PACKAGE = 'autoware_map_asset'
 FILES = ['lanelet2_map.osm', 'map_config.yaml', 'map_projector_info.yaml', 'pointcloud_map.pcd']
 
 

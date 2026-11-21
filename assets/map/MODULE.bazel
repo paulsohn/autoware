@@ -1,5 +1,5 @@
 module(
-    name = "autoware_planning_simulator_map",
+    name = "autoware_map_asset",
     version = "1.0.0",
 )
 
@@ -9,7 +9,7 @@ bazel_dep(name = "rosdistro", version = "0.0.0")
 http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 http_archive(
-    name = "planning_simulator_map_data",
+    name = "map_data",
     build_file = "//:archive.BUILD.bazel",
     sha256 = "5536fce7bb8db7688fdf94ec004118b898637ad0d5b6175108b10989dd6e93b9",
     strip_prefix = "sample-map-planning",
