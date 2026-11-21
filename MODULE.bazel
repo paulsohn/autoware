@@ -1550,3 +1550,9 @@ local_path_override(
     module_name = "autoware_diagnostic_graph_utils",
     path = "src/universe/autoware_universe/system/autoware_diagnostic_graph_utils",
 )
+
+bazel_dep(name = "autoware_hazard_status_converter", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_hazard_status_converter",
+    path = "src/universe/autoware_universe/system/autoware_hazard_status_converter",
+)
