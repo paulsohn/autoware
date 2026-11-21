@@ -12654,3 +12654,46 @@ and controller dependencies before closing 7.3.2.
 
 The separate production-header source fix is 88b93365; build declarations and
 root composition follow it without further source changes.
+
+## 2026-11-22: Phase 7.3.2 — External velocity limit selection
+
+Purpose: provide the selected planner's arbitration between API/internal speed
+limits and its configurable maximum. Inspect the one production source, public
+header, CMake/manifest, parameter schema, original XML/config and complete
+original launch test. The suite changes max_vel, checks default/API/internal
+precedence and clear-command behavior, changes the maximum again, then requires
+clean node exit. Use these real assertions rather than add a duplicate test.
+
+Add package-owned module/library/component/executable/index declarations and a
+root local override. Run generate_parameter_library on the original schema and
+link its actual rclcpp_lifecycle/rsl shared providers with local message and ROS
+providers. The first compile cannot find the original unqualified generated
+header: the registry emits include/<package>/<name>.hpp. Add that generated
+package directory to the owning library's include roots, preserving both the
+original include spelling and generated package identity without source edits.
+Register external_velocity_limit_selector under its original executable name
+and index the original config/launch resources.
+
+Expose the complete original Python launch suite with launch_test and its actual
+ament-index, message, parameter-service, rclpy and XML dependencies. Serialize
+it with the other heavy gates, use a separate ROS domain, and bound it with a
+short Bazel test timeout. No test-body, CMake, package.xml or implementation
+changes are needed.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_output=errors @autoware_external_velocity_limit_selector//...
+git diff --check
+```
+
+The executable, generated parameters and complete two-case original launch suite
+pass in 1.8 seconds (21.2-second invocation). Observed limits follow
+15 -> 15 -> 10 -> 5 -> 10 -> 2.5 -> 2.5 through the original API/internal/clear
+and parameter-update assertions, followed by clean exit. No failures/errors or
+skips occur. Whitespace checks pass. Commit the accumulated extension-usage
+lock refresh for the now-declared SDK and these planning modules together with
+this final local declaration; source/version selections remain pinned.
+CPU/Cyclone DDS with ENABLE_AGNOCAST=0 is selected; no Fast DDS, pre-commit or
+full simulator launch is run. Next validate related selected motion-velocity
+plugins and their complete original module suites.

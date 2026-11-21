@@ -1210,3 +1210,9 @@ local_path_override(
     module_name = "autoware_path_optimizer",
     path = "src/universe/autoware_universe/planning/autoware_path_optimizer",
 )
+
+bazel_dep(name = "autoware_external_velocity_limit_selector", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_external_velocity_limit_selector",
+    path = "src/universe/autoware_universe/planning/autoware_external_velocity_limit_selector",
+)
