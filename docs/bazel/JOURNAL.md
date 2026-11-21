@@ -9872,3 +9872,45 @@ mapping/embedding/move/teardown cases also pass. Buildifier, Python/flake8 and
 whitespace checks pass; Cyclone DDS/ENABLE_AGNOCAST=0 only. The module task is
 complete; original Universe planning and full AWF lane driving remain later
 7.3 tasks. No Fast DDS, GPU, GUI or pre-commit check is run.
+
+## 2026-11-21: Phase 7.3.1 — Dummy perception publisher
+
+Purpose: support the local simulated-perception producer used by planning
+simulation. Inspect all native sources, original launch/config/schema resources
+and its two existing SDF cases. Preserve both SDF cases; add an original-launch
+check of object add/modify/delete, detected/ground-truth frames and IDs,
+nonempty pointcloud production, the separate empty-object executable and clean
+shutdown. The declared acceptance profile uses straight-line objects with zero
+velocity and an explicit map/base_link transform.
+
+Integration: declare its SDF and full node libraries, both executables and
+component-owned resources, using local perception/simulation interfaces,
+trajectory/point-type/utilities and RCR PCL/tf2 providers. Native executables
+must consume flattened ROS dynamic dependencies: directly naming only rclcpp
+and perception cc_shared leaves unresolved inline rcl/rmw/rcutils symbols.
+Use collect_transitive_dynamic_deps, including a small separate closure for
+the empty publisher. The root test publishes a transient-local TF fixture,
+waits for empty outputs to prove the node's TF listener is ready, then sends
+one command per lifecycle transition; repeated ADD would append duplicates.
+The index/launch remains component-owned and has no root label dependency.
+
+Reproduce its complete gate after the grouped build recorded above:
+
+```sh
+bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --nocache_test_results --test_output=errors \
+  @autoware_dummy_perception_publisher//... \
+  //bazel/tests/autoware_dummy_perception_publisher:launch_test
+```
+
+The actual grouped invocation also included the simulator/door targets and
+ran tests sequentially. Both original SDF cases pass; both root launch cases
+pass in 2.9 seconds, with no failures/skips. They verify the original XML/config,
+empty producer output, straight-line object ID/classification and map/base_link
+frames, pointcloud production, exact stationary positions at x=10 then x=12,
+object deletion and clean exit of both executables. This is the selected local
+simulated-perception profile; predicted-path motion and full perception tracking/
+prediction stacks are not established by this fixture. No source implementation
+or original test is changed. Buildifier, Python/flake8 and whitespace checks
+pass. The module task is complete for CPU/Cyclone DDS with Agnocast disabled;
+Fast DDS, GPU and pre-commit are not run.

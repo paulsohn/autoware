@@ -919,3 +919,9 @@ local_path_override(
     module_name = "autoware_simple_planning_simulator",
     path = "src/core/autoware_simple_planning_simulator/autoware_simple_planning_simulator",
 )
+
+bazel_dep(name = "autoware_dummy_perception_publisher", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_dummy_perception_publisher",
+    path = "src/core/autoware_simple_planning_simulator/autoware_dummy_perception_publisher",
+)

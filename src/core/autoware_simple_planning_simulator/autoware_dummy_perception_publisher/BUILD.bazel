@@ -1,0 +1,121 @@
+load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "signed_distance_function",
+    srcs = ["src/signed_distance_function.cpp"],
+    hdrs = ["include/autoware/dummy_perception_publisher/signed_distance_function.hpp"],
+    strip_include_prefix = "include",
+    deps = ["@tf2//:tf2_library"],
+)
+
+cc_library(
+    name = "autoware_dummy_perception_publisher",
+    srcs = glob(
+        ["src/*.cpp"],
+        exclude = [
+            "src/main.cpp",
+            "src/empty_objects_publisher.cpp",
+            "src/signed_distance_function.cpp",
+        ],
+    ),
+    hdrs = glob(
+        ["include/**/*.hpp"],
+        exclude = ["include/autoware/dummy_perception_publisher/signed_distance_function.hpp"],
+    ),
+    strip_include_prefix = "include",
+    deps = [
+        ":signed_distance_function",
+        "@autoware_perception_msgs//:cc",
+        "@autoware_point_types",
+        "@autoware_simulation_msgs//:cc",
+        "@autoware_trajectory",
+        "@autoware_utils_geometry",
+        "@autoware_utils_rclcpp",
+        "@autoware_utils_uuid",
+        "@geometry_msgs//:cc",
+        "@pcl_conversions//:pcl_conversions_library",
+        "@rclcpp//:rclcpp_library",
+        "@rosdistro//cc:pcl_filters",
+        "@sensor_msgs//:cc",
+        "@std_msgs//:cc",
+        "@tf2//:tf2_library",
+        "@tf2_geometry_msgs//:tf2_geometry_msgs_library",
+        "@tf2_ros//:tf2_ros_library",
+        "@unique_identifier_msgs//:cc",
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = [
+        "@autoware_perception_msgs//:cc_shared",
+        "@autoware_simulation_msgs//:cc_shared",
+        "@autoware_trajectory//:runtime_dynamic_deps",
+        "@geometry_msgs//:cc_shared",
+        "@pcl_conversions//:pcl_conversions",
+        "@rclcpp//:rclcpp",
+        "@sensor_msgs//:cc_shared",
+        "@std_msgs//:cc_shared",
+        "@tf2_geometry_msgs//:tf2_geometry_msgs",
+        "@tf2_ros//:tf2_ros",
+        "@unique_identifier_msgs//:cc_shared",
+    ],
+)
+
+cc_binary(
+    name = "autoware_dummy_perception_publisher_node",
+    srcs = ["src/main.cpp"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+    deps = [":autoware_dummy_perception_publisher"],
+)
+
+collect_transitive_dynamic_deps(
+    name = "empty_runtime_dynamic_deps",
+    dynamic_deps = [
+        "@autoware_perception_msgs//:cc_shared",
+        "@rclcpp//:rclcpp",
+    ],
+)
+
+cc_binary(
+    name = "empty_objects_publisher",
+    srcs = ["src/empty_objects_publisher.cpp"],
+    dynamic_deps = [":empty_runtime_dynamic_deps"],
+    deps = [
+        "@autoware_perception_msgs//:cc",
+        "@rclcpp//:rclcpp_library",
+    ],
+)
+
+register_ament_files(
+    name = "node_executables",
+    files = [
+        ":autoware_dummy_perception_publisher_node",
+        ":empty_objects_publisher",
+    ],
+    prefix = "lib/autoware_dummy_perception_publisher",
+    strip_prefix = "*",
+)
+
+ament_index(
+    data = glob([
+        "config/*",
+        "launch/*",
+        "schema/*",
+    ]) + [":node_executables"],
+    package_xml = "package.xml",
+)
+
+cc_test(
+    name = "test_signed_distance_function",
+    srcs = ["test/src/test_signed_distance_function.cpp"],
+    dynamic_deps = ["@tf2//:tf2"],
+    deps = [
+        ":signed_distance_function",
+        "@googletest//:gtest",
+    ],
+)
