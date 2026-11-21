@@ -509,7 +509,10 @@ set `ros2_executor = "MultiThreadedExecutor"` when the component needs callbacks
 in separate groups to progress during a blocking service operation. Match the
 component's existing executor contract. Add its `<name>_components` and `<name>_plugin`
 records to the package's ament_index; register the executable under lib/<package>
-with register_ament_files. Other executor pairs need explicit support before use.
+with register_ament_files. For a component deriving from rclcpp::Node, set
+`agnocast_only = False` to select CallbackIsolatedAgnocastExecutor and its
+get_node_base_interface contract; do not cast it to wrapper::Node. Other
+executor pairs need explicit support before use.
 
 Keep added behavior sources and fixtures under bazel/tests/<package>/. Root
 targets select product runtime dependencies; package BUILD files expose original

@@ -1,4 +1,4 @@
-"""Bazel entry point for Agnocast-only nodes with a ROS executor fallback."""
+"""Bazel entry point for callback-isolated nodes with a ROS executor fallback."""
 
 load("@rclcpp_components//:defs.bzl", "rclcpp_components_register_nodes")
 load("@rosdistro//ament:defs.bzl", "register_ament_resource")
@@ -9,6 +9,12 @@ load("@rules_cc//cc/common:cc_shared_library_info.bzl", "CcSharedLibraryInfo")
 def _main_impl(ctx):
     library = ctx.attr.component[CcSharedLibraryInfo].linker_input.libraries[0].dynamic_library
     output = ctx.actions.declare_file(ctx.label.name + ".cpp")
+    if ctx.attr.agnocast_only:
+        executor_include = "agnocast/node/agnocast_only_callback_isolated_executor.hpp"
+        executor_type = "agnocast::AgnocastOnlyCallbackIsolatedExecutor"
+    else:
+        executor_include = "agnocast/agnocast_callback_isolated_executor.hpp"
+        executor_type = "agnocast::CallbackIsolatedAgnocastExecutor"
     ctx.actions.expand_template(
         template = ctx.file._template,
         output = output,
@@ -16,10 +22,10 @@ def _main_impl(ctx):
             "@_AWR_node@": ctx.attr.node_name,
             "@_AWR_component@": ctx.attr.plugin,
             "@_AWR_library_name@": library.basename,
-            "@_AWR_agnocast_only@": "true",
-            "@_AWR_agnocast_executor_include@": "agnocast/node/agnocast_only_callback_isolated_executor.hpp",
-            "@_AWR_agnocast_executor_type@": "agnocast::AgnocastOnlyCallbackIsolatedExecutor",
-            "@_AWR_agnocast_add_node_expr@": "get_agnocast_node()",
+            "@_AWR_agnocast_only@": "true" if ctx.attr.agnocast_only else "false",
+            "@_AWR_agnocast_executor_include@": executor_include,
+            "@_AWR_agnocast_executor_type@": executor_type,
+            "@_AWR_agnocast_add_node_expr@": "get_agnocast_node()" if ctx.attr.agnocast_only else "get_node_base_interface()",
             "@_AWR_ros2_executor_type@": "rclcpp::executors::" + ctx.attr.ros2_executor,
         },
     )
@@ -29,6 +35,7 @@ _node_main = rule(
     implementation = _main_impl,
     attrs = {
         "component": attr.label(mandatory = True, providers = [CcSharedLibraryInfo]),
+        "agnocast_only": attr.bool(default = True),
         "plugin": attr.string(mandatory = True),
         "node_name": attr.string(mandatory = True),
         "ros2_executor": attr.string(
@@ -42,9 +49,11 @@ _node_main = rule(
     },
 )
 
-def autoware_agnocast_node(name, component, plugin, package_name, data = [], ros2_executor = "SingleThreadedExecutor"):
-    """Use the callback-isolated executor with the selected ROS executor fallback.
+def autoware_agnocast_node(name, component, plugin, package_name, data = [], ros2_executor = "SingleThreadedExecutor", agnocast_only = True):
+    """Use callback-isolated execution with the selected ROS executor fallback.
 
+    Set agnocast_only=False for rclcpp::Node components, matching the ROS-aware
+    CallbackIsolatedAgnocastExecutor. The default requires wrapper::Node.
     Emits <name>_components and <name>_plugin for the caller's ament index.
     """
     rclcpp_components_register_nodes(
@@ -62,6 +71,7 @@ def autoware_agnocast_node(name, component, plugin, package_name, data = [], ros
         name = name + "_main",
         node_name = name,
         ros2_executor = ros2_executor,
+        agnocast_only = agnocast_only,
         component = component,
         plugin = plugin,
     )

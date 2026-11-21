@@ -12416,3 +12416,27 @@ original tests do not change. CPU/Cyclone DDS with Agnocast off is selected; no
 Fast DDS or full simulator launch is run. The following module commits publish
 the component declarations used for the broader gate. Test the installed/indexed
 entrypoint, not only the build-tree py_binary, when adopting Python scripts.
+
+## 2026-11-22: Phase 7.3.2 — ROS-aware callback-isolated entrypoints
+
+Purpose: preserve scenario selector's existing CMake executor contract. Inspect
+its rclcpp::Node base and CMake request for CallbackIsolatedAgnocastExecutor;
+the Bazel helper previously selected only AgnocastOnlyCallbackIsolatedExecutor,
+which requires wrapper::Node. Reuse the original switchable template's existing
+non-AgnocastOnly branch rather than casting a ROS node to wrapper::Node.
+
+Add agnocast_only=False as an explicit opt-in on autoware_agnocast_node. Select
+the ROS-aware include/type, emit false in the template and retain the default
+true and existing ROS fallback. No runtime-library implementation or original
+test changes are needed. The scenario selector's following build commit opts
+in; existing wrapper-derived consumers retain identical generated mains.
+
+Use the exact preceding registered-executable group command. All 37 original
+wrapper native cases and 66 original launch-extension pytest cases pass, with
+no skips/failures (unchanged results reused). The new scenario executable starts,
+answers its parameter service and exits cleanly; the existing mission-planner
+launch passes both cases through the unchanged default executor shape. This
+validates compilation and the CPU/Cyclone DDS ROS fallback for both shapes.
+Enabled-Agnocast execution of the newly exposed shape is not claimed and is not
+the Phase 7 selected configuration. No kernel-dependent matrix, Fast DDS,
+pre-commit or full simulator launch is run. Targeted whitespace checks pass.
