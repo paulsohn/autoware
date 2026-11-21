@@ -2,10 +2,7 @@ load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
 
 package(default_visibility = ["//visibility:public"])
 
-exports_files([
-    "archive.BUILD.bazel",
-    "maps.MODULE.bazel",
-])
+exports_files(["archive.BUILD.bazel"])
 
 register_ament_files(
     name = "planning_map_files",
@@ -20,7 +17,6 @@ register_ament_files(
 )
 
 ament_index(
-    name = "planning_simulator_map",
     data = [":planning_map_files"],
     export_name = "autoware_planning_simulator_map",
 )

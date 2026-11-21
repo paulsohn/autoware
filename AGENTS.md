@@ -32,12 +32,22 @@ experiments, and milestones belong in PLAN.md and JOURNAL.md.
   declarations and colcon --symlink-install behavior, including flat diffusion.
 - `repositories/`, `docker/`, and `ansible/` are reference implementations for
   the existing build and deployment. Do not extend them for Bazel integration.
-- Keep dependency direction `bazel/` -> `src/` -> `third_party/`.
+- With arrows meaning "supplies inputs to", keep dependency direction
+  `(BCR/RCR modules + third_party/)` -> `src/` -> `bazel/`, plus
+  `assets/` -> `bazel/`. Deployment-selectable resource providers and metadata
+  belong under `assets/`; source-owned resources remain with their components.
+  Keep the current `assets/map/` integration git-tracked as its own module,
+  owning acquisition and its resource index; root selects its local override.
+  External asset
+  injection and deployer responsibilities remain a sketch in `assets/README.md`;
+  do not introduce a backend or provisioning framework without a concrete task.
   `bazel/` owns product composition, standalone integration tests and interface
   collections; it may also consume third-party providers directly. `src/`
   components own their build definitions. Reusable SDK/dependency definitions,
   generic dependency helpers and dependency patches live under `third_party/`
   and must not depend on Autoware components or product labels.
+  Asset providers likewise must not depend on application implementations or
+  product targets; generic registry/third-party rules may support them.
   The root owns version selection from `third_party/`, registry releases and
   local overrides; architecture/product settings also remain root-owned.
   Directory placement alone does not require a new facade Bazel module.

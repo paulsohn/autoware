@@ -1,6 +1,8 @@
 # Planning-simulator map resources
 
-The product root selects the official sample-map-planning archive used by AWF's
+The product root selects the local `autoware_planning_simulator_map` module
+with `bazel_dep` and `local_path_override(path = "assets/map")`. This module
+owns the official sample-map-planning archive used by AWF's
 [planning-simulation preparation](https://docs.autoware.org/main/simulation/planning-simulation/).
 The [version 1.4.0 tutorial](https://docs.autoware.org/1.4.0/tutorials/ad-hoc-simulation/planning-simulation/)
 uses the same named map with sample_vehicle and sample_sensor_kit. Both pages
@@ -22,12 +24,15 @@ in this source tree.
 | map_projector_info.yaml | 60 | `9753eba4724aa6d41ffa2cc03e8da2d82e9f317dd14da837b0e96a7705e72bfa` |
 | map_config.yaml | 178 | `c7f8caeaad3559d2bc924a0683f36673f72c9e15f315c2e95f371c9ccceb7e39` |
 
-`//bazel/maps:planning_simulator_map` installs the unchanged payload into the
+Its MODULE.bazel pins/fetches the archive and applies the module-owned BUILD
+overlay; the private data repository is not a product-level API.
+`@autoware_planning_simulator_map//:ament_index` installs the unchanged payload into the
 resource package `autoware_planning_simulator_map`. Consumers declare that target
 and resolve its share directory through ament_index; a launcher can use
 `$(find-pkg-share autoware_planning_simulator_map)` as its map_path. Bazel fetches
 the archive during the build; runtime lookup does not download or consult HOME.
-This is a product-owned map index, independent of the per-repository model indexes.
+This map asset index is independent of the per-repository model indexes. See
+[the asset/deployer sketch](../README.md) for the proposed selection boundary.
 
 The projector file specifies MGRS / 54SVE / WGS84. Retain the legacy map_config.yaml
 for fidelity, but use the projector file for the current map-loader contract.
@@ -35,7 +40,7 @@ The OSM has 4499 nodes and 241 relations; it has no MetaInfo version element.
 The official binary XYZ/RGB PCD declares 1757841 points and has 186 trailing zero
 padding bytes. The real PCL reader accepts the cloud; do not strip or rewrite it.
 
-The root [scenario fixture](../tests/planning_simulator_resources/scenario.yaml)
+The root [scenario fixture](../../bazel/tests/planning_simulator_resources/scenario.yaml)
 records a short initial/goal pair and its observed preferred lanelets 9102/9540.
 Its Universe DefaultPlanner gate checks route feasibility with the indexed
 sample vehicle dimensions. This establishes resource/geometry preparation;

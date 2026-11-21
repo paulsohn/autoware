@@ -236,9 +236,14 @@ reference implementations for the existing build and deployment.
 
 | Location | Owns | May depend on |
 | --- | --- | --- |
-| bazel/ | Product composition, interface collections and standalone integration tests | src/ component modules and third_party/ providers |
+| bazel/ | Product composition, interface collections and standalone integration tests | src/ component modules, assets/ resource providers and third_party/ providers |
 | src/ | Component-specific source/build definitions and original upstream tests | Other component modules and reusable third-party providers |
+| assets/ | Deployment-selectable resource inputs, metadata and resource indexes | Generic registry/build providers; no application or product targets |
 | third_party/ | Independent SDK/dependency definitions, generic runtime/test helpers and dependency patches | Registry/toolchain dependencies and other reusable providers |
+
+With arrows meaning "supplies inputs to", the layers are
+(BCR/RCR + third_party/) -> src/ -> bazel/, plus assets/ -> bazel/.
+See the [asset convention and deployment sketch](../../assets/README.md).
 
 The root owns version selection from third_party/, registry releases and local
 overrides. Consumers use logical module targets, not paths into their parent's
@@ -786,13 +791,14 @@ vehicle_model=sample_vehicle and sensor_model=sample_sensor_kit. The sensor
 index includes its velodyne_description dependency; Xacro, YAML, mesh and image
 resources stay with their original source packages.
 
-Declare `//bazel/maps:planning_simulator_map` to consume the pinned official
-map. Resolve map_path from the `autoware_planning_simulator_map` share directory
+Select the git-tracked module at assets/map through the root local override.
+Its MODULE.bazel owns the pinned archive and BUILD overlay; consume its public
+`@autoware_planning_simulator_map//:ament_index` target. Resolve map_path from the `autoware_planning_simulator_map` share directory
 using ament_index/FindPackageShare or `$(find-pkg-share ...)`. Its original map
 and projector files are installed together; do not inject workspace or HOME
 paths. Fetching is a build operation, and runtime lookup uses indexed resources.
 The map input and per-file provenance are maintained in
-[the provider README](../../bazel/maps/README.md). Map/description resource tests
+[the provider README](../../assets/map/README.md). Map/description resource tests
 do not establish full planning-simulator or autonomous-driving support.
 
 ## Headless core composition

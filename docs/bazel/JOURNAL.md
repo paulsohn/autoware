@@ -10339,14 +10339,15 @@ Accepted input: sample-map-planning.zip from the official URL, SHA-256
 not the mutable URL, identifies the accepted data. Inspect its four payloads,
 archive member timestamps, OSM structure, projector YAML and PCD header. Exact
 URLs, per-file hashes/sizes, attribution and reference links are maintained in
-[bazel/maps/README.md](../../bazel/maps/README.md). No payload is changed or
+[assets/map/README.md](../../assets/map/README.md). No payload is changed or
 committed into the source tree.
 
-Integration: the root includes bazel/maps/maps.MODULE.bazel, whose http_archive
-pins SHA-256, strips sample-map-planning/ and applies a small exports-only BUILD
-overlay. Product composition under bazel/maps registers those four files at
+Integration under the current asset convention: select the local module
+at assets/map with a root bazel_dep/local_path_override pair. Its MODULE.bazel
+owns http_archive, pins SHA-256, strips sample-map-planning/ and applies its
+exports-only BUILD overlay. The provider registers those four files at
 share/autoware_planning_simulator_map and exports its ament index. Consumers
-must declare //bazel/maps:planning_simulator_map and resolve the share directory
+use @autoware_planning_simulator_map//:ament_index and resolve the share directory
 through the index. There is no HOME lookup, absolute workspace path or runtime
 fetch. This product map archive is separate from per-repository model indexes.
 
@@ -10942,3 +10943,71 @@ plugin/controller, perception or system/API implementation closure. No enabled
 Agnocast communication matrix, Fast DDS, planning-simulator launch or driving
 acceptance is claimed. Keep the stashed shared-planner and map-launch
 preparations separate and pause before further Phase 7.3.3 work.
+
+## 2026-11-21: Deployment asset boundary and map provider relocation
+
+Purpose: separate deployment-selectable resource providers from product
+composition. With arrows meaning "supplies inputs to", use
+(BCR/RCR + third_party/) -> src/ -> bazel/, plus assets/ -> bazel/.
+Inspect the current map provider's four files, root MODULE include, archive
+BUILD overlay, resource/native consumer tests and packaging/deployment notes.
+Keep component-owned resources and existing model repository ownership intact.
+
+Move bazel/maps/ to assets/map/ and retain its git-tracked definitions/provenance.
+Give the asset its own module, autoware_planning_simulator_map version 1.0.0,
+with a rosdistro dependency. Root selects it using an adjacent bazel_dep with
+version 0.0.0 and local_path_override(path = "assets/map") at the end of the local
+selection list. Remove the root maps.MODULE.bazel include. The asset's own
+MODULE.bazel owns http_archive and selects its BUILD overlay with the
+module-relative //:archive.BUILD.bazel label. Its private data repository supplies
+the four inputs to the existing register_ament_files rule. Export the conventional
+@autoware_planning_simulator_map//:ament_index target; keep all product tests and
+scenario composition under bazel/. This module boundary lets the root select an
+asset repository without owning that repository's acquisition implementation.
+
+Keep the existing archive SHA-256
+5536fce7bb8db7688fdf94ec004118b898637ad0d5b6175108b10989dd6e93b9,
+four map payloads, installed share layout and runtime resource package name
+unchanged. The apparent data repository name stays planning_simulator_map_data,
+but its owner/canonical repository moves inside the asset module. Map bytes
+still come from the declared archive; this does not import them into Git.
+Update existing map instructions/links to the current module/labels so readers
+can apply the asset boundary from the beginning of their own integration.
+
+Add assets/README.md as the authoritative short design sketch: declared sample
+resources for development, optional local selections exposed as Bazel inputs,
+and backend selection of immutable data/metadata before final release assembly.
+Stable adapters can expose data-only snapshots; collaborating repositories may
+own their public Bazel targets. Runtime-only assets feed validation/packaging
+without becoming compilation inputs. A future deployer would select the exact
+software/resource/vehicle-configuration combination, request assembly, verify and
+stage artifacts, and coordinate compatible activation/recovery. Distinguish
+versioned domain resources, persistent vehicle records and runtime credentials.
+No backend, injection rule, production profile or deployment tool is added.
+Link the sketch from AGENTS.md, the adoption checklist and developer conventions;
+keep the existing map-specific provenance and indexed-consumer instructions.
+
+Reproduce the complete existing map-provider gate:
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --nocache_test_results --test_output=errors \
+  @autoware_planning_simulator_map//:ament_index \
+  //bazel/tests/planning_simulator_resources:resources_test \
+  //bazel/tests/planning_simulator_resources:route_test
+```
+
+The module target builds and all four existing cases pass, without failures or
+skips: two Python payload/index-relocation cases in 0.5 seconds and two native
+routing/PCL cases in 0.6 seconds. The indexed scenario retains preferred lanelets
+9102/9540, and PCL reads all 1757841 points. CPU/Cyclone DDS with ENABLE_AGNOCAST=0
+is the selected gate; no Fast DDS check runs. The tests resolve the same resource
+package/share paths across the new module boundary.
+
+The archive overlay is byte-identical to its previous content, and the original
+archive digest and source URL are retained. Review the small MODULE/BUILD changes
+against the existing declaration style; Bazel successfully parses/builds them.
+Updated local Markdown links/anchors, active labels and whitespace checks pass.
+The external-injection sketch is not an implemented or tested deployment feature;
+planning-simulator launch work and stashed preparations remain deferred.

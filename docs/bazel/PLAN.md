@@ -57,6 +57,8 @@ only when your current target demonstrates the need.
 - [ ] Separate component ownership from product-level composition.
   [Dependency layers and root selection](DEVELOPING.md#repository-dependency-layers);
   [evidence: reusable dependency relocation](JOURNAL.md#2026-11-18-reusable-dependency-layers-under-third_party).
+  [Deployment-selectable asset convention](../../assets/README.md);
+  [evidence: map relocation](JOURNAL.md#2026-11-21-deployment-asset-boundary-and-map-provider-relocation).
   [Evidence: root-owned interface consumers](JOURNAL.md#2026-11-15-build-root-owned-typed-agnocast-plugins-from-the-interface-graph).
   [Canonical interface identity](DEVELOPING.md#interface-declarations-and-bridge-plugins);
   [evidence: nested source categories](JOURNAL.md#2026-11-21-phase-732--nested-interface-source-namespaces).
@@ -120,13 +122,21 @@ only when your current target demonstrates the need.
 
 ## Current decisions
 
-- Keep dependency direction bazel/ -> src/ -> third_party/. Product composition,
-  standalone integration tests and interface collection belong to bazel/;
-  component definitions remain in src/; reusable dependency/SDK support and
+- With arrows meaning "supplies inputs to", keep dependency direction
+  (BCR/RCR modules + third_party/) -> src/ -> bazel/, plus assets/ -> bazel/.
+  Deployment-selectable resource providers and metadata live under assets/;
+  the current git-tracked map module owns its index, archive pin and overlay.
+  The root selects that module with an adjacent bazel_dep/local_path_override
+  pair and retains registry version selection. The external-injection/deployer
+  design is only a [sketch](../../assets/README.md), not a new deployment milestone.
+  Product composition, standalone integration tests and interface collection
+  belong to bazel/; component definitions remain in src/; reusable dependency/SDK support and
   patches belong to third_party/. Direct product-to-third-party dependencies
-  are allowed; reverse dependencies are not. The root owns version selection
-  from third_party/, registry releases and local source overrides. Preserve
-  root-owned architecture/product configuration. See
+  are allowed; reverse dependencies are not. Assets may use generic build rules
+  but must not depend on application implementations or product targets.
+  Source-owned resources and model repository ownership remain unchanged.
+  The root owns version selection from third_party/, registry releases and
+  local source overrides and architecture/product configuration. See
   [dependency layers](DEVELOPING.md#repository-dependency-layers).
 
 - Keep existing source packages unchanged except for Bazel definitions and
@@ -1769,7 +1779,7 @@ Phase 7.3 task boundaries (selected 2026-11-21):
   resources, and a root-owned map index selects the official tutorial archive.
   SHA-256 5536fce7bb8db7688fdf94ec004118b898637ad0d5b6175108b10989dd6e93b9
   pins the otherwise mutable map URL; use the documented tutorial input rather
-  than a substituted test map. [Map provenance](../../bazel/maps/README.md).
+  than a substituted test map. [Map provenance](../../assets/map/README.md).
   A short MGRS/54SVE scenario is pinned and accepted by the real Universe planner
   through lanelets 9102/9540; PCL reads all 1757841 cloud points. Resource,
   relocation and affected description-launch gates pass 12 cases in seven
