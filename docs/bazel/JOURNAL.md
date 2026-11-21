@@ -12084,3 +12084,45 @@ Next expose the SDK's concrete interface targets to the root collection and
 validate descriptor/template/plugin compilation, then the local polygon-iterator
 helper and selected crosswalk consumer. SDK task success is the complete
 four-target gate above, independently of later product composition.
+
+## 2026-11-22: Phase 7.3.2 — Grid-map interfaces in product composition
+
+Purpose: make the SDK's declared messages/services available through the same
+concrete root interface set consumed by bridges and other product-level tools.
+The prerequisite grid-map package gate passes all 109 cases. Add one
+ros_interface_package entry using the public SDK message cc/cc_shared providers,
+without repeating message lists in bridge rules or introducing source-to-root
+labels. Preserve explicit grid_map_msgs ROS identity inside the grid_map Bazel
+module. Extend the existing descriptor test to check the six canonical SDK
+identities and reject the Bazel module name as a ROS package namespace. This
+checks declared provider metadata, not source-directory completeness.
+
+The plugin library currently compiles every generated source against one
+aggregate CcInfo. Adding a package changes that common include/dependency
+context, so existing plugin translation units rebuild even when their generated
+text is unchanged. Keep that cost distinct from a communication-runtime matrix;
+changes to compilation granularity are a later optimization, not part of this
+provider adoption.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_output=errors //bazel/interfaces:descriptor_test \
+  //bazel/agnocast:template_tests //bazel/agnocast:plugins
+```
+
+The manifest contains 345 canonical interface descriptors, including all six
+SDK identities under grid_map_msgs. The full libagnocast_bridge_plugins.so builds
+with 398 typed instantiations (345 pubsub/event and 53 service sources, plus its
+generic implementation). Full compilation takes 1140.6 seconds; a final
+2.2-second invocation reuses that build and passes the updated descriptor test
+(two unittest cases) plus the unchanged template regression. Bazel's fallback
+XML records each Python/shell invocation as one case. Flake8 and whitespace
+checks pass. The AWF finding also receives its existing local source-fix commit
+reference, 4120f86e; that documentation correction reuses the lane-change gate.
+
+This is CPU/Cyclone DDS with ENABLE_AGNOCAST=0. Kernel-dependent bridge runtime
+communication suites are outside this package/provider change; their unchanged
+communication behavior is not a new acceptance claim. No Fast DDS, pre-commit
+or full simulator launch is run. Next validate the local iterator and remaining
+selected scene plugins.

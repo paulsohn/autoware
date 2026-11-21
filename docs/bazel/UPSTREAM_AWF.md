@@ -1156,6 +1156,8 @@ records the diagnosis and the following module entry gives the full command.
 
 ### Lane-change fmt::join needs its declaring header
 
+Local source fix: `4120f86e`, separate from Bazel definitions.
+
 - [x] Associated with merged [universe#13594](https://github.com/autowarefoundation/autoware_universe/pull/13594),
   reviewed 2026-11-22 (merge 0aca0ea44d6ebba9600f753bb561f423591459c8).
   The one-line source fix is identical. The broader

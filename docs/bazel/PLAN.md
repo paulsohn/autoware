@@ -1803,6 +1803,10 @@ Phase 7.3 task boundaries (selected 2026-11-21):
   resources are pinned under third_party/grid_map; the local iterator helper
   precedes crosswalk. [SDK evidence](JOURNAL.md#2026-11-22-phase-732--grid-map-dependency-provider).
   Keep these generic dependency inputs below source components.
+  Its concrete interface providers are registered at the root: canonical
+  descriptor/template regressions and full 345-interface/398-instantiation
+  plugin compilation pass in the CPU/Cyclone DDS configuration.
+  [Composition evidence](JOURNAL.md#2026-11-22-phase-732--grid-map-interfaces-in-product-composition).
 
   Continue in dependency order through shared planner helpers, the
   preset-selected behavior/motion plugins and controller libraries, then
