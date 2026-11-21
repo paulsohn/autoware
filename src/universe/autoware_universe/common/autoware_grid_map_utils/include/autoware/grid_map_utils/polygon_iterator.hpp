@@ -36,7 +36,7 @@ struct Edge
   Edge(grid_map::Position f, grid_map::Position s) : first(std::move(f)), second(std::move(s)) {}
 
   /// @brief Sorting operator resulting in edges sorted from highest to lowest x values
-  bool operator<(const Edge & e)
+  bool operator<(const Edge & e) const
   {
     return first.x() > e.first.x() || (first.x() == e.first.x() && second.x() > e.second.x());
   }

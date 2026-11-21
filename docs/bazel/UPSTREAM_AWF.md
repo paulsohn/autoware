@@ -1174,3 +1174,27 @@ Local source fix: `4120f86e`, separate from Bazel definitions.
   reports older fmt compatibility; this branch does not claim an older-fmt run.
 - Reproducer and local module-gate results are in the lane-change journal entry.
   This is alignment with an existing upstream fix, not a new upstream submission.
+
+### Grid-map edge ordering must accept const operands
+
+- [ ] Associate with a matching upstream fix. Reviewed 2026-11-22: PR/issue
+  searches for grid_map_utils/const and PolygonIterator return no matching
+  correction; current
+  [upstream header](https://github.com/autowarefoundation/autoware_universe/blob/main/common/autoware_grid_map_utils/include/autoware/grid_map_utils/polygon_iterator.hpp)
+  still declares a non-const member. The
+  [Lyrical tracker](https://github.com/autowarefoundation/autoware/issues/7404) and
+  [toolchain tracker](https://github.com/autowarefoundation/autoware_universe/issues/13590)
+  are compatibility context, not a matching fix association.
+- Input: Universe 0.53.2 snapshot imported by 7fbc81af,
+  common/autoware_grid_map_utils/include/autoware/grid_map_utils/polygon_iterator.hpp.
+  LLVM/libc++ 21.1.8, C++23, grid-map 2.5.0, Ubuntu 24.04/RCR Lyrical.
+- Reproduce by compiling the real polygon_iterator.cpp through the complete
+  local module gate in the corresponding journal entry. libc++'s std::__less
+  compares const Edge references; operator< cannot be called on the const left
+  operand, causing invalid-operands/no-matching-function errors in std::sort.
+- Qualify operator<(const Edge &) as const. Its body only reads endpoint
+  coordinates, so ordering and object layout are unchanged. The full original
+  seven-case polygon suite passes and its original benchmark builds. This is
+  source-level Clang/libc++ portability, not an older-GCC runtime claim.
+  No upstream submission has been made; source fix and build definitions are
+  committed separately.

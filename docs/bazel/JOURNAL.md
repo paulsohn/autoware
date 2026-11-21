@@ -12126,3 +12126,44 @@ communication suites are outside this package/provider change; their unchanged
 communication behavior is not a new acceptance claim. No Fast DDS, pre-commit
 or full simulator launch is run. Next validate the local iterator and remaining
 selected scene plugins.
+
+## 2026-11-22: Phase 7.3.2 — Local grid-map polygon iterator
+
+Purpose: provide crosswalk planning with the local scan-line iterator rather
+than a registry substitute. Inspect its one production source/header, manifest,
+CMake, all seven original polygon cases and original benchmark. Select the local
+module after the validated grid-map SDK. Production code uses only the core
+provider; keep the legacy stopwatch dependency in its test/benchmark consumers.
+Declare the original benchmark with its actual CV/OpenCV providers and build it,
+but do not make a long performance/optional interactive experiment the native
+correctness gate. Its --visualize mode is not exercised here.
+
+The first libc++ 21/C++23 compile rejects std::sort's comparison of const Edge
+operands: the header's operator< lacks a const qualifier. Add that qualifier,
+preserving the same read-only descending endpoint ordering. This is a source
+compatibility fix, separate from MODULE/BUILD declarations. Inspect AWF's Lyrical
+and toolchain trackers, current upstream header and repository PR/issue searches
+for grid_map_utils, PolygonIterator and const on 2026-11-22. Current main still
+has the non-const member; no matching fix is found. Record the finding in
+UPSTREAM_AWF.md without associating unrelated feature/performance work.
+
+Add package-owned module/library/index, the complete original GTest executable
+and the original benchmark target. SDK Eigen hooks and shared providers flow
+through their declared core/CV dependencies. No new test body, host library,
+source relocation or disabled test is needed.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_output=errors @autoware_grid_map_utils//...
+git diff --check
+```
+
+The production iterator, original benchmark and complete seven-case suite build.
+All seven cases pass in 0.1 seconds (22.6-second invocation): full cover, outside,
+square/triangle coverage, moved maps, differential comparison and self-crossing
+polygons. There are no failures/errors/skips/disabled cases. Whitespace checks
+pass; the one-keyword source edit retains existing formatting. CPU/Cyclone DDS
+with ENABLE_AGNOCAST=0 is selected. No pre-commit, Fast DDS, performance timing
+claim or full simulator launch is included. Next validate crosswalk and the
+remaining selected behavior-velocity scene group.
