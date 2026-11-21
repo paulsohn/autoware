@@ -15567,3 +15567,20 @@ passes all sixteen targets (92 cases), including the processing profile's actual
 12.5 ms MetricArray and shutdown JSON minimum/count assertions in an isolated
 ROS_LOG_DIR. Targeted clang-format and whitespace checks pass. CPU/Cyclone DDS,
 Agnocast off; older ROS and colcon are not executed. No upstream submission.
+
+## 2026-11-22: Phase 7.3.2 — Component state monitoring
+
+Purpose: make autoware_component_state_monitor part of the selected CPU system implementation
+closure with declared build/runtime inputs. Inspect the original single CPP, header, topics.yaml and launch generator. The YAML describes generator input, not a ROS parameters file. Export the component, original standalone name and indexed resources with local wrapper and concrete diagnostic/system message providers. The root fixture supplies one autonomous.planning name rather than misreading topics.yaml as parameters.
+
+A retained false state becomes true for the matching topic_state_monitor OK diagnostic and false again for ERROR; all other diagnostic hardware identities are ignored by the original implementation.
+
+There are no original functional tests in this package (CMake only registers lint or no tests). Preserve that inventory and add the behavior check outside the source package.
+
+Verification: run the package's complete @autoware_component_state_monitor//... target pattern and //bazel/tests/system_nodes:component_state_runtime_test using
+the exact clean-environment command and shared configuration recorded in the
+[system gate](#2026-11-22-phase-732--dummy-diagnostic-publication-and-system-gate).
+The complete gate passes all sixteen targets/92 active cases: 77 original graph
+cases and fifteen root executable/behavior profiles. No failures or introduced
+skips. CPU/Cyclone DDS, ENABLE_AGNOCAST=0, LLVM/libc++ 21.1.8 and Python 3.14.4.
+No Fast DDS, full simulator launch, older ROS/colcon or real-time acceptance.

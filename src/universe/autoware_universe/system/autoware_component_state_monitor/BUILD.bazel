@@ -1,0 +1,58 @@
+load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library")
+load("@autoware_agnocast_wrapper//:defs.bzl", "autoware_agnocast_node")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "autoware_component_state_monitor",
+    srcs = glob(["src/**/*.cpp"]),
+    hdrs = glob(["src/**/*.hpp"]),
+    includes = ["src"],
+    deps = [
+        "@autoware_agnocast_wrapper//:autoware_agnocast_wrapper_library",
+        "@diagnostic_msgs//:cc",
+        "@rclcpp//:rclcpp_library",
+        "@rclcpp_components//:rclcpp_components_library",
+        "@tier4_system_msgs//:cc",
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = [
+        "@autoware_agnocast_wrapper//:autoware_agnocast_wrapper",
+        "@diagnostic_msgs//:cc_shared",
+        "@rclcpp//:rclcpp",
+        "@rclcpp_components//:rclcpp_components",
+        "@tier4_system_msgs//:cc_shared",
+    ],
+)
+
+cc_shared_library(
+    name = "autoware_component_state_monitor_component",
+    dynamic_deps = [":runtime_dynamic_deps"],
+    deps = [":autoware_component_state_monitor"],
+)
+
+autoware_agnocast_node(
+    name = "component_state_monitor_node",
+    package_name = "autoware_component_state_monitor",
+    component = ":autoware_component_state_monitor_component",
+    plugin = "autoware::component_state_monitor::StateMonitor",
+    agnocast_only = True,
+)
+
+register_ament_files(
+    name = "node_executables",
+    files = [":component_state_monitor_node"],
+    prefix = "lib/autoware_component_state_monitor",
+    strip_prefix = "*",
+)
+
+ament_index(
+    package_xml = "package.xml",
+    data = glob(["config/**", "launch/**"]) + [":component_state_monitor_node_plugin", ":node_executables"],
+    components = [":component_state_monitor_node_components"],
+)

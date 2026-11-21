@@ -1,0 +1,29 @@
+load("@rules_python//python:defs.bzl", "py_test")
+
+[
+    py_test(
+        name = name + "_runtime_test",
+        srcs = ["test_runtime.py"],
+        main = "test_runtime.py",
+        args = [package, executable, config],
+        data = ["@" + package + "//:ament_index"],
+        env = {"ENABLE_AGNOCAST": "0", "LD_LIBRARY_PATH": "lib", "ROS_DOMAIN_ID": "101"},
+        precompile = "disabled",
+        tags = ["no-remote", "no-sandbox"],
+        deps = [
+            "@ament_index_python",
+            "@autoware_control_msgs//:py",
+            "@autoware_internal_debug_msgs//:py",
+            "@tier4_metric_msgs//:py",
+            "@autoware_system_msgs//:py",
+            "@autoware_internal_planning_msgs//:py",
+            "@diagnostic_msgs//:py",
+            "@rcl_interfaces//:py",
+            "@rclpy",
+            "@tier4_system_msgs//:py",
+        ],
+    )
+    for name, package, executable, config in [
+        ("component_state", "autoware_component_state_monitor", "component_state_monitor_node", "-"),
+    ]
+]
