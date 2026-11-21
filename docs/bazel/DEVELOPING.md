@@ -740,6 +740,11 @@ after changing its obstacle-stop plugin assembly. Declare the real plugin index
 on node tests that request it, alongside any intentionally unavailable plugin
 names used to check error handling.
 
+A plugin's parameter lifetime belongs to its hosting node. If that node supports
+unload/reload, initialize parameters with read-or-declare semantics and preserve
+current values. Verify a real reload after a parameter update; constructing a
+plugin only once cannot expose repeated-declaration failures.
+
 ## Launch resource composition
 
 Keep ROS executable names stable even when Bazel target labels differ. Use

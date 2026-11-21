@@ -22,6 +22,7 @@
 #include "autoware/motion_velocity_planner_common/utils.hpp"
 #include "autoware_utils/geometry/geometry.hpp"
 #include "autoware_utils/ros/marker_helper.hpp"
+#include "autoware_utils/ros/parameter.hpp"
 #include "autoware_utils/ros/update_param.hpp"
 
 #include "autoware_internal_planning_msgs/msg/velocity_limit.hpp"
@@ -73,81 +74,97 @@ PIDBasedPlanner::PIDBasedPlanner(
   const CruisePlanningParam & cruise_planning_param)
 : CruisePlannerInterface(node, common_param, cruise_planning_param)
 {
-  min_accel_during_cruise_ = node.declare_parameter<double>(
-    "obstacle_cruise.cruise_planning.pid_based_planner.min_accel_during_cruise");
+  min_accel_during_cruise_ = autoware_utils::get_or_declare_parameter<double>(
+    node, "obstacle_cruise.cruise_planning.pid_based_planner.min_accel_during_cruise");
 
-  use_velocity_limit_based_planner_ = node.declare_parameter<bool>(
-    "obstacle_cruise.cruise_planning.pid_based_planner.use_velocity_limit_based_planner");
+  use_velocity_limit_based_planner_ = autoware_utils::get_or_declare_parameter<bool>(
+    node, "obstacle_cruise.cruise_planning.pid_based_planner.use_velocity_limit_based_planner");
 
   {  // velocity limit based planner
-    const double kp = node.declare_parameter<double>(
-      "obstacle_cruise.cruise_planning.pid_based_planner.velocity_limit_based_planner.kp");
-    const double ki = node.declare_parameter<double>(
-      "obstacle_cruise.cruise_planning.pid_based_planner.velocity_limit_based_planner.ki");
-    const double kd = node.declare_parameter<double>(
-      "obstacle_cruise.cruise_planning.pid_based_planner.velocity_limit_based_planner.kd");
+    const double kp = autoware_utils::get_or_declare_parameter<double>(
+      node, "obstacle_cruise.cruise_planning.pid_based_planner.velocity_limit_based_planner.kp");
+    const double ki = autoware_utils::get_or_declare_parameter<double>(
+      node, "obstacle_cruise.cruise_planning.pid_based_planner.velocity_limit_based_planner.ki");
+    const double kd = autoware_utils::get_or_declare_parameter<double>(
+      node, "obstacle_cruise.cruise_planning.pid_based_planner.velocity_limit_based_planner.kd");
     velocity_limit_based_planner_param_.pid_vel_controller =
       std::make_unique<PIDController>(kp, ki, kd);
 
-    velocity_limit_based_planner_param_.output_ratio_during_accel = node.declare_parameter<double>(
+    velocity_limit_based_planner_param_
+      .output_ratio_during_accel = autoware_utils::get_or_declare_parameter<double>(
+      node,
       "obstacle_cruise.cruise_planning.pid_based_planner.velocity_limit_based_planner.output_ratio_"
       "during_accel");
-    velocity_limit_based_planner_param_.vel_to_acc_weight = node.declare_parameter<double>(
-      "obstacle_cruise.cruise_planning.pid_based_planner.velocity_limit_based_planner.vel_to_acc_"
-      "weight");
+    velocity_limit_based_planner_param_.vel_to_acc_weight =
+      autoware_utils::get_or_declare_parameter<double>(
+        node,
+        "obstacle_cruise.cruise_planning.pid_based_planner.velocity_limit_based_planner.vel_to_acc_"
+        "weight");
 
     velocity_limit_based_planner_param_.enable_jerk_limit_to_output_acc =
-      node.declare_parameter<bool>(
+      autoware_utils::get_or_declare_parameter<bool>(
+        node,
         "obstacle_cruise.cruise_planning.pid_based_planner.velocity_limit_based_planner.enable_"
         "jerk_limit_to_output_acc");
 
-    velocity_limit_based_planner_param_.disable_target_acceleration = node.declare_parameter<bool>(
-      "obstacle_cruise.cruise_planning.pid_based_planner.velocity_limit_based_planner.disable_"
-      "target_acceleration");
+    velocity_limit_based_planner_param_.disable_target_acceleration =
+      autoware_utils::get_or_declare_parameter<bool>(
+        node,
+        "obstacle_cruise.cruise_planning.pid_based_planner.velocity_limit_based_planner.disable_"
+        "target_acceleration");
   }
 
   {  // velocity insertion based planner
     // pid controller for acc
-    const double kp_acc = node.declare_parameter<double>(
+    const double kp_acc = autoware_utils::get_or_declare_parameter<double>(
+      node,
       "obstacle_cruise.cruise_planning.pid_based_planner.velocity_insertion_based_planner.kp_acc");
-    const double ki_acc = node.declare_parameter<double>(
+    const double ki_acc = autoware_utils::get_or_declare_parameter<double>(
+      node,
       "obstacle_cruise.cruise_planning.pid_based_planner.velocity_insertion_based_planner.ki_acc");
-    const double kd_acc = node.declare_parameter<double>(
+    const double kd_acc = autoware_utils::get_or_declare_parameter<double>(
+      node,
       "obstacle_cruise.cruise_planning.pid_based_planner.velocity_insertion_based_planner.kd_acc");
     velocity_insertion_based_planner_param_.pid_acc_controller =
       std::make_unique<PIDController>(kp_acc, ki_acc, kd_acc);
 
     // pid controller for jerk
-    const double kp_jerk = node.declare_parameter<double>(
+    const double kp_jerk = autoware_utils::get_or_declare_parameter<double>(
+      node,
       "obstacle_cruise.cruise_planning.pid_based_planner.velocity_insertion_based_planner.kp_jerk");
-    const double ki_jerk = node.declare_parameter<double>(
+    const double ki_jerk = autoware_utils::get_or_declare_parameter<double>(
+      node,
       "obstacle_cruise.cruise_planning.pid_based_planner.velocity_insertion_based_planner.ki_jerk");
-    const double kd_jerk = node.declare_parameter<double>(
+    const double kd_jerk = autoware_utils::get_or_declare_parameter<double>(
+      node,
       "obstacle_cruise.cruise_planning.pid_based_planner.velocity_insertion_based_planner.kd_jerk");
     velocity_insertion_based_planner_param_.pid_jerk_controller =
       std::make_unique<PIDController>(kp_jerk, ki_jerk, kd_jerk);
 
     velocity_insertion_based_planner_param_.output_acc_ratio_during_accel =
-      node.declare_parameter<double>(
+      autoware_utils::get_or_declare_parameter<double>(
+        node,
         "obstacle_cruise.cruise_planning.pid_based_planner.velocity_insertion_based_planner.output_"
         "acc_ratio_during_accel");
     velocity_insertion_based_planner_param_.output_jerk_ratio_during_accel =
-      node.declare_parameter<double>(
+      autoware_utils::get_or_declare_parameter<double>(
+        node,
         "obstacle_cruise.cruise_planning.pid_based_planner.velocity_insertion_based_planner.output_"
         "jerk_ratio_during_accel");
 
     velocity_insertion_based_planner_param_.enable_jerk_limit_to_output_acc =
-      node.declare_parameter<bool>(
+      autoware_utils::get_or_declare_parameter<bool>(
+        node,
         "obstacle_cruise.cruise_planning.pid_based_planner.velocity_insertion_based_planner.enable_"
         "jerk_limit_to_output_acc");
   }
 
-  min_cruise_target_vel_ = node.declare_parameter<double>(
-    "obstacle_cruise.cruise_planning.pid_based_planner.min_cruise_target_vel");
-  time_to_evaluate_rss_ = node.declare_parameter<double>(
-    "obstacle_cruise.cruise_planning.pid_based_planner.time_to_evaluate_rss");
-  const auto error_function_type = node.declare_parameter<std::string>(
-    "obstacle_cruise.cruise_planning.pid_based_planner.error_function_type");
+  min_cruise_target_vel_ = autoware_utils::get_or_declare_parameter<double>(
+    node, "obstacle_cruise.cruise_planning.pid_based_planner.min_cruise_target_vel");
+  time_to_evaluate_rss_ = autoware_utils::get_or_declare_parameter<double>(
+    node, "obstacle_cruise.cruise_planning.pid_based_planner.time_to_evaluate_rss");
+  const auto error_function_type = autoware_utils::get_or_declare_parameter<std::string>(
+    node, "obstacle_cruise.cruise_planning.pid_based_planner.error_function_type");
   error_func_ = [&]() -> std::function<double(double)> {
     if (error_function_type == "linear") {
       return [](const double val) { return val; };
@@ -158,8 +175,10 @@ PIDBasedPlanner::PIDBasedPlanner(
   }();
 
   // low pass filter
-  const double lpf_normalized_error_cruise_dist_gain = node.declare_parameter<double>(
-    "obstacle_cruise.cruise_planning.pid_based_planner.lpf_normalized_error_cruise_dist_gain");
+  const double lpf_normalized_error_cruise_dist_gain =
+    autoware_utils::get_or_declare_parameter<double>(
+      node,
+      "obstacle_cruise.cruise_planning.pid_based_planner.lpf_normalized_error_cruise_dist_gain");
   lpf_normalized_error_cruise_dist_ptr_ =
     std::make_shared<LowpassFilter1d>(lpf_normalized_error_cruise_dist_gain);
   lpf_dist_to_obstacle_ptr_ = std::make_shared<LowpassFilter1d>(0.5);

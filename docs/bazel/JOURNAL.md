@@ -12697,3 +12697,32 @@ this final local declaration; source/version selections remain pinned.
 CPU/Cyclone DDS with ENABLE_AGNOCAST=0 is selected; no Fast DDS, pre-commit or
 full simulator launch is run. Next validate related selected motion-velocity
 plugins and their complete original module suites.
+
+## 2026-11-22: Phase 7.3.2 — Cruise PID plugin reload
+
+Purpose: preserve the actual planner's advertised plugin load/unload lifecycle.
+The selected cruise PID plugin starts and its original planning-factor test
+passes, but loading it after a successful unload aborts the real planner with
+ParameterAlreadyDeclaredException for min_accel_during_cruise. The plugin is
+removed while its parameters remain on the node. Inspect the planner-manager
+load/unload calls, cruise init and every PID-constructor declaration: the same
+issue affects all 22 unconditional parameter declarations in that constructor.
+
+Use the existing autoware_utils get_or_declare_parameter helper for those 22
+reads, with an explicit parameter header. First initialization keeps its original
+YAML/type behavior; subsequent construction reads the node's current values.
+Do not clear shared node parameters or modify the planner manager. This fix
+covers the selected PID branch; the unselected optimization implementation is
+compiled but its lifecycle is not a new runtime claim. No unrelated module or
+original test bodies change.
+
+Review current AWF PID source and PR searches for cruise/reload and
+ParameterAlreadyDeclaredException on 2026-11-22. Main retains all 22 declarations;
+no matching corrective PR is found. Record the independent lifecycle defect in
+UPSTREAM_AWF.md, not as a Lyrical-only compatibility issue. The root lifecycle
+regression loads the real factory, checks duplicate-load handling, sets the PID
+minimum acceleration to -1.25, unloads/reloads and requires the same value,
+then cleanly shuts down. The following module group gate passes its complete
+original suites and all real planner profiles, including the prior obstacle-stop
+baseline. Format/flake8/whitespace checks pass; no source algorithm changes.
+Commit this fix separately from the following Bazel definitions.

@@ -1237,3 +1237,22 @@ Local source fix: `88b93365`.
   checks pass with CPU/Cyclone DDS and Agnocast off. Exact commands are in the
   optimizer journal. This is production/test dependency separation, not a claim
   of a Lyrical-specific API change or a new upstream submission.
+
+### Cruise PID plugin redeclares persistent node parameters on reload
+
+- [ ] Associate with a matching upstream fix. Reviewed 2026-11-22: current
+  [PID constructor](https://github.com/autowarefoundation/autoware_universe/blob/main/planning/motion_velocity_planner/autoware_motion_velocity_obstacle_cruise_module/src/pid_based_planner/pid_based_planner.cpp)
+  retains 22 node.declare_parameter calls. PR searches for cruise/reload and
+  cruise/ParameterAlreadyDeclaredException return no matching correction.
+- The real motion planner loads ObstacleCruiseModule using the default pid_base
+  config. Unload succeeds; reload aborts with ParameterAlreadyDeclaredException
+  at min_accel_during_cruise because parameters outlive their plugin object.
+  The complete original planning-factor test alone does not expose this.
+- Read-or-declare all PID-constructor parameters through the existing utility,
+  preserving types and current node-owned values. The root lifecycle regression
+  changes minimum acceleration to -1.25 and verifies its value after reload,
+  duplicate-load handling and clean shutdown. The complete three-module group
+  passes 11 cases across seven targets with Cyclone DDS and ENABLE_AGNOCAST=0.
+  Exact commands/results are in the journal. This is a general plugin lifecycle
+  defect; the optional optimization branch and other middleware configurations
+  are not newly validated. No upstream submission has been made.
