@@ -13892,3 +13892,23 @@ executable/behavior cases, preserving one original disabled pure-pursuit case.
 CPU/Cyclone DDS, ENABLE_AGNOCAST=0; no colcon/older-ROS or full simulator claim.
 Targeted clang-format/flake8/whitespace checks pass. Keep source compatibility
 changes separate from the following Bazel module declarations.
+
+## 2026-11-22: Phase 7.3.2 — MPC controller expected compatibility
+
+Purpose: compile the current selected controller closure against native
+tl-expected 1.3.1. The first complete group build cannot find
+tl_expected/expected.hpp in the original controller interfaces. Inspect the
+selected provider's public header and the current package's includes/manifest;
+use tl/expected.hpp and libexpected-dev instead. These package-scoped edits
+exactly match merged AWF #13622 (all 41 files inspected 2026-11-22, merge
+c992af10f4c463fda78a06348c139357b9f195ad). Do not import that PR's unrelated
+packages or its follower header absent from this source snapshot.
+
+The existing native provider replaces the CMake-only expected wrapper's
+header/library effect; no empty wrapper module, host install or algorithm
+change is required. The full command in the following helper/module entries
+passes all seven targets: 137 active original native cases and two installed
+executable/behavior cases, preserving one original disabled pure-pursuit case.
+CPU/Cyclone DDS, ENABLE_AGNOCAST=0; no colcon/older-ROS or full simulator claim.
+Targeted clang-format/flake8/whitespace checks pass. Keep source compatibility
+changes separate from the following Bazel module declarations.
