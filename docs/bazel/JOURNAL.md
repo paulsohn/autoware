@@ -13015,3 +13015,59 @@ shared with child stdout changes its shared open-file-description offset and
 can overwrite capture. Read it with os.pread instead, preserving the writer's
 offset and the lifecycle assertions. Consolidate these diagnoses into this
 module group rather than journaling every rerun.
+
+## 2026-11-22: Phase 7.3.2 — Run-out motion plugin
+
+Purpose: expose the selected run_out factory from the local source snapshot.
+Inspect its manifest/CMake, XML, config, every production source (7)
+and complete original suite (6 active cases). Prerequisites are the
+existing common motion planner, locally overridden interface/utility providers
+and CPU/Cyclone DDS with ENABLE_AGNOCAST=0. Expose the actual collision/TTC and object-handling implementation. Its local Universe utility dependency is integrated first; use its native provider rather than substituting the core utility implementation. diagnostic_updater static linkage uses diagnostic_updater_library; publish the corresponding shared provider.
+
+Add package-owned MODULE/BUILD, a root local override after dependencies,
+all original implementation/header files, a shared plugin with its exact XML
+basename/category and an index owning config resources. Publish flattened shared
+runtime dependencies for native tests. Original tests stay in place; added
+lifecycle coverage stays under bazel/tests. Register this concrete index on the
+root motion-planner test profile. The adapter supplies common fixture YAML plus
+the package's own indexed config; check the expected parameter, actual individual
+DLL, duplicate-load handling, unload/reload and clean SIGINT exit. Interface
+collection and product factory selection remain root-owned.
+
+Complete group command (including suites affected by the internal-type fix):
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_output=errors \
+  @autoware_motion_velocity_run_out_module//... \
+  @autoware_motion_velocity_out_of_lane_module//... \
+  @autoware_motion_velocity_obstacle_velocity_limiter_module//... \
+  @autoware_motion_velocity_boundary_departure_prevention_module//... \
+  @autoware_motion_velocity_road_user_stop_module//... \
+  @autoware_motion_velocity_obstacle_slow_down_module//... \
+  @autoware_motion_velocity_obstacle_cruise_module//... \
+  //bazel/tests/autoware_motion_velocity_run_out_module:all \
+  //bazel/tests/autoware_motion_velocity_out_of_lane_module:all \
+  //bazel/tests/autoware_motion_velocity_obstacle_velocity_limiter_module:all \
+  //bazel/tests/autoware_motion_velocity_boundary_departure_prevention_module:all \
+  //bazel/tests/autoware_motion_velocity_road_user_stop_module:all \
+  //bazel/tests:motion_velocity_planner_runtime_test \
+  //bazel/tests/autoware_motion_velocity_obstacle_slow_down_module:all \
+  //bazel/tests/autoware_motion_velocity_obstacle_cruise_module:all \
+  //bazel/tests/autoware_motion_velocity_dynamic_obstacle_stop_module:all \
+  //bazel/tests/motion_velocity_planner:selected_runtime_test
+python3 -m flake8 --max-line-length=150 bazel/tests/motion_velocity_planner/test_runtime.py
+git diff --check
+```
+
+The full gate passes 16 targets in 117.7 seconds, reusing unchanged results:
+39 original active native cases (37 in the five new packages, two in the
+source-fix-affected cruise/slow-down packages) and ten actual planner lifecycles.
+No failures/errors/skips/disabled cases occur. The nine individual profiles and
+one joint selected profile all pass; the latter checks each factory's reload
+in one process and retains updated cruise/limiter parameters. The limiter's
+original benchmark builds without a performance claim. Formatting/flake8 and
+whitespace checks pass. No Fast DDS, kernel allocator matrix or full simulator
+launch is run. These checks use component-default YAML, so product override and
+trajectory-driving acceptance remain later gates.

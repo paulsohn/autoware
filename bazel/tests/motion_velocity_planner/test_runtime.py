@@ -19,14 +19,24 @@ from rclpy.parameter import Parameter
 import rclpy
 
 EXECUTABLE = str(Path(sys.argv.pop(1)).resolve())
-MODULE = sys.argv.pop(1) if len(sys.argv) > 1 else 'obstacle_stop'
-PLUGIN = 'autoware::motion_velocity_planner::' + ''.join(word.title() for word in MODULE.split('_')) + 'Module'
-PARAMETER, EXPECTED = {
+MODULES = sys.argv.pop(1).split(',') if len(sys.argv) > 1 else ['obstacle_stop']
+PARAMETERS = {
     'obstacle_stop': ('obstacle_stop.stop_planning.stop_margin', 5.0),
     'obstacle_slow_down': ('obstacle_slow_down.slow_down_planning.slow_down_min_acc', -1.0),
     'obstacle_cruise': ('obstacle_cruise.cruise_planning.idling_time', 2.0),
     'dynamic_obstacle_stop': ('dynamic_obstacle_stop.minimum_object_velocity', 0.5),
-}[MODULE]
+    'run_out': ('run_out.collision.time_margin', 0.5),
+    'out_of_lane': ('out_of_lane.max_arc_length', 100.0),
+    'obstacle_velocity_limiter': ('min_ttc', 1.0),
+    'boundary_departure_prevention': ('boundary_departure_prevention.th_point_merge_distance_m', 1.0),
+    'road_user_stop': ('road_user_stop.stop_planning.longitudinal_margin.default_margin', 5.0),
+}
+
+
+def plugin_class(module):
+    scope = ('autoware::motion_velocity_planner::experimental::' if module == 'boundary_departure_prevention'
+             else 'autoware::motion_velocity_planner::')
+    return scope + ''.join(word.title() for word in module.split('_')) + 'Module'
 
 
 class PlannerRuntime(unittest.TestCase):
@@ -45,9 +55,10 @@ class PlannerRuntime(unittest.TestCase):
             'motion_velocity_planner/motion_velocity_planner.param.yaml',
         ]:
             args += ['--params-file', str(share / 'test_config' / name)]
-        plugin_share = Path(get_package_share_directory('autoware_motion_velocity_' + MODULE + '_module'))
-        args += ['--params-file', str(plugin_share / 'config' / (MODULE + '.param.yaml'))]
-        args += ['--log-level', 'debug', '-p', 'launch_modules:=[' + PLUGIN + ']']
+        for module in MODULES:
+            plugin_share = Path(get_package_share_directory('autoware_motion_velocity_' + module + '_module'))
+            args += ['--params-file', str(plugin_share / 'config' / (module + '.param.yaml'))]
+        args += ['--log-level', 'debug', '-p', 'launch_modules:=[' + ','.join(map(plugin_class, MODULES)) + ']']
         load = node.create_client(LoadPlugin, prefix + '/service/load_plugin')
         unload = node.create_client(UnloadPlugin, prefix + '/service/unload_plugin')
         parameters = node.create_client(GetParameters, prefix + '/get_parameters')
@@ -57,8 +68,7 @@ class PlannerRuntime(unittest.TestCase):
                 process = subprocess.Popen(args, stdout=log, stderr=subprocess.STDOUT)
 
                 def output():
-                    log.seek(0)
-                    return log.read()
+                    return os.pread(log.fileno(), os.fstat(log.fileno()).st_size, 0).decode(errors='replace')
 
                 def wait(condition):
                     deadline = time.monotonic() + 25
@@ -78,32 +88,42 @@ class PlannerRuntime(unittest.TestCase):
                 try:
                     wait(lambda: load.service_is_ready() and unload.service_is_ready() and
                          parameters.service_is_ready())
-                    loaded = "The scene plugin '" + PLUGIN + "' is loaded."
-                    wait(lambda: loaded in output())
-                    maps = Path('/proc', str(process.pid), 'maps').read_text()
-                    self.assertIn('libautoware_motion_velocity_' + MODULE + '_module.so', maps)
-                    self.assertNotIn('libagnocast_heaphook.so', maps)
-                    response = call(parameters, GetParameters.Request(
-                        names=['smooth_velocity_before_planning', PARAMETER]))
-                    self.assertTrue(response.values[0].bool_value)
-                    self.assertEqual(response.values[1].double_value, EXPECTED)
-                    call(load, LoadPlugin.Request(plugin_name=PLUGIN))
-                    wait(lambda: "The plugin '" + PLUGIN + "' is already loaded." in output())
-                    self.assertEqual(output().count(loaded), 1)
-                    if MODULE == 'obstacle_cruise':
-                        retained_name = 'obstacle_cruise.cruise_planning.pid_based_planner.min_accel_during_cruise'
-                        wait(set_parameters.service_is_ready)
-                        result = call(set_parameters, SetParameters.Request(parameters=[
-                            Parameter(retained_name, value=-1.25).to_parameter_msg()]))
-                        self.assertTrue(result.results[0].successful, result.results[0].reason)
-                    call(unload, UnloadPlugin.Request(plugin_name=PLUGIN))
-                    wait(lambda: "The scene plugin '" + PLUGIN + "' is unloaded." in output())
-                    call(load, LoadPlugin.Request(plugin_name=PLUGIN))
-                    wait(lambda: output().count(loaded) == 2)
-                    if MODULE == 'obstacle_cruise':
-                        result = call(parameters, GetParameters.Request(names=[retained_name]))
-                        self.assertEqual(result.values[0].double_value, -1.25)
-                    self.assertNotIn('is not available', output())
+                    for module in MODULES:
+                        plugin = plugin_class(module)
+                        parameter, expected = PARAMETERS[module]
+                        loaded = "The scene plugin '" + plugin + "' is loaded."
+                        wait(lambda: loaded in output())
+                        maps = Path('/proc', str(process.pid), 'maps').read_text()
+                        if len(MODULES) == 1:
+                            self.assertIn('libautoware_motion_velocity_' + module + '_module.so', maps)
+                        self.assertNotIn('libagnocast_heaphook.so', maps)
+                        response = call(parameters, GetParameters.Request(
+                            names=['smooth_velocity_before_planning', parameter]))
+                        self.assertTrue(response.values[0].bool_value)
+                        self.assertEqual(response.values[1].double_value, expected)
+                        call(load, LoadPlugin.Request(plugin_name=plugin))
+                        wait(lambda: "The plugin '" + plugin + "' is already loaded." in output())
+                        self.assertEqual(output().count(loaded), 1)
+                        retained = {
+                            'obstacle_cruise': ('obstacle_cruise.cruise_planning.pid_based_planner.min_accel_during_cruise', -1.25),
+                            'obstacle_velocity_limiter': ('trajectory_preprocessing.downsample_factor', 4),
+                        }.get(module)
+                        if retained:
+                            retained_name, retained_value = retained
+                            wait(set_parameters.service_is_ready)
+                            result = call(set_parameters, SetParameters.Request(parameters=[
+                                Parameter(retained_name, value=retained_value).to_parameter_msg()]))
+                            self.assertTrue(result.results[0].successful, result.results[0].reason)
+                        call(unload, UnloadPlugin.Request(plugin_name=plugin))
+                        wait(lambda: "The scene plugin '" + plugin + "' is unloaded." in output())
+                        call(load, LoadPlugin.Request(plugin_name=plugin))
+                        wait(lambda: output().count(loaded) == 2)
+                        if retained:
+                            result = call(parameters, GetParameters.Request(names=[retained_name]))
+                            actual = (result.values[0].double_value if isinstance(retained_value, float)
+                                      else result.values[0].integer_value)
+                            self.assertEqual(actual, retained_value)
+                        self.assertNotIn('is not available', output())
                 finally:
                     if process.poll() is None:
                         process.send_signal(signal.SIGINT)
