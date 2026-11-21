@@ -1056,3 +1056,37 @@ Suggested upstream action: avoid instantiating the discarded conversion branch
 under Clang while preserving supported language versions. This local patch
 requires C++17 or newer; do not assume it is suitable unchanged for upstream
 C++14 consumers. Source-built spconv/cumm, upstream CMake and ARM are untested.
+
+## Learning-based vehicle model finalizes Python before its objects
+
+- [ ] Associate with a matching upstream fix. Reviewed 2026-11-21: no matching
+  fix in the standalone simulator's inspected issue/PR list. Not submitted.
+
+Repository/package: autowarefoundation/autoware_simple_planning_simulator,
+autoware_learning_based_vehicle_model. Upstream main
+087ff2c2867121a4807bdf7360a964aef40004f2 still declares submodels before guard
+and has no destructor to release them first in
+[interconnected_model.hpp](https://github.com/autowarefoundation/autoware_simple_planning_simulator/blob/087ff2c2867121a4807bdf7360a964aef40004f2/autoware_learning_based_vehicle_model/include/autoware/learning_based_vehicle_model/interconnected_model.hpp).
+The inspected [clang-tidy PR #25](https://github.com/autowarefoundation/autoware_simple_planning_simulator/pull/25)
+changes no learning-model lifetime code. The
+[Lyrical tracker](https://github.com/autowarefoundation/autoware/issues/7404)
+is related platform work, not a matching correction.
+
+Reproduce by constructing InterconnectedModel, creating a Python fixture class
+inside its interpreter, adding that submodel and leaving the C++ scope normally.
+The root regression at bazel/tests/autoware_learning_based_vehicle_model/test_embedding.cpp
+also exercises parameter/dt dispatch, updates and state reset before teardown.
+With Python 3.14.4, LLVM/libc++ 21.1.8 and Ubuntu 24.04, destruction segfaults:
+_Py_Dealloc → pybind11::handle::dec_ref → SimplePyModel::~SimplePyModel →
+InterconnectedModel::~InterconnectedModel. Reverse member destruction destroys
+guard first; submodels then decref objects after interpreter finalization.
+
+Clear submodels in an explicit destructor body before guard destruction. The
+correction preserves member layout, API and calculations and requires no ROS
+version guard. The complete four-source library builds and both root mapping/
+embedding cases pass afterward, with no failure/skip and a normal process exit.
+The Phase 7.3.1 journal records exact Bazel/run-under commands and the native
+backtrace. These results establish the tested Python 3.14 configuration; older
+Python/ROS versions and upstream CMake are untested. This is interpreter lifetime,
+not a Lyrical-only algorithm change. Keep the source fix separate from its
+package-local Bazel definitions.

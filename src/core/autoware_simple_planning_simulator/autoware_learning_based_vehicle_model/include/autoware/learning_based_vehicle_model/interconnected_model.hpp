@@ -55,6 +55,12 @@ class __attribute__((visibility("default"))) InterconnectedModel
 public:
   py::scoped_interpreter guard{};  // start the interpreter and keep it alive
 
+  ~InterconnectedModel()
+  {
+    // Release Python-owned submodels before guard finalizes the interpreter.
+    submodels.clear();
+  }
+
   /**
    * @brief constructor
    */

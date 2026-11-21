@@ -9738,3 +9738,47 @@ The pilot preference is a single supervised bridge with explicit routes at
 startup. A native-only deployment can supply an empty route list. Bridge
 qualification and the native QoS investigation continue on the colcon branch.
 Documentation-only update, validated with git diff --check.
+
+## 2026-11-21: Phase 7.3.1 — Embedded model interpreter lifetime
+
+Purpose: correct a demonstrated teardown crash in the required local
+learning-based vehicle-model dependency. The new root embedding fixture first
+checks real Python model calls, then destroys InterconnectedModel normally.
+The model itself owns py::scoped_interpreter; a second caller-owned interpreter
+is invalid and is not part of the final fixture.
+
+Failure: on Ubuntu 24.04, LLVM/libc++ 21.1.8 and declared Python 3.14.4, the model
+executes but exits with SIGSEGV (the run-under wrapper reports exit 245). GDB
+reaches _Py_Dealloc → pybind11::handle::dec_ref → SimplePyModel::~SimplePyModel
+→ InterconnectedModel::~InterconnectedModel. Its guard is declared after the
+submodels vector, so reverse member destruction finalizes Python before releasing
+Python-owned objects. This source lifetime defect is independent of Bazel.
+
+Fix: explicitly clear submodels in the destructor body while the interpreter
+is alive. Keep member layout, public API and model computations unchanged;
+do not suppress teardown, leak submodels or skip the failing regression.
+Upstream main 087ff2c2867121a4807bdf7360a964aef40004f2 has the same lifetime
+ordering. The inspected issue/PR list and clang-tidy PR #25 supply no matching
+fix; the Lyrical tracker is broader related work. UPSTREAM_AWF.md records the
+review scope and proposed correction; no submission is made.
+
+Verification with the package-local Bazel declarations and root fixture prepared
+for the following integration boundary:
+
+```sh
+bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --nocache_test_results --test_output=errors --run_under=//bazel/tests:with_python \
+  @autoware_learning_based_vehicle_model//... \
+  //bazel/tests/autoware_learning_based_vehicle_model:embedding_test
+```
+
+The complete four-source library builds, and both mapping/embedding cases pass,
+including repeated updates, external reset and normal interpreter teardown.
+The pre-fix fixture fails; the same fixture passes after the destructor change.
+Use the existing run-under tool for the declared Python home/import paths.
+For native debugging, preserve those values for the inferior; run host GDB
+with its own libraries/Python settings, rather than forcing the pinned GNU
+wheel runtime onto GDB's libsource-highlight dependency. This changes no target
+runtime dependency selection. Targeted clang-format and whitespace checks pass.
+No older Python/ROS release, upstream CMake, GPU or middleware matrix is tested.
+The other simulator modules and full lane-driving milestone remain incomplete.
