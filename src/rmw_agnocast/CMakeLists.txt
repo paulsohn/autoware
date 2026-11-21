@@ -11,4 +11,6 @@ target_link_libraries(${PROJECT_NAME} PRIVATE "-Wl,--no-as-needed" rmw_cyclonedd
   rclcpp::rclcpp rmw::rmw ${CMAKE_DL_LIBS})
 register_rmw_implementation("c:rosidl_typesupport_introspection_c" "cpp:rosidl_typesupport_introspection_cpp")
 install(TARGETS ${PROJECT_NAME} DESTINATION lib)
+install(FILES host_cloud_view.hpp DESTINATION include/rmw_agnocast)
+ament_export_include_directories(include)
 ament_package()
