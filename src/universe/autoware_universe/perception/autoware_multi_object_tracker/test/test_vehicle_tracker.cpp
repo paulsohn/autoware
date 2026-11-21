@@ -396,9 +396,9 @@ TEST(ExportedPoseCovariance, PositionYawCorrelated)
 
   EXPECT_GT(std::abs(c[XYZRPY_COV_IDX::X_YAW]) + std::abs(c[XYZRPY_COV_IDX::Y_YAW]), 1e-6);
 
-  EXPECT_DOUBLE_EQ(c[XYZRPY_COV_IDX::X_YAW], c[XYZRPY_COV_IDX::YAW_X]);
-  EXPECT_DOUBLE_EQ(c[XYZRPY_COV_IDX::Y_YAW], c[XYZRPY_COV_IDX::YAW_Y]);
-  EXPECT_DOUBLE_EQ(c[XYZRPY_COV_IDX::X_Y], c[XYZRPY_COV_IDX::Y_X]);
+  EXPECT_NEAR(c[XYZRPY_COV_IDX::X_YAW], c[XYZRPY_COV_IDX::YAW_X], 1e-12);
+  EXPECT_NEAR(c[XYZRPY_COV_IDX::Y_YAW], c[XYZRPY_COV_IDX::YAW_Y], 1e-12);
+  EXPECT_NEAR(c[XYZRPY_COV_IDX::X_Y], c[XYZRPY_COV_IDX::Y_X], 1e-12);
 }
 
 // The assembled (x, y, yaw) block is positive semi-definite: G * P_sub * G^T with P_sub PSD.

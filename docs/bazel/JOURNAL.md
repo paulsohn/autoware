@@ -14972,3 +14972,55 @@ They do not prove full-stack safety decisions, simulator driving or real-time
 performance. No Fast DDS or full simulator launch is run. Continue selected
 simulated perception and system/API dependencies; product interface/bridge
 compilation remains the final accumulated gate.
+
+## 2026-11-22: Phase 7.3.2 — Tracker dependency and numeric fixture portability
+
+Purpose: unblock the local 0.53.2 tracker snapshot and its complete original
+suite on the pinned Lyrical/LLVM/Boost providers. Inspect the manifest, CMake
+source/test registration, direct header uses, original assertions and current
+AWF Lyrical/toolchain trackers. Keep these source corrections separate from
+Bazel module declarations and preserve the original test inventory.
+
+Odometry compilation fails on removed tf2/LinearMath/Quaternion.h; the same
+translation unit also names removed tf2/utils.h. Use their current .hpp headers
+and preserve all calculations. Debugger compilation next fails because UUID's
+compatibility header no longer declares boost::hash. Apply exactly the added
+boost/functional/hash.hpp include from merged AWF #13592, verified by inspecting
+its actual one-file patch on 2026-11-22. Keep the original hasher and map type;
+do not replace the algorithm or import unrelated tracker changes.
+
+The original exported-covariance symmetry case then differs by about 1.8e-15
+(roughly eight ULPs) after matrix multiplication; EXPECT_DOUBLE_EQ permits only
+four ULPs. Use EXPECT_NEAR(..., 1e-12) for its three mirrored entries, matching
+the neighboring Jacobian and positive-semidefinite tests' tolerance. Retain the
+positive-correlation assertion and every other original case. Do not change
+production covariance calculations to force a bitwise rounding pattern.
+Current main retains those strict assertions. Related PR #12347 changes EKF
+stability/other covariance paths, not this fixture; no matching numeric-fix
+association or new submission is claimed. The TF header correction likewise
+has no matching PR in the scoped search. Older ROS is not executed.
+
+Reproduce the complete affected gate with the following command after adding
+the source-owned declarations and root adapters described in the module entries:
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast \
+  --local_test_jobs=1 --test_output=errors \
+  @mussp//... @pointcloud_to_laserscan//... \
+  @autoware_multi_object_tracker//... @autoware_map_based_prediction//... \
+  @autoware_perception_online_evaluator//... \
+  @autoware_dummy_traffic_light_publisher//... \
+  //bazel/tests/perception_nodes:all //bazel/tests/perception_metrics:all
+python3 -m flake8 --max-line-length=150 bazel/tests/perception_nodes/test_runtime.py
+git diff --check
+```
+
+All fourteen targets pass: 173 active original cases (tracker 59, prediction 43,
+traffic helpers 33, evaluator 38), eight installed executable/behavior profiles
+and two added time-window regressions: 183 active cases. Four original disabled
+tracker benchmarks stay disabled; no introduced skips or failures. The final
+39.3-second invocation reuses unchanged results, including the full 134.5-second
+evaluator suite. CPU/Cyclone DDS, ENABLE_AGNOCAST=0, LLVM/libc++ 21.1.8, Boost 1.90,
+Python 3.14.4 and Bazel 9.3.2 are selected. No Fast DDS, full simulator launch,
+older-ROS/colcon execution or real-time performance acceptance is claimed.

@@ -1437,3 +1437,27 @@ No older-ROS verification or new submission is claimed.
   the wrapper API explicit. All four original cases pass (9.2 seconds), followed
   by installed startup and the whole sixteen-target command group. This is test
   API compatibility rather than a Lyrical-only fix; see the source-fix journal.
+
+### Tracker dependency headers and covariance fixture portability
+
+- [x] Associate the Boost hash include with merged
+  [AWF #13592](https://github.com/autowarefoundation/autoware_universe/pull/13592).
+  Reviewed its actual patch on 2026-11-22: add boost/functional/hash.hpp in the
+  debugger header. The local correction matches it exactly; keep the original
+  map/hasher. [Tracker #13590](https://github.com/autowarefoundation/autoware_universe/issues/13590)
+  identifies the same Boost 1.86+ header change.
+- [ ] Associate the separate TF-header/numeric-fixture corrections with matching
+  upstream changes. Current odometry uses the removed Quaternion.h/utils.h;
+  current test_vehicle_tracker.cpp retains the three strict mirrored-covariance
+  checks, reviewed 2026-11-22. Related
+  [#12347](https://github.com/autowarefoundation/autoware_universe/pull/12347)
+  changes EKF stability and other covariance handling, not this test.
+- Local input: Universe 0.53.2, LLVM/libc++ 21.1.8, Boost 1.90, Lyrical TF.
+  Use the .hpp headers in odometry. The covariance pair differs by about 1.8e-15;
+  use the neighboring tests' 1e-12 tolerance for its three symmetry checks,
+  preserving positive correlation, propagation and PSD checks and production
+  code. All 59 active original cases, including the recorded bag, pass; four
+  original disabled benchmarks remain disabled. The whole perception gate
+  passes 183 active cases in fourteen targets, Cyclone DDS/Agnocast off.
+  [Exact reproducer and scope](JOURNAL.md#2026-11-22-phase-732--tracker-dependency-and-numeric-fixture-portability).
+  No older-toolchain/colcon result or submission is claimed.
