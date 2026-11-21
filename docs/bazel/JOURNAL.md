@@ -15652,3 +15652,20 @@ The complete gate passes all sixteen targets/92 active cases: 77 original graph
 cases and fifteen root executable/behavior profiles. No failures or introduced
 skips. CPU/Cyclone DDS, ENABLE_AGNOCAST=0, LLVM/libc++ 21.1.8 and Python 3.14.4.
 No Fast DDS, full simulator launch, older ROS/colcon or real-time acceptance.
+
+## 2026-11-22: Phase 7.3.2 — Emergency-stop operator
+
+Purpose: make autoware_mrm_emergency_stop_operator part of the selected CPU system implementation
+closure with declared build/runtime inputs. Inspect original CPP/header, CMake executor and parameter contract. Declare concrete control/system providers and the original wrapper executable/index. No separate empty shim, source algorithm edit or root dependency is needed.
+
+The actual OperateMrm service changes AVAILABLE -> OPERATING -> AVAILABLE; with no previous control command, the existing fallback publishes negative target acceleration. This covers that fallback, not numerical tracking from a moving vehicle.
+
+There are no original functional tests in this package (CMake only registers lint or no tests). Preserve that inventory and add the behavior check outside the source package.
+
+Verification: run the package's complete @autoware_mrm_emergency_stop_operator//... target pattern and //bazel/tests/system_nodes:emergency_stop_runtime_test using
+the exact clean-environment command and shared configuration recorded in the
+[system gate](#2026-11-22-phase-732--dummy-diagnostic-publication-and-system-gate).
+The complete gate passes all sixteen targets/92 active cases: 77 original graph
+cases and fifteen root executable/behavior profiles. No failures or introduced
+skips. CPU/Cyclone DDS, ENABLE_AGNOCAST=0, LLVM/libc++ 21.1.8 and Python 3.14.4.
+No Fast DDS, full simulator launch, older ROS/colcon or real-time acceptance.

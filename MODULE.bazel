@@ -1526,3 +1526,9 @@ local_path_override(
     module_name = "autoware_mrm_comfortable_stop_operator",
     path = "src/universe/autoware_universe/system/autoware_mrm_comfortable_stop_operator",
 )
+
+bazel_dep(name = "autoware_mrm_emergency_stop_operator", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_mrm_emergency_stop_operator",
+    path = "src/universe/autoware_universe/system/autoware_mrm_emergency_stop_operator",
+)
