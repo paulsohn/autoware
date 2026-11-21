@@ -12314,3 +12314,44 @@ regression, with no runtime failures/errors/skips. The final invocation takes
 flake8 and whitespace checks pass. CPU/Cyclone DDS, ENABLE_AGNOCAST=0 is selected;
 no pre-commit, Fast DDS, kernel-dependent gate or full simulator launch is run.
 Next continue the remaining selected planning and control implementation closure.
+
+## 2026-11-22: Phase 7.3.2 — Blind-spot behavior-velocity plugin
+
+Purpose: provide the preset-selected blind-spot scene. Inspect CMake, manifest,
+original plugin XML/config, every production source/header and original test
+registration. This module has 12 production sources and 2 compatible original
+cases covering normal/abnormal path and off-track node handling.
+
+Use package-owned MODULE/BUILD rules, original shared-library basename and
+plugin category, indexed config/fixtures, and a root local override after its
+local dependencies. Export both standard and experimental factories. Declare
+actual C++/message dependencies and flattened shared runtime providers; keep
+source components independent of root labels. Reuse the root RTC-step adapter
+for indexed configuration, factory/DLL loading, parameter service, unload/reload
+and clean SIGINT shutdown through both real planner executables. The selected
+launch profile uses the experimental factory. Original production/test bodies
+remain unchanged except for the separate documented intersection UUID fix.
+
+Use the combined command in the [crosswalk entry](#2026-11-22-phase-732--crosswalk-behavior-velocity-plugin);
+this module selects @autoware_behavior_velocity_blind_spot_module//... and
+//bazel/tests/autoware_behavior_velocity_blind_spot_module:all.
+
+CMake registers no native test executable and explicitly comments out the
+seven-case utility file. Trial compilation confirms that file calls removed
+getSiblingStraightLanelet/generateBlindSpotLanelets APIs and removed PlannerParam
+fields; this is stale upstream-unregistered coverage, not a missing dependency.
+Preserve that original disabled status and leave its source unchanged. Expose
+the compatible original two-case node file, plus the two real factory lifecycles.
+The obsolete seven utility cases are not declared as a passing or deferred gate;
+there is no claim of coverage for the removed algorithms or optional figure
+export. This corrects the initial inventory of test files versus registered/live
+suites, rather than weakening any active original assertion.
+
+All 2 compatible original cases and both lifecycle profiles pass. The
+complete group passes 23 cases across thirteen targets, including the UUID
+regression, with no runtime failures/errors/skips. The final invocation takes
+26.8 seconds, reusing unchanged passing results; the native suites take crosswalk
+14.7, walkway 10.1, intersection 20.7 and blind-spot 10.1 seconds. Targeted format,
+flake8 and whitespace checks pass. CPU/Cyclone DDS, ENABLE_AGNOCAST=0 is selected;
+no pre-commit, Fast DDS, kernel-dependent gate or full simulator launch is run.
+Next continue the remaining selected planning and control implementation closure.

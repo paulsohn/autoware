@@ -1797,7 +1797,11 @@ Phase 7.3 task boundaries (selected 2026-11-21):
   selects the experimental factories. The four-plugin group passes 47 active
   cases without failures/skips. [RTC evidence](JOURNAL.md#2026-11-22-phase-732--behavior-velocity-rtc-scene-support),
   [signal/area group and command](JOURNAL.md#2026-11-22-phase-732--traffic-light-behavior-velocity-plugin).
-  Remaining selected scenes are crosswalk/walkway, intersection and blind spot.
+  Crosswalk, walkway, intersection and blind spot are also complete for the
+  selected profile: fourteen compatible original cases, eight executable
+  lifecycles and one UUID regression pass. Blind spot preserves upstream
+  unregistered obsolete utility coverage; no pass is claimed for that file.
+  [Scene gate and limitations](JOURNAL.md#2026-11-22-phase-732--crosswalk-behavior-velocity-plugin).
   The grid-map 2.5.0 provider is complete for core/CV/ROS/messages: all 109
   original-suite/factory cases pass. Its source archive, Eigen hooks and runtime
   resources are pinned under third_party/grid_map. The local iterator helper
