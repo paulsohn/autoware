@@ -15123,3 +15123,49 @@ tracker benchmarks stay disabled; no introduced skips or failures. The final
 evaluator suite. CPU/Cyclone DDS, ENABLE_AGNOCAST=0, LLVM/libc++ 21.1.8, Boost 1.90,
 Python 3.14.4 and Bazel 9.3.2 are selected. No Fast DDS, full simulator launch,
 older-ROS/colcon execution or real-time performance acceptance is claimed.
+
+## 2026-11-22: Phase 7.3.2 — Local muSSP assignment solver
+
+Purpose: adopt this selected local perception dependency. Inspect source-owned
+package.xml/CMake, production/public headers, complete original test registration,
+fixtures and executable/configuration contracts. Prerequisites are the pinned
+RCR/LLVM providers and existing local core/Universe utilities and interfaces;
+source provenance is repositories/autoware.repos (Universe 0.53.2, with separate
+immutable external-repository refs). Add package-owned MODULE/BUILD, select its
+adjacent root 0.0.0/local override after prerequisites and keep added integration
+checks under bazel/tests. Keep original source/test changes restricted to the
+separately documented demonstrated blockers.
+
+Inspect the repository's four production CPP files and four public headers.
+CMake registers no native test suite; its optional OpenMP discovery supplies no
+active omp calls/pragmas in this snapshot. Expose a real native solver library,
+shared runtime owner and resource index, with public include prefix mussp.
+The tracker consumes that canonical provider instead of embedding another copy
+or fetching the registry counterpart. Its complete 59-case suite, including
+simulated and recorded-data assignment, supplies actual consumer verification.
+No OpenMP/performance claim is inferred from these functional results.
+
+Reproduce the complete affected gate with the following command after adding
+the source-owned declarations and root adapters described in the module entries:
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast \
+  --local_test_jobs=1 --test_output=errors \
+  @mussp//... @pointcloud_to_laserscan//... \
+  @autoware_multi_object_tracker//... @autoware_map_based_prediction//... \
+  @autoware_perception_online_evaluator//... \
+  @autoware_dummy_traffic_light_publisher//... \
+  //bazel/tests/perception_nodes:all //bazel/tests/perception_metrics:all
+python3 -m flake8 --max-line-length=150 bazel/tests/perception_nodes/test_runtime.py
+git diff --check
+```
+
+All fourteen targets pass: 173 active original cases (tracker 59, prediction 43,
+traffic helpers 33, evaluator 38), eight installed executable/behavior profiles
+and two added time-window regressions: 183 active cases. Four original disabled
+tracker benchmarks stay disabled; no introduced skips or failures. The final
+39.3-second invocation reuses unchanged results, including the full 134.5-second
+evaluator suite. CPU/Cyclone DDS, ENABLE_AGNOCAST=0, LLVM/libc++ 21.1.8, Boost 1.90,
+Python 3.14.4 and Bazel 9.3.2 are selected. No Fast DDS, full simulator launch,
+older-ROS/colcon execution or real-time performance acceptance is claimed.

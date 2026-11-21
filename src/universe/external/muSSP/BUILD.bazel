@@ -1,0 +1,14 @@
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rosdistro//ament:defs.bzl", "ament_index")
+package(default_visibility = ["//visibility:public"])
+cc_library(
+    name = "mussp",
+    srcs = glob(["muSSP/*.cpp"]),
+    hdrs = glob(["muSSP/*.h"]),
+    strip_include_prefix = "muSSP",
+    include_prefix = "mussp",
+)
+cc_shared_library(name = "mussp_shared", deps = [":mussp"])
+collect_transitive_dynamic_deps(name = "runtime_dynamic_deps", dynamic_deps = [":mussp_shared"])
+ament_index(package_xml = "package.xml", libraries = [":mussp_shared"])
