@@ -13,7 +13,10 @@ load("@rules_python//python:defs.bzl", "py_test")
             "@autoware_behavior_path_planner//:autoware_behavior_path_planner_node",
             "@autoware_behavior_path_" + module + "_module//:ament_index",
             "@autoware_test_utils//:ament_index",
-        ],
+        ] + ([
+            "@autoware_behavior_path_lane_change_module//:ament_index",
+            "@autoware_behavior_path_static_obstacle_avoidance_module//:ament_index",
+        ] if module == "avoidance_by_lane_change" else []),
         env = {
             "ENABLE_AGNOCAST": "0",
             "LD_LIBRARY_PATH": "lib",
@@ -35,5 +38,6 @@ load("@rules_python//python:defs.bzl", "py_test")
         "bidirectional_traffic",
         "static_obstacle_avoidance",
         "lane_change",
+        "avoidance_by_lane_change",
     ]
 ]

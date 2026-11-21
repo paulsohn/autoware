@@ -11625,3 +11625,40 @@ scenes.
 The source header alignment is committed separately as 4120f86e. Package-owned
 Bazel definitions and the root two-factory profile form the following module
 commit, using the same passing gate above without rerunning unchanged actions.
+
+## 2026-11-22: Phase 7.3.2 — Avoidance-by-lane-change scene plugin
+
+Purpose: expose the preset-selected avoidance manager using its local lane-change
+and static-avoidance implementations. Inspect all three production sources,
+four src-local headers, factory XML, configuration, manifest/CMake and the complete
+original two-case node-interface suite. Both tests send normal routes plus
+empty-route or off-track odometry and require planner output.
+
+Add the package-owned library/plugin/index and root local override after both
+base modules. Its headers live under src, so declare them and that include root
+instead of inventing an include directory. Link actual base libraries and their
+runtime closures. Both the original tests and standalone profile require all
+three indexed YAML providers: lane_change, static_obstacle_avoidance and
+avoidance_by_lane_change. Transitive C++ dependencies do not substitute for
+these runtime resources. Extend the root adapter with that resource list;
+require successful factory/DLL loading, own longitudinal-margin default 80,
+inherited backward-lane-length default 200/update to 201 and clean shutdown.
+No original implementation or test changes are required.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_output=errors @autoware_behavior_path_avoidance_by_lane_change_module//... \
+  //bazel/tests/autoware_behavior_path_planner:all
+python3 -m flake8 --max-line-length=150 \
+  bazel/tests/autoware_behavior_path_planner/test_runtime.py
+git diff --check
+```
+
+All three implementation sources and package targets build. Both original cases
+pass in 9.6 seconds, the new standalone profile in 2.0 seconds and the four prior
+profiles pass. The complete six-target gate passes seven cases in 102.4 seconds
+with no failures, errors, disabled cases or skips. Targeted flake8 and whitespace
+checks pass. Configuration is CPU/Cyclone DDS, ENABLE_AGNOCAST=0; no pre-commit,
+Fast DDS or unrelated deployment matrix runs. Parking scenes and jointly loading
+all selected scenes remain to validate before simulator composition.

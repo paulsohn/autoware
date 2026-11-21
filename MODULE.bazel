@@ -1087,3 +1087,9 @@ local_path_override(
     module_name = "autoware_behavior_path_lane_change_module",
     path = "src/universe/autoware_universe/planning/behavior_path_planner/autoware_behavior_path_lane_change_module",
 )
+
+bazel_dep(name = "autoware_behavior_path_avoidance_by_lane_change_module", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_behavior_path_avoidance_by_lane_change_module",
+    path = "src/universe/autoware_universe/planning/behavior_path_planner/autoware_behavior_path_avoidance_by_lane_change_module",
+)

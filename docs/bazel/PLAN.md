@@ -1807,6 +1807,10 @@ Phase 7.3 task boundaries (selected 2026-11-21):
   original disabled case remains; the direct fmt ranges include matches merged
   upstream #13594 and is committed separately from Bazel declarations.
   [Evidence](JOURNAL.md#2026-11-22-phase-732--lane-change-scene-plugins).
+  Avoidance-by-lane-change is complete: all three sources, both original
+  route/off-track cases and the five standalone profiles pass. Its inherited
+  YAML and parameter-update dependencies are explicit runtime resources.
+  [Evidence](JOURNAL.md#2026-11-22-phase-732--avoidance-by-lane-change-scene-plugin).
   Continue in dependency order through shared planner helpers, the
   preset-selected behavior/motion plugins and controller libraries, then
   simulated perception and the selected system/API closure. CMake-only shims

@@ -34,6 +34,10 @@ CLASS, PARAMETERS, VALUES, UPDATED = {
     'lane_change': ('LaneChangeLeftModuleManager,LaneChangeRightModuleManager',
                     ['lane_change.time_limit', 'lane_change.backward_lane_length'],
                     [50.0, 200.0], 201.0),
+    'avoidance_by_lane_change': ('AvoidanceByLaneChangeModuleManager',
+                                 ['avoidance_by_lane_change.execute_object_longitudinal_margin',
+                                  'lane_change.backward_lane_length'],
+                                 [80.0, 200.0], 201.0),
 }[MODULE]
 PLUGINS = ['autoware::behavior_path_planner::' + c for c in CLASS.split(',')]
 
@@ -47,14 +51,14 @@ class PlannerRuntime(unittest.TestCase):
         prefix = namespace + '/behavior_path_planner'
         args = [EXECUTABLE, '--ros-args', '-r', '__ns:=' + namespace,
                 '-r', '__node:=behavior_path_planner', '--log-level', 'debug']
+        configs = ['lane_change', 'static_obstacle_avoidance', MODULE] if MODULE == 'avoidance_by_lane_change' else [MODULE]
         for package, files in [
             ('autoware_test_utils', ['test_common.param.yaml', 'test_nearest_search.param.yaml',
                                      'test_vehicle_info.param.yaml']),
             ('autoware_behavior_path_planner', ['behavior_path_planner.param.yaml',
                                                 'drivable_area_expansion.param.yaml',
                                                 'scene_module_manager.param.yaml']),
-            ('autoware_behavior_path_' + MODULE + '_module', [MODULE + '.param.yaml']),
-        ]:
+        ] + [('autoware_behavior_path_' + m + '_module', [m + '.param.yaml']) for m in configs]:
             share = Path(get_package_share_directory(package))
             for name in files:
                 args += ['--params-file', str(share / 'config' / name)]

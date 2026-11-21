@@ -1,0 +1,85 @@
+load("@rosdistro//ament:defs.bzl", "ament_index")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "autoware_behavior_path_avoidance_by_lane_change_module",
+    srcs = glob(["src/**/*.cpp"]),
+    hdrs = glob(["src/**/*.hpp"]),
+    includes = ["src"],
+    deps = [
+        "@autoware_behavior_path_lane_change_module",
+        "@autoware_behavior_path_planner_common",
+        "@autoware_behavior_path_static_obstacle_avoidance_module",
+        "@autoware_motion_utils",
+        "@autoware_rtc_interface",
+        "@autoware_utils",
+        "@pluginlib//:pluginlib_library",
+        "@rclcpp//:rclcpp_library",
+        "@rosdistro//cc:boost.geometry",
+        "@tier4_planning_msgs//:cc",
+        "@visualization_msgs//:cc",
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = [
+        "@ament_index_cpp//:ament_index_cpp",
+        "@autoware_behavior_path_planner_common//:runtime_dynamic_deps",
+        "@autoware_behavior_path_lane_change_module//:runtime_dynamic_deps",
+        "@autoware_behavior_path_static_obstacle_avoidance_module//:runtime_dynamic_deps",
+        "@pluginlib//:pluginlib",
+    ],
+)
+
+cc_shared_library(
+    name = "avoidance_by_lane_change_plugin",
+    dynamic_deps = [":runtime_dynamic_deps"],
+    shared_lib_name = "libautoware_behavior_path_avoidance_by_lane_change_module.so",
+    deps = [":autoware_behavior_path_avoidance_by_lane_change_module"],
+)
+
+ament_index(
+    data = glob([
+        "config/**",
+    ]),
+    libraries = [":avoidance_by_lane_change_plugin"],
+    package_xml = "package.xml",
+    plugin_categories = {"plugins.xml": "autoware_behavior_path_planner"},
+)
+
+collect_transitive_dynamic_deps(
+    name = "test_dynamic_deps",
+    dynamic_deps = [
+        ":runtime_dynamic_deps",
+        "@autoware_behavior_path_planner//:test_dynamic_deps",
+    ],
+)
+
+cc_test(
+    name = "test_autoware_behavior_path_avoidance_by_lane_change_module",
+    timeout = "long",
+    srcs = glob(["test/**/*.cpp"]),
+    data = [
+        ":ament_index",
+        "@autoware_behavior_path_lane_change_module//:ament_index",
+        "@autoware_behavior_path_static_obstacle_avoidance_module//:ament_index",
+        "@autoware_behavior_path_planner//:ament_index",
+        "@autoware_behavior_path_planner_common//:ament_index",
+        "@autoware_route_handler//:ament_index",
+        "@autoware_test_utils//:ament_index",
+    ],
+    dynamic_deps = [":test_dynamic_deps"],
+    env = {
+        "LD_LIBRARY_PATH": "lib",
+        "ROS_DOMAIN_ID": "73",
+    },
+    deps = [
+        ":autoware_behavior_path_avoidance_by_lane_change_module",
+        "@autoware_behavior_path_planner//:test_utils",
+        "@googletest//:gtest_main",
+    ],
+)
