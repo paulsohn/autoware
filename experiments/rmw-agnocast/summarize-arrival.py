@@ -22,7 +22,7 @@ def quantiles(values):
 
 
 def summarize(root, mode, condition):
-    jitter = condition == "jitter"
+    jitter = condition in ("jitter", "combined")
     samples = defaultdict(list)
     releases = defaultdict(list)
     cpu, peak, available = [], [], []
@@ -69,6 +69,8 @@ def summarize(root, mode, condition):
 
 if __name__ == "__main__":
     print("mode condition full_ms partial_ms late_pair_ms late_top_ms cpu_s peak_MiB min_host_MiB release_ms")
+    variant = sys.argv[2] if len(sys.argv) > 2 else "jitter"
+    control = "jitter" if variant == "combined" else "baseline"
     for middleware in ("stock", "cyclone", "zenoh"):
-        for name in ("baseline", sys.argv[2] if len(sys.argv) > 2 else "jitter"):
+        for name in (control, variant):
             summarize(Path(sys.argv[1]), middleware, name)

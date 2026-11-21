@@ -1,0 +1,83 @@
+[INFO] [launch]: All log files can be found below /tmp/tmp.jfazQrAkkl/roslog/2026-11-21-12-47-30-951929-paulsohn-tuf-194918
+[INFO] [launch]: Default logging verbosity is set to INFO
+[INFO] [static_transform_publisher-1]: process started with pid [194940]
+[INFO] [component_container-2]: process started with pid [194941]
+[INFO] [concatenate_and_time_sync_node-3]: process started with pid [194942]
+[INFO] [sync_fixture-4]: process started with pid [194943]
+[INFO] [sync_fixture-5]: process started with pid [194944]
+[static_transform_publisher-1] [INFO] [1795265251.038173424] [static_transform_publisher_b7CMlv2LwRwDfR6l]: Spinning until stopped - publishing transform
+[static_transform_publisher-1] translation: ('4.000000', '0.000000', '0.000000')
+[static_transform_publisher-1] rotation: ('0.000000', '0.000000', '0.000000', '1.000000')
+[static_transform_publisher-1] from 'base_link' to 'sync_lidar'
+[component_container-2] [INFO] [1795265251.249434531] [lidar_crops]: Load Library: /ws/build/universe-pipeline/install/universe_crop_benchmark/lib/libuniverse_crop.so
+[concatenate_and_time_sync_node-3] [INFO] [1795265251.421023231] [point_cloud_concatenator_component]: Utilize naive matching strategy
+[component_container-2] [INFO] [1795265251.671339451] [lidar_crops]: Found class: rclcpp_components::NodeFactoryTemplate<autoware::pointcloud_preprocessor::CropBoxFilterComponent>
+[component_container-2] [INFO] [1795265251.671403571] [lidar_crops]: Instantiate class: rclcpp_components::NodeFactoryTemplate<autoware::pointcloud_preprocessor::CropBoxFilterComponent>
+[INFO] [launch_ros.actions.load_composable_nodes]: Loaded node '/crop_left' in container '/lidar_crops'
+[component_container-2] [INFO] [1795265251.679829737] [lidar_crops]: Found class: rclcpp_components::NodeFactoryTemplate<autoware::pointcloud_preprocessor::CropBoxFilterComponent>
+[component_container-2] [INFO] [1795265251.679841689] [lidar_crops]: Instantiate class: rclcpp_components::NodeFactoryTemplate<autoware::pointcloud_preprocessor::CropBoxFilterComponent>
+[INFO] [launch_ros.actions.load_composable_nodes]: Loaded node '/crop_right' in container '/lidar_crops'
+[component_container-2] [INFO] [1795265251.686113008] [lidar_crops]: Found class: rclcpp_components::NodeFactoryTemplate<autoware::pointcloud_preprocessor::CropBoxFilterComponent>
+[component_container-2] [INFO] [1795265251.686125732] [lidar_crops]: Instantiate class: rclcpp_components::NodeFactoryTemplate<autoware::pointcloud_preprocessor::CropBoxFilterComponent>
+[INFO] [launch_ros.actions.load_composable_nodes]: Loaded node '/crop_top' in container '/lidar_crops'
+[sync_fixture-5] top_release_ns,0,15049443
+[sync_fixture-5] top_release_ns,2,50057453
+[sync_fixture-5] top_release_ns,4,15061776
+[sync_fixture-5] top_release_ns,6,50057574
+[sync_fixture-5] top_release_ns,8,15055394
+[sync_fixture-5] top_release_ns,10,50077781
+[sync_fixture-5] top_release_ns,12,15072386
+[sync_fixture-5] top_release_ns,14,50305706
+[sync_fixture-5] top_release_ns,16,15054262
+[sync_fixture-5] top_release_ns,18,50067332
+[sync_fixture-5] top_release_ns,20,15070402
+[sync_fixture-5] top_release_ns,22,50067382
+[sync_fixture-4] sample,0,full,21574146
+[sync_fixture-4] sample,1,partial,47124843
+[sync_fixture-4] sample,2,late_pair,72434109
+[sync_fixture-4] sample,2,late_top,195675389
+[sync_fixture-4] sample,3,partial,223062630
+[sync_fixture-4] sample,4,full,248663030
+[sync_fixture-4] sample,5,partial,273986693
+[sync_fixture-4] sample,6,late_pair,299446480
+[sync_fixture-4] sample,6,late_top,422729849
+[sync_fixture-4] sample,7,partial,450329537
+[sync_fixture-4] sample,8,full,476072604
+[sync_fixture-4] sample,9,partial,501546357
+[sync_fixture-4] sample,10,late_pair,527086654
+[sync_fixture-4] sample,10,late_top,650863185
+[sync_fixture-4] sample,11,partial,678290431
+[sync_fixture-4] sample,12,full,703892034
+[sync_fixture-4] sample,13,partial,729378670
+[sync_fixture-4] sample,14,late_pair,754819192
+[sync_fixture-4] sample,14,late_top,878119041
+[sync_fixture-4] sample,15,partial,905754968
+[sync_fixture-4] sample,16,full,931499627
+[sync_fixture-4] sample,17,partial,957039634
+[sync_fixture-4] sample,18,late_pair,982504070
+[sync_fixture-4] sample,18,late_top,1105824469
+[sync_fixture-4] sample,19,partial,1133193626
+[sync_fixture-4] sample,20,full,1158803072
+[sync_fixture-4] sample,21,partial,1184150069
+[sync_fixture-4] sample,22,late_pair,1209481727
+[sync_fixture-4] sample,22,late_top,1332855555
+[sync_fixture-4] sample,23,partial,1360706131
+[sync_fixture-4] fast_source_hz=9.99974
+[sync_fixture-4] verified 30 synchronized clouds and metadata, 6 complete and 24 timed out, 1966080 input points
+[INFO] [sync_fixture-4]: process has finished cleanly [pid 194943]
+[INFO] [sync_fixture-5]: sending signal 'SIGINT' to process[sync_fixture-5]
+[INFO] [concatenate_and_time_sync_node-3]: sending signal 'SIGINT' to process[concatenate_and_time_sync_node-3]
+[INFO] [component_container-2]: sending signal 'SIGINT' to process[component_container-2]
+[INFO] [static_transform_publisher-1]: sending signal 'SIGINT' to process[static_transform_publisher-1]
+[sync_fixture-5] [INFO] [1795265256.904258745] [rclcpp]: signal_handler(signum=2)
+[concatenate_and_time_sync_node-3] [INFO] [1795265256.904669774] [rclcpp]: signal_handler(signum=2)
+[component_container-2] [INFO] [1795265256.905019457] [rclcpp]: signal_handler(signum=2)
+[static_transform_publisher-1] [INFO] [1795265256.905355615] [rclcpp]: signal_handler(signum=2)
+[concatenate_and_time_sync_node-3] sync_input views=0 copies=60
+[INFO] [static_transform_publisher-1]: process has finished cleanly [pid 194940]
+[INFO] [sync_fixture-5]: process has finished cleanly [pid 194944]
+[INFO] [component_container-2]: process has finished cleanly [pid 194941]
+[INFO] [concatenate_and_time_sync_node-3]: process has finished cleanly [pid 194942]
+graph_user_s=1.092 graph_sys_s=0.641
+scope_peak_bytes=175521792
+Minimum host MemAvailable: 14860 MiB

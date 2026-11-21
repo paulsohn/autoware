@@ -2495,3 +2495,36 @@ cannot resolve the byte cost of five queued loans from this measure.
 [Timing, CPU and memory](pipeline-slow-results/summary.txt) ·
 [Queue diagnostics](pipeline-slow-results/queue-summary.txt) ·
 [Reproduction](../buffer/JOURNAL.md#2026-11-21--slow-output-consumer-at-nominal-lidar-timing).
+
+### Combined LiDAR jitter and slow consumer
+
+The synchronizer produced the same six complete and 24 timed-out clouds per
+launch with a fast or slow consumer. Every split produced the expected
+left/right pair and top-only cloud. Both preserved their member stamps and
+transformed payload through the backlog. The source still sent 60 clouds
+over 24 acquisition groups. Splitting six groups generated six extra output
+callbacks, adding 750 ms of sink work at 125 ms per callback.
+
+| Middleware | Top only, jitter alone | Top only, combined | Full, combined | Last callback entry, combined |
+|---|---:|---:|---:|---:|
+| rmw_agnocast | 89.6 / 90.0 | 878.2 / 1338.2 | 704.0 / 1163.4 | 1360.7–1366.0 |
+| Cyclone DDS | 90.0 / 90.6 | 878.1 / 1335.2 | 703.9 / 1161.1 | 1360.7–1363.1 |
+| Zenoh | 89.7 / 90.4 | 875.6 / 1331.7 | 701.6 / 1157.7 | 1358.0–1359.0 |
+
+Times are milliseconds from oldest member acquisition to callback entry.
+The first three columns show pooled median / nearest-rank p95 after four
+warm-up acquisition groups. Each cell has ten samples, so p95 equals the
+observed maximum. The last column gives the two-run range for group 23.
+
+The separate rmw_agnocast diagnostic measured one concurrent output loan
+with a fast sink and 11 with the slow sink. Median / p95 reader admission
+to release rose from 0.383 / 0.670 ms to 714.852 / 1247.873 ms. The earlier
+slow-only trace peaked at five. The source stopped before the depth-32
+reader filled. These runs establish delivery and eventual drain for this
+burst. A longer run would be needed to characterize eviction or recovery
+after reaching capacity. Peak timed memory was 388.02 MiB in a jitter-only
+launch and 303.08 MiB across combined launches.
+
+[All timing, CPU and memory measurements](pipeline-combined-results/summary.txt) ·
+[Queue diagnostics](pipeline-combined-results/queue-summary.txt) ·
+[Reproduction](../buffer/JOURNAL.md#2026-11-21--combined-top-lidar-jitter-and-slow-output-callback).

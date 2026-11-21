@@ -1,0 +1,2 @@
+combined.trace completed=30 peak=11 hold_ms_p50=714.852 hold_ms_p95=1247.873 max=1322.830
+jitter.trace completed=30 peak=1 hold_ms_p50=0.383 hold_ms_p95=0.670 max=0.837

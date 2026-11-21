@@ -1690,3 +1690,43 @@ minimum host MemAvailable was 14,174 MiB. Compare the two rounds per mode
 and the queue lifetime evidence in the [results](../rmw-agnocast/README.md#slow-downstream-consumer).
 Next combine the tested arrival jitter and slow callback and check that the
 late top-only outputs and their metadata survive the larger backlog.
+
+### 2026-11-21 — Combined top-LiDAR jitter and slow output callback
+
+Reused the installed Lyrical overlay and the three-crop Universe graph from
+the slow-consumer milestone. All timing launches used the same acquisition
+stamps and 15/50 ms alternating top-LiDAR release schedule. The control sink
+returned immediately. The combined sink slept for 125 ms on each output
+cloud callback after recording its entry time. We paired those conditions so
+both sinks would see the same expected sequence of 30 clouds. Alternating
+middleware and condition order in the second round reduced run-order bias.
+
+With the preceding milestone's binaries and kernel module installed, run
+from the colcon worktree. The runner starts one 512 MiB, swap-disabled scope
+at a time and monitors host memory. The two extra stock launches enable
+tracing separately from the timed runs.
+
+```bash
+export LYRICAL_ROOT=$(cat build/agnocast-lyrical/universe-root)
+base=build/universe-pipeline/combined-pairs
+bash experiments/rmw-agnocast/bench-arrival.sh "$base" combined
+for condition in jitter combined; do
+  unset SYNC_SLOW_SINK
+  if [[ $condition == combined ]]; then export SYNC_SLOW_SINK=1; fi
+  SYNC_AUDIT=1 SYNC_TOP_JITTER=1 SYNC_SINK_TRACE="/ws/$base/$condition.trace" \
+    BUFFER_RUNTIME_ONLY=1 experiments/buffer/run-lyrical.sh timeout -k 5 65 \
+    bash experiments/rmw-agnocast/run-pipeline.sh stock >"$base/$condition.audit.log" 2>&1
+done
+python3 experiments/rmw-agnocast/summarize-queue.py --outputs 30 "$base"/*.trace
+```
+
+All 12 timed launches verified 360 clouds and their metadata from 720 raw
+inputs. In the six combined launches, each of the 36 top clouds released
+outside the matching window formed a separate output with its original stamp.
+All six last callbacks started 1.358–1.366 s after acquisition. The slow-only
+reference had six fewer callbacks and finished its last callback entry at
+0.605–0.614 s. The two separate stock audits each released 60 input views
+and accounted for 30 output loans. Minimum timed host MemAvailable was
+14,358 MiB. See the [latency and queue results](../rmw-agnocast/README.md#combined-lidar-jitter-and-slow-consumer).
+The depth-32 queue absorbed this burst; sustained overload beyond that depth
+and native Agnocast on this complete graph remain open.
