@@ -1117,3 +1117,9 @@ local_path_override(
     module_name = "autoware_behavior_velocity_rtc_interface",
     path = "src/universe/autoware_universe/planning/behavior_velocity_planner/autoware_behavior_velocity_rtc_interface",
 )
+
+bazel_dep(name = "autoware_behavior_velocity_traffic_light_module", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_behavior_velocity_traffic_light_module",
+    path = "src/universe/autoware_universe/planning/behavior_velocity_planner/autoware_behavior_velocity_traffic_light_module",
+)

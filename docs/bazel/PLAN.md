@@ -1829,6 +1829,9 @@ Phase 7.3 task boundaries (selected 2026-11-21):
   its root state consumer. The reusable executable adapter retains passing
   standard/experimental stop-line lifecycle gates.
   [Evidence](JOURNAL.md#2026-11-22-phase-732--behavior-velocity-rtc-scene-support).
+  Traffic-light behavior-velocity support is complete: 13 original cases
+  and standard/experimental executable lifecycles pass without skips/failures.
+  [Evidence](JOURNAL.md#2026-11-22-phase-732--traffic-light-behavior-velocity-plugin).
   Continue in dependency order through shared planner helpers, the
   preset-selected behavior/motion plugins and controller libraries, then
   simulated perception and the selected system/API closure. CMake-only shims

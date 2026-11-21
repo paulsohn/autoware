@@ -11847,3 +11847,52 @@ with no failures/errors/skips. Targeted formatting, flake8 and whitespace checks
 pass. CPU/Cyclone DDS with ENABLE_AGNOCAST=0 is selected; no pre-commit, Fast DDS
 or full simulator launch runs. Next integrate selected traffic-light, detection,
 virtual-light and no-stopping-area consumers, preserving their complete suites.
+
+## 2026-11-22: Phase 7.3.2 — Traffic-light behavior-velocity plugin
+
+Purpose: provide the preset-selected traffic-light plugin. Inspect all six production sources, src-local headers,
+factory XML/config, manifest/CMake and every original test source. Preserve the
+complete original executable, covering yellow transitions, arrow/turn-lane decisions, stop-point geometry and normal/empty/off-track node input.
+
+Apply package-owned module/library/shared-plugin/index declarations and the root
+local override after RTC/common dependencies. Export both standard and
+experimental factories under the original library basename. Declare actual local
+helpers and message/TF providers, shared runtime closures, src include roots and
+all original fixtures. Only declare header/source globs that exist; Bazel 9
+rejects each unmatched pattern even when another pattern matches. No original
+implementation/test edits, missing-test exclusions or host installations are
+needed. Reuse the root lifecycle adapter from the RTC step with this package
+index. Check factory/DLL loading, indexed configuration, planner parameters,
+unload/reload and clean shutdown through both real executables. The launch
+selects the experimental factory; the standard check also preserves the API
+exercised by the original node suite.
+
+Run the four related package gates together, with heavy actions/tests serialized.
+The targets for each package can also be selected independently. The exact
+combined invocation used for this entry and the following three entries is:
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_output=errors \
+  @autoware_behavior_velocity_traffic_light_module//... \
+  @autoware_behavior_velocity_detection_area_module//... \
+  @autoware_behavior_velocity_virtual_traffic_light_module//... \
+  @autoware_behavior_velocity_no_stopping_area_module//... \
+  //bazel/tests/autoware_behavior_velocity_traffic_light_module:all \
+  //bazel/tests/autoware_behavior_velocity_detection_area_module:all \
+  //bazel/tests/autoware_behavior_velocity_virtual_traffic_light_module:all \
+  //bazel/tests/autoware_behavior_velocity_no_stopping_area_module:all
+python3 -m flake8 --max-line-length=150 \
+  bazel/tests/behavior_velocity_planner/test_runtime.py
+git diff --check
+```
+
+All six production sources and the complete original suite build. All 13
+original cases pass in 10.2 seconds; standard/experimental lifecycle checks
+pass in 1.7/2.0 seconds. There are no failures, errors, disabled cases or
+skips. The whole four-package group passes 47 cases across twelve targets in
+423.6 seconds. Targeted flake8 and whitespace checks pass. Configuration is
+CPU/Cyclone DDS with ENABLE_AGNOCAST=0; no pre-commit, Fast DDS or full simulator
+launch is run. Remaining selected scenes and motion/controller dependencies
+remain separate gates.
