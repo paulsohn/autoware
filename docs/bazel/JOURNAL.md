@@ -14034,3 +14034,51 @@ checks pass. No Fast DDS, enabled-kernel matrix, optional disabled case,
 performance acceptance or full simulator launch is run. Continue command gating,
 mode transition and the preset-enabled control-safety nodes before simulator
 composition. The accumulated product interface/bridge gate remains pending.
+
+## 2026-11-22: Phase 7.3.2 — Mpc lateral controller
+
+Purpose: integrate this local package in the selected trajectory-follower
+closure. Inspect manifest/CMake, every production source (14), public
+headers, original indexed parameters and complete original test registration
+(6 test sources, 61 active cases). Prerequisites are
+existing local interfaces, motion/utility/vehicle/OSQP providers and pinned
+native Eigen/Boost/fmt/expected inputs. Select CPU/Cyclone DDS, Agnocast off.
+
+Expose every original MPC, trajectory/utilities, QP solver, vehicle-model,
+filter/predictor and controller-adapter source. Keep the original six test files
+in one suite with all 61 active cases, including controller spatial/temporal
+reference behavior, QP/model helpers and steering prediction. Index the original
+param directory, including controller defaults and steering offset. Direct fmt
+and native expected providers preserve CMake dependency effects; no wrapper
+metapackage or source replacement is used. The expected-header source fix is
+separate c433bf4f. The actual follower node also
+constructs this implementation through its installed executable.
+
+Add package-owned MODULE/BUILD, a root local override after prerequisites and
+explicit native/shared dependency providers. Keep source/test bodies in place
+apart from the separately documented dependency-header fixes. Reproduce actual
+CMake effects with Bazel inputs; do not create empty metapackage dependencies.
+Original tests remain source-owned; new integration profiles remain root-owned.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast \
+  --local_test_jobs=1 --test_output=errors \
+  @autoware_fake_test_node//... @autoware_trajectory_follower_base//... \
+  @autoware_mpc_lateral_controller//... \
+  @autoware_pid_longitudinal_controller//... @autoware_pure_pursuit//... \
+  @autoware_trajectory_follower_node//... //bazel/tests/trajectory_follower:all
+python3 -m flake8 --max-line-length=150 bazel/tests/trajectory_follower/test_runtime.py
+git diff --check
+```
+
+All seven targets pass in the final 41.5-second invocation, reusing unchanged
+results: 137 active original cases (fake 4, MPC 61, PID 43, pure pursuit 16,
+follower 13) plus two installed executable/behavior cases. Native follower
+execution takes 15.7 seconds; the standalone MPC and simple profiles take 1.2
+and 1.6 seconds. One original disabled pure-pursuit case remains disabled;
+there are zero failures/errors or introduced skips. Formatting/flake8/whitespace
+checks pass. No Fast DDS, enabled-kernel matrix, optional disabled case,
+performance acceptance or full simulator launch is run. Continue command gating,
+mode transition and the preset-enabled control-safety nodes before simulator
+composition. The accumulated product interface/bridge gate remains pending.
