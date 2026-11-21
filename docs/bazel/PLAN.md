@@ -1815,6 +1815,10 @@ Phase 7.3 task boundaries (selected 2026-11-21):
   plugin compilation pass in the CPU/Cyclone DDS configuration.
   [Composition evidence](JOURNAL.md#2026-11-22-phase-732--grid-map-interfaces-in-product-composition).
 
+  Path smoothing and scenario selection are complete: all four original native
+  cases and indexed startup/script checks pass. The wrapper preserves ROS-aware
+  executor selection; registered Python executables retain their runfiles.
+  [Evidence](JOURNAL.md#2026-11-22-phase-732--scenario-selector).
   Continue in dependency order through shared planner helpers, the
   preset-selected behavior/motion plugins and controller libraries, then
   simulated perception and the selected system/API closure. The selected local

@@ -12477,3 +12477,36 @@ wrapper 37 native/66 Python and existing mission launch results also pass.
 Targeted flake8/whitespace checks pass. CPU/Cyclone DDS and ENABLE_AGNOCAST=0
 is selected; no Fast DDS, pre-commit or full simulator launch is run. Next
 prepare the selected path optimizer and remaining motion/control closure.
+
+## 2026-11-22: Phase 7.3.2 — Scenario selector
+
+Purpose: expose the selected local scenario selector with its original executable,
+public headers, indexed config/launch resources and complete native suite.
+Inspect all 1 production sources, CMake/manifest, node inheritance/executor
+contract and every original test. Keep the planning-test-manager dependency in
+the test closure, not the production library. Compose actual shared message,
+route/geometry or OSQP providers without source-to-root labels.
+
+Use the ROS-aware agnocast_only=False entrypoint, preserving CMake
+CallbackIsolatedAgnocastExecutor/ROS SingleThreadedExecutor selection. Its original
+three cases exercise lane-driving, parking and off-track trajectory handling
+with mandatory map/route/odometry/mode inputs. Index the original config and
+launch without adding a source-to-product dependency.
+
+The root planning_nodes adapter resolves lib/<package>/<executable> through
+the ament package prefix, supplies original/common fixture parameters, requests
+a parameter through the real ROS service, checks the component DLL/no allocator
+preload and requires clean SIGINT exit. Original implementation and tests stay
+unchanged; added startup adapters remain under bazel/.
+
+Verification is the exact eight-target command in the
+[registered-executable entry](#2026-11-22-phase-732--registered-python-executable-closure),
+including @autoware_scenario_selector//... and
+//bazel/tests/planning_nodes:autoware_scenario_selector_runtime_test.
+All 3 original native cases pass; the indexed startup case passes.
+The native suite takes 12.2 seconds and root runtime takes 1.1 seconds.
+The full group passes all eight targets in 64.6 seconds with no failures/skips;
+wrapper 37 native/66 Python and existing mission launch results also pass.
+Targeted flake8/whitespace checks pass. CPU/Cyclone DDS and ENABLE_AGNOCAST=0
+is selected; no Fast DDS, pre-commit or full simulator launch is run. Next
+prepare the selected path optimizer and remaining motion/control closure.
