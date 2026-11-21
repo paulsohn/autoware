@@ -1379,3 +1379,9 @@ local_path_override(
     module_name = "autoware_component_interface_specs_universe",
     path = "src/universe/autoware_universe/common/autoware_component_interface_specs_universe",
 )
+
+bazel_dep(name = "tier4_api_utils", version = "0.0.0")
+local_path_override(
+    module_name = "tier4_api_utils",
+    path = "src/universe/autoware_universe/common/tier4_api_utils",
+)

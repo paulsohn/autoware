@@ -1,0 +1,54 @@
+load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "tier4_api_utils",
+    srcs = [],
+    hdrs = glob(["include/**/*.hpp"]),
+    includes = ["include"],
+    deps = [
+        "@rclcpp//:rclcpp_library",
+        "@tier4_external_api_msgs//:cc",
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = [
+        "@rclcpp//:rclcpp",
+        "@tier4_external_api_msgs//:cc_shared",
+    ],
+)
+
+ament_index(
+    package_xml = "package.xml",
+    data = [],
+    components = [],
+)
+
+collect_transitive_dynamic_deps(
+    name = "test_dynamic_deps",
+    dynamic_deps = [
+        ":runtime_dynamic_deps",
+        "@ament_index_cpp//:ament_index_cpp",
+    ],
+)
+
+cc_test(
+    name = "test_tier4_api_utils",
+    timeout = "long",
+    srcs = glob(["test/**/*.cpp"]),
+    data = [
+        ":ament_index",
+    ],
+    dynamic_deps = [":test_dynamic_deps"],
+    env = {"ENABLE_AGNOCAST": "0", "LD_LIBRARY_PATH": "lib", "ROS_DOMAIN_ID": "95"},
+    deps = [
+        ":tier4_api_utils",
+        "@ament_index_cpp//:ament_index_cpp_library",
+        "@googletest//:gtest",
+    ],
+)
