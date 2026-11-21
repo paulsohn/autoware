@@ -10492,3 +10492,25 @@ source behavior change. Targeted buildifier/clang-format and whitespace checks
 pass. This completes the library's selected default suite, CPU/Cyclone DDS with
 Agnocast disabled; figure-output tooling and full driving acceptance are not
 claimed. The remaining 7.3.2 dependency groups continue before 7.3.3 composition.
+
+## 2026-11-21: Phase 7.3.2 — Freespace test filesystem compatibility
+
+Purpose: compile the complete original freespace algorithm suite against the
+pinned Lyrical rcpputils API. Compilation exposes a removed
+rcpputils::fs::remove_all call in the optional rosbag-output cleanup helper.
+Inspect the helper and its callers: this is directory cleanup, not a ROS path
+abstraction or a planning operation. Replace the obsolete helper include with
+the C++17 filesystem header and use std::filesystem::remove_all; leave solver
+parameters, test assertions and bag-output defaults unchanged.
+
+Checked 2026-11-21: the upstream main copy still contains the obsolete call
+(test source blob 49b85f9a9017415a61b8a41d67159f2bbb21724b). A scoped upstream
+PR search for freespace/filesystem found no matching correction; this is not
+evidence that no wider compatibility PR exists. Record that distinction in
+UPSTREAM_AWF.md. Keep this original-test correction in its own source commit.
+
+The following module entry gives the exact full-suite command. All ten original
+freespace cases and both original RRT cases pass, as do both added Python checks;
+there are no failures or skips. Targeted clang-format and whitespace checks pass.
+This demonstrates CPU/Lyrical compilation and unchanged default test execution;
+optional bag export and older ROS distributions are not validated.

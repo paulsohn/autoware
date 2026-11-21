@@ -17,7 +17,6 @@
 #include "autoware/freespace_planning_algorithms/rrtstar.hpp"
 
 #include <rclcpp/rclcpp.hpp>
-#include <rcpputils/filesystem_helper.hpp>
 #include <rosbag2_cpp/writer.hpp>
 #include <tf2/utils.hpp>
 
@@ -28,6 +27,7 @@
 
 #include <algorithm>
 #include <array>
+#include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <memory>
@@ -353,7 +353,7 @@ bool test_algorithm(enum AlgorithmType algo_type, bool dump_rosbag = false)
       const std::string dir_name =
         "/tmp/" + rosbag_dir_prefix_table[algo_type] + "-case" + std::to_string(i);
 
-      rcpputils::fs::remove_all(dir_name);
+      std::filesystem::remove_all(dir_name);
 
       rosbag2_storage::StorageOptions storage_options;
       storage_options.uri = dir_name;

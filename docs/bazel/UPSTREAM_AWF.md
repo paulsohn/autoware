@@ -1135,3 +1135,21 @@ a current target exposes the need. No host libexpected-dev installation, older
 ROS validation or colcon result is implied by this manifest alignment. See the
 [source-fix journal](JOURNAL.md#2026-11-21-phase-732--boundary-checker-expected-compatibility)
 for the failure, integration context and exact command.
+
+## Freespace tests: removed rcpputils filesystem helper
+
+- [ ] Associated with a matching upstream PR. Checked 2026-11-21: a scoped
+  freespace/filesystem PR search found no match. The upstream main test source
+  still uses rcpputils::fs::remove_all at blob
+  [49b85f9a9017415a61b8a41d67159f2bbb21724b](https://api.github.com/repos/autowarefoundation/autoware_universe/git/blobs/49b85f9a9017415a61b8a41d67159f2bbb21724b).
+  A broader Lyrical change may cover this; no matching association is asserted.
+- [x] Reproduced locally: the original test does not compile against Lyrical's
+  removed filesystem helper. Replacing its include/call with C++17
+  filesystem/std::filesystem::remove_all permits all ten original freespace
+  and both original RRT cases to pass, with no assertions changed or skipped.
+
+The fix only affects the optional rosbag-output directory cleanup helper.
+CPU/Cyclone DDS with ENABLE_AGNOCAST=0 is validated; optional bag export and
+older ROS distributions are not. The
+[journal](JOURNAL.md#2026-11-21-phase-732--freespace-test-filesystem-compatibility)
+records the diagnosis and the following module entry gives the full command.
