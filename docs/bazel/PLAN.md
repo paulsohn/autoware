@@ -1811,6 +1811,9 @@ Phase 7.3 task boundaries (selected 2026-11-21):
   route/off-track cases and the five standalone profiles pass. Its inherited
   YAML and parameter-update dependencies are explicit runtime resources.
   [Evidence](JOURNAL.md#2026-11-22-phase-732--avoidance-by-lane-change-scene-plugin).
+  The Bézier sampler builds both production sources and passes two consumer
+  cases for boundary states, curve evaluation and candidate-family generation.
+  [Evidence](JOURNAL.md#2026-11-22-phase-732--bézier-sampler-library).
   Continue in dependency order through shared planner helpers, the
   preset-selected behavior/motion plugins and controller libraries, then
   simulated perception and the selected system/API closure. CMake-only shims

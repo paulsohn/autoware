@@ -11662,3 +11662,32 @@ with no failures, errors, disabled cases or skips. Targeted flake8 and whitespac
 checks pass. Configuration is CPU/Cyclone DDS, ENABLE_AGNOCAST=0; no pre-commit,
 Fast DDS or unrelated deployment matrix runs. Parking scenes and jointly loading
 all selected scenes remain to validate before simulator composition.
+
+## 2026-11-22: Phase 7.3.2 — Bézier sampler library
+
+Purpose: supply the local goal planner with its actual quintic Bézier sampler.
+Inspect both production sources, both public headers and manifest/CMake. CMake
+registers no native tests. Add package-owned module/library/index, declaring
+sampler-common and Eigen and exposing sampler-common's runtime closure; select
+the local override after that dependency. Keep implementation unchanged.
+
+Add a root native consumer testing actual curve construction from boundary
+states, endpoint position/velocity/zero-acceleration, agreement between scalar
+and matrix evaluation, nine Cartesian/heading samples and finite curvature.
+A second case exercises the sampling API's eight-candidate family and verifies
+all endpoint positions/headings. These cover the API required by goal planning;
+they do not certify arbitrary driving or optimization quality.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_output=errors @autoware_bezier_sampler//... \
+  //bazel/tests/autoware_bezier_sampler:consumer_test
+git diff --check
+```
+
+Both production sources and all package targets build; both consumer cases pass
+in 0.3 seconds (26.8-second invocation), zero failures/errors/skips. Source/test
+inventory and whitespace checks pass. CPU/Cyclone DDS, ENABLE_AGNOCAST=0 is
+selected; no source patch, pre-commit, Fast DDS or unrelated matrix is needed.
+Next validate the goal-planner consumer together with the selected parking scenes.

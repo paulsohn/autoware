@@ -1,0 +1,5 @@
+module(name = "autoware_bezier_sampler", version = "0.0.0")
+
+bazel_dep(name = "autoware_sampler_common", version = "0.0.0")
+bazel_dep(name = "rosdistro", version = "0.0.0")
+bazel_dep(name = "rules_cc", version = "0.2.26.rcr.0")
