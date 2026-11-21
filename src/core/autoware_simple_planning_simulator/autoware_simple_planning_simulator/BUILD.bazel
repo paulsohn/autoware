@@ -1,0 +1,108 @@
+load("@rclcpp_components//:defs.bzl", "rclcpp_components_register_node")
+load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "autoware_simple_planning_simulator",
+    srcs = glob(["src/**/*.cpp"]),
+    hdrs = glob(["include/**/*.hpp"]),
+    strip_include_prefix = "include",
+    deps = [
+        "@autoware_control_msgs//:cc",
+        "@autoware_interpolation",
+        "@autoware_lanelet2_extension//:autoware_lanelet2_extension_lib_library",
+        "@autoware_lanelet2_utils",
+        "@autoware_learning_based_vehicle_model",
+        "@autoware_map_msgs//:cc",
+        "@autoware_motion_utils",
+        "@autoware_planning_msgs//:cc",
+        "@autoware_utils_geometry",
+        "@autoware_utils_rclcpp",
+        "@autoware_vehicle_info_utils",
+        "@autoware_vehicle_msgs//:cc",
+        "@geometry_msgs//:cc",
+        "@lanelet2_core//:lanelet2_core_library",
+        "@lanelet2_routing//:lanelet2_routing_library",
+        "@lanelet2_traffic_rules//:lanelet2_traffic_rules_library",
+        "@nav_msgs//:cc",
+        "@rclcpp//:rclcpp_library",
+        "@rclcpp_components//:rclcpp_components_library",
+        "@rosdistro//cc:eigen",
+        "@sensor_msgs//:cc",
+        "@tf2//:tf2_library",
+        "@tf2_geometry_msgs//:tf2_geometry_msgs_library",
+        "@tf2_ros//:tf2_ros_library",
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = [
+        "@autoware_control_msgs//:cc_shared",
+        "@autoware_lanelet2_utils//:runtime_dynamic_deps",
+        "@autoware_map_msgs//:cc_shared",
+        "@autoware_motion_utils//:runtime_dynamic_deps",
+        "@autoware_planning_msgs//:cc_shared",
+        "@autoware_vehicle_msgs//:cc_shared",
+        "@geometry_msgs//:cc_shared",
+        "@nav_msgs//:cc_shared",
+        "@rclcpp_components//:rclcpp_components",
+        "@sensor_msgs//:cc_shared",
+        "@tf2_geometry_msgs//:tf2_geometry_msgs",
+        "@tf2_ros//:tf2_ros",
+    ],
+)
+
+cc_shared_library(
+    name = "simulator_component",
+    dynamic_deps = [":runtime_dynamic_deps"],
+    deps = [":autoware_simple_planning_simulator"],
+)
+
+rclcpp_components_register_node(
+    name = "autoware_simple_planning_simulator_node",
+    component = ":simulator_component",
+    node_name = "simple_planning_simulator",
+    plugin = "autoware::simulator::simple_planning_simulator::SimplePlanningSimulator",
+)
+
+register_ament_files(
+    name = "node_executables",
+    files = [":autoware_simple_planning_simulator_node"],
+    prefix = "lib/autoware_simple_planning_simulator",
+    strip_prefix = "*",
+)
+
+ament_index(
+    components = [":autoware_simple_planning_simulator_node_record"],
+    data = glob([
+        "param/**",
+        "data/**",
+        "launch/**",
+        "test/actuation_cmd_map/*",
+    ]) + [
+        ":node_executables",
+        "@autoware_vehicle_info_utils//:ament_index",
+    ],
+    package_xml = "package.xml",
+)
+
+cc_test(
+    name = "test_simple_planning_simulator",
+    timeout = "long",
+    srcs = ["test/test_simple_planning_simulator.cpp"],
+    data = [":ament_index"],
+    dynamic_deps = [
+        ":runtime_dynamic_deps",
+        "@ament_index_cpp//:ament_index_cpp",
+    ],
+    env = {"ROS_DOMAIN_ID": "87"},
+    deps = [
+        ":autoware_simple_planning_simulator",
+        "@ament_index_cpp//:ament_index_cpp_library",
+        "@googletest//:gtest_main",
+    ],
+)

@@ -913,3 +913,9 @@ local_path_override(
     module_name = "autoware_learning_based_vehicle_model",
     path = "src/core/autoware_simple_planning_simulator/autoware_learning_based_vehicle_model",
 )
+
+bazel_dep(name = "autoware_simple_planning_simulator", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_simple_planning_simulator",
+    path = "src/core/autoware_simple_planning_simulator/autoware_simple_planning_simulator",
+)

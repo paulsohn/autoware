@@ -9817,3 +9817,58 @@ The fixture follows the model-owned interpreter contract and never starts a
 second interpreter. Targeted buildifier, clang-format and whitespace checks
 pass. The library task is complete; the three simulation nodes and original AWF
 driving milestone remain incomplete. No pre-commit or Fast DDS run is performed.
+
+## 2026-11-21: Phase 7.3.1 — Simple planning simulator
+
+Purpose: expose the local standalone vehicle simulator required by the original
+AWF planning-simulation entrypoint. Inspect its package.xml/CMake, fourteen model/
+core/utility sources, Python launch files, parameter/CSV resources and original
+parameterized GTest before implementation. The acceptance scope is all ten
+existing Ackermann/actuation model cases plus original-launch resource/motion
+and clean-shutdown checks; learned connector lifetime has its separate gate.
+
+Integration: package-local MODULE/BUILD declarations use supported local
+Autoware utilities/messages, selected Lanelet2 providers and the local learning
+library. Export the original component/plugin and generated standalone main;
+register launch/param/data and original test CSV files in its own ament index.
+The original Python launch also requires the vehicle-info provider's indexed
+parameter file, so declare that index transitively. Root launch tests supply
+initial_engage_state and motion_publish_mode=full_motion exactly as the parent
+simulator launch does. Their defaults are inherited launch configurations, not
+new parameters to insert into source files. The root peer sends initial pose,
+gear and control commands, checks declared vehicle/model parameters, forward
+motion and braking, then requires clean process exit. This is a simulator gate,
+not a replacement for the original Universe planning stack.
+
+The primitive launch fixture uses the already-adopted core sample vehicle
+index as a caller-owned vehicle_info_param_file and vehicle_model_pkg. The
+original parent supplies the latter; allow_substs also expands its occurrence
+inside a YAML comment. Without that inherited configuration, launch fails
+before starting a node. Supplying the actual indexed resource fixes the fixture
+without editing source launch files. The full AWF sample_vehicle provider is
+separate and enters the original-launch resource task in 7.3.3.
+
+The three related packages build together with:
+
+```sh
+bazel build --config=runtime --config=no-agnocast \
+  @autoware_simple_planning_simulator//... \
+  @autoware_dummy_perception_publisher//... @autoware_vehicle_door_simulator//...
+bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --nocache_test_results --test_output=errors \
+  @autoware_simple_planning_simulator//... \
+  //bazel/tests/autoware_simple_planning_simulator:launch_test
+```
+
+The complete ten-case original suite passes in 71.5 seconds, covering forward,
+reverse and steering behavior across its declared Ackermann/actuation presets.
+The unchanged original fixture is neither filtered nor edited. Both root
+launch cases pass in 4.2 seconds: wheel_base=2.79, DELAY_STEER_ACC_GEARED,
+map/base_link odometry, displacement greater than 1 m, braking below 0.05 m/s
+and clean node exit. The final complete module gate runs after the learning
+library's lifetime/move correction, source commits b0be9d2d and 8e0efa8d; no
+other simulator implementation change is needed. The library's independent
+mapping/embedding/move/teardown cases also pass. Buildifier, Python/flake8 and
+whitespace checks pass; Cyclone DDS/ENABLE_AGNOCAST=0 only. The module task is
+complete; original Universe planning and full AWF lane driving remain later
+7.3 tasks. No Fast DDS, GPU, GUI or pre-commit check is run.

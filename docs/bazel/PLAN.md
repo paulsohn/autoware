@@ -78,6 +78,9 @@ only when your current target demonstrates the need.
   middleware configurations before implementing each task.
   [Backend executor convention](DEVELOPING.md#switchable-standalone-nodes);
   [evidence: complete Agnocast test inventory](JOURNAL.md#2026-11-15-phase-41--adopt-the-complete-agnocast-library-test-inventory).
+- [ ] Declare embedded-Python runtimes and preserve interpreter/object ownership
+  through shutdown. [Embedding convention](DEVELOPING.md#embedded-python-and-plotting-tests);
+  [evidence: model lifetime](JOURNAL.md#2026-11-21-phase-731--embedded-model-interpreter-lifetime).
 - [ ] Define service readiness, dependency-loss policy and ordered shutdown.
   [Supervisor convention](DEVELOPING.md#s6-core-image);
   [evidence: supervised core](JOURNAL.md#2026-11-21-phase-722--s6-core-service-supervision).
