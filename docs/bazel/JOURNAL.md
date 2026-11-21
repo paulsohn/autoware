@@ -12925,3 +12925,27 @@ its complete suite passes.
 
 The separate source ownership fix is 5eb05315. Next complete the five remaining
 selected motion factories, then the remaining planning/controller closure.
+
+## 2026-11-22: Phase 7.3.2 — Boundary-prevention expected compatibility
+
+Purpose: compile the selected experimental boundary-prevention module against
+the pinned native tl-expected 1.3.1 provider. The actual module build reports
+missing tl_expected/expected.hpp in boundary_departure_prevention_module.hpp
+and slow_down_interpolator.hpp. Inspect both includes, the manifest and provider:
+the library exports tl/expected.hpp. Change exactly those two includes and
+replace manifest tl_expected with libexpected-dev; no algorithm/test edits.
+
+Review merged AWF #13622 on 2026-11-22, including all 41 changed files (paginate
+GitHub's file listing). These three changes exactly match that merged PR;
+merge c992af10f4c463fda78a06348c139357b9f195ad. Do not apply unrelated packages
+from that PR. UPSTREAM_AWF.md extends the existing expected-provider finding.
+The existing shared boundary checker suite's 66 cases remain unchanged.
+
+The [run-out group command](#2026-11-22-phase-732--run-out-motion-plugin) builds all four module implementation sources and runs its
+actual planner startup, duplicate-load and unload/reload, individually and in
+the selected nine-plugin process. The full gate passes 16 targets/49 active
+cases, zero failures/skips/disabled cases, CPU/Cyclone DDS with Agnocast off.
+This package has no original native suite; no such suite is invented or claimed.
+Targeted clang-format and whitespace checks pass. No host expected package or
+colcon result is required/claimed. Keep this source correction separate from
+the following package build declaration.

@@ -1129,9 +1129,14 @@ Local source fix: f8acc3b6 (include spelling/grouping only).
   The complete 66-case original suite passes after the package-scoped fix,
   CPU/Cyclone DDS with ENABLE_AGNOCAST=0; no assertions are edited or skipped.
 
-This correction applies only to autoware_deprecated_boundary_departure_checker.
-Other packages in the upstream PR enter their own compatibility work only when
-a current target exposes the need. No host libexpected-dev installation, older
+The initial correction applies to autoware_deprecated_boundary_departure_checker.
+On 2026-11-22 the selected motion boundary-prevention module independently exposes
+the same missing header. Its two includes and manifest correction also exactly
+match merged #13622 (all 41 PR files inspected), and the complete motion group
+passes 16 targets including individual/joint module reload. See the
+[module source-fix evidence](JOURNAL.md#2026-11-22-phase-732--boundary-prevention-expected-compatibility).
+Other packages in that PR enter compatibility work only when a current target
+exposes the need. No host libexpected-dev installation, older
 ROS validation or colcon result is implied by this manifest alignment. See the
 [source-fix journal](JOURNAL.md#2026-11-21-phase-732--boundary-checker-expected-compatibility)
 for the failure, integration context and exact command.
