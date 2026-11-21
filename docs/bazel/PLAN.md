@@ -1826,6 +1826,10 @@ Phase 7.3 task boundaries (selected 2026-11-21):
   External velocity limit selection also passes its complete original
   arbitration/parameter-update launch suite and clean shutdown.
   [Evidence](JOURNAL.md#2026-11-22-phase-732--external-velocity-limit-selection).
+  Selected slow-down, cruise and dynamic-obstacle-stop motion plugins are
+  complete: their seven original cases and four real planner profiles pass.
+  Cruise preserves updated node parameters across plugin reload.
+  [Evidence](JOURNAL.md#2026-11-22-phase-732--obstacle-slow-down-motion-plugin).
   Continue in dependency order through shared planner helpers, the
   preset-selected behavior/motion plugins and controller libraries, then
   simulated perception and the selected system/API closure. The selected local
