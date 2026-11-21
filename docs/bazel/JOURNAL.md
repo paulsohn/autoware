@@ -11340,6 +11340,68 @@ the scene-plugin suites plus the real executable; all 13 cases pass in
 Keep this build-closure correction with the planner definitions; no source fix
 or host-runtime fallback is needed.
 
-This completes the planner node's existing suite. Actual standalone scene-plugin
-loading/configuration/shutdown is the next paired plugin gate; full selected
-scene coverage and simulator startup remain pending Phase 7.3.2/7.3.3 work.
+This completes the planner node's existing suite. The following entry documents
+the paired standalone scene-plugin loading/configuration/shutdown gate. Full
+selected scene coverage and simulator startup remain pending Phase 7.3.2/7.3.3.
+
+## 2026-11-22: Phase 7.3.2 — Side-shift scene plugin and executable loading
+
+Purpose: validate the first default-enabled behavior-path scene plugin through
+its complete original suite and the real standalone planner. Inspect the
+side-shift CMake/manifest, three implementation sources, public headers,
+plugins.xml, original parameter YAML and both original test files. Reuse the
+validated planner/common libraries and original generateNode test helper.
+The complete gate is both original side-shift executables (six active cases)
+and the added standalone runtime target below, CPU/Cyclone DDS with
+ENABLE_AGNOCAST=0 and sequential execution on ROS domain 71.
+
+Add package-local MODULE/BUILD rules and root selection after the planner.
+Compile scene.cpp, utils.cpp and manager.cpp into the reusable library, then
+build a shared plugin with the original XML basename
+libautoware_behavior_path_side_shift_module.so. Export original config files,
+the shared library and plugins.xml through ament_index, with plugin category
+autoware_behavior_path_planner. The product/test caller composes this index with
+the planner's index; the planner module must not depend back on its plugins.
+Keep both original tests intact, with the planner test-helper runtime and
+indexed test-utils/map resources declared explicitly. No source, original test,
+manifest or parameter changes are needed by the initial integration.
+
+Add the standalone adapter under bazel/tests/autoware_behavior_path_planner.
+Launch the generated planner executable with its original indexed YAML files
+and the side-shift class in launch_modules. Require the successful plugin-load
+log and inspect /proc/<pid>/maps for both the planner component and exact plugin
+DSOs; path output alone could conceal a plugin that was never registered.
+Read the declared planner/plugin parameters through ROS services, change the
+plugin's drivable-area margin through the node callback and read it back.
+Require successful responses, no unavailable-plugin error and a clean SIGINT
+exit. The original C++ suite supplies normal/empty-route, off-track-odometry,
+orientation and shift-length behavior coverage; the adapter adds actual
+executable/dlopen/configuration/shutdown evidence. This does not claim a full
+lateral-maneuver or driving scenario.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_output=errors @autoware_behavior_path_planner//... \
+  @autoware_behavior_path_side_shift_module//... \
+  //bazel/tests/autoware_behavior_path_planner:runtime_test
+python3 -m flake8 --max-line-length=150 \
+  bazel/tests/autoware_behavior_path_planner/test_runtime.py
+git diff --check
+```
+
+All three original plugin sources build. Both complete original suites pass:
+two node-interface cases (9.6 seconds) and four utility cases (0.5 seconds).
+The standalone adapter passes its one case in 2.0 seconds after the planner
+runtime correction documented above. Both original planner executables also
+rerun and pass their six cases. The combined invocation completes in
+62.8 seconds: five test targets, 13 cases, no failures, errors, disabled cases
+or skips. The plugin is actually registered and loaded into the standalone
+planner, with original defaults 300.0/5.0/0.3 and a successful margin update to
+0.4; process shutdown exits zero. No source compatibility patch is required.
+
+The targeted CMake/Bazel inventory, Python/flake8 and git diff --check pass.
+No pre-commit, Fast DDS, GPU, enabled-Agnocast or unchanged packaging matrix is
+run. This completes the side-shift package and paired standalone gate; remaining
+selected scene plugins, the full Universe planning closure and original
+simulator composition remain pending.

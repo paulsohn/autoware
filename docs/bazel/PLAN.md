@@ -1776,8 +1776,13 @@ Phase 7.3 task boundaries (selected 2026-11-21):
   The behavior-path planner node/component now builds and passes all six
   original utility and node-interface cases, including normal/empty routes and
   off-track odometry. Its test helpers are available to scene-module suites;
-  selected scene plugins and their executable loading checks follow.
+  its logging-service typesupport is exported for standalone use.
   [Evidence](JOURNAL.md#2026-11-22-phase-732--behavior-path-planner-node).
+  The default-enabled side-shift plugin is complete: all six original cases
+  and a standalone planner gate pass. The latter verifies actual plugin DLL
+  loading, indexed configuration, a runtime parameter update and clean shutdown.
+  The combined planner/plugin gate passes all 13 cases with no failures/skips.
+  [Evidence](JOURNAL.md#2026-11-22-phase-732--side-shift-scene-plugin-and-executable-loading).
   Continue in dependency order through shared planner helpers, the
   preset-selected behavior/motion plugins and controller libraries, then
   simulated perception and the selected system/API closure. CMake-only shims
