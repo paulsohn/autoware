@@ -75,19 +75,21 @@ rmw_ret_t measure_codec(const char * operation, F && call)
     static_cast<long long>(elapsed));
   return ret;
 }
-bool selected(const char * topic, const char * direction)
+bool listed(std::string_view names, char delimiter, std::string_view value)
 {
-  const char * enabled = std::getenv(direction);
-  if (!enabled) enabled = std::getenv("AGNOCAST_RMW_TOPIC");
-  if (!enabled || !topic) return false;
-  std::string_view names(enabled);
   while (!names.empty()) {
-    auto sep = names.find(':');
-    if (names.substr(0, sep) == topic) return true;
+    auto sep = names.find(delimiter);
+    if (names.substr(0, sep) == value) return true;
     if (sep == names.npos) break;
     names.remove_prefix(sep + 1);
   }
   return false;
+}
+bool selected(const char * topic, const char * direction)
+{
+  const char * enabled = std::getenv(direction);
+  if (!enabled) enabled = std::getenv("AGNOCAST_RMW_TOPIC");
+  return enabled && topic && listed(enabled, ':', topic);
 }
 bool contains_buffer(const Members & members)
 {
@@ -541,8 +543,10 @@ extern "C" rmw_subscription_t * rmw_create_subscription(
     auto native_qos = *qos;
     native_qos.reliability = actual.reliability;
     auto state = std::make_shared<Reader>(node, topic, native_qos, ts);
-    state->host_view = std::getenv("AGNOCAST_RMW_HOST_VIEW") && options &&
-      options->acceptable_buffer_backends && std::string_view(options->acceptable_buffer_backends) == "any";
+    const std::string_view backends = options && options->acceptable_buffer_backends
+      ? options->acceptable_buffer_backends : "";
+    state->host_view = std::getenv("AGNOCAST_RMW_HOST_VIEW") &&
+      (backends == "any" || listed(backends, ',', "agnocast_host_view"));
     sub->can_loan_messages = !state->type.has_buffer;
     if (state->type.has_buffer)
       std::fprintf(
