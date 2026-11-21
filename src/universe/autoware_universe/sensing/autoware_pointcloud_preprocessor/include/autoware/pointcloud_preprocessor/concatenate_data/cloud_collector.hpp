@@ -65,7 +65,8 @@ public:
   void reset();
 
 private:
-  std::shared_ptr<PointCloudConcatenateDataSynchronizerComponentTemplated<MsgTraits>>
+  // The parent owns its collectors. Timer callbacks must not extend its lifetime.
+  std::weak_ptr<PointCloudConcatenateDataSynchronizerComponentTemplated<MsgTraits>>
     ros2_parent_node_;
   std::shared_ptr<CombineCloudHandler<typename MsgTraits::PointCloudMessage>>
     combine_cloud_handler_;

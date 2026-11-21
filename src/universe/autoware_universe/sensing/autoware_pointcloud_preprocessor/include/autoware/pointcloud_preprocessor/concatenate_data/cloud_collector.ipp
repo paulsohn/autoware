@@ -37,7 +37,7 @@ CloudCollector<MsgTraits>::CloudCollector(
   std::shared_ptr<CombineCloudHandler<typename MsgTraits::PointCloudMessage>> &
     combine_cloud_handler,
   int num_of_clouds, double timeout_sec, bool debug_mode)
-: ros2_parent_node_(std::move(ros2_parent_node)),
+: ros2_parent_node_(ros2_parent_node),
   combine_cloud_handler_(combine_cloud_handler),
   core_(static_cast<std::size_t>(num_of_clouds), timeout_sec),
   debug_mode_(debug_mode)
@@ -45,8 +45,10 @@ CloudCollector<MsgTraits>::CloudCollector(
   const auto period_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(
     std::chrono::duration<double>(core_.timeout_sec()));
 
-  timer_ =
-    rclcpp::create_timer(ros2_parent_node_, ros2_parent_node_->get_clock(), period_ns, [this]() {
+  timer_ = rclcpp::create_timer(
+    ros2_parent_node, ros2_parent_node->get_clock(), period_ns, [this, weak = ros2_parent_node_]() {
+      auto parent = weak.lock();
+      if (!parent) return;
       if (core_.status() == CollectorStatus::Finished) return;
       concatenate_callback();
     });
@@ -83,10 +85,11 @@ void CloudCollector<MsgTraits>::process_pointcloud(
     timer_->reset();
   }
   if (result.duplicate_topic) {
+    auto parent = ros2_parent_node_.lock();
+    if (!parent) return;
     // Shouldn't happen if the parameter 'lidar_timestamp_noise_window' is set correctly.
     RCLCPP_WARN_STREAM_THROTTLE(
-      ros2_parent_node_->get_logger(), *ros2_parent_node_->get_clock(),
-      std::chrono::milliseconds(10000).count(),
+      parent->get_logger(), *parent->get_clock(), std::chrono::milliseconds(10000).count(),
       "Topic '" << topic_name
                 << "' already exists in the collector. Check the timestamp of the pointcloud.");
   }
@@ -104,6 +107,8 @@ CollectorStatus CloudCollector<MsgTraits>::get_status() const
 template <typename MsgTraits>
 void CloudCollector<MsgTraits>::concatenate_callback()
 {
+  auto parent = ros2_parent_node_.lock();
+  if (!parent) return;
   if (debug_mode_) {
     show_debug_message();
   }
@@ -114,7 +119,7 @@ void CloudCollector<MsgTraits>::concatenate_callback()
 
   auto concatenated_cloud_result = concatenate_pointclouds(core_.topic_to_cloud_map());
 
-  ros2_parent_node_->publish_clouds(std::move(concatenated_cloud_result), core_.get_info());
+  parent->publish_clouds(std::move(concatenated_cloud_result), core_.get_info());
 
   // Optional allocation happens immediately after the publisher
   // since it is one of th heavier operations.
@@ -142,11 +147,13 @@ CloudCollector<MsgTraits>::get_topic_to_cloud_map()
 template <typename MsgTraits>
 void CloudCollector<MsgTraits>::show_debug_message()
 {
+  auto parent = ros2_parent_node_.lock();
+  if (!parent) return;
   auto time_until_trigger = timer_->time_until_trigger();
   std::stringstream log_stream;
   log_stream << std::fixed << std::setprecision(6);
-  log_stream << "Collector's concatenate callback time: "
-             << ros2_parent_node_->get_clock()->now().seconds() << " seconds\n";
+  log_stream << "Collector's concatenate callback time: " << parent->get_clock()->now().seconds()
+             << " seconds\n";
 
   const auto collector_info = core_.get_info();
   if (auto advanced_info = std::dynamic_pointer_cast<AdvancedCollectorInfo>(collector_info)) {
@@ -172,7 +179,7 @@ void CloudCollector<MsgTraits>::show_debug_message()
   log_stream << "]\n";
 
   const std::string & str = log_stream.str();
-  RCLCPP_INFO(ros2_parent_node_->get_logger(), "%s", str.c_str());
+  RCLCPP_INFO(parent->get_logger(), "%s", str.c_str());
 }
 
 template <typename MsgTraits>
