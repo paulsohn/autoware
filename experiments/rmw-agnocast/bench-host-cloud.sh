@@ -18,6 +18,36 @@ if [[ ${2:-} == --scope ]]; then variant=scope; control=loan; fi
 if [[ ${2:-} == --wire ]]; then variant=v2; control=legacy; fi
 if [[ ${2:-} == --bridge ]]; then baseline=off; variant=idle; control=active; fi
 if [[ ${2:-} == --references ]]; then variant=cyclone; control=zenoh; fi
+if [[ ${2:-} == --confirm-branched ]]; then
+  for round in 1 2; do
+    periods=(20 100)
+    modes=(fixed agnocast)
+    if [[ $round == 2 ]]; then periods=(100 20); fi
+    for period in "${periods[@]}"; do
+      for mode in "${modes[@]}"; do
+        opts=(--branched --period-ms "$period")
+        if [[ $mode == fixed ]]; then opts+=(--payload-scope); fi
+        file="$out/$period-$mode-$round"
+        python3 src/universe_crop_benchmark/run_case.py "$mode" "$file.csv" "${opts[@]}" --resources "$file-resources.csv"
+      done
+      modes=(agnocast fixed)
+    done
+  done
+  exit 0
+fi
+if [[ ${2:-} == --branched ]]; then
+  modes=(agnocast fixed cyclone zenoh)
+  for round in 0 1 2 3; do
+    for offset in 0 1 2 3; do
+      mode=${modes[(round+offset)%4]}
+      opts=(--branched --period-ms "${3:-100}")
+      if [[ $mode == fixed ]]; then opts+=(--payload-scope); fi
+      file="$out/$mode-$((round+1))"
+      python3 src/universe_crop_benchmark/run_case.py "$mode" "$file.csv" "${opts[@]}" --resources "$file-resources.csv"
+    done
+  done
+  exit 0
+fi
 if [[ ${2:-} == --profile-bridge ]]; then
   for round in 1 2 3; do
     AGNOCAST_BRIDGE_PROFILE="$out/timing-$round.csv" python3 src/universe_crop_benchmark/run_case.py fixed \

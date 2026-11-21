@@ -1117,3 +1117,27 @@ The next candidate is avoiding idle payload materialization while qualifying
 delivery to a newly attached reader.
 
 [Build, test commands, complete matrix and limitations](../rmw-agnocast/README.md#crossing-the-versioned-native-boundary)
+
+### Start serious-load item 5 with a branched Universe sensing graph
+
+Prioritize representative graph coverage before spending the next latency
+budget on the simple crop or tuning the idle bridge. Reused the existing two
+Universe crop binaries as serial stages, with a second verifying subscriber
+on the intermediate output. Both readers checked all 60 frames, including
+every point's content and order. The fixed-wait RMW verified native wakes
+and scoped loans at all three publishers. Ran four rotated rounds across
+native Agnocast, rmw_agnocast, Cyclone DDS and Zenoh under the 512 MiB runtime
+cap. A publisher timer parameter enabled a second rate on the same laptop.
+Repeated native and RMW with interleaved rates on the rebuilt binary and
+rechecked the original two-edge cold diagnostic. The matrix and confirmation
+delivered 2,400 source frames at each reader.
+
+Final RMW/native median ratios at 10 Hz were 1.23 and 1.24 in the two
+batches. At 50 Hz they were 0.97 and 1.03. The corresponding 50 Hz p95
+ratios were 1.03 and 1.25. A 1.10× engineering milestone is worth pursuing
+on selected paths. Median parity on a short burst is plausible. A repeatable
+tail or full-system parity result is still open. This step covers branch
+fan-out, multiple stages and higher offered load. Next add heterogeneous
+sensor inputs and synchronization on a real Universe sensing path under
+sustained replay before expanding to the full launch.
+[Setup, commands, measurements and limits](../rmw-agnocast/README.md#item-5-first-branched-universe-workload)

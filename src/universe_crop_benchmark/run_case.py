@@ -22,6 +22,8 @@ parser.add_argument("--host-loan", action="store_true", help="transfer both outp
 parser.add_argument("--host-view", action="store_true", help="read host-cloud payloads through a retained loan")
 parser.add_argument("--host-cloud", action="store_true", help="use the same-host CPU PointCloud2 representation")
 parser.add_argument("--bridge", choices=["idle", "active"], help="mirror the native crop output to Cyclone DDS")
+parser.add_argument("--branched", action="store_true", help="tap the first crop and validate a second crop downstream")
+parser.add_argument("--period-ms", type=int, default=100, help="requested sensor publication period in milliseconds")
 parser.add_argument("--resources", type=Path)
 parser.add_argument("--buffer", choices=["cpu", "shmem", "cuda"], default="cpu")
 parser.add_argument("--ros-cie", action="store_true", help="use the mixed-capable CIE for the ROS crop")
@@ -30,6 +32,10 @@ if args.ros_cie and args.transport == "agnocast":
     parser.error("native Agnocast already uses its Agnocast-only CIE")
 if args.buffer != "cpu" and args.transport != "zenoh":
     parser.error("the explicit buffer matrix uses the Zenoh descriptor transport")
+if args.period_ms <= 0:
+    parser.error("--period-ms must be positive")
+if args.branched and args.bridge:
+    parser.error("the branched experiment measures local paths only")
 if args.bridge and not args.payload_scope:
     parser.error("--bridge requires --payload-scope")
 if args.payload_scope:
@@ -55,7 +61,7 @@ env = dict(os.environ, RMW_IMPLEMENTATION=rmw, BENCH_BUFFER=args.buffer,
            ENABLE_AGNOCAST=str(int(args.transport == "agnocast")), AGNOCAST_BRIDGE_MODE="OFF",
            AGNOCAST_NO_DISCOVERY_AGENT="1")
 if args.transport in ("rmw-agnocast", "mixed", "fixed"):
-    env.update(AGNOCAST_RMW_TOPIC="/input:/output", AGNOCAST_RMW_BUFFER_CDR="1")
+    env.update(AGNOCAST_RMW_TOPIC="/input:/output:/stage1" if args.branched else "/input:/output", AGNOCAST_RMW_BUFFER_CDR="1")
 if args.transport == "rmw-delegated":
     env.update(AGNOCAST_RMW_TOPIC="", AGNOCAST_RMW_BUFFER_CDR="1")
 if args.transport in ("agnocast", "rmw-agnocast", "rmw-delegated", "mixed", "fixed"):
@@ -80,8 +86,12 @@ children = []
 with tempfile.TemporaryDirectory() as tmp:
     samples = Path(tmp) / "samples.csv"
     mirror = Path(tmp) / "mirror.csv"
-    def launch(argv, role):
+    tap = Path(tmp) / "tap.csv"
+    def launch(argv, role, label=None):
+        label = label or role
         child_env = dict(env, BENCH_ROLE=role, BENCH_CSV=str(samples))
+        if label == "tap":
+            child_env["BENCH_CSV"] = str(tap)
         if (args.typed_input or args.host_view) and role in ("sub", "filter"):
             child_env["BENCH_TYPED_INPUT"] = "1"
         if args.host_loan and role in ("pub", "filter"):
@@ -99,12 +109,15 @@ with tempfile.TemporaryDirectory() as tmp:
             child_env["RMW_IMPLEMENTATION"] = "rmw_cyclonedds_cpp"
             child_env["BENCH_CSV"] = str(mirror)
             child_env.pop("LD_PRELOAD", None)
-        proc = subprocess.Popen(argv, env=child_env, stderr=logs.get(role))
+        proc = subprocess.Popen(argv, env=child_env, stderr=logs.get(label))
         children.append(proc)
 
     logs = {role: tempfile.TemporaryFile(mode="w+") for role in ("filter", "sub")} if args.transport == "fixed" else {}
     if args.host_loan:
         logs["pub"] = tempfile.TemporaryFile(mode="w+")
+    if args.branched and args.transport == "fixed":
+        for label in ("tap", "filter2"):
+            logs[label] = tempfile.TemporaryFile(mode="w+")
     if args.bridge:
         logs["bridge"] = tempfile.TemporaryFile(mode="w+")
     try:
@@ -118,10 +131,15 @@ with tempfile.TemporaryDirectory() as tmp:
             if children[-1].poll() is not None:
                 raise RuntimeError("Zenoh router startup failed")
         launch([bin_dir / "endpoint"], "sub")
-        launch([bin_dir / ("crop_cie" if args.ros_cie else "crop"), "--ros-args", "--params-file", config,
-                "-p", "input_frame:=base_link", "-p", "output_frame:=base_link"], "filter")
+        crop = [bin_dir / ("crop_cie" if args.ros_cie else "crop"), "--ros-args", "--params-file", config,
+                "-p", "input_frame:=base_link", "-p", "output_frame:=base_link"]
+        if args.branched:
+            launch([bin_dir / "endpoint", "--ros-args", "-r", "__node:=tap", "-r", "output:=/stage1"], "sub", "tap")
+            launch([*crop, "-r", "__node:=second_crop", "-r", "input:=/stage1"], "filter", "filter2")
+            crop.extend(["-r", "output:=/stage1"])
+        launch(crop, "filter")
         time.sleep(2)
-        launch([bin_dir / "endpoint"], "pub")
+        launch([bin_dir / "endpoint", "--ros-args", "-p", f"period_ms:={args.period_ms}"], "pub")
         deadline = time.monotonic() + 30
         while time.monotonic() < deadline:
             for child in children:
@@ -133,7 +151,9 @@ with tempfile.TemporaryDirectory() as tmp:
                 if len(rows) == 60 and [int(r[0]) for r in rows] == list(range(60)):
                     if args.bridge != "active" or (mirror.exists() and
                             [int(row[0]) for row in csv.reader(mirror.read_text().splitlines())] == list(range(60))):
-                        break
+                        if not args.branched or (tap.exists() and
+                                [int(row[0]) for row in csv.reader(tap.read_text().splitlines())] == list(range(60))):
+                            break
             time.sleep(0.1)
         else:
             raise TimeoutError("missing one or more verified frames")
@@ -162,7 +182,7 @@ with tempfile.TemporaryDirectory() as tmp:
                 continue
             matches = re.findall(r"fixed_wait arms=\d+ completions=\d+ native=(\d+) both=\d+ native_interrupts=(\d+) stop_interrupts=(\d+)", output)
             log.close()
-            if args.host_loan and role in ("pub", "filter"):
+            if args.host_loan and role in ("pub", "filter", "filter2"):
                 loan_counts[role] = re.findall(r"host-cloud publisher loans=(\d+) private_copies=(\d+)", output)
             if role != "pub":
                 summaries[role] = matches
@@ -180,6 +200,9 @@ with tempfile.TemporaryDirectory() as tmp:
     if args.bridge == "active":
         with out.with_name(out.stem + "-observer.csv").open("xb") as f:
             f.write(mirror.read_bytes())
+    if args.branched:
+        with out.with_name(out.stem + "-tap.csv").open("xb") as f:
+            f.write(tap.read_bytes())
     with out.open("xb") as f:
         f.write(samples.read_bytes())
 

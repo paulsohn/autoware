@@ -1451,3 +1451,92 @@ is avoiding idle payload materialization. Measure CPU together with the first
 sample received after an external subscriber joins. For active traffic, use
 the measured callback-to-observer interval as the comparison point.
 [Per-frame latency, resource counters, profiles and contract evidence](route-bridge-results/).
+
+### Item 5, first branched Universe workload
+
+A publisher feeds a Universe crop box. Its output fans out to a verifying
+reader and a second crop box. A second verifying reader consumes the final
+output. All five application processes run concurrently. The second crop
+uses the same bounds and processes the already-filtered points. Both readers
+check every point and its order against the source frame. Both latencies
+start at the source stamp. The timestamp excludes construction of the source
+cloud and the sink's subsequent validation work. The tap and final sink are
+independently scheduled, so subtracting their observations does not isolate
+the execution time of the second filter.
+
+The input has 32,768 points of 16 bytes (512 KiB). Both crop outputs are
+256 KiB. Test a nominal 10 Hz and then 50 Hz with the same graph. Compare
+native Agnocast, the versioned host-cloud RMW with scoped loans and the fixed
+blocking wait, ordinary Cyclone DDS, and Zenoh. Each transport occupies each
+position in the four-run order once. Each run starts fresh and verifies 60
+frames at both readers. Pool the last 50 per run for each reported latency.
+CPU is median aggregate child user and system time including startup and
+teardown, and Zenoh includes its router. Compare CPU within a given rate.
+This is a short burst at higher rate, with a static executor topology and two
+instances of one algorithm. It is an intermediate workload for the existing
+serious-load item.
+
+With the same overlays, heaphook, loaded module and Lyrical root as the crop
+benchmark, build and run sequentially under the existing memory monitor:
+
+```bash
+export LYRICAL_ROOT=$(cat build/agnocast-lyrical/universe-root)
+experiments/buffer/run-lyrical.sh bash experiments/buffer/build-universe-lyrical.sh
+export BUFFER_RUNTIME_ONLY=1
+bench=experiments/rmw-agnocast/bench-host-cloud.sh
+for ms in 100 20; do
+  out=build/rmw-agnocast/branched-period-$ms
+  experiments/buffer/run-lyrical.sh timeout 250s bash "$bench" "$out" --branched "$ms"
+  python3 experiments/rmw-agnocast/summarize-branched.py "$out"
+done
+```
+
+| Rate | Transport | Tap median / p95 ms | Final sink median / p95 ms | Final median / p95 relative to native | Child CPU s |
+|---|---|---|---|---|---:|
+| 10 Hz | Native Agnocast | 0.327 / 0.542 | 0.556 / 0.895 | 1.00 / 1.00 | 0.983 |
+| 10 Hz | rmw_agnocast | 0.415 / 0.650 | 0.683 / 0.989 | 1.23 / 1.10 | 1.131 |
+| 10 Hz | Cyclone DDS | 1.373 / 3.629 | 1.813 / 4.594 | 3.26 / 5.13 | 1.278 |
+| 10 Hz | Zenoh | 1.057 / 1.377 | 1.438 / 1.959 | 2.58 / 2.19 | 2.740 |
+| 50 Hz | Native Agnocast | 0.323 / 0.557 | 0.543 / 0.924 | 1.00 / 1.00 | 0.970 |
+| 50 Hz | rmw_agnocast | 0.325 / 0.532 | 0.528 / 0.948 | 0.97 / 1.03 | 1.204 |
+| 50 Hz | Cyclone DDS | 1.303 / 1.668 | 1.697 / 2.222 | 3.12 / 2.41 | 1.257 |
+| 50 Hz | Zenoh | 0.863 / 1.263 | 1.296 / 2.090 | 2.39 / 2.26 | 2.614 |
+
+At 10 Hz, reaching 1.10× on median would save about 72 µs from the final RMW
+result, and parity would save 127 µs. The 50 Hz matrix already straddles
+parity at median and p95, though run-paired median ratios range from 0.86 to
+1.14. The four 10 Hz pairs range from 1.18 to 1.32. The higher-rate RMW also
+used more child CPU than native. No scheduling, power-state or wakeup cause
+can be inferred from the rate comparison alone. All 1,920 source frames in
+the matrix were checked at both destinations. Each of the three RMW writers
+in every run used 60 loans with zero private payload copies.
+
+The 10 Hz matrix used the original fixed 100 ms timer. The 50 Hz matrix used
+the incremental fixture rebuild exposing the timer period as a ROS parameter.
+The unchanged two-edge workload on the rebuilt binary also delivered all
+60 delegated diagnostics. For a same-binary check interleaving the rates and
+reversing the transport order at each rate, run the following command on a
+fresh output directory:
+
+```bash
+experiments/buffer/run-lyrical.sh timeout 150s bash "$bench" \
+  build/rmw-agnocast/branched-confirm --confirm-branched
+```
+
+In the interleaved confirmation, 10 Hz final median/p95 was 0.572/1.204 ms
+native and 0.711/1.201 ms through the RMW (1.24×/1.00×). At 50 Hz it was
+0.546/0.845 ms native and 0.561/1.056 ms through the RMW (1.03×/1.25×).
+All 480 additional source frames passed at both readers. Measured publication
+rates were 10.00 Hz and 50.01–50.03 Hz in this repeat. The smaller high-rate
+median gap reproduced. The high-rate p95 ratio changed substantially.
+
+Use 1.10× native median and p95 as a proposed **per-workload** stretch
+milestone and track parity as a research question. Pair runs and retain
+absolute latency, drops, deadlines and CPU. A production claim needs longer
+runs on a realistic graph, particularly for tails. Next integrate an actual
+multi-LiDAR synchronization/concatenation path with different input rates,
+timestamps and TF, exercise the normal supported executor, and measure
+sensor-to-consumer latency against native at the same delivered workload.
+Keep the branched and simple crops as controls. Revisit the low-rate wakeup
+path if the gap persists there. The bridge already has a separate CPU and
+delivery baseline. [Raw samples and checks](branched-results/).

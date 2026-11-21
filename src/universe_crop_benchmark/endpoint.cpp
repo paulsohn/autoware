@@ -8,7 +8,9 @@
 
 #include <array>
 #include <chrono>
+#include <cstdio>
 #include <cstdlib>
+#include <stdexcept>
 #include <cstring>
 #include <fstream>
 #include <vector>
@@ -41,7 +43,9 @@ public:
 #endif
     if (std::string(std::getenv("BENCH_ROLE")) == "pub") {
       pub_ = create_publisher<Cloud>("input", rclcpp::SensorDataQoS());
-      timer_ = create_wall_timer(std::chrono::milliseconds(100), [this] { send(); });
+      const auto period = declare_parameter<int>("period_ms", 100);
+      if (period <= 0) throw std::invalid_argument("period_ms must be positive");
+      timer_ = create_wall_timer(std::chrono::milliseconds(period), [this] { send(); });
     } else {
       csv_.open(std::getenv("BENCH_CSV"));
       if (!csv_) throw std::runtime_error("could not open sample log");
@@ -91,9 +95,12 @@ private:
 #ifdef UNIVERSE_BUFFER_MATRIX
     prepare_output(msg->data);
 #endif
-    msg->header.stamp = now();
+    const auto stamp = now();
+    msg->header.stamp = stamp;
+    if (frame_ == 0) first_stamp_ns_ = stamp.nanoseconds();
     pub_->publish(std::move(msg));
-    ++frame_;
+    if (++frame_ == frames)
+      std::fprintf(stderr, "source_rate_hz=%.2f\n", (frames - 1) * 1e9 / (stamp.nanoseconds() - first_stamp_ns_));
   }
 
   void receive(const Cloud &msg) {
@@ -116,6 +123,7 @@ private:
     csv_ << frame_++ << ',' << latency << std::endl;
   }
 
+  int64_t first_stamp_ns_ = 0;
   unsigned frame_ = 0;
   AUTOWARE_PUBLISHER_PTR(Cloud) pub_;
   AUTOWARE_SUBSCRIPTION_PTR(Cloud) sub_;
