@@ -7,7 +7,7 @@ package(default_visibility = ["//visibility:public"])
 
 cc_library(
     name = "autoware_multi_object_tracker",
-    srcs = glob(["src/**/*.cpp", "lib/**/*.cpp"]),
+    srcs = glob(["src/**/*.cpp", "lib/**/*.cpp"], exclude = ["lib/association/successive_shortest_path/ssp.cpp"]),
     hdrs = glob(["include/**/*.hpp", "src/**/*.hpp"]),
     includes = ["include", "src"],
     deps = [

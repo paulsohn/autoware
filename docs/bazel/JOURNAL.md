@@ -15020,7 +15020,7 @@ All fourteen targets pass: 173 active original cases (tracker 59, prediction 43,
 traffic helpers 33, evaluator 38), eight installed executable/behavior profiles
 and two added time-window regressions: 183 active cases. Four original disabled
 tracker benchmarks stay disabled; no introduced skips or failures. The final
-39.3-second invocation reuses unchanged results, including the full 134.5-second
+5.6-second invocation reuses unchanged results, including the full 134.5-second
 evaluator suite. CPU/Cyclone DDS, ENABLE_AGNOCAST=0, LLVM/libc++ 21.1.8, Boost 1.90,
 Python 3.14.4 and Bazel 9.3.2 are selected. No Fast DDS, full simulator launch,
 older-ROS/colcon execution or real-time performance acceptance is claimed.
@@ -15070,7 +15070,7 @@ All fourteen targets pass: 173 active original cases (tracker 59, prediction 43,
 traffic helpers 33, evaluator 38), eight installed executable/behavior profiles
 and two added time-window regressions: 183 active cases. Four original disabled
 tracker benchmarks stay disabled; no introduced skips or failures. The final
-39.3-second invocation reuses unchanged results, including the full 134.5-second
+5.6-second invocation reuses unchanged results, including the full 134.5-second
 evaluator suite. CPU/Cyclone DDS, ENABLE_AGNOCAST=0, LLVM/libc++ 21.1.8, Boost 1.90,
 Python 3.14.4 and Bazel 9.3.2 are selected. No Fast DDS, full simulator launch,
 older-ROS/colcon execution or real-time performance acceptance is claimed.
@@ -15119,7 +15119,7 @@ All fourteen targets pass: 173 active original cases (tracker 59, prediction 43,
 traffic helpers 33, evaluator 38), eight installed executable/behavior profiles
 and two added time-window regressions: 183 active cases. Four original disabled
 tracker benchmarks stay disabled; no introduced skips or failures. The final
-39.3-second invocation reuses unchanged results, including the full 134.5-second
+5.6-second invocation reuses unchanged results, including the full 134.5-second
 evaluator suite. CPU/Cyclone DDS, ENABLE_AGNOCAST=0, LLVM/libc++ 21.1.8, Boost 1.90,
 Python 3.14.4 and Bazel 9.3.2 are selected. No Fast DDS, full simulator launch,
 older-ROS/colcon execution or real-time performance acceptance is claimed.
@@ -15165,7 +15165,7 @@ All fourteen targets pass: 173 active original cases (tracker 59, prediction 43,
 traffic helpers 33, evaluator 38), eight installed executable/behavior profiles
 and two added time-window regressions: 183 active cases. Four original disabled
 tracker benchmarks stay disabled; no introduced skips or failures. The final
-39.3-second invocation reuses unchanged results, including the full 134.5-second
+5.6-second invocation reuses unchanged results, including the full 134.5-second
 evaluator suite. CPU/Cyclone DDS, ENABLE_AGNOCAST=0, LLVM/libc++ 21.1.8, Boost 1.90,
 Python 3.14.4 and Bazel 9.3.2 are selected. No Fast DDS, full simulator launch,
 older-ROS/colcon execution or real-time performance acceptance is claimed.
@@ -15217,7 +15217,7 @@ All fourteen targets pass: 173 active original cases (tracker 59, prediction 43,
 traffic helpers 33, evaluator 38), eight installed executable/behavior profiles
 and two added time-window regressions: 183 active cases. Four original disabled
 tracker benchmarks stay disabled; no introduced skips or failures. The final
-39.3-second invocation reuses unchanged results, including the full 134.5-second
+5.6-second invocation reuses unchanged results, including the full 134.5-second
 evaluator suite. CPU/Cyclone DDS, ENABLE_AGNOCAST=0, LLVM/libc++ 21.1.8, Boost 1.90,
 Python 3.14.4 and Bazel 9.3.2 are selected. No Fast DDS, full simulator launch,
 older-ROS/colcon execution or real-time performance acceptance is claimed.
@@ -15234,10 +15234,13 @@ adjacent root 0.0.0/local override after prerequisites and keep added integratio
 checks under bazel/tests. Keep original source/test changes restricted to the
 separately documented demonstrated blockers.
 
-Expose all forty-two original production CPP files and all seven registered test
-CPP files, with public/private headers. Declare actual Boost geometry/optional,
+Expose all forty-one CMake-registered production CPP files and all seven
+registered test CPP files, with public/private headers. Declare actual Boost geometry/optional,
 circular-buffer, UUID and container-hash inputs plus local muSSP and utility
-providers, ROS messages, TF and rosbag native/shared providers. The BCR container-
+providers, ROS messages, TF and rosbag native/shared providers. Exclude the
+obsolete unregistered lib/association/successive_shortest_path/ssp.cpp; preserve
+that source in place rather than broadening the supported solver surface.
+The BCR container-
 hash version 1.90.0.bcr.1 is already selected transitively; add an explicit root
 selection and source-module requirement rather than changing the whole Boost
 version. Keep root architecture settings authoritative: no host ISA autodetection
@@ -15281,7 +15284,7 @@ All fourteen targets pass: 173 active original cases (tracker 59, prediction 43,
 traffic helpers 33, evaluator 38), eight installed executable/behavior profiles
 and two added time-window regressions: 183 active cases. Four original disabled
 tracker benchmarks stay disabled; no introduced skips or failures. The final
-39.3-second invocation reuses unchanged results, including the full 134.5-second
+5.6-second invocation reuses unchanged results, including the full 134.5-second
 evaluator suite. CPU/Cyclone DDS, ENABLE_AGNOCAST=0, LLVM/libc++ 21.1.8, Boost 1.90,
 Python 3.14.4 and Bazel 9.3.2 are selected. No Fast DDS, full simulator launch,
 older-ROS/colcon execution or real-time performance acceptance is claimed.
@@ -15326,7 +15329,7 @@ All fourteen targets pass: 173 active original cases (tracker 59, prediction 43,
 traffic helpers 33, evaluator 38), eight installed executable/behavior profiles
 and two added time-window regressions: 183 active cases. Four original disabled
 tracker benchmarks stay disabled; no introduced skips or failures. The final
-39.3-second invocation reuses unchanged results, including the full 134.5-second
+5.6-second invocation reuses unchanged results, including the full 134.5-second
 evaluator suite. CPU/Cyclone DDS, ENABLE_AGNOCAST=0, LLVM/libc++ 21.1.8, Boost 1.90,
 Python 3.14.4 and Bazel 9.3.2 are selected. No Fast DDS, full simulator launch,
 older-ROS/colcon execution or real-time performance acceptance is claimed.
@@ -15378,7 +15381,7 @@ All fourteen targets pass: 173 active original cases (tracker 59, prediction 43,
 traffic helpers 33, evaluator 38), eight installed executable/behavior profiles
 and two added time-window regressions: 183 active cases. Four original disabled
 tracker benchmarks stay disabled; no introduced skips or failures. The final
-39.3-second invocation reuses unchanged results, including the full 134.5-second
+5.6-second invocation reuses unchanged results, including the full 134.5-second
 evaluator suite. CPU/Cyclone DDS, ENABLE_AGNOCAST=0, LLVM/libc++ 21.1.8, Boost 1.90,
 Python 3.14.4 and Bazel 9.3.2 are selected. No Fast DDS, full simulator launch,
 older-ROS/colcon execution or real-time performance acceptance is claimed.
@@ -15428,7 +15431,7 @@ All fourteen targets pass: 173 active original cases (tracker 59, prediction 43,
 traffic helpers 33, evaluator 38), eight installed executable/behavior profiles
 and two added time-window regressions: 183 active cases. Four original disabled
 tracker benchmarks stay disabled; no introduced skips or failures. The final
-39.3-second invocation reuses unchanged results, including the full 134.5-second
+5.6-second invocation reuses unchanged results, including the full 134.5-second
 evaluator suite. CPU/Cyclone DDS, ENABLE_AGNOCAST=0, LLVM/libc++ 21.1.8, Boost 1.90,
 Python 3.14.4 and Bazel 9.3.2 are selected. No Fast DDS, full simulator launch,
 older-ROS/colcon execution or real-time performance acceptance is claimed.
