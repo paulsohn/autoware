@@ -7,15 +7,24 @@ import sys
 
 root = Path(sys.argv[1])
 print("Batch | Transport | Complete median/p95 ms | Partial median/p95 ms | Child CPU s")
-for batch in ("large", "repeat"):
-    for mode in ("cyclone", "cdr", "host", "fixed", "zenoh"):
+loan_input = "--loan-input" in sys.argv[2:]
+for batch in (("large", "repeat", "pair3", "pair4", "ref1", "ref2") if loan_input else ("large", "repeat")):
+    modes = ["cyclone", "cdr", "host", "fixed", "zenoh"] if batch in ("large", "repeat") else []
+    if batch.startswith("ref"):
+        modes = ["cyclone", "zenoh"]
+    elif loan_input:
+        modes.extend(["byte-copy", "byte-view"])
+    for mode in modes:
         log = (root / f"{batch}-{mode}.log").read_text()
         assert "verified 24 synchronized clouds and metadata, 12 complete and 12 timed out, 1966080 input points" in log
         assert "exit_status=0" in log
-        if mode == "fixed":
+        if mode in ("fixed", "byte-copy", "byte-view"):
             wakes, = re.findall(r"fixed_wait .*?native=(\d+)", log)
             assert int(wakes) > 0
-        if mode in ("cdr", "host", "fixed"):
+        if mode.startswith("byte-") or batch.startswith("ref"):
+            counts = "views=60 copies=0" if mode == "byte-view" else "views=0 copies=60"
+            assert f"sync_input {counts}" in log
+        if mode in ("cdr", "host", "fixed", "byte-copy", "byte-view"):
             layout = "CDR" if mode == "cdr" else "host-cloud"
             for topic in ("/sync/left", "/sync/right", "/sync/top", "/output"):
                 for endpoint in ("reader", "writer"):

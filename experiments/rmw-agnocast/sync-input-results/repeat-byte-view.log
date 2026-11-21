@@ -1,0 +1,39 @@
+rmw_agnocast host-cloud reader /output
+rmw_agnocast host-cloud writer /sync/left
+rmw_agnocast host-cloud writer /sync/right
+rmw_agnocast host-cloud writer /sync/top
+rmw_agnocast host-cloud writer /output
+rmw_agnocast host-cloud reader /sync/left
+rmw_agnocast host-cloud reader /sync/right
+rmw_agnocast host-cloud reader /sync/top
+fast_source_hz=9.99973
+sample,0,full,19076137
+sample,1,partial,42528628
+sample,2,full,3378019
+sample,3,partial,42045891
+sample,4,full,3283623
+sample,5,partial,42479906
+sample,6,full,3918112
+sample,7,partial,41601948
+sample,8,full,3812374
+sample,9,partial,41617087
+sample,10,full,2564021
+sample,11,partial,41634189
+sample,12,full,2688766
+sample,13,partial,41576630
+sample,14,full,2560825
+sample,15,partial,41668162
+sample,16,full,2592174
+sample,17,partial,41502381
+sample,18,full,2220917
+sample,19,partial,41574346
+sample,20,full,2549485
+sample,21,partial,41598573
+sample,22,full,2611030
+sample,23,partial,41766487
+verified 24 synchronized clouds and metadata, 12 complete and 12 timed out, 1966080 input points
+fixed_wait arms=24 completions=24 native=57 both=0 native_interrupts=0 stop_interrupts=1
+sync_input views=60 copies=0
+graph_user_s=0.702 graph_sys_s=0.407
+Minimum host MemAvailable: 12375 MiB
+exit_status=0

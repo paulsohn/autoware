@@ -2125,3 +2125,83 @@ subscription topology. Its advantage over ordinary host-cloud varied in
 sign at the complete-group median. The next comparison should isolate
 payload copies on this exact graph before changing deployment defaults.
 [Per-set latency, exit status, counters, CPU and memory](sync-results/).
+
+### Read a retained input loan in the Universe synchronizer
+
+On the existing 10/10/5 Hz three-sensor graph, change only the synchronizer's
+input side. The isolated colcon target applies
+loan-input.patch to two build-directory copies of the Universe sources.
+With AUTOWARE_ENABLE_AGNOCAST_HOST_VIEW=OFF it compiles the original
+sources directly. Both the adapter and instrumentation live in the fixture.
+The prototype RMW exports its view header with its ament package. The three
+synchronizer subscriptions request `agnocast_host_view` through Lyrical's
+`acceptable_buffer_backends` option.
+The prototype RMW recognizes this name in a comma-separated list as well as
+the original `any` opt-in. The ordinary CPU default still receives a copy.
+
+The collector retains the original const ROS message. When the group is
+complete or its timer expires, the converter reads XYZIRC bytes directly
+from the const vector owned by the received Buffer implementation. Both
+the byte-copy and byte-view cases use the same converter, blocking A,
+normal publishers and verifying sink. Packed rows use a bulk copy into the
+canonical XYZIRC cloud. With a longer point stride the converter copies the
+XYZIRC prefix and skips the extra point and row bytes. It requires a valid
+native-endian XYZIRC prefix and checks strides and data length. The existing
+transform and concatenation steps and their allocations run in both cases.
+The fixed reference uses the original per-point converter. Comparing fixed
+to byte-view alone would conflate the converter and transport changes.
+
+The timed runs record counts at the converter. A separate untimed audit
+compares the address of the vector being read against the retained owner's
+address and stores weak references. For the padded test, the third sensor
+has two rows, a 20-byte point stride and 8 padding bytes per row. The
+fixture independently checks the same transformed output and per-sensor
+metadata as for packed input. At shutdown all 60 weak owners had expired
+after 33,030,336 input bytes. The packed graph avoids a 512 KiB RMW-to-CPU
+copy on each of 60 input messages (30 MiB per run). The publisher and
+output still materialize payloads. The older host-view probe separately
+checks address identity, mutation isolation, retention and final release.
+
+From the same worktree and Lyrical root as above:
+
+```bash
+set -e
+export LYRICAL_ROOT=$(cat build/agnocast-lyrical/universe-root)
+run=experiments/buffer/run-lyrical.sh
+"$run" bash experiments/rmw-agnocast/build-loadable.sh
+AUTOWARE_ENABLE_AGNOCAST_HOST_VIEW=OFF "$run" bash experiments/rmw-agnocast/build-sync.sh
+BUFFER_RUNTIME_ONLY=1 "$run" timeout -k 4 45 bash experiments/rmw-agnocast/run-sync.sh cyclone
+"$run" bash experiments/rmw-agnocast/build-sync.sh
+export BUFFER_RUNTIME_ONLY=1
+"$run" timeout 60 bash experiments/rmw-agnocast/run-loadable.sh host-view
+for mode in byte-copy byte-view; do
+  SYNC_LARGE=1 SYNC_AUDIT=1 SYNC_STRIDED_INPUT=1 "$run" timeout -k 4 45 \
+    bash experiments/rmw-agnocast/run-sync.sh "$mode"
+done
+bash experiments/rmw-agnocast/bench-sync.sh build/universe-sync/new-input-test --loan-input
+```
+
+The first two timed passes include Cyclone, Zenoh, CDR, host-cloud and the
+original fixed control. Two further passes repeat the matched input pair.
+Orders for the four pairs are copy/view, view/copy, view/copy and copy/view.
+Two additional passes run Cyclone and Zenoh with the same byte converter,
+reversing their order. Their ordinary executor and middleware differ from A.
+Keep complete and intentionally partial groups separate. Each per-run
+median and p95 uses ten post-warmup groups of each kind. Child CPU includes
+startup and teardown. A native Agnocast comparator for this rclcpp-only
+component is still unavailable.
+
+| Complete-group median, ms | Pair 1 | Pair 2 | Pair 3 | Pair 4 |
+|---|---:|---:|---:|---:|
+| Blocking A, copied CPU input | 4.05 | 3.89 | 3.97 | 4.16 |
+| Blocking A, retained view | 2.74 | 2.60 | 2.88 | 2.65 |
+
+The view lowered the matched median by 1.09–1.51 ms in all four pairs
+and the observed p95 by 0.90–1.40 ms. Partial-group medians clustered
+at 41.56–41.75 ms with the 40 ms timeout. CPU totals overlapped. With
+the same converter and ordinary ROS executors, the two Cyclone reference
+medians were 4.70 and 4.64 ms, and Zenoh's were 2.64 and 3.11 ms.
+All 22 timed graphs verified their outputs and exited cleanly. Keep the view
+as the experimental input baseline. The next distinct copy to investigate
+is on publication of the newly constructed concatenated cloud.
+[Per-frame timings, counts and memory checks](sync-input-results/).

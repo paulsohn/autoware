@@ -3,13 +3,27 @@ set -e
 out=${1:?fresh output directory}
 mkdir "$out"
 export SYNC_LARGE=1 BUFFER_RUNTIME_ONLY=1
-for batch in large repeat; do
+batches=(large repeat)
+if [[ ${2:-} == --loan-input ]]; then batches+=(pair3 pair4 ref1 ref2); fi
+for batch in "${batches[@]}"; do
   modes=(cyclone cdr host fixed zenoh)
   if [[ $batch == repeat ]]; then modes=(zenoh fixed host cdr cyclone); fi
+  if [[ ${2:-} == --loan-input ]]; then
+    case $batch in
+      large) modes+=(byte-copy byte-view);;
+      repeat) modes=(byte-view byte-copy "${modes[@]}");;
+      pair3) modes=(byte-view byte-copy);;
+      pair4) modes=(byte-copy byte-view);;
+      ref1) modes=(cyclone zenoh);;
+      ref2) modes=(zenoh cyclone);;
+    esac
+  fi
   for mode in "${modes[@]}"; do
     log="$out/$batch-$mode.log"
     status=0
-    experiments/buffer/run-lyrical.sh timeout -k 4 45 bash -c '
+    settings=()
+    if [[ $batch == ref* ]]; then settings=(SYNC_BYTE_INPUT=1); fi
+    env "${settings[@]}" experiments/buffer/run-lyrical.sh timeout -k 4 45 bash -c '
       TIMEFORMAT="graph_user_s=%U graph_sys_s=%S"
       time bash experiments/rmw-agnocast/run-sync.sh "$1"
     ' bash "$mode" > "$log" 2>&1 || status=$?
@@ -17,4 +31,4 @@ for batch in large repeat; do
     if ((status)); then tail -n 12 "$log"; exit "$status"; fi
   done
 done
-python3 experiments/rmw-agnocast/summarize-sync.py "$out"
+python3 experiments/rmw-agnocast/summarize-sync.py "$out" "${@:2}"

@@ -1,0 +1,20 @@
+build/universe-sync/isolated-off-cyclone.log:verified 24 synchronized clouds and metadata, 12 complete and 12 timed out, 61440 input points
+build/universe-sync/isolated-off-cyclone.log:Minimum host MemAvailable: 12371 MiB
+build/universe-sync/isolated-audit-byte-view.log:verified 24 synchronized clouds and metadata, 12 complete and 12 timed out, 1966080 input points
+build/universe-sync/isolated-audit-byte-view.log:fixed_wait arms=24 completions=24 native=57 both=0 native_interrupts=0 stop_interrupts=1
+build/universe-sync/isolated-audit-byte-view.log:sync_input views=60 copies=0
+build/universe-sync/isolated-audit-byte-view.log:sync_view_audit loans=60 released=60 bytes=33030336
+build/universe-sync/isolated-audit-byte-view.log:Minimum host MemAvailable: 12274 MiB
+build/universe-sync/isolated-audit-byte-copy.log:verified 24 synchronized clouds and metadata, 12 complete and 12 timed out, 1966080 input points
+build/universe-sync/isolated-audit-byte-copy.log:fixed_wait arms=24 completions=24 native=57 both=3 native_interrupts=0 stop_interrupts=1
+build/universe-sync/isolated-audit-byte-copy.log:sync_input views=0 copies=60
+build/universe-sync/isolated-audit-byte-copy.log:Minimum host MemAvailable: 12344 MiB
+view addresses, independent mutation, retention and final release passed
+empty and padded clouds verified through typed and serialized take
+Minimum host MemAvailable: 11337 MiB
+build/universe-sync/isolated-build-on.log:Summary: 2 packages finished [45.6s]
+build/universe-sync/isolated-build-on.log:Minimum host MemAvailable: 11547 MiB
+build/universe-sync/isolated-build-off.log:Summary: 2 packages finished [47.2s]
+build/universe-sync/isolated-build-off.log:Minimum host MemAvailable: 11505 MiB
+build/universe-sync/direct-rmw-build.log:Summary: 2 packages finished [1.20s]
+build/universe-sync/direct-rmw-build.log:Minimum host MemAvailable: 12161 MiB

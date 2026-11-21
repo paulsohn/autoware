@@ -46,7 +46,12 @@ Cloud cloud(int seq, int sensor)
   c.height = 1;
   c.is_dense = true;
   c.point_step = sizeof(Point);
-  c.row_step = points * sizeof(Point);
+  if (sensor == 2 && std::getenv("SYNC_STRIDED_INPUT")) {
+    c.height = 2;
+    c.width = points / c.height;
+    c.point_step += 4;
+  }
+  c.row_step = c.width * c.point_step + (c.height == 2 ? 8 : 0);
   using Field = sensor_msgs::msg::PointField;
   for (auto [name, offset, type] :
        {std::tuple{"x", 0, Field::FLOAT32},
@@ -62,10 +67,11 @@ Cloud cloud(int seq, int sensor)
     f.count = 1;
     c.fields.push_back(f);
   }
-  c.data.resize(c.row_step);
+  c.data.resize(size_t(c.height) * c.row_step);
   for (int i = 0; i < points; ++i) {
     auto p = point(seq, sensor, i);
-    std::memcpy(c.data.data() + i * sizeof(p), &p, sizeof(p));
+    const auto offset = (i / c.width) * c.row_step + (i % c.width) * c.point_step;
+    std::memcpy(c.data.data() + offset, &p, sizeof(p));
   }
   return c;
 }

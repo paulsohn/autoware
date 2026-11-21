@@ -1,0 +1,35 @@
+--- a/combine_cloud_handler.cpp
++++ b/combine_cloud_handler.cpp
+@@ -16,6 +16,7 @@
+
+ #include "autoware/pointcloud_preprocessor/concatenate_data/concatenation_info_manager.hpp"
+ #include "time_utils.hpp"
++#include "sync_input.hpp"
+
+ #include <Eigen/Dense>
+
+@@ -43,6 +44,11 @@
+
+   PointCloud2Modifier<PointXYZIRC, autoware::point_types::PointXYZIRCGenerator> output_modifier{
+     *xyzirc_cloud, input_cloud->header.frame_id};
++  if (std::getenv("SYNC_BYTE_INPUT") ||
++      dynamic_cast<const rmw_agnocast::HostCloudView *>(input_cloud->data.get_impl())) {
++    host_view_input::convert_xyzirc(*input_cloud, *xyzirc_cloud);
++    return;
++  }
+   output_modifier.reserve(input_cloud->width);
+
+   bool has_valid_intensity =
+--- a/concatenate_and_time_sync_node.cpp
++++ b/concatenate_and_time_sync_node.cpp
+@@ -57,7 +57,9 @@
+       this->cloud_callback(msg, topic);
+     };
+
++    rclcpp::SubscriptionOptions options;
++    if (std::getenv("SYNC_VIEW_INPUT")) options.acceptable_buffer_backends = "agnocast_host_view";
+     auto pointcloud_sub = this->create_subscription<sensor_msgs::msg::PointCloud2>(
+-      topic, rclcpp::SensorDataQoS().keep_last(params_.maximum_queue_size), callback);
++      topic, rclcpp::SensorDataQoS().keep_last(params_.maximum_queue_size), callback, options);
+     pointcloud_subs_.push_back(pointcloud_sub);
+   }

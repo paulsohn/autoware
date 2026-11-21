@@ -7,11 +7,27 @@ set(deps rclcpp_components rclcpp sensor_msgs nav_msgs geometry_msgs autoware_in
 set(aw "${CMAKE_CURRENT_SOURCE_DIR}/..")
 set(pre "${aw}/universe/autoware_universe/sensing/autoware_pointcloud_preprocessor")
 set(sync "${pre}/src/concatenate_data")
+option(AUTOWARE_ENABLE_AGNOCAST_HOST_VIEW "Build the experimental Lyrical host-view input" ON)
+set(input_sources "${sync}")
+if(AUTOWARE_ENABLE_AGNOCAST_HOST_VIEW)
+  set(input_sources "${CMAKE_CURRENT_BINARY_DIR}/loan-input")
+  foreach(file IN ITEMS concatenate_and_time_sync_node.cpp combine_cloud_handler.cpp)
+    configure_file("${sync}/${file}" "${input_sources}/${file}" COPYONLY)
+  endforeach()
+  set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS loan-input.patch)
+  execute_process(COMMAND patch -p1 -i "${CMAKE_CURRENT_SOURCE_DIR}/loan-input.patch"
+    WORKING_DIRECTORY "${input_sources}" COMMAND_ERROR_IS_FATAL ANY)
+endif()
 add_library(universe_sync SHARED
-  "${sync}/concatenate_and_time_sync_node.cpp" "${sync}/cloud_collector.cpp"
+  "${input_sources}/concatenate_and_time_sync_node.cpp" "${sync}/cloud_collector.cpp"
   "${sync}/collector_matcher.cpp" "${sync}/matching_policy.cpp"
-  "${sync}/combine_cloud_handler.cpp" "${sync}/combine_cloud_handler_base.cpp"
+  "${input_sources}/combine_cloud_handler.cpp" "${sync}/combine_cloud_handler_base.cpp"
   "${sync}/concatenation_diagnostics.cpp" "${pre}/src/utility/memory.cpp")
+if(AUTOWARE_ENABLE_AGNOCAST_HOST_VIEW)
+  find_package(rmw_agnocast REQUIRED)
+  target_include_directories(universe_sync PRIVATE "${sync}" "${CMAKE_CURRENT_SOURCE_DIR}" ${rmw_agnocast_INCLUDE_DIRS})
+  target_compile_features(universe_sync PRIVATE cxx_std_20)
+endif()
 target_include_directories(universe_sync PRIVATE "${pre}/include"
   "${aw}/core/autoware_core/common/autoware_point_types/include")
 foreach(pkg IN ITEMS autoware_utils autoware_utils_debug autoware_utils_diagnostics autoware_utils_system)

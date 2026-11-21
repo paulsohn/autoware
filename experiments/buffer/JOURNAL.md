@@ -1373,3 +1373,42 @@ partial-group medians were 42.15/42.44 ms. Both runs reported 57 native
 wakes and 24 delegated completions. All ten graph invocations passed the
 payload, TF, timeout and teardown checks. No consistent complete-group
 median advantage over ordinary host-cloud was established.
+
+## 2026-11-21 — Read the synchronizer inputs from retained Agnocast loans
+
+Kept the experimental adapter in universe_sync_benchmark. The fixture applies
+loan-input.patch to two build-directory copies when enabled and directly
+compiles the tracked Universe sources when disabled. Compared the Universe
+subtree against 1c78effe, which already includes the Lyrical header and
+collector lifetime fixes. Keep direct Universe edits for demonstrated fixes.
+
+The ordinary rclcpp subscriptions previously requested CPU buffers. The
+RMW now accepts its named host-view backend in the Lyrical subscription
+options and exports the header via ament. The three experimental subscriptions
+request that backend. The consumer reads the retained vector at conversion,
+after the collector has waited for its peers or for the 40 ms timer. A
+matched CPU-copy control performs the identical XYZIRC byte conversion
+under the same blocking A wait. Packed rows take a bulk copy into canonical
+XYZIRC output. The padded-input test additionally exercises per-point stride
+and skips end-of-row padding. Keep transformation and output ownership
+identical in both cases.
+
+Use the guarded build and run commands in the linked README. For the
+unadapted colcon control run build-sync.sh under the same guarded runner
+with AUTOWARE_ENABLE_AGNOCAST_HOST_VIEW=OFF and run the Cyclone graph before
+rebuilding the enabled case. Build with one worker under the 1,200 MiB cap,
+then run graphs one at a time under the 512 MiB cap. The pre-existing host-view
+probe also passed address identity, retention, independent mutation, final
+release, and the empty and padded cloud checks. The RMW-to-CPU input copy
+and the algorithm's output construction are separate costs. The experiment
+does not establish native Agnocast parity.
+[Commands, per-run evidence and latency comparison](../rmw-agnocast/README.md#read-a-retained-input-loan-in-the-universe-synchronizer)
+
+In the final isolated build all 22 timed graphs exited cleanly and verified
+528 output groups and their metadata. The four view runs took all 240 input
+clouds as retained views, and the four matched copying runs took all 240 as
+CPU buffers. Complete-group median fell in all four pairs, from 3.89–4.16 ms
+to 2.60–2.88 ms. Partial-group latency remained dominated by the 40 ms
+collector timeout. The padded audit verified all 60 owner references expired
+at teardown. Use the view for further experiments and keep the Universe
+subtree at its last verified fixes while studying the output publication path.
