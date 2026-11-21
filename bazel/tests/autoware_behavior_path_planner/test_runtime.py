@@ -27,6 +27,10 @@ CLASS, PARAMETERS, VALUES, UPDATED = {
                               ['bidirectional_traffic.min_distance_from_roadside',
                                'bidirectional_traffic.wait_time_for_oncoming_car'],
                               [0.2, 15.0], None),
+    'static_obstacle_avoidance': ('StaticObstacleAvoidanceModuleManager',
+                                  ['avoidance.resample_interval_for_planning',
+                                   'avoidance.target_filtering.max_compensation_time'],
+                                  [0.3, 2.0], 2.5),
 }[MODULE]
 PLUGIN = 'autoware::behavior_path_planner::' + CLASS
 

@@ -81,6 +81,7 @@ only when your current target demonstrates the need.
 - [ ] Preserve original suites' source-layout and tool prerequisites in declared fixtures.
   [Test adapter convention](DEVELOPING.md#original-test-source-layout);
   [evidence: interface lint](JOURNAL.md#2026-11-18-phase-534--interface-spec-lint).
+  [Evidence: textually included C++ implementation](JOURNAL.md#2026-11-22-phase-732--static-obstacle-avoidance-scene-plugin).
 - [ ] Inventory complete module suites, runtime prerequisites and required
   middleware configurations before implementing each task.
   [Backend executor convention](DEVELOPING.md#switchable-standalone-nodes);
@@ -1788,6 +1789,13 @@ Phase 7.3 task boundaries (selected 2026-11-21):
   loading/default-parameter/shutdown and side-shift regression checks. Its
   original empty parameter-update callback is not an implemented capability.
   [Evidence](JOURNAL.md#2026-11-22-phase-732--bidirectional-traffic-scene-plugin).
+  Static-obstacle avoidance is complete: all five implementation sources build
+  and all 21 active original cases pass, including predicted-object planning
+  factors. One upstream-disabled moving-time case remains disabled. Its
+  standalone loading/parameter-update/shutdown gate and both earlier runtime
+  profiles pass; the combined group passes 27 active cases without runtime
+  skips. Original tests and implementation remain unchanged.
+  [Evidence](JOURNAL.md#2026-11-22-phase-732--static-obstacle-avoidance-scene-plugin).
   Continue in dependency order through shared planner helpers, the
   preset-selected behavior/motion plugins and controller libraries, then
   simulated perception and the selected system/API closure. CMake-only shims

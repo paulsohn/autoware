@@ -777,6 +777,12 @@ runtime data/arguments. The interface-lint suite uses
 `//bazel/tests:interface_spec_lint_tests`; it includes all original cases and
 its committed-spec/manifest checks. Its original config determines active gates.
 
+When an original C++ test textually includes a .cpp implementation, expose that
+file through textual_hdrs on a test-only cc_library and add that library to the
+test's deps. This supplies the sandbox input while preserving the original
+relative include. Keep the production compilation in its owning library; adding
+the included file to the test's srcs would compile another object unnecessarily.
+
 The example node uses native RCLCPP component registration, with its original
 ROS executable name registered under lib/autoware_test_node. Its index owns
 that executable registration; avoid an executable-to-same-index data edge.

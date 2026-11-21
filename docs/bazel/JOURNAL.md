@@ -11453,3 +11453,63 @@ Targeted Python style, source/test inventory and whitespace checks pass.
 No implementation or original test changes are needed. Other selected scene
 modules and full simulator startup remain pending; no Fast DDS, GPU,
 enabled-Agnocast or unchanged distribution matrix is run.
+
+## 2026-11-22: Phase 7.3.2 — Static-obstacle-avoidance scene plugin
+
+Purpose: integrate the default-enabled static-obstacle-avoidance plugin and its
+original planning-factor behavior. Inspect CMake/manifest, all five production
+sources, public headers, plugin XML, config/test_data and all three original
+test sources. The single original test executable combines geometry/object
+utilities, normal/empty-route and off-track node cases, and actual predicted
+object input with planning-factor publication. Preserve the existing disabled
+TestUtils.DISABLED_fillObjectMovingTime case separately from active results.
+
+Apply the same package-owned library/plugin/index pattern as the preceding
+scene modules, keeping the original shared-library basename and category.
+Export config and test_data through the package's index and provide the local
+planner's test helper plus route-handler/test-utils fixture indexes. Reuse the
+common library's runtime closure and actual signal-processing, RTC, visualization,
+map/TF and sensor-message providers. No new dependency module or source changes
+are needed. The test-file glob selects the real .cpp files; this package has no
+additional test headers to declare.
+
+The original utility test textually includes ../src/utils.cpp. Its first
+sandbox compilation cannot find that undeclared file. Add a test-only cc_library
+with textual_hdrs = ["src/utils.cpp"] and make the existing test depend on it.
+This declares the include as an input without compiling an extra test object;
+the production library retains its original source compilation. Preserve the
+test and its relative include. The complete test and real-plugin gates below
+validate compilation, linking and execution of that arrangement.
+
+Add its profile to the same root standalone adapter: require actual plugin DLL
+loading, original avoidance defaults, a supported max-compensation-time update
+and clean exit. Keep the previous profiles as regression checks. Parameter
+acceptance/readback is configuration coverage, not proof of a complete obstacle
+avoidance maneuver; the original planning-factor case supplies its own behavior
+assertions on unsafe factors, control points and object identities.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_output=errors @autoware_behavior_path_bidirectional_traffic_module//... \
+  @autoware_behavior_path_static_obstacle_avoidance_module//... \
+  //bazel/tests/autoware_behavior_path_planner:all
+python3 -m flake8 --max-line-length=150 \
+  bazel/tests/autoware_behavior_path_planner/test_runtime.py
+git diff --check
+```
+
+All five original implementation sources build. The complete original test
+executable passes 21 active cases in 13.9 seconds; its one upstream-disabled
+fillObjectMovingTime case retains that status. There are zero failures, errors
+or runtime skips. The real standalone plugin check passes in 2.0 seconds,
+including loaded DLLs, original defaults 0.3/2.0, a max-compensation-time update
+to 2.5 and clean shutdown. The combined gate with bidirectional traffic and the
+side-shift regression passes all 27 active cases across five targets in
+179.5 seconds, CPU/Cyclone DDS with ENABLE_AGNOCAST=0.
+
+Targeted source/test inventory, Python/flake8 and git diff --check pass. No source
+compatibility patch, pre-commit, Fast DDS, GPU, enabled-Agnocast or unchanged
+packaging matrix is required/run. This completes this plugin's declared gate;
+lane-changing/parking scenes, the remaining planning closure and original
+simulator composition remain pending.
