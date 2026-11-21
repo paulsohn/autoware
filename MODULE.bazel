@@ -1367,3 +1367,9 @@ local_path_override(
     module_name = "autoware_pure_pursuit",
     path = "src/universe/autoware_universe/control/autoware_pure_pursuit",
 )
+
+bazel_dep(name = "autoware_trajectory_follower_node", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_trajectory_follower_node",
+    path = "src/universe/autoware_universe/control/autoware_trajectory_follower_node",
+)

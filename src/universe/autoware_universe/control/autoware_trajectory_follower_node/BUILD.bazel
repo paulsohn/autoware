@@ -1,0 +1,135 @@
+load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
+load("@autoware_agnocast_wrapper//:defs.bzl", "autoware_agnocast_node")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "autoware_trajectory_follower_node",
+    srcs = ["src/controller_node.cpp"],
+    hdrs = glob(["include/**/*.hpp"]),
+    includes = ["include", "src"],
+    deps = [
+        "@autoware_adapi_v1_msgs//:cc",
+        "@autoware_agnocast_wrapper//:autoware_agnocast_wrapper_library",
+        "@autoware_control_msgs//:cc",
+        "@autoware_motion_utils",
+        "@autoware_mpc_lateral_controller",
+        "@autoware_pid_longitudinal_controller",
+        "@autoware_planning_msgs//:cc",
+        "@autoware_pure_pursuit",
+        "@autoware_trajectory_follower_base",
+        "@autoware_utils",
+        "@autoware_vehicle_info_utils",
+        "@autoware_vehicle_msgs//:cc",
+        "@rclcpp//:rclcpp_library",
+        "@rclcpp_components//:rclcpp_components_library",
+        "@visualization_msgs//:cc",
+    ],
+)
+
+cc_library(
+    name = "simple_library",
+    srcs = ["src/simple_trajectory_follower.cpp"],
+    hdrs = ["include/autoware/trajectory_follower_node/simple_trajectory_follower.hpp"],
+    includes = ["include"],
+    deps = [
+        "@autoware_control_msgs//:cc",
+        "@autoware_motion_utils",
+        "@autoware_planning_msgs//:cc",
+        "@autoware_utils",
+        "@rclcpp//:rclcpp_library",
+        "@rclcpp_components//:rclcpp_components_library",
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = [
+        "@autoware_adapi_v1_msgs//:cc_shared",
+        "@autoware_agnocast_wrapper//:autoware_agnocast_wrapper",
+        "@autoware_control_msgs//:cc_shared",
+        "@autoware_motion_utils//:runtime_dynamic_deps",
+        "@autoware_mpc_lateral_controller//:runtime_dynamic_deps",
+        "@autoware_pid_longitudinal_controller//:runtime_dynamic_deps",
+        "@autoware_planning_msgs//:cc_shared",
+        "@autoware_pure_pursuit//:runtime_dynamic_deps",
+        "@autoware_trajectory_follower_base//:runtime_dynamic_deps",
+        "@autoware_vehicle_msgs//:cc_shared",
+        "@logging_demo//:cc_shared",
+        "@rclcpp//:rclcpp",
+        "@rclcpp_components//:rclcpp_components",
+        "@visualization_msgs//:cc_shared",
+    ],
+)
+
+cc_shared_library(
+    name = "autoware_trajectory_follower_node_controller_component",
+    dynamic_deps = [":runtime_dynamic_deps"],
+    deps = [":autoware_trajectory_follower_node"],
+)
+
+autoware_agnocast_node(
+    name = "controller_node_exe",
+    component = ":autoware_trajectory_follower_node_controller_component",
+    package_name = "autoware_trajectory_follower_node",
+    plugin = "autoware::motion::control::trajectory_follower_node::Controller",
+    agnocast_only = False,
+)
+
+cc_shared_library(
+    name = "autoware_trajectory_follower_node_simple_component",
+    dynamic_deps = [":runtime_dynamic_deps"],
+    deps = [":simple_library"],
+)
+
+autoware_agnocast_node(
+    name = "simple_trajectory_follower_exe",
+    component = ":autoware_trajectory_follower_node_simple_component",
+    package_name = "autoware_trajectory_follower_node",
+    plugin = "simple_trajectory_follower::SimpleTrajectoryFollower",
+    agnocast_only = False,
+)
+
+register_ament_files(
+    name = "node_executables",
+    files = [":controller_node_exe", ":simple_trajectory_follower_exe"],
+    prefix = "lib/autoware_trajectory_follower_node",
+    strip_prefix = "*",
+)
+
+ament_index(
+    package_xml = "package.xml",
+    data = glob(["param/**", "config/**", "launch/**", "test/*.yaml"]) + [":controller_node_exe_plugin", ":simple_trajectory_follower_exe_plugin", ":node_executables"],
+    components = [":controller_node_exe_components", ":simple_trajectory_follower_exe_components"],
+)
+
+collect_transitive_dynamic_deps(
+    name = "test_dynamic_deps",
+    dynamic_deps = [
+        ":runtime_dynamic_deps",
+        "@ament_index_cpp//:ament_index_cpp",
+        "@autoware_fake_test_node//:runtime_dynamic_deps",
+    ],
+)
+
+cc_test(
+    name = "test_autoware_trajectory_follower_node",
+    timeout = "long",
+    srcs = glob(["test/**/*.cpp"] + ["test/**/*.hpp"]),
+    data = [
+        ":ament_index",
+        "@autoware_mpc_lateral_controller//:ament_index",
+        "@autoware_pid_longitudinal_controller//:ament_index",
+        "@autoware_pure_pursuit//:ament_index",
+    ],
+    dynamic_deps = [":test_dynamic_deps"],
+    env = {"ENABLE_AGNOCAST": "0", "LD_LIBRARY_PATH": "lib", "ROS_DOMAIN_ID": "93"},
+    deps = [
+        ":autoware_trajectory_follower_node",
+        "@ament_index_cpp//:ament_index_cpp_library",
+        "@autoware_fake_test_node",
+        "@googletest//:gtest_main",
+    ],
+)

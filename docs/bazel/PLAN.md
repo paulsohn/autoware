@@ -1869,6 +1869,14 @@ Phase 7.3 task boundaries (selected 2026-11-21):
   Product interface registration/full typed-bridge compilation remains a final
   accumulated-interface gate before 7.3.2 closes; do not infer that result from
   component suites or the status wire check.
+  The selected trajectory-follower closure is complete: local follower-base,
+  MPC/PID controllers, required pure pursuit, FakeTestNode and both installed
+  follower entrypoints pass 139 active cases in seven targets. One original
+  implementation-formula-specific pure-pursuit case stays disabled. The normal
+  installed node uses MPC/PID defaults; the simple profile also publishes and
+  verifies control commands. Expected headers align with merged AWF #13622;
+  unused experimental optional headers are removed separately from build rules.
+  [Follower group](JOURNAL.md#2026-11-22-phase-732--trajectory-follower-node).
   Continue in dependency order through shared planner helpers, the
   preset-selected behavior/motion plugins and controller libraries, then
   simulated perception and the selected system/API closure. The selected local

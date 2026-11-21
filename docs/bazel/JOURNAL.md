@@ -14176,3 +14176,64 @@ checks pass. No Fast DDS, enabled-kernel matrix, optional disabled case,
 performance acceptance or full simulator launch is run. Continue command gating,
 mode transition and the preset-enabled control-safety nodes before simulator
 composition. The accumulated product interface/bridge gate remains pending.
+
+## 2026-11-22: Phase 7.3.2 — Trajectory follower node
+
+Purpose: integrate this local package in the selected trajectory-follower
+closure. Inspect manifest/CMake, every production source (2), public
+headers, original indexed parameters and complete original test registration
+(1 test sources, 13 active cases). Prerequisites are
+existing local interfaces, motion/utility/vehicle/OSQP providers and pinned
+native Eigen/Boost/fmt/expected inputs. Select CPU/Cyclone DDS, Agnocast off.
+
+Expose normal and simple follower implementations as separate native
+libraries and uniquely named component DSOs inside one source module. Register
+both original executable names under lib/<package> through the existing wrapper,
+with agnocast_only=False because both classes derive from rclcpp::Node; preserve
+the ROS-aware callback-isolated executor branch. Keep actual normal-controller
+dependencies on local MPC/PID/pure-pursuit/base providers; the simple implementation
+uses only its actual motion/utility/message/ROS inputs, not those controller
+libraries. The normal logger service declares its dynamic introspection provider.
+
+Index original launch/config/param and the original test YAML fixtures needed
+by the complete thirteen-case native suite. Declare the local FakeTestNode
+helper and each indexed controller config in its test closure. Added checks stay
+under bazel/tests/trajectory_follower. The installed normal executable consumes
+the original MPC defaults, steering offset, PID defaults, vehicle/nearest-search
+fixtures and follower config; verify parameters, its own DSO and clean SIGINT.
+For the simple executable, its original YAML contains launch substitutions:
+supply the original XML defaults as typed CLI parameters rather than modifying
+that YAML. Publish a straight trajectory at 2 m/s and odometry, require three
+control samples at the external 5 m/s override, zero steering and finite
+acceleration, then clean exit. Both profiles assert no preloaded heaphook.
+This proves installed entrypoint/configuration and simple ROS output, not full
+simulator engagement, model-specific driving or real-time performance.
+
+Add package-owned MODULE/BUILD, a root local override after prerequisites and
+explicit native/shared dependency providers. Keep source/test bodies in place
+apart from the separately documented dependency-header fixes. Reproduce actual
+CMake effects with Bazel inputs; do not create empty metapackage dependencies.
+Original tests remain source-owned; new integration profiles remain root-owned.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast \
+  --local_test_jobs=1 --test_output=errors \
+  @autoware_fake_test_node//... @autoware_trajectory_follower_base//... \
+  @autoware_mpc_lateral_controller//... \
+  @autoware_pid_longitudinal_controller//... @autoware_pure_pursuit//... \
+  @autoware_trajectory_follower_node//... //bazel/tests/trajectory_follower:all
+python3 -m flake8 --max-line-length=150 bazel/tests/trajectory_follower/test_runtime.py
+git diff --check
+```
+
+All seven targets pass in the final 41.5-second invocation, reusing unchanged
+results: 137 active original cases (fake 4, MPC 61, PID 43, pure pursuit 16,
+follower 13) plus two installed executable/behavior cases. Native follower
+execution takes 15.7 seconds; the standalone MPC and simple profiles take 1.2
+and 1.6 seconds. One original disabled pure-pursuit case remains disabled;
+there are zero failures/errors or introduced skips. Formatting/flake8/whitespace
+checks pass. No Fast DDS, enabled-kernel matrix, optional disabled case,
+performance acceptance or full simulator launch is run. Continue command gating,
+mode transition and the preset-enabled control-safety nodes before simulator
+composition. The accumulated product interface/bridge gate remains pending.

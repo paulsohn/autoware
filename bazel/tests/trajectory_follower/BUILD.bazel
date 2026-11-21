@@ -1,0 +1,20 @@
+load("@rules_python//python:defs.bzl", "py_test")
+
+[
+    py_test(
+        name = profile + "_runtime_test",
+        srcs = ["test_runtime.py"],
+        main = "test_runtime.py",
+        args = [profile],
+        data = [
+            "@autoware_trajectory_follower_node//:ament_index",
+            "@autoware_mpc_lateral_controller//:ament_index",
+            "@autoware_pid_longitudinal_controller//:ament_index",
+        ],
+        env = {"ENABLE_AGNOCAST": "0", "LD_LIBRARY_PATH": "lib", "ROS_DOMAIN_ID": "94"},
+        precompile = "disabled",
+        tags = ["no-remote", "no-sandbox"],
+        deps = ["@ament_index_python", "@autoware_control_msgs//:py", "@autoware_planning_msgs//:py", "@nav_msgs//:py", "@rcl_interfaces//:py", "@rclpy"],
+    )
+    for profile in ["mpc", "simple"]
+]
