@@ -13603,3 +13603,68 @@ Register the accumulated selected interfaces at root and compile the complete
 typed bridge once that set is final, before closing Phase 7.3.2; this avoids a
 full generated-library build for each new package. Source module suites and
 wire checks remain complete for each package boundary.
+
+## 2026-11-22: Phase 7.3.2 — Planning validator node and status interface
+
+Purpose: expose this selected local validator package. Inspect its manifest,
+CMake, all 5 implementation sources, public headers and complete original
+test registration (2 active cases). Prerequisites are local planning/
+message/route/vehicle utilities, the published angles 1.16.1-3.rcr.2 pin and the
+existing wrapper/generated-parameter providers. Select CPU/Cyclone DDS with
+ENABLE_AGNOCAST=0 for this group.
+
+Expose the public plugin API plus debug-marker/utility implementation as the
+package's default native library; keep manager/node implementation in a separate
+node_library. Plugins consume the common API without depending on a node DSO or
+embedding another node registration. A trial whole-node shared dependency fails
+cc_shared_library ownership checks on private utility/PCL dependencies; splitting
+API from entrypoint preserves the component boundary without broad export flags.
+Align transitive PCL/message ownership through the actual pcl_conversions shared
+provider and declare logger-service introspection support at runtime.
+
+This is a mixed interface/component package: explicitly register
+msg/PlanningValidatorStatus in msg/BUILD and default_generators. Omit the
+macro's automatic package index and create one owning index with generated IDL,
+C++/Python bindings, config/launch, normal and invalid-trajectory executables and
+both component records. The node consumes its own :cc/:cc_shared targets; the
+root interface consumer can consume just those targets without linking the node.
+The added wire check round-trips the generated public status type.
+
+Expose both original node cases, with the original main/ROS setup (gtest,
+not gtest_main). Add root installed-executable checks for the wrapper-based node
+and ordinary invalid-trajectory component. Preserve MultiThreadedExecutor for
+the normal node. The runtime adapter checks a real declared traffic-light timeout
+parameter; planning_hz remains in original YAML but is not declared by the node.
+
+Add package-owned MODULE/BUILD and an adjacent root local override after its
+actual prerequisites. Components do not depend on root product/test labels.
+Keep original tests in place and added profiles under bazel/tests. Publish the
+flattened runtime dependency closure and keep config resources indexed with
+their owning package. Generate interfaces and parameters in the build graph;
+no ament-prefix scanning, host install or post-build generation is involved.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast \
+  --local_test_jobs=1 --test_output=errors @angles//test:all \
+  @autoware_planning_validator_test_utils//... \
+  @autoware_planning_validator//... \
+  @autoware_planning_validator_latency_checker//... \
+  @autoware_planning_validator_trajectory_checker//... \
+  @autoware_planning_validator_intersection_collision_checker//... \
+  @autoware_planning_validator_rear_collision_checker//... \
+  //bazel/tests/planning_validator:all
+python3 -m flake8 --max-line-length=150 bazel/tests/planning_validator/test_runtime.py
+git diff --check
+```
+
+All twelve targets pass (final invocation 45.4 seconds, reusing unchanged
+results): 27 original validator/checker cases, 16 original angles cases, seven
+indexed-node/factory lifecycles and one generated-status wire type. The native
+checker runs 25 cases in 43.2 seconds; base node cases take 8.1 seconds; root
+profiles take 1.3–1.8 seconds. Zero failures/errors/disabled cases/skips occur.
+The joint profile loads all four default-enabled factories in one real validator
+and exits cleanly; it uses component-default YAML and does not establish driving
+or all collision-checker scenario behavior. Source/test assertions remain intact
+apart from the documented constant-initializer compatibility correction.
+Formatting/flake8/whitespace checks pass. No Fast DDS or full simulator is run.

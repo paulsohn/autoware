@@ -1,0 +1,23 @@
+load("//bazel/tests/ros_interfaces:defs.bzl", "interface_serialization_test")
+load("@rules_python//python:defs.bzl", "py_test")
+
+_CHECKERS = ["latency_checker", "trajectory_checker", "intersection_collision_checker", "rear_collision_checker"]
+[
+    py_test(
+        name = profile + "_runtime_test",
+        srcs = ["test_runtime.py"],
+        main = "test_runtime.py",
+        args = [profile],
+        data = ["@autoware_planning_validator//:ament_index", "@autoware_test_utils//:ament_index"] + [
+            "@autoware_planning_validator_" + module + "//:ament_index"
+            for module in (_CHECKERS if profile == "selected" else ([] if profile in ["base", "invalid"] else [profile]))
+        ],
+        env = {"ENABLE_AGNOCAST": "0", "LD_LIBRARY_PATH": "lib", "ROS_DOMAIN_ID": "91"},
+        precompile = "disabled",
+        tags = ["no-remote", "no-sandbox"],
+        deps = ["@ament_index_python", "@rcl_interfaces//:py", "@rclpy"],
+    )
+    for profile in ["base", "invalid"]
+]
+
+interface_serialization_test(package = "autoware_planning_validator")

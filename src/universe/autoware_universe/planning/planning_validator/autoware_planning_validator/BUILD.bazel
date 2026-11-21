@@ -1,0 +1,139 @@
+load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
+load("@rosidl_default_generators//:defs.bzl", "default_generators")
+load("@autoware_agnocast_wrapper//:defs.bzl", "autoware_agnocast_node")
+load("@rclcpp_components//:defs.bzl", "rclcpp_components_register_node")
+
+package(default_visibility = ["//visibility:public"])
+
+default_generators(
+    deps = ["//msg:PlanningValidatorStatus"],
+    dependencies = ["@builtin_interfaces"],
+)
+
+cc_library(
+    name = "autoware_planning_validator",
+    srcs = ["src/debug_marker.cpp", "src/utils.cpp"],
+    hdrs = glob(["include/**/*.hpp", "src/**/*.hpp"]),
+    includes = ["include", "src"],
+    deps = [
+        ":cc",
+        "@angles",
+        "@autoware_adapi_v1_msgs//:cc",
+        "@autoware_agnocast_wrapper//:autoware_agnocast_wrapper_library",
+        "@autoware_internal_debug_msgs//:cc",
+        "@autoware_internal_planning_msgs//:cc",
+        "@autoware_motion_utils",
+        "@autoware_perception_msgs//:cc",
+        "@autoware_planning_factor_interface",
+        "@autoware_planning_msgs//:cc",
+        "@autoware_planning_test_manager",
+        "@autoware_route_handler",
+        "@autoware_utils",
+        "@autoware_utils_debug",
+        "@autoware_utils_logging",
+        "@autoware_vehicle_info_utils",
+        "@diagnostic_updater//:diagnostic_updater_library",
+        "@geometry_msgs//:cc",
+        "@nav_msgs//:cc",
+        "@pluginlib//:pluginlib_library",
+        "@rclcpp//:rclcpp_library",
+        "@rclcpp_components//:rclcpp_components_library",
+        "@rosdistro//cc:boost.geometry",
+        "@sensor_msgs//:cc",
+        "@visualization_msgs//:cc",
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = [
+        ":cc_shared",
+        "@autoware_adapi_v1_msgs//:cc_shared",
+        "@autoware_agnocast_wrapper//:autoware_agnocast_wrapper",
+        "@autoware_internal_debug_msgs//:cc_shared",
+        "@autoware_internal_planning_msgs//:cc_shared",
+        "@autoware_motion_utils//:runtime_dynamic_deps",
+        "@autoware_perception_msgs//:cc_shared",
+        "@autoware_planning_factor_interface//:runtime_dynamic_deps",
+        "@autoware_planning_msgs//:cc_shared",
+        "@autoware_planning_test_manager//:runtime_dynamic_deps",
+        "@autoware_route_handler//:runtime_dynamic_deps",
+        "@autoware_utils_debug//:runtime_dynamic_deps",
+        "@diagnostic_updater//:diagnostic_updater",
+        "@geometry_msgs//:cc_shared",
+        "@logging_demo//:cc_shared",
+        "@nav_msgs//:cc_shared",
+        "@pcl_conversions//:pcl_conversions",
+        "@pluginlib//:pluginlib",
+        "@rclcpp//:rclcpp",
+        "@rclcpp_components//:rclcpp_components",
+        "@sensor_msgs//:cc_shared",
+        "@visualization_msgs//:cc_shared",
+    ],
+)
+
+cc_library(
+    name = "node_library",
+    srcs = ["src/manager.cpp", "src/node.cpp"],
+    deps = [":autoware_planning_validator"],
+)
+
+cc_shared_library(
+    name = "autoware_planning_validator_component",
+    dynamic_deps = [":runtime_dynamic_deps"],
+    deps = [":node_library"],
+)
+
+autoware_agnocast_node(
+    name = "autoware_planning_validator_node",
+    component = ":autoware_planning_validator_component",
+    package_name = "autoware_planning_validator",
+    plugin = "autoware::planning_validator::PlanningValidatorNode",
+    ros2_executor = "MultiThreadedExecutor",
+)
+
+cc_library(
+    name = "invalid_trajectory_publisher_library",
+    srcs = ["src/invalid_trajectory_publisher/invalid_trajectory_publisher.cpp"],
+    hdrs = ["src/invalid_trajectory_publisher/invalid_trajectory_publisher.hpp"],
+    deps = ["@autoware_planning_msgs//:cc", "@rclcpp//:rclcpp_library", "@rclcpp_components//:rclcpp_components_library"],
+)
+cc_shared_library(
+    name = "autoware_planning_validator_invalid_component",
+    dynamic_deps = [":runtime_dynamic_deps"],
+    deps = [":invalid_trajectory_publisher_library"],
+)
+rclcpp_components_register_node(
+    name = "invalid_trajectory_publisher",
+    node_name = "invalid_trajectory_publisher",
+    component = ":autoware_planning_validator_invalid_component",
+    plugin = "autoware::planning_validator::InvalidTrajectoryPublisherNode",
+)
+register_ament_files(
+    name = "node_executables",
+    files = [":autoware_planning_validator_node", ":invalid_trajectory_publisher"],
+    prefix = "lib/autoware_planning_validator",
+    strip_prefix = "*",
+)
+ament_index(
+    components = [":autoware_planning_validator_node_components", ":invalid_trajectory_publisher_record"],
+    libraries = [":cc_shared", ":py"],
+    data = glob(["config/**", "launch/**"]) + [":idl", ":node_executables", ":autoware_planning_validator_node_plugin"],
+    package_xml = "package.xml",
+)
+
+collect_transitive_dynamic_deps(
+    name = "test_dynamic_deps",
+    dynamic_deps = [":runtime_dynamic_deps", "@autoware_planning_validator_test_utils//:runtime_dynamic_deps", "@autoware_planning_test_manager//:runtime_dynamic_deps", "@ament_index_cpp//:ament_index_cpp"],
+)
+cc_test(
+    name = "test_autoware_planning_validator",
+    timeout = "long",
+    srcs = glob(["test/**/*.cpp"]),
+    data = [":ament_index", "@autoware_test_utils//:ament_index", "@autoware_route_handler//:ament_index", "@autoware_lanelet2_utils//:ament_index", "@autoware_vehicle_info_utils//:ament_index"],
+    dynamic_deps = [":test_dynamic_deps"],
+    env = {"ENABLE_AGNOCAST": "0", "LD_LIBRARY_PATH": "lib", "ROS_DOMAIN_ID": "90"},
+    deps = [":node_library", "@autoware_planning_validator_test_utils", "@autoware_planning_test_manager", "@ament_index_cpp//:ament_index_cpp_library", "@googletest//:gtest"],
+)
