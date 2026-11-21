@@ -1,0 +1,91 @@
+load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library")
+load("@rclcpp_components//:defs.bzl", "rclcpp_components_register_node")
+
+package(default_visibility = ["//visibility:public"])
+
+# CPU laserscan surface, matching the original CUDA_FOUND=false implementation.
+cc_library(
+    name = "autoware_probabilistic_occupancy_grid_map",
+    srcs = [
+        "lib/costmap_2d/occupancy_grid_map_base.cpp",
+        "lib/costmap_2d/occupancy_grid_map.cpp",
+        "lib/updater/binary_bayes_filter_updater.cpp",
+        "lib/utils/utils.cpp",
+        "src/laserscan_based_occupancy_grid_map/laserscan_based_occupancy_grid_map_node.cpp",
+    ],
+    hdrs = glob(["include/**/*.hpp", "src/laserscan_based_occupancy_grid_map/*.hpp"]),
+    includes = ["include", "src/laserscan_based_occupancy_grid_map"],
+    deps = [
+        "@autoware_utils",
+        "@autoware_internal_debug_msgs//:cc",
+        "@grid_map//:grid_map_costmap_2d",
+        "@laser_geometry//:laser_geometry_library",
+        "@message_filters//:message_filters_library",
+        "@nav2_costmap_2d//:nav2_costmap_2d_core_library",
+        "@nav_msgs//:cc",
+        "@nav2_util//:nav2_util_core_library",
+        "@pcl_conversions//:pcl_conversions_library",
+        "@pcl_ros//:pcl_ros_tf_library",
+        "@rclcpp//:rclcpp_library",
+        "@rclcpp_components//:rclcpp_components_library",
+        "@rosdistro//cc:eigen",
+        "@sensor_msgs//:cc",
+        "@tf2_eigen//:tf2_eigen_library",
+        "@tf2_ros//:tf2_ros_library",
+        "@tf2_sensor_msgs//:tf2_sensor_msgs_library",
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = [
+        "@autoware_internal_debug_msgs//:cc_shared",
+        "@grid_map//:grid_map_costmap_2d_runtime_dynamic_deps",
+        "@laser_geometry//:laser_geometry",
+        "@message_filters//:message_filters",
+        "@nav_msgs//:cc_shared",
+        "@nav2_util//:nav2_util_core",
+        "@pcl_conversions//:pcl_conversions",
+        "@pcl_ros//:pcl_ros_tf",
+        "@rclcpp//:rclcpp",
+        "@rclcpp_components//:rclcpp_components",
+        "@sensor_msgs//:cc_shared",
+        "@tf2_eigen//:tf2_eigen",
+        "@tf2_ros//:tf2_ros",
+        "@tf2_sensor_msgs//:tf2_sensor_msgs",
+    ],
+)
+
+cc_shared_library(
+    name = "autoware_probabilistic_occupancy_grid_map_component",
+    dynamic_deps = [":runtime_dynamic_deps"],
+    deps = [":autoware_probabilistic_occupancy_grid_map"],
+)
+
+rclcpp_components_register_node(
+    name = "laserscan_based_occupancy_grid_map_node",
+    node_name = "laserscan_based_occupancy_grid_map_node",
+    component = ":autoware_probabilistic_occupancy_grid_map_component",
+    plugin = "autoware::occupancy_grid_map::LaserscanBasedOccupancyGridMapNode",
+)
+
+register_ament_files(
+    name = "node_executables",
+    files = [":laserscan_based_occupancy_grid_map_node"],
+    prefix = "lib/autoware_probabilistic_occupancy_grid_map",
+    strip_prefix = "*",
+)
+
+ament_index(
+    package_xml = "package.xml",
+    data = glob(["config/**", "launch/**"]) + [
+        ":node_executables",
+    ],
+    deps = [
+        "@pointcloud_to_laserscan//:ament_index",
+        "@rclcpp_components//:ament_package",
+    ],
+    components = [":laserscan_based_occupancy_grid_map_node_record"],
+)

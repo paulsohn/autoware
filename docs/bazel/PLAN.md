@@ -1898,9 +1898,16 @@ Phase 7.3 task boundaries (selected 2026-11-21):
   behavior profiles and two clock-boundary regressions pass 183 active cases
   in fourteen targets. Preserve four original disabled tracker benchmarks.
   Recorded bag loading, conversion in both directions and traffic passthrough/
-  expiry are exercised. The selected CPU occupancy node and system/API closure
-  remain before simulator composition.
+  expiry are exercised. The selected system/API closure remains before
+  simulator composition.
   [Perception group](JOURNAL.md#2026-11-22-phase-732--dummy-traffic-light-publication).
+  The selected CPU occupancy pipeline is complete. Its original launch loads
+  the real converter and mapper and produces the expected probability grid;
+  127 original SDK/factory cases and two launch/teardown checks pass in seven
+  targets. RCR supplies Nav2; the generic grid-map module owns its missing
+  header adapter. Current filter and raytrace API corrections are separate
+  source changes. GPU pointcloud/fusion variants remain outside this CPU scope.
+  [Occupancy evidence](JOURNAL.md#2026-11-22-phase-732--cpu-occupancy-grid-pipeline).
   Continue in dependency order through shared planner helpers, the
   preset-selected behavior/motion plugins and controller libraries, then
   simulated perception and the selected system/API closure. The selected local

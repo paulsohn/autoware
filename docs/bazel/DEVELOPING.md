@@ -744,6 +744,14 @@ native consumers of inline/plugin APIs; a raw shared-library target alone need
 not link their direct references to its dependencies. See the
 [grid-map provider conventions](../../third_party/grid_map/README.md).
 
+The CPU laserscan occupancy target is
+@autoware_probabilistic_occupancy_grid_map//:laserscan_based_occupancy_grid_map_node.
+Its resource index declares the original launcher and static converter/container
+providers. Run //bazel/tests/occupancy_grid:launch_test for original-launch
+conversion/grid/shutdown checks. GPU pointcloud/fusion targets are not declared
+by this CPU surface.
+
+
 For the motion planner, the configured fully-qualified class name is also its
 module name: use it for both load and unload. Run
 //bazel/tests:motion_velocity_planner_runtime_test with --config=no-agnocast

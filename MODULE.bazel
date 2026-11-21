@@ -1490,3 +1490,9 @@ local_path_override(
     module_name = "autoware_dummy_traffic_light_publisher",
     path = "src/universe/autoware_universe/simulator/autoware_dummy_traffic_light_publisher",
 )
+
+bazel_dep(name = "autoware_probabilistic_occupancy_grid_map", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_probabilistic_occupancy_grid_map",
+    path = "src/universe/autoware_universe/perception/autoware_probabilistic_occupancy_grid_map",
+)

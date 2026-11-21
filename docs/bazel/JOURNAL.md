@@ -15495,3 +15495,56 @@ actual pointcloud converter and exact-synchronized inputs: occupied cells near
 the 2 m test wall, free cells, dimensions/resolution, bounded probabilities and
 clean container shutdown. Both behavior/teardown cases pass, followed by the
 [complete CPU occupancy gate](#2026-11-22-phase-732--cpu-occupancy-grid-pipeline) (129 cases/seven targets). No original tests are edited.
+
+## 2026-11-22: Phase 7.3.2 — CPU occupancy-grid pipeline
+
+Purpose: integrate the actual selected laserscan occupancy path, not the
+CUDA pointcloud/fusion variants. Inspect CMake's CUDA_FOUND=false branch and
+its five production sources (base/map, binary Bayes updater, utilities, node),
+original config/launch and comment-disabled test registrations (upstream issue
+#7724). There is no active original behavioral suite to silently omit; this
+module supports the selected CPU surface and makes no GPU completion claim.
+
+Add package-owned MODULE/BUILD and root adjacent local override. Use local
+Autoware utility/debug providers and declared Nav2, grid-map adapter, PCL, laser,
+filter and TF native/shared providers. Do not enable USE_CUDA or discover the
+host toolkit for this target; the actual CPU constructor passes false. No empty
+CUDA meta shim is needed for code outside that conditional surface.
+
+Keep the original ordinary rclcpp component/executable contract and one indexed
+resource owner. Its static launcher dependencies belong in ament_index deps:
+local pointcloud_to_laserscan's index and rclcpp_components' published
+ament_package. The latter supplies installed component_container executables;
+its index alone contains metadata, not those executables. Foreign providers in
+data instead of deps copy nested install trees below the caller's share and
+produce obscured-symlink errors even when a launch happens to pass. Move them to
+deps; keep only owned config/launch/executable registrations in data. The final
+build has no such errors. No custom container wrapper or metarepository label
+is required inside the source package.
+
+Add a root launch test that includes the original Python launch, chooses its
+own container, enables obstacle-only input and leaves original parameter files
+intact. Publish a retained map-to-base_link identity transform and three actual
+pointcloud points forming a 2 m wall. Both real components load in the published
+container. Check map frame, 300x300 dimensions, 0.5 m resolution, 90000 bounded
+probabilities, free space and occupied cells around that wall; assert clean
+SIGINT/exit. This proves the selected composed CPU pipeline, not map-aware
+simulator driving or real-time/GPU behavior.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast \
+  --local_test_jobs=1 --test_output=errors @grid_map//:tests \
+  @autoware_probabilistic_occupancy_grid_map//... \
+  //bazel/tests/occupancy_grid:all
+python3 -m flake8 --max-line-length=150 bazel/tests/occupancy_grid/test_launch.py
+git diff --check
+```
+
+All seven test targets pass: 127 SDK/factory cases plus two original-launch
+behavior/teardown cases (129 total), no failures/skips/disabled cases. Final
+invocation 6.3 seconds, runtime launch 3.4 seconds, reusing unchanged SDK results.
+Targeted C++ formatting, Python style and whitespace checks pass. CPU/Cyclone DDS
+with ENABLE_AGNOCAST=0; no Fast DDS or full simulator launch. Continue the
+preset-selected system/API implementation closure, then the accumulated typed-
+interface compilation gate before full simulator composition.
