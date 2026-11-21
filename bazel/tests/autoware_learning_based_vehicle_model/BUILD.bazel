@@ -1,0 +1,10 @@
+load("@rules_cc//cc:defs.bzl", "cc_test")
+
+cc_test(
+    name = "embedding_test",
+    srcs = ["test_embedding.cpp"],
+    deps = [
+        "@autoware_learning_based_vehicle_model",
+        "@googletest//:gtest_main",
+    ],
+)

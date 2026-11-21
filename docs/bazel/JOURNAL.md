@@ -9782,3 +9782,32 @@ wheel runtime onto GDB's libsource-highlight dependency. This changes no target
 runtime dependency selection. Targeted clang-format and whitespace checks pass.
 No older Python/ROS release, upstream CMake, GPU or middleware matrix is tested.
 The other simulator modules and full lane-driving milestone remain incomplete.
+
+## 2026-11-21: Phase 7.3.1 — Learning-based vehicle model
+
+Purpose: supply the local simulator's required C++/Python connector without
+host python3-dev/pybind11 packages. Inspect the standalone simulator repository's
+package.xml/CMake/source and use its local snapshot; this library has no existing
+behavior suite. Preserve all four C++ sources and the upstream hidden-visibility
+compile setting. Expose its public headers with package-local MODULE/BUILD
+rules and root local_path_override. Reuse the selected RCR pybind11 and declared
+rules_python Python 3.14 headers/libraries, as the established pyplot provider
+does; no empty pybind11_vendor/CMake shim is needed.
+
+The root-owned acceptance fixture checks textual signal-name mapping/unconnected
+signals and actual embedded-Python model loading, parameter/reset/dt dispatch,
+state/action conversion, repeated updates and external state reset. InterconnectedModel
+owns interpreter lifetime; the fixture must not create a second scoped interpreter.
+No real learned vehicle/model weights are selected
+by this fixture. Define this gate before introducing any compatibility fixes.
+
+Validation: the complete four-source module builds and both root cases pass
+with normal teardown, zero failures/skips, using the command in the immediately
+preceding source-fix entry. //bazel/tests:with_python supplies the declared
+interpreter home/import paths; it is a root test adapter, not a dependency of
+this component. The experiment exposed interpreter/member lifetime ordering;
+source correction b0be9d2d is documented separately above and in UPSTREAM_AWF.md.
+The fixture follows the model-owned interpreter contract and never starts a
+second interpreter. Targeted buildifier, clang-format and whitespace checks
+pass. The library task is complete; the three simulation nodes and original AWF
+driving milestone remain incomplete. No pre-commit or Fast DDS run is performed.

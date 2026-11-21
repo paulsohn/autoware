@@ -1623,12 +1623,47 @@ Complete each distribution boundary before expanding the application closure.
    variants below are additional completion gates. A pinned QEMU guest is an
    optional additional OCI packaging check; a bootable OSTree deployment would
    require its own guest boot gate. Neither establishes real-time or GPU support.
-3. **7.3 — AWF planning simulation.** Establish the exact tutorial/source/input
+3. **7.3 — AWF planning simulation (in progress).** Establish the exact tutorial/source/input
    contract, then demonstrate the original planning_simulator.launch.xml
    workflow and repeatable headless functional assertions. Integrate the
    selected autoware_universe planning/launch dependency closure first where
    required by that workflow. A smaller core-only experiment is optional and
    does not satisfy the AWF workflow gate by itself.
+
+Phase 7.3 task boundaries (selected 2026-11-21):
+
+- **7.3.1 — Simulation primitives (in progress).** Add local Bazel definitions
+  for autoware_learning_based_vehicle_model, autoware_simple_planning_simulator,
+  autoware_dummy_perception_publisher and autoware_vehicle_door_simulator.
+  Preserve the complete existing ten-case simulator and two-case SDF suites.
+  Add root-owned embedding, launch/motion, simulated-perception and door-service
+  checks. Keep package commits separate; validate related consumers together.
+- **7.3.2 — Selected Universe implementation closure.** Adopt the default
+  rule-based planning, control, simulated perception and supporting system/API
+  dependencies in related groups, starting from their actual local launch and
+  source declarations. Refine groups as each required dependency is inspected;
+  do not replace the Universe stack with the smaller core-only launch.
+- **7.3.3 — Original launch and resources.** Compose the actual
+  planning_simulator.launch.xml closure and its sample map/vehicle/sensor inputs.
+  Pin the tutorial map and scenario geometry before implementing its behavior
+  gate. Keep default rule-based behavior; migrate any selected model provider
+  and affected launcher paths together under the indexed-resource convention.
+- **7.3.4 — Lane-driving acceptance.** Demonstrate the original RViz workflow
+  and a repeatable equivalent headless case, including initial pose, route,
+  autonomous engagement, vehicle motion, bounded goal completion and clean
+  shutdown. Retain the runtime closure/packaging checks for the expanded graph.
+
+The version 1.4.0 tutorial and the current
+[lane-driving page](https://docs.autoware.org/main/simulation/planning-simulation/lane-driving/)
+were compared 2026-11-21: both use sample_vehicle/sample_sensor_kit, the original
+entrypoint, pose/goal selection and ChangeOperationMode. The local entrypoint
+selects Universe launch packages, rule-based planning, simulated perception,
+vehicle simulation and localization_sim_mode=api; default scenario_simulation
+and use_sim_time are false. The legacy HOME/data_path argument still present in
+unadopted launcher paths is not a new supported resource convention. Resolve
+that boundary when those consumers enter the graph, without unrelated edits now.
+Routine 7.3.1 validation is CPU/Cyclone DDS with Agnocast disabled. No Fast DDS,
+GPU, full communication matrix, QEMU or deployment-framework work is scheduled.
 
 Phase 7.2 task boundaries:
 

@@ -907,3 +907,9 @@ local_path_override(
     module_name = "autoware_tensorrt_yolox",
     path = "src/universe/autoware_universe/perception/autoware_tensorrt_yolox",
 )
+
+bazel_dep(name = "autoware_learning_based_vehicle_model", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_learning_based_vehicle_model",
+    path = "src/core/autoware_simple_planning_simulator/autoware_learning_based_vehicle_model",
+)

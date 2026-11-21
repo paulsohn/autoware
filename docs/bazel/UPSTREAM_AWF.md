@@ -1059,6 +1059,8 @@ C++14 consumers. Source-built spconv/cumm, upstream CMake and ARM are untested.
 
 ## Learning-based vehicle model finalizes Python before its objects
 
+Local source correction: `b0be9d2d`, separate from Bazel definitions.
+
 - [ ] Associate with a matching upstream fix. Reviewed 2026-11-21: no matching
   fix in the standalone simulator's inspected issue/PR list. Not submitted.
 

@@ -523,6 +523,17 @@ are retained in each test's undeclared outputs; GTest writes the normal XML
 report. Keep PLOT enabled and trajectory's ENABLE_TEST_PLOT=1 setting. The original
 route-handler suite includes one upstream-disabled case, reported separately.
 
+For the learning-based vehicle connector, InterconnectedModel owns its Python
+interpreter. Create the model before using Python APIs, and do not wrap it in a
+second scoped_interpreter. Python-owned submodels must be released before
+interpreter shutdown. Run its root integration fixture with the same launcher:
+
+```sh
+bazel test --config=runtime --config=no-agnocast --nocache_test_results \
+  --run_under=//bazel/tests:with_python \
+  //bazel/tests/autoware_learning_based_vehicle_model:embedding_test
+```
+
 ## Editing Python and launch packages
 
 Declare the Python library's complete source set and direct runtime imports in
