@@ -1416,3 +1416,15 @@ Local source fix: `5eb05315`.
   gate cases plus added positive/negative/in-range steering regression and the
   complete command group pass, Cyclone DDS/Agnocast off. See the source-fix
   journal for exact commands; no older-toolchain/colcon result is claimed.
+
+### External-converter heartbeat fixture needs explicit message-wrapper construction
+
+- [ ] Associate with a matching upstream change. Reviewed 2026-11-22: current
+  [original test](https://github.com/autowarefoundation/autoware_universe/blob/main/vehicle/autoware_external_cmd_converter/tests/test_external_cmd_converter.cpp)
+  still passes the mutable shared pointer directly; the scoped heartbeat search
+  finds unrelated JoyController work, not this fix. No submission is claimed.
+- The wrapper callback argument uses an explicit constructor. Construct that
+  wrapper at the test call without changing preparation or assertions and keep
+  the wrapper API explicit. All four original cases pass (9.2 seconds), followed
+  by installed startup and the whole sixteen-target command group. This is test
+  API compatibility rather than a Lyrical-only fix; see the source-fix journal.

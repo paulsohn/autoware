@@ -108,7 +108,8 @@ public:
     }
     ManualOperatorHeartbeat::SharedPtr msg = std::make_shared<ManualOperatorHeartbeat>();
     msg->ready = true;
-    external_cmd_converter_->on_heartbeat(msg);
+    external_cmd_converter_->on_heartbeat(
+      AUTOWARE_MESSAGE_CONST_SHARED_PTR(ManualOperatorHeartbeat){msg});
     GateMode gate;
     gate.data = (is_auto) ? tier4_control_msgs::msg::GateMode::AUTO
                           : tier4_control_msgs::msg::GateMode::EXTERNAL;
