@@ -1240,6 +1240,8 @@ Local source fix: `88b93365`.
 
 ### Cruise PID plugin redeclares persistent node parameters on reload
 
+Local source fix: `15352cbe`.
+
 - [ ] Associate with a matching upstream fix. Reviewed 2026-11-22: current
   [PID constructor](https://github.com/autowarefoundation/autoware_universe/blob/main/planning/motion_velocity_planner/autoware_motion_velocity_obstacle_cruise_module/src/pid_based_planner/pid_based_planner.cpp)
   retains 22 node.declare_parameter calls. PR searches for cruise/reload and

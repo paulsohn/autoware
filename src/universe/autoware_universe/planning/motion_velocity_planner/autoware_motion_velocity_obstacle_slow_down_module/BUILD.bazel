@@ -1,0 +1,90 @@
+load("@rosdistro//ament:defs.bzl", "ament_index")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "autoware_motion_velocity_obstacle_slow_down_module",
+    srcs = glob(["src/**/*.cpp"]),
+    hdrs = glob(["src/**/*.hpp"]),
+    includes = ["src"],
+    deps = [
+        "@autoware_internal_debug_msgs//:cc",
+        "@autoware_internal_planning_msgs//:cc",
+        "@autoware_motion_utils",
+        "@autoware_motion_velocity_planner_common",
+        "@autoware_objects_of_interest_marker_interface",
+        "@autoware_perception_msgs//:cc",
+        "@autoware_planning_factor_interface",
+        "@autoware_planning_msgs//:cc",
+        "@autoware_route_handler",
+        "@autoware_signal_processing",
+        "@autoware_utils",
+        "@autoware_utils_debug",
+        "@autoware_utils_geometry",
+        "@autoware_vehicle_info_utils",
+        "@geometry_msgs//:cc",
+        "@nav_msgs//:cc",
+        "@pluginlib//:pluginlib_library",
+        "@rclcpp//:rclcpp_library",
+        "@rosdistro//cc:boost.geometry",
+        "@rosdistro//cc:pcl_common",
+        "@sensor_msgs//:cc",
+        "@tf2//:tf2_library",
+        "@unique_identifier_msgs//:cc",
+        "@visualization_msgs//:cc",
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = [
+        "@autoware_internal_debug_msgs//:cc_shared",
+        "@autoware_internal_planning_msgs//:cc_shared",
+        "@autoware_motion_utils//:runtime_dynamic_deps",
+        "@autoware_motion_velocity_planner_common//:runtime_dynamic_deps",
+        "@autoware_objects_of_interest_marker_interface//:runtime_dynamic_deps",
+        "@autoware_perception_msgs//:cc_shared",
+        "@autoware_planning_factor_interface//:runtime_dynamic_deps",
+        "@autoware_planning_msgs//:cc_shared",
+        "@autoware_route_handler//:runtime_dynamic_deps",
+        "@autoware_utils_debug//:runtime_dynamic_deps",
+        "@geometry_msgs//:cc_shared",
+        "@nav_msgs//:cc_shared",
+        "@pluginlib//:pluginlib",
+        "@rclcpp//:rclcpp",
+        "@sensor_msgs//:cc_shared",
+        "@tf2//:tf2",
+        "@unique_identifier_msgs//:cc_shared",
+        "@visualization_msgs//:cc_shared",
+    ],
+)
+
+cc_shared_library(
+    name = "obstacle_slow_down_plugin",
+    shared_lib_name = "libautoware_motion_velocity_obstacle_slow_down_module.so",
+    dynamic_deps = [":runtime_dynamic_deps"],
+    deps = [":autoware_motion_velocity_obstacle_slow_down_module"],
+)
+
+ament_index(
+    data = glob(["config/**"]),
+    libraries = [":obstacle_slow_down_plugin"],
+    package_xml = "package.xml",
+    plugin_categories = {"plugins.xml": "autoware_motion_velocity_planner"},
+)
+
+collect_transitive_dynamic_deps(
+    name = "test_dynamic_deps",
+    dynamic_deps = [":runtime_dynamic_deps", "@ament_index_cpp//:ament_index_cpp", "@autoware_test_utils//:runtime_dynamic_deps"],
+)
+
+cc_test(
+    name = "test_autoware_motion_velocity_obstacle_slow_down_module",
+    timeout = "long",
+    srcs = glob(["test/**/*.cpp"]),
+    data = [":ament_index", "@autoware_test_utils//:ament_index"],
+    dynamic_deps = [":test_dynamic_deps"],
+    env = {"ENABLE_AGNOCAST": "0", "LD_LIBRARY_PATH": "lib", "ROS_DOMAIN_ID": "84"},
+    deps = [":autoware_motion_velocity_obstacle_slow_down_module", "@ament_index_cpp//:ament_index_cpp_library", "@autoware_test_utils", "@googletest//:gtest_main"],
+)

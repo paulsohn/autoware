@@ -1270,7 +1270,7 @@ py_binary(
 
 py_test(
     name = "motion_velocity_planner_runtime_test",
-    srcs = ["motion_velocity_planner/test_runtime.py"],
+    srcs = ["//bazel/tests/motion_velocity_planner:test_runtime.py"],
     args = ["$(rootpath @autoware_motion_velocity_planner//:autoware_motion_velocity_planner_node)"],
     data = [
         "@autoware_motion_velocity_obstacle_stop_module//:ament_index",
@@ -1281,7 +1281,7 @@ py_test(
         "ENABLE_AGNOCAST": "0",
         "LD_LIBRARY_PATH": "lib",
     },
-    main = "motion_velocity_planner/test_runtime.py",
+    main = "//bazel/tests/motion_velocity_planner:test_runtime.py",
     tags = [
         "no-remote",
         "no-sandbox",

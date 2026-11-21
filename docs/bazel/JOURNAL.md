@@ -12726,3 +12726,51 @@ then cleanly shuts down. The following module group gate passes its complete
 original suites and all real planner profiles, including the prior obstacle-stop
 baseline. Format/flake8/whitespace checks pass; no source algorithm changes.
 Commit this fix separately from the following Bazel definitions.
+
+## 2026-11-22: Phase 7.3.2 — Obstacle-slow-down motion plugin
+
+Purpose: expose the default-preset obstacle-slow-down factory. Inspect manifest/CMake,
+all 1 production sources and local headers, original XML/config and complete
+original suite (1 cases covering predicted-object planning-factor and speed reduction decisions).
+
+Add package-local module/library/shared-plugin/index declarations and a root
+local override after the common planner and actual local dependencies. Preserve
+the original plugin basename and category. Declare direct message, PCL, TF,
+planning-factor/marker helpers and flattened shared runtime providers. Expose
+every original test source with its indexed fixtures and actual test utility
+closure; do not add a new in-package test body.
+
+Reuse the root motion-planner adapter with a concrete module profile. The
+adapter loads the actual factory and its own indexed config, checks the expected
+module parameter and DLL, duplicate-load behavior, unload/reload and clean exit.
+Keep the existing obstacle-stop profile as a regression. Moving the shared script
+into its own root test package requires updating the baseline BUILD source/main
+labels together; its assertions remain intact.
+
+The complete related group uses this exact sequential gate; each module can
+select its own package and root test targets independently:
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_output=errors \
+  @autoware_motion_velocity_obstacle_slow_down_module//... \
+  @autoware_motion_velocity_obstacle_cruise_module//... \
+  @autoware_motion_velocity_dynamic_obstacle_stop_module//... \
+  //bazel/tests/autoware_motion_velocity_obstacle_slow_down_module:all \
+  //bazel/tests/autoware_motion_velocity_obstacle_cruise_module:all \
+  //bazel/tests/autoware_motion_velocity_dynamic_obstacle_stop_module:all \
+  //bazel/tests:motion_velocity_planner_runtime_test
+python3 -m flake8 --max-line-length=150 \
+  bazel/tests/motion_velocity_planner/test_runtime.py
+git diff --check
+```
+
+All 1 original cases and this real planner lifecycle pass. The complete
+group passes eleven cases across seven targets in 52.1 seconds, reusing unchanged
+results: native slow-down/cruise 0.4 seconds each, dynamic-stop 0.4 seconds, and
+all four planner profiles 1.2–1.3 seconds each. No failures/errors, disabled cases
+or skips occur. Format/flake8/whitespace checks pass. CPU/Cyclone DDS with
+ENABLE_AGNOCAST=0 is selected; no Fast DDS, kernel-dependent matrix, pre-commit
+or full simulator launch is run. Continue remaining selected motion modules
+and their local utility dependency before the controller group.
