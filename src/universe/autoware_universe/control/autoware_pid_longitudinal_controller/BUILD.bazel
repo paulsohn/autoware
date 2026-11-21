@@ -1,0 +1,86 @@
+load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "autoware_pid_longitudinal_controller",
+    srcs = glob(["src/**/*.cpp"]),
+    hdrs = glob(["include/**/*.hpp"]),
+    includes = ["include", "src"],
+    deps = [
+        "@autoware_adapi_v1_msgs//:cc",
+        "@autoware_control_msgs//:cc",
+        "@autoware_internal_debug_msgs//:cc",
+        "@autoware_interpolation",
+        "@autoware_motion_utils",
+        "@autoware_planning_msgs//:cc",
+        "@autoware_trajectory_follower_base",
+        "@autoware_utils",
+        "@autoware_vehicle_info_utils",
+        "@autoware_vehicle_msgs//:cc",
+        "@diagnostic_msgs//:cc",
+        "@diagnostic_updater//:diagnostic_updater_library",
+        "@geometry_msgs//:cc",
+        "@rclcpp//:rclcpp_library",
+        "@rclcpp_components//:rclcpp_components_library",
+        "@rosdistro//cc:eigen",
+        "@rosdistro//cc:fmt",
+        "@rosdistro//cc:tl_expected",
+        "@std_msgs//:cc",
+        "@tf2//:tf2_library",
+        "@tf2_ros//:tf2_ros_library",
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = [
+        "@autoware_adapi_v1_msgs//:cc_shared",
+        "@autoware_control_msgs//:cc_shared",
+        "@autoware_internal_debug_msgs//:cc_shared",
+        "@autoware_motion_utils//:runtime_dynamic_deps",
+        "@autoware_planning_msgs//:cc_shared",
+        "@autoware_trajectory_follower_base//:runtime_dynamic_deps",
+        "@autoware_vehicle_msgs//:cc_shared",
+        "@diagnostic_msgs//:cc_shared",
+        "@diagnostic_updater//:diagnostic_updater",
+        "@geometry_msgs//:cc_shared",
+        "@rclcpp//:rclcpp",
+        "@rclcpp_components//:rclcpp_components",
+        "@std_msgs//:cc_shared",
+        "@tf2//:tf2",
+        "@tf2_ros//:tf2_ros",
+    ],
+)
+
+ament_index(
+    package_xml = "package.xml",
+    data = glob(["config/**"]) + [],
+    components = [],
+)
+
+collect_transitive_dynamic_deps(
+    name = "test_dynamic_deps",
+    dynamic_deps = [
+        ":runtime_dynamic_deps",
+        "@ament_index_cpp//:ament_index_cpp",
+    ],
+)
+
+cc_test(
+    name = "test_autoware_pid_longitudinal_controller",
+    timeout = "long",
+    srcs = glob(["test/**/*.cpp"]),
+    data = [
+        ":ament_index",
+    ],
+    dynamic_deps = [":test_dynamic_deps"],
+    env = {"ENABLE_AGNOCAST": "0", "LD_LIBRARY_PATH": "lib", "ROS_DOMAIN_ID": "93"},
+    deps = [
+        ":autoware_pid_longitudinal_controller",
+        "@ament_index_cpp//:ament_index_cpp_library",
+        "@googletest//:gtest_main",
+    ],
+)

@@ -1355,3 +1355,9 @@ local_path_override(
     module_name = "autoware_mpc_lateral_controller",
     path = "src/universe/autoware_universe/control/autoware_mpc_lateral_controller",
 )
+
+bazel_dep(name = "autoware_pid_longitudinal_controller", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_pid_longitudinal_controller",
+    path = "src/universe/autoware_universe/control/autoware_pid_longitudinal_controller",
+)
