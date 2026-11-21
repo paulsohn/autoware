@@ -1111,3 +1111,9 @@ local_path_override(
     module_name = "autoware_behavior_path_goal_planner_module",
     path = "src/universe/autoware_universe/planning/behavior_path_planner/autoware_behavior_path_goal_planner_module",
 )
+
+bazel_dep(name = "autoware_behavior_velocity_rtc_interface", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_behavior_velocity_rtc_interface",
+    path = "src/universe/autoware_universe/planning/behavior_velocity_planner/autoware_behavior_velocity_rtc_interface",
+)

@@ -11800,3 +11800,50 @@ skips; unchanged native results are reused. Flake8 and whitespace checks pass.
 CPU/Cyclone DDS with ENABLE_AGNOCAST=0 is selected. No pre-commit, Fast DDS,
 full simulator assembly or unchanged deployment matrix is run. Selected behavior-
 path scenes are now available; behavior/motion velocity and controllers follow.
+
+## 2026-11-22: Phase 7.3.2 — Behavior-velocity RTC scene support
+
+Purpose: provide the shared approval/safety interface needed by the selected
+behavior-velocity plugins. Inspect both legacy and experimental implementation
+files/public headers and manifest/CMake. CMake registers no native tests. Add a
+package-owned module/library/index and root local override, declaring the actual
+planner-common, RTC, planning-factor, message and utility inputs. Export the
+existing shared runtime providers; neither a host package nor a source patch is
+needed. Both implementations build.
+
+Add a root native consumer deriving the legacy scene API. Check module identity,
+initial inactive/unsafe state, automatic activation following safety when RTC
+is off, independent safety/approval with RTC on, explicit activation, distance
+and returning to unsafe. Initialize the RTC-enabled flag before exercising that
+API. This is a scene-state consumer, not a vehicle-level approval test; selected
+plugin suites and experimental executable checks follow.
+
+Reuse the existing root planner lifecycle adapter for subsequent plugin packages:
+make the module an explicit argument, derive its factory/configuration names,
+and export the source from its own root test package. Existing standard and
+experimental stop-line gates retain their factory, DLL, parameter checks,
+unload/reload and clean-exit assertions. Future package test declarations can
+reference that exported adapter with their own indexes; source components do
+not acquire root labels. Preserve the stop-line-specific duration assertion.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_output=errors @autoware_behavior_velocity_rtc_interface//... \
+  //bazel/tests/autoware_behavior_velocity_rtc_interface:consumer_test \
+  //bazel/tests:behavior_velocity_planner_standard_runtime_test \
+  //bazel/tests:behavior_velocity_planner_experimental_runtime_test
+python3 -m flake8 --max-line-length=150 \
+  bazel/tests/behavior_velocity_planner/test_runtime.py
+clang-format --dry-run --Werror \
+  bazel/tests/autoware_behavior_velocity_rtc_interface/consumer_test.cpp
+git diff --check
+```
+
+All package targets and both implementations build. The native state consumer
+passes in 0.6 seconds; standard/experimental stop-line lifecycles pass in 1.4/1.5
+seconds. The final three-target invocation passes three cases in 40.3 seconds,
+with no failures/errors/skips. Targeted formatting, flake8 and whitespace checks
+pass. CPU/Cyclone DDS with ENABLE_AGNOCAST=0 is selected; no pre-commit, Fast DDS
+or full simulator launch runs. Next integrate selected traffic-light, detection,
+virtual-light and no-stopping-area consumers, preserving their complete suites.

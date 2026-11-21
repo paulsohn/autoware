@@ -1,0 +1,38 @@
+load("@rosdistro//ament:defs.bzl", "ament_index")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "autoware_behavior_velocity_rtc_interface",
+    srcs = glob(["src/**/*.cpp"]),
+    hdrs = glob(["include/**/*.hpp"]),
+    strip_include_prefix = "include",
+    deps = [
+        "@autoware_behavior_velocity_planner_common",
+        "@autoware_motion_utils",
+        "@autoware_planning_factor_interface",
+        "@autoware_planning_msgs//:cc",
+        "@autoware_rtc_interface",
+        "@autoware_utils",
+        "@rclcpp//:rclcpp_library",
+        "@rclcpp_components//:rclcpp_components_library",
+        "@tier4_planning_msgs//:cc",
+        "@tier4_rtc_msgs//:cc",
+        "@unique_identifier_msgs//:cc",
+        "@builtin_interfaces//:cc",
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = [
+        "@autoware_behavior_velocity_planner_common//:runtime_dynamic_deps",
+        "@autoware_rtc_interface//:runtime_dynamic_deps",
+        "@rclcpp_components//:rclcpp_components",
+        "@tier4_rtc_msgs//:cc_shared",
+    ],
+)
+
+ament_index(package_xml = "package.xml")

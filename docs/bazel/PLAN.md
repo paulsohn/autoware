@@ -1825,6 +1825,10 @@ Phase 7.3 task boundaries (selected 2026-11-21):
   loads all eight selected factories, updates parameters and exits cleanly.
   The pinned libc++ PSTL backend is serial; no performance claim is made.
   [Evidence](JOURNAL.md#2026-11-22-phase-732--goal-planner-scene-plugin).
+  Behavior-velocity RTC support builds both original implementations and passes
+  its root state consumer. The reusable executable adapter retains passing
+  standard/experimental stop-line lifecycle gates.
+  [Evidence](JOURNAL.md#2026-11-22-phase-732--behavior-velocity-rtc-scene-support).
   Continue in dependency order through shared planner helpers, the
   preset-selected behavior/motion plugins and controller libraries, then
   simulated perception and the selected system/API closure. CMake-only shims

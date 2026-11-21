@@ -1,0 +1,8 @@
+load("@rules_cc//cc:defs.bzl", "cc_test")
+
+cc_test(
+    name = "consumer_test",
+    srcs = ["consumer_test.cpp"],
+    dynamic_deps = ["@autoware_behavior_velocity_rtc_interface//:runtime_dynamic_deps"],
+    deps = ["@autoware_behavior_velocity_rtc_interface", "@googletest//:gtest_main"],
+)

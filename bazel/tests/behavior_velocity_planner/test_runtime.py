@@ -1,7 +1,7 @@
 # Copyright 2026 Taeseung Sohn
 # SPDX-License-Identifier: Apache-2.0
 
-"""Load each stop-line factory through its real planner executable."""
+"""Load selected scene factories through their real planner executable."""
 
 import os
 from pathlib import Path
@@ -19,8 +19,10 @@ import rclpy
 
 EXECUTABLE = str(Path(sys.argv.pop(1)).resolve())
 EXPERIMENTAL = sys.argv.pop(1) == '1'
+MODULE = sys.argv.pop(1)
+FACTORY = ''.join(part.capitalize() for part in MODULE.split('_')) + 'ModulePlugin'
 PLUGIN = ('autoware::behavior_velocity_planner::' +
-          ('experimental::' if EXPERIMENTAL else '') + 'StopLineModulePlugin')
+          ('experimental::' if EXPERIMENTAL else '') + FACTORY)
 
 
 class PlannerRuntime(unittest.TestCase):
@@ -34,12 +36,12 @@ class PlannerRuntime(unittest.TestCase):
         for package, files in [
             ('autoware_test_utils', ['test_common.param.yaml', 'test_nearest_search.param.yaml',
                                      'test_vehicle_info.param.yaml']),
-            ('autoware_velocity_smoother', ['default_velocity_smoother.param.yaml',
-                                          'Analytical.param.yaml']),
+            ('autoware_velocity_smoother',
+             ['default_velocity_smoother.param.yaml', 'Analytical.param.yaml']),
             ('autoware_behavior_velocity_planner_common',
              ['behavior_velocity_planner_common.param.yaml']),
             ('autoware_behavior_velocity_planner', ['behavior_velocity_planner.param.yaml']),
-            ('autoware_behavior_velocity_stop_line_module', ['stop_line.param.yaml']),
+            ('autoware_behavior_velocity_' + MODULE + '_module', [MODULE + '.param.yaml']),
         ]:
             share = Path(get_package_share_directory(package))
             for name in files:
@@ -77,13 +79,18 @@ class PlannerRuntime(unittest.TestCase):
                     loaded = "The scene plugin '" + PLUGIN + "' is loaded."
                     wait(lambda: loaded in output())
                     maps = Path('/proc', str(process.pid), 'maps').read_text()
-                    self.assertIn('libautoware_behavior_velocity_stop_line_module.so', maps)
+                    self.assertTrue('libautoware_behavior_velocity_' + MODULE + '_module.so' in maps,
+                                    MODULE + ' plugin DLL is not mapped')
                     self.assertNotIn('libagnocast_heaphook.so', maps)
-                    response = call(parameters, GetParameters.Request(
-                        names=['forward_path_length', 'stop_line.required_stop_duration_sec']))
-                    self.assertEqual([v.double_value for v in response.values], [1000.0, 1.0])
-                    call(unload, UnloadPlugin.Request(plugin_name="stop_line"))
-                    wait(lambda: "The scene plugin 'stop_line' is unloaded." in output())
+                    names = ['forward_path_length']
+                    values = [1000.0]
+                    if MODULE == 'stop_line':
+                        names += ['stop_line.required_stop_duration_sec']
+                        values += [1.0]
+                    response = call(parameters, GetParameters.Request(names=names))
+                    self.assertEqual([v.double_value for v in response.values], values)
+                    call(unload, UnloadPlugin.Request(plugin_name=MODULE))
+                    wait(lambda: "The scene plugin '" + MODULE + "' is unloaded." in output())
                     call(load, LoadPlugin.Request(plugin_name=PLUGIN))
                     wait(lambda: output().count(loaded) == 2)
                     self.assertNotIn('is not available', output())
