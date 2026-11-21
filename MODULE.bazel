@@ -1508,3 +1508,9 @@ local_path_override(
     module_name = "autoware_duplicated_node_checker",
     path = "src/universe/autoware_universe/system/autoware_duplicated_node_checker",
 )
+
+bazel_dep(name = "autoware_processing_time_checker", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_processing_time_checker",
+    path = "src/universe/autoware_universe/system/autoware_processing_time_checker",
+)

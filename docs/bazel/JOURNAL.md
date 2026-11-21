@@ -15601,3 +15601,20 @@ The complete gate passes all sixteen targets/92 active cases: 77 original graph
 cases and fifteen root executable/behavior profiles. No failures or introduced
 skips. CPU/Cyclone DDS, ENABLE_AGNOCAST=0, LLVM/libc++ 21.1.8 and Python 3.14.4.
 No Fast DDS, full simulator launch, older ROS/colcon or real-time acceptance.
+
+## 2026-11-22: Phase 7.3.2 — Processing-time monitoring
+
+Purpose: make autoware_processing_time_checker part of the selected CPU system implementation
+closure with declared build/runtime inputs. Inspect the original single CPP/header and launch/config contract. Add a package-local native library, unique component DSO, wrapper executable and indexed config/launch. Use native JSON and existing utility/metric providers, and the separately committed logging API correction. output_metrics is a typed launch-provided boolean, absent from the original parameter file; pass it explicitly in the root fixture.
+
+Publish 12.5 ms on a configured probe topic; require processing_time/probe in the actual MetricArray and min=12.5/count>0 in the shutdown JSON under a temporary ROS_LOG_DIR.
+
+There are no original functional tests in this package (CMake only registers lint or no tests). Preserve that inventory and add the behavior check outside the source package.
+
+Verification: run the package's complete @autoware_processing_time_checker//... target pattern and //bazel/tests/system_nodes:processing_runtime_test using
+the exact clean-environment command and shared configuration recorded in the
+[system gate](#2026-11-22-phase-732--dummy-diagnostic-publication-and-system-gate).
+The complete gate passes all sixteen targets/92 active cases: 77 original graph
+cases and fifteen root executable/behavior profiles. No failures or introduced
+skips. CPU/Cyclone DDS, ENABLE_AGNOCAST=0, LLVM/libc++ 21.1.8 and Python 3.14.4.
+No Fast DDS, full simulator launch, older ROS/colcon or real-time acceptance.
