@@ -15435,3 +15435,35 @@ tracker benchmarks stay disabled; no introduced skips or failures. The final
 evaluator suite. CPU/Cyclone DDS, ENABLE_AGNOCAST=0, LLVM/libc++ 21.1.8, Boost 1.90,
 Python 3.14.4 and Bazel 9.3.2 are selected. No Fast DDS, full simulator launch,
 older-ROS/colcon execution or real-time performance acceptance is claimed.
+
+## 2026-11-22: Phase 7.3.2 — Grid-map costmap adapter provider
+
+Purpose: supply the actual generic costmap adapter required by the selected CPU
+occupancy implementation. Reuse the already pinned grid-map 2.5.0 source archive
+and inspect grid_map_costmap_2d manifest/CMake, its two headers and all three test
+translation units. No local source snapshot exists. Rechecking all six grid-map
+module/package metadata URLs on 2026-11-22 still returns RCR HTTP 404. Nav2 itself
+has a usable published 1.5.2-2.rcr.0 provider; select that at the root rather than
+replacing grid-map or inventing an empty Nav2 shim.
+
+Extend third_party/grid_map's archive overlay and forwarding labels. This CMake
+INTERFACE library is genuinely header-only: export native core, geometry, Nav2
+costmap core, TF and Eigen effects without manufacturing another shared object.
+Keep a distinct grid_map_costmap_2d package index and runtime dependency aggregate.
+Register the sixteen typed conversion cases and both existing ROS costmap cases,
+including each original main. Preserve all existing core/CV/ROS suites/factory
+checks: six targets, 127 cases, zero failures/skips. The real ROS tests configure
+and activate Nav2 nodes with the original empty layer list and real transforms.
+
+The published Nav2 index pulls its build/test/runtime package closure, including
+map-server and transport codecs; prepare those pinned Bazel inputs rather than
+using host installs or dropping the ROS suite. This is the generic SDK test's
+broader resource closure, not evidence that every codec belongs in the application
+payload. Native application consumers use the core C++ provider.
+
+Verification: the [complete CPU occupancy gate](#2026-11-22-phase-732--cpu-occupancy-grid-pipeline) passes all seven targets with these six unchanged
+SDK results (new conversion target 0.1 seconds, ROS target 2.9 seconds). The final
+combined invocation takes 6.3 seconds; initial dependency materialization took
+longer. CPU/Cyclone DDS, Agnocast off. No SDK source/test edits or skips; no
+Fast DDS, GPU surface or full simulator launch. The following source/module
+tasks complete the actual consumer independently from this provider boundary.

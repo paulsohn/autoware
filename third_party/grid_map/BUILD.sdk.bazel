@@ -241,3 +241,59 @@ filegroup(
 )
 
 exports_files(["grid_map_ros/resource/double_chatter/metadata.yaml"])
+
+
+# The upstream costmap adapter is an INTERFACE library, not another C++ DSO.
+cc_library(
+    name = "grid_map_costmap_2d",
+    hdrs = glob(["grid_map_costmap_2d/include/**/*.hpp"]),
+    strip_include_prefix = "grid_map_costmap_2d/include",
+    deps = [
+        ":grid_map_core",
+        "@geometry_msgs//:cc",
+        "@nav2_costmap_2d//:nav2_costmap_2d_core_library",
+        "@tf2_geometry_msgs//:tf2_geometry_msgs_library",
+        "@tf2_ros//:tf2_ros_library",
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "grid_map_costmap_2d_runtime_dynamic_deps",
+    dynamic_deps = [
+        ":grid_map_core_shared",
+        "@geometry_msgs//:cc_shared",
+        "@nav2_costmap_2d//:nav2_costmap_2d_core",
+        "@tf2_geometry_msgs//:tf2_geometry_msgs",
+        "@tf2_ros//:tf2_ros",
+    ],
+)
+
+ament_index(
+    name = "grid_map_costmap_2d_index",
+    export_name = "grid_map_costmap_2d",
+    package_xml = "grid_map_costmap_2d/package.xml",
+)
+
+cc_test(
+    name = "test_grid_map_costmap_2d",
+    srcs = [
+        "grid_map_costmap_2d/test/test_grid_map_costmap_2d.cpp",
+        "grid_map_costmap_2d/test/test_costmap_2d_converter.cpp",
+    ],
+    dynamic_deps = [":grid_map_costmap_2d_runtime_dynamic_deps"],
+    env = {"LD_LIBRARY_PATH": "lib"},
+    deps = [":grid_map_costmap_2d", "@googletest//:gtest"],
+)
+
+cc_test(
+    name = "test_grid_map_costmap_2d_ros",
+    timeout = "long",
+    srcs = [
+        "grid_map_costmap_2d/test/test_costmap_2d_ros.cpp",
+        "grid_map_costmap_2d/test/test_costmap_2d_ros.hpp",
+    ],
+    data = ["@nav2_costmap_2d//:ament_index"],
+    dynamic_deps = [":grid_map_costmap_2d_runtime_dynamic_deps"],
+    env = {"LD_LIBRARY_PATH": "lib", "ROS_DOMAIN_ID": "99"},
+    deps = [":grid_map_costmap_2d", "@googletest//:gtest"],
+)

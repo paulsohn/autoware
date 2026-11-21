@@ -64,5 +64,11 @@ test_suite(
         "@grid_map_source//:test_grid_map_cv",
         ":test_grid_map_ros",
         ":filter_factory_test",
+        "@grid_map_source//:test_grid_map_costmap_2d",
+        "@grid_map_source//:test_grid_map_costmap_2d_ros",
     ],
 )
+
+alias(name = "grid_map_costmap_2d", actual = "@grid_map_source//:grid_map_costmap_2d")
+alias(name = "grid_map_costmap_2d_runtime_dynamic_deps", actual = "@grid_map_source//:grid_map_costmap_2d_runtime_dynamic_deps")
+alias(name = "grid_map_costmap_2d_index", actual = "@grid_map_source//:grid_map_costmap_2d_index")
