@@ -1483,3 +1483,9 @@ local_path_override(
     module_name = "autoware_perception_online_evaluator",
     path = "src/universe/autoware_universe/evaluator/autoware_perception_online_evaluator",
 )
+
+bazel_dep(name = "autoware_dummy_traffic_light_publisher", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_dummy_traffic_light_publisher",
+    path = "src/universe/autoware_universe/simulator/autoware_dummy_traffic_light_publisher",
+)

@@ -1892,6 +1892,15 @@ Phase 7.3 task boundaries (selected 2026-11-21):
   validator case. The logging API fix is separate; debug-message introspection
   providers are declared explicitly for installed processes.
   [Safety group](JOURNAL.md#2026-11-22-phase-732--control-evaluation).
+  Simulated-perception tracking, map-based prediction, dummy traffic lights
+  and analytics/evaluation are complete, including local muSSP and both local
+  pointcloud/laserscan converters. Their full original suites, eight installed
+  behavior profiles and two clock-boundary regressions pass 183 active cases
+  in fourteen targets. Preserve four original disabled tracker benchmarks.
+  Recorded bag loading, conversion in both directions and traffic passthrough/
+  expiry are exercised. The selected CPU occupancy node and system/API closure
+  remain before simulator composition.
+  [Perception group](JOURNAL.md#2026-11-22-phase-732--dummy-traffic-light-publication).
   Continue in dependency order through shared planner helpers, the
   preset-selected behavior/motion plugins and controller libraries, then
   simulated perception and the selected system/API closure. The selected local
