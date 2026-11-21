@@ -24,13 +24,13 @@ cleanup() {
 }
 trap cleanup EXIT
 child=()
-case ${1:?cyclone, cdr, host, fixed, byte-copy, byte-view or zenoh} in
+case ${1:?cyclone, cdr, host, fixed, byte-copy, byte-view, output-private, output-shared or zenoh} in
   cyclone) export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp;;
   zenoh)
     export RMW_IMPLEMENTATION=rmw_zenoh_cpp
     /opt/ros/lyrical/lib/rmw_zenoh_cpp/rmw_zenohd & nodes+=("$!")
     sleep 1;;
-  cdr|host|fixed|byte-copy|byte-view)
+  cdr|host|fixed|byte-copy|byte-view|output-private|output-shared)
     export RMW_IMPLEMENTATION=rmw_agnocast
     export AGNOCAST_RMW_TOPIC=/sync/left:/sync/right:/sync/top:/output
     if [[ $1 == cdr ]]; then export AGNOCAST_RMW_BUFFER_CDR=1; else export AGNOCAST_RMW_HOST_CLOUD=1; fi
@@ -42,12 +42,15 @@ config=src/universe/autoware_universe/sensing/autoware_pointcloud_preprocessor/c
 "${child[@]}" /opt/ros/lyrical/lib/tf2_ros/static_transform_publisher --x 4 --frame-id base_link --child-frame-id sync_lidar &
 nodes+=("$!")
 sync=("${child[@]}" "$bin/concatenate_and_time_sync_node")
-if [[ $1 == fixed || $1 == byte-* ]]; then
+if [[ $1 == fixed || $1 == byte-* || $1 == output-* ]]; then
   export SYNC_READY_FILE="$scratch/ready"
   runner="$(ros2 pkg prefix agnocast_rmw_loan_probe)/lib/agnocast_rmw_loan_probe/crop_wait_runner"
   input=()
-  if [[ $1 == byte-* ]]; then input+=(SYNC_BYTE_INPUT=1); fi
-  if [[ $1 == byte-view ]]; then input+=(SYNC_VIEW_INPUT=1 AGNOCAST_RMW_HOST_VIEW=1); fi
+  if [[ $1 == byte-* || $1 == output-* ]]; then input+=(SYNC_BYTE_INPUT=1); fi
+  if [[ $1 == byte-view || $1 == output-* ]]; then input+=(SYNC_VIEW_INPUT=1 AGNOCAST_RMW_HOST_VIEW=1); fi
+  if [[ $1 == output-* ]]; then input+=(SYNC_LOAN_OUTPUT=1 AGNOCAST_RMW_HOST_LOAN=1); fi
+  if [[ $1 == output-shared ]]; then input+=(SYNC_SHARED_OUTPUT=1); fi
+  if [[ -n ${SYNC_TRACE_DIR:-} ]]; then input+=(BENCH_HOP_WRITER="$SYNC_TRACE_DIR/writer.csv"); fi
   sync=("${child[@]}" "${input[@]}" AGNOCAST_RMW_DIRECT_WAIT=1 AGNOCAST_FIXED_PROBE=1 AGNOCAST_RMW_READY_FD=0
     BENCH_CSV="$SYNC_READY_FILE" "$runner" libuniverse_sync.so
     autoware::pointcloud_preprocessor::PointCloudConcatenateDataSynchronizerComponent)
@@ -56,5 +59,7 @@ fi
   -p 'input_topics:=[/sync/left,/sync/right,/sync/top]' -p is_motion_compensated:=false \
   -p publish_synchronized_pointcloud:=false -p timeout_sec:=0.04 &
 nodes+=("$!")
-"${child[@]}" "$bin/sync_fixture"
+trace=()
+if [[ -n ${SYNC_TRACE_DIR:-} ]]; then trace=(env BENCH_HOP_READER="$SYNC_TRACE_DIR/reader.csv"); fi
+"${trace[@]}" "${child[@]}" "$bin/sync_fixture"
 for pid in "${nodes[@]}"; do kill -0 "$pid"; done

@@ -1,0 +1,33 @@
+Batch | Transport | Complete median/p95 ms | Partial median/p95 ms | Child CPU s
+large | byte-view | 2.83/3.28 | 41.61/42.04 | 1.135
+large | output-shared | 3.86/5.16 | 42.45/43.46 | 1.112
+large | output-private | 2.77/4.04 | 41.60/42.23 | 1.185
+repeat | byte-view | 2.51/3.46 | 41.45/42.23 | 1.137
+repeat | output-shared | 3.99/5.01 | 42.48/43.20 | 1.140
+repeat | output-private | 2.67/3.09 | 41.63/42.03 | 1.103
+pair3 | byte-view | 2.56/3.74 | 41.61/42.89 | 1.086
+pair3 | output-shared | 3.99/5.11 | 42.46/43.87 | 1.138
+pair4 | byte-view | 2.43/3.29 | 41.45/42.29 | 1.130
+pair4 | output-shared | 3.58/4.64 | 42.19/42.67 | 1.165
+ref1 | cyclone | 8.47/13.04 | 46.32/47.35 | 0.900
+ref1 | zenoh | 3.01/3.63 | 42.12/43.67 | 1.396
+ref2 | cyclone | 3.98/4.49 | 42.86/43.16 | 0.804
+ref2 | zenoh | 2.53/3.27 | 41.98/43.10 | 1.302
+Pass | Mode | Group | Median reserve/append/publish (us)
+1 | byte-view | full | 2.2/75.8/107.5
+1 | byte-view | partial | 2.3/48.0/63.1
+1 | output-private | full | 1.9/60.8/79.2
+1 | output-private | partial | 3.1/48.4/75.5
+1 | output-shared | full | 2.5/78.9/15.2
+1 | output-shared | partial | 2.7/47.8/18.9
+2 | byte-view | full | 1.9/62.3/72.4
+2 | byte-view | partial | 3.1/43.8/56.3
+2 | output-private | full | 1.7/60.5/103.8
+2 | output-private | partial | 3.1/50.0/66.7
+2 | output-shared | full | 2.7/78.3/16.4
+2 | output-shared | partial | 2.8/51.8/21.9
+Pass | Mode | Full-group median stamp-to-publish/encode/handoff-to-take/restore (us)
+1 | output-private | 1478.4/66.7/58.5/695.3
+1 | output-shared | 2919.2/0.6/59.8/659.4
+2 | output-private | 1551.3/67.1/55.8/650.4
+2 | output-shared | 2492.2/0.6/65.3/670.4

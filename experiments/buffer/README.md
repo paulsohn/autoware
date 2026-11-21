@@ -187,3 +187,7 @@ the performance ranking open. The next Universe experiment is synchronizer
 output publication from retained host inputs.
 [Reproduction and decision](JOURNAL.md#2026-11-21--one-universe-cuda-transform-edge-on-the-laptop)
 and [per-round measurements](../../src/universe_gpu_edge_benchmark/results.csv).
+
+The CPU track has since tested publication of the completed synchronizer
+output. Retained input with ordinary publication remains the laptop baseline.
+[Publisher-loan comparison and next diagnostic](../rmw-agnocast/README.md#transfer-the-universe-synchronizer-output-through-a-publisher-loan).

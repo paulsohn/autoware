@@ -1474,3 +1474,44 @@ enqueue through delayed take, allocation reuse, dropped samples and endpoint
 teardown before relying on that route. This fixture does not run the entire
 Universe GPU component or compare Agnocast and Cyclone GPU transports.
 [Two-round results](../../src/universe_gpu_edge_benchmark/results.csv)
+
+## 2026-11-21 — Move the CPU synchronizer's finished output into a publisher loan
+
+Followed the Universe synchronizer's final unique-pointer publish through
+rclcpp to the host-cloud RMW's const-message publish. That route constructs
+HostCloud by copying the output vector. Tested a short native ROS publisher
+loan at the same call site. A negative control moved a privately allocated
+message into the loan. The candidate also reserved the completed output's
+point storage in the shared writer pool before the existing append loop.
+Kept the input view, blocking executor, TF and component code identical
+across the three RMW cases. The edits apply only to the fixture's build
+copies. The tracked Universe and RMW implementations required no change.
+
+The private-loan control reported 24 publisher loans and 24 private copies.
+The shared-output case reported 24 loans and zero private copies. Both
+validated every point, TF and source metadata on padded input, including
+the 12 intentional timeout groups. Both observed release of all 60 retained
+input owners. At the packed test load the writer eliminates 30 MiB of
+publication payload copies per 24 groups. The concatenation append and the
+ordinary CPU subscriber's receive copy still run.
+
+An exploratory batch verified the payloads but encountered a shell parse
+error at teardown after the running launcher was edited. Discarded that
+batch. Rebuilt the fixture and reran the full matrix with the launcher held
+fixed. Timing runs use no stage timestamps. Separate diagnostic runs
+measure reserve, append and publication on the same blocking executor.
+[Reproduction and measurements](../rmw-agnocast/README.md#transfer-the-universe-synchronizer-output-through-a-publisher-loan).
+
+Four paired latency runs favored ordinary output publication. The shared
+route eliminated the final writer copy but added 1.03–1.49 ms to the median
+for complete groups. Two stage profiles in reverse order and four paired
+writer/sink trace graphs put the larger delay before entry to the RMW
+publish call. Keep ordinary publication as the reference while splitting
+input arrival and collector scheduling from conversion and transformation.
+The initial trace launcher inadvertently preloaded the heap hook in an
+intermediate env executable and process registration failed. Moving the
+trace environment assignment before the preloaded child restored clean
+startup. The four archived trace runs each matched all 24 writer and reader
+timestamps. Across the final 14 timing graphs, six writer profiles, four
+paired trace graphs and two padded audits, the sink verified 624 clouds and
+their corresponding metadata.

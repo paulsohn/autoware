@@ -1,0 +1,85 @@
+[INFO] [1795231810.933909560] [static_transform_publisher_LpAVyxfNsfVcQkDC]: Spinning until stopped - publishing transform
+translation: ('4.000000', '0.000000', '0.000000')
+rotation: ('0.000000', '0.000000', '0.000000', '1.000000')
+from 'base_link' to 'sync_lidar'
+[WARN] [1795231811.118711705] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[WARN] [1795231811.118903924] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+rmw_agnocast host-cloud reader /output
+[WARN] [1795231811.120163997] [Agnocast]: Agnocast publishers do not honor the BestEffort reliability QoS policy. Messages are delivered through shared memory regardless of this setting.
+[WARN] [1795231811.120185948] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+rmw_agnocast host-cloud writer /sync/left
+[WARN] [1795231811.120641619] [Agnocast]: Agnocast publishers do not honor the BestEffort reliability QoS policy. Messages are delivered through shared memory regardless of this setting.
+[WARN] [1795231811.120657449] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+rmw_agnocast host-cloud writer /sync/right
+[WARN] [1795231811.121106387] [Agnocast]: Agnocast publishers do not honor the BestEffort reliability QoS policy. Messages are delivered through shared memory regardless of this setting.
+[WARN] [1795231811.121121996] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+rmw_agnocast host-cloud writer /sync/top
+[INFO] [1795231811.501398618] [point_cloud_concatenator_component]: Utilize naive matching strategy
+[WARN] [1795231811.503129911] [Agnocast]: Agnocast publishers do not honor the BestEffort reliability QoS policy. Messages are delivered through shared memory regardless of this setting.
+[WARN] [1795231811.503152443] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+rmw_agnocast host-cloud writer /output
+[WARN] [1795231811.504508646] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[WARN] [1795231811.504567195] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+rmw_agnocast host-cloud reader /sync/left
+[WARN] [1795231811.505051199] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[WARN] [1795231811.505085654] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+rmw_agnocast host-cloud reader /sync/right
+[WARN] [1795231811.505534171] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[WARN] [1795231811.505567233] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+rmw_agnocast host-cloud reader /sync/top
+sync_output bytes=1572864 reserve_ns=19457 append_ns=544817 publish_ns=936379
+sync_output bytes=1048576 reserve_ns=5751 append_ns=315530 publish_ns=562771
+sync_output bytes=1572864 reserve_ns=701 append_ns=31639 publish_ns=777893
+sync_output bytes=1048576 reserve_ns=801 append_ns=21220 publish_ns=576787
+sync_output bytes=1572864 reserve_ns=1022 append_ns=47980 publish_ns=857752
+sync_output bytes=1048576 reserve_ns=1102 append_ns=23534 publish_ns=705117
+sync_output bytes=1572864 reserve_ns=2285 append_ns=76754 publish_ns=945155
+sync_output bytes=1048576 reserve_ns=3146 append_ns=48190 publish_ns=63829
+sync_output bytes=1572864 reserve_ns=2164 append_ns=93725 publish_ns=856659
+sync_output bytes=1048576 reserve_ns=2274 append_ns=48471 publish_ns=92724
+sync_output bytes=1572864 reserve_ns=3907 append_ns=155601 publish_ns=149579
+sync_output bytes=1048576 reserve_ns=4348 append_ns=64500 publish_ns=57287
+sync_output bytes=1572864 reserve_ns=3307 append_ns=74839 publish_ns=86040
+sync_output bytes=1048576 reserve_ns=811 append_ns=22121 publish_ns=46006
+sync_output bytes=1572864 reserve_ns=782 append_ns=42550 publish_ns=97272
+sync_output bytes=1048576 reserve_ns=2405 append_ns=47829 publish_ns=53179
+sync_output bytes=1572864 reserve_ns=1172 append_ns=35906 publish_ns=117690
+sync_output bytes=1048576 reserve_ns=1934 append_ns=41207 publish_ns=56455
+sync_output bytes=1572864 reserve_ns=971 append_ns=39173 publish_ns=70461
+sync_output bytes=1048576 reserve_ns=1152 append_ns=28243 publish_ns=76443
+sync_output bytes=1572864 reserve_ns=2324 append_ns=212877 publish_ns=69881
+sync_output bytes=1048576 reserve_ns=2514 append_ns=50403 publish_ns=63068
+sync_output bytes=1572864 reserve_ns=2625 append_ns=81823 publish_ns=83185
+sync_output bytes=1048576 reserve_ns=3066 append_ns=66475 publish_ns=63108
+fast_source_hz=9.99964
+sample,0,full,19728515
+sample,1,partial,42472130
+sample,2,full,3052711
+sample,3,partial,41848376
+sample,4,full,3378460
+sample,5,partial,41988668
+sample,6,full,3323737
+sample,7,partial,41566910
+sample,8,full,3198103
+sample,9,partial,41547804
+sample,10,full,2657884
+sample,11,partial,41602166
+sample,12,full,2473490
+sample,13,partial,41240290
+sample,14,full,2705232
+sample,15,partial,41525954
+sample,16,full,2421632
+sample,17,partial,41410798
+sample,18,full,2197464
+sample,19,partial,41589503
+sample,20,full,2296198
+sample,21,partial,41564435
+sample,22,full,2149865
+sample,23,partial,41641941
+verified 24 synchronized clouds and metadata, 12 complete and 12 timed out, 1966080 input points
+[INFO] [1795231815.059620392] [rclcpp]: signal_handler(signum=2)
+[INFO] [1795231815.059696534] [rclcpp]: signal_handler(signum=2)
+fixed_wait arms=24 completions=24 native=57 both=0 native_interrupts=0 stop_interrupts=1
+sync_input views=60 copies=0
+Minimum host MemAvailable: 11970 MiB
+exit_status=0

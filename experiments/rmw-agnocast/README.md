@@ -2207,3 +2207,94 @@ All 22 timed graphs verified their outputs and exited cleanly. Keep the view
 as the experimental input baseline. The next distinct copy to investigate
 is on publication of the newly constructed concatenated cloud.
 [Per-frame timings, counts and memory checks](sync-input-results/).
+
+### Transfer the Universe synchronizer output through a publisher loan
+
+Keep the three retained input subscriptions, blocking A, source cadence, TF,
+collector timeout and ordinary CPU sink from the preceding experiment. The
+synchronizer normally hands a unique PointCloud2 to rclcpp. Its host-cloud
+RMW publication still receives a const message and copies the finished vector.
+Compare that path (byte-view) with two ways to move the completed message
+into a short rclcpp publisher loan. Output-private keeps the normal vector
+allocation. Output-shared uses the existing Agnocast heap hook around the
+single output reserve, restores the thread-local allocator state immediately,
+and appends the points using the existing Universe code. The RMW checks the
+finished vector against the writer's shared mapping and copies private
+storage on fallback. No change to the RMW or kernel is needed for this test.
+The fixture applies loan-output.patch only in its build directory. The scoped
+allocator calls are Agnocast-specific and experimental.
+
+On the reference laptop, source the same overlays and use the same exported
+Lyrical root as in the retained-input experiment. Run one graph at a time:
+
+```bash
+set -e
+export LYRICAL_ROOT=$(cat build/agnocast-lyrical/universe-root)
+run=experiments/buffer/run-lyrical.sh
+"$run" bash experiments/rmw-agnocast/build-sync.sh
+export BUFFER_RUNTIME_ONLY=1
+for mode in output-private output-shared; do
+  SYNC_LARGE=1 SYNC_AUDIT=1 SYNC_STRIDED_INPUT=1 "$run" timeout -k 4 45 \
+    bash experiments/rmw-agnocast/run-sync.sh "$mode"
+done
+bash experiments/rmw-agnocast/bench-sync.sh build/universe-sync/new-output-test --loan-output
+for mode in byte-view output-private output-shared output-shared output-private byte-view; do
+  SYNC_LARGE=1 SYNC_OUTPUT_PROFILE=1 "$run" timeout -k 4 45 \
+    bash experiments/rmw-agnocast/run-sync.sh "$mode"
+done
+```
+
+The timed comparison uses four order-balanced ordinary/shared pairs, two
+private-loan controls, and fresh Cyclone DDS and Zenoh references with CPU
+input and the same XYZIRC converter. The fixture verifies all points and
+metadata for full and intentionally partial groups. Latency runs from the
+oldest sensor stamp to the sink callback. Per-run median and nearest-rank
+p95 use ten post-warmup groups of each kind. Separate instrumented runs time
+output reserve, the sum of the per-sensor appends, and the call to publish
+(including borrow and move in the loan cases). These three durations cover
+only part of the end-to-end path. Profiling records are emitted after publish.
+
+| Transport and output policy | Complete median, ms | Complete p95, ms | Partial median, ms |
+|---|---:|---:|---:|
+| rmw_agnocast, ordinary publication | 2.43–2.83 | 3.28–3.74 | 41.45–41.61 |
+| rmw_agnocast, private vector moved into loan | 2.67–2.77 | 3.09–4.04 | 41.60–41.63 |
+| rmw_agnocast, shared vector moved into loan | 3.58–3.99 | 4.64–5.16 | 42.19–42.48 |
+| Cyclone DDS | 3.98–8.47 | 4.49–13.04 | 42.86–46.32 |
+| Zenoh | 2.53–3.01 | 3.27–3.63 | 41.98–42.12 |
+
+The table gives ranges of per-run statistics. The 14 timing graphs verified
+336 outputs. All four shared runs recorded 24 publisher loans with zero
+private copies. Both private controls recorded 24 copies. Complete-group
+median increased by 1.03–1.49 ms in the four paired ordinary/shared runs.
+Partial groups include the configured 40 ms timeout. The Cyclone and Zenoh
+rows provide ordinary ROS references. No matched native Agnocast port exists
+for this synchronizer.
+
+In the separate profile, the shared writer's full-group median publish call
+took 15–16 µs versus 79–104 µs for private loans. Writing the shared output
+was sometimes more expensive early in a run. For groups 4, 6, 8 and 10 the
+three appends together took 0.77–1.07 ms in the two shared profiles. For the
+following six complete groups they took 0.06–0.09 ms. The uninstrumented
+shared route was slower in the later groups as well.
+
+To repeat the timestamp attribution, create a fresh directory under /ws for
+each diagnostic invocation. Set SYNC_TRACE_DIR to its absolute in-runner path
+and run output-private, output-shared, output-shared and output-private with
+SYNC_LARGE=1 using the guarded runner above. The existing RMW traces record
+the writer and the sink separately. Join on the oldest sensor stamp. The
+following are full-group medians from two runs per mode:
+
+| Interval, µs | Private output loan | Shared output loan |
+|---|---:|---:|
+| Oldest sensor stamp to output RMW publish entry | 1,478 / 1,551 | 2,919 / 2,492 |
+| Output RMW publish entry to native handoff | 66.7 / 67.1 | 0.6 / 0.6 |
+| Native handoff to sink take | 58.5 / 55.8 | 59.8 / 65.3 |
+| Sink take to restored CPU message | 695 / 650 | 659 / 670 |
+
+These measurements place the dominant difference before output RMW
+publication. Keep retained input plus ordinary publication as the laptop
+baseline. The next diagnostic should timestamp input admission, collector
+match, per-sensor conversion and transform, and completion of concatenation
+on the same groups. The current evidence cannot distinguish scheduling and
+input-arrival effects from the rest of the construction cost.
+[Per-group timings, CPU, memory, traces and checks](sync-output-results/).

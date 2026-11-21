@@ -14,8 +14,12 @@ if(AUTOWARE_ENABLE_AGNOCAST_HOST_VIEW)
   foreach(file IN ITEMS concatenate_and_time_sync_node.cpp combine_cloud_handler.cpp)
     configure_file("${sync}/${file}" "${input_sources}/${file}" COPYONLY)
   endforeach()
-  set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS loan-input.patch)
+  set(node_impl autoware/pointcloud_preprocessor/concatenate_data/concatenate_and_time_sync_node.ipp)
+  configure_file("${pre}/include/${node_impl}" "${input_sources}/${node_impl}" COPYONLY)
+  set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS loan-input.patch loan-output.patch)
   execute_process(COMMAND patch -p1 -i "${CMAKE_CURRENT_SOURCE_DIR}/loan-input.patch"
+    WORKING_DIRECTORY "${input_sources}" COMMAND_ERROR_IS_FATAL ANY)
+  execute_process(COMMAND patch -p1 -i "${CMAKE_CURRENT_SOURCE_DIR}/loan-output.patch"
     WORKING_DIRECTORY "${input_sources}" COMMAND_ERROR_IS_FATAL ANY)
 endif()
 add_library(universe_sync SHARED
@@ -25,6 +29,9 @@ add_library(universe_sync SHARED
   "${sync}/concatenation_diagnostics.cpp" "${pre}/src/utility/memory.cpp")
 if(AUTOWARE_ENABLE_AGNOCAST_HOST_VIEW)
   find_package(rmw_agnocast REQUIRED)
+  find_package(agnocastlib REQUIRED)
+  target_link_libraries(universe_sync ${agnocastlib_TARGETS})
+  target_include_directories(universe_sync BEFORE PRIVATE "${input_sources}")
   target_include_directories(universe_sync PRIVATE "${sync}" "${CMAKE_CURRENT_SOURCE_DIR}" ${rmw_agnocast_INCLUDE_DIRS})
   target_compile_features(universe_sync PRIVATE cxx_std_20)
 endif()

@@ -1,0 +1,67 @@
+--- a/combine_cloud_handler.cpp
++++ b/combine_cloud_handler.cpp
+@@ -18,5 +18,7 @@
+ #include "time_utils.hpp"
+ #include "sync_input.hpp"
+-
++#include "sync_output_profile.hpp"
++
++#include <agnocast/agnocast_publisher.hpp>
+ #include <Eigen/Dense>
+
+@@ -126,5 +128,7 @@
+   // Both clouds share the PointXYZIRC layout (identical fields and point_step), so concatenating is
+   // a byte append of the point data. width/height/row_step are recomputed by the caller afterwards.
++  const auto start = sync_output_profile::now();
+   dst.data.insert(dst.data.end(), src.data.begin(), src.data.end());
++  sync_output_profile::append_ns += sync_output_profile::now() - start;
+ }
+
+@@ -206,5 +210,16 @@
+     total_data_size += cloud->data.size();
+   }
+-  result.concatenate_cloud_ptr->data.reserve(total_data_size);
++  const auto start = sync_output_profile::now();
++  if (std::getenv("SYNC_SHARED_OUTPUT")) {
++    struct SharedPayloadAllocation {
++      SharedPayloadAllocation() { agnocast::increment_borrowed_publisher_num(); }
++      ~SharedPayloadAllocation() { agnocast::decrement_borrowed_publisher_num(); }
++    } allocation;
++    result.concatenate_cloud_ptr->data.reserve(total_data_size);
++  } else {
++    result.concatenate_cloud_ptr->data.reserve(total_data_size);
++  }
++  sync_output_profile::reserve_ns = sync_output_profile::now() - start;
++  sync_output_profile::append_ns = 0;
+ }
+
+--- a/autoware/pointcloud_preprocessor/concatenate_data/concatenate_and_time_sync_node.ipp
++++ b/autoware/pointcloud_preprocessor/concatenate_data/concatenate_and_time_sync_node.ipp
+@@ -16,4 +16,6 @@
+ #include "autoware/pointcloud_preprocessor/diagnostics/format_utils.hpp"
+ #include "autoware/pointcloud_preprocessor/utility/memory.hpp"
++
++#include "sync_output_profile.hpp"
+
+ #include <limits>
+@@ -354,6 +356,18 @@
+   if (publish_pointcloud) {
+     latest_concatenate_cloud_timestamp_ = current_concatenate_cloud_timestamp_;
+-    concatenated_cloud_publisher_->publish(
+-      std::move(concatenated_cloud_result.concatenate_cloud_ptr));
++    const auto start = sync_output_profile::now();
++    const auto payload_size = concatenated_cloud_result.concatenate_cloud_ptr->row_step;
++    if (std::getenv("SYNC_LOAN_OUTPUT")) {
++      if (!concatenated_cloud_publisher_->can_loan_messages()) {
++        throw std::runtime_error("expected a native output publisher loan");
++      }
++      auto loan = concatenated_cloud_publisher_->borrow_loaned_message();
++      loan.get() = std::move(*concatenated_cloud_result.concatenate_cloud_ptr);
++      concatenated_cloud_publisher_->publish(std::move(loan));
++    } else {
++      concatenated_cloud_publisher_->publish(
++        std::move(concatenated_cloud_result.concatenate_cloud_ptr));
++    }
++    if (start) sync_output_profile::report(payload_size, start);
+     // publish transformed raw pointclouds
+     if (

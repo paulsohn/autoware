@@ -4,6 +4,8 @@
   <maintainer email="paulsohn@users.noreply.github.com">Paul Sohn</maintainer>
   <license>Apache-2.0</license>
   <buildtool_depend>ament_cmake</buildtool_depend>
+  <depend>agnocastlib</depend>
+  <build_depend>rmw_agnocast</build_depend>
   <depend>rclcpp_components</depend>
   <depend>rclcpp</depend>
   <depend>sensor_msgs</depend>
