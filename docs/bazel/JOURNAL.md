@@ -17148,3 +17148,22 @@ Run bazel test --config=runtime --config=no-agnocast --local_test_jobs=1
 environment. All 8 exported factories construct/destroy; the unchanged original
 RViz configuration also loads and renders. Keep its Bazel definitions in the
 following module boundary. Older Qt/ROS and upstream CMake/GCC were not run.
+
+## 2026-11-22: Phase 7.3.4 — autoware_perception_rviz_plugin compatibility
+
+Purpose: compile and load this original plugin package with RCR RViz 15.2.6,
+Qt 6.10.2, TF 0.45.10 and LLVM/libc++ 21.1.8 on Ubuntu 24.04.
+The common object display still receives float elapsed seconds, but current
+MarkerCommon accepts nanoseconds. Select the legacy float call through a
+templated invocability check, otherwise duration_cast elapsed seconds to
+nanoseconds. Replace removed tf2/utils.h with utils.hpp in polygon details.
+Preserve detection geometry, class IDs and message subscriptions.
+
+The original package registers lint only, with no functional CPP/launch suite.
+Its complete exported-factory/resource gate is
+//bazel/tests/rviz_plugins:autoware_perception_rviz_plugin_factories_test.
+Run bazel test --config=runtime --config=no-agnocast --local_test_jobs=1
+--test_output=errors with that target from an authenticated DISPLAY/XAUTHORITY
+environment. All 4 exported factories construct/destroy; the unchanged original
+RViz configuration also loads and renders. Keep its Bazel definitions in the
+following module boundary. Older Qt/ROS and upstream CMake/GCC were not run.

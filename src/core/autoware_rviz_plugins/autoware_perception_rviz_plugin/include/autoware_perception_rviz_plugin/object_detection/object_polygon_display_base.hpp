@@ -27,8 +27,10 @@
 #include <autoware_perception_msgs/msg/object_classification.hpp>
 #include <unique_identifier_msgs/msg/uuid.hpp>
 
+#include <chrono>
 #include <memory>
 #include <string>
+#include <type_traits>
 #include <unordered_map>
 #include <vector>
 
@@ -185,7 +187,10 @@ public:
     m_marker_common.load(config);
   }
 
-  void update(float wall_dt, float ros_dt) override { m_marker_common.update(wall_dt, ros_dt); }
+  void update(float wall_dt, float ros_dt) override
+  {
+    updateMarkerCommon(m_marker_common, wall_dt, ros_dt);
+  }
 
   void reset() override
   {
@@ -683,6 +688,19 @@ private:
   std::string m_default_topic;
 
   std::vector<std_msgs::msg::ColorRGBA> predicted_path_colors;
+
+private:
+  template <class Common>
+  static void updateMarkerCommon(Common & common, float wall_dt, float ros_dt)
+  {
+    if constexpr (std::is_invocable_v<decltype(&Common::update), Common &, float, float>) {
+      common.update(wall_dt, ros_dt);
+    } else {
+      common.update(
+        std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::duration<float>(wall_dt)),
+        std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::duration<float>(ros_dt)));
+    }
+  }
 };
 }  // namespace object_detection
 }  // namespace rviz_plugins
