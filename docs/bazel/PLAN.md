@@ -108,6 +108,7 @@ only when your current target demonstrates the need.
 - [ ] Separate builder-host, build-environment and runtime prerequisites; declare
   runtime resources once and reuse them for packaging.
   [Packaging and deployment requirements](#runtime-packaging-and-deployment-requirements);
+  [middleware discovery capacity evidence](JOURNAL.md#2026-11-22-phase-733--original-headless-planning-simulator-product);
   [distribution convention](DEVELOPING.md#native-core-distribution);
   [evidence: native runtime closure](JOURNAL.md#2026-11-20-phase-71--native-headless-core-distribution).
   [OCI image convention](DEVELOPING.md#oci-core-distribution);
@@ -1854,39 +1855,41 @@ Phase 7.3 task boundaries (selected 2026-11-21):
   outside this selected profile. Omit CMake-only shims only after preserving their
   actual native-provider effects and validating consumers. Follow actual local
   source/launch declarations; the smaller core-only launch is not a substitute.
-  Pause immediately before full planning_simulator.launch.xml composition/startup
-  in 7.3.3. Pixi comparison remains deferred until full Universe integration.
-- **7.3.3 — Original launch and resources (in progress).** The first resource
-  group is complete (2026-11-21): the tutorial's local sample_vehicle_description
-  and sample_sensor_kit_description own their original model/calibration/mesh
-  resources, and the independent autoware_map_asset module owns the official
-  tutorial archive and resource index. Root selects its local override; source
-  consumers may declare its public module/index dependency. The supported core
-  launch and native/OCI/s6/systemd/OSTree products resolve that indexed map
-  without map_path injection or a separate runtime map mount.
-  SHA-256 5536fce7bb8db7688fdf94ec004118b898637ad0d5b6175108b10989dd6e93b9
-  pins the otherwise mutable map URL; use the documented tutorial input rather
-  than a substituted test map. [Map provenance](../../assets/map/README.md).
-  A short MGRS/54SVE scenario is pinned and accepted by the real Universe planner
-  through lanelets 9102/9540; PCL reads all 1757841 cloud points. Resource,
-  relocation and affected description-launch gates pass 12 cases in seven
-  targets, CPU/Cyclone DDS with ENABLE_AGNOCAST=0.
-  [Evidence](JOURNAL.md#2026-11-21-phase-733--official-tutorial-map-and-scenario-resources).
-  Configuration/model-selection resources are now indexed in seven separate
-  validated module commits: five configuration packages plus sample_vehicle_launch
-  and sample_sensor_kit_launch; fourteen lookup/relocation cases pass. The original
-  installed map hash/XML executable is also available, with its complete
-  seventeen-target map-loader gate passing 62 cases.
-  [Resource group](JOURNAL.md#2026-11-22-phase-733--sample-sensor-kit-launch-resources),
-  [map identity](JOURNAL.md#2026-11-22-phase-733--installed-map-hash-and-xml-service).
-  The required local map-TF provider is complete: its original sampling case and
-  both installed PCD/vector transform behaviors pass, including clean shutdown.
-  [Viewer TF gate](JOURNAL.md#2026-11-22-phase-733--map-viewer-tf-provider).
-  Phase 7.3.2 now supplies the validated implementation closure. Next compose
-  the actual planning_simulator.launch.xml; the resource and component gates
-  do not establish full simulator startup. Keep default rule-based
-  behavior; migrate any selected model provider and affected launcher paths
-  together under the indexed-resource convention.
+  The original entrypoint composition/startup gate is recorded in 7.3.3.
+  Pixi comparison remains deferred until full Universe integration.
+- **7.3.3 — Original launch and resources (complete, 2026-11-22).**
+  Package-owned indexes supply the sample vehicle/sensor descriptions and launch
+  identities, five configuration packages and eight original launch packages.
+  The independent autoware_map_asset module owns the official tutorial map,
+  acquisition pin and portable index; root selects it. Its SHA-256 is
+  5536fce7bb8db7688fdf94ec004118b898637ad0d5b6175108b10989dd6e93b9.
+  [Map provenance](../../assets/map/README.md),
+  [resource evidence](JOURNAL.md#2026-11-21-phase-733--official-tutorial-map-and-scenario-resources),
+  [launch ownership pattern](JOURNAL.md#2026-11-22-phase-733--autoware_map_launch-resource-closure).
+  The map hash/XML executable passes the complete seventeen-target loader gate
+  (62 cases); the viewer-TF provider passes its original case and both installed
+  PCD/vector behavior checks. Map defaults resolve the logical asset without
+  path injection, and the selected rule-based launch has no common model data_path.
+
+  Root //bazel/runtime:planning_simulator runs the original XML with sample
+  vehicle/sensor identities supplied as caller-owned data. The supported profile
+  is CPU/Cyclone DDS, ENABLE_AGNOCAST=0, rviz=false, default rule-based planners,
+  simulated perception/vehicle and API localization. Default safety nodes remain
+  enabled. The root-owned Cyclone URI raises the demonstrated RMW index capacity
+  from 32 to 119; it is shared by the full test and runnable target. No host DDS
+  installation/tuning or container is required. Compatibility fixes remain
+  separate from build definitions: shared utility SDK ownership, stale diagnostic
+  paths and the predictor's synchronized parameter defaults.
+
+  The final eight original subsystem/full-launch targets pass all sixteen
+  behavior/shutdown cases. All affected native suites and existing standalone,
+  wire/resource checks pass; unchanged passing results are reused. The actual
+  product command starts 56 processes and loads 41 components from a clean
+  environment outside the checkout, then all 56 exit cleanly on SIGINT and the
+  runner returns zero. This establishes startup and resource composition,
+  not autonomous driving. RViz, route/engagement/motion and expanded distribution
+  acceptance remain 7.3.4; no Fast DDS or enabled-Agnocast product result is claimed.
+  [Exact product gate and remaining scope](JOURNAL.md#2026-11-22-phase-733--original-headless-planning-simulator-product).
 - **7.3.4 — Lane-driving acceptance.** Demonstrate the original RViz workflow
   and a repeatable equivalent headless case, including initial pose, route,
   autonomous engagement, vehicle motion, bounded goal completion and clean

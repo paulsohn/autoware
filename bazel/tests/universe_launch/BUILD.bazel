@@ -1,0 +1,46 @@
+load("//bazel/runtime:cyclonedds.bzl", "PLANNING_SIMULATOR_CYCLONEDDS_URI")
+load("@launch_testing//:defs.bzl", "launch_test")
+load("@pip_ros//:requirements.bzl", "requirement")
+
+[
+    launch_test(
+        name = mode + "_launch_test",
+        timeout = "long",
+        src = "test_launch.py",
+        data = [
+            "@autoware_launch//:ament_index",
+            "@sample_vehicle_description//:ament_index",
+            "@sample_vehicle_launch//:ament_index",
+            "@sample_sensor_kit_description//:ament_index",
+            "@sample_sensor_kit_launch//:ament_index",
+        ],
+        env = {
+            "ENABLE_AGNOCAST": "0",
+            "LD_LIBRARY_PATH": "lib",
+            "ROS_DOMAIN_ID": "106",
+            "UNIVERSE_LAUNCH_MODE": mode,
+        } | ({"CYCLONEDDS_URI": PLANNING_SIMULATOR_CYCLONEDDS_URI} if mode == "full" else {}),
+        precompile = "disabled",
+        tags = ["no-remote", "no-sandbox"],
+        deps = [
+            "@ament_index_python",
+            "@autoware_adapi_version_msgs//:py",
+            "@autoware_map_msgs//:py",
+            "@composition_interfaces//:py",
+            "@launch",
+            "@launch_ros",
+            "@launch_testing",
+            "@launch_xml",
+            "@launch_yaml",
+            "@nav_msgs//:py",
+            "@rcl_interfaces//:py",
+            "@rclpy",
+            "@sensor_msgs//:py",
+            "@std_msgs//:py",
+            "@tier4_system_msgs//:py",
+            requirement("pytest"),
+            requirement("pyyaml"),
+        ],
+    )
+    for mode in ["map", "vehicle", "api", "simulator", "system", "control", "planning", "full"]
+]

@@ -16823,3 +16823,87 @@ original default sample models, scenario_simulation/use_sim_time=false and
 rviz=false, with the indexed map and real rule-based planners/safety nodes.
 The product entrypoint/discovery configuration and standalone runner gate are
 recorded next. No Fast DDS, enabled-Agnocast, GUI, colcon or driving claim.
+
+## 2026-11-22: Phase 7.3.3 — Original headless planning simulator product
+
+Purpose: run the actual default planning_simulator.launch.xml through the
+Bazel-owned graph, with CPU implementations, Cyclone DDS and Agnocast disabled.
+Prerequisites are the local implementations from 7.3.2, independently indexed
+map/model/config resources and the eight launch-package boundaries above.
+Inspect the original default choices and all selected conditional includes;
+indexing unselected XML does not establish its optional executable closure.
+
+Add root launch_ros_binary //bazel/runtime:planning_simulator using the original
+exported XML, source-owned Autoware index, native SDK runtime aggregate and the
+caller-owned sample vehicle/sensor description/launch indexes. No substitute
+launch topology, host ament environment or container. The exact product runner
+also needs @launch_yaml for original planner YAML presets: the test harness
+already has that frontend, but the first standalone product run reports an
+unknown launch format. Declare the frontend on the actual product target; do
+not rely on imports leaked by its integration test. XML is supplied by the
+launch rule itself, and the existing wrapper supplies its Python extensions.
+
+The first full graph exceeds the selected RMW's explicitly hardcoded automatic
+participant index 32 (rmw_cyclonedds_cpp/src/rmw_node.cpp). Processes report
+Failed to find a free participant index and fail node creation. Own one compact
+CYCLONEDDS_URI value in bazel/runtime/cyclonedds.bzl and share it between the
+full-launch test and product environment. Set MaxAutoParticipantIndex=119,
+keeping the standard per-domain port range; do not patch RMW, split processes,
+disable safety nodes or require host configuration. The current topology
+requires this capacity; future platforms must validate their own topology.
+The corrected complete launch then exposes the predictor preset mismatch fixed
+in its separate source entry. Consolidate those failures into the final gate.
+
+Add external original-launch fixtures for map, vehicle, API, simulator, system,
+control, planning and full composition. Inventory confirms no original functional
+suite in these resource-only launch packages; their CMake lint declarations are
+not treated as runtime tests. Wait for completed ListNodes sets and standalone
+parameter responses. Require retained full official map/expanded vehicle URDF,
+the diagnostic autonomous root, version 1.9.1, predictor defaults and preserved
+use_sim_time=false. No RViz process is allowed in this headless profile. Assert
+zero exits for every launched process, rather than accepting an early API
+response as full startup success.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast \
+  --local_test_jobs=1 --test_output=errors //bazel/tests/universe_launch:all
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel build --config=runtime --config=no-agnocast \
+  //bazel/runtime:planning_simulator
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel run --config=runtime --config=no-agnocast \
+  //bazel/runtime:planning_simulator -- rviz:=false
+python3 -m flake8 --max-line-length=150 bazel/tests/universe_launch/test_launch.py
+git diff --check
+```
+
+The final whole product suite passes all eight targets/sixteen launch cases,
+including clean shutdown; full launch takes 13.5 seconds in that final sweep.
+The preceding affected package gates pass all 21 original utility consumers'
+native cases, 43 original predictor cases, all ten existing affected standalone/
+wire/regression targets and the predictor/resource gate. Topic monitor's four
+profiles and affected state check pass too. Reuse passing unchanged results;
+no dependency-related skips or deferred failures satisfy these module gates.
+
+For a controlled check of the actual command, generate Bazel's script with
+bazel run --config=runtime --config=no-agnocast
+--script_path=/tmp/autoware-planning-simulator-run
+//bazel/runtime:planning_simulator -- rviz:=false. Execute that generated script
+from /tmp with only HOME, minimal PATH and a separate ROS_DOMAIN_ID=108; it
+supplies the product's own environment/runfiles. Observe the complete selected
+component-load set and process starts before sending SIGINT to the script PID.
+The observed result is 56 processes, 41 loaded components, all 56 processes
+finishing cleanly and runner exit zero. The script is a disposable local Bazel
+command, not a portable deployment artifact or committed absolute-path launcher.
+The typed full-launch suite above supplies stronger functional readiness checks;
+this second check verifies the real product dependency/environment boundary.
+
+Phase 7.3.3 is complete. This is startup/resource composition, not autonomous
+availability: until pose/route initialization, diagnostics and planners can
+report absent inputs; an unused optional driving-mode mapping also reports its
+missing available path. RViz GUI, pose/route/engagement/motion/goal and expanded
+native/package closure acceptance remain 7.3.4. No Fast DDS, enabled-Agnocast
+product, GPU, full colcon/older ROS, QEMU or simulator OCI claim. Existing core
+packaging stays separate. Targeted Python and whitespace checks pass; no
+pre-commit is run. Continue with the documented lane-driving acceptance phase.

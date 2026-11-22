@@ -1,3 +1,4 @@
+load(":cyclonedds.bzl", "PLANNING_SIMULATOR_CYCLONEDDS_URI")
 load("@launch_ros//:defs.bzl", "launch_ros_binary")
 load("@rules_cc//cc:defs.bzl", "cc_binary")
 load("@rules_pkg//pkg:tar.bzl", "pkg_tar")
@@ -33,6 +34,23 @@ launch_ros_binary(
     ],
     precompile = "disabled",
     deps = ["@autoware_agnocast_wrapper//:python"],
+)
+
+# Original Universe entrypoint; callers select rviz:=false for the headless profile.
+launch_ros_binary(
+    name = "planning_simulator",
+    src = "@autoware_launch//:launch/planning_simulator.launch.xml",
+    data = [
+        ":native_runtime",
+        "@autoware_launch//:ament_index",
+        "@sample_vehicle_description//:ament_index",
+        "@sample_vehicle_launch//:ament_index",
+        "@sample_sensor_kit_description//:ament_index",
+        "@sample_sensor_kit_launch//:ament_index",
+    ],
+    env = {"ENABLE_AGNOCAST": "0", "CYCLONEDDS_URI": PLANNING_SIMULATOR_CYCLONEDDS_URI},
+    precompile = "disabled",
+    deps = ["@autoware_agnocast_wrapper//:python", "@launch_yaml"],
 )
 
 pkg_tar(

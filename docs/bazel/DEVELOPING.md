@@ -841,6 +841,39 @@ Do not rely on a host-installed xacro. The sample and AWSIM description checks
 are `//bazel/tests:vehicle_description_sample_launch_test` and
 `//bazel/tests:vehicle_description_awsim_launch_test` with `--config=no-agnocast`.
 
+## Universe planning simulator
+
+The supported original simulator profile uses sample_vehicle/sample_sensor_kit,
+CPU/Cyclone DDS, Agnocast off and rviz=false. Run it without sourcing host ROS:
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel run --config=runtime --config=no-agnocast \
+  //bazel/runtime:planning_simulator -- rviz:=false
+```
+
+The target supplies original launch/config resources, real default rule-based
+planners/safety nodes, native SDK runtime files and caller-selected sample model
+indexes. The map resolves through autoware_map_asset; no map_path/data_path or
+absolute checkout path is needed. The wrapper and YAML/XML frontends belong to
+the actual runnable target's Python dependencies. A richer test runner's imports
+must not hide missing product dependencies; verify the runnable command too.
+
+The shared root configuration in bazel/runtime/cyclonedds.bzl sets
+MaxAutoParticipantIndex=119. RMW's default of 32 is insufficient for this
+single-host process graph. This controls discovery capacity, not kernel/network
+provisioning or communication isolation. A different deployment topology must
+select and validate its own domain/discovery configuration.
+
+Run //bazel/tests/universe_launch:all with the same build configs and
+--local_test_jobs=1 --test_output=errors when changing this product composition.
+It exercises the original seven subsystem launches and full headless XML,
+component/standalone readiness, retained map/vehicle/diagnostic resources, API
+version and clean shutdown. Routine component work keeps its own scoped suite.
+This profile establishes startup; GUI/driving and the expanded packaged runtime
+are separate acceptance gates. Existing core distribution targets retain their
+own scope and do not package this new simulator target automatically.
+
 ## Original test source layout
 
 Keep original tests in their source packages and expose their inputs through
