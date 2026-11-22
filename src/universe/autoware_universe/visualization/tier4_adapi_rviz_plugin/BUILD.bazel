@@ -1,0 +1,71 @@
+load("@qt//:qt.bzl", "qt_cc_library", "qt_cc_shared_library")
+load("@rosdistro//ament:defs.bzl", "ament_index")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+
+package(default_visibility = ["//visibility:public"])
+
+qt_cc_library(
+    name = "tier4_adapi_rviz_plugin_library",
+    moc_hdrs = [
+        "src/door_panel.hpp",
+        "src/operation_mode_debug_panel.hpp",
+        "src/route_panel.hpp",
+        "src/route_tool.hpp",
+    ],
+    srcs = glob(["src/**/*.cpp"]),
+    hdrs = glob(["include/**/*.hpp", "src/**/*.hpp"], allow_empty = True),
+    includes = ["src"],
+    defines = ["PLUGINLIB__DISABLE_BOOST_FUNCTIONS"],
+    deps = [
+        "@autoware_adapi_specs",
+        "@autoware_adapi_v1_msgs//:cc",
+        "@autoware_component_interface_utils",
+        "@autoware_vehicle_msgs//:cc",
+        "@geometry_msgs//:cc",
+        "@pluginlib//:pluginlib_library",
+        "@qtbase//:widgets",
+        "@rclcpp//:rclcpp_library",
+        "@rosdistro//cc:OgreMain_library",
+        "@rosdistro//cc:OgreOverlay_library",
+        "@rosdistro//cc:boost.geometry",
+        "@rosdistro//cc:eigen",
+        "@rviz_common//:rviz_common_library",
+        "@rviz_default_plugins//:rviz_default_plugins_library",
+        "@tier4_external_api_msgs//:cc",
+        "@tier4_planning_msgs//:cc",
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = [
+        "@autoware_adapi_specs//:runtime_dynamic_deps",
+        "@autoware_adapi_v1_msgs//:cc_shared",
+        "@autoware_component_interface_utils//:runtime_dynamic_deps",
+        "@autoware_vehicle_msgs//:cc_shared",
+        "@geometry_msgs//:cc_shared",
+        "@pluginlib//:pluginlib",
+        "@rclcpp//:rclcpp",
+        "@rosdistro//cc:OgreMain",
+        "@rosdistro//cc:OgreOverlay",
+        "@rviz_common//:rviz_common",
+        "@rviz_default_plugins//:rviz_default_plugins",
+        "@tier4_external_api_msgs//:cc_shared",
+        "@tier4_planning_msgs//:cc_shared",
+    ],
+)
+
+qt_cc_shared_library(
+    name = "tier4_adapi_rviz_plugin",
+    shared_lib_name = "libtier4_adapi_rviz_plugin.so",
+    dynamic_deps = [":runtime_dynamic_deps"],
+    deps = [":tier4_adapi_rviz_plugin_library"],
+)
+
+ament_index(
+    package_xml = "package.xml",
+    data = glob(["icons/**", "plugins/**"]),
+    libraries = [":tier4_adapi_rviz_plugin"],
+    deps = ["@rviz_common//:ament_index", "@rviz_default_plugins//:ament_index"],
+    plugin_categories = {"plugins/plugin_description.xml": "rviz_common"},
+)
