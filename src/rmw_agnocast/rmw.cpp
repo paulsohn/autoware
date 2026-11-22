@@ -620,6 +620,16 @@ extern "C" rmw_ret_t rmw_borrow_loaned_message(
   }
   return RMW_RET_OK;
 }
+static void destroy_host_cloud(void * p)
+{
+  auto * cloud = static_cast<HostCloud *>(p);
+  static const bool audit = std::getenv("AGNOCAST_RMW_AUDIT_RELEASE") != nullptr;
+  const auto stamp = audit ? cloud_stamp(cloud->header) : 0;
+  std::destroy_at(cloud);
+  ::operator delete(p);
+  if (audit) std::fprintf(stderr, "host_payload_reclaimed=%ld\n", long(stamp));
+}
+
 extern "C" rmw_ret_t rmw_publish_loaned_message(
   const rmw_publisher_t * pub, void * msg, rmw_publisher_allocation_t * a)
 {
@@ -649,14 +659,7 @@ extern "C" rmw_ret_t rmw_publish_loaned_message(
     if (cpu && !shared) ++w->private_copies;
     w->stamp(msg);
     trace.mark("handoff", stamp);
-    w->pub.publish(std::move(it->second), [](void * p) {
-      auto * cloud = static_cast<HostCloud *>(p);
-      static const bool audit = std::getenv("AGNOCAST_RMW_AUDIT_RELEASE") != nullptr;
-      const auto stamp = audit ? cloud_stamp(cloud->header) : 0;
-      std::destroy_at(cloud);
-      ::operator delete(p);
-      if (audit) std::fprintf(stderr, "host_payload_reclaimed=%ld\n", long(stamp));
-    });
+    w->pub.publish(std::move(it->second), destroy_host_cloud);
     trace.mark("publish_return", stamp);
     ++w->published_loans;
   } else {
@@ -701,10 +704,7 @@ extern "C" rmw_ret_t rmw_publish(
         std::ofstream(path) << reinterpret_cast<uintptr_t>(static_cast<HostCloud *>(loan.get())->bytes.data());
       }
       w->stamp(loan.get());
-      w->pub.publish(std::move(loan), [](void * p) {
-        static_cast<HostCloud *>(p)->~HostCloud();
-        ::operator delete(p);
-      });
+      w->pub.publish(std::move(loan), destroy_host_cloud);
       return RMW_RET_OK;
     } catch (const std::exception & e) {
       return error(e.what());

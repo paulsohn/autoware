@@ -1,0 +1,12 @@
+[INFO] [1795351906.464800215] [rosbag2_recorder]: Event publisher thread: Started
+[INFO] [1795351906.468111047] [rosbag2_recorder]: Starting recording to '/ws/build/bridge-restart-forward/restart/bag'
+[WARN] [1795351906.468136775] [rosbag2_recorder]: No input serialization format specified, using default rmw serialization format: 'cdr'.
+[INFO] [1795351906.469417546] [rosbag2_storage]: Opened database '/ws/build/bridge-restart-forward/restart/bag/0_bag_2026_11_22-12_51_46.db3' for READ_WRITE.
+[INFO] [1795351906.472233734] [rosbag2_recorder]: Subscribed to topic '/mirror'
+[INFO] [1795351906.472304105] [rosbag2_recorder]: Listening for topics...
+[INFO] [1795351906.472310367] [rosbag2_recorder]: Recording...
+[INFO] [1795351906.472358266] [rosbag2_recorder]: Topics discovery started.
+[INFO] [1795351906.472403801] [rosbag2_recorder]: All requested topics are subscribed. Stopping discovery...
+[INFO] [1795351906.472411155] [rosbag2_recorder]: Topics discovery stopped.
+[INFO] [1795351914.962017935] [rosbag2_recorder]: Recording stopped
+[INFO] [1795351914.962974100] [rosbag2_recorder]: Event publisher thread: Exited

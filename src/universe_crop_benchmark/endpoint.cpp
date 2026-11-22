@@ -136,6 +136,7 @@ private:
     msg->header.stamp = stamp;
     last_stamp_ns_ = stamp.nanoseconds();
     if (frame_ == 0) first_stamp_ns_ = stamp.nanoseconds();
+    if (trace_stamps_) std::fprintf(stderr, "sent %u %ld\n", frame_, long(last_stamp_ns_));
     pub_->publish(std::move(msg));
     if (++frame_ == frames)
       std::fprintf(stderr, "source_rate_hz=%.2f\n", (frames - 1) * 1e9 / (stamp.nanoseconds() - first_stamp_ns_));
@@ -164,6 +165,7 @@ private:
     ++frame_;
   }
 
+  const bool trace_stamps_ = std::getenv("BENCH_TRACE_STAMPS") != nullptr;
   const char * lifecycle_limit_ = std::getenv("BENCH_LIFECYCLE_LIMIT");
   const bool native_counts_ = std::getenv("BENCH_NATIVE_COUNTS") != nullptr;
   const bool raw_reader_ = std::getenv("BENCH_RAW_READER") != nullptr;

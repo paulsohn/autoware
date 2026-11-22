@@ -2919,3 +2919,17 @@ wait used the standard component manager. The fixed-wait fixture explicitly
 ended its scope before executor changes.
 
 [Per-run evidence](pipeline-lifecycle-results/) · [Experiment journal](../buffer/JOURNAL.md)
+
+### Restarting an outbound bridge with a persistent Cyclone recorder
+
+Across four forced relay deaths, the same recorder resumed after relaunch
+while the local Universe crop continued at 20 Hz. Both restart trials
+delivered 150/150 verified local frames and 124/150 bag frames. Both
+healthy controls delivered 150/150 on both paths. Each deliberately
+interrupted route lost 13 consecutive bag frames. First recovered bag
+messages arrived 91–100 ms after spawning the relay. Native reader counts
+returned to baseline and five recent publisher payloads remained live at
+every checkpoint. This qualifies externally supervised relaunch for the
+tested same-host outbound best-effort route.
+
+[Run evidence](bridge-restart-results/) · [Reproduction and limits](../buffer/JOURNAL.md#2026-11-22--restart-the-explicit-outbound-cyclone-bridge-under-live-crop-traffic)

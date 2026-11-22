@@ -2753,3 +2753,80 @@ orderly unload and shutdown on one laptop with one writer. It does not
 measure callback latency or recovery from a killed container.
 
 [Run summaries, frame sequences and endpoint logs](../rmw-agnocast/pipeline-lifecycle-results/)
+
+## 2026-11-22 — Restart the explicit outbound Cyclone bridge under live crop traffic
+
+Determine whether restarting one failed relay restores an already recording
+DDS reader while a standard Universe crop continues to process native local
+traffic. Use the previous lifecycle overlay, kernel module and endpoint.
+Keep one ordinary host-cloud writer (512 KiB PointCloud2 at 20 Hz), a direct
+wait crop, its independent verifying sink, and a stock Cyclone SQLite bag
+recorder alive for 150 frames. Mirror /input to /mirror with route_bridge.
+Select SensorDataQoS and loopback discovery. Register both recording and
+local endpoints before publication. At sequences 35 and 95 send SIGKILL to
+the relay, observe twelve more frames, and spawn a fresh relay with identical
+arguments. Compare against the same graph with an uninterrupted relay.
+Repeat the pair in reverse order. The driver acts as the supervisor.
+
+Share the existing host-cloud destruction callback between ordinary and
+loaned publication to audit reclamation on the ordinary publisher path.
+Enable stamp logging in the endpoint fixture and release logging only in the
+writer. Correlate every live publication with its destruction stamp at six
+checkpoints per run, including during both outages. The writer samples the
+kernel's best-effort/reliable input reader counts and output writer count.
+Validate every cropped point in the local sink. After recorder shutdown,
+deserialize every SQLite record, compare all 32,768 points with the original
+sequence-dependent pattern and compare its header stamp to the writer log.
+Use the bag receive timestamp for recovery time, referenced to the driver's
+wall clock immediately before spawning the new process. Reconstruct local
+sink callback arrival time from the source stamp and sink latency. This
+measures the interval between verified crop outputs at the sink.
+
+Run from the colcon worktree with its exported Lyrical root, loaded Agnocast
+module and existing Universe and loadable RMW overlays:
+
+```bash
+export LYRICAL_ROOT=$(cat build/agnocast-lyrical/universe-root)
+experiments/buffer/run-lyrical.sh bash -ec '
+  bash experiments/rmw-agnocast/build-loadable.sh
+  source build/agnocast-lyrical/install/local_setup.bash
+  source build/universe-sync/install/local_setup.bash
+  source build/rmw-agnocast/load-install/local_setup.bash
+  colcon build --base-paths src/universe_crop_benchmark --build-base build/universe-pipeline/obj \
+    --install-base build/universe-pipeline/install --executor sequential'
+out=build/reproduce-bridge
+mkdir "$out"
+for trial in healthy-1 restart-1 restart-2 healthy-2; do
+  BUFFER_RUNTIME_ONLY=1 experiments/buffer/run-lyrical.sh timeout -k 5 55 bash -ec '
+    source build/agnocast-lyrical/install/local_setup.bash
+    source build/rmw-agnocast/load-install/local_setup.bash
+    source build/universe-sync/install/local_setup.bash
+    source build/universe-pipeline/install/local_setup.bash
+    export CYCLONEDDS_URI="<CycloneDDS><Domain><General><Interfaces><NetworkInterface name=\"lo\"/></Interfaces><AllowMulticast>false</AllowMulticast></General><Discovery><ParticipantIndex>auto</ParticipantIndex><Peers><Peer Address=\"127.0.0.1\"/></Peers></Discovery></Domain></CycloneDDS>"
+    python3 experiments/rmw-agnocast/bridge-restart.py "$1" "$2"' \
+    bash "${trial%-*}" "$out/$trial" >"$out/$trial.txt" 2>&1 || exit 1
+done
+```
+
+Both restart trials reproduced the same two recording gaps, 35→49 and
+95→109, losing 13 frames per kill. The unchanged recorder stored 124/150
+frames per run. Both healthy controls stored all 150. Four relaunch-to-first-
+record intervals were 98.674, 91.361, 99.247 and 97.546 ms after a deliberate
+roughly 0.6 s outage. Verified local deliveries were 150/150 in all four
+runs. Maximum local output intervals were 50.502 and 50.304 ms during the
+two restart trials and 52.094 and 50.920 ms in the controls. Each input
+reader count went from two to one during the outage and back to two, with
+one local output writer throughout the checkpoints. All 24 checkpoints had
+five recent live writer payloads and no older outstanding payload. Lowest
+sampled host MemAvailable during runtime was 19,088 MiB.
+
+A supervisor can restore this same-host outbound recording route by
+restarting only the relay. This best-effort profile permits a recording gap.
+The experiment exercises neither automatic failure detection nor the reverse
+DDS-to-native direction. The comparison uses the same Cyclone recorder in
+both rows to isolate the restart. The prior lifecycle matrix covers Zenoh.
+Raw SQLite bags stay in the ignored build tree. Archived bag sequence and
+receive timestamps, crop samples, writer release and route logs permit
+independent inspection of all reported timing and count results.
+
+[Per-run evidence](../rmw-agnocast/bridge-restart-results/)

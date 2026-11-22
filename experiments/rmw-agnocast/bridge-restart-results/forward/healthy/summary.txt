@@ -1,0 +1,9 @@
+checkpoint seq=35 input_readers=2/2 output_writers=1 live=5
+checkpoint seq=47 input_readers=2/2 output_writers=1 live=5
+checkpoint seq=69 input_readers=2/2 output_writers=1 live=5
+checkpoint seq=95 input_readers=2/2 output_writers=1 live=5
+checkpoint seq=107 input_readers=2/2 output_writers=1 live=5
+checkpoint seq=129 input_readers=2/2 output_writers=1 live=5
+local=150/150 largest_callback_interval_ms=52.094
+bag=150/150 gaps=[] (last_good,first_recovered)
+Minimum host MemAvailable: 19202 MiB

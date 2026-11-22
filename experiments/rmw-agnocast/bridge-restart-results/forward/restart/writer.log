@@ -1,0 +1,450 @@
+[WARN] [1795351906.348876818] [Agnocast]: Agnocast publishers do not honor the BestEffort reliability QoS policy. Messages are delivered through shared memory regardless of this setting.
+[WARN] [1795351906.348924317] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+rmw_agnocast host-cloud writer /input
+routes seq=0 input_be=2 input_rel=2 output_be=1
+sent 0 1795351907099710563
+routes seq=1 input_be=2 input_rel=2 output_be=1
+sent 1 1795351907149627187
+routes seq=2 input_be=2 input_rel=2 output_be=1
+sent 2 1795351907199330492
+routes seq=3 input_be=2 input_rel=2 output_be=1
+sent 3 1795351907249356741
+routes seq=4 input_be=2 input_rel=2 output_be=1
+sent 4 1795351907299369164
+routes seq=5 input_be=2 input_rel=2 output_be=1
+sent 5 1795351907349415289
+host_payload_reclaimed=1795351907099710563
+routes seq=6 input_be=2 input_rel=2 output_be=1
+sent 6 1795351907399415488
+host_payload_reclaimed=1795351907149627187
+routes seq=7 input_be=2 input_rel=2 output_be=1
+sent 7 1795351907449373038
+host_payload_reclaimed=1795351907199330492
+routes seq=8 input_be=2 input_rel=2 output_be=1
+sent 8 1795351907499753267
+host_payload_reclaimed=1795351907249356741
+routes seq=9 input_be=2 input_rel=2 output_be=1
+sent 9 1795351907549415225
+host_payload_reclaimed=1795351907299369164
+routes seq=10 input_be=2 input_rel=2 output_be=1
+sent 10 1795351907599412500
+host_payload_reclaimed=1795351907349415289
+routes seq=11 input_be=2 input_rel=2 output_be=1
+sent 11 1795351907649376111
+host_payload_reclaimed=1795351907399415488
+routes seq=12 input_be=2 input_rel=2 output_be=1
+sent 12 1795351907699349861
+host_payload_reclaimed=1795351907449373038
+routes seq=13 input_be=2 input_rel=2 output_be=1
+sent 13 1795351907749410053
+host_payload_reclaimed=1795351907499753267
+routes seq=14 input_be=2 input_rel=2 output_be=1
+sent 14 1795351907799445679
+host_payload_reclaimed=1795351907549415225
+routes seq=15 input_be=2 input_rel=2 output_be=1
+sent 15 1795351907849407927
+host_payload_reclaimed=1795351907599412500
+routes seq=16 input_be=2 input_rel=2 output_be=1
+sent 16 1795351907899348165
+host_payload_reclaimed=1795351907649376111
+routes seq=17 input_be=2 input_rel=2 output_be=1
+sent 17 1795351907949394130
+host_payload_reclaimed=1795351907699349861
+routes seq=18 input_be=2 input_rel=2 output_be=1
+sent 18 1795351907999344847
+host_payload_reclaimed=1795351907749410053
+routes seq=19 input_be=2 input_rel=2 output_be=1
+sent 19 1795351908049332714
+host_payload_reclaimed=1795351907799445679
+routes seq=20 input_be=2 input_rel=2 output_be=1
+sent 20 1795351908099398376
+host_payload_reclaimed=1795351907849407927
+routes seq=21 input_be=2 input_rel=2 output_be=1
+sent 21 1795351908149371615
+host_payload_reclaimed=1795351907899348165
+routes seq=22 input_be=2 input_rel=2 output_be=1
+sent 22 1795351908199317844
+host_payload_reclaimed=1795351907949394130
+routes seq=23 input_be=2 input_rel=2 output_be=1
+sent 23 1795351908249384568
+host_payload_reclaimed=1795351907999344847
+routes seq=24 input_be=2 input_rel=2 output_be=1
+sent 24 1795351908299361153
+host_payload_reclaimed=1795351908049332714
+routes seq=25 input_be=2 input_rel=2 output_be=1
+sent 25 1795351908349373466
+host_payload_reclaimed=1795351908099398376
+routes seq=26 input_be=2 input_rel=2 output_be=1
+sent 26 1795351908399346865
+host_payload_reclaimed=1795351908149371615
+routes seq=27 input_be=2 input_rel=2 output_be=1
+sent 27 1795351908449370138
+host_payload_reclaimed=1795351908199317844
+routes seq=28 input_be=2 input_rel=2 output_be=1
+sent 28 1795351908499367923
+host_payload_reclaimed=1795351908249384568
+routes seq=29 input_be=2 input_rel=2 output_be=1
+sent 29 1795351908549409730
+host_payload_reclaimed=1795351908299361153
+routes seq=30 input_be=2 input_rel=2 output_be=1
+sent 30 1795351908599329249
+host_payload_reclaimed=1795351908349373466
+routes seq=31 input_be=2 input_rel=2 output_be=1
+sent 31 1795351908649392677
+host_payload_reclaimed=1795351908399346865
+routes seq=32 input_be=2 input_rel=2 output_be=1
+sent 32 1795351908699342002
+host_payload_reclaimed=1795351908449370138
+routes seq=33 input_be=2 input_rel=2 output_be=1
+sent 33 1795351908749427881
+host_payload_reclaimed=1795351908499367923
+routes seq=34 input_be=2 input_rel=2 output_be=1
+sent 34 1795351908799404066
+host_payload_reclaimed=1795351908549409730
+routes seq=35 input_be=2 input_rel=2 output_be=1
+sent 35 1795351908849407532
+host_payload_reclaimed=1795351908599329249
+routes seq=36 input_be=1 input_rel=1 output_be=1
+sent 36 1795351908899395769
+host_payload_reclaimed=1795351908649392677
+routes seq=37 input_be=1 input_rel=1 output_be=1
+sent 37 1795351908949394777
+host_payload_reclaimed=1795351908699342002
+routes seq=38 input_be=1 input_rel=1 output_be=1
+sent 38 1795351908999358187
+host_payload_reclaimed=1795351908749427881
+routes seq=39 input_be=1 input_rel=1 output_be=1
+sent 39 1795351909049367284
+host_payload_reclaimed=1795351908799404066
+routes seq=40 input_be=1 input_rel=1 output_be=1
+sent 40 1795351909099352225
+host_payload_reclaimed=1795351908849407532
+routes seq=41 input_be=1 input_rel=1 output_be=1
+sent 41 1795351909149398741
+host_payload_reclaimed=1795351908899395769
+routes seq=42 input_be=1 input_rel=1 output_be=1
+sent 42 1795351909199360048
+host_payload_reclaimed=1795351908949394777
+routes seq=43 input_be=1 input_rel=1 output_be=1
+sent 43 1795351909249378882
+host_payload_reclaimed=1795351908999358187
+routes seq=44 input_be=1 input_rel=1 output_be=1
+sent 44 1795351909299348795
+host_payload_reclaimed=1795351909049367284
+routes seq=45 input_be=1 input_rel=1 output_be=1
+sent 45 1795351909349394380
+host_payload_reclaimed=1795351909099352225
+routes seq=46 input_be=1 input_rel=1 output_be=1
+sent 46 1795351909399369162
+host_payload_reclaimed=1795351909149398741
+routes seq=47 input_be=1 input_rel=1 output_be=1
+sent 47 1795351909449385011
+host_payload_reclaimed=1795351909199360048
+routes seq=48 input_be=1 input_rel=1 output_be=1
+sent 48 1795351909499419454
+host_payload_reclaimed=1795351909249378882
+routes seq=49 input_be=2 input_rel=2 output_be=1
+sent 49 1795351909549405177
+host_payload_reclaimed=1795351909299348795
+routes seq=50 input_be=2 input_rel=2 output_be=1
+sent 50 1795351909599367757
+host_payload_reclaimed=1795351909349394380
+routes seq=51 input_be=2 input_rel=2 output_be=1
+sent 51 1795351909649347668
+host_payload_reclaimed=1795351909399369162
+routes seq=52 input_be=2 input_rel=2 output_be=1
+sent 52 1795351909699413340
+host_payload_reclaimed=1795351909449385011
+routes seq=53 input_be=2 input_rel=2 output_be=1
+sent 53 1795351909749384375
+host_payload_reclaimed=1795351909499419454
+routes seq=54 input_be=2 input_rel=2 output_be=1
+sent 54 1795351909799359248
+host_payload_reclaimed=1795351909549405177
+routes seq=55 input_be=2 input_rel=2 output_be=1
+sent 55 1795351909849343858
+host_payload_reclaimed=1795351909599367757
+routes seq=56 input_be=2 input_rel=2 output_be=1
+sent 56 1795351909899371138
+host_payload_reclaimed=1795351909649347668
+routes seq=57 input_be=2 input_rel=2 output_be=1
+sent 57 1795351909949331273
+host_payload_reclaimed=1795351909699413340
+routes seq=58 input_be=2 input_rel=2 output_be=1
+sent 58 1795351909999356820
+host_payload_reclaimed=1795351909749384375
+routes seq=59 input_be=2 input_rel=2 output_be=1
+sent 59 1795351910049370966
+host_payload_reclaimed=1795351909799359248
+source_rate_hz=20.00
+routes seq=60 input_be=2 input_rel=2 output_be=1
+sent 60 1795351910099349294
+host_payload_reclaimed=1795351909849343858
+routes seq=61 input_be=2 input_rel=2 output_be=1
+sent 61 1795351910149335668
+host_payload_reclaimed=1795351909899371138
+routes seq=62 input_be=2 input_rel=2 output_be=1
+sent 62 1795351910199412812
+host_payload_reclaimed=1795351909949331273
+routes seq=63 input_be=2 input_rel=2 output_be=1
+sent 63 1795351910249365993
+host_payload_reclaimed=1795351909999356820
+routes seq=64 input_be=2 input_rel=2 output_be=1
+sent 64 1795351910299422639
+host_payload_reclaimed=1795351910049370966
+routes seq=65 input_be=2 input_rel=2 output_be=1
+sent 65 1795351910349366643
+host_payload_reclaimed=1795351910099349294
+routes seq=66 input_be=2 input_rel=2 output_be=1
+sent 66 1795351910399397841
+host_payload_reclaimed=1795351910149335668
+routes seq=67 input_be=2 input_rel=2 output_be=1
+sent 67 1795351910449416545
+host_payload_reclaimed=1795351910199412812
+routes seq=68 input_be=2 input_rel=2 output_be=1
+sent 68 1795351910499390526
+host_payload_reclaimed=1795351910249365993
+routes seq=69 input_be=2 input_rel=2 output_be=1
+sent 69 1795351910549369365
+host_payload_reclaimed=1795351910299422639
+routes seq=70 input_be=2 input_rel=2 output_be=1
+sent 70 1795351910599398188
+host_payload_reclaimed=1795351910349366643
+routes seq=71 input_be=2 input_rel=2 output_be=1
+sent 71 1795351910649403688
+host_payload_reclaimed=1795351910399397841
+routes seq=72 input_be=2 input_rel=2 output_be=1
+sent 72 1795351910699369824
+host_payload_reclaimed=1795351910449416545
+routes seq=73 input_be=2 input_rel=2 output_be=1
+sent 73 1795351910749373330
+host_payload_reclaimed=1795351910499390526
+routes seq=74 input_be=2 input_rel=2 output_be=1
+sent 74 1795351910799369171
+host_payload_reclaimed=1795351910549369365
+routes seq=75 input_be=2 input_rel=2 output_be=1
+sent 75 1795351910849369691
+host_payload_reclaimed=1795351910599398188
+routes seq=76 input_be=2 input_rel=2 output_be=1
+sent 76 1795351910899392854
+host_payload_reclaimed=1795351910649403688
+routes seq=77 input_be=2 input_rel=2 output_be=1
+sent 77 1795351910949416628
+host_payload_reclaimed=1795351910699369824
+routes seq=78 input_be=2 input_rel=2 output_be=1
+sent 78 1795351910999350163
+host_payload_reclaimed=1795351910749373330
+routes seq=79 input_be=2 input_rel=2 output_be=1
+sent 79 1795351911049382693
+host_payload_reclaimed=1795351910799369171
+routes seq=80 input_be=2 input_rel=2 output_be=1
+sent 80 1795351911099384786
+host_payload_reclaimed=1795351910849369691
+routes seq=81 input_be=2 input_rel=2 output_be=1
+sent 81 1795351911149422736
+host_payload_reclaimed=1795351910899392854
+routes seq=82 input_be=2 input_rel=2 output_be=1
+sent 82 1795351911199472418
+host_payload_reclaimed=1795351910949416628
+routes seq=83 input_be=2 input_rel=2 output_be=1
+sent 83 1795351911249413117
+host_payload_reclaimed=1795351910999350163
+routes seq=84 input_be=2 input_rel=2 output_be=1
+sent 84 1795351911299451849
+host_payload_reclaimed=1795351911049382693
+routes seq=85 input_be=2 input_rel=2 output_be=1
+sent 85 1795351911349437751
+host_payload_reclaimed=1795351911099384786
+routes seq=86 input_be=2 input_rel=2 output_be=1
+sent 86 1795351911399401934
+host_payload_reclaimed=1795351911149422736
+routes seq=87 input_be=2 input_rel=2 output_be=1
+sent 87 1795351911449426448
+host_payload_reclaimed=1795351911199472418
+routes seq=88 input_be=2 input_rel=2 output_be=1
+sent 88 1795351911499381644
+host_payload_reclaimed=1795351911249413117
+routes seq=89 input_be=2 input_rel=2 output_be=1
+sent 89 1795351911549379008
+host_payload_reclaimed=1795351911299451849
+routes seq=90 input_be=2 input_rel=2 output_be=1
+sent 90 1795351911599400919
+host_payload_reclaimed=1795351911349437751
+routes seq=91 input_be=2 input_rel=2 output_be=1
+sent 91 1795351911649343250
+host_payload_reclaimed=1795351911399401934
+routes seq=92 input_be=2 input_rel=2 output_be=1
+sent 92 1795351911699381250
+host_payload_reclaimed=1795351911449426448
+routes seq=93 input_be=2 input_rel=2 output_be=1
+sent 93 1795351911749370830
+host_payload_reclaimed=1795351911499381644
+routes seq=94 input_be=2 input_rel=2 output_be=1
+sent 94 1795351911799322269
+host_payload_reclaimed=1795351911549379008
+routes seq=95 input_be=2 input_rel=2 output_be=1
+sent 95 1795351911849332507
+host_payload_reclaimed=1795351911599400919
+routes seq=96 input_be=1 input_rel=1 output_be=1
+sent 96 1795351911899417806
+host_payload_reclaimed=1795351911649343250
+routes seq=97 input_be=1 input_rel=1 output_be=1
+sent 97 1795351911949354837
+host_payload_reclaimed=1795351911699381250
+routes seq=98 input_be=1 input_rel=1 output_be=1
+sent 98 1795351911999426280
+host_payload_reclaimed=1795351911749370830
+routes seq=99 input_be=1 input_rel=1 output_be=1
+sent 99 1795351912049402204
+host_payload_reclaimed=1795351911799322269
+routes seq=100 input_be=1 input_rel=1 output_be=1
+sent 100 1795351912099344316
+host_payload_reclaimed=1795351911849332507
+routes seq=101 input_be=1 input_rel=1 output_be=1
+sent 101 1795351912149416299
+host_payload_reclaimed=1795351911899417806
+routes seq=102 input_be=1 input_rel=1 output_be=1
+sent 102 1795351912199406069
+host_payload_reclaimed=1795351911949354837
+routes seq=103 input_be=1 input_rel=1 output_be=1
+sent 103 1795351912249393014
+host_payload_reclaimed=1795351911999426280
+routes seq=104 input_be=1 input_rel=1 output_be=1
+sent 104 1795351912299395749
+host_payload_reclaimed=1795351912049402204
+routes seq=105 input_be=1 input_rel=1 output_be=1
+sent 105 1795351912349358148
+host_payload_reclaimed=1795351912099344316
+routes seq=106 input_be=1 input_rel=1 output_be=1
+sent 106 1795351912399350172
+host_payload_reclaimed=1795351912149416299
+routes seq=107 input_be=1 input_rel=1 output_be=1
+sent 107 1795351912449381981
+host_payload_reclaimed=1795351912199406069
+routes seq=108 input_be=1 input_rel=1 output_be=1
+sent 108 1795351912499379295
+host_payload_reclaimed=1795351912249393014
+routes seq=109 input_be=2 input_rel=2 output_be=1
+sent 109 1795351912549430981
+host_payload_reclaimed=1795351912299395749
+routes seq=110 input_be=2 input_rel=2 output_be=1
+sent 110 1795351912599376749
+host_payload_reclaimed=1795351912349358148
+routes seq=111 input_be=2 input_rel=2 output_be=1
+sent 111 1795351912649429026
+host_payload_reclaimed=1795351912399350172
+routes seq=112 input_be=2 input_rel=2 output_be=1
+sent 112 1795351912699338816
+host_payload_reclaimed=1795351912449381981
+routes seq=113 input_be=2 input_rel=2 output_be=1
+sent 113 1795351912749423644
+host_payload_reclaimed=1795351912499379295
+routes seq=114 input_be=2 input_rel=2 output_be=1
+sent 114 1795351912799425316
+host_payload_reclaimed=1795351912549430981
+routes seq=115 input_be=2 input_rel=2 output_be=1
+sent 115 1795351912849390400
+host_payload_reclaimed=1795351912599376749
+routes seq=116 input_be=2 input_rel=2 output_be=1
+sent 116 1795351912899396150
+host_payload_reclaimed=1795351912649429026
+routes seq=117 input_be=2 input_rel=2 output_be=1
+sent 117 1795351912949382184
+host_payload_reclaimed=1795351912699338816
+routes seq=118 input_be=2 input_rel=2 output_be=1
+sent 118 1795351912999423790
+host_payload_reclaimed=1795351912749423644
+routes seq=119 input_be=2 input_rel=2 output_be=1
+sent 119 1795351913049391109
+host_payload_reclaimed=1795351912799425316
+routes seq=120 input_be=2 input_rel=2 output_be=1
+sent 120 1795351913099424020
+host_payload_reclaimed=1795351912849390400
+routes seq=121 input_be=2 input_rel=2 output_be=1
+sent 121 1795351913149350912
+host_payload_reclaimed=1795351912899396150
+routes seq=122 input_be=2 input_rel=2 output_be=1
+sent 122 1795351913199360029
+host_payload_reclaimed=1795351912949382184
+routes seq=123 input_be=2 input_rel=2 output_be=1
+sent 123 1795351913249420040
+host_payload_reclaimed=1795351912999423790
+routes seq=124 input_be=2 input_rel=2 output_be=1
+sent 124 1795351913299353655
+host_payload_reclaimed=1795351913049391109
+routes seq=125 input_be=2 input_rel=2 output_be=1
+sent 125 1795351913349339187
+host_payload_reclaimed=1795351913099424020
+routes seq=126 input_be=2 input_rel=2 output_be=1
+sent 126 1795351913399346060
+host_payload_reclaimed=1795351913149350912
+routes seq=127 input_be=2 input_rel=2 output_be=1
+sent 127 1795351913449368731
+host_payload_reclaimed=1795351913199360029
+routes seq=128 input_be=2 input_rel=2 output_be=1
+sent 128 1795351913499399838
+host_payload_reclaimed=1795351913249420040
+routes seq=129 input_be=2 input_rel=2 output_be=1
+sent 129 1795351913549375833
+host_payload_reclaimed=1795351913299353655
+routes seq=130 input_be=2 input_rel=2 output_be=1
+sent 130 1795351913599332722
+host_payload_reclaimed=1795351913349339187
+routes seq=131 input_be=2 input_rel=2 output_be=1
+sent 131 1795351913649320518
+host_payload_reclaimed=1795351913399346060
+routes seq=132 input_be=2 input_rel=2 output_be=1
+sent 132 1795351913699379007
+host_payload_reclaimed=1795351913449368731
+routes seq=133 input_be=2 input_rel=2 output_be=1
+sent 133 1795351913749369668
+host_payload_reclaimed=1795351913499399838
+routes seq=134 input_be=2 input_rel=2 output_be=1
+sent 134 1795351913799429720
+host_payload_reclaimed=1795351913549375833
+routes seq=135 input_be=2 input_rel=2 output_be=1
+sent 135 1795351913849413609
+host_payload_reclaimed=1795351913599332722
+routes seq=136 input_be=2 input_rel=2 output_be=1
+sent 136 1795351913899354007
+host_payload_reclaimed=1795351913649320518
+routes seq=137 input_be=2 input_rel=2 output_be=1
+sent 137 1795351913949373703
+host_payload_reclaimed=1795351913699379007
+routes seq=138 input_be=2 input_rel=2 output_be=1
+sent 138 1795351913999366669
+host_payload_reclaimed=1795351913749369668
+routes seq=139 input_be=2 input_rel=2 output_be=1
+sent 139 1795351914049378380
+host_payload_reclaimed=1795351913799429720
+routes seq=140 input_be=2 input_rel=2 output_be=1
+sent 140 1795351914099417452
+host_payload_reclaimed=1795351913849413609
+routes seq=141 input_be=2 input_rel=2 output_be=1
+sent 141 1795351914149368390
+host_payload_reclaimed=1795351913899354007
+routes seq=142 input_be=2 input_rel=2 output_be=1
+sent 142 1795351914199380692
+host_payload_reclaimed=1795351913949373703
+routes seq=143 input_be=2 input_rel=2 output_be=1
+sent 143 1795351914249390630
+host_payload_reclaimed=1795351913999366669
+routes seq=144 input_be=2 input_rel=2 output_be=1
+sent 144 1795351914299343752
+host_payload_reclaimed=1795351914049378380
+routes seq=145 input_be=2 input_rel=2 output_be=1
+sent 145 1795351914349448456
+host_payload_reclaimed=1795351914099417452
+routes seq=146 input_be=2 input_rel=2 output_be=1
+sent 146 1795351914399349942
+host_payload_reclaimed=1795351914149368390
+routes seq=147 input_be=2 input_rel=2 output_be=1
+sent 147 1795351914449381220
+host_payload_reclaimed=1795351914199380692
+routes seq=148 input_be=2 input_rel=2 output_be=1
+sent 148 1795351914499354619
+host_payload_reclaimed=1795351914249390630
+routes seq=149 input_be=2 input_rel=2 output_be=1
+sent 149 1795351914549397599
+host_payload_reclaimed=1795351914299343752
+[INFO] [1795351918.273419482] [rclcpp]: signal_handler(signum=2)

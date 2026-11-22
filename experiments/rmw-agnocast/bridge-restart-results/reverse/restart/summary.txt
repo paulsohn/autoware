@@ -1,0 +1,11 @@
+checkpoint seq=35 input_readers=2/2 output_writers=1 live=5
+checkpoint seq=47 input_readers=1/1 output_writers=1 live=5
+checkpoint seq=69 input_readers=2/2 output_writers=1 live=5
+checkpoint seq=95 input_readers=2/2 output_writers=1 live=5
+checkpoint seq=107 input_readers=1/1 output_writers=1 live=5
+checkpoint seq=129 input_readers=2/2 output_writers=1 live=5
+local=150/150 largest_callback_interval_ms=50.304
+bag=124/150 gaps=[(35, 49), (95, 109)] (last_good,first_recovered)
+before=35 after=49 missing=13 kill_ns=1795351923105645567 restart_ns=1795351923698602108 first_bag_ns=1795351923797848730 restart_to_record_ms=99.247
+before=95 after=109 missing=13 kill_ns=1795351926105270943 restart_ns=1795351926700185239 first_bag_ns=1795351926797731316 restart_to_record_ms=97.546
+Minimum host MemAvailable: 19088 MiB

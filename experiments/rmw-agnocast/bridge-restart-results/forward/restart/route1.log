@@ -1,0 +1,4 @@
+[WARN] [1795351909.518062861] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[WARN] [1795351909.518263967] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+rmw_agnocast host-cloud reader /input
+[INFO] [1795351909.549981323] [agnocast_route_bridge]: ingress_gid=rmw_cyclonedds_cpp/6a79d5303c3ae6670000000000000000 egress_gid=rmw_cyclonedds_cpp/a51814dd576d91100000000000000000
