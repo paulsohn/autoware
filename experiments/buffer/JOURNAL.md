@@ -2498,3 +2498,102 @@ rmw_agnocast README.
 
 [Per-run measurements](../rmw-agnocast/pipeline-saturation-results/summary.txt) ·
 [Tracker replays](../rmw-agnocast/pipeline-saturation-results/tracker.txt).
+
+## 2026-11-22 — Local retained and copying PointCloud2 readers with a late DDS recorder
+
+Qualify one live publisher, one ordinary CPU reader, one local reader retaining
+a whole payload through an Agnocast host view, and an outbound DDS recorder.
+Use the preceding Lyrical overlays, /dev/agnocast, heap hook and publisher
+loan support. Add a fixture to agnocast_rmw_loan_probe. Its writer publishes
+256 KiB clouds at 20 Hz with one UINT32 intensity field and a sequence-dependent
+payload. Every callback checks the shape and all payload bytes. Compare the
+producer's data address with the CPU and retained reader addresses for the
+same sequence. Retain the first view through at least two recorder lifetimes
+and verify its bytes again on each subsequent callback. All readers use a
+single executor thread per process; this experiment does not inject CPU load.
+
+A fixture-only environment flag instruments the existing host-cloud writer
+deleter. It reports the sample stamp after destroying the shared vector and
+freeing the host-cloud object. The publisher's loan/private-copy counters
+and reader backend/address checks describe payload ownership at the native
+edges. They do not count DDS serialization or storage-plugin copies.
+
+Keep one writer and CPU reader alive. Start the existing outbound route bridge
+after the baseline. Start four successive view readers. For each reader join,
+stop, then restart an unhooked Cyclone recorder on /mirror while the producer
+continues. A separate DDS observer measures callback latency in the same
+20-frame window as each local reader. In the bag run, launch rosbag2 with
+SQLite3 and zero recorder cache and deserialize every stored record, checking
+its full payload, source timestamp and consecutive sequence number. Stop the
+holder gracefully in odd cycles and send SIGKILL in even cycles. After 35
+more CPU-reader frames check reclamation of the held sample, all old sample
+stamps, outstanding payload count and publisher shared-mapping RSS.
+
+Run builds and experiments sequentially. Use a fresh output directory and
+run each Python invocation from the repository root:
+
+```bash
+export LYRICAL_ROOT=$(cat build/agnocast-lyrical/universe-root)
+experiments/buffer/run-lyrical.sh bash experiments/rmw-agnocast/build-loadable.sh
+BUFFER_RUNTIME_ONLY=1 experiments/buffer/run-lyrical.sh timeout 180 bash -ec '
+  source build/agnocast-lyrical/install/local_setup.bash
+  source build/rmw-agnocast/load-install/local_setup.bash
+  out=build/mixed-reader-reproduction
+  mkdir "$out"
+  r=experiments/rmw-agnocast/mixed-readers.py
+  for mode in native cyclone; do python3 "$r" "$out/$mode" "$mode"; done
+  /opt/ros/lyrical/lib/rmw_zenoh_cpp/rmw_zenohd > "$out/router.log" 2>&1 &
+  router=$!
+  trap "kill $router; wait $router || true" EXIT
+  sleep 1
+  python3 "$r" "$out/zenoh" zenoh
+  kill "$router"
+  wait "$router" || true
+  trap - EXIT
+  python3 "$r" "$out/mixed" rmw --bags'
+```
+
+The native, Cyclone and Zenoh controls use one producer and one reader at
+the same rate and payload size. Native uses its typed message loan and
+Agnocast-only single-threaded executor; the ROS references use the ordinary
+CPU path with loaning disabled. These single-reader latency samples are
+context for the mixed case, rather than matched native bridge trials.
+
+Two independent disk-recording runs delivered 550/550 clouds each to the
+always-on local CPU reader. The host-view payload addresses matched the
+publisher's addresses for every received sequence; the default CPU reader
+always had a distinct address. The writer reported 550 loans and zero
+private payload copies in each run. All 16 SQLite bags contained consecutive
+sequences within their recording intervals (204 + 206 stored clouds),
+with verified source stamps and bytes. Gaps between recording intervals
+are expected for this volatile route. First-run single-reader controls each
+delivered 45/45; after five warmups their median/p95 in milliseconds were
+native 0.050/0.062, Cyclone 0.433/0.576, Zenoh 0.305/0.389, rmw_agnocast
+CPU reader 0.112/0.147 (repeat CPU baseline 0.103/0.118).
+
+Across the 16 simultaneous 20-frame windows, pooled publication-to-callback
+median/p95 were 0.107/0.137 ms for the local CPU copy, 0.088/0.121 ms for
+the retained view, and 0.581/0.811 ms for the ordinary DDS timing observer.
+Record time is taken at callback entry before verification. DDS observer
+timing excludes SQLite persistence. Reference runs have a different graph
+and native avoids the local CPU materialization.
+
+All eight retained sample stamps were absent from publisher reclamation
+events while held, then present after reader exit. Both graceful shutdown
+and SIGKILL occurred four times. Every drain checkpoint found five live
+payloads (the writer history depth) with zero old outstanding samples.
+Publisher payload-mapping RSS at the four checkpoints was 3092 KiB in
+trial one, and 3092, 3348, 3348, 3348 KiB in trial two. These count live
+payloads and one mapping, not every allocation in the process. Minimum
+available host memory in the two guarded disk runs was 5643 and 5613 MiB.
+
+Repeated the same four-cycle test first with a DDS timing observer alone
+(476/476 local), then added actual rosbag2 persistence. Raw logs, final
+SQLite bag metadata and both disk trial summaries are archived. Full
+generated bag files stay in the ignored build directory; the runner reads
+each database back before reporting success. The experiment exercises
+reader death while the publisher survives. Publisher or bridge failure,
+dynamic component unloading and multiple hosts remain distinct cases.
+
+[Trial one](../rmw-agnocast/mixed-reader-results/trial-1/summary.txt) ·
+[Trial two](../rmw-agnocast/mixed-reader-results/trial-2/summary.txt).

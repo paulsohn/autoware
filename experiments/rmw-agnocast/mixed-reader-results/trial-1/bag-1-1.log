@@ -1,0 +1,12 @@
+[INFO] [1795346904.378685180] [rosbag2_recorder]: Event publisher thread: Started
+[INFO] [1795346904.382918757] [rosbag2_recorder]: Starting recording to 'bag-1-1'
+[WARN] [1795346904.382944645] [rosbag2_recorder]: No input serialization format specified, using default rmw serialization format: 'cdr'.
+[INFO] [1795346904.387666584] [rosbag2_storage]: Opened database 'bag-1-1/0_bag-1-1_2026_11_22-11_28_24.db3' for READ_WRITE.
+[INFO] [1795346904.391802709] [rosbag2_recorder]: Subscribed to topic '/mirror'
+[INFO] [1795346904.391889641] [rosbag2_recorder]: Listening for topics...
+[INFO] [1795346904.391898017] [rosbag2_recorder]: Recording...
+[INFO] [1795346904.391985961] [rosbag2_recorder]: Topics discovery started.
+[INFO] [1795346904.392018131] [rosbag2_recorder]: All requested topics are subscribed. Stopping discovery...
+[INFO] [1795346904.392025264] [rosbag2_recorder]: Topics discovery stopped.
+[INFO] [1795346905.666440609] [rosbag2_recorder]: Recording stopped
+[INFO] [1795346905.667080053] [rosbag2_recorder]: Event publisher thread: Exited

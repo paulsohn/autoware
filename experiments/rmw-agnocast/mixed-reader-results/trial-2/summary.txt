@@ -1,0 +1,39 @@
+baseline cpu seq=6..45 n=40 p50_ms=0.103 p95_ms=0.118
+recording-1-1 cpu seq=67..86 n=20 p50_ms=0.103 p95_ms=0.118
+recording-1-1 holder-1 seq=67..86 n=20 p50_ms=0.106 p95_ms=0.125
+recording-1-1 recorder-1-1 seq=67..86 n=20 p50_ms=0.589 p95_ms=0.719
+bag-1-1 stored=25 seq=66..90 payloads_verified
+recording-1-2 cpu seq=105..124 n=20 p50_ms=0.110 p95_ms=0.151
+recording-1-2 holder-1 seq=105..124 n=20 p50_ms=0.084 p95_ms=0.131
+recording-1-2 recorder-1-2 seq=105..124 n=20 p50_ms=0.583 p95_ms=0.854
+bag-1-2 stored=26 seq=103..128 payloads_verified
+drain cycle=1 exit=graceful held=48 held_reclaimed=True old_outstanding=[] live_payloads=5 shared_rss_KiB=3092
+recording-2-1 cpu seq=192..211 n=20 p50_ms=0.108 p95_ms=0.123
+recording-2-1 holder-2 seq=192..211 n=20 p50_ms=0.093 p95_ms=0.101
+recording-2-1 recorder-2-1 seq=192..211 n=20 p50_ms=0.587 p95_ms=0.785
+bag-2-1 stored=26 seq=190..215 payloads_verified
+recording-2-2 cpu seq=227..246 n=20 p50_ms=0.104 p95_ms=0.123
+recording-2-2 holder-2 seq=227..246 n=20 p50_ms=0.064 p95_ms=0.090
+recording-2-2 recorder-2-2 seq=227..246 n=20 p50_ms=0.610 p95_ms=0.732
+bag-2-2 stored=26 seq=225..250 payloads_verified
+drain cycle=2 exit=kill held=175 held_reclaimed=True old_outstanding=[] live_payloads=5 shared_rss_KiB=3348
+recording-3-1 cpu seq=310..329 n=20 p50_ms=0.111 p95_ms=0.125
+recording-3-1 holder-3 seq=310..329 n=20 p50_ms=0.095 p95_ms=0.118
+recording-3-1 recorder-3-1 seq=310..329 n=20 p50_ms=0.584 p95_ms=0.712
+bag-3-1 stored=26 seq=308..333 payloads_verified
+recording-3-2 cpu seq=345..364 n=20 p50_ms=0.111 p95_ms=0.128
+recording-3-2 holder-3 seq=345..364 n=20 p50_ms=0.081 p95_ms=0.088
+recording-3-2 recorder-3-2 seq=345..364 n=20 p50_ms=0.584 p95_ms=0.777
+bag-3-2 stored=26 seq=343..368 payloads_verified
+drain cycle=3 exit=graceful held=293 held_reclaimed=True old_outstanding=[] live_payloads=5 shared_rss_KiB=3348
+recording-4-1 cpu seq=432..451 n=20 p50_ms=0.103 p95_ms=0.127
+recording-4-1 holder-4 seq=432..451 n=20 p50_ms=0.084 p95_ms=0.133
+recording-4-1 recorder-4-1 seq=432..451 n=20 p50_ms=0.609 p95_ms=0.751
+bag-4-1 stored=26 seq=430..455 payloads_verified
+recording-4-2 cpu seq=466..485 n=20 p50_ms=0.108 p95_ms=0.128
+recording-4-2 holder-4 seq=466..485 n=20 p50_ms=0.083 p95_ms=0.106
+recording-4-2 recorder-4-2 seq=466..485 n=20 p50_ms=0.607 p95_ms=0.721
+bag-4-2 stored=25 seq=465..489 payloads_verified
+drain cycle=4 exit=kill held=415 held_reclaimed=True old_outstanding=[] live_payloads=5 shared_rss_KiB=3348
+continuous_reader=550/550
+Minimum host MemAvailable: 5613 MiB

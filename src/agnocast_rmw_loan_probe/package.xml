@@ -3,6 +3,7 @@
   <description>Exercise rclcpp whole-message loan ownership with Agnocast storage.</description>
   <maintainer email="paulsohn@users.noreply.github.com">Paul Sohn</maintainer>
   <license>Apache-2.0</license><buildtool_depend>ament_cmake</buildtool_depend>
+  <build_depend>rmw_agnocast</build_depend>
   <depend>sensor_msgs</depend><depend>nav_msgs</depend><depend>geometry_msgs</depend>
   <depend>agnocastlib</depend><depend>autoware_planning_msgs</depend>
   <depend>rclcpp</depend><depend>rmw</depend><depend>rclcpp_components</depend><depend>class_loader</depend>

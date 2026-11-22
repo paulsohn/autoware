@@ -635,8 +635,12 @@ extern "C" rmw_ret_t rmw_publish_loaned_message(
     w->stamp(msg);
     trace.mark("handoff", stamp);
     w->pub.publish(std::move(it->second), [](void * p) {
-      std::destroy_at(static_cast<HostCloud *>(p));
+      auto * cloud = static_cast<HostCloud *>(p);
+      static const bool audit = std::getenv("AGNOCAST_RMW_AUDIT_RELEASE") != nullptr;
+      const auto stamp = audit ? cloud_stamp(cloud->header) : 0;
+      std::destroy_at(cloud);
       ::operator delete(p);
+      if (audit) std::fprintf(stderr, "host_payload_reclaimed=%ld\n", long(stamp));
     });
     trace.mark("publish_return", stamp);
     ++w->published_loans;

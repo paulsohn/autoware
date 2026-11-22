@@ -1,0 +1,44 @@
+rosbag2_bagfile_information:
+  version: 9
+  storage_identifier: sqlite3
+  duration:
+    nanoseconds: 1199996581
+  starting_time:
+    nanoseconds_since_epoch: 1795346906295006557
+  message_count: 25
+  topics_with_message_count:
+    - topic_metadata:
+        name: /mirror
+        type: sensor_msgs/msg/PointCloud2
+        serialization_format: cdr
+        offered_qos_profiles:
+          - history: keep_last
+            depth: 5
+            reliability: best_effort
+            durability: volatile
+            deadline:
+              sec: 9223372036
+              nsec: 854775807
+            lifespan:
+              sec: 9223372036
+              nsec: 854775807
+            liveliness: automatic
+            liveliness_lease_duration:
+              sec: 9223372036
+              nsec: 854775807
+            avoid_ros_namespace_conventions: false
+        type_description_hash: RIHS01_9198cabf7da3796ae6fe19c4cb3bdd3525492988c70522628af5daa124bae2b5
+      message_count: 25
+  compression_format: ""
+  compression_mode: ""
+  relative_file_paths:
+    - 0_bag-1-2_2026_11_22-11_28_26.db3
+  files:
+    - path: 0_bag-1-2_2026_11_22-11_28_26.db3
+      starting_time:
+        nanoseconds_since_epoch: 1795346906295006557
+      duration:
+        nanoseconds: 1199996581
+      message_count: 25
+  custom_data: ~
+  ros_distro: lyrical

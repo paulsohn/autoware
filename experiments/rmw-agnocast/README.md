@@ -2876,3 +2876,20 @@ three workers or bundled CIE. Those configurations confirmed 13, 30 and
 30 of the 30 transient targets within 100 ms. This supports sizing the
 ordinary pool to the concurrent work for the tested graph.
 [Two-competitor matrix](pipeline-saturation-results/summary.txt).
+
+### Concurrent retained views, CPU copies and late DDS recorders
+
+A single rmw_agnocast writer published 256 KiB PointCloud2 messages at
+20 Hz. Two runs delivered all 1100 clouds to the ordinary local CPU reader
+while host-view readers and stock Cyclone rosbag2 recorders joined and
+exited. All 16 bag sessions passed payload and sequence readback. Retained
+views matched publisher addresses, ordinary CPU reads materialized
+independent payloads, and all 1100 publisher loans reported zero private
+payload copies. Each of eight retained payloads was reclaimed after its
+reader exited, including four forced process deaths. All eight drain
+checkpoints returned to five live payloads. These are same-host,
+single-writer results with a surviving explicit outbound bridge.
+
+[Measured windows and ownership checks](mixed-reader-results/trial-1/summary.txt) ·
+[Independent repeat](mixed-reader-results/trial-2/summary.txt) ·
+[Reproduction and controls](../buffer/JOURNAL.md#2026-11-22--local-retained-and-copying-pointcloud2-readers-with-a-late-dds-recorder).
