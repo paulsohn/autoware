@@ -1,0 +1,36 @@
+Subject: Recognize a leading package name in interface resource entries
+
+Applies to: RCR rosidl_runtime_py 0.15.2-3.rcr.2,
+rosidl_runtime_py/get_interfaces.py.
+
+Observed failure: get_interfaces reports builtin_interfaces/Time as a grid_map_msgs
+message. Its resource index contains grid_map_msgs/msg/GridMap.idl alongside
+transitive dependency entries. The existing own-package filter recognizes only
+/package/ in the middle of a path, so it fails when package/ starts the path.
+
+Rationale and scope: normalize a leading owning-package segment before the
+existing filter. Preserve ordinary relative and embedded-package paths, API
+behavior and dependency filtering. No package-specific names or path inventory.
+
+Verification: all nine original SDK targets pass (51 behavioral cases and four
+linter cases), with no skips. resource_paths_test passes all three path-position
+subcases (one unittest case). The extracted product has a separate consumer gate.
+
+Upstream: the selected published implementation retains this boundary case,
+inspected 2026-11-23. No matching upstream association is recorded.
+https://bazel.ros.org/modules/rosidl_runtime_py/0.15.2-3.rcr.2/source.json
+
+--- a/rosidl_runtime_py/get_interfaces.py
++++ b/rosidl_runtime_py/get_interfaces.py
+@@ -41,7 +41,10 @@
+             continue
+         lines = []
+         marker = f'/{package_name}/'
+-        raw_lines = content.splitlines()
++        raw_lines = [
++            '/' + line if line.startswith(package_name + '/') else line
++            for line in content.splitlines()
++        ]
+         own_stems = {
+             line.split(marker)[-1].rsplit('.', 1)[0]
+             for line in raw_lines

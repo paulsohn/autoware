@@ -18590,3 +18590,43 @@ consumer gate; its remaining Python-closure issue does not change these two
 launchers or archives. Existing simulator-driving and OCI runtime evidence
 applies to unchanged application code and profiles; no new GPU, Fast DDS,
 image-export or full simulator check is part of this refactor.
+
+## 2026-11-23: Phase 7.6 — Leading-package interface resource paths
+
+Purpose: preserve resource ownership when a source repository contains multiple
+ROS packages. During the debug environment's all-indexed-type import check,
+get_interfaces reports msg/Time under grid_map_msgs, then get_message tries to
+import grid_map_msgs.msg._time. Inspect the actual resource marker: grid_map's
+own entries start grid_map_msgs/msg/GridMap.idl, alongside transitive dependency
+entries such as msg/builtin_interfaces/msg/Time.idl. In rosidl_runtime_py
+0.15.2-3.rcr.2, the existing own-package filter recognizes /<package>/ only in
+the middle of a path. A leading <package>/ therefore leaves its ownership set
+empty and includes foreign types.
+
+Keep that SDK version and add leading_package.patch through a root override.
+Normalize only a leading owning-package segment by prepending a slash before
+the existing ownership filter. Ordinary relative and embedded-package paths
+retain their existing behavior; do not copy the consumer's package list or
+rewrite resources in an archive. Add a generic resource_paths_test under the
+SDK owner, mocking its resource content for ordinary, leading-package and
+embedded-package paths, with a message, service, action and foreign dependency.
+Run all nine registered SDK tests (five behavioral modules and four linters),
+plus this regression. Declare both the SDK and its required ament_index_python
+imports in the regression fixture. Command:
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_output=errors @rosidl_runtime_py//... \
+  //third_party/rosidl_runtime_py:resource_paths_test
+python3 -m flake8 --max-line-length=150 third_party/rosidl_runtime_py/test_resource_paths.py
+git diff --check
+```
+
+All ten targets pass: the original 51 behavioral and four linter cases, with no
+skips, plus the regression's three path-position subcases (one case, 0.5 s).
+The published SDK already contains its embedded-package ownership filter; this
+correction extends that existing filter to the observed leading-package form.
+No matching upstream association is recorded for the selected published version,
+inspected 2026-11-23. The relocated distribution separately tests real indexed
+schemas and bindings. No Autoware source, GPU, Fast DDS or pre-commit change.

@@ -219,3 +219,24 @@ bazel test --config=runtime --config=no-agnocast --test_output=errors \
 ```
 
 [Reproducible adoption evidence](JOURNAL.md#2026-11-23-phase-76--transitive-interface-resource-indexes).
+
+### Interface ownership filtering misses a leading package path
+
+- [ ] Associate leading-package resource normalization with an upstream RCR change.
+
+Verified 2026-11-23 with rosidl_runtime_py 0.15.2-3.rcr.2 and grid_map's
+multi-package source repository. Its index contains grid_map_msgs/msg/GridMap.idl
+beside dependency entries such as msg/builtin_interfaces/msg/Time.idl. The SDK's
+get_interfaces ownership filter recognizes /<package>/ within a path, but misses
+<package>/ at the beginning. It then reports Time under grid_map_msgs, and a
+real get_message call attempts to import the nonexistent grid_map_msgs.msg._time.
+
+The [normalization correction](../../third_party/rosidl_runtime_py/leading_package.patch)
+handles that leading segment before the existing filter. The generic regression
+covers ordinary relative, leading-package and embedded-package forms with
+message/service/action resources and a foreign dependency. All nine original SDK
+targets pass (51 behavioral cases and four linters, no skips), plus the new
+regression. This extends the selected published SDK's existing path adaptation;
+no matching upstream association is recorded for that version.
+
+[Reproducible commands and diagnosis](JOURNAL.md#2026-11-23-phase-76--leading-package-interface-resource-paths).

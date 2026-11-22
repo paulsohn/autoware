@@ -129,6 +129,14 @@ single_version_override(
     version = "0.4.3-3.rcr.5",
 )
 
+# Preserve introspection when an owning package starts a resource path.
+single_version_override(
+    module_name = "rosidl_runtime_py",
+    patch_strip = 1,
+    patches = ["//third_party/rosidl_runtime_py:leading_package.patch"],
+    version = "0.15.2-3.rcr.2",
+)
+
 # Keep the existing solver API separate from RCR's OSQP 1.x consumers.
 # shortcut: current consumers link only 0.6; revisit before mixing both ABIs in one process.
 multiple_version_override(

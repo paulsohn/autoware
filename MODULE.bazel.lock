@@ -1504,7 +1504,6 @@
     "https://bazel.ros.org/modules/rosidl_runtime_cpp/0.0.0/MODULE.bazel": "ff491644854b77c972e74b1ed376129c5cbeee8cfcbe2f7a1aa8cefbf28274e2",
     "https://bazel.ros.org/modules/rosidl_runtime_cpp/5.2.1-1.rcr.2/MODULE.bazel": "76f5ae44b4e746bd5b056b4f7bf62ed0a7a908f34ed8289424b895567913c142",
     "https://bazel.ros.org/modules/rosidl_runtime_cpp/5.2.1-1.rcr.2/source.json": "b17657cffdbb99b5da141f1ccafc90f270498e41a357a4289fee30ef320a572f",
-    "https://bazel.ros.org/modules/rosidl_runtime_py/0.0.0/MODULE.bazel": "0312b4031eccf8866d9229f248a25f4b86a407f3560d603f9fd1e9882c6e938f",
     "https://bazel.ros.org/modules/rosidl_runtime_py/0.15.2-3.rcr.2/MODULE.bazel": "0b92dfb47d628ffe5aab7a915bb9a93c9359a96221c6b972224a7e9b421a3d92",
     "https://bazel.ros.org/modules/rosidl_runtime_py/0.15.2-3.rcr.2/source.json": "385f650726b1248ac9fd4256c5a211907a8ceefb89d3f287100f43e5a6c4d5ca",
     "https://bazel.ros.org/modules/rosidl_typesupport_c/3.4.2-3.rcr.2/MODULE.bazel": "0f1142e408aaf7f692af269d8d4aa6ac50ec2cfe3510f35c29428db6d69333b4",
