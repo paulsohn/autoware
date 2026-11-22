@@ -54,6 +54,9 @@ experiments, and milestones belong in PLAN.md and JOURNAL.md.
   The root owns version selection from `third_party/`, registry releases and
   local overrides; architecture/product settings also remain root-owned.
   Directory placement alone does not require a new facade Bazel module.
+  Keep standalone module checkout roots out of main-repository recursive
+  discovery through `.bazelignore`; consume their logical module targets.
+  See [recursive discovery and IDE targets](docs/bazel/DEVELOPING.md#recursive-discovery-and-ide-targets).
 - Keep runnable product composition and launchers under `bazel/runtime/`;
   native bundles, OCI/OSTree assembly and service definitions belong under
   `bazel/deployments/`. Keep verification companions under `bazel/tests/`.

@@ -271,6 +271,33 @@ fragment with reusable build/patch support, without an artificial facade module.
 Generic SDK test launchers belong with the SDK; Autoware-specific integration
 adapters and fixtures remain under bazel/tests/.
 
+### Recursive discovery and IDE targets
+
+The root .bazelignore excludes src/, assets/ and standalone third-party module
+directories from the main repository's recursive package discovery. Those
+directories are consumed through local_path_override and their logical module
+labels. Keep this list updated when adding a standalone module outside the
+already excluded src/ and assets/ trees; keep metarepository-owned third-party
+helpers available under their normal //third_party/... labels.
+
+Do not load the same standalone BUILD through its physical parent-repository
+path. For example, use @spconv//:spconv or @spconv//..., rather than
+//third_party/spconv:spconv. The latter applies the root repository mapping to
+module-owned .bzl loads, so dependencies declared only by spconv can appear
+missing. Adding private SDK dependencies to the root does not correct that
+repository boundary.
+
+For IDE integration, select the runnable/library targets being developed and
+their dependency closure, or explicitly include the relevant @module//...
+roots. Root //... discovers metarepository packages; it does not enumerate
+external modules, including local overrides. Excluding a physical directory
+from root discovery leaves its module targets available. These are Bazel label
+conventions; configure the IDE's target selection accordingly.
+See Bazel's [target patterns](https://bazel.build/run/build#specifying-build-targets)
+and [.bazelignore](https://bazel.build/run/bazelrc#bazelignore) documentation.
+
+### Dependency declarations
+
 In the root MODULE.bazel, list registry dependencies first and keep local modules
 at the end, after extension and toolchain configuration. Within each dependency
 group, place prerequisites before consumers where possible. Each local bazel_dep uses version

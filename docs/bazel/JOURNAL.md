@@ -18102,3 +18102,64 @@ evidence. Analysis and existing artifact/runtime results are sufficient for
 this policy change. Phase 7.5 and Phase 7 are complete; Phase 8 is not started.
 No Fast DDS or pre-commit runs. Resource limits and local overrides remain in
 ignored user.bazelrc, independently of the shared opt-in default.
+
+## 2026-11-23: Standalone module boundaries for recursive discovery
+
+Purpose: make main-repository recursive discovery usable by IDE integrations
+without interpreting standalone local modules as metarepository packages.
+An IDE reports that third_party/spconv/defs.bzl cannot resolve @with_cfg.bzl
+from the main repository. Inspect that BUILD/defs pair, its MODULE.bazel and
+the root local_path_override. spconv already declares with_cfg.bzl 0.12.0;
+querying @spconv//:all succeeds. Querying //third_party/spconv:all reproduces
+the missing-repository error because the same physical source is being loaded
+with the root repository mapping. Private SDK repositories and root-relative
+labels in that module likewise belong to its own mapping. Adding dependencies
+to the parent would mask this boundary error rather than correct ownership.
+
+Add a root .bazelignore with six directory entries: src, assets,
+third_party/acados, third_party/grid_map, third_party/spconv and
+third_party/tensorrt. Source and asset repositories are selected as local
+modules; the four named third-party trees are also standalone modules. Keep
+the remaining metarepository-owned third-party helpers in root discovery.
+No SDK declaration, version, source, test or toolchain configuration changes.
+Local overrides still provide the excluded trees through their @module labels.
+
+For a non-Bazel integration, distinguish the physical checkout from the Bazel
+repository namespace when adding local modules. Keep nested module roots out
+of parent recursive discovery and query/build them through their own labels.
+An IDE can select a product target's transitive dependency closure, or explicit
+module target patterns; root //... alone does not enumerate external modules.
+Maintain extra standalone module entries when introducing them outside the
+already excluded src/ and assets/ trees. The steady-state
+[IDE/recursive-discovery convention](DEVELOPING.md#recursive-discovery-and-ide-targets)
+and AGENTS.md record the rule; the adoption checklist links the evidence.
+
+Verification uses package loading and configured analysis only:
+
+```sh
+# Before the fix: the physical parent-repository label fails to resolve with_cfg.
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel query //third_party/spconv:all
+# Correct module ownership already works before the fix.
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel query @spconv//:all
+# After adding .bazelignore:
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" bazel query //...
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel query 'set(@spconv//... @tensorrt//... @acados//... @grid_map//... @autoware_map_asset//... @autoware_launch//:all)'
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel build --config=runtime --config=no-agnocast --nobuild \
+  //bazel/runtime:planning_simulator @spconv//:abi_test @autoware_tensorrt_plugins//...
+git diff --check
+```
+
+The root query succeeds with 502 targets and no incorrectly rooted src/,
+assets/ or standalone SDK packages. Root products and generic helpers remain
+present. All six logical module queries succeed. Configured analysis succeeds
+for eight selected product/SDK/plugin targets in 8.8 s with zero actions;
+the ABI-transition test remains addressable under @spconv. No compilation,
+GPU execution, simulator driving, image assembly, Fast DDS or pre-commit run
+is required for this discovery-only change. Existing library behavior evidence
+is reused because the module definitions and their inputs are unchanged.
+The IDE's own synchronization/indexing was not exercised; its target selection
+must use logical modules or products. Phase 8 remains unstarted.

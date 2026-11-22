@@ -57,6 +57,8 @@ only when your current target demonstrates the need.
   [Evidence: tests outside component packages](JOURNAL.md#2026-11-17-keep-added-integration-tests-outside-component-packages).
 - [ ] Separate component ownership from product-level composition.
   [Dependency layers and root selection](DEVELOPING.md#repository-dependency-layers);
+  [Recursive discovery and IDE module labels](DEVELOPING.md#recursive-discovery-and-ide-targets);
+  [evidence: standalone repository boundaries](JOURNAL.md#2026-11-23-standalone-module-boundaries-for-recursive-discovery);
   [Product, deployment and builder-container ownership](DEVELOPING.md#source-and-package-layout);
   [evidence: deployment layout](JOURNAL.md#2026-11-23-phase-75--deployment-directory-and-builder-container-conventions);
   [Package-owned file exports](DEVELOPING.md#launch-resource-composition);
