@@ -1546,3 +1546,18 @@ No older-ROS verification or new submission is claimed.
 - System launch passes both graph/shutdown cases (4.1 seconds), and the original
   full simulator passes both headless cases (12.4 seconds), CPU/Cyclone DDS and
   Agnocast off. [Local patch, commands and limitations](JOURNAL.md#2026-11-22-phase-733--diagnostic-graph-resource-paths).
+
+### Predictor launcher preset misses required lane-change parameters
+
+- [x] Associated with merged [autoware_launch #2002](https://github.com/autowarefoundation/autoware_launch/pull/2002),
+  [29f046d2](https://github.com/autowarefoundation/autoware_launch/commit/29f046d2c76eec604a718b056d68684a60b1416d).
+  Reviewed actual file patch 2026-11-22: it adds exactly the three parameter
+  values and synchronized-source reference used by this local correction.
+  Other updates in that PR are outside this patch. No new submission needed.
+- The selected full launch exits map_based_prediction with expected [bool] got
+  [not set]. Add lane_change_path_suppression defaults true/true/5.0 from the
+  local provider, retaining preset overrides. This is snapshot synchronization,
+  not Lyrical-only compatibility.
+- All 43 original predictor cases, installed startup, two resource cases and
+  both full headless launch cases pass, CPU/Cyclone DDS and Agnocast off.
+  [Local patch and exact gate](JOURNAL.md#2026-11-22-phase-733--prediction-preset-parameter-synchronization).

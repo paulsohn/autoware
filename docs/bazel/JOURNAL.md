@@ -16514,3 +16514,41 @@ finding in UPSTREAM_AWF.md; no issue/PR submission or matching association is
 claimed. The diagnostic graph can still report unavailable optional driving-mode
 paths and expected missing pose/route inputs before initialization. Those logs
 are not a claim that autonomous operation is available; acceptance is 7.3.4.
+
+## 2026-11-22: Phase 7.3.3 — Prediction preset parameter synchronization
+
+Purpose: start the selected real predictor with autoware_perception_config's
+launcher preset. The original full simulator loads its other components but
+map_based_prediction exits one: expected [bool] got [not set]. Compare its
+constructor and owned default YAML against the selected launcher YAML. The
+launcher lacks lane_change_path_suppression.enable/keep_when_lane_ends and the
+lane-end rescue horizon required by the local Universe 0.53.2 snapshot
+(62a5739d4d5a34f27f6aa15702c8ff59fa4d862c).
+
+Add only those existing defaults (true, true, 5.0), preserving the launcher
+velocity/debug overrides. Upstream autoware_launch PR #2002, merge
+29f046d2c76eec604a718b056d68684a60b1416d, contains exactly that four-line addition
+and updates the synchronized source reference to
+2cee5373ad006bda0031b5194ad19ef46cb0decb. Align both the narrow change and source
+reference; do not import unrelated perception parameter updates. This is a
+cross-snapshot configuration mismatch, not a Lyrical implementation change.
+
+Extend the external full gate to request predictor and tracker parameters,
+assert both flags and the 5.0 horizon, and require every process to exit zero.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast \
+  --local_test_jobs=1 --test_output=errors \
+  @autoware_map_based_prediction//... \
+  //bazel/tests/perception_nodes:prediction_runtime_test \
+  //bazel/tests/launch_resources:autoware_perception_config_test \
+  //bazel/tests/universe_launch:full_launch_test
+```
+
+All four targets pass in 17.5 seconds: 43 original predictor cases, one existing
+installed startup check, two resource cases and both original full-launch cases.
+The full launch takes 12.4 seconds, with clean shutdown, no failures/skips.
+Only the source-reference comment changes afterward to match upstream metadata;
+no runtime rerun is needed for that comment. CPU/Cyclone DDS/Agnocast off.
+No Fast DDS, colcon/older ROS or autonomous-driving result is claimed.
