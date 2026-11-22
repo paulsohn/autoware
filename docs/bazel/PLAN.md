@@ -68,6 +68,7 @@ only when your current target demonstrates the need.
   [Native plugin registration and utility SDK ownership](DEVELOPING.md#native-plugin-libraries);
   [evidence: composed utility closure](JOURNAL.md#2026-11-22-phase-733--shared-utility-sdk-ownership-in-containers);
   [combined-plugin type identity](JOURNAL.md#2026-11-22-phase-732--distinct-motion-plugin-internal-types);
+  [validator collision-type evidence](JOURNAL.md#2026-11-22-phase-734--distinct-validator-collision-checker-debug-types);
   [node-owned parameter lifetime](JOURNAL.md#2026-11-22-phase-732--cruise-pid-plugin-reload);
   [multi-package dependency identity and link closure](../../third_party/grid_map/README.md);
   [evidence: stop-line plugin](JOURNAL.md#2026-11-17-phase-525--stop-line-plugin).

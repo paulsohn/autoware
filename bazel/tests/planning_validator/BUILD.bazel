@@ -1,3 +1,5 @@
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_test")
 load("//bazel/tests/ros_interfaces:defs.bzl", "interface_serialization_test")
 load("@rules_python//python:defs.bzl", "py_test")
 
@@ -21,3 +23,22 @@ _CHECKERS = ["latency_checker", "trajectory_checker", "intersection_collision_ch
 ]
 
 interface_serialization_test(package = "autoware_planning_validator")
+
+collect_transitive_dynamic_deps(
+    name = "collision_debug_dynamic_deps",
+    dynamic_deps = [
+        "@autoware_planning_validator_intersection_collision_checker//:runtime_dynamic_deps",
+        "@autoware_planning_validator_rear_collision_checker//:runtime_dynamic_deps",
+    ],
+)
+
+cc_test(
+    name = "collision_debug_types_test",
+    srcs = ["collision_debug_types_test.cpp"],
+    dynamic_deps = [":collision_debug_dynamic_deps"],
+    deps = [
+        "@autoware_planning_validator_intersection_collision_checker",
+        "@autoware_planning_validator_rear_collision_checker",
+        "@googletest//:gtest_main",
+    ],
+)

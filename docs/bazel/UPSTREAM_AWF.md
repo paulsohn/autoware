@@ -1561,3 +1561,36 @@ No older-ROS verification or new submission is claimed.
 - All 43 original predictor cases, installed startup, two resource cases and
   both full headless launch cases pass, CPU/Cyclone DDS and Agnocast off.
   [Local patch and exact gate](JOURNAL.md#2026-11-22-phase-733--prediction-preset-parameter-synchronization).
+
+## Planning-validator collision plugins share incompatible DebugData types
+
+- [ ] Associate upstream: current rear-checker main still declares
+  autoware::planning_validator::DebugData; the scoped planning_validator/DebugData
+  PR search found no match on 2026-11-22. Not submitted. The
+  [Lyrical tracker](https://github.com/autowarefoundation/autoware/issues/7404)
+  is related integration context, not a matching fix.
+- Local source correction: ab3d1ca228e9d7f643a923e3cea95eb29f27070e.
+  Universe 0.53.2 at 62a5739d4d5a34f27f6aa15702c8ff59fa4d862c,
+  Ubuntu 24.04, LLVM/libc++ 21.1.8, RCR Lyrical/Cyclone DDS, Agnocast off.
+- Reproducer: load both configured intersection/rear collision-checker plugins
+  in the original planning validator, initialize the official sample-map pose,
+  set the pinned lane route and deliver the first generated trajectory. The
+  validator crashes before publishing its output. A scoped GDB prefix shows
+  RearCollisionChecker::validate invoking DebugData::~DebugData and
+  EgoLanelets::~EgoLanelets from the intersection library.
+- Cause: both packages define autoware::planning_validator::DebugData with
+  different member layouts. ELF interposition resolves the rear object's
+  destructor to the intersection implementation. This is a C++ ODR violation,
+  not an algorithm or ROS-version-specific behavior change.
+- Fix: rename the rear checker's private structure to RearCollisionDebugData
+  and update its five source/header callers. Preserve class-loader IDs,
+  parameters, safety checks and algorithms. The
+  [current rear declaration](https://github.com/autowarefoundation/autoware_universe/blob/main/planning/planning_validator/autoware_planning_validator_rear_collision_checker/src/structs.hpp)
+  and [intersection declaration](https://github.com/autowarefoundation/autoware_universe/blob/main/planning/planning_validator/autoware_planning_validator_intersection_collision_checker/include/autoware/planning_validator_intersection_collision_checker/types.hpp)
+  were compared directly; no link-visibility workaround is used.
+- Evidence: 27 original validator/trajectory-checker cases, all seven installed
+  runtime profiles, wire serialization, a joint-header/type-identity regression
+  and full original-launch driving/shutdown pass. The live vehicle reaches the
+  goal with 0.04 m error and stops. See the
+  [exact module gate](JOURNAL.md#2026-11-22-phase-734--distinct-validator-collision-checker-debug-types).
+  Upstream CMake/GCC, Humble/Jazzy and enabled Agnocast were not run.

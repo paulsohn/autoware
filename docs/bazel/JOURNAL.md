@@ -16997,8 +16997,8 @@ All twelve target gates pass, reusing unchanged passing results: 27 original
 native cases, all seven runtime profiles, wire serialization, the new identity
 case and full driving/shutdown. The vehicle travels 16.72 m, peaks at 3.60 m/s,
 arrives 0.04 m from the goal and stops. No skipped groups or deferred failures.
-The reusable regression/build definition is committed separately from this
-source correction. Current upstream main still declares the same rear DebugData;
+The reusable joint-header regression/build definition is committed separately
+from source correction ab3d1ca228e9d7f643a923e3cea95eb29f27070e. Current upstream main still declares the same rear DebugData;
 scoped planning_validator/DebugData PR search finds no match (2026-11-22).
 Record the local source commit and association in UPSTREAM_AWF.md with the test
 boundary. Other compilers, older ROS and upstream CMake are not validated.
