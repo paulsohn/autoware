@@ -1,0 +1,3 @@
+module(name = "sample_vehicle_launch", version = "0.0.0")
+
+bazel_dep(name = "rosdistro", version = "0.0.0")

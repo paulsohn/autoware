@@ -1598,3 +1598,9 @@ local_path_override(
     module_name = "autoware_localization_config",
     path = "src/launcher/autoware_launch/autoware_universe_launch/autoware_localization_config",
 )
+
+bazel_dep(name = "sample_vehicle_launch", version = "0.0.0")
+local_path_override(
+    module_name = "sample_vehicle_launch",
+    path = "src/launcher/autoware_launch/vehicle/sample_vehicle_launch/sample_vehicle_launch",
+)
