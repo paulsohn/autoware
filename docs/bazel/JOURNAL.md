@@ -16798,3 +16798,28 @@ Both behavior/shutdown cases pass in 6.0 seconds, no failures/skips.
 The complete original full headless launch also passes both cases in 12.4 seconds.
 CPU/Cyclone DDS, ENABLE_AGNOCAST=0. No Fast DDS, enabled-Agnocast, full colcon,
 RViz or autonomous-driving result is claimed. Continue original product assembly.
+
+## 2026-11-22: Phase 7.3.3 — Original Autoware launch package
+
+Purpose: expose the original planning_simulator.launch.xml and its selected
+cross-package resources. Inspect CMake/manifest, simulator/main/component XML and
+simulated perception includes. CMake registers lint but no original functional
+suite. Preserve config, launch and RViz resources in the package-owned index;
+export the original XML label for a product launcher. Reuse the launch-group
+pattern above and root-selected local dependency/override pairs.
+
+Declare all seven selected subsystem indexes, global parameter/wrapper resources,
+logical map asset, perception/localization configs and real CPU simulated-
+perception consumers (dummy detection/traffic, tracker, predictor, analytics and
+occupancy). Keep the model-selected sample descriptions/launch identities on the
+root caller rather than coupling generic launch packages to a sample product.
+Only the selected default CPU/headless profile is supported by these definitions;
+RViz resources being indexed does not establish an available RViz executable.
+
+Run //bazel/tests/universe_launch:full_launch_test with the clean
+--config=runtime --config=no-agnocast --local_test_jobs=1 --test_output=errors
+invocation above. Both cases pass in 12.4 seconds, no failures/skips. It uses the
+original default sample models, scenario_simulation/use_sim_time=false and
+rviz=false, with the indexed map and real rule-based planners/safety nodes.
+The product entrypoint/discovery configuration and standalone runner gate are
+recorded next. No Fast DDS, enabled-Agnocast, GUI, colcon or driving claim.

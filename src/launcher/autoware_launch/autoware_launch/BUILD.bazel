@@ -1,0 +1,32 @@
+load("@rosdistro//ament:defs.bzl", "ament_index")
+
+package(default_visibility = ["//visibility:public"])
+
+exports_files(["launch/planning_simulator.launch.xml"])
+
+# Resource closure for the default rule-based planning simulator profile.
+ament_index(
+    package_xml = "package.xml",
+    data = glob(["config/**", "launch/**", "rviz/**"]),
+    deps = [
+        "@autoware_agnocast_wrapper//:ament_package",
+        "@autoware_control_launch//:ament_index",
+        "@autoware_diagnostic_graph_utils//:ament_index",
+        "@autoware_dummy_perception_publisher//:ament_index",
+        "@autoware_dummy_traffic_light_publisher//:ament_index",
+        "@autoware_global_parameter_loader//:ament_index",
+        "@autoware_localization_config//:ament_index",
+        "@autoware_map_asset//:ament_index",
+        "@autoware_map_based_prediction//:ament_index",
+        "@autoware_map_launch//:ament_index",
+        "@autoware_multi_object_tracker//:ament_index",
+        "@autoware_perception_config//:ament_index",
+        "@autoware_perception_online_evaluator//:ament_index",
+        "@autoware_planning_launch//:ament_index",
+        "@autoware_probabilistic_occupancy_grid_map//:ament_index",
+        "@tier4_autoware_api_launch//:ament_index",
+        "@tier4_simulator_launch//:ament_index",
+        "@tier4_system_launch//:ament_index",
+        "@tier4_vehicle_launch//:ament_index",
+    ],
+)

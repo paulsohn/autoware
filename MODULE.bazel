@@ -1665,3 +1665,9 @@ local_path_override(
     module_name = "autoware_planning_launch",
     path = "src/launcher/autoware_launch/autoware_universe_launch/autoware_planning_launch",
 )
+
+bazel_dep(name = "autoware_launch", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_launch",
+    path = "src/launcher/autoware_launch/autoware_launch",
+)
