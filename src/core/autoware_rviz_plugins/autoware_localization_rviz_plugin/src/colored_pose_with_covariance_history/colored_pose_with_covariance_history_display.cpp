@@ -23,7 +23,7 @@
 #include <rviz_common/validate_floats.hpp>
 #include <rviz_rendering/objects/billboard_line.hpp>
 
-#include <tf2/LinearMath/Quaternion.h>
+#include <tf2/LinearMath/Quaternion.hpp>
 
 #include <limits>
 #include <memory>

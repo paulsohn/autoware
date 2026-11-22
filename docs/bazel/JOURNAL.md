@@ -17114,3 +17114,20 @@ Run bazel test --config=runtime --config=no-agnocast --local_test_jobs=1
 environment. All 1 exported factories construct/destroy; the unchanged original
 RViz configuration also loads and renders. Keep its Bazel definitions in the
 following module boundary. Older Qt/ROS and upstream CMake/GCC were not run.
+
+## 2026-11-22: Phase 7.3.4 — autoware_localization_rviz_plugin compatibility
+
+Purpose: compile and load this original plugin package with RCR RViz 15.2.6,
+Qt 6.10.2, TF 0.45.10 and LLVM/libc++ 21.1.8 on Ubuntu 24.04.
+The selected TF provider removes tf2/LinearMath/Quaternion.h. Include its
+Quaternion.hpp implementation from both history displays, preserving all
+original visualization calculations and tests.
+
+The original package registers lint only, with no functional CPP/launch suite.
+Its complete exported-factory/resource gate is
+//bazel/tests/rviz_plugins:autoware_localization_rviz_plugin_factories_test.
+Run bazel test --config=runtime --config=no-agnocast --local_test_jobs=1
+--test_output=errors with that target from an authenticated DISPLAY/XAUTHORITY
+environment. All 4 exported factories construct/destroy; the unchanged original
+RViz configuration also loads and renders. Keep its Bazel definitions in the
+following module boundary. Older Qt/ROS and upstream CMake/GCC were not run.
