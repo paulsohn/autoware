@@ -1,0 +1,17 @@
+load("@rules_python//python:defs.bzl", "py_test")
+load("@pip_ros//:requirements.bzl", "requirement")
+
+[
+    py_test(
+        name = package + "_test",
+        srcs = ["test_resources.py"],
+        main = "test_resources.py",
+        args = [package, fixture],
+        data = ["@" + package + "//:ament_index"],
+        precompile = "disabled",
+        deps = ["@ament_index_python", requirement("pyyaml")],
+    )
+    for package, fixture in [
+        ("autoware_planning_config", "config/preset/default_preset.yaml"),
+    ]
+]

@@ -1568,3 +1568,9 @@ local_path_override(
     module_name = "autoware_default_adapi_universe",
     path = "src/universe/autoware_universe/system/autoware_default_adapi_universe",
 )
+
+bazel_dep(name = "autoware_planning_config", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_planning_config",
+    path = "src/launcher/autoware_launch/autoware_universe_launch/autoware_planning_config",
+)
