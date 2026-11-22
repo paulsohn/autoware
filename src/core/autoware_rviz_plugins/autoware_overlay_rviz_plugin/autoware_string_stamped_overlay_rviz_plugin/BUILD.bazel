@@ -1,0 +1,62 @@
+load("@qt//:qt.bzl", "qt_cc_library", "qt_cc_shared_library")
+load("@rosdistro//ament:defs.bzl", "ament_index")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+
+package(default_visibility = ["//visibility:public"])
+
+qt_cc_library(
+    name = "autoware_string_stamped_rviz_plugin_library",
+    moc_hdrs = ["src/string_stamped_overlay_display.hpp"],
+    srcs = glob(["src/**/*.cpp"]),
+    hdrs = glob(["include/**/*.hpp", "src/**/*.hpp"], allow_empty = True),
+    copts = ["-include", "char_traits_patch.h"],
+    includes = ["src"],
+    defines = ["PLUGINLIB__DISABLE_BOOST_FUNCTIONS", "QT_NO_KEYWORDS"],
+    deps = [
+        "@ament_index_cpp//:ament_index_cpp_library",
+        "@autoware_internal_debug_msgs//:cc",
+        "@libx11",
+        "@pluginlib//:pluginlib_library",
+        "@qtbase//:widgets",
+        "@rclcpp//:rclcpp_library",
+        "@rosdistro//cc:OgreMain_library",
+        "@rosdistro//cc:OgreOverlay_library",
+        "@rosdistro//cc:boost.geometry",
+        "@rosdistro//cc:eigen",
+        "@rviz_2d_overlay_msgs//:cc",
+        "@rviz_2d_overlay_plugins//:rviz_2d_overlay_plugins_library",
+        "@rviz_common//:rviz_common_library",
+        "@rviz_rendering//:rviz_rendering_library",
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = [
+        "@ament_index_cpp//:ament_index_cpp",
+        "@autoware_internal_debug_msgs//:cc_shared",
+        "@pluginlib//:pluginlib",
+        "@rclcpp//:rclcpp",
+        "@rosdistro//cc:OgreMain",
+        "@rosdistro//cc:OgreOverlay",
+        "@rviz_2d_overlay_msgs//:cc_shared",
+        "@rviz_2d_overlay_plugins//:rviz_2d_overlay_plugins",
+        "@rviz_common//:rviz_common",
+        "@rviz_rendering//:rviz_rendering",
+    ],
+)
+
+qt_cc_shared_library(
+    name = "autoware_string_stamped_rviz_plugin",
+    shared_lib_name = "libautoware_string_stamped_rviz_plugin.so",
+    dynamic_deps = [":runtime_dynamic_deps"],
+    deps = [":autoware_string_stamped_rviz_plugin_library"],
+)
+
+ament_index(
+    package_xml = "package.xml",
+    data = glob(["plugins/**"]),
+    libraries = [":autoware_string_stamped_rviz_plugin"],
+    deps = ["@rviz_common//:ament_index"],
+    plugin_categories = {"plugins/plugins_description.xml": "rviz_common"},
+)

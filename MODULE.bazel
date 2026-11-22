@@ -1710,3 +1710,9 @@ local_path_override(
     module_name = "autoware_mission_details_overlay_rviz_plugin",
     path = "src/core/autoware_rviz_plugins/autoware_overlay_rviz_plugin/autoware_mission_details_overlay_rviz_plugin",
 )
+
+bazel_dep(name = "autoware_string_stamped_rviz_plugin", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_string_stamped_rviz_plugin",
+    path = "src/core/autoware_rviz_plugins/autoware_overlay_rviz_plugin/autoware_string_stamped_overlay_rviz_plugin",
+)
