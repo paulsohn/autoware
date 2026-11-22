@@ -1103,6 +1103,27 @@ The common Cyclone configuration is expanded into executable application/verifie
 scripts from bazel/runtime/cyclonedds.bzl; update that source when the topology
 requires another tested discovery profile.
 
+## Python providers in runtime compositions
+
+Use `runtime_python` from `//third_party/runtime:python.bzl` when a Python
+consumer needs Python libraries reached through a non-Python product's runtime
+graph. Set roots to the existing product target and add the resulting target
+to the consumer's deps. The aspect collects PyInfo through deps, data, srcs,
+libraries, executables, components and dynamic_deps; it merges the product's
+runfiles and Python import/source providers. Ordinary data edges alone do not
+propagate PyInfo to a py_binary. Keep runtime dependencies declared by their
+owners rather than introducing a parallel package inventory.
+
+The manifest output group records the selected roots and their declared runfile
+symlink paths. It supports checking that a composed artifact preserves its
+selected product's indexes/resources; it does not discover undeclared sources
+or validate directory completeness. Run the generic helper's complete suite:
+
+```sh
+bazel test --config=runtime --config=no-agnocast \
+  //third_party/runtime:runtime_python_test
+```
+
 ## OCI simulator distribution
 
 The simulator image puts the native application bundle at /opt/autoware over

@@ -121,6 +121,8 @@ only when your current target demonstrates the need.
   [middleware discovery capacity evidence](JOURNAL.md#2026-11-22-phase-733--original-headless-planning-simulator-product);
   [Desktop driver ABI evidence](JOURNAL.md#2026-11-22-phase-734--desktop-glx-runtime-abi);
   [Independent process environments at exec](JOURNAL.md#2026-11-23-phase-734--extracted-native-simulator-distribution);
+  [Python providers across runtime edges](DEVELOPING.md#python-providers-in-runtime-compositions);
+  [evidence: composed interpreter](JOURNAL.md#2026-11-23-phase-76--python-providers-through-product-runtime-edges);
   [distribution convention](DEVELOPING.md#native-core-distribution);
   [evidence: native runtime closure](JOURNAL.md#2026-11-20-phase-71--native-headless-core-distribution).
   [OCI image convention](DEVELOPING.md#oci-core-distribution);
@@ -1646,7 +1648,7 @@ Phase 8. No new Fast DDS acceptance run was performed; it still requires
 explicit approval. The x86 TensorRT 10.16.1 versus JetPack 7.2.1's 10.16.2 gap
 remains explicit for Phase 8.
 
-## Phase 7 — Runtime packaging and planning simulation (complete, 2026-11-23)
+## Phase 7 — Runtime packaging and planning simulation (in progress)
 
 Follow the [packaging and deployment requirements](#runtime-packaging-and-deployment-requirements).
 Complete each distribution boundary before expanding the application closure.
@@ -1702,6 +1704,17 @@ Complete each distribution boundary before expanding the application closure.
    work and requested milestones. Phase 8 is not started by this cleanup.
    [Directory relocation](JOURNAL.md#2026-11-23-phase-75--deployment-directory-and-builder-container-conventions);
    [opt-in verification](JOURNAL.md#2026-11-23-phase-75--opt-in-expensive-system-and-deployment-targets).
+6. **7.6 — Sourceable native debugging distribution (in progress).** Compose
+   the original simulator entrypoint's declared runtime closure with standard
+   ROS CLI extensions and Python providers reachable through that closure.
+   Produce an opt-in native bundle with setup.bash/install.bash, ros2 and the
+   matching Python interpreter. Keep package indexes, registered executables,
+   libraries, interfaces and resources aligned with the entrypoint without a
+   second application inventory. The gate covers the generic Python-provider
+   collector, relocated clean-shell activation, indexed resource/executable
+   lookup, interface introspection, and live topic/service/parameter interaction
+   with Cyclone DDS. Reuse unchanged simulator-driving and OCI evidence; no
+   builder image, build cache or compiler SDK is part of this distribution.
 
 Phase 7.2 task boundaries:
 

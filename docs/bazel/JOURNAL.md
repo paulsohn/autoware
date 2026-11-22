@@ -18163,3 +18163,46 @@ is required for this discovery-only change. Existing library behavior evidence
 is reused because the module definitions and their inputs are unchanged.
 The IDE's own synchronization/indexing was not exercised; its target selection
 must use logical modules or products. Phase 8 remains unstarted.
+
+## 2026-11-23: Phase 7.6 — Python providers through product runtime edges
+
+Purpose: allow an interactive Python consumer to use generated ROS interfaces
+already selected by a runnable product, without repeating its package inventory.
+Inspect the selected product's data/filegroup/ament_index edges, RCR's
+rosidl_core_generators definitions and rules_python 2.4.5's public PyInfo.
+Generated interface indexes select Python support through libraries, while
+py_binary only combines Python providers from its Python dependencies. Merely
+including an index in data preserves files/resources but does not establish
+Python imports for an independent CLI interpreter.
+
+Add the generic runtime_python rule under third_party/runtime/python.bzl.
+Its aspect follows deps, data, srcs, libraries, executables, components and
+dynamic_deps. Merge public PyInfo source/import/bytecode/venv depsets and flags,
+forward roots' DefaultInfo runfiles, and expose the result as a Python dependency.
+Keep package selection in the product's existing graph. The manifest output
+group records selected root labels and their declared runfile symlinks for
+artifact-preservation checks; it is not a source-directory registration gate.
+An adapter must not infer or enforce completeness of undeclared interfaces.
+
+Verify a Python library behind a filegroup rather than only testing an ordinary
+py_library dependency. The test consumer imports that module through the
+collector, then starts its own sys.executable without PYTHONPATH and imports it
+again. With the runtime bootstrap, rules_python's generated venv/.pth retains
+the collected imports for an interactive interpreter; this avoids inventing a
+second PYTHONPATH or guessing private venv directory names. Command:
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --test_output=errors \
+  //third_party/runtime:runtime_python_test
+python3 -m flake8 --max-line-length=150 third_party/runtime/test_python.py \
+  third_party/runtime/testdata/runtime_message.py
+git diff --check
+```
+
+Both original-import and interpreter-subprocess cases pass (two cases, 0.2 s),
+and targeted Python style checks pass. This validates the generic helper, not
+an extracted application distribution or all of its message types. The next
+module task composes the actual product/debug CLI and tests its archive after
+relocation. No source package changes, simulator driving, image export,
+Fast DDS or pre-commit run is required for this helper.

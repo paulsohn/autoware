@@ -1,1 +1,30 @@
-exports_files(["defs.bzl"])
+load("@rules_python//python:defs.bzl", "py_library", "py_test")
+load(":python.bzl", "runtime_python")
+
+exports_files(["defs.bzl", "python.bzl"])
+
+py_library(
+    name = "test_message",
+    testonly = True,
+    srcs = ["testdata/runtime_message.py"],
+    imports = ["testdata"],
+)
+
+filegroup(
+    name = "test_product",
+    testonly = True,
+    srcs = [":test_message"],
+)
+
+runtime_python(
+    name = "test_python_closure",
+    testonly = True,
+    roots = [":test_product"],
+)
+
+py_test(
+    name = "runtime_python_test",
+    srcs = ["test_python.py"],
+    main = "test_python.py",
+    deps = [":test_python_closure"],
+)
