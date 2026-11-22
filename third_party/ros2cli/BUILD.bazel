@@ -1,0 +1,58 @@
+load("@pip_ros//:requirements.bzl", "requirement")
+load("@rules_python//python:defs.bzl", "py_binary", "py_library", "py_test")
+
+# These public libraries omit the distribution metadata declared by setup.py.
+PACKAGES = [
+    "ros2action",
+    "ros2component",
+    "ros2launch",
+    "ros2lifecycle",
+    "ros2node",
+    "ros2param",
+    "ros2run",
+    "ros2service",
+]
+
+[
+    py_binary(
+        name = pkg + "_setup",
+        srcs = ["@" + pkg + "//:setup.py"],
+        main = "@" + pkg + "//:setup.py",
+        deps = [requirement("setuptools")],
+    )
+    for pkg in PACKAGES
+]
+
+[
+    genrule(
+        name = pkg + "_metadata",
+        outs = [pkg + ".egg-info/" + path for path in ["PKG-INFO", "entry_points.txt", "top_level.txt"]],
+        cmd = """
+metadata_tool="$$PWD/$(execpath :{pkg}_setup)"
+metadata_out="$$PWD/$(@D)"
+metadata_work=$$(mktemp -d)
+trap 'rm -rf "$$metadata_work"' EXIT
+mkdir -p "$$metadata_out"
+cd "$$metadata_work"
+"$$metadata_tool" egg_info --egg-base "$$metadata_out"
+""".format(pkg = pkg),
+        tools = [":" + pkg + "_setup"],
+    )
+    for pkg in PACKAGES
+]
+
+py_library(
+    name = "entry_points",
+    data = [":" + pkg + "_metadata" for pkg in PACKAGES],
+    imports = ["."],
+    visibility = ["//visibility:public"],
+)
+
+py_test(
+    name = "metadata_test",
+    srcs = ["test_metadata.py"],
+    args = [value for pkg in PACKAGES for value in [pkg, "$(rootpath @" + pkg + "//:setup.py)"]],
+    data = ["@" + pkg + "//:setup.py" for pkg in PACKAGES],
+    main = "test_metadata.py",
+    deps = [":entry_points"],
+)

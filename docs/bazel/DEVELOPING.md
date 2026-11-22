@@ -1114,6 +1114,14 @@ runfiles and Python import/source providers. Ordinary data edges alone do not
 propagate PyInfo to a py_binary. Keep runtime dependencies declared by their
 owners rather than introducing a parallel package inventory.
 
+Python plugin discovery also requires distribution metadata. The
+`//third_party/ros2cli:entry_points` provider generates missing SDK CLI metadata
+from the dependencies' own setup.py files using pinned setuptools. Add it to
+the CLI's deps; keep entrypoint declarations and versions with those sources.
+Its complete gate is `//third_party/ros2cli:metadata_test`. Generation runs in
+an empty temporary directory with declared outputs, independently of checkout
+package discovery or host Python installations.
+
 The manifest output group records the selected roots and their declared runfile
 symlink paths. It supports checking that a composed artifact preserves its
 selected product's indexes/resources; it does not discover undeclared sources

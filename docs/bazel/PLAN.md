@@ -124,6 +124,7 @@ only when your current target demonstrates the need.
   [Python providers across runtime edges](DEVELOPING.md#python-providers-in-runtime-compositions);
   [evidence: composed interpreter](JOURNAL.md#2026-11-23-phase-76--python-providers-through-product-runtime-edges);
   [Native bootstrap path quoting](JOURNAL.md#2026-11-23-phase-76--native-python-bootstrap-path-quoting);
+  [Dependency-owned plugin metadata](JOURNAL.md#2026-11-23-phase-76--dependency-owned-ros-cli-extension-metadata);
   [distribution convention](DEVELOPING.md#native-core-distribution);
   [evidence: native runtime closure](JOURNAL.md#2026-11-20-phase-71--native-headless-core-distribution).
   [OCI image convention](DEVELOPING.md#oci-core-distribution);
