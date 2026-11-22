@@ -1871,6 +1871,16 @@ Phase 7.3 task boundaries (selected 2026-11-21):
   relocation and affected description-launch gates pass 12 cases in seven
   targets, CPU/Cyclone DDS with ENABLE_AGNOCAST=0.
   [Evidence](JOURNAL.md#2026-11-21-phase-733--official-tutorial-map-and-scenario-resources).
+  Configuration/model-selection resources are now indexed in seven separate
+  validated module commits: five configuration packages plus sample_vehicle_launch
+  and sample_sensor_kit_launch; fourteen lookup/relocation cases pass. The original
+  installed map hash/XML executable is also available, with its complete
+  seventeen-target map-loader gate passing 62 cases.
+  [Resource group](JOURNAL.md#2026-11-22-phase-733--sample-sensor-kit-launch-resources),
+  [map identity](JOURNAL.md#2026-11-22-phase-733--installed-map-hash-and-xml-service).
+  The required local map-TF provider is complete: its original sampling case and
+  both installed PCD/vector transform behaviors pass, including clean shutdown.
+  [Viewer TF gate](JOURNAL.md#2026-11-22-phase-733--map-viewer-tf-provider).
   Phase 7.3.2 now supplies the validated implementation closure. Next compose
   the actual planning_simulator.launch.xml; the resource and component gates
   do not establish full simulator startup. Keep default rule-based

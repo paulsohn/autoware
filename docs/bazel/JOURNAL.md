@@ -16243,3 +16243,51 @@ installed hash/XML check (62 cases). No failures/skips. CPU/Cyclone DDS,
 ENABLE_AGNOCAST=0, Python 3.14.4 and LLVM/libc++ 21.1.8. No Fast DDS, enabled
 Agnocast runtime, full simulator, RViz or older-ROS/colcon result is claimed.
 Continue resolving the actual map/vehicle/planning launch dependency closure.
+
+## 2026-11-22: Phase 7.3.3 — Map viewer TF provider
+
+Purpose: supply the original map launch's vector-map viewer transform through
+the required local autoware_map_tf_generator package. Inspect manifest/CMake,
+both CPP implementations, uniform_random.hpp, the original sampling test and
+map/viewer config/launch. Keep the full package boundary: ordinary-rclcpp PCD
+node and wrapper-based vector node, with their original registration/executables.
+
+Add a package-owned MODULE/BUILD and root local override. The native library
+contains both CPPs and their declared header; a unique component DSO exports both
+factories. Concrete ROS/TF, local lanelet conversion and native PCL common/
+conversion providers replace CMake discovery without an empty helper module.
+Preserve the one original GMock case. The owned index installs config/launch,
+registrations and executables, with the static wrapper launcher dependency in
+deps. No original source/tests are modified: this TF SDK still provides the
+legacy static_transform_broadcaster.h with warnings, so no patch is justified.
+
+Add two external installed-executable checks under bazel/tests. A retained cloud
+of three identical (2,4,6) points must produce that exact map-to-viewer transform
+regardless of sampling. The vector check runs the real loader on the indexed
+official map, supplies retained MGRS/54SVE projector information and verifies a
+finite transform inside conservative bounds derived from the original MGRS/
+elevation tags, with identity quaternion. It tests bounds, not an independently
+computed exact vector centroid. Both checks assert clean SIGINT exits.
+
+The initial vector check times out despite successful map loading: the loader
+publishes canonical /map/vector_map, whereas the viewer node's input is relative
+vector_map. Match the original launcher's explicit vector_map remap in the
+fixture. No implementation fix is needed. Keep diagnostics in a temporary file
+and observe it with pread, so inspection cannot move a child's shared offset.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast \
+  --local_test_jobs=1 --test_output=errors @autoware_map_tf_generator//... \
+  //bazel/tests/autoware_map_tf_generator:all
+python3 -m flake8 --max-line-length=150 bazel/tests/autoware_map_tf_generator/test_runtime.py
+git diff --check
+```
+
+All three targets/cases pass: one original case and both installed behavior
+checks (PCD 0.9 seconds, vector 1.0 seconds); final invocation 3.6 seconds, reusing
+unchanged compilation. Initial native compilation took 51.9 seconds. No failures
+or skips, CPU/Cyclone DDS and ENABLE_AGNOCAST=0. No Fast DDS, enabled Agnocast,
+older ROS/colcon, full simulator or RViz result is claimed. Continue with the
+actual map/vehicle/system/simulator/API/planning/control launch indexes before
+original headless simulator composition; driving acceptance is Phase 7.3.4.

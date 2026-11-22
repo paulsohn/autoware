@@ -1611,3 +1611,9 @@ local_path_override(
     module_name = "sample_sensor_kit_launch",
     path = "src/launcher/autoware_launch/sensor_kit/sample_sensor_kit_launch/sample_sensor_kit_launch",
 )
+
+bazel_dep(name = "autoware_map_tf_generator", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_map_tf_generator",
+    path = "src/universe/autoware_universe/map/autoware_map_tf_generator",
+)

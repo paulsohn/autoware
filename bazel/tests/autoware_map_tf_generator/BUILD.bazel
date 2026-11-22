@@ -1,0 +1,20 @@
+load("@rules_python//python:defs.bzl", "py_test")
+
+[
+    py_test(
+        name = mode + "_runtime_test",
+        srcs = ["test_runtime.py"],
+        main = "test_runtime.py",
+        args = [mode],
+        data = [
+            "@autoware_map_tf_generator//:ament_index",
+            "@autoware_map_loader//:ament_index",
+            "@autoware_map_asset//:ament_index",
+        ],
+        env = {"ENABLE_AGNOCAST": "0", "LD_LIBRARY_PATH": "lib", "ROS_DOMAIN_ID": "105"},
+        precompile = "disabled",
+        tags = ["no-remote", "no-sandbox"],
+        deps = ["@ament_index_python", "@autoware_map_msgs//:py", "@rclpy", "@sensor_msgs//:py", "@tf2_msgs//:py"],
+    )
+    for mode in ["pcd", "vector"]
+]
