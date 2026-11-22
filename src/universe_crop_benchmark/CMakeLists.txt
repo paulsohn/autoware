@@ -79,6 +79,10 @@ if(NOT UNIVERSE_BUFFER_MATRIX AND NOT "$ENV{ENABLE_AGNOCAST}" STREQUAL "1")
     PLUGIN "autoware::pointcloud_preprocessor::CropBoxFilterComponent" EXECUTABLE crop_two
     EXECUTOR crop_benchmark::TwoWorkerExecutor RESOURCE_INDEX universe_crop_benchmark_two)
   target_compile_options(crop_two PRIVATE -include "${CMAKE_CURRENT_SOURCE_DIR}/two_worker_executor.hpp")
+  rclcpp_components_register_node(universe_crop
+    PLUGIN "autoware::pointcloud_preprocessor::CropBoxFilterComponent" EXECUTABLE crop_three
+    EXECUTOR crop_benchmark::ThreeWorkerExecutor RESOURCE_INDEX universe_crop_benchmark_three)
+  target_compile_options(crop_three PRIVATE -include "${CMAKE_CURRENT_SOURCE_DIR}/two_worker_executor.hpp")
 endif()
 if(UNIVERSE_BUFFER_MATRIX OR NOT "$ENV{ENABLE_AGNOCAST}" STREQUAL "1")
   # ROS-only crop process using the CIE shipped with our pinned Agnocast.

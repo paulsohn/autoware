@@ -1,5 +1,6 @@
 """Launch three Universe crop components, their synchronizer, and a verifying consumer."""
 import os
+import shlex
 from pathlib import Path
 
 from ament_index_python.packages import get_package_prefix, get_package_share_directory
@@ -96,9 +97,16 @@ def graph(context):
         if topic == "/region/near" and os.getenv("SYNC_STALL_NEAR"):
             crop_env["BENCH_STALL_THIS_CROP"] = "1"
         executable = "crop"
-        if topic == "/region/near" and mode != "native" and os.getenv("BENCH_EXECUTOR") in ("cie", "two"):
+        if topic == "/region/near" and mode != "native" and os.getenv("BENCH_EXECUTOR") in ("cie", "two", "three"):
             executable = "crop_" + os.environ["BENCH_EXECUTOR"]
-        regions.append(Node(package="universe_crop_benchmark", executable=executable,
+        prefix = None
+        if topic == "/region/near" and os.getenv("BENCH_SECOND_TIMER"):
+            args = ["taskset", "-c", os.environ["BENCH_NEAR_CPUS"]]
+            if crop_env.get("LD_PRELOAD"):
+                args.extend(["env", "LD_PRELOAD=" + crop_env["LD_PRELOAD"]])
+                crop_env["LD_PRELOAD"] = ""
+            prefix = shlex.join(args)
+        regions.append(Node(package="universe_crop_benchmark", executable=executable, prefix=prefix,
                             name="region_" + topic.split("/")[-1], output="screen",
                             additional_env=crop_env, remappings=[("input", "/output"), ("output", topic)],
                             parameters=[config, {"input_frame": "base_link", "output_frame": "base_link",

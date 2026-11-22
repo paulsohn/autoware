@@ -1,0 +1,225 @@
+Started Zenoh router with id 2cce4e5d2e559994fa15697ddea8f37a
+[INFO] [launch]: All log files can be found below /tmp/tmp.gs21aKtDi1/roslog/2026-11-22-10-53-18-022382-paulsohn-tuf-2020764
+[INFO] [launch]: Default logging verbosity is set to INFO
+[INFO] [static_transform_publisher-1]: process started with pid [2020801]
+[INFO] [component_container-2]: process started with pid [2020802]
+[INFO] [concatenate_and_time_sync_node-3]: process started with pid [2020803]
+[INFO] [taskset-4]: process started with pid [2020804]
+[INFO] [crop-5]: process started with pid [2020805]
+[INFO] [sync_fixture-6]: process started with pid [2020806]
+[INFO] [sync_fixture-7]: process started with pid [2020807]
+[static_transform_publisher-1] [INFO] [1795344798.175977609] [static_transform_publisher_iPQaJ1Gn2wHFOeMS]: Spinning until stopped - publishing transform
+[static_transform_publisher-1] translation: ('4.000000', '0.000000', '0.000000')
+[static_transform_publisher-1] rotation: ('0.000000', '0.000000', '0.000000', '1.000000')
+[static_transform_publisher-1] from 'base_link' to 'sync_lidar'
+[component_container-2] [INFO] [1795344798.379389539] [lidar_crops]: Load Library: /ws/build/universe-pipeline/install/universe_crop_benchmark/lib/libuniverse_crop.so
+[concatenate_and_time_sync_node-3] [INFO] [1795344798.542269241] [point_cloud_concatenator_component]: Utilize naive matching strategy
+[sync_fixture-7] [INFO] [1795344798.633705796] [host_endpoint_manager]: Initialized shared memory registry for domain 0 on host paulsohn-tuf
+[crop-5] [INFO] [1795344798.633768373] [host_endpoint_manager]: Attached to existing shared memory registry for domain 0
+[concatenate_and_time_sync_node-3] [INFO] [1795344798.654244664] [host_endpoint_manager]: Attached to existing shared memory registry for domain 0
+[taskset-4] [INFO] [1795344798.657193421] [host_endpoint_manager]: Attached to existing shared memory registry for domain 0
+[sync_fixture-6] [INFO] [1795344798.659953196] [host_endpoint_manager]: Attached to existing shared memory registry for domain 0
+[component_container-2] [INFO] [1795344798.761379027] [lidar_crops]: Found class: rclcpp_components::NodeFactoryTemplate<autoware::pointcloud_preprocessor::CropBoxFilterComponent>
+[component_container-2] [INFO] [1795344798.761433779] [lidar_crops]: Instantiate class: rclcpp_components::NodeFactoryTemplate<autoware::pointcloud_preprocessor::CropBoxFilterComponent>
+[component_container-2] [INFO] [1795344798.980444882] [host_endpoint_manager]: Attached to existing shared memory registry for domain 0
+[taskset-4] [INFO] [1795344799.151012692] [region_near]: near_reader_depth=8 near_writer_depth=5
+[INFO] [launch_ros.actions.load_composable_nodes]: Loaded node '/crop_left' in container '/lidar_crops'
+[component_container-2] [INFO] [1795344799.161638627] [lidar_crops]: Found class: rclcpp_components::NodeFactoryTemplate<autoware::pointcloud_preprocessor::CropBoxFilterComponent>
+[component_container-2] [INFO] [1795344799.161661950] [lidar_crops]: Instantiate class: rclcpp_components::NodeFactoryTemplate<autoware::pointcloud_preprocessor::CropBoxFilterComponent>
+[INFO] [launch_ros.actions.load_composable_nodes]: Loaded node '/crop_right' in container '/lidar_crops'
+[component_container-2] [INFO] [1795344799.163623754] [lidar_crops]: Found class: rclcpp_components::NodeFactoryTemplate<autoware::pointcloud_preprocessor::CropBoxFilterComponent>
+[component_container-2] [INFO] [1795344799.163638181] [lidar_crops]: Instantiate class: rclcpp_components::NodeFactoryTemplate<autoware::pointcloud_preprocessor::CropBoxFilterComponent>
+[INFO] [launch_ros.actions.load_composable_nodes]: Loaded node '/crop_top' in container '/lidar_crops'
+[taskset-4] near_entry_ns=1795344800190952540
+[taskset-4] near_entry_ns=1795344800265104385
+[taskset-4] near_entry_ns=1795344800275040882
+[taskset-4] near_entry_ns=1795344800364032141
+[taskset-4] near_entry_ns=1795344800374376430
+[taskset-4] timer_1_allowed_cpu=2
+[taskset-4] timer_1_allowed_cpu=3
+[taskset-4] timer_1_allowed_cpu=4
+[taskset-4] second_stall_start_ns=1795344800376217208
+[taskset-4] timer_0_allowed_cpu=2
+[taskset-4] timer_0_allowed_cpu=3
+[taskset-4] timer_0_allowed_cpu=4
+[taskset-4] near_stall_start_ns=1795344800376225954
+[taskset-4] second_stall_end_ns=1795344801276221343
+[taskset-4] second_cpu_ns=899755606
+[taskset-4] near_stall_end_ns=1795344801276228306
+[taskset-4] competitor_cpu_ns=899921324
+[taskset-4] near_entry_ns=1795344801276345876
+[taskset-4] near_entry_ns=1795344801276810874
+[taskset-4] near_entry_ns=1795344801277316910
+[taskset-4] near_entry_ns=1795344801277637138
+[taskset-4] near_entry_ns=1795344801277932249
+[taskset-4] near_entry_ns=1795344801278244332
+[taskset-4] near_entry_ns=1795344801278535505
+[taskset-4] near_entry_ns=1795344801278833532
+[taskset-4] near_entry_ns=1795344801363709866
+[taskset-4] near_entry_ns=1795344801374168899
+[taskset-4] near_entry_ns=1795344801463721206
+[taskset-4] near_entry_ns=1795344801474239089
+[taskset-4] near_entry_ns=1795344801563703331
+[taskset-4] near_entry_ns=1795344801574299991
+[taskset-4] near_entry_ns=1795344801664306757
+[taskset-4] near_entry_ns=1795344801674321390
+[sync_fixture-7] top_release_ns,0,683536
+[sync_fixture-7] top_release_ns,2,485827
+[sync_fixture-7] top_release_ns,4,452635
+[sync_fixture-7] top_release_ns,6,450120
+[sync_fixture-7] top_release_ns,8,681292
+[sync_fixture-7] top_release_ns,10,368058
+[sync_fixture-7] top_release_ns,12,422178
+[sync_fixture-7] top_release_ns,14,560817
+[sync_fixture-7] top_release_ns,16,509962
+[sync_fixture-7] top_release_ns,18,453226
+[sync_fixture-7] top_release_ns,20,461552
+[sync_fixture-7] top_release_ns,22,395148
+[sync_fixture-7] top_release_ns,24,392473
+[sync_fixture-7] top_release_ns,26,465459
+[sync_fixture-7] top_release_ns,28,376082
+[sync_fixture-7] top_release_ns,30,484595
+[taskset-4] near_entry_ns=1795344801763744455
+[sync_fixture-6] branch,0,full,0,1795344800171897022,20540912
+[sync_fixture-6] branch,0,full,1,1795344800171897022,20450162
+[sync_fixture-6] regions,0,full,20540912
+[sync_fixture-6] sample,0,full,19038736
+[sync_fixture-6] branch,1,partial,0,1795344800221952114,43727936
+[sync_fixture-6] branch,1,partial,1,1795344800221952114,43666030
+[sync_fixture-6] regions,1,partial,43727936
+[sync_fixture-6] sample,1,partial,43619874
+[sync_fixture-6] branch,2,full,0,1795344800271952164,3610913
+[sync_fixture-6] branch,2,full,1,1795344800271952164,3005703
+[sync_fixture-6] regions,2,full,3610913
+[sync_fixture-6] sample,2,full,3413986
+[sync_fixture-6] branch,3,partial,0,1795344800321950079,42586133
+[sync_fixture-6] branch,3,partial,1,1795344800321950079,42238775
+[sync_fixture-6] regions,3,partial,42586133
+[sync_fixture-6] sample,3,partial,42177631
+[sync_fixture-6] branch,4,full,0,1795344800371959316,2919201
+[sync_fixture-6] branch,4,full,1,1795344800371959316,2752660
+[sync_fixture-6] regions,4,full,2919201
+[sync_fixture-6] sample,4,full,2731551
+[sync_fixture-6] branch,5,partial,0,1795344800421958624,-1
+[sync_fixture-6] branch,5,partial,1,1795344800421958624,42049591
+[sync_fixture-6] sample,5,partial,42035084
+[sync_fixture-6] branch,6,full,0,1795344800471945659,-1
+[sync_fixture-6] branch,6,full,1,1795344800471945659,2592622
+[sync_fixture-6] sample,6,full,3037332
+[sync_fixture-6] branch,7,partial,0,1795344800521953112,-1
+[sync_fixture-6] branch,7,partial,1,1795344800521953112,42173843
+[sync_fixture-6] sample,7,partial,42125283
+[sync_fixture-6] branch,8,full,0,1795344800571947892,-1
+[sync_fixture-6] branch,8,full,1,1795344800571947892,2927747
+[sync_fixture-6] sample,8,full,3220003
+[sync_fixture-6] branch,9,partial,0,1795344800621950987,-1
+[sync_fixture-6] branch,9,partial,1,1795344800621950987,42238784
+[sync_fixture-6] sample,9,partial,42212325
+[sync_fixture-6] branch,10,full,0,1795344800671952709,-1
+[sync_fixture-6] branch,10,full,1,1795344800671952709,3001576
+[sync_fixture-6] sample,10,full,2848340
+[sync_fixture-6] branch,11,partial,0,1795344800721944263,-1
+[sync_fixture-6] branch,11,partial,1,1795344800721944263,41963370
+[sync_fixture-6] sample,11,partial,41834209
+[sync_fixture-6] branch,12,full,0,1795344800771958379,-1
+[sync_fixture-6] branch,12,full,1,1795344800771958379,2745307
+[sync_fixture-6] sample,12,full,2657793
+[sync_fixture-6] branch,13,partial,0,1795344800821958228,-1
+[sync_fixture-6] branch,13,partial,1,1795344800821958228,42028051
+[sync_fixture-6] sample,13,partial,41901244
+[sync_fixture-6] branch,14,full,0,1795344800871948349,-1
+[sync_fixture-6] branch,14,full,1,1795344800871948349,2983121
+[sync_fixture-6] sample,14,full,2891961
+[sync_fixture-6] branch,15,partial,0,1795344800921940754,354902591
+[sync_fixture-6] branch,15,partial,1,1795344800921940754,42238163
+[sync_fixture-6] regions,15,partial,354902591
+[sync_fixture-6] sample,15,partial,42174675
+[sync_fixture-6] branch,16,full,0,1795344800971948708,305484539
+[sync_fixture-6] branch,16,full,1,1795344800971948708,3330440
+[sync_fixture-6] regions,16,full,305484539
+[sync_fixture-6] sample,16,full,3094038
+[sync_fixture-6] branch,17,partial,0,1795344801021935793,255746359
+[sync_fixture-6] branch,17,partial,1,1795344801021935793,42184804
+[sync_fixture-6] regions,17,partial,255746359
+[sync_fixture-6] sample,17,partial,42034764
+[sync_fixture-6] branch,18,full,0,1795344801071942275,206024999
+[sync_fixture-6] branch,18,full,1,1795344801071942275,2887202
+[sync_fixture-6] regions,18,full,206024999
+[sync_fixture-6] sample,18,full,2782857
+[sync_fixture-6] branch,19,partial,0,1795344801121950038,156345659
+[sync_fixture-6] branch,19,partial,1,1795344801121950038,42256117
+[sync_fixture-6] regions,19,partial,156345659
+[sync_fixture-6] sample,19,partial,42227534
+[sync_fixture-6] branch,20,full,0,1795344801171945068,106625072
+[sync_fixture-6] branch,20,full,1,1795344801171945068,2434056
+[sync_fixture-6] regions,20,full,106625072
+[sync_fixture-6] sample,20,full,2823594
+[sync_fixture-6] branch,21,partial,0,1795344801221955858,56878986
+[sync_fixture-6] branch,21,partial,1,1795344801221955858,42171198
+[sync_fixture-6] regions,21,partial,56878986
+[sync_fixture-6] sample,21,partial,42110645
+[sync_fixture-6] branch,22,full,0,1795344801271950668,7216056
+[sync_fixture-6] branch,22,full,1,1795344801271950668,2881962
+[sync_fixture-6] regions,22,full,7216056
+[sync_fixture-6] sample,22,full,2715050
+[sync_fixture-6] branch,23,partial,0,1795344801321952661,42357045
+[sync_fixture-6] branch,23,partial,1,1795344801321952661,42289429
+[sync_fixture-6] regions,23,partial,42357045
+[sync_fixture-6] sample,23,partial,42236420
+[sync_fixture-6] branch,24,full,0,1795344801371948131,2907270
+[sync_fixture-6] branch,24,full,1,1795344801371948131,2818264
+[sync_fixture-6] regions,24,full,2907270
+[sync_fixture-6] sample,24,full,2721824
+[sync_fixture-6] branch,25,partial,0,1795344801421949614,42287084
+[sync_fixture-6] branch,25,partial,1,1795344801421949614,41967007
+[sync_fixture-6] regions,25,partial,42287084
+[sync_fixture-6] sample,25,partial,42204049
+[sync_fixture-6] branch,26,full,0,1795344801471945115,2966880
+[sync_fixture-6] branch,26,full,1,1795344801471945115,2563046
+[sync_fixture-6] regions,26,full,2966880
+[sync_fixture-6] sample,26,full,2891099
+[sync_fixture-6] branch,27,partial,0,1795344801521939083,42251378
+[sync_fixture-6] branch,27,partial,1,1795344801521939083,42189182
+[sync_fixture-6] regions,27,partial,42251378
+[sync_fixture-6] sample,27,partial,42133868
+[sync_fixture-6] branch,28,full,0,1795344801571954401,3075273
+[sync_fixture-6] branch,28,full,1,1795344801571954401,2640321
+[sync_fixture-6] regions,28,full,3075273
+[sync_fixture-6] sample,28,full,2954407
+[sync_fixture-6] branch,29,partial,0,1795344801621944752,42956174
+[sync_fixture-6] branch,29,partial,1,1795344801621944752,42870895
+[sync_fixture-6] regions,29,partial,42956174
+[sync_fixture-6] sample,29,partial,42746843
+[sync_fixture-6] branch,30,full,0,1795344801671954680,3113955
+[sync_fixture-6] branch,30,full,1,1795344801671954680,3044566
+[sync_fixture-6] regions,30,full,3113955
+[sync_fixture-6] sample,30,full,2947244
+[sync_fixture-6] branch,31,partial,0,1795344801721941875,42470207
+[sync_fixture-6] branch,31,partial,1,1795344801721941875,42398543
+[sync_fixture-6] regions,31,partial,42470207
+[sync_fixture-6] sample,31,partial,42333161
+[sync_fixture-6] fast_source_hz=19.9994
+[sync_fixture-6] verified 32 synchronized clouds and metadata, 16 complete and 16 timed out, 2621440 input points
+[INFO] [sync_fixture-6]: process has finished cleanly [pid 2020806]
+[INFO] [sync_fixture-7]: sending signal 'SIGINT' to process[sync_fixture-7]
+[INFO] [crop-5]: sending signal 'SIGINT' to process[crop-5]
+[INFO] [taskset-4]: sending signal 'SIGINT' to process[taskset-4]
+[INFO] [concatenate_and_time_sync_node-3]: sending signal 'SIGINT' to process[concatenate_and_time_sync_node-3]
+[INFO] [component_container-2]: sending signal 'SIGINT' to process[component_container-2]
+[INFO] [static_transform_publisher-1]: sending signal 'SIGINT' to process[static_transform_publisher-1]
+[sync_fixture-7] [INFO] [1795344803.170184073] [rclcpp]: signal_handler(signum=2)
+[crop-5] [INFO] [1795344803.170510964] [rclcpp]: signal_handler(signum=2)
+[taskset-4] [INFO] [1795344803.170770649] [rclcpp]: signal_handler(signum=2)
+[concatenate_and_time_sync_node-3] [INFO] [1795344803.171032438] [rclcpp]: signal_handler(signum=2)
+[component_container-2] [INFO] [1795344803.171236759] [rclcpp]: signal_handler(signum=2)
+[static_transform_publisher-1] [INFO] [1795344803.171488479] [rclcpp]: signal_handler(signum=2)
+[concatenate_and_time_sync_node-3] sync_input views=0 copies=80
+[INFO] [static_transform_publisher-1]: process has finished cleanly [pid 2020801]
+[INFO] [concatenate_and_time_sync_node-3]: process has finished cleanly [pid 2020803]
+[INFO] [sync_fixture-7]: process has finished cleanly [pid 2020807]
+[INFO] [taskset-4]: process has finished cleanly [pid 2020804]
+[INFO] [crop-5]: process has finished cleanly [pid 2020805]
+[INFO] [component_container-2]: process has finished cleanly [pid 2020802]
+graph_user_s=3.466 graph_sys_s=2.777
+scope_peak_bytes=517492736
+Minimum host MemAvailable: 6716 MiB

@@ -4,9 +4,12 @@
 
 namespace crop_benchmark
 {
-class TwoWorkerExecutor : public rclcpp::executors::MultiThreadedExecutor
+template<size_t Workers>
+class WorkerExecutor : public rclcpp::executors::MultiThreadedExecutor
 {
 public:
-  TwoWorkerExecutor() : MultiThreadedExecutor(rclcpp::ExecutorOptions{}, 2) {}
+  WorkerExecutor() : MultiThreadedExecutor(rclcpp::ExecutorOptions{}, Workers) {}
 };
+using TwoWorkerExecutor = WorkerExecutor<2>;
+using ThreeWorkerExecutor = WorkerExecutor<3>;
 }  // namespace crop_benchmark

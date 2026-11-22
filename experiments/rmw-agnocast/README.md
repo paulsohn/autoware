@@ -2853,3 +2853,26 @@ Use the two-worker executor as the ordinary ROS baseline for contention tests.
 [Per-run executor matrix](pipeline-competitor-results/summary.txt) ·
 [Two-worker control](pipeline-workers-results/summary.txt) ·
 [Reproduction](../buffer/JOURNAL.md#2026-11-22--competing-callback-on-the-three-lidar-near-crop).
+
+### Executor selection for integration
+
+Keep executor selection in the component/container. For ordinary rclcpp
+nodes on rmw_agnocast, prefer stock rclcpp workers when they meet the
+workload. Where per-group isolation is required, prefer the standalone AWF
+CIE once its Lyrical build and graph behavior have been validated. Keep
+the tested bundled CIE for native Agnocast callback entities and as the
+Lyrical comparison reference. The two-worker control shares its pool
+across groups. CIE assigns each group a dedicated thread.
+
+Checked 2026-11-22: standalone main was at 06713baf (October 27 CI runner
+update). Its Lyrical support issue was still open. Recent repository
+activity and Lyrical compatibility are separate pieces of evidence.
+[Standalone revision](https://github.com/autowarefoundation/callback_isolated_executor/commit/06713baf54be962afe041b2b256671310489fd32) ·
+[Lyrical support issue](https://github.com/autowarefoundation/callback_isolated_executor/issues/64).
+
+With two independent busy timers on three allowed physical cores,
+rmw_agnocast delivered 22/32 clouds with two workers and 32/32 with either
+three workers or bundled CIE. Those configurations confirmed 13, 30 and
+30 of the 30 transient targets within 100 ms. This supports sizing the
+ordinary pool to the concurrent work for the tested graph.
+[Two-competitor matrix](pipeline-saturation-results/summary.txt).

@@ -3,6 +3,7 @@
 #include <atomic>
 #include <chrono>
 #include <memory>
+#include <sched.h>
 #include <rclcpp/callback_group.hpp>
 #include <cstdio>
 #include <cstdlib>
@@ -15,22 +16,36 @@ namespace crop_benchmark
 template<class Node, class Callback>
 void add_competitor(Node & node, Callback & process)
 {
-  auto group = node.create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
   auto count = std::make_shared<std::atomic<unsigned>>(0);
-  auto timer = node.create_wall_timer(std::chrono::milliseconds(5), [count, &node, done = std::make_shared<bool>(false)]() {
-    if (*done || count->load() < 5) return;
-    *done = true;
-    timespec before{}, after{};
-    if (clock_gettime(CLOCK_THREAD_CPUTIME_ID, &before)) std::abort();
-    std::fprintf(stderr, "near_stall_start_ns=%ld\n", long(node.now().nanoseconds()));
-    const auto end = std::chrono::steady_clock::now() + std::chrono::milliseconds(900);
-    while (std::chrono::steady_clock::now() < end) {}
-    std::fprintf(stderr, "near_stall_end_ns=%ld\n", long(node.now().nanoseconds()));
-    if (clock_gettime(CLOCK_THREAD_CPUTIME_ID, &after)) std::abort();
-    std::fprintf(stderr, "competitor_cpu_ns=%ld\n",
-      (after.tv_sec - before.tv_sec) * 1000000000L + after.tv_nsec - before.tv_nsec);
-  }, group);
-  process = [previous = process, group, timer, count, &node](auto msg) {
+  auto make_timer = [&](bool second) {
+    auto group = node.create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
+    auto timer = node.create_wall_timer(std::chrono::milliseconds(5),
+      [count, &node, second, done = std::make_shared<bool>(false)]() {
+        if (*done || count->load() < 5) return;
+        *done = true;
+        if (std::getenv("BENCH_SECOND_TIMER")) {
+          cpu_set_t allowed;
+          if (sched_getaffinity(0, sizeof(allowed), &allowed)) std::abort();
+          for (int i = 0; i < CPU_SETSIZE; ++i) {
+            if (CPU_ISSET(i, &allowed)) std::fprintf(stderr, "timer_%d_allowed_cpu=%d\n", int(second), i);
+          }
+        }
+        timespec before{}, after{};
+        if (clock_gettime(CLOCK_THREAD_CPUTIME_ID, &before)) std::abort();
+        const char * label = second ? "second_stall" : "near_stall";
+        std::fprintf(stderr, "%s_start_ns=%ld\n", label, long(node.now().nanoseconds()));
+        const auto end = std::chrono::steady_clock::now() + std::chrono::milliseconds(900);
+        while (std::chrono::steady_clock::now() < end) {}
+        std::fprintf(stderr, "%s_end_ns=%ld\n", label, long(node.now().nanoseconds()));
+        if (clock_gettime(CLOCK_THREAD_CPUTIME_ID, &after)) std::abort();
+        std::fprintf(stderr, "%s_cpu_ns=%ld\n", second ? "second" : "competitor",
+          (after.tv_sec - before.tv_sec) * 1000000000L + after.tv_nsec - before.tv_nsec);
+      }, group);
+    return std::make_pair(group, timer);
+  };
+  auto first = make_timer(false);
+  auto second = std::getenv("BENCH_SECOND_TIMER") ? make_timer(true) : first;
+  process = [previous = process, first, second, count, &node](auto msg) {
     std::fprintf(stderr, "near_entry_ns=%ld\n", long(node.now().nanoseconds()));
     ++*count;
     previous(msg);

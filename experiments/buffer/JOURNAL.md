@@ -2433,3 +2433,68 @@ worker invocation and its tracker replays completed end to end.
 
 [Executor matrix](../rmw-agnocast/pipeline-competitor-results/summary.txt) ·
 [Two-worker control](../rmw-agnocast/pipeline-workers-results/summary.txt).
+
+## 2026-11-22 — Saturating two executor workers on the near crop
+
+Use the same three-LiDAR graph, depth-8 reader, and paced tracker fixture
+as the preceding competing-callback test. Give each of two 5 ms timers its
+own mutually exclusive group and one 900 ms busy invocation after the fifth
+cloud callback. The two ordinary executor configurations use exactly two
+or three workers. The bundled CIE assigns a worker per callback group.
+Native uses its existing Agnocast-only CIE. No priority tuning was applied.
+Compare rmw_agnocast, Cyclone DDS and Zenoh in both run orders.
+
+Use the preceding two-overlay build recipe (crop and sync packages).
+Check lscpu -e=CPU,CORE,SOCKET and select three allowed logical CPUs on
+distinct physical cores. Apply the mask only to the near crop at launch.
+Both timer callbacks report their effective masks. Upstream nodes and the
+far reference keep their ordinary placement. A first launch inherited
+the Agnocast heap hook in taskset, then initialized it again after exec
+in the crop and failed process registration. Set the preload only on the
+final crop executable. Rerun the entire matrix in a fresh output directory.
+
+```bash
+export LYRICAL_ROOT=$(cat build/agnocast-lyrical/universe-root)
+export BENCH_NEAR_CPUS=2,3,4
+r=experiments/rmw-agnocast
+out=build/universe-saturation-paired
+bash "$r/bench-native-graph.sh" "$out" saturation
+REPLAY_TARGET_SPACING_M=8 REPLAY_RETURN_GROUP=20 BUFFER_RUNTIME_ONLY=1 \
+  experiments/buffer/run-lyrical.sh bash "$r/run-track-replay.sh" "$out"/*/*.log > "$out/tracker.log" 2>&1
+rg '^trace=' "$out/tracker.log" > "$out/tracker.txt"
+python3 "$r/summarize-competitor.py" "$out"
+```
+
+Count cloud entries strictly inside the intersection of the two busy
+windows. Require more than 800 ms of common time and identical three-CPU
+masks on both timers in every run. Compare frame deliveries, near and far
+receipt ages, longest gap between fresh near arrivals, transient-target
+confirmations within 100 ms, and continuity of the returning object's UUID.
+
+All 20 graphs passed, each with 32 fused cloud/metadata pairs and 32 far
+outputs. The two busy windows overlapped for 896.2–900.0 ms, and both
+timers reported CPUs 2,3,4 throughout the matrix. The CPU values measure
+per-thread execution over wall-time bursts (852.4–900.0 ms each). The
+highest graph scope peak was 493.5 MiB and minimum graph host headroom
+was 5251 MiB. The heavier two-overlay build retained at least 6497 MiB.
+
+With rmw_agnocast, two workers executed zero cloud callbacks during the
+overlap, delivered 22/32 near clouds and had near receipt-age p95 of
+305.43–306.60 ms. Three workers and bundled CIE both executed 18 callbacks
+during the overlap, delivered 32/32, and had p95 of 42.84–43.00 ms and
+42.15–44.90 ms respectively. The tracker confirmed 13/30 transient targets
+within 100 ms for two workers and 30/30 for either concurrent configuration.
+The returning UUID changed only with two workers. Cyclone DDS and Zenoh
+had the same delivery and tracker counts. Native Agnocast CIE also delivered
+32/32 and confirmed 30/30 on time. One Cyclone CIE run processed 17 cloud
+callbacks strictly within the intersection while delivering all frames.
+
+For this workload the third available worker explains the observed recovery.
+Keep ordinary rclcpp pools as the baseline. CIE remains optional for
+per-group scheduling. This experiment did not reserve cores, set thread
+priorities or validate standalone CIE. The local selection decision and
+upstream compatibility check are in the executor-selection section of the
+rmw_agnocast README.
+
+[Per-run measurements](../rmw-agnocast/pipeline-saturation-results/summary.txt) ·
+[Tracker replays](../rmw-agnocast/pipeline-saturation-results/tracker.txt).
