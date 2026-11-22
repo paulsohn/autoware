@@ -1,0 +1,10 @@
+module(name = "autoware_map_launch", version = "0.0.0")
+
+bazel_dep(name = "autoware_agnocast_wrapper", version = "0.0.0")
+bazel_dep(name = "autoware_lanelet2_map_visualizer", version = "0.0.0")
+bazel_dep(name = "autoware_map_config", version = "0.0.0")
+bazel_dep(name = "autoware_map_loader", version = "0.0.0")
+bazel_dep(name = "autoware_map_projection_loader", version = "0.0.0")
+bazel_dep(name = "autoware_map_tf_generator", version = "0.0.0")
+bazel_dep(name = "rclcpp_components", version = "0.0.0")
+bazel_dep(name = "rosdistro", version = "0.0.0")

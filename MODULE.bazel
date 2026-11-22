@@ -1623,3 +1623,9 @@ local_path_override(
     module_name = "autoware_topic_state_monitor",
     path = "src/universe/autoware_universe/system/autoware_topic_state_monitor",
 )
+
+bazel_dep(name = "autoware_map_launch", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_map_launch",
+    path = "src/launcher/autoware_launch/autoware_universe_launch/autoware_map_launch",
+)

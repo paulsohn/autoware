@@ -16578,3 +16578,39 @@ CPU/Cyclone/no-Agnocast flags as above: both cases in each pass, no failures/ski
 with all processes exiting zero. No algorithm/safety defaults or original tests
 change. Colcon dependencies must likewise provide the indexed asset package;
 full colcon/older ROS, unselected neural profiles and driving are not validated.
+
+## 2026-11-22: Phase 7.3.3 — autoware_map_launch resource closure
+
+Purpose: run the original map subsystem with the default simulator profile.
+Inspect package.xml, CMake install directories and conditional launch includes;
+CMake registers no original functional suite in this resource package.
+
+Integration pattern for this launch group: one package-owned MODULE and
+ament_index BUILD, root adjacent 0.0.0 dependency/local override, original
+CMake-installed resources in data and selected runtime indexes in deps. Keep
+foreign indexes out of data: flattening nested runtime trees can obscure their
+installed resources. Use ament_package for executable wrapper/container providers
+where a registry ament_index alone omits binaries. Preserve original sources;
+these resource packages are real providers, not empty CMake shims. Conditional
+launch names require explicit dependency choices; indexing an XML file does not
+make all possible options supported. Dynamic model identities stay at the caller.
+
+Supply the original map launcher with map config, projection, lanelet/PCD loaders,
+visualizer, viewer TF and the registered hash/XML executable. All are local
+implementations already tested at their own boundaries. Require retained
+LaneletMapBin and exactly 1757841 PointCloud2 points from the official indexed
+map, then clean process exits. No map_path injection or host ROS install.
+
+The external fixture in bazel/tests/universe_launch includes original XML;
+it is committed with the final product composition. Exact standalone gate:
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_output=errors //bazel/tests/universe_launch:map_launch_test
+```
+
+Both behavior/shutdown cases pass in 2.6 seconds, no failures/skips.
+The complete original full headless launch also passes both cases in 12.4 seconds.
+CPU/Cyclone DDS, ENABLE_AGNOCAST=0. No Fast DDS, enabled-Agnocast, full colcon,
+RViz or autonomous-driving result is claimed. Continue original product assembly.
