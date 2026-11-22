@@ -16412,3 +16412,18 @@ prediction configuration documented in their own entries. CPU/Cyclone DDS,
 ENABLE_AGNOCAST=0; no Fast DDS, enabled-Agnocast or driving acceptance result.
 Targeted Python/whitespace checks pass. Following commits wire each affected
 package boundary to the shared facade provider using this same tested change.
+
+## 2026-11-22: Phase 7.3.3 — autoware_path_smoother shared utility runtime
+
+Purpose: keep this package's utility SDK objects in the existing shared owners
+when loaded with other planning components. Inspect its library/runtime aggregate;
+add @autoware_utils//:runtime_dynamic_deps to that aggregate. The component DSO,
+standalone binaries and native tests reuse it. No implementation/test changes.
+The [shared-ownership entry](#2026-11-22-phase-733--shared-utility-sdk-ownership-in-containers)
+records the dependency pattern, crash diagnosis and exact complete group commands.
+
+All 1 original native cases pass through bazel test @autoware_path_smoother//...;
+The affected existing adapters and original planning_launch_test pass, including
+zero exit codes after full component loading and SIGINT. CPU/Cyclone DDS,
+ENABLE_AGNOCAST=0, no failures/skips. Reuse the common group evidence above;
+Fast DDS, enabled-Agnocast and autonomous driving are outside this gate.

@@ -36,6 +36,7 @@ cc_library(
 collect_transitive_dynamic_deps(
     name = "runtime_dynamic_deps",
     dynamic_deps = [
+        "@autoware_utils//:runtime_dynamic_deps",
         "@autoware_agnocast_wrapper//:autoware_agnocast_wrapper",
         "@autoware_internal_debug_msgs//:cc_shared",
         "@autoware_motion_utils//:runtime_dynamic_deps",
