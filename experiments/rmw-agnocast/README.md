@@ -2933,3 +2933,16 @@ every checkpoint. This qualifies externally supervised relaunch for the
 tested same-host outbound best-effort route.
 
 [Run evidence](bridge-restart-results/) · [Reproduction and limits](../buffer/JOURNAL.md#2026-11-22--restart-the-explicit-outbound-cyclone-bridge-under-live-crop-traffic)
+
+### Restarting the sole inbound writer of a live Universe crop
+
+A persistent stock Cyclone publisher and independent DDS witness exchanged
+all 100 numbered clouds per run. In both restart trials the Universe crop
+missed frames 31–43 while its inbound relay was interrupted. It resumed on
+frame 44 within 100–102 ms of relaunch. After a second relay death during
+idle, the same crop woke on the first isolated cloud. All subsequent clouds
+arrived once in order. The two uninterrupted controls delivered 100/100 to
+both paths. The Agnocast kernel reported one native writer before each kill,
+zero after death and one after replacement. The driver supplied supervision.
+
+[Run evidence](bridge-ingress-results/) · [Reproduction and limits](../buffer/JOURNAL.md#2026-11-22--replace-the-only-native-writer-on-an-inbound-bridge)

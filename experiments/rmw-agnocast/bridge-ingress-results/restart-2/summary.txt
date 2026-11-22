@@ -1,0 +1,5 @@
+idle crop wait channel: poll_schedule_timeout.constprop.0
+source graph GID: 0110ff68d2d591dc63a12d6c00002803
+last_good=30 first_recovered=44 missing=13 restart_ns=1795352366457955051 restart_to_crop_sink_ms=100.080
+mode=restart witness=100/100 crop=87/100 gaps=[(30, 44)] isolated_seq=80 source_to_sink_ms=4.190 distinct_bridge_egress_gids=3 native_counts=1/0/1/0/1
+Minimum host MemAvailable: 19725 MiB

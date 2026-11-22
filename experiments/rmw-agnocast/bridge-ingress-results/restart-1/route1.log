@@ -1,0 +1,4 @@
+[WARN] [1795352354.205953230] [Agnocast]: Agnocast publishers do not honor the BestEffort reliability QoS policy. Messages are delivered through shared memory regardless of this setting.
+[WARN] [1795352354.206032478] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+rmw_agnocast host-cloud writer /input
+[INFO] [1795352354.214053519] [agnocast_route_bridge]: ingress_gid=rmw_cyclonedds_cpp/89720730d6fa59790000000000000000 egress_gid=rmw_cyclonedds_cpp/4ff2b2f70f62cd0c0000000000000000

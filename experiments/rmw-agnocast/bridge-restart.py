@@ -1,4 +1,4 @@
-"""Exercise an outbound PointCloud2 route with a persistent stock Cyclone bag and Universe crop."""
+"""Exercise outbound and inbound PointCloud2 route restart with a persistent Universe crop."""
 import csv
 import os
 import re
@@ -15,7 +15,9 @@ from ament_index_python.packages import get_package_prefix
 from rclpy.serialization import deserialize_message
 from sensor_msgs.msg import PointCloud2
 
-mode, target = sys.argv[1:]
+mode, target = sys.argv[1:3]
+ingress = sys.argv[3:] == ["--inbound"]
+assert ingress or len(sys.argv) == 3
 assert mode in ("healthy", "restart")
 out = Path(target).resolve()
 out.mkdir()
@@ -105,6 +107,121 @@ def read_bag():
     return rows
 
 
+def inbound():
+    import ctypes
+
+    ioctl = ctypes.CDLL("libagnocast_ioctl_wrapper.so")
+    query = ioctl.get_agnocast_pub_nodes
+    query.argtypes = [ctypes.c_char_p, ctypes.POINTER(ctypes.c_int), ctypes.c_uint32]
+    query.restype = ctypes.c_void_p
+    ioctl.free_agnocast_topic_info_ret.argtypes = [ctypes.c_void_p]
+    ioctl.free_agnocast_topic_info_ret.restype = None
+
+    def writers():
+        n = ctypes.c_int()
+        wire = b"/input/_rmw_agnocast_v2/sensor_msgs/msg/PointCloud2/host_cloud/best_effort"
+        ptr = query(wire, ctypes.byref(n), int(os.environ["ROS_DOMAIN_ID"]))
+        ioctl.free_agnocast_topic_info_ret(ptr)
+        return n.value
+
+    def cyclone_readers():
+        return {bytes(info.endpoint_gid) for info in graph.get_subscriptions_info_by_topic("/mirror")
+                if info.node_name == "agnocast_route_bridge"}
+
+    def source_gids():
+        return {bytes(info.endpoint_gid) for info in graph.get_publishers_info_by_topic("/mirror")}
+
+    def launch_route(index):
+        start(f"route{index}", [binary("agnocast_rmw_loan_probe", "route_bridge"), "r2a",
+                                "cloud", "/mirror", "/input"])
+
+    def frames(file):
+        path = out / file
+        return [int(row[0]) for row in csv.reader(path.read_text().splitlines()) if len(row) == 2]
+
+    def allow(n):
+        tmp = limit.with_suffix(".tmp")
+        tmp.write_text(str(n))
+        tmp.replace(limit)
+
+    def blocked():
+        proc = Path(f"/proc/{children['crop'].pid}")
+        for _ in range(3):
+            wait(lambda: (proc/"stat").read_text().split(") ")[1][0] == "S" and
+                 "poll" in (proc/"wchan").read_text(), "crop blocked in direct wait")
+            time.sleep(.025)
+
+    dds = dict(os.environ, BENCH_LIFECYCLE_LIMIT=str(limit), ENABLE_AGNOCAST="0")
+    start("witness", [endpoint, "--ros-args", "-r", "output:=/mirror"], base=dds,
+          BENCH_ROLE="sub", BENCH_RAW_READER="1", BENCH_CSV=str(out/"witness.csv"))
+    start("writer", [endpoint, "--ros-args", "-r", "input:=/mirror", "-p", "period_ms:=50"],
+          base=dds, BENCH_ROLE="pub", BENCH_TRACE_STAMPS="1")
+    launch_route(0)
+    wait(lambda: writers() == 1 and cyclone_readers() and graph.count_subscribers("/mirror") == 2
+         and graph.count_subscribers("/input") == 1 and graph.count_publishers("/output") == 1
+         and graph.count_subscribers("/output") == 1, "initial route")
+    source = source_gids()
+    assert len(source) == 1
+    time.sleep(.4)
+    allow(80)
+    wait(lambda: 30 in frames("crop.csv"), "continuous baseline")
+    if mode == "restart":
+        stop("route0", signal.SIGKILL)
+        wait(lambda: writers() == 0, "old native writer removal")
+    wait(lambda: 42 in frames("witness.csv"), "DDS witness during first interval")
+    restart_ns = time.time_ns()
+    if mode == "restart":
+        launch_route(1)
+    wait(lambda: writers() == 1 and 79 in frames("crop.csv"), "end of continuous stream")
+    steady = frames("crop.csv")
+    gaps = [(a, b) for a, b in zip(steady, steady[1:]) if b != a+1]
+    assert steady[0] == 0 and steady == sorted(set(steady))
+    if mode == "restart":
+        assert len(gaps) == 1 and gaps[0][0] >= 30 and gaps[0][1] > 42, gaps
+    else:
+        assert not gaps
+    assert frames("witness.csv") == list(range(80))
+    before = cyclone_readers()
+    if mode == "restart":
+        stop("route1", signal.SIGKILL)
+        wait(lambda: writers() == 0, "idle writer removal")
+        launch_route(2)
+        wait(lambda: writers() == 1 and cyclone_readers() - before, "replacement on both sides")
+    blocked()
+    print("idle crop wait channel:", (Path(f"/proc/{children['crop'].pid}")/"wchan").read_text().strip())
+    assert source_gids() == source
+    assert frames("crop.csv") == steady
+    allow(81)
+    wait(lambda: frames("crop.csv") == steady + [80] and frames("witness.csv") == list(range(81)),
+         "isolated first cloud")
+    time.sleep(.25)
+    assert frames("crop.csv") == steady + [80]
+    allow(100)
+    wait(lambda: 99 in frames("crop.csv") and 99 in frames("witness.csv"), "continued traffic")
+    assert source_gids() == source and writers() == 1
+    print("source graph GID:", next(iter(source)).hex())
+    for name in list(children):
+        stop(name)
+    assert frames("witness.csv") == list(range(100))
+    assert frames("crop.csv") == steady + list(range(80,100))
+    stamps = {int(i): int(s) for i,s in re.findall(r"^sent (\d+) (\d+)$", (out/"writer.log").read_text(), re.M)}
+    assert list(stamps) == list(range(100))
+    latencies = dict(sink())
+    gids = []
+    for path in sorted(out.glob("route*.log")):
+        ingress, egress = re.search(r"ingress_gid=(\S+) egress_gid=(\S+)", path.read_text()).groups()
+        gids.append((ingress, egress))
+    assert len({egress for _, egress in gids}) == len(gids), gids
+    if gaps:
+        a, b = gaps[0]
+        assert stamps[b] >= restart_ns
+        print(f"last_good={a} first_recovered={b} missing={b-a-1} restart_ns={restart_ns} "
+              f"restart_to_crop_sink_ms={(stamps[b]+latencies[b]-restart_ns)/1e6:.3f}")
+    print(f"mode={mode} witness=100/100 crop={len(latencies)}/100 gaps={gaps} "
+          f"isolated_seq=80 source_to_sink_ms={latencies[80]/1e6:.3f} "
+          f"distinct_bridge_egress_gids={len(gids)} native_counts={'1/0/1/0/1' if gaps else '1'}")
+
+
 try:
     rclpy.init()
     graph = rclpy.create_node("restart_driver")
@@ -114,6 +231,9 @@ try:
     start("crop", [binary("universe_crop_benchmark", "crop"), "--ros-args", "--params-file", config,
                    "-p", "input_frame:=base_link", "-p", "output_frame:=base_link"], AGNOCAST_RMW_DIRECT_WAIT="1")
     start("sink", [endpoint], BENCH_ROLE="sub", BENCH_CSV=str(out / "crop.csv"))
+    if ingress:
+        inbound()
+        sys.exit(0)
     start("writer", [endpoint, "--ros-args", "-p", "period_ms:=50"], BENCH_ROLE="pub",
           BENCH_NATIVE_COUNTS="1", BENCH_TRACE_STAMPS="1", AGNOCAST_RMW_AUDIT_RELEASE="1")
     bridge(0)

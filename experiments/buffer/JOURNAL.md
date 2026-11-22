@@ -2830,3 +2830,83 @@ receive timestamps, crop samples, writer release and route logs permit
 independent inspection of all reported timing and count results.
 
 [Per-run evidence](../rmw-agnocast/bridge-restart-results/)
+
+## 2026-11-22 — Replace the only native writer on an inbound bridge
+
+Keep the stock Cyclone writer and its independent stock Cyclone witness on
+/mirror. Forward that topic to /input with the existing r2a route_bridge
+and run an ordinary Universe crop with the direct blocking wait. Keep the
+crop and its /output verifier alive through both relay deaths. Use the
+outbound experiment's Lyrical overlays, memory guard, CPU point layout,
+crop bounds, 20 Hz publisher and SensorDataQoS. The DDS witness checks
+all raw point bytes. The local sink checks all surviving cropped bytes.
+
+First stream frames 0–79. Kill the bridge after crop frame 30 and relaunch
+after the DDS witness gets frame 42. Check for one gap, ordered unique
+deliveries and recovery before the source pauses at 79. Measure relaunch
+to first valid crop output from the driver's wall-clock time before spawning
+the bridge to the sink callback time (source stamp plus sink latency).
+Then kill the bridge while the source is paused, observe zero native writers,
+and launch the identical route. Wait for one native writer on the best-effort
+host-cloud input route and a new DDS subscription endpoint on /mirror.
+Sample the crop main thread sleeping in poll three times. Release only frame
+80. Require both witness and crop output before permitting frame 81. Hold
+another 250 ms and check for extra outputs. Finish at sequence 99. The
+healthy control follows the same publication schedule with one uninterrupted
+bridge. Run both orders serially.
+
+Inspect the native publisher count with the vendored topic_info.cpp ioctl
+wrapper, independently of DDS graph expiry after SIGKILL. Its full package
+CMake build failed at ament_target_dependencies on Lyrical. The single
+translation unit used for this observation builds directly in the guarded
+root with no ROS API dependency. No middleware or Universe change was
+needed. On the first diagnostic run, a cross-process equality assertion on
+Cyclone ingress message-info GID bytes failed despite a continuous writer
+and correct deliveries. The three relay processes saw three different byte
+strings. The final driver checks the DDS writer from the same live graph
+observer before and after replacement and keeps the bridge logs for inspection.
+
+Reproduce from the experimental worktree with the same overlays and loaded
+kernel module as the preceding outbound experiment:
+
+```bash
+mkdir -p build/inbound
+export LYRICAL_ROOT=$(cat build/agnocast-lyrical/universe-root)
+experiments/buffer/run-lyrical.sh g++ -shared -fPIC \
+  src/core/agnocast/src/agnocast_ioctl_wrapper/src/topic_info.cpp \
+  -o build/inbound/libagnocast_ioctl_wrapper.so
+out=build/reproduce-inbound
+mkdir "$out"
+for trial in healthy-1 restart-1 restart-2 healthy-2; do
+ BUFFER_RUNTIME_ONLY=1 experiments/buffer/run-lyrical.sh timeout -k 5 55 bash -ec '
+ source build/agnocast-lyrical/install/local_setup.bash
+ source build/rmw-agnocast/load-install/local_setup.bash
+ source build/universe-sync/install/local_setup.bash
+ source build/universe-pipeline/install/local_setup.bash
+ export LD_LIBRARY_PATH=/ws/build/inbound:$LD_LIBRARY_PATH
+ export CYCLONEDDS_URI="<CycloneDDS><Domain><General><Interfaces><NetworkInterface name=\"lo\"/></Interfaces><AllowMulticast>false</AllowMulticast></General><Discovery><ParticipantIndex>auto</ParticipantIndex><Peers><Peer Address=\"127.0.0.1\"/></Peers></Discovery></Domain></CycloneDDS>"
+ python3 experiments/rmw-agnocast/bridge-restart.py "$1" "$2" --inbound' bash "${trial%-*}" "$out/$trial" >"$out/$trial.txt" 2>&1 || exit 1
+done
+```
+
+All four DDS witness traces contain frames 0–99 exactly once. Both healthy
+controls delivered 100/100 locally. Both restart trials delivered 87/100.
+The only gap was 31–43 inclusive, all during the continuous restart
+interval. Frame 44 reached the verified crop sink 101.056 and 100.080 ms
+after spawn. During the idle restart the native writer count again fell to
+zero and returned to one. The already running crop processed isolated
+sequence 80 with 4.063 and 4.190 ms from DDS source stamp to local output
+callback. Healthy controls measured 1.942 and 3.079 ms on that frame. Two
+observations per condition do not establish a latency distribution.
+The next nineteen frames were complete in every run. Minimum sampled host
+MemAvailable during the four runs was 19,306 MiB.
+
+This supplies the missing writer-replacement result for same-host best-effort
+PointCloud2. Together with outbound restart, it supports implementing a
+supervisor around the explicit relay. Automatic restart policy, topic
+selection, multi-host behavior and reliable/durable QoS remain open.
+
+[Frame sequences, stamps and relay logs](../rmw-agnocast/bridge-ingress-results/)
+
+The unchanged outbound healthy mode of the shared driver also passed its
+regression run with 150/150 verified local and recorded frames.
