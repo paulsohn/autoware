@@ -1,0 +1,34 @@
+Subject: Quote native bootstrap runfiles paths
+
+Applies to: rules_python 2.4.5, python/private/stage1_bootstrap_template.sh.
+
+Observed failure: a relocated runtime distribution under a path containing
+spaces fails with "Python interpreter not found: debug". Unquoted arguments
+split RUNFILES_DIR before find_python_interpreter receives it. Automatic
+runfiles discovery and symlink traversal have the same argument-splitting issue.
+
+Rationale and scope: quote these three paths in the non-zip bootstrap path.
+Retain interpreter selection, runfiles lookup, environment and exec behavior.
+No changes to zip extraction, runtime-created venvs or toolchain selection.
+
+Verification: the regression suite in //third_party/rules_python:bootstrap_test
+exercises relocated execution with explicit/automatic runfiles and a symlinked
+launcher; all three subcases pass with --config=runtime --config=no-agnocast.
+The test packages the actual native bootstrap/interpreter and runs it from a
+different working directory. It does not exercise zip or runtime-created venvs.
+
+Upstream: the same unquoted calls remain in the main-branch template inspected
+2026-11-23; no matching fix association is recorded.
+https://github.com/bazel-contrib/rules_python/blob/main/python/private/stage1_bootstrap_template.sh
+
+--- a/python/private/stage1_bootstrap_template.sh
++++ b/python/private/stage1_bootstrap_template.sh
+@@ -124 +124 @@
+-      stub_filename=$(readlink $stub_filename)
++      stub_filename=$(readlink "$stub_filename")
+@@ -129 +129 @@
+-  RUNFILES_DIR=$(find_runfiles_root $0)
++  RUNFILES_DIR=$(find_runfiles_root "$0")
+@@ -151 +151 @@
+-python_exe=$(find_python_interpreter $RUNFILES_DIR $PYTHON_BINARY)
++python_exe=$(find_python_interpreter "$RUNFILES_DIR" "$PYTHON_BINARY")

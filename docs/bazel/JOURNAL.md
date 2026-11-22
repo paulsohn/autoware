@@ -18206,3 +18206,47 @@ an extracted application distribution or all of its message types. The next
 module task composes the actual product/debug CLI and tests its archive after
 relocation. No source package changes, simulator driving, image export,
 Fast DDS or pre-commit run is required for this helper.
+
+## 2026-11-23: Phase 7.6 — Native Python bootstrap path quoting
+
+Purpose: preserve native Python entrypoints after extracting a runtime archive
+into a directory containing spaces. The debug distribution initially reports
+`Python interpreter not found: debug` under `/tmp/autoware debug ...` before
+reaching any ROS code. Inspect rules_python 2.4.5's generated native launcher
+and python/private/stage1_bootstrap_template.sh. The call to
+find_python_interpreter passes RUNFILES_DIR unquoted, splitting the directory
+into separate arguments. Automatic runfile discovery and readlink traversal
+also pass their filenames unquoted.
+
+Keep version 2.4.5 and apply a three-line dependency patch through a root
+single_version_override, patch_strip=1. Quote those arguments only. Store the
+patch, with rationale, affected version, verification and upstream reference,
+under third_party/rules_python. Do not rewrite generated executables after
+Bazel builds them. Do not change zip extraction or runtime-created venv modes
+without a target exposing that separate need. The upstream main-branch template
+retrieved on 2026-11-23 retains the three unquoted calls; no matching upstream
+fix association is recorded:
+https://github.com/bazel-contrib/rules_python/blob/main/python/private/stage1_bootstrap_template.sh
+
+Add a small py_binary that prints its first argument and package its real
+bootstrap, interpreter and runfiles with rules_pkg. The regression extracts
+that archive into a path containing spaces and invokes it from `/`, with a
+clean PATH/HOME and an argument containing spaces. Check explicit RUNFILES_DIR,
+automatic executable-adjacent discovery and two absolute symlink hops. This
+matches the existing bootstrap's symlink-discovery contract; relative symlink
+resolution is not changed by this patch. Command:
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --test_output=errors \
+  //third_party/rules_python:bootstrap_test
+python3 -m flake8 --max-line-length=150 third_party/rules_python/hello.py \
+  third_party/rules_python/test_bootstrap.py
+git diff --check
+```
+
+The complete regression passes its three execution subcases (one unittest case,
+1.2 s), with correct argument preservation and zero exit status. Targeted Python
+checks pass. This is a native-bootstrap correction; actual ROS CLI behavior and
+application packaging are verified in the distribution task. No source package
+implementation, middleware selection, Fast DDS or pre-commit run changes.

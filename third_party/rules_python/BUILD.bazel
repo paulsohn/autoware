@@ -1,0 +1,28 @@
+load("@rules_pkg//pkg:tar.bzl", "pkg_tar")
+load("@rules_python//python:defs.bzl", "py_binary", "py_test")
+
+exports_files(["bootstrap_paths.patch"])
+
+py_binary(
+    name = "hello",
+    testonly = True,
+    srcs = ["hello.py"],
+    precompile = "disabled",
+)
+
+pkg_tar(
+    name = "bootstrap_bundle",
+    testonly = True,
+    srcs = [":hello"],
+    include_runfiles = True,
+    preserve_mode = True,
+    strip_prefix = ".",
+)
+
+py_test(
+    name = "bootstrap_test",
+    srcs = ["test_bootstrap.py"],
+    args = ["$(rootpath :bootstrap_bundle)"],
+    data = [":bootstrap_bundle"],
+    main = "test_bootstrap.py",
+)

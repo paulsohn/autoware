@@ -83,6 +83,14 @@ single_version_override(
     version = "lyrical.2026-10-05.rcr.4",
 )
 
+# Native runtime launchers must survive relocation into paths containing spaces.
+single_version_override(
+    module_name = "rules_python",
+    patch_strip = 1,
+    patches = ["//third_party/rules_python:bootstrap_paths.patch"],
+    version = "2.4.5",
+)
+
 # Keep the existing solver API separate from RCR's OSQP 1.x consumers.
 # shortcut: current consumers link only 0.6; revisit before mixing both ABIs in one process.
 multiple_version_override(
