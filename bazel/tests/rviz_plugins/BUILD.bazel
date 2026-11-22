@@ -47,5 +47,6 @@ collect_transitive_dynamic_deps(
         ("autoware_perception_rviz_plugin", "plugins_description.xml"),
         ("autoware_localization_rviz_plugin", "plugins/plugin_description.xml"),
         ("autoware_planning_rviz_plugin", "plugins/plugin_description.xml"),
+        ("autoware_overlay_rviz_plugin", "plugins_description.xml"),
     ]
 ]
