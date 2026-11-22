@@ -1,0 +1,31 @@
+Subject: Shut down the ROS context on component-container early returns
+
+Applies to: RCR rclcpp_components 32.0.3-1.rcr.0,
+src/component_container.cpp.
+
+Observed failure: component_container --help prints usage then segfaults,
+both in the build tree and an extracted runtime. GDB reaches
+spdlog::details::registry::drop from rcl_logging_external_shutdown,
+rclcpp::Context::shutdown and the default-context destructor at process exit.
+
+Rationale and scope: the help and invalid-executor paths return after
+rclcpp::init without the shutdown performed by the normal execution path.
+Shut down explicitly before returning, while logging globals are still alive.
+Preserve help/error output and exit statuses; do not change executor behavior.
+
+Verification: //third_party/rclcpp_components:early_exit_test passes all three
+help/invalid-executor subcases, returning 0/1/1 without a signal. The complete
+existing SDK suite also passes: seven C++ cases and three benchmark operations,
+with Cyclone DDS, --config=runtime --config=no-agnocast and ROS_DOMAIN_ID=118.
+The consuming distribution has a separate extracted CLI gate.
+
+Upstream: rolling's component_container.cpp retrieved 2026-11-23 retains
+these early returns without shutdown. No matching fix association is recorded.
+https://github.com/ros2/rclcpp/blob/rolling/rclcpp_components/src/component_container.cpp
+
+--- a/src/component_container.cpp
++++ b/src/component_container.cpp
+@@ -135,0 +136 @@
++    rclcpp::shutdown();
+@@ -141,0 +143 @@
++    rclcpp::shutdown();

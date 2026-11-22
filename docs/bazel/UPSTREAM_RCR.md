@@ -162,3 +162,31 @@ bazel test --config=runtime --config=no-agnocast --test_output=errors \
 
 [Metadata adoption evidence](JOURNAL.md#2026-11-23-phase-76--dependency-owned-ros-cli-extension-metadata);
 [index adoption evidence](JOURNAL.md#2026-11-23-phase-76--package-qualified-runtime-executable-indexes).
+
+### Component-container early returns leave ROS shutdown until global destruction
+
+- [ ] Associate the early-shutdown source correction with a ROS 2 rclcpp upstream fix.
+- [ ] Associate the benchmark compile-dependency correction with an RCR overlay fix.
+
+Verified 2026-11-23 with rclcpp_components 32.0.3-1.rcr.0, LLVM/libc++ 21 and
+Cyclone DDS. Both the build-tree binary and its extracted runtime copy print
+usage for --help and then segfault. GDB reaches spdlog::details::registry::drop
+through rcl_logging_external_shutdown, rclcpp::Context::shutdown and destruction
+of the global default context in exit handlers. The help and invalid-executor
+branches return after rclcpp::init without the shutdown used by normal execution.
+
+The local [two-path source correction](../../third_party/rclcpp_components/early_shutdown.patch)
+explicitly shuts down before those returns. The native regression verifies
+help and both invalid-executor forms return 0/1/1 without a signal. All seven
+original component manager/API cases and three benchmark operations also pass.
+The complete suite first exposed a missing component_manager_library compile
+dependency on benchmark_components; the separate
+[overlay correction](../../third_party/rclcpp_components/benchmark_dependency.patch)
+supplies its existing header/API without changing benchmark source or operations.
+
+The [rolling source](https://github.com/ros2/rclcpp/blob/rolling/rclcpp_components/src/component_container.cpp)
+retrieved on 2026-11-23 retains the two early returns without shutdown. No
+matching upstream fix association is recorded; unrelated rolling changes are
+outside this correction. The reproducible commands and native backtrace are in
+[the source-task journal](JOURNAL.md#2026-11-23-phase-76--component-container-early-exit-logging-lifetime),
+with its [suite prerequisite](JOURNAL.md#2026-11-23-phase-76--component-sdk-benchmark-dependency).

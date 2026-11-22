@@ -107,11 +107,14 @@ single_version_override(
     version = "2.4.5",
 )
 
-# Supply the manager API to the SDK's registered benchmark.
+# Close initialized ROS/logging state before native CLI early returns.
 single_version_override(
     module_name = "rclcpp_components",
     patch_strip = 1,
-    patches = ["//third_party/rclcpp_components:benchmark_dependency.patch"],
+    patches = [
+        "//third_party/rclcpp_components:benchmark_dependency.patch",
+        "//third_party/rclcpp_components:early_shutdown.patch",
+    ],
     version = "32.0.3-1.rcr.0",
 )
 

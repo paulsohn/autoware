@@ -18368,3 +18368,53 @@ create_node_instance operations; its timings are observations, not performance
 acceptance thresholds. This validates SDK test build support. The separate
 source correction below changes only component_container's early-return paths.
 No Fast DDS, GPU or pre-commit run.
+
+## 2026-11-23: Phase 7.6 — Component-container early-exit logging lifetime
+
+Purpose: make the selected native container usable through ros2 run, including
+its help and invalid-argument exits. In the debug archive, component_container
+--help prints usage and segfaults. Reproduce directly in the build tree to
+separate packaging from source behavior:
+
+```sh
+env -i HOME="$HOME" PATH=/usr/bin:/bin RMW_IMPLEMENTATION=rmw_cyclonedds_cpp \
+  ENABLE_AGNOCAST=0 gdb --batch -ex run -ex 'bt 24' --args \
+  bazel-bin/external/rclcpp_components+/component_container --help
+```
+
+The backtrace reaches spdlog::details::registry::drop through
+rcl_logging_external_shutdown, rclcpp::Context::shutdown and destruction of the
+global default context during exit handlers. Inspect component_container.cpp:
+rclcpp::init runs before parsing, but the help and invalid-executor returns
+omit the explicit shutdown used by the normal spin path. Logging teardown is
+therefore delayed until global destruction, after the logger registry lifetime.
+
+Keep SDK 32.0.3-1.rcr.0 and apply early_shutdown.patch: call rclcpp::shutdown
+before each of those two returns. Preserve output, statuses and normal executor
+behavior. The rolling source retrieved on 2026-11-23 still has these early
+returns; no matching upstream association is recorded. Reference:
+https://github.com/ros2/rclcpp/blob/rolling/rclcpp_components/src/component_container.cpp
+
+Add third_party/rclcpp_components:early_exit_test using the real native binary.
+Exercise --help, --executor-type invalid and a missing executor value. Require
+usage text and exact statuses 0, 1 and 1, rather than accepting a printed message
+followed by a signal. Complete gate:
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_env=ROS_DOMAIN_ID=118 \
+  --test_output=errors //third_party/rclcpp_components:early_exit_test \
+  @rclcpp_components//test:test_component_manager \
+  @rclcpp_components//test:test_component_manager_api \
+  @rclcpp_components//test:benchmark_components
+python3 -m flake8 --max-line-length=150 third_party/rclcpp_components/test_early_exit.py
+git diff --check
+```
+
+All three early-exit subcases pass (one unittest case, 0.3 s); the complete
+existing SDK suite also passes its seven C++ cases and three benchmark
+operations. The original manager/benchmark implementation is unchanged; keep
+their passing evidence with this source fix. The consuming debug distribution
+separately verifies ros2 run and packaged library lookup. No Autoware source,
+GPU execution, Fast DDS or pre-commit changes.

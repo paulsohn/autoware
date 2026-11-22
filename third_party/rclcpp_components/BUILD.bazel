@@ -1,1 +1,12 @@
-exports_files(["benchmark_dependency.patch"])
+load("@rules_python//python:defs.bzl", "py_test")
+
+exports_files(["early_shutdown.patch", "benchmark_dependency.patch"])
+
+py_test(
+    name = "early_exit_test",
+    srcs = ["test_early_exit.py"],
+    args = ["$(rootpath @rclcpp_components//:component_container)"],
+    data = ["@rclcpp_components//:component_container"],
+    env = {"RMW_IMPLEMENTATION": "rmw_cyclonedds_cpp", "ENABLE_AGNOCAST": "0"},
+    main = "test_early_exit.py",
+)
