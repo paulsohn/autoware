@@ -2958,3 +2958,15 @@ respawn pending. The previous manual-relaunch controls provide the healthy
 delivery and data-path baseline.
 
 [Supervisor](supervise-route.py) · [Sequences and process events](bridge-supervision-results/) · [Reproduction and results](../buffer/JOURNAL.md#2026-11-22--supervise-a-configured-bridge-with-ros-launch)
+
+### Two supervised routes on the launched three-LiDAR graph
+
+One Cyclone ingress supplied top LiDAR and one Cyclone egress mirrored the
+synchronized output. Healthy runs recorded all 24 locally verified groups.
+After an egress crash the bag missed groups 7–8 and local synchronization
+continued. After an ingress crash the recorder matched all 24 local outputs:
+group 8 timed out on top LiDAR, and group 10 combined three fresh inputs.
+The original source stamps and every transformed point agreed in both run
+orders. Use the explicit supervised routes for this same-host colcon pilot.
+
+[Latency and CPU](dual-route-results/timings.txt) · [Evidence and reproduction](../buffer/JOURNAL.md#2026-11-23--simultaneous-ingress-and-egress-on-the-launched-three-lidar-graph)

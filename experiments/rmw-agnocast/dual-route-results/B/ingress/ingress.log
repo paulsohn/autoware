@@ -1,0 +1,22 @@
+[INFO] [launch]: All log files can be found below /ws/build/dual-B/ingress/ros/2026-11-22-15-32-50-808043-paulsohn-tuf-291527
+[INFO] [launch]: Default logging verbosity is set to INFO
+[INFO] [route_bridge-1]: process started with pid [291536]
+event 1795361570809943593 291536 started
+[route_bridge-1] [WARN] [1795361570.864831525] [Agnocast]: Agnocast publishers do not honor the BestEffort reliability QoS policy. Messages are delivered through shared memory regardless of this setting.
+[route_bridge-1] [WARN] [1795361570.864891537] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[route_bridge-1] rmw_agnocast host-cloud writer /raw/sync/top
+[route_bridge-1] [INFO] [1795361572.407833568] [agnocast_route_bridge]: ingress_gid=rmw_cyclonedds_cpp/c1d4f19b6c4480af0000000000000000 egress_gid=rmw_cyclonedds_cpp/9e45a359721b28d10000000000000000
+[ERROR] [route_bridge-1]: process has died [pid 291536, exit code -9, cmd '/ws/build/rmw-agnocast/load-install/agnocast_rmw_loan_probe/lib/agnocast_rmw_loan_probe/route_bridge r2a cloud /dds/top /raw/sync/top'].
+event 1795361573013733689 291536 -9
+[INFO] [route_bridge-1]: process started with pid [291778]
+event 1795361573265010913 291778 started
+[route_bridge-1] [WARN] [1795361573.330669683] [Agnocast]: Agnocast publishers do not honor the BestEffort reliability QoS policy. Messages are delivered through shared memory regardless of this setting.
+[route_bridge-1] [WARN] [1795361573.330724656] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[route_bridge-1] rmw_agnocast host-cloud writer /raw/sync/top
+[route_bridge-1] [INFO] [1795361573.407640041] [agnocast_route_bridge]: ingress_gid=rmw_cyclonedds_cpp/d925a079f01499fb0000000000000000 egress_gid=rmw_cyclonedds_cpp/7a5a090c7b4a867a0000000000000000
+[WARNING] [launch]: user interrupted with ctrl-c (SIGINT)
+[INFO] [route_bridge-1]: sending signal 'SIGINT' to process[route_bridge-1]
+[route_bridge-1] [INFO] [1795361579.856116909] [rclcpp]: signal_handler(signum=2)
+[route_bridge-1] [INFO] [1795361579.856425356] [agnocast_route_bridge]: received=7 forwarded=7
+[INFO] [route_bridge-1]: process has finished cleanly [pid 291778]
+event 1795361580062854882 291778 0

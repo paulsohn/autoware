@@ -1,0 +1,14 @@
+[INFO] [launch]: All log files can be found below /ws/build/dual-B/ingress/ros/2026-11-22-15-32-50-808447-paulsohn-tuf-291528
+[INFO] [launch]: Default logging verbosity is set to INFO
+[INFO] [route_bridge-1]: process started with pid [291537]
+event 1795361570810254544 291537 started
+[route_bridge-1] [WARN] [1795361570.866169905] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[route_bridge-1] [WARN] [1795361570.866321879] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[route_bridge-1] rmw_agnocast host-cloud reader /output
+[route_bridge-1] [INFO] [1795361572.426885033] [agnocast_route_bridge]: ingress_gid=rmw_cyclonedds_cpp/fb011a96ea74e50e0000000000000000 egress_gid=rmw_cyclonedds_cpp/42d9a22aba5ec69a0000000000000000
+[WARNING] [launch]: user interrupted with ctrl-c (SIGINT)
+[INFO] [route_bridge-1]: sending signal 'SIGINT' to process[route_bridge-1]
+[route_bridge-1] [INFO] [1795361580.120278089] [rclcpp]: signal_handler(signum=2)
+[route_bridge-1] [INFO] [1795361580.120562620] [agnocast_route_bridge]: received=24 forwarded=24
+[INFO] [route_bridge-1]: process has finished cleanly [pid 291537]
+event 1795361581146830098 291537 0

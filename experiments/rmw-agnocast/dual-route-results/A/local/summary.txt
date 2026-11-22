@@ -1,0 +1,4 @@
+graph_and_sidecars_cpu_s=1.719
+full count=12 median_ms=2.831 p95_ms=25.893
+partial count=12 median_ms=41.803 p95_ms=42.706
+Minimum host MemAvailable: 16947 MiB

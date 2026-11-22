@@ -1,0 +1,18 @@
+local cpu_s=1.719,1.560
+  local_full n=20 median_ms=2.629 p95_ms=3.646
+  local_partial n=20 median_ms=41.793 p95_ms=42.389
+healthy cpu_s=2.481,2.485
+  local_full n=20 median_ms=3.274 p95_ms=5.016
+  local_partial n=20 median_ms=41.756 p95_ms=42.642
+  bag_full n=20 median_ms=3.790 p95_ms=5.693
+  bag_partial n=20 median_ms=42.449 p95_ms=43.328
+ingress cpu_s=2.582,2.633
+  local_full n=18 median_ms=3.371 p95_ms=3.799
+  local_partial n=22 median_ms=41.695 p95_ms=42.030
+  bag_full n=18 median_ms=3.774 p95_ms=4.429
+  bag_partial n=22 median_ms=42.231 p95_ms=42.718
+egress cpu_s=2.526,2.585
+  local_full n=20 median_ms=2.871 p95_ms=3.421
+  local_partial n=20 median_ms=41.542 p95_ms=41.936
+  bag_full n=18 median_ms=3.249 p95_ms=3.742
+  bag_partial n=18 median_ms=42.038 p95_ms=42.716

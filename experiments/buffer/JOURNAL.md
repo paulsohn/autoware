@@ -2992,3 +2992,106 @@ remain outside this test. Use ordinary deployment supervision for the
 explicit-route pilot; revisit route selection separately.
 
 [Both run orders and raw evidence](../rmw-agnocast/bridge-supervision-results/)
+
+## 2026-11-23 — Simultaneous ingress and egress on the launched three-LiDAR graph
+
+Exercise two explicit supervised routes together with the existing stock
+rclcpp three-crop container, Universe synchronizer, local sink and static TF.
+Use the retained-input build with ENABLE_AGNOCAST=0 and runtime rmw_agnocast.
+For the dual-route cases remap the source's top publisher to /dds/top.
+This topic is outside AGNOCAST_RMW_TOPIC, so the existing source creates
+a delegated Cyclone DDS publisher in the same process that publishes the
+two local sensors. An r2a relay forwards it to /raw/sync/top. An a2r relay
+mirrors /output to /dds/synchronized. A stock Cyclone SQLite rosbag2
+recorder subscribes to both DDS topics. The local-only control publishes
+all three streams over the native host-cloud route. Cyclone and Zenoh
+local-only comparison measurements are in pipeline-launch-results.
+
+Keep the original 24 acquisition groups, with left/right at 10 Hz and top
+at 5 Hz on even sequences. The collector timeout is 40 ms. Wait for sink
+readiness and the recorder subscriptions. After the seventh local output,
+kill only the selected relay. Its own launch supervisor respawns it with
+a 250 ms delay. Check child start/exit histories for both routes. First
+run local-only, both healthy, ingress fault and egress fault, then reverse
+that order. Use the same pilot sink instrumentation in the control.
+
+For an ingress outage the verifier permits a left/right-only group on an
+even sequence. It derives group size from the local cloud, then independently
+checks the exact transformed point content, sequence of every point, sensor
+identity, source offsets, timestamps, OK and TIMEOUT statuses and collector
+success flag. Other conditions keep the scheduled source membership. Store
+each verified local cloud in CDR after collection. After clean recorder
+shutdown, read every bag record, verify all 12 top input sequences and stamps,
+and compare each entire deserialized mirrored PointCloud2 with its local
+counterpart. Reject gaps outside the failure interval, duplicates and
+reordering. Match the first recovered complete group's source timestamps
+against the source log. The two sides retain the original +1 and +2 ms
+fixture stamp offsets for right and top. Local CDR files and bags stay under
+the ignored build directory.
+
+Reproduce on the reference laptop from the colcon worktree with the
+Agnocast module loaded and the existing Lyrical overlays:
+
+```bash
+export LYRICAL_ROOT=$(cat build/agnocast-lyrical/universe-root)
+experiments/buffer/run-lyrical.sh bash experiments/rmw-agnocast/build-pipeline.sh
+out=build/reproduce-dual
+modes="local healthy ingress egress"
+export LYRICAL_ROOT=$(cat build/agnocast-lyrical/universe-root)
+mkdir "$out"
+for mode in $modes; do
+ BUFFER_RUNTIME_ONLY=1 experiments/buffer/run-lyrical.sh timeout -k 5 75 bash -ec '
+ source build/agnocast-lyrical/install/local_setup.bash
+ source build/rmw-agnocast/install/local_setup.bash
+ source build/rmw-agnocast/load-install/local_setup.bash
+ source build/universe-sync/install/local_setup.bash
+ source build/universe-pipeline/install/local_setup.bash
+ export CYCLONEDDS_URI="<CycloneDDS><Domain><General><Interfaces><NetworkInterface name=\"lo\"/></Interfaces><AllowMulticast>false</AllowMulticast></General><Discovery><ParticipantIndex>auto</ParticipantIndex><Peers><Peer Address=\"127.0.0.1\"/></Peers></Discovery></Domain></CycloneDDS>"
+ python3 experiments/rmw-agnocast/dual-route.py "$@"' bash "$mode" "$out/$mode" >"$out/$mode.txt" 2>&1 || exit 1
+done
+```
+
+Repeat with a fresh output directory and reversed modes. The guarded runs
+use a 512 MiB runtime memory limit and no cgroup swap. The driver reports
+per-trial median and nearest-rank p95 including cold samples. For comparison
+against the earlier pipeline-launch-results convention, pool the two rounds
+after dropping groups 0–3 of each. CPU is child user plus system seconds
+through shutdown including graph verification, local snapshots, supervisors
+and recording where active; offline bag readback is excluded. These are
+whole-run costs, including startup, and do not isolate relay CPU.
+
+Both run orders reproduced the same sequences. Healthy local and recorded
+outputs were 24/24. Killing egress left all 24 local groups intact with the
+usual 12 complete and 12 partial; the bag missed only groups 7 and 8. Its
+separate top-input topic contained all 12 frames. Killing ingress left
+all 24 synchronized outputs present on both paths. Group 8 then contained
+only left and right with top marked TIMEOUT. Group 9 was its scheduled
+two-sensor group. Group 10 was the first complete group after respawn.
+Its three metadata stamps matched the group-10 source base time plus 0,
+1 and 2 ms, and every transformed point carried sequence 10. The retained
+synchronizer logged 59 input views for the ingress fault and 60 in every
+other condition, with zero converter copies. Check the full per-trial
+scope before interpreting these converter counts as pipeline copy costs.
+
+For healthy operation, pooled post-warmup complete-cloud median/p95 at
+the local sink were 2.629/3.646 ms local-only and 3.274/5.016 ms with both
+routes and recording. Partial-cloud times were 41.793/42.389 and
+41.756/42.642 ms respectively. At the recorder they were 3.790/5.693 ms
+complete and 42.449/43.328 ms partial. CPU seconds for local-only were
+1.719/1.560 and for both healthy routes 2.481/2.485. These small paired runs
+show a measurable deployment cost and give limited precision on p95.
+As earlier local-only historical controls, the same graph under Cyclone
+measured 2.868/3.270 ms complete and Zenoh 2.765/3.594 ms; see the linked
+baseline for configuration and CPU. The current study targets the explicit
+Cyclone-DDS bridge. The ordinary stock launch without pilot variables also
+passed its original 24-group verification after rebuilding the fixtures.
+
+Use the explicit supervised route profile for this colcon pilot. The
+ingress outage caused a valid partial observation rather than a stale
+three-sensor result. The egress outage affected only the exported stream.
+This covers one same-host graph and one failed route at a time. Cross-host
+behavior, simultaneous relay failure and a downstream consumer's response
+to a missing LiDAR remain separate questions.
+
+[Dual-route samples and process logs](../rmw-agnocast/dual-route-results/) ·
+[Earlier local-only control matrix](../rmw-agnocast/pipeline-launch-results/summary.txt)

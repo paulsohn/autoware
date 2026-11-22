@@ -1,0 +1,13 @@
+[INFO] [1795361559.756012016] [rosbag2_recorder]: Event publisher thread: Started
+[INFO] [1795361559.759173912] [rosbag2_recorder]: Starting recording to '/ws/build/dual-B/egress/bag'
+[WARN] [1795361559.759207705] [rosbag2_recorder]: No input serialization format specified, using default rmw serialization format: 'cdr'.
+[INFO] [1795361559.761048133] [rosbag2_storage]: Opened database '/ws/build/dual-B/egress/bag/0_bag_2026_11_22-15_32_39.db3' for READ_WRITE.
+[INFO] [1795361559.761440406] [rosbag2_recorder]: Listening for topics...
+[INFO] [1795361559.761454442] [rosbag2_recorder]: Recording...
+[INFO] [1795361559.761485781] [rosbag2_recorder]: Topics discovery started.
+[INFO] [1795361559.765163520] [rosbag2_recorder]: Subscribed to topic '/dds/synchronized'
+[INFO] [1795361559.850533287] [rosbag2_recorder]: Subscribed to topic '/dds/top'
+[INFO] [1795361559.850554496] [rosbag2_recorder]: All requested topics are subscribed. Stopping discovery...
+[INFO] [1795361559.850560317] [rosbag2_recorder]: Topics discovery stopped.
+[INFO] [1795361567.686850512] [rosbag2_recorder]: Recording stopped
+[INFO] [1795361567.687318345] [rosbag2_recorder]: Event publisher thread: Exited

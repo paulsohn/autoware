@@ -1,0 +1,6 @@
+graph_and_sidecars_cpu_s=2.585
+full count=12 median_ms=2.914 p95_ms=24.543
+partial count=12 median_ms=41.559 p95_ms=42.566
+local=24/24 mirrored=22/24 input_top=12/12 mirror_missing=[7, 8] top_timeouts_on_even=[]
+kill_ns=1795361561855834017 respawn_ns=1795361562109786027 first_recovered_seq=9 source_stamp_ns=1795361562148816870
+Minimum host MemAvailable: 16682 MiB

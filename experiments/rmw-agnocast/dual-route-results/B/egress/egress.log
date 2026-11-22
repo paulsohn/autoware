@@ -1,0 +1,25 @@
+/opt/ros/lyrical/lib/python3.14/site-packages/launch/logging/__init__.py:172: UserWarning: Cannot create a symlink to latest log directory: [Errno 17] File exists: '/ws/build/dual-B/egress/ros/2026-11-22-15-32-39-655470-paulsohn-tuf-290863' -> '/ws/build/dual-B/egress/ros/latest'
+
+  warnings.warn(
+[INFO] [launch]: All log files can be found below /ws/build/dual-B/egress/ros/2026-11-22-15-32-39-655470-paulsohn-tuf-290863
+[INFO] [launch]: Default logging verbosity is set to INFO
+[INFO] [route_bridge-1]: process started with pid [290871]
+event 1795361559657585772 290871 started
+[route_bridge-1] [WARN] [1795361559.708803439] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[route_bridge-1] [WARN] [1795361559.708972845] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[route_bridge-1] rmw_agnocast host-cloud reader /output
+[route_bridge-1] [INFO] [1795361561.273088344] [agnocast_route_bridge]: ingress_gid=rmw_cyclonedds_cpp/b4e88e3db060d3230000000000000000 egress_gid=rmw_cyclonedds_cpp/993d910752e409a80000000000000000
+[ERROR] [route_bridge-1]: process has died [pid 290871, exit code -9, cmd '/ws/build/rmw-agnocast/load-install/agnocast_rmw_loan_probe/lib/agnocast_rmw_loan_probe/route_bridge a2r cloud /output /dds/synchronized'].
+event 1795361561858586628 290871 -9
+[INFO] [route_bridge-1]: process started with pid [291029]
+event 1795361562109786027 291029 started
+[route_bridge-1] [WARN] [1795361562.162182685] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[route_bridge-1] [WARN] [1795361562.162362491] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[route_bridge-1] rmw_agnocast host-cloud reader /output
+[route_bridge-1] [INFO] [1795361562.190867795] [agnocast_route_bridge]: ingress_gid=rmw_cyclonedds_cpp/b4e88e3db060d3230000000000000000 egress_gid=rmw_cyclonedds_cpp/f868022a574efdc10000000000000000
+[WARNING] [launch]: user interrupted with ctrl-c (SIGINT)
+[INFO] [route_bridge-1]: sending signal 'SIGINT' to process[route_bridge-1]
+[route_bridge-1] [INFO] [1795361569.865596048] [rclcpp]: signal_handler(signum=2)
+[route_bridge-1] [INFO] [1795361569.865814286] [agnocast_route_bridge]: received=15 forwarded=15
+[INFO] [route_bridge-1]: process has finished cleanly [pid 291029]
+event 1795361569875218812 291029 0

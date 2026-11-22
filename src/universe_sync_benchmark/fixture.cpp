@@ -1,3 +1,4 @@
+#include <rclcpp/serialization.hpp>
 #include <rclcpp/rclcpp.hpp>
 #ifdef SYNC_NATIVE
 #include "native_cloud.hpp"
@@ -28,6 +29,7 @@ using Info = autoware_sensing_msgs::msg::ConcatenatedPointCloudInfo;
 using Clock = std::chrono::steady_clock;
 using namespace std::chrono_literals;
 const bool extended = std::getenv("PIPELINE_DIR") && std::getenv("SYNC_EXTENDED");
+const bool route_pilot = std::getenv("SYNC_ROUTE_PILOT") != nullptr;
 const bool regions = std::getenv("PIPELINE_DIR") && std::getenv("SYNC_REGIONS");
 const std::array<std::string, 2> region_topics{"/region/near", "/region/far"};
 const bool isolation = regions && std::getenv("SYNC_ISOLATION");
@@ -111,7 +113,8 @@ int pipeline_source(rclcpp::Node::SharedPtr node, const std::filesystem::path & 
   }
   const auto deadline = Clock::now() + 20s;
   auto matched = [&] {
-    return std::filesystem::exists(directory / "sink-ready") &&
+    return (!route_pilot || std::filesystem::exists(directory / "go")) &&
+           std::filesystem::exists(directory / "sink-ready") &&
 #ifdef SYNC_NATIVE
            (!regions || agnocast::get_subscription_count_core("/output") == 3) &&
 #else
@@ -213,6 +216,7 @@ int main(int argc, char ** argv)
     }
     check(clouds.emplace(rclcpp::Time(c->header.stamp).nanoseconds(), c).second, "duplicate cloud");
     ++cloud_count;
+    if (route_pilot && cloud_count == 7) std::ofstream(std::filesystem::path(directory) / "fault-window") << stamp;
   };
 #ifdef SYNC_NATIVE
   auto sub =
@@ -354,6 +358,14 @@ int main(int argc, char ** argv)
           c.point_step == sizeof(Point) && c.row_step == bytes.size() &&
           bytes.size() == c.width * sizeof(Point),
         "invalid cloud frame or shape");
+      if (route_pilot) {
+        rclcpp::SerializedMessage encoded;
+        rclcpp::Serialization<Cloud>().serialize_message(&c, &encoded);
+        const auto & raw = encoded.get_rcl_serialized_message();
+        std::ofstream file(std::filesystem::path(directory) / ("local-" + std::to_string(seq)), std::ios::binary);
+        file.exceptions(std::ios::badbit | std::ios::failbit);
+        file.write(reinterpret_cast<const char *>(raw.buffer), raw.buffer_length);
+      }
       if (regions) {
         int64_t both = 0;
         for (size_t j = 0; j < region_topics.size(); ++j) {
@@ -443,7 +455,12 @@ int main(int argc, char ** argv)
       verify_group(seq, 0, 2, "late_pair");
       verify_group(seq, 2, 1, "late_top");
     } else {
-      verify_group(seq, 0, seq % 2 ? 2 : 3, seq % 2 ? "partial" : "full");
+      int members = seq % 2 ? 2 : 3;
+      if (route_pilot && std::getenv("SYNC_INGRESS_FAULT")) {
+        members = clouds.at(stamps[seq])->width / segment_points;
+        check((members == 3 && seq % 2 == 0) || members == 2, "unexpected route pilot membership");
+      }
+      verify_group(seq, 0, members, members == 3 ? "full" : "partial");
     }
   }
   std::cout << "fast_source_hz=" << 1e9 * (sets - 1) / (stamps.back() - stamps.front()) << "\n";
@@ -452,6 +469,8 @@ int main(int argc, char ** argv)
     std::cout << "extended expected=" << expected_outputs << " clouds=" << counted_clouds
               << " metadata=" << counted_infos << " paired=" << paired << " resume_ns=" << resume_ns
               << "\n";
+  else if (route_pilot)
+    std::cout << "verified route pilot groups=" << paired << "\n";
   else
     std::cout << "verified " << expected_outputs << " synchronized clouds and metadata, "
               << (jitter ? sets / 4 : sets / 2) << " complete and " << (jitter ? sets : sets / 2)

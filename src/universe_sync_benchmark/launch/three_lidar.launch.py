@@ -87,7 +87,9 @@ def graph(context):
     sink = Node(package="universe_sync_benchmark", executable="sync_fixture", name="pipeline_sink",
                 additional_env=sink_env, output="screen")
     source = Node(package="universe_sync_benchmark", executable="sync_fixture", name="pipeline_source",
-                  additional_env=dict(env, PIPELINE_SOURCE="1"), output="screen")
+                  additional_env=dict(env, PIPELINE_SOURCE="1"),
+                  remappings=[(raw[2], "/dds/top")] if os.getenv("SYNC_DDS_TOP") else [],
+                  output="screen")
     tf = Node(package="tf2_ros", executable="static_transform_publisher",
               arguments=["--x", "4", "--frame-id", "base_link", "--child-frame-id", "sync_lidar"],
               additional_env=env, output="screen")

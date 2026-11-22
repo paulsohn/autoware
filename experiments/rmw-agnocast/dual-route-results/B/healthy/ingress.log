@@ -1,0 +1,17 @@
+/opt/ros/lyrical/lib/python3.14/site-packages/launch/logging/__init__.py:172: UserWarning: Cannot create a symlink to latest log directory: [Errno 17] File exists: '/ws/build/dual-B/healthy/ros/2026-11-22-15-33-02-165135-paulsohn-tuf-292042' -> '/ws/build/dual-B/healthy/ros/latest'
+
+  warnings.warn(
+[INFO] [launch]: All log files can be found below /ws/build/dual-B/healthy/ros/2026-11-22-15-33-02-165135-paulsohn-tuf-292042
+[INFO] [launch]: Default logging verbosity is set to INFO
+[INFO] [route_bridge-1]: process started with pid [292056]
+event 1795361582167238853 292056 started
+[route_bridge-1] [WARN] [1795361582.221697062] [Agnocast]: Agnocast publishers do not honor the BestEffort reliability QoS policy. Messages are delivered through shared memory regardless of this setting.
+[route_bridge-1] [WARN] [1795361582.221745352] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[route_bridge-1] rmw_agnocast host-cloud writer /raw/sync/top
+[route_bridge-1] [INFO] [1795361583.762491391] [agnocast_route_bridge]: ingress_gid=rmw_cyclonedds_cpp/cbeb433e409d03100000000000000000 egress_gid=rmw_cyclonedds_cpp/bd8ae5c9bf5a9b310000000000000000
+[WARNING] [launch]: user interrupted with ctrl-c (SIGINT)
+[INFO] [route_bridge-1]: sending signal 'SIGINT' to process[route_bridge-1]
+[route_bridge-1] [INFO] [1795361587.701321625] [rclcpp]: signal_handler(signum=2)
+[route_bridge-1] [INFO] [1795361587.701529032] [agnocast_route_bridge]: received=12 forwarded=12
+[INFO] [route_bridge-1]: process has finished cleanly [pid 292056]
+event 1795361587907550546 292056 0

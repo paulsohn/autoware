@@ -1,0 +1,14 @@
+[INFO] [launch]: All log files can be found below /ws/build/dual-A/healthy/ros/2026-11-22-15-31-59-117561-paulsohn-tuf-289281
+[INFO] [launch]: Default logging verbosity is set to INFO
+[INFO] [route_bridge-1]: process started with pid [289289]
+event 1795361519119901921 289289 started
+[route_bridge-1] [WARN] [1795361519.173662907] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[route_bridge-1] [WARN] [1795361519.173807117] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[route_bridge-1] rmw_agnocast host-cloud reader /output
+[route_bridge-1] [INFO] [1795361520.728489006] [agnocast_route_bridge]: ingress_gid=rmw_cyclonedds_cpp/844d1ef08f2c5d140000000000000000 egress_gid=rmw_cyclonedds_cpp/f89cd4113be6e95b0000000000000000
+[WARNING] [launch]: user interrupted with ctrl-c (SIGINT)
+[INFO] [route_bridge-1]: sending signal 'SIGINT' to process[route_bridge-1]
+[route_bridge-1] [INFO] [1795361524.911934931] [rclcpp]: signal_handler(signum=2)
+[route_bridge-1] [INFO] [1795361524.912239359] [agnocast_route_bridge]: received=24 forwarded=24
+[INFO] [route_bridge-1]: process has finished cleanly [pid 289289]
+event 1795361524921391434 289289 0

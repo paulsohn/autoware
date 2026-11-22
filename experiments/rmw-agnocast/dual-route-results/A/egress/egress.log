@@ -1,0 +1,22 @@
+[INFO] [launch]: All log files can be found below /ws/build/dual-A/egress/ros/2026-11-22-15-32-17-237458-paulsohn-tuf-290218
+[INFO] [launch]: Default logging verbosity is set to INFO
+[INFO] [route_bridge-1]: process started with pid [290225]
+event 1795361537239421448 290225 started
+[route_bridge-1] [WARN] [1795361537.290067436] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[route_bridge-1] [WARN] [1795361537.290213789] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[route_bridge-1] rmw_agnocast host-cloud reader /output
+[route_bridge-1] [INFO] [1795361538.844165554] [agnocast_route_bridge]: ingress_gid=rmw_cyclonedds_cpp/dd6eba4b57230e190000000000000000 egress_gid=rmw_cyclonedds_cpp/b9a7d13bac76bc2f0000000000000000
+[ERROR] [route_bridge-1]: process has died [pid 290225, exit code -9, cmd '/ws/build/rmw-agnocast/load-install/agnocast_rmw_loan_probe/lib/agnocast_rmw_loan_probe/route_bridge a2r cloud /output /dds/synchronized'].
+event 1795361539432758328 290225 -9
+[INFO] [route_bridge-1]: process started with pid [290410]
+event 1795361539683783963 290410 started
+[route_bridge-1] [WARN] [1795361539.737473937] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[route_bridge-1] [WARN] [1795361539.737673660] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[route_bridge-1] rmw_agnocast host-cloud reader /output
+[route_bridge-1] [INFO] [1795361539.764510597] [agnocast_route_bridge]: ingress_gid=rmw_cyclonedds_cpp/dd6eba4b57230e190000000000000000 egress_gid=rmw_cyclonedds_cpp/be1eb1c3143a818f0000000000000000
+[WARNING] [launch]: user interrupted with ctrl-c (SIGINT)
+[INFO] [route_bridge-1]: sending signal 'SIGINT' to process[route_bridge-1]
+[route_bridge-1] [INFO] [1795361547.341523354] [rclcpp]: signal_handler(signum=2)
+[route_bridge-1] [INFO] [1795361547.341799770] [agnocast_route_bridge]: received=15 forwarded=15
+[INFO] [route_bridge-1]: process has finished cleanly [pid 290410]
+event 1795361547354355352 290410 0
