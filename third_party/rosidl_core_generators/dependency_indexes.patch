@@ -1,0 +1,26 @@
+Subject: Forward declared interface-package indexes at runtime
+
+Applies to: RCR rosidl_core_generators 0.4.3-3.rcr.5, defs.bzl.
+
+Observed failure: a consumer of an interface package's generated ament_index
+can import its Python message classes but cannot introspect nested definitions.
+For example, geometry_msgs is unknown to a consumer of nav_msgs/its index.
+C++ and Python binding dependencies are forwarded, but index dependencies are not.
+
+Rationale and scope: forward the already-declared interface dependencies to
+the generated ament_index, using the same label mapping as language providers.
+Preserve package ownership and existing targets; do not infer undeclared sources
+or maintain another top-level dependency-package list.
+
+Verification: dependency_indexes_test passes all three package/resource lookups
+(one unittest case, 0.2 s). The collection Python consumer also resolves nested
+geometry_msgs resources and imports native type support with Cyclone DDS.
+
+Upstream: the selected published macro lacks this edge, inspected 2026-11-23.
+No matching upstream association is recorded.
+https://bazel.ros.org/modules/rosidl_core_generators/0.4.3-3.rcr.5/source.json
+
+--- a/defs.bzl
++++ b/defs.bzl
+@@ -318,0 +319 @@
++            deps = [_dependency_label(dependency, "ament_index") for dependency in dependencies],

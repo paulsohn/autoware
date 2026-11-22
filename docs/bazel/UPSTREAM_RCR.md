@@ -190,3 +190,32 @@ matching upstream fix association is recorded; unrelated rolling changes are
 outside this correction. The reproducible commands and native backtrace are in
 [the source-task journal](JOURNAL.md#2026-11-23-phase-76--component-container-early-exit-logging-lifetime),
 with its [suite prerequisite](JOURNAL.md#2026-11-23-phase-76--component-sdk-benchmark-dependency).
+
+### Generated interface indexes omit declared dependency indexes
+
+- [ ] Associate transitive interface-index forwarding with an upstream RCR change.
+
+Verified 2026-11-23 with rosidl_core_generators 0.4.3-3.rcr.5. A consumer of
+nav_msgs:ament_index can locate Odometry.msg but cannot find its referenced
+geometry_msgs/Pose or std_msgs/Header resources. The published core_generators
+macro forwards generated language dependencies but not their ament indexes.
+Python importability and C++ link closure therefore do not establish schema
+introspection closure.
+
+The [one-line dependency correction](../../third_party/rosidl_core_generators/dependency_indexes.patch)
+passes the already-declared dependencies through the macro's existing
+_dependency_label mapping into ament_index.deps. It adds no package inventory
+or source discovery. The generic regression, whose only data dependency is
+nav_msgs:ament_index, resolves all three package manifests and message resources.
+The Autoware collection consumer also imports native Trajectory/Pose type support
+and resolves their schemas. No registered SDK tests exist in this pinned module;
+the consumer suite supplies the acceptance evidence. No matching upstream
+association is recorded for the inspected published version.
+
+```sh
+bazel test --config=runtime --config=no-agnocast --test_output=errors \
+  //third_party/rosidl_core_generators:dependency_indexes_test \
+  //bazel/interfaces:python_interfaces_test
+```
+
+[Reproducible adoption evidence](JOURNAL.md#2026-11-23-phase-76--transitive-interface-resource-indexes).

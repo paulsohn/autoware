@@ -1,0 +1,12 @@
+load("@rules_python//python:defs.bzl", "py_test")
+
+exports_files(["dependency_indexes.patch"])
+
+py_test(
+    name = "dependency_indexes_test",
+    srcs = ["test_dependency_indexes.py"],
+    data = ["@nav_msgs//:ament_index"],
+    env = {"AMENT_PREFIX_PATH": "."},
+    main = "test_dependency_indexes.py",
+    deps = ["@ament_index_python"],
+)

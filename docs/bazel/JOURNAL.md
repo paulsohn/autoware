@@ -18418,3 +18418,41 @@ operations. The original manager/benchmark implementation is unchanged; keep
 their passing evidence with this source fix. The consuming debug distribution
 separately verifies ros2 run and packaged library lookup. No Autoware source,
 GPU execution, Fast DDS or pre-commit changes.
+
+## 2026-11-23: Phase 7.6 — Transitive interface resource indexes
+
+Purpose: let standard ROS introspection find the definitions referenced by a
+selected interface package. Inspect rosidl_core_generators 0.4.3-3.rcr.5's
+core_generators macro and its existing _dependency_label mapping. A consumer of
+nav_msgs:ament_index sees Odometry.msg, but cannot find geometry_msgs/Pose or
+std_msgs/Header, although generated language bindings declare those dependencies.
+The index exports its own IDL files and libraries without forwarding the indexes
+of its declared interface dependencies. Querying
+`bazel query 'tests(@rosidl_core_generators//...)'` returns no registered tests.
+
+Keep the selected version and add dependency_indexes.patch under its third_party
+owner, selected by a root single_version_override. Add one deps edge list to the
+generated ament_index using _dependency_label(dependency, "ament_index") for the
+already-declared dependencies. Use the existing mapping for ordinary and implicit
+service/action dependencies; do not infer labels from discovered interface names
+or duplicate transitive package lists in product composition.
+
+Add a generic dependency_indexes_test with only nav_msgs:ament_index as data.
+Use ament_index_python to resolve nav_msgs, geometry_msgs and std_msgs, requiring
+each package.xml and representative .msg resource. Command:
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --test_output=errors \
+  //third_party/rosidl_core_generators:dependency_indexes_test
+python3 -m flake8 --max-line-length=150 third_party/rosidl_core_generators/test_dependency_indexes.py
+git diff --check
+```
+
+The regression passes all three package/resource lookups (one unittest case,
+0.2 s). The consuming collection also resolves geometry_msgs transitively.
+This is a runtime-index dependency correction, with no source implementation,
+generator output or middleware-selection change. The selected published macro
+lacks this edge as inspected on 2026-11-23; no matching upstream association is
+recorded. The extracted debug distribution has its own consumer gate. No GPU,
+Fast DDS or pre-commit run.
