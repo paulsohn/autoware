@@ -17002,3 +17002,26 @@ from source correction ab3d1ca228e9d7f643a923e3cea95eb29f27070e. Current upstrea
 scoped planning_validator/DebugData PR search finds no match (2026-11-22).
 Record the local source commit and association in UPSTREAM_AWF.md with the test
 boundary. Other compilers, older ROS and upstream CMake are not validated.
+
+## 2026-11-22: Phase 7.3.4 — Required RViz provider sources
+
+Purpose: supply PolarGridDisplay and AutowareDateTimePanel named by the original
+autoware.rviz configuration. Both packages are absent from the local RViz
+0.6.0 snapshot (b3d59795932ee08cad52de5f1981cb8ef9d6d37c); the RCR metadata URLs
+for autoware_polar_grid and tier4_datetime_rviz_plugin return 404. Resolve the
+actual providers instead of removing configured UI entries.
+
+Import only these two package directories (16 original files) under the existing
+src/core/autoware_rviz_plugins repository boundary from immutable upstream
+c9b9aa3449a999ec2285b1421fb625e0e95b01d1. Download
+https://codeload.github.com/autowarefoundation/autoware_rviz_plugins/tar.gz/c9b9aa3449a999ec2285b1421fb625e0e95b01d1
+and require SHA-256
+7aff3f9bdb8a534e77fb715b525a9a8ad7c008d7f91aff17a0b6fdfca121cef4
+before extracting the two whitelisted directories. Preserve every existing
+package; do not advance the whole source repository. Both imported manifests
+retain their upstream version 0.6.0 and register no original functional suite.
+
+The following package-owned Bazel boundaries expose their original XML/resources
+and each passes its factory check and the original full RViz configuration.
+Keep source acquisition, datetime's demonstrated Qt6 correction and the owned
+MODULE/BUILD definitions separate. Upstream CMake/colcon is not validated here.
