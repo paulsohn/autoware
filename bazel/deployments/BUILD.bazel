@@ -20,6 +20,7 @@ pkg_tar(
     srcs = [
         "//bazel/runtime:run",
         "//bazel/runtime:core_headless",
+        "//bazel/runtime:core_setup",
     ],
     allow_duplicates_with_different_content = False,
     compression_level = 1,
@@ -33,7 +34,11 @@ pkg_tar(
 pkg_tar(
     name = "planning_simulator_bundle",
     target_compatible_with = EXPENSIVE_TARGET_COMPATIBILITY,
-    srcs = ["//bazel/runtime:planning_simulator_launcher", "//bazel/runtime:planning_simulator"],
+    srcs = [
+        "//bazel/runtime:planning_simulator_launcher",
+        "//bazel/runtime:planning_simulator",
+        "//bazel/runtime:planning_simulator_setup",
+    ],
     allow_duplicates_with_different_content = False,
     compression_level = 1,
     extension = "tar.gz",

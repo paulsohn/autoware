@@ -1,0 +1,18 @@
+# Copyright 2026 Taeseung Sohn
+# SPDX-License-Identifier: Apache-2.0
+# Source this file to activate the selected native runtime environment.
+
+unset COLCON_PREFIX_PATH CMAKE_PREFIX_PATH PYTHONPATH PYTHONHOME LD_PRELOAD
+unset RUNFILES_DIR RUNFILES_MANIFEST_FILE JAVA_RUNFILES
+_autoware_debug_root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)
+case ":${PATH:-}:" in
+  *":${_autoware_debug_root}/bin:"*) ;;
+  *) export PATH="${_autoware_debug_root}/bin:${PATH:-/usr/bin:/bin}" ;;
+esac
+export AMENT_PREFIX_PATH="${_autoware_debug_root}/@ENTRYPOINT@.runfiles/_main"
+export LD_LIBRARY_PATH="${AMENT_PREFIX_PATH}/lib"
+export ROS_DISTRO=lyrical RMW_IMPLEMENTATION=rmw_cyclonedds_cpp ENABLE_AGNOCAST=0
+export PYTHONNOUSERSITE=1
+@DISCOVERY_ENV@
+export OMP_NUM_THREADS="${OMP_NUM_THREADS:-1}"
+unset _autoware_debug_root

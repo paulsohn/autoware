@@ -18533,3 +18533,60 @@ This validates the optional Python/index projection; the existing C++ provider
 implementation, selected metadata roots and Agnocast plugin assembly are
 unchanged. Full simulator driving, GPU and Fast DDS checks are outside this
 projection task.
+
+## 2026-11-23: Phase 7.6 — Shared native launcher activation
+
+Purpose: share the native environment contract between the core run launcher,
+the simulator run_simulator launcher and a sourceable debugging environment.
+Inspect both original wrapper bodies, their pkg_tar declarations and RCR's
+ament/underlay.bzl, ament/ament_package.bzl and environment templates. The RCR
+underlay builds conventional per-package install trees from AmentPackageInfo
+through deps edges. Existing component targets instead export ament_index
+runtime providers and compose resources through data and executable runfiles.
+Preserve that validated runtime layout rather than adding a second package
+installation inventory to shorten two scripts.
+
+Put one sourceable setup.bash.in under bazel/runtime. Expand its entrypoint
+name into core_setup.bash and simulator_setup.bash. Resolve each prefix relative
+to BASH_SOURCE, set ament/native-library paths and the CPU/Cyclone/Agnocast-off
+profile, and clear inherited Python, colcon/CMake and runfiles lookup state.
+Keep RUNFILES_DIR private to each executable wrapper. Core retains its fixed
+vehicle/sensor/headless arguments; simulator retains its fixed discovery XML,
+rviz:=false default and caller argument ordering. Both retain the one-thread
+profile, caller ROS_DOMAIN_ID and exec exit-status behavior. Include each new
+setup file beside its launcher in the owning native archive; a sourceable script
+must be an explicit packaging input, not an undeclared neighbor in bazel-bin.
+
+Add a standalone launchers_test under bazel/tests/runtime_debug. Stage each
+real generated setup/launcher pair into a temporary path containing spaces and
+replace only its final ROS executable with a recording fixture. Supply dirty
+inherited environment variables and arguments containing spaces. Check both
+profiles' exact arguments, private runfiles/ament/library paths, preserved
+caller settings, cleared discovery state and exit statuses 0 and 7. Extend the
+existing archive-structure suite to require the corresponding setup file.
+Required verification:
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --test_output=errors \
+  //bazel/tests/runtime_debug:launchers_test
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=expensive --config=runtime --config=no-agnocast \
+  --local_test_jobs=1 --test_output=errors \
+  //bazel/tests:core_bundle_structure_test \
+  //bazel/tests:planning_simulator_bundle_structure_test \
+  //bazel/tests:core_system_headless_launch_test
+python3 -m flake8 --max-line-length=150 bazel/tests/runtime_debug/test_launchers.py \
+  bazel/tests/runtime/test_bundle.py
+bash -n bazel/runtime/run bazel/runtime/run_simulator.sh.in bazel/runtime/setup.bash.in
+git diff --check
+```
+
+The launcher regression passes both profiles with statuses 0/7 (one case,
+0.5 s). Both native archive-structure suites pass (21.8/60.8 s), and both original
+core startup/shutdown cases pass (one target, 4.8 s). Targeted Python checks,
+Bash syntax and git diff --check pass. The sourceable debug product has a separate
+consumer gate; its remaining Python-closure issue does not change these two
+launchers or archives. Existing simulator-driving and OCI runtime evidence
+applies to unchanged application code and profiles; no new GPU, Fast DDS,
+image-export or full simulator check is part of this refactor.

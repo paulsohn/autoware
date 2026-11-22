@@ -4,20 +4,12 @@
 set -eu
 
 bundle=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)
-runfiles="$bundle/planning_simulator.runfiles"
-prefix="$runfiles/_main"
-
-unset AMENT_PREFIX_PATH COLCON_PREFIX_PATH CMAKE_PREFIX_PATH PYTHONPATH PYTHONHOME
-unset LD_LIBRARY_PATH LD_PRELOAD RUNFILES_DIR RUNFILES_MANIFEST_FILE JAVA_RUNFILES
 export PATH=/usr/bin:/bin
-export RUNFILES_DIR="$runfiles"
-export AMENT_PREFIX_PATH="$prefix"
-export LD_LIBRARY_PATH="$prefix/lib"
-export PYTHONNOUSERSITE=1
-export ENABLE_AGNOCAST=0 RMW_IMPLEMENTATION=rmw_cyclonedds_cpp ROS_DISTRO=lyrical
 export OMP_NUM_THREADS=1
 export CYCLONEDDS_URI='@CYCLONEDDS_URI@'
+source "$bundle/simulator_setup.bash"
+export RUNFILES_DIR="$bundle/planning_simulator.runfiles"
 
 exec "$bundle/planning_simulator" \
-  "$prefix/share/autoware_launch/launch/planning_simulator.launch.xml" \
+  "$AMENT_PREFIX_PATH/share/autoware_launch/launch/planning_simulator.launch.xml" \
   rviz:=false "$@"

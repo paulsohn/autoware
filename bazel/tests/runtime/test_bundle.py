@@ -39,6 +39,10 @@ class TestBundle(unittest.TestCase):
                 entry = entries[0]
                 package = 'autoware_launch' if entry in ('planning_simulator', 'universe_launch/lane_driving_test') else 'autoware_core'
                 self.assertTrue(members[entry].mode & 0o111)
+                if entry == 'core_headless':
+                    self.assertIn('core_setup.bash', members)
+                if entry == 'planning_simulator':
+                    self.assertIn('simulator_setup.bash', members)
                 self.assertEqual(archive.extractfile(entry).readline().strip(), b'#!/usr/bin/env bash')
                 self.assertIn(entry + '.runfiles/_repo_mapping', members)
                 self.assertIn(entry + '.runfiles/_main/share/ament_index/resource_index/packages/' + package, members)

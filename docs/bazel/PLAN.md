@@ -125,6 +125,7 @@ only when your current target demonstrates the need.
   [Independent process environments at exec](JOURNAL.md#2026-11-23-phase-734--extracted-native-simulator-distribution);
   [Python providers across runtime edges](DEVELOPING.md#python-providers-in-runtime-compositions);
   [evidence: composed interpreter](JOURNAL.md#2026-11-23-phase-76--python-providers-through-product-runtime-edges);
+  [Shared native activation](JOURNAL.md#2026-11-23-phase-76--shared-native-launcher-activation);
   [Native bootstrap path quoting](JOURNAL.md#2026-11-23-phase-76--native-python-bootstrap-path-quoting);
   [Dependency-owned plugin metadata](JOURNAL.md#2026-11-23-phase-76--dependency-owned-ros-cli-extension-metadata);
   [distribution convention](DEVELOPING.md#native-core-distribution);

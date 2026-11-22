@@ -1,0 +1,19 @@
+load("//bazel/runtime:cyclonedds.bzl", "PLANNING_SIMULATOR_CYCLONEDDS_URI")
+load("@rules_python//python:defs.bzl", "py_test")
+
+py_test(
+    name = "launchers_test",
+    srcs = ["test_launchers.py"],
+    args = [
+        "$(rootpath //bazel/runtime:run)",
+        "$(rootpath //bazel/runtime:core_setup)",
+        "$(rootpath //bazel/runtime:planning_simulator_launcher)",
+        "$(rootpath //bazel/runtime:planning_simulator_setup)",
+        PLANNING_SIMULATOR_CYCLONEDDS_URI,
+    ],
+    data = [
+        "//bazel/runtime:run", "//bazel/runtime:core_setup",
+        "//bazel/runtime:planning_simulator_launcher", "//bazel/runtime:planning_simulator_setup",
+    ],
+    main = "test_launchers.py",
+)

@@ -1,6 +1,7 @@
 load(":defs.bzl", "executable_template")
 load(":cyclonedds.bzl", "PLANNING_SIMULATOR_CYCLONEDDS_URI")
 load("@launch_ros//:defs.bzl", "launch_ros_binary")
+load("@bazel_skylib//rules:expand_template.bzl", "expand_template")
 load("//third_party/runtime:defs.bzl", "runtime_libraries")
 
 package(default_visibility = ["//visibility:public"])
@@ -75,4 +76,18 @@ executable_template(
     out = "run_simulator",
     substitutions = {"@CYCLONEDDS_URI@": PLANNING_SIMULATOR_CYCLONEDDS_URI},
     template = "run_simulator.sh.in",
+)
+
+expand_template(
+    name = "core_setup",
+    out = "core_setup.bash",
+    substitutions = {"@ENTRYPOINT@": "core_headless", "@DISCOVERY_ENV@": ""},
+    template = "setup.bash.in",
+)
+
+expand_template(
+    name = "planning_simulator_setup",
+    out = "simulator_setup.bash",
+    substitutions = {"@ENTRYPOINT@": "planning_simulator", "@DISCOVERY_ENV@": ""},
+    template = "setup.bash.in",
 )

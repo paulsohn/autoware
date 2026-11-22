@@ -1286,6 +1286,17 @@ bazel/tests/ use strip_prefix="/bazel/tests". Keep installed entrypoints and
 adjacent runfiles independent of the archive rule's package location; moving a
 BUILD target must not silently move files inside the deployment artifact.
 
+The core run and simulator run_simulator launchers source generated instances
+of bazel/runtime/setup.bash.in. Ship core_setup.bash or simulator_setup.bash
+beside its launcher, respectively. The template activates that entrypoint's
+ament/library prefix and clears inherited Python/runfiles discovery state;
+the launcher sets its private RUNFILES_DIR and fixed product arguments before
+exec. Keep these profiles separate from a developer's sourced shell. Check
+both argument lists, profile settings and exit forwarding with
+`//bazel/tests/runtime_debug:launchers_test`, and the affected native archives
+with their bundle_structure_test targets. Reuse unchanged application behavior
+evidence; this does not automatically require simulator driving or OCI export.
+
 Register Python executable targets through register_ament_files, preserving the
 launcher rather than flattening all DefaultInfo files to an executable name.
 Registration must forward the executable's default runfiles as well as its
