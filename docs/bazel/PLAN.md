@@ -99,6 +99,8 @@ only when your current target demonstrates the need.
   [Evidence: textually included C++ implementation](JOURNAL.md#2026-11-22-phase-732--static-obstacle-avoidance-scene-plugin).
 - [ ] Inventory complete module suites, runtime prerequisites and required
   middleware configurations before implementing each task.
+  [Steady-state expensive-target policy](DEVELOPING.md#expensive-targets);
+  [evidence: opt-in selection](JOURNAL.md#2026-11-23-phase-75--opt-in-expensive-system-and-deployment-targets);
   [ROS-time boundary evidence](JOURNAL.md#2026-11-22-phase-732--perception-metric-windows-at-ros-time-zero);
   [Backend executor convention](DEVELOPING.md#switchable-standalone-nodes);
   [evidence: complete Agnocast test inventory](JOURNAL.md#2026-11-15-phase-41--adopt-the-complete-agnocast-library-test-inventory).
@@ -1642,7 +1644,7 @@ Phase 8. No new Fast DDS acceptance run was performed; it still requires
 explicit approval. The x86 TensorRT 10.16.1 versus JetPack 7.2.1's 10.16.2 gap
 remains explicit for Phase 8.
 
-## Phase 7 — Runtime packaging and planning simulation (in progress)
+## Phase 7 — Runtime packaging and planning simulation (complete, 2026-11-23)
 
 Follow the [packaging and deployment requirements](#runtime-packaging-and-deployment-requirements).
 Complete each distribution boundary before expanding the application closure.
@@ -1686,18 +1688,18 @@ Complete each distribution boundary before expanding the application closure.
    without a root package. Scope is file exports only, with no perception
    :ament_index or claim of a complete perception runtime.
    [Integration pattern and gate](JOURNAL.md#2026-11-23-phase-74--package-owned-perception-launcher-exports).
-5. **7.5 — Deployment directory and builder-container conventions (in progress).**
-   Keep runnable products in bazel/runtime/, move native/OCI/OSTree delivery
-   and service definitions to bazel/deployments/, and put verification archives
-   under bazel/tests/. Leave only the optional builder dev.Dockerfile under
-   images/; use source mounts and persistent caches rather than a prepopulated
-   workspace image. Preserve runtime layout, resource selection and service
-   behavior. The gate covers the existing archive, image, supervisor, simulator
-   distribution and OSTree update/rollback suites with Cyclone DDS/Agnocast off,
-   plus analysis of both OCI layout exports. Add an explicit opt-in for costly
-   simulator/deployment artifacts and tests, disabled by default. Reuse unchanged
-   behavior evidence and run these gates only for affected work or requested
-   milestones. Phase 8 is not started by this cleanup.
+5. **7.5 — Deployment directory and builder-container conventions (complete, 2026-11-23).**
+   Runnable products remain in bazel/runtime/; native/OCI/OSTree delivery and
+   service definitions live under bazel/deployments/, and verification archives
+   under bazel/tests/. Only the optional builder dev.Dockerfile remains in
+   images/. All twelve deployment targets pass with Cyclone DDS/Agnocast off,
+   both OCI exports pass analysis, and all four application/verification archive
+   hashes remain unchanged. Costly targets are now disabled by default through
+   a separately validated opt-in. Follow the steady-state
+   [expensive-target convention](DEVELOPING.md#expensive-targets) for affected
+   work and requested milestones. Phase 8 is not started by this cleanup.
+   [Directory relocation](JOURNAL.md#2026-11-23-phase-75--deployment-directory-and-builder-container-conventions);
+   [opt-in verification](JOURNAL.md#2026-11-23-phase-75--opt-in-expensive-system-and-deployment-targets).
 
 Phase 7.2 task boundaries:
 

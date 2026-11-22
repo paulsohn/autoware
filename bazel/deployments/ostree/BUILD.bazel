@@ -1,3 +1,4 @@
+load("//bazel:expensive.bzl", "EXPENSIVE_TARGET_COMPATIBILITY")
 load("@rules_python//python:defs.bzl", "py_binary")
 
 package(default_visibility = ["//visibility:public"])
@@ -19,7 +20,7 @@ genrule(
         "core_ostree.json",
     ],
     cmd = "$(execpath :make_repository) --sdk $(location //third_party/ostree:runtime) --bundle $(location //bazel/deployments:core_bundle) --archive $(location core_ostree.tar.gz) --manifest $(location core_ostree.json)",
-    target_compatible_with = [
+    target_compatible_with = EXPENSIVE_TARGET_COMPATIBILITY + [
         "@platforms//cpu:x86_64",
         "@platforms//os:linux",
     ],

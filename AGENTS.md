@@ -160,6 +160,10 @@ experiments, and milestones belong in PLAN.md and JOURNAL.md.
   static checks against files changed by the current task.
 - Run heavy builds sequentially and respect the resource limits in
   `user.bazelrc`.
+- Costly system/deployment targets are opt-in through `--config=expensive`.
+  Follow the steady-state [expensive-target convention](docs/bazel/DEVELOPING.md#expensive-targets):
+  run only affected gates when needed, reuse unchanged passing evidence, and
+  never count a disabled/skipped gate as passing required module acceptance.
 - Use Cyclone DDS for routine validation. Reserve Fast DDS checks for major
   milestones, and always obtain the user's approval before running any Fast
   DDS build, test, or behavior check. Earlier results do not authorize a rerun.

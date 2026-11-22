@@ -1,3 +1,4 @@
+load("//bazel:expensive.bzl", "EXPENSIVE_TARGET_COMPATIBILITY")
 load("//bazel/runtime:cyclonedds.bzl", "PLANNING_SIMULATOR_CYCLONEDDS_URI")
 load("@launch_testing//:defs.bzl", "launch_test")
 load("@pip_ros//:requirements.bzl", "requirement")
@@ -33,6 +34,7 @@ _TEST_DEPS = [
 [
     launch_test(
         name = mode + "_launch_test",
+        target_compatible_with = EXPENSIVE_TARGET_COMPATIBILITY,
         timeout = "long",
         src = "test_launch.py",
         data = _RUNTIME_DATA,
@@ -51,6 +53,7 @@ _TEST_DEPS = [
 
 launch_test(
     name = "lane_driving_test",
+    target_compatible_with = EXPENSIVE_TARGET_COMPATIBILITY,
     visibility = ["//bazel/tests:__pkg__"],
     timeout = "long",
     src = "test_drive.py",

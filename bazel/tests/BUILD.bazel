@@ -1,3 +1,4 @@
+load("//bazel:expensive.bzl", "EXPENSIVE_TARGET_COMPATIBILITY")
 load("//bazel/runtime:cyclonedds.bzl", "PLANNING_SIMULATOR_CYCLONEDDS_URI")
 load("//bazel/runtime:defs.bzl", "executable_template")
 load("@launch_testing//:defs.bzl", "launch_test")
@@ -22,6 +23,7 @@ exports_files([
 pkg_tar(
     name = "core_bundle_tests",
     testonly = True,
+    target_compatible_with = EXPENSIVE_TARGET_COMPATIBILITY,
     srcs = [
         ":core_system_headless_launch_test",
         "runtime/service_launcher",
@@ -39,6 +41,7 @@ pkg_tar(
 pkg_tar(
     name = "planning_simulator_bundle_tests",
     testonly = True,
+    target_compatible_with = EXPENSIVE_TARGET_COMPATIBILITY,
     srcs = [
         ":verify_simulator",
         "//bazel/tests/universe_launch:lane_driving_test",

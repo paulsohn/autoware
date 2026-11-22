@@ -1,3 +1,4 @@
+load("//bazel:expensive.bzl", "EXPENSIVE_TARGET_COMPATIBILITY")
 load("@rules_cc//cc:defs.bzl", "cc_binary")
 load("@rules_img//img:image.bzl", "image_manifest")
 load("@rules_img//img:layer.bzl", "image_layer", "layer_from_tar")
@@ -15,6 +16,7 @@ cc_binary(
 
 pkg_tar(
     name = "core_bundle",
+    target_compatible_with = EXPENSIVE_TARGET_COMPATIBILITY,
     srcs = [
         "//bazel/runtime:run",
         "//bazel/runtime:core_headless",
@@ -30,6 +32,7 @@ pkg_tar(
 
 pkg_tar(
     name = "planning_simulator_bundle",
+    target_compatible_with = EXPENSIVE_TARGET_COMPATIBILITY,
     srcs = ["//bazel/runtime:planning_simulator_launcher", "//bazel/runtime:planning_simulator"],
     allow_duplicates_with_different_content = False,
     compression_level = 1,

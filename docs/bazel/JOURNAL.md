@@ -18018,3 +18018,87 @@ pass. Both OCI export labels analyze successfully with zero actions; do not
 reassemble their archives for unchanged image rules and payloads. The directory
 relocation is validated; an opt-in policy for costly targets follows as a separate task in
 Phase 7.5. No simulator or OCI runtime rerun is needed for that policy alone.
+
+## 2026-11-23: Phase 7.5 — Opt-in expensive system and deployment targets
+
+Purpose: prevent routine builds/tests from assembling large distribution
+archives or running full simulator/deployment checks unnecessarily. The
+authoritative steady-state rule is [Expensive targets](DEVELOPING.md#expensive-targets);
+AGENTS.md links it, while this entry records how to adopt and verify the policy.
+The preceding relocation already passed all twelve deployment gates. Reuse
+that behavior evidence for unchanged application, packaging and test code.
+
+Inspect the pinned bazel_skylib common_settings bool_flag rule and the existing
+target/dependency boundaries. Add a public bool_flag under bazel/BUILD.bazel,
+enable_expensive_targets, default False, plus a config_setting matching true.
+Use a shared select in bazel/expensive.bzl to supply either an empty constraint
+list or @platforms//:incompatible. Set target_compatible_with on the two native
+application archives, two verification archives, OSTree assembler target and
+the original Universe launch tests. Retain OSTree's architecture/OS constraints.
+Dependent image layers, exports and deployment checks inherit incompatibility;
+no source component or ordinary runnable product receives this restriction.
+
+The shared .bazelrc adds --config=expensive as an explicit true selection.
+Do not enable it globally or modify the developer's ignored user.bazelrc.
+Document its optional local override instead. Platform compatibility provides
+both wildcard skipping and clear failure for explicitly requested disabled
+targets; a disabled test cannot silently stand in for a passed module gate.
+Enabling the flag only unlocks targets: developers still select the affected
+gate, and Fast DDS remains a separate approval/configuration decision.
+
+Validate flag selection without executing expensive bodies. Use the same
+runtime/Cyclone configuration as the passing artifact gates:
+
+```bash
+policy_targets='set(
+  //bazel/deployments:core_bundle
+  //bazel/deployments:planning_simulator_bundle
+  //bazel/deployments:core_oci
+  //bazel/deployments:planning_simulator_oci
+  //bazel/deployments/ostree:core_repository
+  //bazel/tests:planning_simulator_native_runtime_test
+  //bazel/tests:planning_simulator_oci_runtime_test
+  //bazel/tests:core_ostree_runtime_test
+  //bazel/tests/universe_launch:full_launch_test
+  //bazel/tests/universe_launch:lane_driving_test
+)'
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel cquery "$policy_targets" --config=runtime --config=no-agnocast \
+  --output=starlark \
+  --starlark:expr='str(target.label) + " disabled=" + str("IncompatiblePlatformProvider" in providers(target))'
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel cquery "$policy_targets" --config=runtime --config=no-agnocast \
+  --config=expensive --output=starlark \
+  --starlark:expr='str(target.label) + " disabled=" + str("IncompatiblePlatformProvider" in providers(target))'
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel build --config=runtime --config=no-agnocast \
+  //bazel/deployments/... //bazel/tests/universe_launch:all
+# Expected rejection: explicit costly target without the opt-in.
+! env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel build --config=runtime --config=no-agnocast //bazel/deployments:core_bundle
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --test_output=errors \
+  //bazel/tests:yolox_launch_paths_test
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --config=expensive \
+  --nocache_test_results --test_output=errors //bazel/tests:core_image_structure_test
+git diff --check
+```
+
+All ten cquery rows report disabled=True by default and disabled=False with the
+opt-in, each with zero actions. The default wildcard build skips costly roots
+and performs only 15 internal bootstrap/runfiles actions; it performs no large
+archive/OCI assembly or runtime test. The explicit unenabled core archive fails
+before packaging with the expected incompatible-target diagnostic. The ordinary
+YOLOX launcher check remains available and passes using its unchanged cached
+result. The opted-in image-structure check executes and passes in 0.2 s using
+cached image payload actions. No simulator driving, OCI export assembly,
+supervisor or OSTree behavior rerun is required for this selection-only policy.
+
+Update existing steady-state distribution commands to include the opt-in.
+Keep routine source/module tests enabled, choose costly gates only when their
+behavior/resources are affected, and do not count disabled gates as acceptance
+evidence. Analysis and existing artifact/runtime results are sufficient for
+this policy change. Phase 7.5 and Phase 7 are complete; Phase 8 is not started.
+No Fast DDS or pre-commit runs. Resource limits and local overrides remain in
+ignored user.bazelrc, independently of the shared opt-in default.

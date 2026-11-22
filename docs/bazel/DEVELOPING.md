@@ -714,17 +714,75 @@ verification commands/results or their journal reference, and upstream status
 or tracking reference. Update this preface when the patch or its validation
 changes. Verify that Bazel can still apply the documented patch.
 
+## Expensive targets
+
+Costly system checks and distribution assembly are disabled by default. Enable
+them explicitly with --config=expensive, then select only the targets needed
+for the current change. The configuration unlocks targets; it does not schedule
+an entire suite or change the middleware.
+
+The opt-in covers native application/verification archives and their dependent
+OCI/OSTree artifacts and checks, plus the original Universe simulator launch
+suite. Ordinary package tests and runnable products such as
+//bazel/runtime:planning_simulator remain available without this configuration.
+Wildcard builds/tests skip disabled targets. Explicitly requesting a disabled
+target reports an incompatible-target error; enable the configuration to run it.
+Disabled or skipped tests do not count as passing a required completion gate.
+
+Use affected package builds/tests for routine development. Run the relevant
+expensive gate when changing product composition, runtime resources, packaging
+layout, service supervision, export rules or a gate's behavior, or when an
+explicit milestone requires it. Reuse passing results for unchanged inputs;
+docs, labels or configuration-only changes can often use analysis with --nobuild
+and focused lightweight checks. Identical artifact hashes can support reuse of
+the existing runtime evidence. Full simulator driving and OCI export assembly
+are not automatic follow-ups to every task or commit. Preserve complete module
+acceptance whenever that module's behavior or runtime closure is affected.
+
+For example, when simulator distribution behavior needs verification:
+
+```sh
+bazel test --config=expensive --config=runtime --config=no-agnocast \
+  --local_test_jobs=1 --test_output=errors \
+  //bazel/tests:planning_simulator_native_runtime_test
+```
+
+For an export-label change with unchanged assembly rules and payloads, analyze
+the export without producing another large archive:
+
+```sh
+bazel build --config=expensive --config=runtime --config=no-agnocast --nobuild \
+  //bazel/deployments:planning_simulator_oci
+```
+
+The shared --config=expensive sets //bazel:enable_expensive_targets=true.
+An optional local default can be set in ignored user.bazelrc:
+
+```text
+# Enable only while working on costly system/deployment targets.
+build --//bazel:enable_expensive_targets=true
+```
+
+Omit that override for normal development. Pass
+--//bazel:enable_expensive_targets=false to disable it for an individual command.
+Keep machine resource limits in user.bazelrc independently of this opt-in.
+Fast DDS still requires separate explicit approval.
+
 ## Validation and commits
 
 Validate in proportion to the change:
 
-- BUILD or module change: build every affected target surface;
+- BUILD or module change: build affected target surfaces; label/selection-only
+  changes can use analysis and focused checks when action inputs and runtime
+  behavior are unchanged;
 - interface definition or declaration change: build generated targets and test
   affected consumers;
 - library change: build and run the affected module's complete test suite;
 - executable or communication change: run a behavior check;
-- container change: build the image and run a representative target with the
-  source mounted read-only;
+- builder bootstrap change: build the development image and validate an
+  affected target with the source mounted read-only;
+- deployment change: select the relevant artifact/behavior gates using the
+  [expensive-target convention](#expensive-targets);
 - documentation-only change: run targeted documentation checks and state that
   no runtime validation was performed.
 
@@ -983,8 +1041,9 @@ single-host process graph. This controls discovery capacity, not kernel/network
 provisioning or communication isolation. A different deployment topology must
 select and validate its own domain/discovery configuration.
 
-Run //bazel/tests/universe_launch:all with the same build configs and
---local_test_jobs=1 --test_output=errors when changing this product composition.
+Run //bazel/tests/universe_launch:all with --config=expensive, the same build
+configs and --local_test_jobs=1 --test_output=errors when changing this product
+composition.
 It exercises the original seven subsystem launches, full headless XML and the
 closed-loop driving case. Component/standalone readiness, retained map/vehicle/
 diagnostic resources, API version and clean shutdown remain part of the gate.
@@ -993,8 +1052,8 @@ products retain their own scope; they do not package this simulator automaticall
 
 ## Native simulator distribution
 
-Build //bazel/deployments:planning_simulator_bundle with --config=runtime
---config=no-agnocast. Extract its tar.gz at the desired installation prefix and
+Build //bazel/deployments:planning_simulator_bundle with --config=expensive
+--config=runtime --config=no-agnocast. Extract its tar.gz at the desired installation prefix and
 execute run_simulator from any working directory. It selects its own bundled
 interpreter, libraries and indexed resources; no source checkout, Bazel command,
 ROS setup script, Python installation or HOME model directory is a runtime input.
@@ -1025,9 +1084,9 @@ running as UID/GID 1000 with SIGINT for orderly shutdown. Build the OCI layout
 or load the same manifest into the local Docker daemon:
 
 ```sh
-bazel build --config=runtime --config=no-agnocast \
+bazel build --config=expensive --config=runtime --config=no-agnocast \
   //bazel/deployments:planning_simulator_oci //bazel/deployments:planning_simulator_docker_archive
-bazel run --config=runtime --config=no-agnocast //bazel/deployments:planning_simulator_load
+bazel run --config=expensive --config=runtime --config=no-agnocast //bazel/deployments:planning_simulator_load
 docker run --rm --name autoware-planning-simulator --pull=never \
   --network=none --read-only --cap-drop=ALL --security-opt=no-new-privileges \
   --tmpfs /tmp:rw,exec,nosuid,nodev \
@@ -1047,7 +1106,7 @@ use the native RViz instructions above for graphical lane driving.
 For image changes, run the uncached local Docker gate:
 
 ```sh
-bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+bazel test --config=expensive --config=runtime --config=no-agnocast --local_test_jobs=1 \
   --test_output=errors //bazel/tests:planning_simulator_oci_runtime_test
 ```
 
@@ -1139,9 +1198,9 @@ Build the application and its separate verification companion with the bundled
 Python bootstrap configuration:
 
 ```sh
-bazel build --config=runtime --config=no-agnocast \
+bazel build --config=expensive --config=runtime --config=no-agnocast \
   //bazel/deployments:core_bundle //bazel/tests:core_bundle_tests
-bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+bazel test --config=expensive --config=runtime --config=no-agnocast --local_test_jobs=1 \
   --test_output=errors //bazel/tests:core_system_headless_launch_test \
   //bazel/tests:core_bundle_structure_test
 ```
@@ -1217,10 +1276,10 @@ a compatible Linux host kernel and container engine. The supported product remai
 CPU/Cyclone DDS, with Agnocast disabled.
 
 ```sh
-bazel build --config=runtime --config=no-agnocast \
+bazel build --config=expensive --config=runtime --config=no-agnocast \
   //bazel/deployments:core_oci //bazel/deployments:core_docker_archive
-bazel run --config=runtime --config=no-agnocast //bazel/deployments:core_load
-bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+bazel run --config=expensive --config=runtime --config=no-agnocast //bazel/deployments:core_load
+bazel test --config=expensive --config=runtime --config=no-agnocast --local_test_jobs=1 \
   --test_output=errors //bazel/tests:core_image_structure_test \
   //bazel/tests:core_image_payload_test //bazel/tests:core_image_runtime_test
 ```
@@ -1264,8 +1323,8 @@ with nonzero status; recover by explicitly restarting the product. Ordinary
 shutdown stops the core and its nodes before the prerequisite.
 
 ```sh
-bazel run --config=runtime --config=no-agnocast //bazel/deployments:core_s6_load
-bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+bazel run --config=expensive --config=runtime --config=no-agnocast //bazel/deployments:core_s6_load
+bazel test --config=expensive --config=runtime --config=no-agnocast --local_test_jobs=1 \
   --test_output=errors //bazel/tests:core_s6_structure_test \
   //bazel/tests:core_s6_runtime_test
 docker run --rm --pull=never --network=none --read-only --cap-drop=ALL \
@@ -1305,8 +1364,8 @@ does not cancel the service's failure policy. PartOf propagates requested
 product stops to both services.
 
 ```sh
-bazel run --config=runtime --config=no-agnocast //bazel/deployments:core_systemd_load
-bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+bazel run --config=expensive --config=runtime --config=no-agnocast //bazel/deployments:core_systemd_load
+bazel test --config=expensive --config=runtime --config=no-agnocast --local_test_jobs=1 \
   --test_output=errors //bazel/tests:core_systemd_structure_test \
   //bazel/tests:core_systemd_runtime_test
 docker run --rm --pull=never --network=none --read-only --cgroupns=private -t \
@@ -1346,9 +1405,9 @@ inputs. This is application delivery on the supported OS; systemd, its units
 and the prerequisite stay in that OS/harness and are outside the update tree.
 
 ```sh
-bazel build --config=runtime --config=no-agnocast \
+bazel build --config=expensive --config=runtime --config=no-agnocast \
   //bazel/deployments/ostree:core_repository
-bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+bazel test --config=expensive --config=runtime --config=no-agnocast --local_test_jobs=1 \
   --nocache_test_results --test_output=errors //bazel/tests:core_ostree_runtime_test
 ```
 

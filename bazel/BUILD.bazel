@@ -1,0 +1,13 @@
+load("@bazel_skylib//rules:common_settings.bzl", "bool_flag")
+
+package(default_visibility = ["//visibility:public"])
+
+bool_flag(
+    name = "enable_expensive_targets",
+    build_setting_default = False,
+)
+
+config_setting(
+    name = "expensive_targets_enabled",
+    flag_values = {":enable_expensive_targets": "true"},
+)
