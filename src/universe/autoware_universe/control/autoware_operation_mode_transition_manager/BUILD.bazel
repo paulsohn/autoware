@@ -38,6 +38,7 @@ cc_library(
 collect_transitive_dynamic_deps(
     name = "runtime_dynamic_deps",
     dynamic_deps = [
+        "@autoware_utils//:runtime_dynamic_deps",
         ":cc_shared",
         "@autoware_component_interface_specs_universe//:runtime_dynamic_deps",
         "@autoware_component_interface_utils//:runtime_dynamic_deps",

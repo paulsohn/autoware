@@ -16472,3 +16472,19 @@ The affected existing adapters and original control_launch_test pass, including
 zero exit codes after full component loading and SIGINT. CPU/Cyclone DDS,
 ENABLE_AGNOCAST=0, no failures/skips. Reuse the common group evidence above;
 Fast DDS, enabled-Agnocast and autonomous driving are outside this gate.
+
+## 2026-11-22: Phase 7.3.3 — autoware_operation_mode_transition_manager shared utility runtime
+
+Purpose: keep this package's utility SDK objects in the existing shared owners
+when loaded with other control components. Inspect its library/runtime aggregate;
+add @autoware_utils//:runtime_dynamic_deps to that aggregate. The component DSO,
+standalone binaries and native tests reuse it. No implementation/test changes.
+The [shared-ownership entry](#2026-11-22-phase-733--shared-utility-sdk-ownership-in-containers)
+records the dependency pattern, crash diagnosis and exact complete group commands.
+
+CMake registers no original functional tests; both installed executables pass
+the existing mode_runtime_test and transition_flag_runtime_test adapters.
+The affected existing adapters and original control_launch_test pass, including
+zero exit codes after full component loading and SIGINT. CPU/Cyclone DDS,
+ENABLE_AGNOCAST=0, no failures/skips. Reuse the common group evidence above;
+Fast DDS, enabled-Agnocast and autonomous driving are outside this gate.
