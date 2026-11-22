@@ -54,5 +54,10 @@ register_ament_files(
 ament_index(
     package_xml = "package.xml",
     data = glob(["config/**", "launch/**"]) + [":component_state_monitor_node_plugin", ":node_executables"],
+    deps = [
+        "@autoware_topic_state_monitor//:ament_index",
+        "@autoware_agnocast_wrapper//:ament_package",
+        "@rclcpp_components//:ament_package",
+    ],
     components = [":component_state_monitor_node_components"],
 )

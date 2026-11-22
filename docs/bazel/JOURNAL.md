@@ -16291,3 +16291,46 @@ or skips, CPU/Cyclone DDS and ENABLE_AGNOCAST=0. No Fast DDS, enabled Agnocast,
 older ROS/colcon, full simulator or RViz result is claimed. Continue with the
 actual map/vehicle/system/simulator/API/planning/control launch indexes before
 original headless simulator composition; driving acceptance is Phase 7.3.4.
+
+## 2026-11-22: Phase 7.3.3 — Topic-state monitor launch dependency
+
+Purpose: satisfy component_state_monitor's original launch-time creation of
+ordinary-topic and TF monitors. Inspect both production CPPs/headers, CMake,
+manifest and all four standalone/composed XML entrypoints. There are no original
+functional CMake tests; the manifest lists lint only. The first system-launch
+attempt fails package lookup for autoware_topic_state_monitor. Its local source
+is present, so add its own module instead of a registry replacement.
+
+Declare the two-CPP library, unique component DSO, original switchable standalone
+executable and registration. Forward concrete diagnostic, parameter, TF, wrapper,
+ament-index and rclcpp shared providers. Index original launch files and wrapper
+launch resources. The component-state monitor statically knows the monitor
+package name and container/wrapper launchers; put those dependencies on its own
+ament index and MODULE, rather than supplying them only in root composition.
+
+Add four external launch profiles under bazel/tests/autoware_topic_state_monitor:
+the original standalone and composed XML for generic String topics and TF.
+Require NotReceived, OK, Timeout, dynamically configured ErrorRate and WarnRate;
+TF additionally rejects an unrelated child frame. All processes must exit zero.
+Generic subscription requires the concrete std_msgs typesupport at runtime,
+even though the production C++ code itself does not compile against String.
+The affected existing component-state behavior test remains in the gate.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast \
+  --local_test_jobs=1 --test_output=errors \
+  @autoware_topic_state_monitor//... @autoware_component_state_monitor//... \
+  //bazel/tests/autoware_topic_state_monitor:all \
+  //bazel/tests/system_nodes:component_state_runtime_test
+python3 -m flake8 --max-line-length=150 bazel/tests/autoware_topic_state_monitor/test_runtime.py
+git diff --check
+```
+
+All five test targets pass with no failures/skips: four profiles each exercise
+behavior and clean shutdown (eight launch cases), plus the existing component-
+state runtime case. Total invocation 69.3 seconds including initial compilation;
+monitor profiles take 2.5–4.2 seconds. Targeted flake8 and whitespace checks pass.
+CPU/Cyclone DDS with ENABLE_AGNOCAST=0 is the selected configuration; no Fast DDS
+or enabled-Agnocast runtime result is claimed. Original implementation/tests
+remain unchanged. Continue the original system/subsystem launch gates.

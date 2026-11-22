@@ -1617,3 +1617,9 @@ local_path_override(
     module_name = "autoware_map_tf_generator",
     path = "src/universe/autoware_universe/map/autoware_map_tf_generator",
 )
+
+bazel_dep(name = "autoware_topic_state_monitor", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_topic_state_monitor",
+    path = "src/universe/autoware_universe/system/autoware_topic_state_monitor",
+)

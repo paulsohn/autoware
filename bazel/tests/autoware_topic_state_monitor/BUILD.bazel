@@ -1,0 +1,24 @@
+load("@launch_testing//:defs.bzl", "launch_test")
+load("@pip_ros//:requirements.bzl", "requirement")
+
+[
+    launch_test(
+        name = mode + "_test",
+        src = "test_runtime.py",
+        data = [
+            "@autoware_topic_state_monitor//:ament_index",
+            "@rclcpp_components//:ament_package",
+            "@std_msgs//:ament_index",
+        ],
+        env = {"ENABLE_AGNOCAST": "0", "LD_LIBRARY_PATH": "lib", "ROS_DOMAIN_ID": "107", "MONITOR_MODE": mode},
+        precompile = "disabled",
+        tags = ["no-remote", "no-sandbox"],
+        deps = [
+            "@ament_index_python", "@diagnostic_msgs//:py", "@geometry_msgs//:py",
+            "@launch", "@launch_ros", "@launch_testing", "@launch_xml",
+            "@rcl_interfaces//:py", "@rclpy", "@std_msgs//:py", "@tf2_msgs//:py",
+            requirement("pytest"),
+        ],
+    )
+    for mode in ["topic", "tf", "topic_composed", "tf_composed"]
+]
