@@ -1,3 +1,5 @@
+#include <agnocast/agnocast_publisher.hpp>
+#include <agnocast/agnocast_subscription.hpp>
 #include <autoware/agnocast_wrapper/node.hpp>
 #include <rclcpp_components/register_node_macro.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
@@ -87,7 +89,20 @@ public:
 
 private:
   void send() {
-    if (frame_ >= frames || !pub_->get_subscription_count()) return;
+    if (lifecycle_limit_) {
+      unsigned limit = 0;
+      if (!(std::ifstream(lifecycle_limit_) >> limit) || frame_ >= limit) return;
+    } else if (frame_ >= frames) {
+      return;
+    }
+    if (!pub_->get_subscription_count()) return;
+    if (native_counts_) {
+      const std::string suffix = "/_rmw_agnocast_v2/sensor_msgs/msg/PointCloud2/host_cloud/";
+      std::fprintf(stderr, "routes seq=%u input_be=%u input_rel=%u output_be=%u\n", frame_,
+        agnocast::get_subscription_count_core("/input" + suffix + "best_effort"),
+        agnocast::get_subscription_count_core("/input" + suffix + "reliable"),
+        agnocast::get_publisher_count_core("/output" + suffix + "best_effort"));
+    }
     auto msg = ALLOCATE_OUTPUT_MESSAGE_UNIQUE(pub_);
     msg->header.frame_id = "base_link";
     msg->width = points;
@@ -134,18 +149,24 @@ private:
 #else
     const std::vector<uint8_t> & data = msg.data;
 #endif
-    if (latency <= 0 || msg.header.frame_id != "base_link" || msg.width != points / 2 ||
+    const unsigned stride = raw_reader_ ? 1 : 2;
+    if (latency <= 0 || msg.header.frame_id != "base_link" || msg.width != points / stride ||
       msg.point_step != sizeof(Point) || msg.height != 1 || msg.fields.size() != 6 ||
       msg.row_step != msg.width * sizeof(Point) || data.size() != msg.row_step)
       throw std::runtime_error("invalid crop output");
+    const unsigned seq = lifecycle_limit_ ? data[offsetof(Point, intensity)] : frame_;
     for (unsigned i = 0; i < msg.width; ++i) {
-      const auto point = sample(i * 2, frame_);
+      const auto point = sample(i * stride, seq);
       if (std::memcmp(data.data() + i * sizeof(Point), &point, sizeof(Point)))
         throw std::runtime_error("point, order, or frame mismatch");
     }
-    csv_ << frame_++ << ',' << latency << std::endl;
+    csv_ << seq << ',' << latency << std::endl;
+    ++frame_;
   }
 
+  const char * lifecycle_limit_ = std::getenv("BENCH_LIFECYCLE_LIMIT");
+  const bool native_counts_ = std::getenv("BENCH_NATIVE_COUNTS") != nullptr;
+  const bool raw_reader_ = std::getenv("BENCH_RAW_READER") != nullptr;
   int64_t last_stamp_ns_ = 0;
   int64_t first_stamp_ns_ = 0;
   unsigned frame_ = 0;

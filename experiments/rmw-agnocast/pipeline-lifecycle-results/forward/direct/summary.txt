@@ -1,0 +1,8 @@
+idle_load main_thread_wait=futex_do_wait
+idle_first_cloud main_thread_wait=poll_schedule_timeout.constprop.0
+unloaded id=1 raw_continued=20..25
+unloaded id=2 raw_continued=45..50
+idle_shutdown main_thread_wait=poll_schedule_timeout.constprop.0
+native_routes loaded=2/2/1 absent=1/1/0 (input BE readers/reliable readers/output BE writers)
+mode=direct raw=78/78 crop=59 single_first=0 steady_ranges=[(2, 18), (27, 43), (52, 68)] shutdown_ms=263.8
+Minimum host MemAvailable: 20103 MiB

@@ -1,0 +1,3 @@
+[INFO] [1795351319.881805678] [host_endpoint_manager]: Initialized shared memory registry for domain 0 on host paulsohn-tuf
+source_rate_hz=18.73
+[INFO] [1795351325.532813016] [rclcpp]: signal_handler(signum=2)

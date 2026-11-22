@@ -2906,3 +2906,16 @@ Cross-process GPU descriptor import remains a separate transport feature.
 
 [Measurements](host-fallback-results/) ·
 [Reproduction](../buffer/JOURNAL.md#2026-11-22--materializing-non-cpu-pointcloud2-input-on-the-agnocast-host-route).
+
+### Loading and unloading a Universe crop during publication
+
+A persistent PointCloud2 writer fed a raw reader and three successive crop
+component instances at a nominal 20 Hz. Stock and direct Agnocast wait,
+explicitly scoped fixed wait, Cyclone DDS and Zenoh each passed twice.
+In every run the first isolated frame reached the newly loaded crop, the
+raw reader received all 78 frames and each steady crop window was complete.
+Agnocast endpoint counts returned to baseline on unload and shutdown. Direct
+wait used the standard component manager. The fixed-wait fixture explicitly
+ended its scope before executor changes.
+
+[Per-run evidence](pipeline-lifecycle-results/) · [Experiment journal](../buffer/JOURNAL.md)

@@ -2661,3 +2661,95 @@ The experiment covers the optimized PointCloud2 route. Generic Buffer
 messages, CUDA descriptor forwarding and compatibility in Cyclone's own
 serialization path are separate work.
 [Raw runs](../rmw-agnocast/host-fallback-results/).
+
+## 2026-11-22 — Component load, unload, reload and shutdown with a blocked executor
+
+Use the actual Universe CropBoxFilterComponent and its existing benchmark
+package registration. Keep the writer, independent raw reader and independent
+crop-output reader alive throughout each run. The stock Lyrical component
+container uses ordinary LoadNode, UnloadNode and ListNodes services. For
+rmw_agnocast these control services are delegated to Cyclone. Only /input
+and /output are selected for Agnocast transport. Compare default notification,
+per-call direct mixed wait, the separately scoped fixed wait, Cyclone DDS,
+and Zenoh. Use the same ordinary CPU cloud representation at the application
+interface, QoS, crop bounds and single-threaded container executor in each row.
+
+Extend the endpoint fixture with a file-controlled publication limit. An
+atomic rename advances the limit without introducing a DDS command that could
+wake the crop. Each cloud contains 32,768 16-byte points, with a sequence in
+the intensity field. The independent input and output readers validate all
+point bytes against the fixture. The driver waits for endpoint discovery,
+samples the container main thread's sleeping state and wait channel, publishes
+one frame and waits for both readers before allowing any further data. It then
+runs at 20 Hz and loads three successive instances on the same topics. Each
+of two unloads must return success and remove the instance from the manager
+and the ROS graph. Traffic continues through unload and reload. Check a
+contiguous window after each load and an output-silent window after each
+unload, allowing transitions around service completion. Finally stop input,
+signal the still-loaded container, require clean exit within five seconds,
+check graph cleanup and publish five more witness frames without crop output.
+
+For the RMW rows the persistent writer samples the Agnocast kernel's topic
+counts for the input best-effort/reliable routes and the output best-effort
+route. This separately checks transport membership after reload, unload and
+process shutdown. A best-effort RMW subscription listens on both reliability
+routes in this prototype.
+
+Only the scoped row uses lifecycle_container. It uses the same ROS component
+manager and executor; a test ListNodes call after warmup starts a fixed wait
+scope. The fixture stops and joins the helper before adding/removing a node
+from the executor, and before teardown after spin returns. Each generation
+must show a separate scope with actual native wakes and one stop interrupt.
+This is an explicit lifecycle boundary. It does not make arbitrary timers,
+DDS entities or subscriptions safe to mutate within a live fixed scope.
+
+Using the same Lyrical root, Agnocast module and overlays as the preceding
+Universe runs, build serially:
+
+```bash
+export LYRICAL_ROOT=$(cat build/agnocast-lyrical/universe-root)
+experiments/buffer/run-lyrical.sh bash -ec '
+  bash experiments/rmw-agnocast/build-loadable.sh
+  source build/agnocast-lyrical/install/local_setup.bash
+  source build/universe-sync/install/local_setup.bash
+  source build/rmw-agnocast/load-install/local_setup.bash
+  colcon build --base-paths src/universe_crop_benchmark --build-base build/universe-pipeline/obj \
+    --install-base build/universe-pipeline/install --executor sequential'
+out=build/lifecycle-reproduction
+mkdir "$out"
+for mode in stock direct scoped cyclone zenoh; do
+  BUFFER_RUNTIME_ONLY=1 experiments/buffer/run-lyrical.sh timeout -k 5 60 bash -ec '
+    source build/agnocast-lyrical/install/local_setup.bash
+    source build/rmw-agnocast/load-install/local_setup.bash
+    source build/universe-sync/install/local_setup.bash
+    source build/universe-pipeline/install/local_setup.bash
+    export CYCLONEDDS_URI="<CycloneDDS><Domain><General><Interfaces><NetworkInterface name=\"lo\"/></Interfaces><AllowMulticast>false</AllowMulticast></General><Discovery><ParticipantIndex>auto</ParticipantIndex><Peers><Peer Address=\"127.0.0.1\"/></Peers></Discovery></Domain></CycloneDDS>"
+    if [[ $1 == zenoh ]]; then export RMW_IMPLEMENTATION=rmw_zenoh_cpp; fi
+    python3 experiments/rmw-agnocast/dynamic-graph.py "$1" "$2/$1"' \
+    bash "$mode" "$out" >"$out/$mode.txt" 2>&1 || exit 1
+done
+```
+
+The driver starts its own Zenoh router for the Zenoh row. Repeat with a
+fresh output directory and reversed mode order.
+
+Both run orders passed in all five modes. In each of the ten runs the raw
+witness received 78/78 unique frames in order, including five after container
+exit. Each crop verifier received 59 frames, including the isolated frame 0
+and every frame in the three steady windows (2–18, 27–43, 52–68). The crop
+was intentionally absent for part of the stream. All six Agnocast runs
+recorded native counts of 2/2/1 with the crop loaded and 1/1/0 after removal.
+Each scoped run recorded three helper completions and one stop interrupt per
+scope. Process shutdown measured 263.8–264.0 ms for the Agnocast modes,
+263.8–263.9 ms for Cyclone and 113.5 ms in both Zenoh runs. These times
+include the driver's process-exit observation interval. The lowest sampled
+host MemAvailable was 19,926 MiB.
+
+The normal manager with direct wait handled these live graph changes. Keep
+that configuration in the Universe pilot. Fixed wait passed with manager
+cooperation at each executor change. This fixture does not establish safety
+for arbitrary graph mutation inside a fixed scope. The experiment covers
+orderly unload and shutdown on one laptop with one writer. It does not
+measure callback latency or recovery from a killed container.
+
+[Run summaries, frame sequences and endpoint logs](../rmw-agnocast/pipeline-lifecycle-results/)
