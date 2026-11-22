@@ -3095,3 +3095,42 @@ to a missing LiDAR remain separate questions.
 
 [Dual-route samples and process logs](../rmw-agnocast/dual-route-results/) ·
 [Earlier local-only control matrix](../rmw-agnocast/pipeline-launch-results/summary.txt)
+
+## 2026-11-23 — Match a top-LiDAR omission against actual ingress failure through tracking
+
+Use each previous dual-route round's healthy and ingress-fault SQLite bags.
+Deserialize the synchronized outputs. Check encoded source identity, sequence,
+channel and transformed xyz in the selected sensor segments. Map 12 selected
+channels per sensor to a small shared rectangular landmark and another 12
+top channels to a landmark eight metres away. This is a controlled visibility
+scene constructed from the recorded clouds. The comparison control removes
+only the healthy top segment at group 8 locally in replay. Compare projected
+cloud bytes and sensor lists against the fault before clustering.
+
+Use the existing built Universe Euclidean cluster and tracker overlays,
+the fixture's rectangular shape estimates and static map transform. For
+each group use the recorded fault stamp intervals shifted once to current
+time; all three trackers receive precisely the same header stamps. A first
+attempt at simulated time hit negative time during tracker startup. Three
+independent tracker instances under a single guarded scope avoided that
+startup artifact. Clustering is shared and requests are processed sequentially.
+Random track UUIDs are checked within each tracker, with cross-condition
+comparison by landmark and group. Reproduce both after the dual-route runs:
+
+```bash
+export LYRICAL_ROOT=$(cat build/agnocast-lyrical/universe-root)
+for round in A B; do
+  BUFFER_RUNTIME_ONLY=1 experiments/buffer/run-lyrical.sh timeout -k 5 90 \
+    bash experiments/rmw-agnocast/run-track-replay.sh coverage "build/dual-$round" || exit 1
+done
+```
+
+Both trials had the same per-frame result. The shared landmark was detected
+in all 24 groups. The top-only landmark was normally detected on 12 even
+groups and was missed at group 8 in both omission and ingress replays.
+First track confirmation remained at groups 1 and 2. In both affected
+conditions the top track disappeared from output at groups 8–9 and returned
+with its previous UUID at group 10, about 200 ms after group 8. The healthy
+track remained present across these frames. Neither target switched identity.
+This result concerns these two established static landmarks and the deployed
+tracker parameters. [Per-frame results](../rmw-agnocast/coverage-replay-results/)

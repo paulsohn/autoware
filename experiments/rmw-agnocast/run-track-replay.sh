@@ -15,5 +15,10 @@ cluster=$!
 tf=$!
 trap 'kill -INT "$cluster" "$tf" 2>/dev/null || true; wait "$cluster"; wait "$tf"' EXIT
 r=experiments/rmw-agnocast
+if [[ ${1:-} == coverage ]]; then
+  shift
+  python3 "$r/route-perception.py" "$@"
+  exit
+fi
 if (($# == 0)); then set -- "$r"/pipeline-{isolation,busy}-results/*.log; fi
 python3 "$r/replay-tracks.py" "$@"
