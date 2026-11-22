@@ -38,9 +38,12 @@ class TestSerialization(unittest.TestCase):
                         continue
                     for message_type in types:
                         with self.subTest(type=f'{name}.{message_type.__name__}'):
-                            encoded = serialize_message(message_type())
+                            original = message_type()
+                            encoded = serialize_message(original)
                             decoded = deserialize_message(encoded, message_type)
-                            self.assertEqual(serialize_message(decoded), encoded)
+                            # CDR padding bytes need not be stable between serializations.
+                            self.assertEqual(decoded, original)
+                            self.assertEqual(deserialize_message(serialize_message(decoded), message_type), original)
                             checked += 1
         self.assertGreater(checked, 0)
         print(f'{PACKAGE}: {checked} generated wire types passed')

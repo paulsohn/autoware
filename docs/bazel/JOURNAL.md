@@ -18456,3 +18456,40 @@ generator output or middleware-selection change. The selected published macro
 lacks this edge as inspected on 2026-11-23; no matching upstream association is
 recorded. The extracted debug distribution has its own consumer gate. No GPU,
 Fast DDS or pre-commit run.
+
+## 2026-11-23: Phase 7.6 — Semantic interface serialization assertions
+
+Purpose: make the existing generated-interface round-trip gate check message
+values rather than unspecified padding bytes. During the full interface suite,
+CooperationStatus intermittently differs in the last serialized byte after
+reserialization. Inspect its source: a 16-byte UUID, two one-byte decisions and
+a boolean follow the four-byte CDR header. The observed 25-byte buffer therefore
+contains trailing bytes beyond those fields. In the test's pinned Python/Cyclone
+environment, 100 round trips with decision values 3/2 and cancellable=true all
+preserve message equality while the final byte varies between serializations.
+
+In bazel/tests/ros_interfaces/serialization_test.py, retain enumeration of every
+registered public message plus service request/response/event type. Compare the
+decoded message to its original value, then serialize/decode again and compare
+the second decoded value. Do not change production serializers or mask selected
+byte positions. Identify every interface_serialization_test macro caller under
+bazel/ before changing the shared test; all seventeen callers form its gate.
+
+Reproduce the caller inventory with this query, then test those labels. During
+this run the equivalent macro-call inventory was written to the target-pattern
+file, together with the collection descriptor/Python and SDK index regressions.
+
+```sh
+bazel query 'kind("py_test", rdeps(//bazel/..., //bazel/tests/ros_interfaces:serialization_test.py, 1))' \
+  > /tmp/autoware-serialization-tests.txt
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_output=errors --target_pattern_file=/tmp/autoware-serialization-tests.txt
+python3 -m flake8 --max-line-length=150 bazel/tests/ros_interfaces/serialization_test.py
+git diff --check
+```
+
+All seventeen serialization targets pass, with every registered type still
+checked; the full combined interface/index gate passes all twenty targets.
+This corrects a test assertion, not production serialization or a claim of
+canonical serialized bytes. No upstream source, Fast DDS or pre-commit change.
