@@ -16488,3 +16488,29 @@ The affected existing adapters and original control_launch_test pass, including
 zero exit codes after full component loading and SIGINT. CPU/Cyclone DDS,
 ENABLE_AGNOCAST=0, no failures/skips. Reuse the common group evidence above;
 Fast DDS, enabled-Agnocast and autonomous driving are outside this gate.
+
+## 2026-11-22: Phase 7.3.3 — Diagnostic graph resource paths
+
+Purpose: start the real diagnostic aggregator from the original system launcher.
+Its first launch exits one and reports the requested graph path. The component
+XML names config/system/tier4_diagnostics, but both rule-based and end-to-end
+files actually live in config/system/diagnostics. Inspect that directory, the
+relative included graphs and both conditional references before changing them.
+
+Correct only the two path references; preserve graph contents, mappings,
+safety gates and launch defaults. The original system gate requires all selected
+topic monitors through ListNodes, retained DiagGraphStruct containing
+/autoware/modes/autonomous, parameter responses and zero process exits. Run
+bazel test --config=runtime --config=no-agnocast --local_test_jobs=1
+--test_output=errors //bazel/tests/universe_launch:system_launch_test in the clean
+environment documented above. Both cases pass in 4.1 seconds; the full simulator
+also passes both cases in 12.4 seconds. No failures/skips. CPU/Cyclone DDS and
+Agnocast off; no colcon, older-ROS, Fast DDS or autonomous-driving claim.
+
+Reviewed upstream main on 2026-11-22: the component still names tier4_diagnostics,
+while the upstream config/system directory contains diagnostics. This is a
+resource-reference mismatch, not a Lyrical API change. Record the reproducible
+finding in UPSTREAM_AWF.md; no issue/PR submission or matching association is
+claimed. The diagnostic graph can still report unavailable optional driving-mode
+paths and expected missing pose/route inputs before initialization. Those logs
+are not a claim that autonomous operation is available; acceptance is 7.3.4.

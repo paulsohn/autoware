@@ -1532,3 +1532,17 @@ No older-ROS verification or new submission is claimed.
   gate passes sixteen targets/92 cases with CPU/Cyclone DDS and Agnocast off.
   [Commands and limits](JOURNAL.md#2026-11-22-phase-732--dummy-diagnostic-publication-and-system-gate).
   No older-ROS/colcon execution or submission is claimed.
+
+### System launch references a removed diagnostic directory
+
+- [ ] Associate with a matching upstream fix. Reviewed 2026-11-22: the
+  [component launcher](https://github.com/autowarefoundation/autoware_launch/blob/main/autoware_launch/launch/components/tier4_system_component.launch.xml)
+  still references config/system/tier4_diagnostics, while the
+  [upstream directory](https://github.com/autowarefoundation/autoware_launch/tree/main/autoware_launch/config/system)
+  contains diagnostics. No matching association or new submission is claimed.
+- The original system launch exits its aggregator with code 1 before publishing
+  the graph. Correct the two conditional graph paths to diagnostics, preserving
+  graph content and all safety settings. This is independent of Lyrical.
+- System launch passes both graph/shutdown cases (4.1 seconds), and the original
+  full simulator passes both headless cases (12.4 seconds), CPU/Cyclone DDS and
+  Agnocast off. [Local patch, commands and limitations](JOURNAL.md#2026-11-22-phase-733--diagnostic-graph-resource-paths).
