@@ -30,13 +30,13 @@ namespace autoware::planning_validator::utils
 auto check_shift_behavior(
   const lanelet::ConstLanelets & lanelets, const bool is_unsafe_holding,
   const std::shared_ptr<PlanningValidatorContext> & context,
-  const rear_collision_checker_node::Params & parameters, DebugData & debug)
+  const rear_collision_checker_node::Params & parameters, RearCollisionDebugData & debug)
   -> std::pair<Behavior, double>;
 
 auto check_turn_behavior(
   const lanelet::ConstLanelets & lanelets, const bool is_unsafe_holding,
   const std::shared_ptr<PlanningValidatorContext> & context,
-  const rear_collision_checker_node::Params & parameters, DebugData & debug)
+  const rear_collision_checker_node::Params & parameters, RearCollisionDebugData & debug)
   -> std::pair<Behavior, double>;
 
 void cut_by_lanelets(const lanelet::ConstLanelets & lanelets, DetectionAreas & detection_areas);

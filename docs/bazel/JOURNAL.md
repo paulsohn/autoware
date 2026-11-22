@@ -16953,3 +16953,52 @@ plugin-load failure. All 57 launched processes, including RViz, finish cleanly
 on SIGINT and the runner exits zero. This verifies GUI startup/rendering and the
 ABI correction; driving and expanded distribution gates remain separate tasks.
 No alternate middleware or older GNU runtime/other desktop-driver claim.
+
+## 2026-11-22: Phase 7.3.4 — Distinct validator collision-checker debug types
+
+Purpose: make the original configured collision-checker combination process a
+real routed trajectory without crashing. Input is Universe 0.53.2 at
+62a5739d4d5a34f27f6aa15702c8ff59fa4d862c. Both intersection and rear checkers are
+selected by the original planning launch. Their manifests/CMake register no
+original functional suites; retain the base validator's two cases, trajectory
+checker's 25 cases, seven installed-node/plugin profiles and wire checks as the
+complete affected gate, plus the actual full-launch driving check.
+
+Symptom: after pose initialization and route acceptance, the first trajectory
+kills the validator with SIGSEGV. A scoped debugger prefix on only
+autoware_planning_validator_node shows RearCollisionChecker::validate calling
+DebugData::~DebugData and EgoLanelets::~EgoLanelets from the intersection plugin.
+Both libraries define autoware::planning_validator::DebugData with different
+layouts. ELF symbol interposition selects the other plugin's destructor: this
+is a C++ one-definition-rule violation, independent of Bazel or Lyrical.
+
+Rename the rear checker's private structure to RearCollisionDebugData and update
+its five source/header callers. Preserve plugin class IDs, parameters, safety
+checks and algorithms. Do not hide conflicting symbols to mask invalid type
+identity. Include both headers in a root regression, assert distinct types,
+construct their real containers and destroy them. The former declarations
+cannot coexist in one translation unit; the corrected types can. The live
+combined-plugin trajectory gate verifies the actual dynamic-library case.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast \
+  --local_test_jobs=1 --test_output=errors \
+  @autoware_planning_validator//... \
+  @autoware_planning_validator_trajectory_checker//... \
+  @autoware_planning_validator_latency_checker//... \
+  @autoware_planning_validator_intersection_collision_checker//... \
+  @autoware_planning_validator_rear_collision_checker//... \
+  //bazel/tests/planning_validator:all \
+  //bazel/tests/universe_launch:lane_driving_test
+```
+
+All twelve target gates pass, reusing unchanged passing results: 27 original
+native cases, all seven runtime profiles, wire serialization, the new identity
+case and full driving/shutdown. The vehicle travels 16.72 m, peaks at 3.60 m/s,
+arrives 0.04 m from the goal and stops. No skipped groups or deferred failures.
+The reusable regression/build definition is committed separately from this
+source correction. Current upstream main still declares the same rear DebugData;
+scoped planning_validator/DebugData PR search finds no match (2026-11-22).
+Record the local source commit and association in UPSTREAM_AWF.md with the test
+boundary. Other compilers, older ROS and upstream CMake are not validated.

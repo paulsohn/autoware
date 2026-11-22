@@ -98,7 +98,7 @@ void RearCollisionChecker::validate()
   autoware_utils::ScopedTimeTrack st(__func__, *time_keeper_);
   const auto start_time = clock_->now();
 
-  DebugData debug_data;
+  RearCollisionDebugData debug_data;
 
   context_->validation_status->is_valid_rear_collision_check = is_safe(debug_data);
 
@@ -223,7 +223,7 @@ void RearCollisionChecker::fill_velocity(PointCloudObject & pointcloud_object)
   update_history(pointcloud_object);
 }
 
-auto RearCollisionChecker::filter_pointcloud(DebugData & debug) const -> PointCloud::Ptr
+auto RearCollisionChecker::filter_pointcloud(RearCollisionDebugData & debug) const -> PointCloud::Ptr
 {
   autoware_utils::ScopedTimeTrack st(__func__, *time_keeper_);
 
@@ -310,7 +310,7 @@ auto RearCollisionChecker::filter_pointcloud(DebugData & debug) const -> PointCl
 }
 
 auto RearCollisionChecker::get_clustered_pointcloud(
-  const PointCloud::Ptr in, DebugData & debug) const -> PointCloud::Ptr
+  const PointCloud::Ptr in, RearCollisionDebugData & debug) const -> PointCloud::Ptr
 {
   autoware_utils::ScopedTimeTrack st(__func__, *time_keeper_);
 
@@ -372,7 +372,7 @@ auto RearCollisionChecker::get_clustered_pointcloud(
 
 auto RearCollisionChecker::get_pointcloud_object(
   const rclcpp::Time & now, const PointCloud::Ptr & pointcloud_ptr,
-  const DetectionAreas & detection_areas, DebugData & debug) -> std::optional<PointCloudObject>
+  const DetectionAreas & detection_areas, RearCollisionDebugData & debug) -> std::optional<PointCloudObject>
 {
   autoware_utils::ScopedTimeTrack st(__func__, *time_keeper_);
 
@@ -448,7 +448,7 @@ auto RearCollisionChecker::get_pointcloud_objects(
 auto RearCollisionChecker::get_pointcloud_objects_on_adjacent_lane(
   const lanelet::ConstLanelets & current_lanes, const Behavior & shift_behavior,
   const double forward_distance, const double backward_distance,
-  const PointCloud::Ptr & obstacle_pointcloud, DebugData & debug) -> PointCloudObjects
+  const PointCloud::Ptr & obstacle_pointcloud, RearCollisionDebugData & debug) -> PointCloudObjects
 {
   autoware_utils::ScopedTimeTrack st(__func__, *time_keeper_);
 
@@ -572,7 +572,7 @@ auto RearCollisionChecker::get_pointcloud_objects_on_adjacent_lane(
 auto RearCollisionChecker::get_pointcloud_objects_at_blind_spot(
   const lanelet::ConstLanelets & current_lanes, const Behavior & turn_behavior,
   const double forward_distance, const double backward_distance,
-  const PointCloud::Ptr & obstacle_pointcloud, DebugData & debug) -> PointCloudObjects
+  const PointCloud::Ptr & obstacle_pointcloud, RearCollisionDebugData & debug) -> PointCloudObjects
 {
   autoware_utils::ScopedTimeTrack st(__func__, *time_keeper_);
 
@@ -640,7 +640,7 @@ auto RearCollisionChecker::get_pointcloud_objects_at_blind_spot(
   return objects;
 }
 
-bool RearCollisionChecker::is_safe(const PointCloudObjects & objects, DebugData & debug) const
+bool RearCollisionChecker::is_safe(const PointCloudObjects & objects, RearCollisionDebugData & debug) const
 {
   autoware_utils::ScopedTimeTrack st("is_safe_pointcloud", *time_keeper_);
 
@@ -669,7 +669,7 @@ bool RearCollisionChecker::is_safe(const PointCloudObjects & objects, DebugData 
   return true;
 }
 
-bool RearCollisionChecker::is_safe(DebugData & debug)
+bool RearCollisionChecker::is_safe(RearCollisionDebugData & debug)
 {
   using std::placeholders::_1;
   using std::placeholders::_2;
@@ -805,7 +805,7 @@ void RearCollisionChecker::post_process()
   }
 }
 
-void RearCollisionChecker::publish_marker(const DebugData & debug) const
+void RearCollisionChecker::publish_marker(const RearCollisionDebugData & debug) const
 {
   autoware_utils::ScopedTimeTrack st(__func__, *time_keeper_);
 
@@ -882,7 +882,7 @@ void RearCollisionChecker::publish_marker(const DebugData & debug) const
   }
 }
 
-void RearCollisionChecker::publish_planning_factor(const DebugData & debug) const
+void RearCollisionChecker::publish_planning_factor(const RearCollisionDebugData & debug) const
 {
   if (debug.is_safe) return;
 

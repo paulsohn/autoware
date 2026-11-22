@@ -109,7 +109,7 @@ struct PointCloudObject
 
 using PointCloudObjects = std::vector<PointCloudObject>;
 
-struct DebugData
+struct RearCollisionDebugData
 {
   autoware_utils_geometry::LineString3d reachable_line;
 

@@ -41,14 +41,14 @@ public:
 private:
   void fill_velocity(PointCloudObject & pointcloud_object);
 
-  auto filter_pointcloud(DebugData & debug) const -> PointCloud::Ptr;
+  auto filter_pointcloud(RearCollisionDebugData & debug) const -> PointCloud::Ptr;
 
-  auto get_clustered_pointcloud(const PointCloud::Ptr in, DebugData & debug) const
+  auto get_clustered_pointcloud(const PointCloud::Ptr in, RearCollisionDebugData & debug) const
     -> PointCloud::Ptr;
 
   auto get_pointcloud_object(
     const rclcpp::Time & now, const PointCloud::Ptr & pointcloud_ptr,
-    const DetectionAreas & detection_areas, DebugData & debug) -> std::optional<PointCloudObject>;
+    const DetectionAreas & detection_areas, RearCollisionDebugData & debug) -> std::optional<PointCloudObject>;
 
   auto get_pointcloud_objects(
     const std::function<std::pair<double, double>()> & func_range_calculation,
@@ -58,22 +58,22 @@ private:
   auto get_pointcloud_objects_on_adjacent_lane(
     const lanelet::ConstLanelets & current_lanes, const Behavior & shift_behavior,
     const double forward_distance, const double backward_distance,
-    const PointCloud::Ptr & obstacle_pointcloud, DebugData & debug) -> PointCloudObjects;
+    const PointCloud::Ptr & obstacle_pointcloud, RearCollisionDebugData & debug) -> PointCloudObjects;
 
   auto get_pointcloud_objects_at_blind_spot(
     const lanelet::ConstLanelets & current_lanes, const Behavior & turn_behavior,
     const double forward_distance, const double backward_distance,
-    const PointCloud::Ptr & obstacle_pointcloud, DebugData & debug) -> PointCloudObjects;
+    const PointCloud::Ptr & obstacle_pointcloud, RearCollisionDebugData & debug) -> PointCloudObjects;
 
-  bool is_safe(const PointCloudObjects & objects, DebugData & debug) const;
+  bool is_safe(const PointCloudObjects & objects, RearCollisionDebugData & debug) const;
 
-  bool is_safe(DebugData & debug);
+  bool is_safe(RearCollisionDebugData & debug);
 
   void post_process();
 
-  void publish_marker(const DebugData & debug) const;
+  void publish_marker(const RearCollisionDebugData & debug) const;
 
-  void publish_planning_factor(const DebugData & debug) const;
+  void publish_planning_factor(const RearCollisionDebugData & debug) const;
 
   void set_diag_status(
     DiagnosticStatusWrapper & stat, const bool & is_ok, const std::string & msg) const;
