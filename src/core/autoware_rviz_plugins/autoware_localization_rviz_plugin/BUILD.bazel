@@ -1,0 +1,68 @@
+load("@qt//:qt.bzl", "qt_cc_library", "qt_cc_shared_library")
+load("@rosdistro//ament:defs.bzl", "ament_index")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+
+package(default_visibility = ["//visibility:public"])
+
+qt_cc_library(
+    name = "autoware_localization_rviz_plugin_library",
+    moc_hdrs = [
+        "src/colored_pose_with_covariance_history/colored_pose_with_covariance_history_display.hpp",
+        "src/pose_history/pose_history_display.hpp",
+        "src/pose_history_footprint/display.hpp",
+        "src/pose_with_covariance_history/pose_with_covariance_history_display.hpp",
+    ],
+    srcs = glob(["src/**/*.cpp"]),
+    hdrs = glob(["include/**/*.hpp", "src/**/*.hpp"], allow_empty = True),
+    includes = ["src"],
+    defines = ["PLUGINLIB__DISABLE_BOOST_FUNCTIONS", "QT_NO_KEYWORDS"],
+    deps = [
+        "@autoware_internal_debug_msgs//:cc",
+        "@autoware_vehicle_info_utils",
+        "@geometry_msgs//:cc",
+        "@pluginlib//:pluginlib_library",
+        "@qtbase//:widgets",
+        "@rclcpp//:rclcpp_library",
+        "@rosdistro//cc:OgreMain_library",
+        "@rosdistro//cc:OgreOverlay_library",
+        "@rosdistro//cc:boost.geometry",
+        "@rosdistro//cc:eigen",
+        "@rviz_common//:rviz_common_library",
+        "@rviz_default_plugins//:rviz_default_plugins_library",
+        "@rviz_rendering//:rviz_rendering_library",
+        "@tf2//:tf2_library",
+        "@tf2_ros//:tf2_ros_library",
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = [
+        "@autoware_internal_debug_msgs//:cc_shared",
+        "@geometry_msgs//:cc_shared",
+        "@pluginlib//:pluginlib",
+        "@rclcpp//:rclcpp",
+        "@rosdistro//cc:OgreMain",
+        "@rosdistro//cc:OgreOverlay",
+        "@rviz_common//:rviz_common",
+        "@rviz_default_plugins//:rviz_default_plugins",
+        "@rviz_rendering//:rviz_rendering",
+        "@tf2//:tf2",
+        "@tf2_ros//:tf2_ros",
+    ],
+)
+
+qt_cc_shared_library(
+    name = "autoware_localization_rviz_plugin",
+    shared_lib_name = "libautoware_localization_rviz_plugin.so",
+    dynamic_deps = [":runtime_dynamic_deps"],
+    deps = [":autoware_localization_rviz_plugin_library"],
+)
+
+ament_index(
+    package_xml = "package.xml",
+    data = glob(["icons/**", "images/**", "plugins/**"]),
+    libraries = [":autoware_localization_rviz_plugin"],
+    deps = ["@rviz_common//:ament_index", "@rviz_default_plugins//:ament_index"],
+    plugin_categories = {"plugins/plugin_description.xml": "rviz_common"},
+)

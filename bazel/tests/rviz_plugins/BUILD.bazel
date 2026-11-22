@@ -45,5 +45,6 @@ collect_transitive_dynamic_deps(
     )
     for package, xml in [
         ("autoware_perception_rviz_plugin", "plugins_description.xml"),
+        ("autoware_localization_rviz_plugin", "plugins/plugin_description.xml"),
     ]
 ]
