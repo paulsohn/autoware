@@ -4,7 +4,7 @@ set -eu
 out=${1:?fresh result directory}
 mkdir "$out"
 export BUFFER_RUNTIME_ONLY=1 SYNC_SHORT_WAIT=1
-unset BENCH_NEAR_POLICY BENCH_NEAR_DEPTH SYNC_ISOLATION SYNC_STALL_NEAR BENCH_STALL_THIS_CROP SYNC_REGIONS SYNC_DOUBLE_RATE SYNC_AUDIT SYNC_SINK_TRACE SYNC_EXTENDED SYNC_TOP_JITTER SYNC_SLOW_SINK
+unset BENCH_COMPETITOR BENCH_EXECUTOR BENCH_NEAR_POLICY BENCH_NEAR_DEPTH SYNC_ISOLATION SYNC_STALL_NEAR BENCH_STALL_THIS_CROP SYNC_REGIONS SYNC_DOUBLE_RATE SYNC_AUDIT SYNC_SINK_TRACE SYNC_EXTENDED SYNC_TOP_JITTER SYNC_SLOW_SINK
 failed=0
 rounds=(1 2)
 if [[ ${2:-} == confirmation ]]; then rounds=(3 4 5 6); fi
@@ -52,6 +52,18 @@ for round in "${rounds[@]}"; do
     if ((round == 2)); then modes=(zenoh cyclone stock native); conditions=(reject keep); fi
     export BENCH_BUSY_NEAR=1 BENCH_NEAR_DEPTH=8
   fi
+  if [[ ${2:-} == competitor ]]; then
+    modes=(native stock cyclone zenoh)
+    conditions=(single cie)
+    if ((round == 2)); then modes=(zenoh cyclone stock native); conditions=(cie single); fi
+    export BENCH_NEAR_DEPTH=8 BENCH_COMPETITOR=1
+  fi
+  if [[ ${2:-} == workers ]]; then
+    modes=(stock)
+    conditions=(single two)
+    if ((round == 2)); then conditions=(two single); fi
+    export BENCH_NEAR_DEPTH=8 BENCH_COMPETITOR=1
+  fi
   for mode in "${modes[@]}"; do
     launch_mode=$mode
     if [[ $mode == native-default ]]; then
@@ -79,6 +91,12 @@ for round in "${rounds[@]}"; do
       fi
       if [[ ${2:-} == freshness ]]; then
         export BENCH_NEAR_POLICY=$condition SYNC_STALL_NEAR=1 SYNC_REGIONS=1 SYNC_ISOLATION=1 SYNC_DOUBLE_RATE=1
+        mkdir -p "$out/$condition"
+        log="$out/$condition/$round-$mode-slow-near.log"
+      fi
+      if [[ ${2:-} == competitor || ${2:-} == workers ]]; then
+        if [[ $mode == native && $condition == single ]]; then continue; fi
+        export BENCH_EXECUTOR=$condition SYNC_STALL_NEAR=1 SYNC_REGIONS=1 SYNC_ISOLATION=1 SYNC_DOUBLE_RATE=1
         mkdir -p "$out/$condition"
         log="$out/$condition/$round-$mode-slow-near.log"
       fi

@@ -2838,3 +2838,18 @@ landmark increased from 161 ms to 751 ms. Keep the backlog for this fixture.
 
 [Transport matrix](pipeline-freshness-results/summary.txt) ·
 [Setup and interpretation](../buffer/JOURNAL.md#2026-11-22--rejecting-stale-near-crop-inputs-at-depth-8).
+
+### A competing callback on the three-LiDAR graph
+
+With a 900 ms busy timer in a separate near-crop callback group, single-threaded
+rmw_agnocast delivered 22/32 near clouds. Tracker replay confirmed 13/30
+transient targets within 100 ms. Both the bundled CIE and an ordinary
+two-worker rclcpp executor ran 18 cloud callbacks during the timer, delivered
+32/32 and confirmed all 30 within budget. The concurrent results also
+preserved the returning object's UUID. Cyclone DDS and Zenoh reproduced the
+single-threaded and CIE outcomes. Native Agnocast reproduced the CIE result.
+Use the two-worker executor as the ordinary ROS baseline for contention tests.
+
+[Per-run executor matrix](pipeline-competitor-results/summary.txt) ·
+[Two-worker control](pipeline-workers-results/summary.txt) ·
+[Reproduction](../buffer/JOURNAL.md#2026-11-22--competing-callback-on-the-three-lidar-near-crop).

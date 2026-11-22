@@ -95,7 +95,10 @@ def graph(context):
         crop_env = dict(env)
         if topic == "/region/near" and os.getenv("SYNC_STALL_NEAR"):
             crop_env["BENCH_STALL_THIS_CROP"] = "1"
-        regions.append(Node(package="universe_crop_benchmark", executable="crop",
+        executable = "crop"
+        if topic == "/region/near" and mode != "native" and os.getenv("BENCH_EXECUTOR") in ("cie", "two"):
+            executable = "crop_" + os.environ["BENCH_EXECUTOR"]
+        regions.append(Node(package="universe_crop_benchmark", executable=executable,
                             name="region_" + topic.split("/")[-1], output="screen",
                             additional_env=crop_env, remappings=[("input", "/output"), ("output", topic)],
                             parameters=[config, {"input_frame": "base_link", "output_frame": "base_link",

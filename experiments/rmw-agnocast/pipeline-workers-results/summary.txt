@@ -1,0 +1,5 @@
+transport executor round busy_cpu_ms overlap near/32 near_p50/p95_ms far_p50/p95_ms fresh_gap_ms confirmed within_100ms same_uuid graph_cpu_s peak_MiB min_host_MiB
+stock single 1 900.0 0 22 41.55/304.34 22.43/42.35 902.8 20 13 0 3.38 308.0 9053
+stock single 2 899.7 0 22 42.15/308.59 22.85/42.51 907.6 20 13 0 3.33 293.6 9270
+stock two 1 899.7 18 32 24.47/42.47 24.37/42.81 89.8 30 30 1 3.42 288.4 9147
+stock two 2 899.9 18 32 26.76/43.10 26.58/43.21 89.6 30 30 1 3.45 285.2 9216

@@ -2356,3 +2356,80 @@ work that must execute on the cloud callback's own thread.
 
 [Per-run metrics and missed targets](../rmw-agnocast/pipeline-freshness-results/summary.txt) ·
 [Tracker timing and identities](../rmw-agnocast/pipeline-freshness-results/tracker.txt).
+
+## 2026-11-22 — Competing callback on the three-LiDAR near crop
+
+Run the depth-8 near crop on the same 20/20/10 Hz graph with an independent
+timer in a separate mutually exclusive callback group. Create the timer and
+group before spin, keep both alive with the subscription, and arm the 5 ms
+timer after the fifth near callback enters. Its first armed invocation burns
+900 ms of wall time once. It logs its actual thread CPU time and the start
+and end of the window. The crop logs each subscription callback entry. This
+single contiguous interval models another task occupying the executor.
+It differs from the previous six delays inside the cloud callback. Keep
+the queued inputs in both conditions.
+
+For ordinary ROS endpoints compare the stock single-threaded crop with the
+same component in the pinned Agnocast library's mixed-capable CIE. Change
+only the near executable, leaving the far branch and upstream executors
+alone. Include native Agnocast using its existing Agnocast-only CIE as a
+reference. Build both cached overlays sequentially under the memory guard:
+
+```bash
+export LYRICAL_ROOT=$(cat build/agnocast-lyrical/universe-root)
+experiments/buffer/run-lyrical.sh bash -ec '
+  source build/agnocast-lyrical/install/local_setup.bash
+  source build/universe-sync/install/local_setup.bash
+  source build/rmw-agnocast/load-install/local_setup.bash
+  for ws in universe-pipeline universe-pipeline-native; do
+    if [[ $ws == universe-pipeline-native ]]; then export ENABLE_AGNOCAST=1; else export ENABLE_AGNOCAST=0; fi
+    colcon build --base-paths src/universe_crop_benchmark src/universe_sync_benchmark \
+      --build-base "build/$ws/obj" --install-base "build/$ws/install" --executor sequential
+  done'
+r=experiments/rmw-agnocast
+out=build/universe-competitor
+bash "$r/bench-native-graph.sh" "$out" competitor
+REPLAY_TARGET_SPACING_M=8 REPLAY_RETURN_GROUP=20 BUFFER_RUNTIME_ONLY=1 \
+  experiments/buffer/run-lyrical.sh bash "$r/run-track-replay.sh" "$out"/*/*.log > "$out/tracker.log" 2>&1
+rg '^trace=' "$out/tracker.log" > "$out/tracker.txt"
+python3 "$r/summarize-competitor.py" "$out"
+```
+
+Lyrical's rclcpp timer function traits rejected a mutable lambda during the
+initial build. Give the timer a const-callable closure and put its one-shot
+flag in captured storage. The timer callback group's mutual exclusion
+serializes access to that flag. An atomic counter connects the two groups.
+
+As an attribution control, the ordinary ROS build also registers the same
+crop in stock rclcpp MultiThreadedExecutor with exactly two workers. Run
+the commands above again with out=build/universe-workers and pass workers
+as the graph runner's second argument. This runs two new single/two-worker
+pairs on rmw_agnocast, reversing order in the second pair. Each graph
+uses the same timer, callback groups, source rates, queue and verification.
+
+All 18 live graphs delivered the full 32 fused cloud/metadata pairs and all
+32 far outputs. The competing timer consumed 899.5–900.0 ms of thread CPU.
+All eight single-threaded runs had zero near callback entries inside the
+busy interval and delivered 22/32 near outputs. The tracker confirmed 20/30
+transient targets, 13/30 within 100 ms, and assigned a new UUID on return.
+All ten concurrent runs recorded 18 near callback entries during the interval,
+delivered 32/32 and kept the returning UUID. Tracker replay confirmed 30/30
+within 100 ms. Maximum graph scope peak was 474.6 MiB, and minimum available
+host memory during the graphs was 8369 MiB.
+
+Across the four paired single-threaded rmw_agnocast runs, near receipt-age
+p95 was 304.34–308.59 ms. With the bundled CIE it was 42.23–42.52 ms,
+and with two rclcpp workers 42.47–43.10 ms. Within the mixed full/partial
+fixture, the partial groups include a 40 ms collector timeout. Two workers
+were sufficient on this laptop with one independent busy callback. This
+leaves open the behavior under multiple runnable callbacks, CPU contention,
+and competing work that holds a lock required by the hot path.
+
+The graph runner was edited while the first invocation was finishing. Bash
+reported a trailing parse error after writing all 14 complete graph logs.
+Validated every recorded graph independently, checked the final runner with
+bash -n, and ran tracker replay on all 14 traces. The separate four-graph
+worker invocation and its tracker replays completed end to end.
+
+[Executor matrix](../rmw-agnocast/pipeline-competitor-results/summary.txt) ·
+[Two-worker control](../rmw-agnocast/pipeline-workers-results/summary.txt).

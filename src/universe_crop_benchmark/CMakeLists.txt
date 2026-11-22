@@ -74,13 +74,21 @@ target_include_directories(universe_endpoint PRIVATE ${autoware_agnocast_wrapper
 autoware_agnocast_wrapper_register_node(universe_endpoint
   PLUGIN "benchmark::Endpoint" EXECUTABLE endpoint
   AGNOCAST_EXECUTOR AgnocastOnlySingleThreadedExecutor ROS2_EXECUTOR SingleThreadedExecutor)
-if(UNIVERSE_BUFFER_MATRIX)
+if(NOT UNIVERSE_BUFFER_MATRIX AND NOT "$ENV{ENABLE_AGNOCAST}" STREQUAL "1")
+  rclcpp_components_register_node(universe_crop
+    PLUGIN "autoware::pointcloud_preprocessor::CropBoxFilterComponent" EXECUTABLE crop_two
+    EXECUTOR crop_benchmark::TwoWorkerExecutor RESOURCE_INDEX universe_crop_benchmark_two)
+  target_compile_options(crop_two PRIVATE -include "${CMAKE_CURRENT_SOURCE_DIR}/two_worker_executor.hpp")
+endif()
+if(UNIVERSE_BUFFER_MATRIX OR NOT "$ENV{ENABLE_AGNOCAST}" STREQUAL "1")
   # ROS-only crop process using the CIE shipped with our pinned Agnocast.
   rclcpp_components_register_node(universe_crop
     PLUGIN "autoware::pointcloud_preprocessor::CropBoxFilterComponent" EXECUTABLE crop_cie
     EXECUTOR agnocast::CallbackIsolatedAgnocastExecutor RESOURCE_INDEX universe_crop_benchmark_cie)
   target_link_libraries(crop_cie ${agnocastlib_TARGETS})
   target_compile_options(crop_cie PRIVATE -include agnocast/agnocast_callback_isolated_executor.hpp)
+endif()
+if(UNIVERSE_BUFFER_MATRIX)
   foreach(target IN ITEMS universe_crop universe_endpoint)
     target_include_directories(${target} BEFORE PRIVATE "${wrapper_copy}")
     target_link_libraries(${target} shmem_buffer::shmem_buffer cuda_buffer::cuda_buffer CUDA::cudart)
