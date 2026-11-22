@@ -17494,3 +17494,19 @@ probe parses the owned XML, constructs/destroys every exported class and unloads
 its library. The actual original RViz configuration also loads and renders with
 this provider; its root UI composition is recorded separately. No functional
 suite is skipped; older ROS/Qt and upstream CMake are not claimed.
+
+## 2026-11-22: Phase 7.3.4 — Launcher fixture labels across package boundaries
+
+Purpose: retain the existing YOLOX launcher-resource checks after autoware_launch
+becomes a Bazel package. A focused root query reports that root-relative file
+labels cross the newly declared source subpackage boundary. Export the traffic
+light XML and package manifest from their owning autoware_launch BUILD and use
+@autoware_launch labels in the existing root fixture collection. Leave the
+remaining unadopted perception-launch files in their current source boundary.
+No launcher behavior or model-path parameter changes.
+
+Verify bazel query '//:all' and bazel test --config=runtime --config=no-agnocast
+--local_test_jobs=1 --test_output=errors //bazel/tests:yolox_launch_paths_test.
+The query succeeds; both existing model-path/dependency cases pass. The combined
+29-target gate reuses that result. This is build/resource-label validation;
+no GPU execution or model inference is required for unchanged resource content.

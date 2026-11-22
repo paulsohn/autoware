@@ -2,7 +2,11 @@ load("@rosdistro//ament:defs.bzl", "ament_index")
 
 package(default_visibility = ["//visibility:public"])
 
-exports_files(["launch/planning_simulator.launch.xml"])
+exports_files([
+    "launch/components/component_traffic_light.launch.xml",
+    "launch/planning_simulator.launch.xml",
+    "package.xml",
+])
 
 # Resource closure for the default rule-based planning simulator profile.
 ament_index(
