@@ -1746,3 +1746,9 @@ local_path_override(
     module_name = "tier4_vehicle_rviz_plugin",
     path = "src/universe/autoware_universe/visualization/tier4_vehicle_rviz_plugin",
 )
+
+bazel_dep(name = "tier4_dummy_object_rviz_plugin", version = "0.0.0")
+local_path_override(
+    module_name = "tier4_dummy_object_rviz_plugin",
+    path = "src/universe/autoware_universe/simulator/tier4_dummy_object_rviz_plugin",
+)
