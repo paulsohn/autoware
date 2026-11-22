@@ -1,0 +1,7 @@
+module(name = "tier4_autoware_api_launch", version = "0.0.0")
+
+bazel_dep(name = "autoware_adapi_adaptors", version = "0.0.0")
+bazel_dep(name = "autoware_agnocast_wrapper", version = "0.0.0")
+bazel_dep(name = "autoware_default_adapi_universe", version = "0.0.0")
+bazel_dep(name = "rclcpp_components", version = "0.0.0")
+bazel_dep(name = "rosdistro", version = "0.0.0")
