@@ -158,6 +158,15 @@ plugin for its synthesized `<Service>_Event` message, using the service header.
 It accepts message and service interfaces; action bridges are unsupported.
 Interface discovery does not use `AMENT_PREFIX_PATH`.
 
+Python/introspection consumers use `//bazel/interfaces:all_interfaces_python`.
+The same package entries supply generated Python bindings and resource indexes;
+there is no second package list. Ordinary `:cc` providers default to sibling
+`:py` and `:ament_index` targets. Supply `python` and `index` explicitly for
+nonstandard providers, as for grid_map. These are package-wide providers even
+when metadata roots select fewer types. Declared interface dependencies forward
+their indexes transitively, so nested message definitions remain discoverable.
+This optional projection does not add Python dependencies to C++ consumers.
+
 Test the plugin library with the kernel module available:
 
 ```bash

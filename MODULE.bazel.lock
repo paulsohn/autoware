@@ -1486,6 +1486,7 @@
     "https://bazel.ros.org/modules/rosidl_generator_cpp/5.2.1-1.rcr.2/MODULE.bazel": "27cf6be71354fe7c8a7bfc45f3523073a59b49c7175d9ffafbd3099eb9302e62",
     "https://bazel.ros.org/modules/rosidl_generator_cpp/5.2.1-1.rcr.3/MODULE.bazel": "49e742d498733f9a0453be142d002bfc64a7ee9728c71143f1f0eca96027e23a",
     "https://bazel.ros.org/modules/rosidl_generator_cpp/5.2.1-1.rcr.3/source.json": "8b82186aa3f578f6c728a28fcfc7f0e72e142713502079640028b7e3a736a19d",
+    "https://bazel.ros.org/modules/rosidl_generator_py/0.0.0/MODULE.bazel": "731a9a982ba4a617fa49b4388a475b4c9e8b4957b00ed4b636dc5aff49beb9b2",
     "https://bazel.ros.org/modules/rosidl_generator_py/0.27.2-3.rcr.3/MODULE.bazel": "0a3ae172cf031cbe4a18d1a5d87c48fe19e0e8d9fd32f010ca5b93a44c47c91a",
     "https://bazel.ros.org/modules/rosidl_generator_py/0.27.2-3.rcr.4/MODULE.bazel": "f0d5f795e1cded8685faa8867264b1eeb34f3f0e4cfbbb7daa87aefe7a7deb98",
     "https://bazel.ros.org/modules/rosidl_generator_py/0.27.2-3.rcr.4/source.json": "0613deff2cd07121dc40c4e2f83b13f0e39c7a200be7cdb4c1edced5b36cb902",
@@ -3568,7 +3569,7 @@
     "@@rosdistro+//python:defs.bzl%pip_ros": {
       "general": {
         "bzlTransitiveDigest": "9KPSmaWfGTp6RN0By0DcuUgpR00WASpGuGN+q6IHLUY=",
-        "usagesDigest": "L0R8GWfLih8wJTJEyrlswn7ZuRq05xn+/hCdrrc95HQ=",
+        "usagesDigest": "wghM34RlI4o9JC8esHHy9LLK7rM6DfGrRWErgmqLbsw=",
         "recordedInputs": [
           "REPO_MAPPING:bazel_features+,bazel_features_globals bazel_features++version_extension+bazel_features_globals",
           "REPO_MAPPING:bazel_features+,bazel_features_version bazel_features++version_extension+bazel_features_version",

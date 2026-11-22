@@ -18493,3 +18493,43 @@ All seventeen serialization targets pass, with every registered type still
 checked; the full combined interface/index gate passes all twenty targets.
 This corrects a test assertion, not production serialization or a claim of
 canonical serialized bytes. No upstream source, Fast DDS or pre-commit change.
+
+## 2026-11-23: Phase 7.6 — Python view of the selected interface collection
+
+Purpose: support Python CLI inspection of the same interfaces selected for
+compiled consumers. The simulator C++ runtime alone does not expose the sibling
+Python binding or schema-index targets. In bazel/interfaces/interfaces.bzl,
+project each existing ros_interface_package entry into one public
+<set>_python py_library, depending on the package's generated Python target and
+carrying its ament_index as data. For conventional :cc labels, use sibling :py
+and :ament_index defaults at macro expansion. Nonstandard providers must supply
+python/index explicitly; grid_map uses its existing public aliases. Keep the
+existing C++/shared-provider collection unchanged and keep a single package list.
+Narrowed metadata roots do not narrow package-wide language providers.
+
+Add python_interfaces_test consuming all_interfaces_python. Instantiate
+Trajectory and Pose, import their native type support, and locate their schema
+resources through ament_index_python/rosidl_runtime_py. Geometry is reached
+transitively through declared interface dependencies. Declare the direct ROS
+Python SDK dependencies in the root module and test. The debug runtime collector
+will consume the existing simulator target plus this Python/index projection.
+Run the complete bazel/interfaces suite, including all three existing generated
+serialization targets and the descriptor gate:
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_output=errors //bazel/interfaces:all
+python3 -m flake8 --max-line-length=150 bazel/interfaces/python_interfaces_test.py
+git diff --check
+```
+
+All five collection tests pass: descriptor enumeration, the three complete
+package serialization checks and the new Python/schema consumer. The initial
+complete gate exposed an existing byte-equality assertion; the separate shared
+test correction above preserves semantic round-trip checks for every type.
+Native Trajectory/Pose support and both schema lookups pass (one case, 0.6 s).
+This validates the optional Python/index projection; the existing C++ provider
+implementation, selected metadata roots and Agnocast plugin assembly are
+unchanged. Full simulator driving, GPU and Fast DDS checks are outside this
+projection task.

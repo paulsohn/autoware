@@ -5,6 +5,7 @@ load("@rosidl_default_generators//:defs.bzl", "RosInterfaceInfo")
 load("@rules_cc//cc/common:cc_common.bzl", "cc_common")
 load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
 load("@rules_cc//cc/common:cc_shared_library_info.bzl", "CcSharedLibraryInfo")
+load("@rules_python//python:defs.bzl", "py_library")
 
 RosInterfaceSetInfo = provider(
     "The deterministic ROS interface closure of a product-owned root set.",
@@ -98,13 +99,22 @@ _ros_interface_set = rule(
     },
 )
 
-def ros_interface_package(cc, shared, roots = None):
+def ros_interface_package(cc, shared, roots = None, python = None, index = None):
     """Pair declared C++/shared providers with the selected interface roots.
 
     By default select the package's entire cc interface closure. Explicit roots
     can select individual interfaces without narrowing its compiled provider.
     """
-    return struct(cc = cc, shared = shared, roots = [cc] if roots == None else roots)
+    if not str(cc).endswith(":cc") and (python == None or index == None):
+        fail("Nonstandard C++ interface targets must declare Python and index targets explicitly")
+    base = str(cc).removesuffix(":cc")
+    return struct(
+        cc = cc,
+        shared = shared,
+        roots = [cc] if roots == None else roots,
+        python = python if python != None else base + ":py",
+        index = index if index != None else base + ":ament_index",
+    )
 
 def ros_interface_set(name, packages, roots = None, **kwargs):
     """Expose interface metadata, CcInfo and shared runtime from one declaration.
@@ -117,6 +127,12 @@ def ros_interface_set(name, packages, roots = None, **kwargs):
         name = name + "_runtime",
         dynamic_deps = [package.shared for package in packages],
         visibility = ["//visibility:private"],
+    )
+    py_library(
+        name = name + "_python",
+        deps = [package.python for package in packages],
+        data = [package.index for package in packages],
+        visibility = kwargs.get("visibility"),
     )
     _ros_interface_set(
         name = name,

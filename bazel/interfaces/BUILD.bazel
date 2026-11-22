@@ -37,7 +37,12 @@ ros_interface_set(
         ros_interface_package("@autoware_vehicle_msgs//:cc", "@autoware_vehicle_msgs//:cc_shared"),
         ros_interface_package("@agnocast_sample_interfaces//:cc", "@agnocast_sample_interfaces//:cc_shared"),
         ros_interface_package("@ros2agnocast_discovery_msgs//:cc", "@ros2agnocast_discovery_msgs//:cc_shared"),
-        ros_interface_package("@grid_map//:grid_map_msgs_cc", "@grid_map//:grid_map_msgs_cc_shared"),
+        ros_interface_package(
+            "@grid_map//:grid_map_msgs_cc",
+            "@grid_map//:grid_map_msgs_cc_shared",
+            python = "@grid_map//:grid_map_msgs_py",
+            index = "@grid_map//:grid_map_msgs_ament_index",
+        ),
         ros_interface_package("@nav_msgs//:cc", "@nav_msgs//:cc_shared"),
         ros_interface_package("@rcl_interfaces//:cc", "@rcl_interfaces//:cc_shared"),
         ros_interface_package(
@@ -82,5 +87,12 @@ py_test(
 )
 
 interface_serialization_test(package = "autoware_adapi_v1_msgs", name = "adapi_v1_serialization_test")
+py_test(
+    name = "python_interfaces_test",
+    srcs = ["python_interfaces_test.py"],
+    env = {"AMENT_PREFIX_PATH": ".", "LD_LIBRARY_PATH": "lib"},
+    deps = [":all_interfaces_python", "@ament_index_python", "@rosidl_runtime_py", "@rosidl_generator_py"],
+)
+
 interface_serialization_test(package = "autoware_adapi_version_msgs", name = "adapi_version_serialization_test")
 interface_serialization_test(package = "sensor_msgs", name = "sensor_serialization_test")

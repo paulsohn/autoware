@@ -70,6 +70,8 @@ only when your current target demonstrates the need.
   [Evidence: root-owned interface consumers](JOURNAL.md#2026-11-15-build-root-owned-typed-agnocast-plugins-from-the-interface-graph).
   [Canonical interface identity](DEVELOPING.md#interface-declarations-and-bridge-plugins);
   [mixed-package product selection](DEVELOPING.md#editing-interface-packages);
+  [same-list Python/index projection](JOURNAL.md#2026-11-23-phase-76--python-view-of-the-selected-interface-collection);
+  [transitive schema indexes](JOURNAL.md#2026-11-23-phase-76--transitive-interface-resource-indexes);
   [evidence: nested source categories](JOURNAL.md#2026-11-21-phase-732--nested-interface-source-namespaces).
   [Native plugin registration and utility SDK ownership](DEVELOPING.md#native-plugin-libraries);
   [Qt/RViz runtime ownership and graphical prerequisites](DEVELOPING.md#rviz-plugin-packages);
@@ -196,6 +198,9 @@ only when your current target demonstrates the need.
   shared runtime providers to consumers. The plugin takes only this set and
   retains its own Agnocast/RCLCPP dependencies; separate proof/sample sets and
   consumer-owned copies of the package registry are unnecessary.
+  The same entries expose an optional all_interfaces_python projection of
+  package-wide Python bindings and transitive schema indexes. C++ consumers
+  keep their existing providers without acquiring that Python projection.
   The heap-hook component owns its Cargo extension; runtime launchers locate
   its artifact through repository-mapped runfiles rather than source paths.
 
