@@ -1586,3 +1586,9 @@ local_path_override(
     module_name = "autoware_perception_config",
     path = "src/launcher/autoware_launch/autoware_universe_launch/autoware_perception_config",
 )
+
+bazel_dep(name = "autoware_map_config", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_map_config",
+    path = "src/launcher/autoware_launch/autoware_universe_launch/autoware_map_config",
+)
