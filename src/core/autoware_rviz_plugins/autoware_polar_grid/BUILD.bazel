@@ -1,0 +1,50 @@
+load("@qt//:qt.bzl", "qt_cc_library", "qt_cc_shared_library")
+load("@rosdistro//ament:defs.bzl", "ament_index")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+
+package(default_visibility = ["//visibility:public"])
+
+qt_cc_library(
+    name = "autoware_polar_grid_library",
+    moc_hdrs = ["src/polar_grid_display.hpp"],
+    srcs = glob(["src/**/*.cpp"]),
+    hdrs = glob(["include/**/*.hpp", "src/**/*.hpp"], allow_empty = True),
+    includes = ["src"],
+    defines = ["PLUGINLIB__DISABLE_BOOST_FUNCTIONS", "QT_NO_KEYWORDS"],
+    deps = [
+        "@pluginlib//:pluginlib_library",
+        "@qtbase//:widgets",
+        "@rclcpp//:rclcpp_library",
+        "@rosdistro//cc:OgreMain_library",
+        "@rosdistro//cc:OgreOverlay_library",
+        "@rosdistro//cc:boost.geometry",
+        "@rosdistro//cc:eigen",
+        "@rviz_common//:rviz_common_library",
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = [
+        "@pluginlib//:pluginlib",
+        "@rclcpp//:rclcpp",
+        "@rosdistro//cc:OgreMain",
+        "@rosdistro//cc:OgreOverlay",
+        "@rviz_common//:rviz_common",
+    ],
+)
+
+qt_cc_shared_library(
+    name = "autoware_polar_grid",
+    shared_lib_name = "libautoware_polar_grid.so",
+    dynamic_deps = [":runtime_dynamic_deps"],
+    deps = [":autoware_polar_grid_library"],
+)
+
+ament_index(
+    package_xml = "package.xml",
+    data = glob(["icons/**", "plugins/**"]),
+    libraries = [":autoware_polar_grid"],
+    deps = ["@rviz_common//:ament_index"],
+    plugin_categories = {"plugins/plugin_description.xml": "rviz_common"},
+)
