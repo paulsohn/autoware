@@ -841,6 +841,13 @@ Do not rely on a host-installed xacro. The sample and AWSIM description checks
 are `//bazel/tests:vehicle_description_sample_launch_test` and
 `//bazel/tests:vehicle_description_awsim_launch_test` with `--config=no-agnocast`.
 
+Graphical consumers also exercise the platform driver's native ABI closure.
+The declared graphics runtime pins GLVND/X11 and GNU libgcc/libstdc++ 14.2; the
+runtime platform supplies the display and its compatible rendering driver.
+Run //third_party/graphics_runtime:all with authenticated DISPLAY/XAUTHORITY when
+changing that boundary. An EGL dispatch-only check does not prove that a Mesa
+or vendor GLX driver can load and create RViz's visual.
+
 ## Universe planning simulator
 
 The supported original simulator profile uses sample_vehicle/sample_sensor_kit,

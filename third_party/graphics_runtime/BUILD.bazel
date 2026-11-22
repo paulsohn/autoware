@@ -25,3 +25,13 @@ cc_test(
     env = {"LD_LIBRARY_PATH": "lib"},
     linkopts = ["-ldl"],
 )
+
+cc_test(
+    name = "glx_display_test",
+    srcs = ["glx_display_test.c"],
+    data = [":runtime"],
+    env = {"LD_LIBRARY_PATH": "lib"},
+    env_inherit = ["DISPLAY", "XAUTHORITY"],
+    linkopts = ["-ldl"],
+    tags = ["no-remote", "no-sandbox", "requires-display"],
+)

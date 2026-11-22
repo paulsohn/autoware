@@ -16907,3 +16907,49 @@ native/package closure acceptance remain 7.3.4. No Fast DDS, enabled-Agnocast
 product, GPU, full colcon/older ROS, QEMU or simulator OCI claim. Existing core
 packaging stays separate. Targeted Python and whitespace checks pass; no
 pre-commit is run. Continue with the documented lane-driving acceptance phase.
+
+## 2026-11-22: Phase 7.3.4 — Desktop GLX runtime ABI
+
+Purpose: run the original RViz configuration using declared user-space runtime
+libraries and the normal desktop display/driver, without installing ROS or
+repairing dependencies through a package manager. The existing graphics_runtime
+provider pins GLVND/X11 dispatch archives; actual display services and hardware
+or software rendering drivers remain runtime-platform inputs.
+
+The first GUI attempt opens X11 but reports Unable to create glx visual and
+crashes. Compare glXChooseVisual/glXGetClientString with the host library search
+path and with the product's lib directory. Host Mesa succeeds; the product's
+Mesa load fails because its host LLVM 20.1 dependency needs GLIBCXX_3.4.32 while
+the former bundled libstdc++ 12 exposes only older symbols. Merely loading the
+GLVND dispatch libraries or obtaining EGL client extensions does not exercise
+this driver-dependent path. Forcing another GLX vendor is not a portable fix.
+
+Add SHA-256-pinned Ubuntu 24.04 libgcc-s1/libstdc++6 archives, both
+14.2.0-4ubuntu2~24.04.1, to third_party/graphics_runtime/archives.json. Reuse the
+immutable archive identities already inventoried for the OSTree environment.
+Remove the older Python-vendor runtime pair from the product's native_runtime
+composition so one selected C++ ABI provider owns those SONAMEs. Application
+compilation remains on LLVM/libc++; this changes the GNU runtime used by vendor
+and graphics-driver dependencies, not the application C++ standard library.
+A future runtime driver can require a newer ABI floor and must be checked again.
+
+Add glx_display_test alongside the existing dispatch_test. Load the declared X11
+and GLX libraries, connect through authenticated DISPLAY/XAUTHORITY, and require
+a vendor string and a visual with RViz's RGBA/double-buffer/depth/stencil
+attributes. These are explicit graphical test prerequisites, not skipped cases.
+The test uses dlopen and owns no Autoware-specific dependency.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  DISPLAY="$DISPLAY" XAUTHORITY="$XAUTHORITY" XDG_RUNTIME_DIR="$XDG_RUNTIME_DIR" \
+  bazel test --config=runtime --config=no-agnocast \
+  --local_test_jobs=1 --test_output=errors //third_party/graphics_runtime:all
+```
+
+Both tests pass; GLX reports Mesa Project and SGI and finds the required visual.
+The refreshed simulator product opens the original RViz window with OpenGL 4.6,
+its sample map, state panel, overlays, original pose/goal tools and no configured
+plugin-load failure. All 57 launched processes, including RViz, finish cleanly
+on SIGINT and the runner exits zero. This verifies GUI startup/rendering and the
+ABI correction; driving and expanded distribution gates remain separate tasks.
+No alternate middleware or older GNU runtime/other desktop-driver claim.

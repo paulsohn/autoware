@@ -15,8 +15,6 @@ runtime_libraries(
     name = "native_runtime",
     libraries = [
         "//third_party/graphics_runtime:runtime",
-        "@python_libgcc_linux_x86_64//:runtime",
-        "@python_libstdcxx_linux_x86_64//:runtime",
         "@rosdistro//cc:zlib",
     ],
     sonames = {"libzlib_shared.so": ["libz.so.1"]},

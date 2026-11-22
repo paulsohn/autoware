@@ -12,6 +12,12 @@
     "SHA256": "e549f7776216f7bd3b1c216729fb40a97a562e2eb7c563cde632b4931f9a4e57"
   },
   {
+    "Package": "libgcc-s1",
+    "Version": "14.2.0-4ubuntu2~24.04.1",
+    "Filename": "pool/main/g/gcc-14/libgcc-s1_14.2.0-4ubuntu2~24.04.1_amd64.deb",
+    "SHA256": "aa7fadbe33b78bcf99885318040601c550c208929565b179891d9a3cc2aa68cd"
+  },
+  {
     "Package": "libgl1",
     "Version": "1.7.0-1build1",
     "Filename": "pool/main/libg/libglvnd/libgl1_1.7.0-1build1_amd64.deb",
@@ -40,6 +46,12 @@
     "Version": "1.7.0-1build1",
     "Filename": "pool/main/libg/libglvnd/libopengl0_1.7.0-1build1_amd64.deb",
     "SHA256": "da36bd4d30c13b40b697fa8b72cc09d309ff36a5bd9750341ef78492bf3f3966"
+  },
+  {
+    "Package": "libstdc++6",
+    "Version": "14.2.0-4ubuntu2~24.04.1",
+    "Filename": "pool/main/g/gcc-14/libstdc++6_14.2.0-4ubuntu2~24.04.1_amd64.deb",
+    "SHA256": "a51f8de7829211db961a31f02158058ad1a95f92ac6d0a5dff6350e2821c54c0"
   },
   {
     "Package": "libx11-6",

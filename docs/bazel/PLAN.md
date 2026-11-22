@@ -109,6 +109,7 @@ only when your current target demonstrates the need.
   runtime resources once and reuse them for packaging.
   [Packaging and deployment requirements](#runtime-packaging-and-deployment-requirements);
   [middleware discovery capacity evidence](JOURNAL.md#2026-11-22-phase-733--original-headless-planning-simulator-product);
+  [Desktop driver ABI evidence](JOURNAL.md#2026-11-22-phase-734--desktop-glx-runtime-abi);
   [distribution convention](DEVELOPING.md#native-core-distribution);
   [evidence: native runtime closure](JOURNAL.md#2026-11-20-phase-71--native-headless-core-distribution).
   [OCI image convention](DEVELOPING.md#oci-core-distribution);
