@@ -34,7 +34,9 @@ const bool regions = std::getenv("PIPELINE_DIR") && std::getenv("SYNC_REGIONS");
 const std::array<std::string, 2> region_topics{"/region/near", "/region/far"};
 const bool isolation = regions && std::getenv("SYNC_ISOLATION");
 const bool stall_near = isolation && std::getenv("SYNC_STALL_NEAR");
-const int sets = extended ? 104 : (isolation ? 32 : 24);
+const bool omit_top = route_pilot && std::getenv("SYNC_OMIT_TOP");
+const bool sustained = std::getenv("SYNC_SUSTAINED") != nullptr;
+const int sets = sustained ? 600 : extended ? 104 : (isolation ? 32 : 24);
 const int points = std::getenv("SYNC_LARGE") ? 32768 : 1024;
 const std::array<std::string, 3> topics{"/sync/left", "/sync/right", "/sync/top"};
 struct Point
@@ -107,7 +109,7 @@ int pipeline_source(rclcpp::Node::SharedPtr node, const std::filesystem::path & 
 #else
     pubs.push_back(node->create_publisher<Cloud>("/raw" + topic, qos));
 #endif
-  for (int seq = 0; !extended && seq < sets; ++seq) {
+  for (int seq = 0; !sustained && !extended && seq < sets; ++seq) {
     for (int sensor = 0; sensor < (seq % 2 ? 2 : 3); ++sensor)
       inputs[seq].push_back(cloud(seq, sensor));
   }
@@ -156,7 +158,7 @@ int pipeline_source(rclcpp::Node::SharedPtr node, const std::filesystem::path & 
   std::vector<int64_t> top_release_ns(sets);
   std::vector<int64_t> stamps(sets);
   for (int seq = 0; seq < sets; ++seq) {
-    if (extended) {
+    if (extended || sustained) {
       for (int sensor = 0; sensor < (seq % 2 ? 2 : 3); ++sensor)
         inputs[seq].push_back(cloud(seq, sensor));
     }
@@ -166,6 +168,7 @@ int pipeline_source(rclcpp::Node::SharedPtr node, const std::filesystem::path & 
     for (size_t sensor = 0; sensor < inputs[seq].size(); ++sensor) {
       inputs[seq][sensor].header.stamp = rclcpp::Time(stamps[seq] + int64_t(sensor) * 1000000);
       if (sensor == 2) {
+        if (omit_top && seq == 8) continue;
         if (jitter) std::this_thread::sleep_until(group_start + (seq % 4 == 0 ? 15ms : 50ms));
         top_release_ns[seq] = node->now().nanoseconds() - stamps[seq];
       }
@@ -175,7 +178,7 @@ int pipeline_source(rclcpp::Node::SharedPtr node, const std::filesystem::path & 
       pubs[sensor]->publish(inputs[seq][sensor]);
 #endif
     }
-    if (extended) inputs[seq].clear();
+    if (extended || sustained) inputs[seq].clear();
   }
   for (int seq = 0; seq < sets; seq += 2)
     std::cout << "top_release_ns," << seq << "," << top_release_ns[seq] << std::endl;
@@ -187,12 +190,70 @@ int pipeline_source(rclcpp::Node::SharedPtr node, const std::filesystem::path & 
   rclcpp::spin(node);
   return 0;
 }
+// A bounded live sink for long runs. The recorder and clustering adapter share this output.
+int sustained_sink(rclcpp::Node::SharedPtr node, const std::filesystem::path & dir)
+{
+  auto qos = rclcpp::SensorDataQoS().keep_last(32);
+  auto fanout = node->create_publisher<Cloud>("/perception/cloud", qos);
+  std::atomic<int> received{0};
+  auto observe = [&](Cloud::ConstSharedPtr msg) {
+    const int seq = received.load();
+    const int members = seq % 2 ? 2 : 3;
+    const int length = points / 2;
+    const auto & bytes = static_cast<const std::vector<uint8_t> &>(msg->data);
+    check(msg->width == unsigned(members * length) && bytes.size() == msg->width * sizeof(Point),
+          "unexpected sustained group");
+    unsigned mask = 0;
+    for (int part = 0; part < members; ++part) {
+      const int offset = part * length;
+      const auto sensor = bytes[offset * sizeof(Point) + offsetof(Point, type)];
+      check(sensor < members && !(mask & (1u << sensor)), "duplicate sustained sensor");
+      mask |= 1u << sensor;
+      for (int i = 0; i < length; ++i) {
+        auto expected = point(seq, sensor, i + sensor * points / 4);
+        if (sensor) expected.x += 4;
+        check(!std::memcmp(bytes.data() + (offset+i)*sizeof(Point), &expected, sizeof(Point)),
+              "sustained payload mismatch");
+      }
+    }
+    fanout->publish(*msg);
+    ++received;
+  };
+#ifdef SYNC_NATIVE
+  auto sub = agnocast::create_subscription<Cloud>(node.get(), "/output", qos,
+    [&](native_sync::Loan loan) { observe(native_sync::cpu_copy(std::move(loan))); });
+  native_sync::Executor executor;
+#else
+  auto sub = node->create_subscription<Cloud>("/output", qos, observe);
+  rclcpp::executors::SingleThreadedExecutor executor;
+#endif
+  executor.add_node(node);
+  std::thread spin([&] { executor.spin(); });
+  const auto deadline = Clock::now() + 90s;
+  while (!sub->get_publisher_count() || fanout->get_subscription_count() < 2 ||
+         !std::filesystem::exists(dir / "perception-ready")) {
+    check(Clock::now() < deadline, "sustained graph discovery timeout");
+    std::this_thread::sleep_for(10ms);
+  }
+  std::ofstream(dir / "sink-ready") << "ready";
+  while (!std::filesystem::exists(dir / "perception-done")) {
+    check(Clock::now() < deadline, "sustained perception timeout");
+    std::this_thread::sleep_for(10ms);
+  }
+  executor.cancel();
+  spin.join();
+  check(received == sets, "incomplete sustained cloud delivery");
+  std::cout << "verified sustained clouds=" << received << std::endl;
+  rclcpp::shutdown();
+  return 0;
+}
 int main(int argc, char ** argv)
 {
   rclcpp::init(argc, argv);
   auto node = std::make_shared<rclcpp::Node>("sync_fixture");
   const char * directory = std::getenv("PIPELINE_DIR");
   if (directory && std::getenv("PIPELINE_SOURCE")) return pipeline_source(node, directory);
+  if (directory && sustained) return sustained_sink(node, directory);
   const bool jitter = directory && std::getenv("SYNC_TOP_JITTER");
   const int expected_outputs = jitter ? sets + sets / 4 : sets;
   const int segment_points = directory ? points / 2 : points;
@@ -455,7 +516,7 @@ int main(int argc, char ** argv)
       verify_group(seq, 0, 2, "late_pair");
       verify_group(seq, 2, 1, "late_top");
     } else {
-      int members = seq % 2 ? 2 : 3;
+      int members = (seq % 2 || (omit_top && seq == 8)) ? 2 : 3;
       if (route_pilot && std::getenv("SYNC_INGRESS_FAULT")) {
         members = clouds.at(stamps[seq])->width / segment_points;
         check((members == 3 && seq % 2 == 0) || members == 2, "unexpected route pilot membership");

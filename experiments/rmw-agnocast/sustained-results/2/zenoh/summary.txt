@@ -1,0 +1,4 @@
+[INFO] [1795367951.676395071] [host_endpoint_manager]: Initialized shared memory registry for domain 0 on host paulsohn-tuf
+mode=zenoh frames=600 steady_tracks=596/596 cpu_driver_stream_s=1.850 cpu_children_s=9.573 scope_peak_bytes=537022464
+bag=600/600 source_stamps_and_sequences_verified
+Minimum host MemAvailable: 12588 MiB

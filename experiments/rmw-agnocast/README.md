@@ -13,6 +13,23 @@ seven RMW entry points inside the test executable. Cyclone supplies discovery,
 ordinary entities and an empty wakeup message for its wait set. A private native
 Agnocast topic carries the complete Autoware trajectory. The bridge is off.
 
+## Pilot support by application interface
+
+The native pilot requires the matching kernel module and allocator preload
+on each participating host and explicitly selected topic names. Selected
+native endpoints require C++ introspection and volatile KeepLast with positive
+depth. The [versioned native matching tests](#two-native-writers-and-one-reliable-path-reader)
+cover reliability compatibility and publisher identity on the tested profiles.
+
+| Application operation | Qualified behavior | Application or deployment requirement |
+|---|---|---|
+| Ordinary rclcpp publish and CPU take on PointCloud2 | The host-cloud route supports the ordinary ROS build; publication puts the payload into shared host storage and a CPU-vector reader materializes its own bytes. | Select the host-cloud route. The application can keep its CPU interface. |
+| Retain the received PointCloud2 payload | A read-only Buffer can share the publisher's host bytes across processes and outlive the callback. The tested synchronizer reads that view and still writes the merged output. | Typed subscription accepting the backend, retained-input adaptation and tested rclcpp/Buffer overlay. [Receiver view](#receiver-local-buffer-view-of-an-agnocast-point-payload) |
+| Fill a publisher loan | A publisher that allocates the point bytes inside the tested shared loan can transfer them without another private-payload copy. A completed private vector can require copying. | Borrow before filling and use the qualified host-allocation scope. [Publisher loan](#transfer-cpu-point-payloads-through-a-publisher-loan) |
+| Dynamic object types without a Buffer field | Native object loan and ordinary copy paths tested on selected examples including Path. The copy operation can use CDR. | Install matching C++ type support; retained callbacks require the loan-aware overlay. [Type support](#type-support-and-the-universe-decision) |
+| Other Buffer types or GPU-resident inputs | CPU fallback and GPU-to-host materialization tested for PointCloud2. The generic opt-in CDR route serializes Buffer data. Direct GPU descriptor import remains separate. | Choose a qualified backend for the application's actual storage. [Host fallback](#non-cpu-source-on-the-host-cloud-route) |
+| Ordinary ROS peers and unselected topics | Unselected endpoints use Cyclone. Configured native topics can reach a stock Cyclone reader or writer via an explicit supervised route. | Configure topics and directions for each route. [Supervision](#automatic-restart-of-an-explicitly-configured-bridge) |
+
 ## First experiment
 
 The Lyrical userspace contains ros-lyrical-rclcpp
@@ -2970,3 +2987,33 @@ The original source stamps and every transformed point agreed in both run
 orders. Use the explicit supervised routes for this same-host colcon pilot.
 
 [Latency and CPU](dual-route-results/timings.txt) · [Evidence and reproduction](../buffer/JOURNAL.md#2026-11-23--simultaneous-ingress-and-egress-on-the-launched-three-lidar-graph)
+
+### Sensor coverage through detection and tracking
+
+At group 8 the ingress interruption removed the top observation. A controlled
+two-landmark scene built from the synchronized segments produced the same
+detections and group-by-group track presence as deliberately removing that
+top segment locally. The shared landmark survived; the top-only track was
+absent from groups 8–9 and returned at group 10 with its previous ID. Two
+independent bag rounds gave the same result. [Per-frame evidence](coverage-replay-results/)
+
+### Sustained sensor-to-track comparison
+
+Six hundred acquisition groups in one minute exercise three Universe crops,
+the synchronizer, current-group validation, two downstream readers, a real
+SQLite recorder, Euclidean clustering and multi-object tracking. Full cloud
+payloads reach the fan-out readers; the downstream landmark scene is a
+controlled projection of selected channels. Read the complete and timeout
+rows separately. Stock denotes the ordinary ROS graph on rmw_agnocast with
+the retained-input synchronizer adaptation. The native arm uses bundled
+CIE and the previously tested short wait. [Paired results](sustained-results/summary.txt)
+
+**Bazel pilot milestone.** Package the validated same-host colcon profile as
+an opt-in deployment after reproducing its pinned prerequisites in a clean
+environment. Acceptance should preserve ordinary ROS source entry points,
+the explicit native topic list and retained-input adaptation, verified cloud
+and tracking sequences, bag completeness and loan release. Keep native
+Agnocast available for comparison. The sustained profile supports this
+bounded milestone; the complete-group p95 excursion and clean-host
+reproduction remain open for a wider default decision. The Bazel branch
+has no changes from this experiment.

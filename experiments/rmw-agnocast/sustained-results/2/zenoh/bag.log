@@ -1,0 +1,14 @@
+[INFO] [1795367952.045664378] [rosbag2_recorder]: Event publisher thread: Started
+[INFO] [1795367952.047532687] [rosbag2_recorder]: Starting recording to '/ws/build/sustained-2/zenoh/bag'
+[WARN] [1795367952.047567662] [rosbag2_recorder]: No input serialization format specified, using default rmw serialization format: 'cdr'.
+[INFO] [1795367952.049925686] [rosbag2_storage]: Opened database '/ws/build/sustained-2/zenoh/bag/0_bag_2026_11_22-17_19_12.db3' for READ_WRITE.
+[INFO] [1795367952.050740317] [rosbag2_recorder]: Listening for topics...
+[INFO] [1795367952.050762328] [rosbag2_recorder]: Recording...
+[INFO] [1795367952.050780322] [rosbag2_recorder]: Topics discovery started.
+[INFO] [1795367952.214972145] [host_endpoint_manager]: Attached to existing shared memory registry for domain 0
+[INFO] [1795367952.549064971] [rosbag2_recorder]: Subscribed to topic '/perception/cloud'
+[INFO] [1795367952.549117559] [rosbag2_recorder]: All requested topics are subscribed. Stopping discovery...
+[INFO] [1795367952.549124021] [rosbag2_recorder]: Topics discovery stopped.
+[INFO] [1795368014.372672712] [rosbag2_recorder]: Recording stopped
+[WARN] [1795368014.373820425] [rmw_zenoh_cpp]: unable to publish message since the zenoh session is closed
+[INFO] [1795368014.374798722] [rosbag2_recorder]: Event publisher thread: Exited

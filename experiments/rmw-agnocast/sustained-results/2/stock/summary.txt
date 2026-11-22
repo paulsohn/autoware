@@ -1,0 +1,3 @@
+mode=stock frames=600 steady_tracks=596/596 cpu_driver_stream_s=1.960 cpu_children_s=6.411 scope_peak_bytes=536879104
+bag=600/600 source_stamps_and_sequences_verified missing=[]
+Minimum host MemAvailable: 12768 MiB

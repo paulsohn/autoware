@@ -1,0 +1,6 @@
+native full_track_ms=4.606/5.433 partial_track_ms=43.748/44.605 full_cloud_ms=2.894/3.496 recorded=[600, 600] cpu_s=[9.12, 8.4] peak_MiB=[512.0, 512.2] sampled_anon_MiB=[(213.5, 216.3), (213.5, 216.3)]
+stock full_track_ms=4.976/6.838 partial_track_ms=43.954/45.233 full_cloud_ms=3.204/4.088 recorded=[600, 600] cpu_s=[8.51, 8.37] peak_MiB=[512.1, 512.0] sampled_anon_MiB=[(226.6, 229.7), (226.7, 229.7)]
+cyclone full_track_ms=6.689/8.360 partial_track_ms=44.988/46.027 full_cloud_ms=4.876/6.134 recorded=[600, 537] cpu_s=[10.67, 9.9] peak_MiB=[513.8, 513.5] sampled_anon_MiB=[(232.1, 235.1), (232.3, 257.1)]
+zenoh full_track_ms=5.316/7.492 partial_track_ms=44.398/47.005 full_cloud_ms=3.583/5.191 recorded=[600, 600] cpu_s=[10.97, 11.42] peak_MiB=[512.1, 512.1] sampled_anon_MiB=[(404.1, 412.1), (409.3, 415.1)]
+paired round=1 rmw/native full-track median/p95=1.072/1.097
+paired round=2 rmw/native full-track median/p95=1.088/2.556

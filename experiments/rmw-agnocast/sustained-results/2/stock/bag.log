@@ -1,0 +1,12 @@
+[INFO] [1795368115.607881913] [rosbag2_recorder]: Event publisher thread: Started
+[INFO] [1795368115.611475815] [rosbag2_recorder]: Starting recording to '/ws/build/sustained-2/stock/bag'
+[WARN] [1795368115.611508526] [rosbag2_recorder]: No input serialization format specified, using default rmw serialization format: 'cdr'.
+[INFO] [1795368115.613426598] [rosbag2_storage]: Opened database '/ws/build/sustained-2/stock/bag/0_bag_2026_11_22-17_21_55.db3' for READ_WRITE.
+[INFO] [1795368115.614120754] [rosbag2_recorder]: Listening for topics...
+[INFO] [1795368115.614136554] [rosbag2_recorder]: Recording...
+[INFO] [1795368115.614160979] [rosbag2_recorder]: Topics discovery started.
+[INFO] [1795368115.746882683] [rosbag2_recorder]: Subscribed to topic '/perception/cloud'
+[INFO] [1795368115.746912849] [rosbag2_recorder]: All requested topics are subscribed. Stopping discovery...
+[INFO] [1795368115.746918740] [rosbag2_recorder]: Topics discovery stopped.
+[INFO] [1795368177.856647582] [rosbag2_recorder]: Recording stopped
+[INFO] [1795368177.857323694] [rosbag2_recorder]: Event publisher thread: Exited

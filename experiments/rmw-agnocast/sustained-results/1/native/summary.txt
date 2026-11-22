@@ -1,0 +1,3 @@
+mode=native frames=600 steady_tracks=596/596 cpu_driver_stream_s=1.924 cpu_children_s=7.201 scope_peak_bytes=536875008
+bag=600/600 source_stamps_and_sequences_verified
+Minimum host MemAvailable: 13986 MiB

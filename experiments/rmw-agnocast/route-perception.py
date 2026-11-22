@@ -44,7 +44,7 @@ def project(cloud, seq, omit):
         for i in range(24 if sensor == 2 else 12):
             x, y, z, intensity, kind, channel = struct.unpack_from("<fffBBH", payload, 16*(segment+i))
             assert (x,y,z,intensity,kind,channel) == (
-                sensor*8192+i+(4 if sensor else 0), seq, sensor, seq, sensor, sensor*8192+i)
+                sensor*8192+i+(4 if sensor else 0), seq % 24, sensor, seq % 256, sensor, sensor*8192+i)
             target = i // 12
             landmarks.append((8.*target+.1*(i%4), .1*((i%12)//4), 1.))
     msg = PointCloud2(height=1,width=len(landmarks),point_step=12,row_step=12*len(landmarks),is_dense=True)
@@ -131,6 +131,23 @@ def main():
     conditions=dict(healthy=[project(c,i,False) for i,c in enumerate(good)],
                     omission=[project(c,i,i==8) for i,c in enumerate(good)],
                     ingress=[project(c,i,False) for i,c in enumerate(fault)])
+    if len(sys.argv) > 2:
+        omitted = Path(sys.argv[2])
+        actual = []
+        def segments(cloud):
+            stride = 16384 * 16
+            data = bytes(cloud.data)
+            return {data[k+13]: data[k:k+stride] for k in range(0,len(data),stride)}
+        for i in range(24):
+            cloud = deserialize_message((omitted/f"local-{i}").read_bytes(), PointCloud2)
+            expected = segments(good[i])
+            if i == 8:
+                del expected[2]
+            assert segments(cloud) == expected == segments(fault[i]), i
+            actual.append(project(cloud,i,False))
+        assert actual == conditions["omission"]
+        conditions["omission"] = actual
+        print("local source omission matches counterfactual projection", flush=True)
     assert conditions["omission"]==conditions["ingress"]
     rclpy.init()
     node=rclpy.create_node("coverage_replay")

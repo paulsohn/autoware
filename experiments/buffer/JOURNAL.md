@@ -3134,3 +3134,135 @@ with its previous UUID at group 10, about 200 ms after group 8. The healthy
 track remained present across these frames. Neither target switched identity.
 This result concerns these two established static landmarks and the deployed
 tracker parameters. [Per-frame results](../rmw-agnocast/coverage-replay-results/)
+
+A second control exercised the actual local-only graph. Set SYNC_OMIT_TOP=1
+for the earlier dual-route driver's local case and select a fresh directory.
+The source omits its top publication only at group 8. The local sink still
+checks every point and timeout status. Repeat the replay with the local
+capture directory as its final argument, e.g.
+`run-track-replay.sh coverage build/dual-A build/coverage-omit-A` under the
+same Lyrical guard. For each group compare the entire per-sensor payload
+segments of the local control with the fault bag, independent of segment
+order and absolute run time. Verified equality in both rounds. The physical
+source omission, replay omission and real bridge failure had the same
+group-level result and per-target tracking histories. Source graph samples
+and repeated tracker traces are in the same archive.
+
+## 2026-11-23 — Sustained three-LiDAR perception with concurrent full-cloud recording
+
+Use 600 acquisitions per run (one minute at 10 Hz, top at 5 Hz). Generate
+32,768 XYZI/return/channel points per active sensor on demand. Run the three
+real Universe crop filters and synchronizer including the 40 ms timeout.
+The sustained sink checks every transformed point against its original sensor,
+sequence and channel, then republishes the completed PointCloud2 on
+/perception/cloud. The ongoing cluster adapter and SQLite recorder both
+subscribe to that topic. Retain only the current output in the sink. This
+avoids the short verification fixture's unbounded-for-this-purpose map of
+completed groups. All cases verify 600 bag timestamps and sequences in
+record order after shutdown. Acquisition stamps and callback timing are
+also saved separately from the bag.
+
+Use the same shared and top-only synthetic landmarks established in the
+coverage replay. The adapter extracts small fixed patches from each existing
+sensor segment and projects them to the two rectangular landmarks. Real
+Universe Euclidean clustering and multi-object tracking run on the resulting
+scene concurrently with the LiDAR graph. Check detections against group
+membership; track both landmarks, checking within-run UUID continuity
+and output stamp. The Python adapter and its request/response callbacks
+contribute to end-to-end timing. Full-size clouds travel through crops,
+synchronization, the fan-out topic and recording. Clustering operates on the
+selected patches, not a full-density driving scene. All cases use the same
+shape fixture. The native arm converts the shared output into a local CPU
+message at the verifying sink. All arms forward an ordinary ROS cloud to
+the common observation/recording leg.
+
+Use the earlier native and non-native colcon overlays and the cluster/tracker
+builds from the preceding replay. The native implementation uses bundled
+CIE with the existing 1 ms wait control and Agnocast's native reliability
+behavior. The stock arm uses the retained-input synchronizer adaptation
+on rmw_agnocast with ordinary ROS executors; Cyclone and Zenoh use the same
+ordinary graph. SYNC_AUDIT retains only weak owners for the teardown checks.
+A first native preflight timed out: the executable came from the native
+overlay but its shared synchronizer implementation resolved from another
+overlay after a direct CMake install replaced a colcon environment hook list. Select the active universe_sync_benchmark package's own lib
+directory first in LD_LIBRARY_PATH. Confirm actual native callback creation
+and the final loan counters from the launched processes. This is an overlay
+selection correction in the experiment runner.
+
+From the worktree, with the Lyrical root, native kmod and the two previously
+configured colcon build directories, rebuild the changed fixture in each:
+
+```bash
+export LYRICAL_ROOT=$(cat build/agnocast-lyrical/universe-root)
+experiments/buffer/run-lyrical.sh bash -ec '
+ source build/agnocast-lyrical/install/local_setup.bash
+ source build/rmw-agnocast/load-install/local_setup.bash
+ source build/universe-sync/install/local_setup.bash
+ export CC=/usr/bin/clang-21 CXX=/usr/bin/clang++-21
+ for name in universe-pipeline universe-pipeline-native; do
+  export ENABLE_AGNOCAST=0
+  if [[ $name == *-native ]]; then export ENABLE_AGNOCAST=1; fi
+  colcon --log-base "build/$name/log" build --base-paths src/universe_sync_benchmark \
+    --executor sequential --build-base "build/$name/obj" --install-base "build/$name/install"
+ done'
+for round in 1 2; do
+ out="build/reproduce-sustained-$round"
+ mkdir "$out"
+ modes="native stock cyclone zenoh"
+ if [[ $round == 2 ]]; then modes="zenoh cyclone stock native"; fi
+ for mode in $modes; do
+  BUFFER_RUNTIME_ONLY=1 experiments/buffer/run-lyrical.sh timeout -k 6 140 \
+    bash experiments/rmw-agnocast/run-sustained.sh "$mode" "$out/$mode" >"$out/$mode.txt" 2>&1 || exit 1
+ done
+done
+```
+
+For each run exclude the first twenty acquisitions from the latency summary;
+report median and nearest-rank p95 separately for complete and timeout groups.
+Time from the left source stamp to the live track callback. CPU seconds sum
+child user/system time through shutdown and measured driver CPU during the
+stream, excluding bag readback. Sample scope anonymous bytes every 50 groups
+and at the last group; the whole-scope peak includes reclaimable recording
+file cache and is influenced by the 512 MiB cap. It is not an RSS measurement.
+
+Both trials for all four transports delivered 600/600 outputs to clustering
+and tracking. Both landmarks retained their IDs once established. Native
+Agnocast, rmw_agnocast and Zenoh also recorded 600/600 in both trials. The
+second Cyclone bag retained 537/600, missing 188–222 and 519–546, ordered
+and with valid retained content. The live perception reader received those
+groups. The recorder log did not identify a cause. The initial bag verifier
+used the row position as the expected sequence and stopped on a width
+mismatch at the first gap. Read back independently by looking up each bag
+header stamp in samples.csv, then verify actual sequence and width. Treat
+this trial as a failed recording check and retain it in the control matrix.
+A normal run with missing bag frames exits nonzero after reporting them.
+After such a run, continue the remaining independent modes in fresh dirs.
+The archived original failure and the readback result are both preserved.
+
+Complete-group source-to-track pooled median/p95 were 4.606/5.433 ms native,
+4.976/6.838 ms rmw_agnocast, 6.689/8.360 ms Cyclone and 5.316/7.492 ms
+Zenoh. Partial groups include the collector timeout and were 43.748/44.605
+ms native and 43.954/45.233 ms rmw_agnocast. The paired complete-group
+rmw/native ratios were 1.072/1.097 and 1.088/2.556. In the second stock
+run, the slowest 16 full groups all fell inside 222–254. In that window
+both source-to-cloud and subsequent perception latency contributed. There
+is no causal attribution to transport, scheduling or recording from these
+timestamps. The bag gap in the Cyclone arm occurred in a separate run.
+Whole-run CPU was 8.40–9.12 s native, 8.37–8.51 s rmw, 9.90–10.67 s
+Cyclone and 10.97–11.42 s Zenoh. After group 100 sampled anonymous memory
+was 213.5–216.3 MiB native and 226.6–229.7 MiB rmw. Lowest sampled host
+MemAvailable in the matrix was 12,588 MiB. All scopes used the same cap;
+file cache from recording brought peaks close to 512 MiB.
+
+Stock reported 1,500 input views and all 1,500 owners released in each run.
+Native also reported 1,500 input views, with 1,498 released at its converter
+thread audit and all 1,500 released at its native owner audit on teardown.
+Cyclone and Zenoh each reported 1,500 CPU inputs. These counters measure
+ownership and conversion at synchronizer input, not downstream copy count.
+See the [sample-level archive and summary](../rmw-agnocast/sustained-results/summary.txt).
+
+After rebuilding both fixture packages with colcon, the original stock and
+native launch modes each passed their 24-cloud and metadata regression
+with sustained mode disabled. Open an opt-in Bazel pilot milestone in the
+experimental roadmap; keep a clean-environment build and the variable tail
+visible as follow-up work. No Bazel files were changed.
