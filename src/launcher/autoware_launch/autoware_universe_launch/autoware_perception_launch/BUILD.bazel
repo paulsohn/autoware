@@ -1,0 +1,11 @@
+# Resource exports for model-path checks; no runnable perception closure yet.
+exports_files(
+    [
+        "launch/object_recognition/object_recognition_camera_lidar_radar.launch.xml",
+        "launch/object_recognition/object_recognition_camera_lidar_radar_serial.launch.xml",
+        "launch/traffic_light_recognition/traffic_light_detector_whole_image.launch.xml",
+        "launch/traffic_light_recognition/traffic_light_recognition_whole_image.launch.xml",
+        "package.xml",
+    ],
+    visibility = ["//visibility:public"],
+)

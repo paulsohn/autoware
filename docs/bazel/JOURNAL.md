@@ -17811,3 +17811,82 @@ and audit containers removed. Fast DDS, GPU inference, enabled Agnocast product
 execution, full Universe coverage, QEMU and production OTA remain outside this
 gate. Broader Universe adoption and the existing later-phase plans remain
 separate work. Targeted Python and whitespace checks pass; no pre-commit runs.
+
+## 2026-11-23: Phase 7.4 — Package-owned perception launcher exports
+
+Purpose: remove the metarepository root BUILD.bazel and its checkout-relative
+launcher fixture inventory before Phase 8. The immediate consumer only inspects
+YOLOX model-path substitutions and manifest dependencies. Define this task as
+the autoware_perception_launch file-export boundary; its complete runtime
+dependency closure is a later task. The current simulator uses simulated
+perception and does not cover those YOLOX defaults, so retain the existing
+focused launcher-path test.
+
+Inspect the perception launch package's original CMakeLists.txt and package.xml,
+the root yolox_launch_inputs filegroup, the existing autoware_launch exports,
+and bazel/tests/autoware_tensorrt_yolox/test_launch_paths.py. CMake installs the
+launch directory and declares no functional test suite; its manifest includes
+many perception execution dependencies. Reading four XMLs and a manifest does
+not execute their referenced nodes. There is no reason to acquire those node
+implementations or advertise an incomplete runtime index for this task.
+Prerequisites are the existing indexed YOLOX model module and launch-substitution
+Python providers used by the two existing resource suites.
+
+Add MODULE.bazel with module(name="autoware_perception_launch", version="0.0.0")
+inside src/launcher/autoware_launch/autoware_universe_launch/autoware_perception_launch.
+Its BUILD.bazel uses public exports_files for package.xml and these four files:
+
+- launch/object_recognition/object_recognition_camera_lidar_radar.launch.xml
+- launch/object_recognition/object_recognition_camera_lidar_radar_serial.launch.xml
+- launch/traffic_light_recognition/traffic_light_detector_whole_image.launch.xml
+- launch/traffic_light_recognition/traffic_light_recognition_whole_image.launch.xml
+
+Select the local module with an adjacent root bazel_dep(version="0.0.0") and
+local_path_override pair, before the top-level launcher selection. No registry
+version or component dependencies are needed for file exports. Move the
+yolox_launch_inputs filegroup to bazel/tests/BUILD.bazel, preserving its seven
+files: five new @autoware_perception_launch labels plus the existing traffic-
+light XML and manifest from @autoware_launch. Change the test's data and
+rlocationpaths references to :yolox_launch_inputs, then delete root BUILD.bazel.
+Original XMLs, manifests, tests, implementation and runtime composition stay
+unchanged. No replacement root marker is required by the exercised targets.
+
+This separates file ownership from consumer selection. A component exports
+its own resources; a test composes logical module labels under bazel/. An
+exports-only module is a usable source boundary, but does not establish that
+its launch files can run. Add ament_index and actual runtime dependencies when
+a selected executable profile needs them, with that profile's complete gate.
+The convention is linked from the adoption checklist and described in
+[launch resource composition](DEVELOPING.md#launch-resource-composition).
+
+Run the following commands sequentially from the metarepository, with no root
+BUILD.bazel present:
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel query 'labels(srcs, //bazel/tests:yolox_launch_inputs)'
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_output=errors //bazel/tests:yolox_launch_paths_test \
+  //bazel/tests:yolox_model_resources_test
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel build --config=runtime --config=no-agnocast \
+  //bazel/runtime:planning_simulator
+git diff --check
+```
+
+The query returns exactly seven file labels from the two owning modules, with
+no checkout-relative fixture paths. Both test targets pass all four cases:
+actual launcher substitutions resolve to existing repository-indexed model
+files, both launcher manifests declare the model dependency, and the model
+resource/hash and relocated-index checks remain successful. The test command
+takes 32.5 s; both tests execute. The unchanged simulator builds successfully
+in 39.4 s using cached application actions and updated repository mappings.
+Whitespace checks pass. No missing-root-package failure occurs, despite the
+deleted file's historical comment about external extensions requiring it.
+
+Phase 7.4 is complete for this resource boundary. Full perception launch,
+inference and its dependency closure remain unintegrated by this task. Reuse
+the prior passing simulator behavior/distribution results for unchanged code
+and runtime resources; no GUI, OCI, GPU, enabled-Agnocast or Fast DDS rerun is
+needed for these file-label changes. No pre-commit is run. Phase 8 is not started.

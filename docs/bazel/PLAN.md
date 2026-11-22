@@ -57,6 +57,8 @@ only when your current target demonstrates the need.
   [Evidence: tests outside component packages](JOURNAL.md#2026-11-17-keep-added-integration-tests-outside-component-packages).
 - [ ] Separate component ownership from product-level composition.
   [Dependency layers and root selection](DEVELOPING.md#repository-dependency-layers);
+  [Package-owned file exports](DEVELOPING.md#launch-resource-composition);
+  [evidence: launcher resource boundary](JOURNAL.md#2026-11-23-phase-74--package-owned-perception-launcher-exports);
   [evidence: reusable dependency relocation](JOURNAL.md#2026-11-18-reusable-dependency-layers-under-third_party).
   [Deployment-selectable asset convention](../../assets/README.md);
   [evidence: map relocation](JOURNAL.md#2026-11-21-deployment-asset-boundary-and-map-provider-relocation);
@@ -1674,6 +1676,14 @@ Complete each distribution boundary before expanding the application closure.
    OCI distributions each pass the complete startup/driving/shutdown gate.
    Scope is the selected sample-vehicle, rule-based CPU/Cyclone DDS profile
    with Agnocast disabled; this does not establish full Universe coverage.
+4. **7.4 — Package-owned launcher resource exports (complete, 2026-11-23).**
+   The local autoware_perception_launch module exports the four selected YOLOX
+   launch XMLs and manifest. The existing model-path fixture collection lives
+   under bazel/tests/ and uses owning-module labels; root BUILD.bazel is removed.
+   Both resource suites pass all four cases, and the unchanged simulator builds
+   without a root package. Scope is file exports only, with no perception
+   :ament_index or claim of a complete perception runtime.
+   [Integration pattern and gate](JOURNAL.md#2026-11-23-phase-74--package-owned-perception-launcher-exports).
 
 Phase 7.2 task boundaries:
 

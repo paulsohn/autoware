@@ -799,6 +799,16 @@ seeking it also changes the child's write offset and can corrupt captured output
 
 ## Launch resource composition
 
+For file-only inspection, export the required XML/configuration files and
+manifest from their owning source package with exports_files. A package-local
+MODULE.bazel can expose that resource-only boundary without acquiring every
+node referenced by its launch files. Consumers under bazel/ select logical
+module labels and compose their fixtures there; avoid checkout-relative src/
+paths in a metarepository filegroup. The root selects the local module override.
+For example, @autoware_perception_launch currently exports only the YOLOX
+launcher-check inputs. It has no runtime :ament_index target; adding that
+target requires its selected runtime dependency closure and launch gate.
+
 Keep ROS executable names stable even when Bazel target labels differ. Use
 register_ament_files renames under lib/<package> to expose the names declared by
 original launch files/CMake. Rootpath-based binary checks do not verify this
