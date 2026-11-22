@@ -1,0 +1,49 @@
+load("@qt//:qt.bzl", "qt_cc_test")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = [
+        "@ament_index_cpp//:ament_index_cpp",
+        "@pluginlib//:pluginlib",
+        "@rclcpp//:rclcpp",
+        "@rviz_common//:rviz_common",
+        "@rosdistro//cc:tinyxml2",
+    ],
+)
+
+[
+    qt_cc_test(
+        name = package + "_factories_test",
+        srcs = ["factories_test.cpp"],
+        data = [
+            "@" + package + "//:ament_index",
+            "@rviz_common//:ament_index",
+            "//bazel/runtime:native_runtime",
+        ],
+        dynamic_deps = [":runtime_dynamic_deps"],
+        env_inherit = ["DISPLAY", "XAUTHORITY", "XDG_RUNTIME_DIR"],
+        tags = ["no-remote", "no-sandbox", "requires-display"],
+        env = {
+            "AMENT_PREFIX_PATH": ".",
+            "ENABLE_AGNOCAST": "0",
+            "LD_LIBRARY_PATH": "lib",
+            "QT_QPA_PLATFORM": "offscreen",
+            "ROS_DOMAIN_ID": "109",
+            "RVIZ_PLUGIN_PACKAGE": package,
+            "RVIZ_PLUGIN_XML": xml,
+        },
+        deps = [
+            "@ament_index_cpp//:ament_index_cpp_library",
+            "@googletest//:gtest",
+            "@pluginlib//:pluginlib_library",
+            "@qtbase//:widgets",
+            "@rclcpp//:rclcpp_library",
+            "@rviz_common//:rviz_common_library",
+            "@rosdistro//cc:tinyxml2_library",
+        ],
+    )
+    for package, xml in [
+        ("autoware_perception_rviz_plugin", "plugins_description.xml"),
+    ]
+]
