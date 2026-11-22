@@ -1,0 +1,14 @@
+load("@rules_python//python:defs.bzl", "py_test")
+
+exports_files(["test_standalone.py"])
+
+py_test(
+    name = "map_hash_test",
+    srcs = ["test_map_hash.py"],
+    main = "test_map_hash.py",
+    data = ["@autoware_map_loader//:ament_index", "@autoware_map_asset//:ament_index"],
+    env = {"ENABLE_AGNOCAST": "0", "LD_LIBRARY_PATH": "lib", "ROS_DOMAIN_ID": "104"},
+    precompile = "disabled",
+    tags = ["no-remote", "no-sandbox"],
+    deps = ["@ament_index_python", "@rclpy", "@tier4_external_api_msgs//:py"],
+)

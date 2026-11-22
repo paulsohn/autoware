@@ -726,7 +726,7 @@ py_test(
 [
     py_test(
         name = "map_loader_" + mode + "_" + backend + "_test",
-        srcs = ["autoware_map_loader/test_standalone.py"],
+        srcs = ["//bazel/tests/autoware_map_loader:test_standalone.py"],
         args = [
             "$(rootpath @autoware_map_loader//:" + executable + ")",
             "$(rootpath @autoware_map_loader//:test/data/test_map.osm)",
@@ -740,10 +740,11 @@ py_test(
             "@autoware_map_loader//:test/data/test_map.osm",
         ],
         env = {
+            "LD_LIBRARY_PATH": "lib",
             "AGNOCAST_TEST_NO_PRELOAD": "1",
             "AUTOWARE_TEST_AGNOCAST": enabled,
         },
-        main = "autoware_map_loader/test_standalone.py",
+        main = "//bazel/tests/autoware_map_loader:test_standalone.py",
         precompile = "disabled",
         tags = [
             "no-remote",

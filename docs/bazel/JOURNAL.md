@@ -16197,3 +16197,49 @@ failures/skips. Native DDS processes are not needed for this resource-only gate;
 Cyclone/no-Agnocast is selected for subsequent launch work. No Fast DDS, physical
 hardware, full simulator startup or RViz result is claimed. Continue to original
 launch composition and its actual runtime prerequisites.
+
+## 2026-11-22: Phase 7.3.3 — Installed map hash and XML service
+
+Purpose: satisfy the original map launch's autoware_map_loader/map_hash_generator
+entrypoint. Inspect CMake's install(PROGRAMS), the original suffixless Python
+script and imports, twelve registered C++ tests and two original launch suites.
+The previous index has both native loaders but no hash executable. Preserve the
+implementation and add build support rather than substituting a root script.
+
+Declare a py_binary with rclpy and the local tier4_external_api_msgs provider,
+and register its launcher in the existing owned executable/index aggregate.
+rules_python rejects a suffixless main with "main must end in '.py'". Use
+bazel_skylib copy_file with allow_symlink=True to declare a .py output alias for
+the unchanged source, keeping the installed executable name map_hash_generator.
+Pin the already selected skylib 1.9.2 at root and declare the component's tool
+requirement; no host pip or source filename change is required.
+
+The root behavior test launches that installed executable with paths resolved
+from the independent autoware_map_asset index. Require retained lanelet/PCD
+SHA-256 values matching the actual official files, successful GetTextFile status,
+identical lanelet XML and clean SIGINT exit. Newly introduced test-package
+boundaries require existing parent srcs/main labels to reference their exported
+subpackage file explicitly. Running the two affected standalone fixtures in a
+clean environment also exposes missing LD_LIBRARY_PATH=lib: introspection dlopen
+cannot find std_msgs. Set the declared runfiles loader directory in their rule,
+not a host library path; preserve the fixture implementation.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast \
+  --local_test_jobs=1 --test_output=errors @autoware_map_loader//... \
+  //bazel/tests:map_loader_lanelet_launch_test \
+  //bazel/tests:map_loader_pointcloud_launch_test \
+  //bazel/tests:map_loader_lanelet_rclcpp_test \
+  //bazel/tests:map_loader_pointcloud_rclcpp_test \
+  //bazel/tests/autoware_map_loader:map_hash_test
+python3 -m flake8 --max-line-length=150 bazel/tests/autoware_map_loader/test_map_hash.py
+git diff --check
+```
+
+All seventeen targets pass in 5.3 seconds, reusing unchanged results: 55 original
+C++ cases, four original launch cases, two affected standalone checks and one
+installed hash/XML check (62 cases). No failures/skips. CPU/Cyclone DDS,
+ENABLE_AGNOCAST=0, Python 3.14.4 and LLVM/libc++ 21.1.8. No Fast DDS, enabled
+Agnocast runtime, full simulator, RViz or older-ROS/colcon result is claimed.
+Continue resolving the actual map/vehicle/planning launch dependency closure.

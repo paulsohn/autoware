@@ -2,6 +2,7 @@ module(name = "autoware_bazel")
 
 # Registry dependencies, with prerequisites before consumers where known.
 bazel_dep(name = "platforms", version = "1.1.0")
+bazel_dep(name = "bazel_skylib", version = "1.9.2")
 bazel_dep(name = "rules_cc", version = "0.2.26.rcr.0")
 bazel_dep(name = "rules_cuda", version = "0.4.0")
 bazel_dep(name = "googletest", version = "1.18.0.bcr.1")

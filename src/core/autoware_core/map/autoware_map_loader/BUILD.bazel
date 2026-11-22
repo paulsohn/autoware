@@ -1,3 +1,5 @@
+load("@bazel_skylib//rules:copy_file.bzl", "copy_file")
+load("@rules_python//python:defs.bzl", "py_binary")
 load("@autoware_agnocast_wrapper//:defs.bzl", "autoware_agnocast_node")
 load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
 load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
@@ -78,9 +80,24 @@ cc_shared_library(
     ]
 ]
 
+copy_file(
+    name = "map_hash_source",
+    src = "script/map_hash_generator",
+    out = "map_hash_generator.py",
+    allow_symlink = True,
+)
+
+py_binary(
+    name = "map_hash_generator",
+    srcs = [":map_hash_generator.py"],
+    main = ":map_hash_generator.py",
+    deps = ["@rclpy", "@tier4_external_api_msgs//:py"],
+)
+
 register_ament_files(
     name = "node_executables",
     files = [
+        ":map_hash_generator",
         ":autoware_lanelet2_map_loader",
         ":autoware_pointcloud_map_loader",
     ],

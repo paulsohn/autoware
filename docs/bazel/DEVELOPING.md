@@ -931,6 +931,11 @@ launcher rather than flattening all DefaultInfo files to an executable name.
 Registration must forward the executable's default runfiles as well as its
 installed symlink. Validate the indexed entrypoint with a real subprocess;
 build-tree execution can hide a broken launcher or missing imports/data.
+For an original suffixless Python script, rules_python still requires a .py main.
+Use a declared copy_file output alias (allow_symlink=True) as py_binary's source/
+main, then register the executable under its original installed name. Keep the
+original source filename and implementation unchanged.
+
 
 Keep generated standalone mains' runtime providers in their helper package's
 index too. A dependency used by a main can be absent from its component library's
