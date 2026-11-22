@@ -17649,3 +17649,43 @@ following OCI gate, not a claim supplied by this host-native run. GUI mouse
 interaction remains separate. No Fast DDS, enabled Agnocast, GPU inference,
 new service supervisor or QEMU execution is claimed. Targeted Python, shell
 syntax and whitespace checks pass; no pre-commit is run.
+
+## 2026-11-23: Phase 7.3.4 — Original RViz lane-driving interaction
+
+Purpose: demonstrate the actual documented GUI workflow in addition to typed
+ROS-interface tests. Build/run the existing planning_simulator target using the
+[developer guide's commands](DEVELOPING.md#universe-planning-simulator), with
+rviz:=true, sample vehicle/sensors, CPU/Cyclone DDS and ENABLE_AGNOCAST=0. An
+unlocked authenticated desktop and compatible OpenGL driver are prerequisites.
+The console is redirected to a log; no launcher/node output behavior is changed.
+
+Use the original TopDownOrtho view, viewer target frame, Scale 10 and Angle 0.
+On the slanted straight road southwest of the central junction, select 2D Pose
+Estimate and drag northeast along the lane. Wait for initialized localization;
+select 2D Goal Pose about 17 m ahead on the same road, still before the junction,
+and drag in the same direction. Wait for Routing Set and available Auto, then
+click Auto in the original AutowareStatePanel. These are the actual toolbar and
+panel controls, not a replacement ROS-only GUI demo.
+
+The accepted mouse placement is approximately start
+(3717.256592, 73720.820312, yaw 0.482509), goal
+(3731.956543, 73728.523438, yaw 0.481115). The original pose adaptor fits the start
+height to 19.3063 m. The mission planner accepts two lane segments on the pinned
+road. API state changes WaitingForRoute → Planning → WaitingForEngage → Driving
+→ ArrivedGoal; Driving to ArrivedGoal takes about 12 s. The vehicle visibly moves
+along the trajectory, and the final panel shows Routing Arrived, Motion Stopped
+and 0 km/h. The recorded [arrival screenshot](images/planning-simulator-arrived.png)
+contains only the application. Exact motion/goal tolerances remain enforced by
+the repeatable typed/native-artifact gate, not inferred from screenshot pixels.
+
+For pointer automation, first verify actual absolute screen coordinates and the
+current window/view geometry. An uncalibrated relative-motion request selects
+unintended road points and the planner correctly rejects an unreachable route.
+Correct the test input and reset the view; no source or safety-policy change is
+needed. Physical mouse interaction follows the same documented controls.
+
+Send Ctrl+C to the launch terminal after arrival. All 57 processes, including
+RViz, exit cleanly; all 41 configured components loaded, no process dies, and the
+runner returns zero. The GUI gate is complete. Reuse the unchanged passing
+factory/module tests; only the isolated OCI gate remains in Phase 7.3.4.
+No additional middleware, inference, traffic-light scenario or QEMU claim.

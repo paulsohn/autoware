@@ -911,10 +911,13 @@ rule-based profile. For manual lane driving:
 
 1. Wait for the point-cloud/vector map and AutowareStatePanel to load.
 2. Select **2D Pose Estimate**. Click a lane and drag along its direction;
-   release and wait for Localization to become Initialized. The original
+   release and wait for Localization to become Initialized. For the first
+   example, use the slanted straight road southwest of the central junction
+   and drag northeast along it. The original
    adaptor fits the pose height to the indexed map.
 3. Select **2D Goal Pose**. Click a reachable lane ahead, drag along the lane
-   direction and release. Wait for a route/trajectory and available **Auto**.
+   direction and release. Keep the first goal about 17 m ahead and before the
+   junction. Wait for a route/trajectory and available **Auto**.
 4. Click **Auto** in AutowareStatePanel. Observe the vehicle move and stop at
    its goal. Press **Ctrl+C in the launching terminal** to stop all nodes;
    the original launch can respawn RViz if only its window is closed.
@@ -926,8 +929,11 @@ counterclockwise from map +X, on lanelets 9102/9540. The typed equivalent is
 //bazel/tests/universe_launch:lane_driving_test. It initializes through the
 same /initialpose adaptor, sets a route through the public API, requests Auto,
 and requires actual displacement, autonomous control, bounded arrival and stop.
-GUI startup/rendering and this typed gate are validated; the mouse interaction
-check remains an explicit Phase 7.3.4 acceptance item.
+The original GUI pose/goal/Auto workflow and this typed gate are validated.
+Use **Clear Route** before selecting another route. The expected arrival state
+is shown below; camera placement and mouse precision can differ.
+
+![Original RViz after lane-driving arrival](images/planning-simulator-arrived.png)
 
 For a headless session, use the same target with rviz:=false. The target supplies
 original launch/config resources, real default rule-based planners/safety nodes,
