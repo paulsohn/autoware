@@ -883,21 +883,59 @@ success does not replace the product's real rendering and interaction check.
 
 ## Universe planning simulator
 
-The supported original simulator profile uses sample_vehicle/sample_sensor_kit,
-CPU/Cyclone DDS, Agnocast off and rviz=false. Run it without sourcing host ROS:
+The original simulator product uses sample_vehicle/sample_sensor_kit,
+CPU/Cyclone DDS and Agnocast off. Run these commands from the repository root;
+no host ROS environment needs to be sourced. Build first:
 
 ```sh
 env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
-  bazel run --config=runtime --config=no-agnocast \
-  //bazel/runtime:planning_simulator -- rviz:=false
+  bazel build --config=runtime --config=no-agnocast \
+  //bazel/runtime:planning_simulator
 ```
 
-The target supplies original launch/config resources, real default rule-based
-planners/safety nodes, native SDK runtime files and caller-selected sample model
-indexes. The map resolves through autoware_map_asset; no map_path/data_path or
-absolute checkout path is needed. The wrapper and YAML/XML frontends belong to
-the actual runnable target's Python dependencies. A richer test runner's imports
-must not hide missing product dependencies; verify the runnable command too.
+Then launch the original RViz window, keeping waiting messages in a log:
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  DISPLAY="$DISPLAY" XAUTHORITY="${XAUTHORITY:-}" \
+  XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-}" ROS_DOMAIN_ID=108 \
+  bazel run --config=runtime --config=no-agnocast \
+  //bazel/runtime:planning_simulator -- rviz:=true \
+  > "${TMPDIR:-/tmp}/autoware-planning-simulator.log" 2>&1
+```
+
+Keep that terminal running. If no window appears, inspect the last 80 lines of
+that log. The desktop must expose an authenticated X11/XWayland display and a
+compatible OpenGL driver. The camera panel displays No Image in this simulated
+rule-based profile. For manual lane driving:
+
+1. Wait for the point-cloud/vector map and AutowareStatePanel to load.
+2. Select **2D Pose Estimate**. Click a lane and drag along its direction;
+   release and wait for Localization to become Initialized. The original
+   adaptor fits the pose height to the indexed map.
+3. Select **2D Goal Pose**. Click a reachable lane ahead, drag along the lane
+   direction and release. Wait for a route/trajectory and available **Auto**.
+4. Click **Auto** in AutowareStatePanel. Observe the vehicle move and stop at
+   its goal. Press **Ctrl+C in the launching terminal** to stop all nodes;
+   the original launch can respawn RViz if only its window is closed.
+
+The repeatable short scenario is recorded in
+bazel/tests/planning_simulator_resources/scenario.yaml: start
+(3717.2395, 73720.8438), goal (3732.0, 73728.6), heading about 28 degrees
+counterclockwise from map +X, on lanelets 9102/9540. The typed equivalent is
+//bazel/tests/universe_launch:lane_driving_test. It initializes through the
+same /initialpose adaptor, sets a route through the public API, requests Auto,
+and requires actual displacement, autonomous control, bounded arrival and stop.
+GUI startup/rendering and this typed gate are validated; the mouse interaction
+check remains an explicit Phase 7.3.4 acceptance item.
+
+For a headless session, use the same target with rviz:=false. The target supplies
+original launch/config resources, real default rule-based planners/safety nodes,
+native SDK runtime files and caller-selected sample model indexes. The map
+resolves through autoware_map_asset; no map_path/data_path or absolute checkout
+path is needed. Root planning_simulator_rviz composes the selected original
+plugin indexes. The wrapper and YAML/XML frontends belong to the actual runnable
+target's Python dependencies; test-only imports must not hide missing inputs.
 
 The shared root configuration in bazel/runtime/cyclonedds.bzl sets
 MaxAutoParticipantIndex=119. RMW's default of 32 is insufficient for this
@@ -907,12 +945,11 @@ select and validate its own domain/discovery configuration.
 
 Run //bazel/tests/universe_launch:all with the same build configs and
 --local_test_jobs=1 --test_output=errors when changing this product composition.
-It exercises the original seven subsystem launches and full headless XML,
-component/standalone readiness, retained map/vehicle/diagnostic resources, API
-version and clean shutdown. Routine component work keeps its own scoped suite.
-This profile establishes startup; GUI/driving and the expanded packaged runtime
-are separate acceptance gates. Existing core distribution targets retain their
-own scope and do not package this new simulator target automatically.
+It exercises the original seven subsystem launches, full headless XML and the
+closed-loop driving case. Component/standalone readiness, retained map/vehicle/
+diagnostic resources, API version and clean shutdown remain part of the gate.
+Routine component work keeps its own scoped suite. Existing core distribution
+products retain their own scope; they do not package this simulator automatically.
 
 ## Original test source layout
 

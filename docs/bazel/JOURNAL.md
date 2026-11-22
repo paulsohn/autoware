@@ -17510,3 +17510,76 @@ Verify bazel query '//:all' and bazel test --config=runtime --config=no-agnocast
 The query succeeds; both existing model-path/dependency cases pass. The combined
 29-target gate reuses that result. This is build/resource-label validation;
 no GPU execution or model inference is required for unchanged resource content.
+
+## 2026-11-22: Phase 7.3.4 — Original RViz runtime and typed lane driving
+
+Purpose: compose the original RViz configuration and prove a complete short
+lane-driving loop through the original simulator launch. Inspect autoware.rviz,
+its panels/displays/tools, the source-owned plugin XMLs and the fixed official
+map scenario before selecting providers. The fourteen package/source boundaries
+above record their individual inputs and complete factory/resource checks;
+[the owned Qt/RViz pattern](DEVELOPING.md#rviz-plugin-packages) is the reusable
+build convention. Acquisition and compatibility corrections remain separate.
+
+Root bazel/runtime:planning_simulator_rviz collects the fourteen concrete plugin
+indexes plus the generic third_party/rviz2 executable adapter. Add that caller-
+owned optional UI composition to planning_simulator's data. Preserve the source
+entrypoint/configuration and existing source-module ownership: no component
+points back to root product labels. The selected profile is CPU/Cyclone DDS,
+ENABLE_AGNOCAST=0, default rule-based planners and original safety nodes.
+
+The factory probe parses each original XML and constructs/destroys/unloads all
+forty exported Display/Panel/Tool classes across fourteen package targets. SDK
+consumers own the common/default-plugin indexes they need, including indexed
+transport resources. Do not substitute CMake build-tool exports for that runtime
+closure. Constructors which query X11 require authenticated DISPLAY/XAUTHORITY
+even when Qt uses its offscreen platform; the initial missing-display crashes
+were a test prerequisite error, not evidence for changing those constructors.
+
+The actual product opens the original window with map, panels, overlays and
+OpenGL 4.6. Its successful startup/shutdown check observes 57 processes, 41
+loaded components, all 57 clean SIGINT exits and runner status zero. The desktop
+GLX entry records the diagnosed GNU-runtime ABI correction. Redirect output to
+a log for an interactive session; do not change original node output behavior.
+The developer guide gives copy/paste build/GUI commands and pose/goal/Auto steps.
+
+Add a typed launch test under bazel/tests/universe_launch using the same original
+headless launch and scenario.yaml. Wait for the official vector/cloud maps and
+the full 19-component AD API, publish /initialpose, require initialized localization
+and matching odometry, then wait for routing UNSET before SetRoutePoints.
+Discovering the public service alone does not establish its backend readiness;
+early calls otherwise report Initialize service is not ready or The route is
+already set while routing is still UNKNOWN. No arbitrary startup sleep is needed.
+
+Require a real planned trajectory and available autonomous mode before calling
+ChangeOperationMode. Confirm autonomous control is enabled and transition has
+finished; then require ARRIVED, goal error below 2 m and absolute speed below
+0.1 m/s within 180 s. Require displacement above 5 m and peak speed above
+0.2 m/s. Preserve default safety behavior and assert every launched process exits
+zero. This exposes the collision-checker ODR defect fixed in its separate source
+boundary; do not bypass a failing safety node to obtain a motion demonstration.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  DISPLAY="$DISPLAY" XAUTHORITY="$XAUTHORITY" XDG_RUNTIME_DIR="$XDG_RUNTIME_DIR" \
+  bazel test --keep_going --config=runtime --config=no-agnocast \
+  --local_test_jobs=1 --test_output=errors //bazel/tests/rviz_plugins:all
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast \
+  --local_test_jobs=1 --test_output=errors \
+  //bazel/tests/universe_launch:lane_driving_test
+```
+
+The affected module gates pass all 29 targets: fourteen RViz factory targets,
+twelve validator/wire/runtime/driving targets, both graphics tests and the
+existing launcher-model check. Passing unchanged results are reused. The latest
+complete original-launch sweep passes all nine targets/nineteen cases, including
+the full startup case reused by the driving fixture. Driving completes in about
+29 s: 16.70 m displacement, 3.60 m/s peak speed, 0.03 m goal error, stopped, and
+clean shutdown. The earlier passing run measures 0.04 m error; recorded
+tolerances, rather than bit-identical timing, define the gate.
+
+GUI startup/rendering and typed driving are established. The actual GUI mouse
+interaction and expanded native/OCI distribution acceptance remain separate
+Phase 7.3.4 gates; no overall phase completion, Fast DDS, enabled Agnocast,
+GPU inference or additional driving scenario is claimed by this boundary.

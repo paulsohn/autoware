@@ -34,12 +34,35 @@ launch_ros_binary(
     deps = ["@autoware_agnocast_wrapper//:python"],
 )
 
+# Caller-owned UI composition for the original simulator RViz configuration.
+filegroup(
+    name = "planning_simulator_rviz",
+    srcs = [
+        "//third_party/rviz2:runtime",
+        "@autoware_localization_rviz_plugin//:ament_index",
+        "@autoware_mission_details_overlay_rviz_plugin//:ament_index",
+        "@autoware_overlay_rviz_plugin//:ament_index",
+        "@autoware_perception_rviz_plugin//:ament_index",
+        "@autoware_planning_rviz_plugin//:ament_index",
+        "@autoware_polar_grid//:ament_index",
+        "@autoware_string_stamped_rviz_plugin//:ament_index",
+        "@tier4_adapi_rviz_plugin//:ament_index",
+        "@tier4_control_mode_rviz_plugin//:ament_index",
+        "@tier4_datetime_rviz_plugin//:ament_index",
+        "@tier4_dummy_object_rviz_plugin//:ament_index",
+        "@tier4_planning_factor_rviz_plugin//:ament_index",
+        "@tier4_state_rviz_plugin//:ament_index",
+        "@tier4_vehicle_rviz_plugin//:ament_index",
+    ],
+)
+
 # Original Universe entrypoint; callers select rviz:=false for the headless profile.
 launch_ros_binary(
     name = "planning_simulator",
     src = "@autoware_launch//:launch/planning_simulator.launch.xml",
     data = [
         ":native_runtime",
+        ":planning_simulator_rviz",
         "@autoware_launch//:ament_index",
         "@sample_vehicle_description//:ament_index",
         "@sample_vehicle_launch//:ament_index",

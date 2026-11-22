@@ -1893,10 +1893,18 @@ Phase 7.3 task boundaries (selected 2026-11-21):
   not autonomous driving. RViz, route/engagement/motion and expanded distribution
   acceptance remain 7.3.4; no Fast DDS or enabled-Agnocast product result is claimed.
   [Exact product gate and remaining scope](JOURNAL.md#2026-11-22-phase-733--original-headless-planning-simulator-product).
-- **7.3.4 — Lane-driving acceptance.** Demonstrate the original RViz workflow
-  and a repeatable equivalent headless case, including initial pose, route,
-  autonomous engagement, vehicle motion, bounded goal completion and clean
-  shutdown. Retain the runtime closure/packaging checks for the expanded graph.
+- **7.3.4 — Lane-driving acceptance (in progress).** Complete the original RViz
+  workflow and its equivalent headless case, then expanded native/OCI runtime
+  closure acceptance. The fourteen local RViz plugin modules pass all forty
+  exported factories; the original window renders the map/panels/overlays with
+  OpenGL 4.6 and all 57 processes exit cleanly. Typed pose/route/Auto driving
+  passes with 16.70 m displacement, 3.60 m/s peak speed and 0.03 m final error,
+  arrival, stop and clean shutdown. The combined affected module gate passes
+  29 targets. Source compatibility and collision-type fixes are separate from
+  package BUILD definitions. Remaining gates: actual GUI mouse interaction,
+  expanded archive extraction and isolated runtime behavior. Routine evidence
+  stays CPU/Cyclone DDS with Agnocast off; Fast DDS requires fresh approval.
+  [Product composition and exact driving gate](JOURNAL.md#2026-11-22-phase-734--original-rviz-runtime-and-typed-lane-driving).
 
 The version 1.4.0 tutorial and the current
 [lane-driving page](https://docs.autoware.org/main/simulation/planning-simulation/lane-driving/)

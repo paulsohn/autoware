@@ -1,5 +1,5 @@
-# A short lane-driving acceptance candidate on the pinned official map.
-# Route feasibility is checked here; autonomous motion is a later gate.
+# Short lane-driving acceptance on the pinned official map.
+# Used by route feasibility and original-launch driving/shutdown gates.
 frame_id: map
 map_package: autoware_map_asset
 vehicle_model: sample_vehicle

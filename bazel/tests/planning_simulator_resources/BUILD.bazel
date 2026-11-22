@@ -3,6 +3,8 @@ load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
 load("@rules_cc//cc:defs.bzl", "cc_test")
 load("@rules_python//python:defs.bzl", "py_test")
 
+exports_files(["scenario.yaml"])
+
 py_test(
     name = "resources_test",
     srcs = ["resources_test.py"],

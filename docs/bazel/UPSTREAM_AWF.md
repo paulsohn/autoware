@@ -1594,3 +1594,65 @@ No older-ROS verification or new submission is claimed.
   goal with 0.04 m error and stops. See the
   [exact module gate](JOURNAL.md#2026-11-22-phase-734--distinct-validator-collision-checker-debug-types).
   Upstream CMake/GCC, Humble/Jazzy and enabled Agnocast were not run.
+
+## RViz Qt 6, TF and marker-duration caller compatibility
+
+- [ ] Associate upstream: scoped Qt6/rviz, QEnterEvent, MarkerCommon and Lyrical
+  PR searches in autoware_universe/autoware_rviz_plugins find no matching patch
+  on 2026-11-22. [Universe#13620](https://github.com/autowarefoundation/autoware_universe/issues/13620)
+  explicitly tracks Qt6 support for the RViz packages; it is transition context,
+  not a reviewed source patch for these callers. Not submitted.
+- Inputs: autoware_rviz_plugins 0.6.0 at
+  b3d59795932ee08cad52de5f1981cb8ef9d6d37c, with the separately acquired datetime
+  provider at c9b9aa3449a999ec2285b1421fb625e0e95b01d1; Universe 0.53.2 at
+  62a5739d4d5a34f27f6aa15702c8ff59fa4d862c. Ubuntu 24.04,
+  LLVM/libc++ 21.1.8, Qt 6.10.2, RViz 15.2.6 and TF 0.45.10.
+
+| Local source commit | Package and demonstrated change |
+| --- | --- |
+| 36ee51a88e31d13ed7269980d939bf38e187a74b | State widgets: Qt6 enterEvent takes QEnterEvent*; preserve Qt5 QEvent* under a version guard. Replace removed zero setMargin with setContentsMargins(0,0,0,0). |
+| 6886aa77133a4f2d4114cfca2af7722f98e244ff | Vehicle displays: replace removed QMatrix with QTransform for the same steering-image rotation. Also use the selected modern Ogre Overlay provider's flat header paths; retain its legacy version branch. |
+| ec87c80c723cd8360cbce40701490ba0ba4a733f | Datetime panel: replace removed QString::rightRef with right for the same displayed suffix. |
+| f4fe60186d6662f2a066bc09e12d434d247d258d | Planning-factor display: convert float elapsed seconds to nanoseconds for the current MarkerCommon update API. |
+| 0ac0a030bf66f5514e02587858a82d1d30ae8f2d | Perception displays: the same MarkerCommon duration adaptation, plus the supported TF utility include. |
+| 2630477cce6f64d72f84522996b0dbb4607741aa | Planning displays: tf2/utils.h becomes tf2/utils.hpp. |
+| 884fb81425ad7b48770915e69b41fca45ca410b2 | Localization history displays: TF Quaternion.h becomes Quaternion.hpp. |
+
+Reproducer: build the original sources against these SDK headers. Qt6 rejects
+three event overrides and the removed margin/matrix/string-view APIs; current
+MarkerCommon rejects float update arguments; TF no longer exports those .h
+forwarders. For MarkerCommon, a templated invocability check retains the legacy
+float call when accepted, otherwise duration_cast converts seconds to
+nanoseconds. This avoids inventing a ROS-release threshold or changing geometry.
+Current upstream state still uses QEvent*, and the perception caller still
+forwards float seconds, checked directly. Ogre include-directory differences
+must be reviewed against upstream CMake exports before proposing that part.
+
+All 40 exported classes across fourteen local packages construct/destroy/unload,
+and the unchanged original RViz configuration renders the official sample map,
+panels and overlays with OpenGL 4.6. Per-package commands and source decisions
+are recorded in JOURNAL.md; the owning pattern is in
+[DEVELOPING.md](DEVELOPING.md#rviz-plugin-packages). The original packages declare
+lint only, with no omitted native/launch functional suite. Qt5 guards and legacy
+marker calls preserve source intent; upstream CMake/GCC, Qt5, Humble and Jazzy
+were not executed. Upstream Qt6 package-selection/CMake work remains separate
+from the source callers validated by Bazel.
+
+## RViz SignalDisplay declares an undefined private Qt slot
+
+- [ ] Associate upstream: SignalDisplay/Lyrical scoped PR search finds no match
+  on 2026-11-22. The
+  [current header](https://github.com/autowarefoundation/autoware_rviz_plugins/blob/main/autoware_overlay_rviz_plugin/autoware_overlay_rviz_plugin/include/signal_display.hpp)
+  still declares updateSmallOverlaySize; its implementation has no definition
+  or connection for that slot. Not submitted.
+- Local correction: a0d643dd910eadd2b61047aa0ebe2e3c9252c6d9,
+  autoware_overlay_rviz_plugin in the same RViz 0.6.0 source snapshot above.
+- Reproducer: generate/link Qt moc for SignalDisplay and load the original
+  plugin. Its metacall references SignalDisplay::updateSmallOverlaySize, and
+  factory loading fails with an undefined-symbol error. This is an incomplete
+  class declaration, not a Lyrical-only API change.
+- Fix: remove the unused private slot declaration. Retain implemented
+  updateOverlaySize and all real property connections; do not add a no-op
+  implementation. Its exported SignalDisplay factory now constructs/unloads and
+  the original live overlay renders. The fourteen-package factory gate passes.
+  Qt5 and upstream CMake were not run; no runtime behavior change is intended.
