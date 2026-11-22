@@ -1,0 +1,18 @@
+load("@rosdistro//ament:defs.bzl", "ament_index")
+
+package(default_visibility = ["//visibility:public"])
+
+# Resource closure for the default rule-based planning simulator profile.
+ament_index(
+    package_xml = "package.xml",
+    data = glob(["launch/**"]),
+    deps = [
+        "@autoware_agnocast_wrapper//:ament_package",
+        "@autoware_localization_config//:ament_index",
+        "@autoware_pose_initializer//:ament_index",
+        "@autoware_raw_vehicle_cmd_converter//:ament_index",
+        "@autoware_simple_planning_simulator//:ament_index",
+        "@autoware_vehicle_door_simulator//:ament_index",
+        "@rclcpp_components//:ament_package",
+    ],
+)

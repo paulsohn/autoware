@@ -1641,3 +1641,9 @@ local_path_override(
     module_name = "tier4_autoware_api_launch",
     path = "src/launcher/autoware_launch/tier4_universe_launch/tier4_autoware_api_launch",
 )
+
+bazel_dep(name = "tier4_simulator_launch", version = "0.0.0")
+local_path_override(
+    module_name = "tier4_simulator_launch",
+    path = "src/launcher/autoware_launch/tier4_universe_launch/tier4_simulator_launch",
+)

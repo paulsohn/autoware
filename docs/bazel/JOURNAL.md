@@ -16674,3 +16674,33 @@ Both behavior/shutdown cases pass in 3.9 seconds, no failures/skips.
 The complete original full headless launch also passes both cases in 12.4 seconds.
 CPU/Cyclone DDS, ENABLE_AGNOCAST=0. No Fast DDS, enabled-Agnocast, full colcon,
 RViz or autonomous-driving result is claimed. Continue original product assembly.
+
+## 2026-11-22: Phase 7.3.3 — tier4_simulator_launch resource closure
+
+Purpose: run the original simulator subsystem with the default simulator profile.
+Inspect package.xml, CMake install directories and conditional launch includes;
+CMake registers no original functional suite in this resource package.
+
+Use the [launch-group integration pattern](#2026-11-22-phase-733--autoware_map_launch-resource-closure)
+for MODULE/BUILD ownership, indexed resources and conditional runtime selection.
+
+Compose the real simple planning simulator, API pose initializer, raw converter,
+door simulator and localization parameter provider. Use the original selected
+localization_sim_mode=api, dummy vehicle/doors and initial engagement settings.
+Require the actual simulator, initializer and vehicle_door_simulator_node to
+answer parameters, then clean exit. Fault injection, physical localization and
+scenario-simulator adapters remain default-disabled, not substituted stubs.
+
+The external fixture in bazel/tests/universe_launch includes original XML;
+it is committed with the final product composition. Exact standalone gate:
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_output=errors //bazel/tests/universe_launch:simulator_launch_test
+```
+
+Both behavior/shutdown cases pass in 2.8 seconds, no failures/skips.
+The complete original full headless launch also passes both cases in 12.4 seconds.
+CPU/Cyclone DDS, ENABLE_AGNOCAST=0. No Fast DDS, enabled-Agnocast, full colcon,
+RViz or autonomous-driving result is claimed. Continue original product assembly.

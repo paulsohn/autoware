@@ -1,0 +1,10 @@
+module(name = "tier4_simulator_launch", version = "0.0.0")
+
+bazel_dep(name = "autoware_agnocast_wrapper", version = "0.0.0")
+bazel_dep(name = "autoware_localization_config", version = "0.0.0")
+bazel_dep(name = "autoware_pose_initializer", version = "0.0.0")
+bazel_dep(name = "autoware_raw_vehicle_cmd_converter", version = "0.0.0")
+bazel_dep(name = "autoware_simple_planning_simulator", version = "0.0.0")
+bazel_dep(name = "autoware_vehicle_door_simulator", version = "0.0.0")
+bazel_dep(name = "rclcpp_components", version = "0.0.0")
+bazel_dep(name = "rosdistro", version = "0.0.0")
