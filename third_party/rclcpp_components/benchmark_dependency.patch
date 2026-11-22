@@ -1,0 +1,25 @@
+Subject: Declare the component-manager dependency of the SDK benchmark
+
+Applies to: RCR rclcpp_components 32.0.3-1.rcr.0, test/BUILD.bazel.
+
+Observed failure: the registered benchmark_components target cannot compile
+because rclcpp_components/component_manager.hpp is unavailable. Its source
+uses ComponentManager, but only the external dependency map is in deps.
+
+Rationale and scope: add component_manager_library as a compile dependency,
+matching the package's other native tests. Keep original benchmark source,
+registration, dynamic dependencies and measured operations unchanged.
+
+Verification: all seven original C++ cases and all three registered benchmark
+operations pass with Cyclone DDS, --config=runtime --config=no-agnocast, and
+ROS_DOMAIN_ID=118. Original sources and registered groups remain unchanged.
+
+Upstream: this dependency is absent from the selected published overlay,
+inspected 2026-11-23. No matching upstream association is recorded.
+https://bazel.ros.org/modules/rclcpp_components/32.0.3-1.rcr.0/source.json
+
+--- a/test/BUILD.bazel
++++ b/test/BUILD.bazel
+@@ -77 +77 @@
+-    deps = DEPENDENCIES.values() + ["@google_benchmark//:benchmark_main"],
++    deps = DEPENDENCIES.values() + ["//:component_manager_library", "@google_benchmark//:benchmark_main"],

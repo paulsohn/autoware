@@ -18333,3 +18333,38 @@ finds and invokes the actual component_container; its separate early-return
 logging-lifetime failure is handled in the SDK source task below. No component
 source, installed-underlay layout or middleware selection changes in this index
 correction. No GPU, Fast DDS or pre-commit run.
+
+## 2026-11-23: Phase 7.6 — Component SDK benchmark dependency
+
+Purpose: prepare the entire declared rclcpp_components 32.0.3-1.rcr.0 suite
+before correcting its native CLI early exits. Query tests(@rclcpp_components//...):
+the published overlay registers test_component_manager, test_component_manager_api
+and the manual benchmark_components target. Include all three. The benchmark
+fails compilation at rclcpp_components/component_manager.hpp: its source uses
+ComponentManager but its deps contain only external SDK dependencies and
+benchmark_main. The other two native targets already declare
+component_manager_library.
+
+Add that same compile dependency to the benchmark through a narrowly scoped
+benchmark_dependency.patch in third_party/rclcpp_components and a root
+single_version_override retaining 32.0.3-1.rcr.0. Keep original test/benchmark
+sources, registration, data and dynamic dependencies. This supplies headers and
+the correct compile API without introducing another manager implementation.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_env=ROS_DOMAIN_ID=118 \
+  --test_output=errors @rclcpp_components//test:test_component_manager \
+  @rclcpp_components//test:test_component_manager_api \
+  @rclcpp_components//test:benchmark_components
+git diff --check
+```
+
+All four manager cases, all three API cases and all three benchmark operations
+pass, with no skipped C++ cases or benchmark SkipWithError results. The
+benchmark runs all get_component_resources, create_component_factory and
+create_node_instance operations; its timings are observations, not performance
+acceptance thresholds. This validates SDK test build support. The separate
+source correction below changes only component_container's early-return paths.
+No Fast DDS, GPU or pre-commit run.

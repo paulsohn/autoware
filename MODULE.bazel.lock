@@ -1290,7 +1290,6 @@
     "https://bazel.ros.org/modules/rclcpp/32.0.3-1.rcr.1/source.json": "00f3394c5674846ef6d283d302eaedc9244f4c6d7820476621ecff7300cb1c4d",
     "https://bazel.ros.org/modules/rclcpp_action/32.0.3-1.rcr.0/MODULE.bazel": "45757f2421aa81dc614aeb4467c61f655ce2ea53453af01de7c27e5eb585dc1c",
     "https://bazel.ros.org/modules/rclcpp_action/32.0.3-1.rcr.0/source.json": "a51d43cb901d69c6874bf4c720c77c4296dad4d9820060fa7ce2d455fd6f7a05",
-    "https://bazel.ros.org/modules/rclcpp_components/0.0.0/MODULE.bazel": "353d3f4e140157b96a38c77123a2cff18d55154697f0ce7cf4d77770b86c72fa",
     "https://bazel.ros.org/modules/rclcpp_components/32.0.3-1.rcr.0/MODULE.bazel": "e181e1401d3aea16caaeb7ca98682c75c812799a423ac804e3f02696885aa099",
     "https://bazel.ros.org/modules/rclcpp_components/32.0.3-1.rcr.0/source.json": "a4fb41a3da9a2c7b955585e1083c81f044f323c3d0d91b55fa7a5dc287125468",
     "https://bazel.ros.org/modules/rclcpp_lifecycle/0.0.0/MODULE.bazel": "c69d7d83884f181cb9b13b2b7239841217010bed57b9ad595d81018df9bf53ea",
