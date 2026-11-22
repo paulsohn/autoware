@@ -54,5 +54,6 @@ collect_transitive_dynamic_deps(
         ("tier4_adapi_rviz_plugin", "plugins/plugin_description.xml"),
         ("tier4_control_mode_rviz_plugin", "plugins/plugin_description.xml"),
         ("tier4_planning_factor_rviz_plugin", "plugins.xml"),
+        ("tier4_vehicle_rviz_plugin", "plugins/plugin_description.xml"),
     ]
 ]

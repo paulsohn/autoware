@@ -1740,3 +1740,9 @@ local_path_override(
     module_name = "tier4_planning_factor_rviz_plugin",
     path = "src/universe/autoware_universe/visualization/tier4_planning_factor_rviz_plugin",
 )
+
+bazel_dep(name = "tier4_vehicle_rviz_plugin", version = "0.0.0")
+local_path_override(
+    module_name = "tier4_vehicle_rviz_plugin",
+    path = "src/universe/autoware_universe/visualization/tier4_vehicle_rviz_plugin",
+)
