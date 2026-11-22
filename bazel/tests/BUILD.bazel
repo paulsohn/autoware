@@ -1,3 +1,5 @@
+load("//bazel/runtime:cyclonedds.bzl", "PLANNING_SIMULATOR_CYCLONEDDS_URI")
+load("//bazel/runtime:defs.bzl", "executable_template")
 load("@launch_testing//:defs.bzl", "launch_test")
 load("@pip_ros//:requirements.bzl", "requirement")
 load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
@@ -123,6 +125,47 @@ py_test(
     ],
     main = "runtime/test_bundle.py",
 )
+
+executable_template(
+    name = "verify_simulator",
+    out = "runtime/verify_simulator",
+    substitutions = {"@CYCLONEDDS_URI@": PLANNING_SIMULATOR_CYCLONEDDS_URI},
+    template = "runtime/verify_simulator.sh.in",
+)
+
+py_test(
+    name = "planning_simulator_bundle_structure_test",
+    srcs = ["runtime/test_bundle.py"],
+    args = [
+        "$(rootpath //bazel/runtime:planning_simulator_bundle)",
+        "$(rootpath //bazel/runtime:planning_simulator_bundle_tests)",
+    ],
+    data = [
+        "//bazel/runtime:planning_simulator_bundle",
+        "//bazel/runtime:planning_simulator_bundle_tests",
+    ],
+    main = "runtime/test_bundle.py",
+)
+
+[
+    py_test(
+        name = "planning_simulator_" + kind + "_runtime_test",
+        size = "large",
+        timeout = "long",
+        srcs = ["runtime/test_simulator_bundle.py"],
+        args = [
+            kind,
+            "$(rootpath " + product + ")",
+            "$(rootpath //bazel/runtime:planning_simulator_bundle_tests)",
+        ],
+        data = [product, "//bazel/runtime:planning_simulator_bundle_tests"],
+        main = "runtime/test_simulator_bundle.py",
+        tags = ["external", "no-remote", "no-sandbox"],
+    )
+    for kind, product in [
+        ("native", "//bazel/runtime:planning_simulator_bundle"),
+    ]
+]
 
 DEPS = {
     "@rclcpp//:rclcpp": "@rclcpp//:rclcpp_library",

@@ -1,0 +1,26 @@
+#!/bin/bash
+# Copyright 2026 Taeseung Sohn
+# SPDX-License-Identifier: Apache-2.0
+set -eu
+
+suite=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)
+runner="$suite/universe_launch/lane_driving_test"
+runfiles="$runner.runfiles"
+prefix="$runfiles/_main"
+launcher=$(realpath -- "${1:?usage: verify_simulator /path/to/application/run_simulator}")
+shift
+
+unset AMENT_PREFIX_PATH COLCON_PREFIX_PATH CMAKE_PREFIX_PATH PYTHONPATH PYTHONHOME
+unset LD_LIBRARY_PATH LD_PRELOAD RUNFILES_DIR RUNFILES_MANIFEST_FILE JAVA_RUNFILES
+export PATH=/usr/bin:/bin
+export RUNFILES_DIR="$runfiles"
+export AMENT_PREFIX_PATH="$prefix"
+export LD_LIBRARY_PATH="$prefix/lib"
+export PYTHONNOUSERSITE=1
+export PLANNING_SIMULATOR_BUNDLE_LAUNCHER="$launcher"
+export ENABLE_AGNOCAST=0 RMW_IMPLEMENTATION=rmw_cyclonedds_cpp ROS_DISTRO=lyrical
+export ROS_DOMAIN_ID=112 OMP_NUM_THREADS=1 UNIVERSE_LAUNCH_MODE=full
+export CYCLONEDDS_URI='@CYCLONEDDS_URI@'
+export TEST_TMPDIR="${TEST_TMPDIR:?set TEST_TMPDIR to a writable state directory}"
+
+exec "$runner" "$prefix/bazel/tests/universe_launch/test_drive.py" "$@"

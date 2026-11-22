@@ -37,7 +37,18 @@ def include(package, path, arguments):
 def generate_test_description():
     arguments = {'vehicle_model': 'sample_vehicle', 'sensor_model': 'sample_sensor_kit', 'use_sim_time': 'false'}
     entries = []
-    if MODE in ('planning', 'control'):
+    if os.environ.get('PLANNING_SIMULATOR_BUNDLE_LAUNCHER'):
+        if MODE != 'full':
+            raise ValueError('The packaged simulator gate requires full launch mode')
+        entries.append(launch.actions.ExecuteProcess(
+            cmd=[os.environ['PLANNING_SIMULATOR_BUNDLE_LAUNCHER'], 'rviz:=false'],
+            env={
+                'HOME': os.environ['HOME'], 'PATH': '/usr/bin:/bin',
+                'LOGNAME': os.environ.get('LOGNAME', 'runtime'),
+                'ROS_DOMAIN_ID': os.environ.get('ROS_DOMAIN_ID', '0'),
+            },
+            output='screen', sigterm_timeout='30', sigkill_timeout='10'))
+    elif MODE in ('planning', 'control'):
         entries.append(include('autoware_global_parameter_loader', 'global_params.launch.py', arguments))
         entries.append(include('autoware_' + MODE + '_launch', MODE + '.launch.xml', arguments))
     elif MODE == 'vehicle':

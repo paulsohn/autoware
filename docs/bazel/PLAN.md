@@ -112,6 +112,7 @@ only when your current target demonstrates the need.
   [Packaging and deployment requirements](#runtime-packaging-and-deployment-requirements);
   [middleware discovery capacity evidence](JOURNAL.md#2026-11-22-phase-733--original-headless-planning-simulator-product);
   [Desktop driver ABI evidence](JOURNAL.md#2026-11-22-phase-734--desktop-glx-runtime-abi);
+  [Independent process environments at exec](JOURNAL.md#2026-11-23-phase-734--extracted-native-simulator-distribution);
   [distribution convention](DEVELOPING.md#native-core-distribution);
   [evidence: native runtime closure](JOURNAL.md#2026-11-20-phase-71--native-headless-core-distribution).
   [OCI image convention](DEVELOPING.md#oci-core-distribution);
@@ -1901,8 +1902,10 @@ Phase 7.3 task boundaries (selected 2026-11-21):
   passes with 16.70 m displacement, 3.60 m/s peak speed and 0.03 m final error,
   arrival, stop and clean shutdown. The combined affected module gate passes
   29 targets. Source compatibility and collision-type fixes are separate from
-  package BUILD definitions. Remaining gates: actual GUI mouse interaction,
-  expanded archive extraction and isolated runtime behavior. Routine evidence
+  package BUILD definitions. Remaining gates: actual GUI mouse interaction
+  and isolated OCI behavior. Expanded native extraction passes
+  the complete three-case startup/driving/shutdown gate, with 57 clean processes
+  and 0.01 m final error. Routine evidence
   stays CPU/Cyclone DDS with Agnocast off; Fast DDS requires fresh approval.
   [Product composition and exact driving gate](JOURNAL.md#2026-11-22-phase-734--original-rviz-runtime-and-typed-lane-driving).
 

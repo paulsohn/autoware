@@ -17583,3 +17583,69 @@ GUI startup/rendering and typed driving are established. The actual GUI mouse
 interaction and expanded native/OCI distribution acceptance remain separate
 Phase 7.3.4 gates; no overall phase completion, Fast DDS, enabled Agnocast,
 GPU inference or additional driving scenario is claimed by this boundary.
+
+## 2026-11-23: Phase 7.3.4 — Extracted native simulator distribution
+
+Purpose: make the expanded original simulator deployable independently of its
+build tree. Reuse planning_simulator's complete binary/resource runfiles rather
+than enumerate its nodes and files again. Keep verification peers and their
+fixtures in a separate test-only archive. The native runtime needs the documented
+Linux x86_64/Ubuntu 24.04 ABI baseline; building/running it does not need Docker.
+
+Add planning_simulator_bundle with the actual product and an executable
+run_simulator launcher. Compute its prefix from the launcher's own location,
+clear inherited ROS/Python/library discovery, set the selected RMW/profile and
+execute the original indexed planning_simulator.launch.xml. Headless is the
+wrapper's default; its launch arguments are passed through afterward. Expand
+the shared Cyclone URI into both application and verifier launchers with a small
+executable template action. Bazel's ordinary template expansion is not an
+executable-file provider; the action must explicitly set the output executable
+bit. Keep discovery capacity in one root constant, not duplicated shell strings.
+
+The test-only archive includes the real lane_driving_test and a verifier that
+starts its bundled interpreter/runfiles. Reuse the original full Composition
+case as well as LaneDriving and Shutdown: check the full component/resource/API
+contract before selecting a pose, then require actual motion, arrival and stop.
+The external-launch fixture starts the extracted product, whose own launcher
+selects its resources; the peer's separate indexes must not repair the app.
+
+The first extracted test fails with E2BIG (Argument list too long) before the
+application wrapper can run. The generated test-runner Python search environment
+grows with the longer extraction prefix and exceeds the OS exec boundary.
+Give ExecuteProcess a small explicit HOME/PATH/LOGNAME/ROS_DOMAIN_ID environment
+before exec. Cleaning paths inside the child launcher, or asking an env command
+to clean them after it starts, is too late. The application then establishes
+only its own prefix. This is test-to-product isolation, not a source-node patch
+or a reason to shorten deployment paths to match the checkout.
+
+Extend the existing archive closure test to recognize simulator and verifier
+entrypoints while retaining its original core checks. Reject escaping/absolute
+links, duplicate destinations, missing indexed map/manifest resources and wrong
+bootstrap modes. Extract application and verification archives into separate
+new directories and run from a third working directory with a clean environment.
+Do not silently repair dependencies with the host ROS/Python installation.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast \
+  --local_test_jobs=1 --test_output=errors \
+  //bazel/tests/universe_launch:all \
+  //bazel/tests:planning_simulator_bundle_structure_test \
+  //bazel/tests:planning_simulator_native_runtime_test
+```
+
+All eleven targets pass. The direct suite has nineteen cases across nine targets.
+The extracted artifact runs all three original-startup/driving/shutdown cases,
+tracks 57 clean processes (56 source processes plus the outer product launcher),
+travels 16.68 m, peaks at 3.60 m/s and stops 0.01 m from the goal. Its complete
+native gate takes 122.1 s including extraction. The archive closure check passes;
+the existing core archive check also passes after the GNU-runtime update.
+The application archive is about 2.2 GiB and its separate verification archive
+about 2.1 GiB; do not ship the verifier as application content.
+
+This proves relocation and independent discovery in a native environment.
+Filesystem absence of the workspace/cache and an audited minimal OS are the
+following OCI gate, not a claim supplied by this host-native run. GUI mouse
+interaction remains separate. No Fast DDS, enabled Agnocast, GPU inference,
+new service supervisor or QEMU execution is claimed. Targeted Python, shell
+syntax and whitespace checks pass; no pre-commit is run.

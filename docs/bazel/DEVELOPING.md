@@ -951,6 +951,32 @@ diagnostic resources, API version and clean shutdown remain part of the gate.
 Routine component work keeps its own scoped suite. Existing core distribution
 products retain their own scope; they do not package this simulator automatically.
 
+## Native simulator distribution
+
+Build //bazel/runtime:planning_simulator_bundle with --config=runtime
+--config=no-agnocast. Extract its tar.gz at the desired installation prefix and
+execute run_simulator from any working directory. It selects its own bundled
+interpreter, libraries and indexed resources; no source checkout, Bazel command,
+ROS setup script, Python installation or HOME model directory is a runtime input.
+The supported native OS/ABI baseline still applies. The launcher defaults to the
+headless original simulator; its subsequent arguments are original launch args.
+
+The test-only planning_simulator_bundle_tests archive stays separate. Use
+//bazel/tests:planning_simulator_bundle_structure_test and
+//bazel/tests:planning_simulator_native_runtime_test for distribution changes.
+They check closed archive links, extraction at another prefix, complete startup,
+real lane driving and clean shutdown. The shared archive checker also retains
+//bazel/tests:core_bundle_structure_test. These products package their declared
+runfiles, not an inventory of files discovered on the builder's filesystem.
+
+Independent-process test launchers must supply the product's explicit environment
+at the exec boundary. In particular, do not forward a generated test PYTHONPATH
+and rely on a child shell to unset it: a long relocated search path can prevent
+that shell from starting. The product launcher then owns its own discovery paths.
+The common Cyclone configuration is expanded into executable application/verifier
+scripts from bazel/runtime/cyclonedds.bzl; update that source when the topology
+requires another tested discovery profile.
+
 ## Original test source layout
 
 Keep original tests in their source packages and expose their inputs through

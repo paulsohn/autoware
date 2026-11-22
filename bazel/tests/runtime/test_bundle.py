@@ -32,11 +32,16 @@ class TestBundle(unittest.TestCase):
                             target = posixpath.join(posixpath.dirname(name), target)
                         target = posixpath.normpath(target)
                         self.assertIn(target, members, (name, target))
-                entry = 'core_headless' if 'core_headless' in members else 'core_system_headless_launch_test'
+                entries = [name for name in (
+                    'core_headless', 'core_system_headless_launch_test',
+                    'planning_simulator', 'universe_launch/lane_driving_test') if name in members]
+                self.assertEqual(len(entries), 1, entries)
+                entry = entries[0]
+                package = 'autoware_launch' if entry in ('planning_simulator', 'universe_launch/lane_driving_test') else 'autoware_core'
                 self.assertTrue(members[entry].mode & 0o111)
                 self.assertEqual(archive.extractfile(entry).readline().strip(), b'#!/usr/bin/env bash')
                 self.assertIn(entry + '.runfiles/_repo_mapping', members)
-                self.assertIn(entry + '.runfiles/_main/share/ament_index/resource_index/packages/autoware_core', members)
+                self.assertIn(entry + '.runfiles/_main/share/ament_index/resource_index/packages/' + package, members)
                 self.assertIn(entry + '.runfiles/_main/share/ament_index/resource_index/packages/autoware_map_asset', members)
                 for name in ('lanelet2_map.osm', 'pointcloud_map.pcd', 'map_projector_info.yaml', 'map_config.yaml'):
                     self.assertIn(entry + '.runfiles/_main/share/autoware_map_asset/' + name, members)
