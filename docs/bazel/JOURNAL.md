@@ -16334,3 +16334,81 @@ monitor profiles take 2.5–4.2 seconds. Targeted flake8 and whitespace checks p
 CPU/Cyclone DDS with ENABLE_AGNOCAST=0 is the selected configuration; no Fast DDS
 or enabled-Agnocast runtime result is claimed. Original implementation/tests
 remain unchanged. Continue the original system/subsystem launch gates.
+
+## 2026-11-22: Phase 7.3.3 — Shared utility SDK ownership in containers
+
+Purpose: make the original motion-planning and control containers shut down
+cleanly with their real component combinations. Inventory the complete original
+suites of path smoother, path optimizer, trajectory follower, vehicle command
+gate and operation-mode transition manager. The utility facade has no original
+functional suite of its own. Inspect its eleven subpackage dependencies and the
+registry PCL/conversions/VTK shared-provider ownership.
+
+The initial subsystem tests discover nodes before construction finishes. Improve
+the external fixture: poll composition_interfaces/ListNodes for the complete
+selected set and request standalone parameter responses before shutdown. The
+initial-pose adaptor also waits in its constructor for the map-loader parameter
+service; its isolated API gate must launch the real map subsystem. Fix incorrect
+fixture names to match original XML/constructors. These are test prerequisites,
+not justification to disable original adaptors or safety nodes.
+
+Even after completed component loading, the motion container segfaults and the
+control container aborts with double free during SIGINT shutdown. Use a temporary
+launch-prefix for component_container_mt with gdb --batch --return-child-result,
+-ex 'handle SIGINT nostop noprint pass' -ex run -ex 'thread apply all bt 16'.
+Set launch-prefix-filter to ^component_container_mt$ and keep the original XML.
+The motion trace points to vtkCommonInformationKeyManager destruction from the
+path-smoother DSO inside dlclose. nm -D -C confirms that the smoother, command
+gate and controller each define that VTK manager. They link the broad utility
+facade without its PCL/conversions shared ownership; static SDK objects and
+process globals enter independent component DSOs.
+
+Expose the facade's complete runtime_dynamic_deps, forwarding the existing
+utility PCL/debug providers and the remaining concrete shared dependencies.
+Declare their logical modules. Add that provider to the five affected consumers'
+runtime aggregates; leave algorithm code, original tests and container layout
+unchanged. The core motion-velocity planner already declares the correct PCL
+runtime provider and needs no change. Do not use process splitting, forced
+library retention or ignored exit codes to hide the link-ownership defect.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast \
+  --local_test_jobs=1 --test_output=errors @autoware_utils//... \
+  @autoware_path_smoother//... @autoware_path_optimizer//... \
+  @autoware_trajectory_follower_node//... @autoware_vehicle_cmd_gate//... \
+  @autoware_operation_mode_transition_manager//... \
+  //bazel/tests/universe_launch:all
+```
+
+All four native binaries pass 21 original cases: smoother 1, optimizer 1,
+trajectory follower 13 and gate 6. All seven subsystem launches pass fourteen
+behavior/shutdown cases, including both previously crashing containers. The
+operation-mode package has no original functional CMake test; both installed
+executables are exercised by the following existing adapter gate. nm -D -C no
+longer finds defined VTK manager symbols in the smoother; readelf -d shows its
+shared PCL/conversions/VTK dependencies instead. No source implementation change.
+
+Also run the existing affected external adapters, sequentially with the same
+clean environment and --config=runtime --config=no-agnocast --local_test_jobs=1
+--test_output=errors:
+
+```sh
+bazel test //bazel/tests/planning_nodes:autoware_path_smoother_runtime_test \
+  //bazel/tests/planning_nodes:autoware_path_optimizer_runtime_test \
+  //bazel/tests/trajectory_follower:all \
+  //bazel/tests/command_nodes:gate_runtime_test \
+  //bazel/tests/command_nodes:mode_runtime_test \
+  //bazel/tests/command_nodes:transition_flag_runtime_test \
+  //bazel/tests/command_nodes:steering_limit_test \
+  //bazel/tests/command_nodes:gate_serialization_test \
+  //bazel/tests/command_nodes:mode_serialization_test
+```
+
+All ten adapter targets/cases pass (unchanged serialization results reused).
+The original launch fixtures are committed with the final product composition
+in this phase. Full startup additionally needs the discovery capacity and
+prediction configuration documented in their own entries. CPU/Cyclone DDS,
+ENABLE_AGNOCAST=0; no Fast DDS, enabled-Agnocast or driving acceptance result.
+Targeted Python/whitespace checks pass. Following commits wire each affected
+package boundary to the shared facade provider using this same tested change.

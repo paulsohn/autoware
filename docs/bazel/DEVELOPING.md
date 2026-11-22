@@ -752,6 +752,13 @@ unloading uses the module name (stop_line). Run
 //bazel/tests:behavior_velocity_planner_standard_runtime_test and
 //bazel/tests:behavior_velocity_planner_experimental_runtime_test with
 --config=no-agnocast after changing their plugin assembly.
+When a native component uses the broad `@autoware_utils` facade, include
+`@autoware_utils//:runtime_dynamic_deps` in its dynamic-dependency aggregate.
+Header-facing dependencies can still pull static SDK objects into a DSO;
+PCL/conversions/VTK globals must remain in their existing shared owners.
+Check actual ELF exports/dependencies and unload multiple components together;
+a standalone process exiting once does not exercise cross-DSO ownership.
+
 Keep existing test helper sources in testonly libraries rather than linking
 planning test managers into production components.
 
@@ -807,6 +814,13 @@ through launch_test, checking configuration/remaps and clean exits. Core plannin
 uses //bazel/tests:core_planning_launch_test; core control uses
 //bazel/tests:core_control_launch_test and
 //bazel/tests:core_control_gate_launch_test, all with --config=no-agnocast.
+
+Before ending a composed launch test, poll each container's
+composition_interfaces/srv/ListNodes service for the complete selected set.
+A node can appear in graph discovery while its constructor is still running.
+For standalone nodes, request a parameter response to establish executor
+readiness, and provide real constructor dependencies such as map-loader
+parameter services. Require clean exit codes from every launched process.
 
 Dynamic launch arguments do not create Bazel dependency edges. The global
 parameter loader resolves `<vehicle_model>_description` at runtime; keep that
