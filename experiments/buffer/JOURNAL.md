@@ -2218,3 +2218,80 @@ can affect identity at some return times. The causal observation benefit
 was reproduced at group 20 on both workloads. The continuously visible
 landmark remained confirmed throughout each run after its initial
 confirmation. See the [comparison and archived evidence](../rmw-agnocast/README.md#delayed-observations-and-multi-object-track-identity).
+
+## 2026-11-22 — Near reader history depth and track identity
+
+Test whether retaining more queued clouds on the near branch recovers the
+established track in the preceding group-20 occlusion replay. The production
+crop normally uses max_queue_size for both its input and output. To isolate
+the reader, build a second source file (filter.cpp) into the benchmark's
+existing non-Buffer-matrix build copy. Only the near process has
+BENCH_STALL_THIS_CROP. When BENCH_NEAR_DEPTH is also set, the ordinary
+point-cloud subscription requests KEEP_LAST depth 5, 8 or 16. The near
+publisher still requests 5. Each log records both settings. The fusion
+publisher, far branch, tracker and middleware implementations are unchanged.
+
+Repeat the preceding guarded crop build, using its cached configurations:
+
+```bash
+export LYRICAL_ROOT=$(cat build/agnocast-lyrical/universe-root)
+experiments/buffer/run-lyrical.sh bash -ec '
+  source build/agnocast-lyrical/install/local_setup.bash
+  source build/universe-sync/install/local_setup.bash
+  source build/rmw-agnocast/load-install/local_setup.bash
+  for ws in universe-pipeline universe-pipeline-native; do
+    if [[ $ws == universe-pipeline-native ]]; then export ENABLE_AGNOCAST=1; else export ENABLE_AGNOCAST=0; fi
+    colcon build --base-paths src/universe_crop_benchmark --build-base "build/$ws/obj" \
+      --install-base "build/$ws/install" --executor sequential
+  done'
+mkdir -p build/universe-depth
+out=build/universe-depth/pairs
+r=experiments/rmw-agnocast
+bash "$r/bench-native-graph.sh" "$out" depth
+REPLAY_TARGET_SPACING_M=8 REPLAY_RETURN_GROUP=20 BUFFER_RUNTIME_ONLY=1 \
+  experiments/buffer/run-lyrical.sh bash "$r/run-track-replay.sh" "$out"/depth-*/*.log > "$out/tracker.log"
+rg '^trace=' "$out/tracker.log" > "$out/tracker.txt"
+python3 "$r/summarize-depth.py" "$out"
+```
+
+Use a fresh output directory, with the preceding corrected tracker installed.
+All four transports get the same six 150 ms CPU-busy near callbacks, at
+20/20/10 Hz. Run one graph at a time, inverting middleware and depth order
+in round two. Use the wider transient-target spacing, fixed acquisition and
+arrival offsets, and the three-frame glimpse at 9–11. Temporal outcomes are
+specific to this visibility window. Near maximum delivered age measures age
+on receipt. Peak latest-observation age measures the age a consumer sees
+between receipts. The fresh gap uses a 100 ms budget. Far latency covers
+complete acquisitions made while the near callback was impaired.
+
+Across both rounds, rmw_agnocast, Cyclone DDS and Zenoh delivered 24, 27
+and 32 of 32 near clouds at depths 5, 8 and 16 respectively. They retained
+zero, two (9 and 11), and three glimpse observations. Tracker replay lost
+the returning object's UUID only at depth 5. Native delivered 26/32 and
+retained all three glimpses and the UUID at every requested depth. At depth
+8 native and rmw_agnocast both confirmed 25/30 transient targets, but
+native missed targets 12–16 and rmw_agnocast missed 8 and 10–13.
+
+To isolate the effect of seeing the returning object during the glimpse,
+repeat the six rmw_agnocast replays with only that object's detections
+removed from groups 9–11:
+
+```bash
+REPLAY_HIDE_GLIMPSE=1 REPLAY_TARGET_SPACING_M=8 REPLAY_RETURN_GROUP=20 BUFFER_RUNTIME_ONLY=1 \
+  experiments/buffer/run-lyrical.sh bash "$r/run-track-replay.sh" "$out"/depth-*/*-stock-slow-near.log > "$out/hidden.log"
+rg '^trace=' "$out/hidden.log" > "$out/hidden.txt"
+```
+
+All six controls assigned a new UUID after return, including the two
+depth-16 runs with complete cloud delivery. Retaining observations during
+this visibility window explains the identity recovery in this fixture.
+The oldest delivered near cloud on rmw_agnocast rose from 407–408 ms to
+556–557 ms and then 655–656 ms. All 24 replays confirmed 12/30 transient
+targets within 100 ms. Depth 8 was the smallest tested setting to preserve
+identity. Depth 16 recovered the entire bounded burst. Neither improved
+timely confirmation. Each far branch delivered all 32 groups. Maximum
+measured graph memory was 485.7 MiB and minimum available host memory
+during the graph matrix was 3737 MiB.
+
+[Per-run transport and tracker measurements](../rmw-agnocast/pipeline-depth-results/summary.txt)
+and [hidden-glimpse controls](../rmw-agnocast/pipeline-depth-results/hidden.txt).

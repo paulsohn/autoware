@@ -32,14 +32,17 @@ if(UNIVERSE_BUFFER_MATRIX)
     WORKING_DIRECTORY "${crop_src}" COMMAND_ERROR_IS_FATAL ANY)
 endif()
 set(crop_impl "${crop_src}/src/crop_box_filter/crop_box_filter_node.cpp")
+set(filter_impl "${crop_src}/src/filter.cpp")
 if(NOT UNIVERSE_BUFFER_MATRIX)
+  configure_file("${filter_impl}" "${CMAKE_CURRENT_BINARY_DIR}/filter.cpp" COPYONLY)
+  set(filter_impl "${CMAKE_CURRENT_BINARY_DIR}/filter.cpp")
   configure_file("${crop_impl}" "${CMAKE_CURRENT_BINARY_DIR}/crop.cpp" COPYONLY)
   set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS region-stall.patch)
   execute_process(COMMAND patch -p1 -i "${CMAKE_CURRENT_SOURCE_DIR}/region-stall.patch"
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}" COMMAND_ERROR_IS_FATAL ANY)
   set(crop_impl "${CMAKE_CURRENT_BINARY_DIR}/crop.cpp")
 endif()
-add_library(universe_crop SHARED "${crop_src}/src/filter.cpp" "${pre}/src/utility/memory.cpp"
+add_library(universe_crop SHARED "${filter_impl}" "${pre}/src/utility/memory.cpp"
   "${crop_impl}")
 target_include_directories(universe_crop PRIVATE "${crop_src}/include" "${CMAKE_CURRENT_SOURCE_DIR}")
 target_include_directories(universe_crop PRIVATE "${pre}/include"

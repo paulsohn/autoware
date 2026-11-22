@@ -2801,3 +2801,27 @@ observations and different association opportunities.
 [Wider spacing](track-replay-results/wider.txt) ·
 [Occlusion controls](track-replay-results/occlusion.txt) ·
 [Reproduction and build fixes](../buffer/JOURNAL.md#2026-11-22--track-identity-and-confirmation-after-near-branch-losses).
+
+### Near crop reader depth during CPU overload
+
+On the three-LiDAR graph, six consecutive 150 ms near-crop callbacks
+overloaded one reader. Only its requested history depth varied. Each cell
+below shows near clouds delivered out of 32, whether the returning object
+kept its UUID in tracker replay, and transient targets confirmed out of 30.
+Both rounds gave the same counts.
+
+| Transport | Depth 5 | Depth 8 | Depth 16 |
+|---|---|---|---|
+| Native Agnocast | 26, yes, 25 | 26, yes, 25 | 26, yes, 25 |
+| rmw_agnocast | 24, no, 21 | 27, yes, 25 | 32, yes, 30 |
+| Cyclone DDS | 24, no, 21 | 27, yes, 25 | 32, yes, 30 |
+| Zenoh | 24, no, 21 | 27, yes, 25 | 32, yes, 30 |
+
+Depth 8 was the smallest tested depth that kept the UUID on rmw_agnocast.
+Hiding the object during its brief reappearance broke continuity even at
+depth 16. All configurations confirmed 12/30 targets within 100 ms. On
+rmw_agnocast the oldest cloud delivered at depth 16 was 655–656 ms old.
+These results describe this bounded burst and the tracker replay fixture.
+
+[Per-run latency, resource usage and identities](pipeline-depth-results/summary.txt) ·
+[Reproduction and controls](../buffer/JOURNAL.md#2026-11-22--near-reader-history-depth-and-track-identity).

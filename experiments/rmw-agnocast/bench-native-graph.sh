@@ -4,7 +4,7 @@ set -eu
 out=${1:?fresh result directory}
 mkdir "$out"
 export BUFFER_RUNTIME_ONLY=1 SYNC_SHORT_WAIT=1
-unset SYNC_ISOLATION SYNC_STALL_NEAR BENCH_STALL_THIS_CROP SYNC_REGIONS SYNC_DOUBLE_RATE SYNC_AUDIT SYNC_SINK_TRACE SYNC_EXTENDED SYNC_TOP_JITTER SYNC_SLOW_SINK
+unset BENCH_NEAR_DEPTH SYNC_ISOLATION SYNC_STALL_NEAR BENCH_STALL_THIS_CROP SYNC_REGIONS SYNC_DOUBLE_RATE SYNC_AUDIT SYNC_SINK_TRACE SYNC_EXTENDED SYNC_TOP_JITTER SYNC_SLOW_SINK
 failed=0
 rounds=(1 2)
 if [[ ${2:-} == confirmation ]]; then rounds=(3 4 5 6); fi
@@ -40,6 +40,12 @@ for round in "${rounds[@]}"; do
     conditions=(healthy slow-near)
     if ((round % 2 == 0)); then conditions=(slow-near healthy); fi
   fi
+  if [[ ${2:-} == depth ]]; then
+    modes=(native stock cyclone zenoh)
+    conditions=(5 8 16)
+    if ((round == 2)); then modes=(zenoh cyclone stock native); conditions=(16 8 5); fi
+    export BENCH_BUSY_NEAR=1
+  fi
   for mode in "${modes[@]}"; do
     launch_mode=$mode
     if [[ $mode == native-default ]]; then
@@ -59,12 +65,18 @@ for round in "${rounds[@]}"; do
       if [[ $condition == fast ]]; then export SYNC_REGIONS=1 SYNC_DOUBLE_RATE=1; fi
       if [[ $condition == jitter ]]; then export SYNC_TOP_JITTER=1; fi
       if [[ $condition == overflow ]]; then export SYNC_EXTENDED=1 SYNC_TOP_JITTER=1 SYNC_SLOW_SINK=1; fi
+      log="$out/$round-$mode-$condition.log"
+      if [[ ${2:-} == depth ]]; then
+        export BENCH_NEAR_DEPTH=$condition SYNC_STALL_NEAR=1 SYNC_REGIONS=1 SYNC_ISOLATION=1 SYNC_DOUBLE_RATE=1
+        mkdir -p "$out/depth-$condition"
+        log="$out/depth-$condition/$round-$mode-slow-near.log"
+      fi
       if ! experiments/buffer/run-lyrical.sh timeout -k 5 65 bash -ec '
         TIMEFORMAT="graph_user_s=%U graph_sys_s=%S"
         time bash experiments/rmw-agnocast/run-pipeline.sh "$1"
         scope=$(sed -n "s,^0::,,p" /proc/self/cgroup)
         case "$scope" in */aw-buffer-*.scope) sed "s/^/scope_peak_bytes=/" "/sys/fs/cgroup$scope/memory.peak";; *) exit 2;; esac
-      ' bash "$launch_mode" >"$out/$round-$mode-$condition.log" 2>&1; then
+      ' bash "$launch_mode" >"$log" 2>&1; then
         echo "$round $mode $condition failed" >&2
         failed=1
       fi

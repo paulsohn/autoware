@@ -41,3 +41,31 @@
 
    if (indices) {
      RCLCPP_WARN_THROTTLE(
+--- a/filter.cpp
++++ b/filter.cpp
+@@ -49,6 +49,7 @@
+  *
+  */
+
++#include <cstdlib>
+ #include "autoware/pointcloud_preprocessor/filter.hpp"
+
+ #include "autoware/pointcloud_preprocessor/utility/memory.hpp"
+@@ -184,7 +185,16 @@
+     // CAN'T use auto-type here.
+     std::function<void(const PointCloud2ConstPtr)> cb =
+       std::bind(callback, this, std::placeholders::_1, PointIndicesConstPtr());
++    auto depth = max_queue_size_;
++    if (const char * value = std::getenv("BENCH_NEAR_DEPTH"); value && std::getenv("BENCH_STALL_THIS_CROP")) {
++      const std::string requested(value);
++      if (requested != "5" && requested != "8" && requested != "16") {
++        throw std::invalid_argument("unsupported benchmark reader depth");
++      }
++      depth = std::stoul(requested);
++      RCLCPP_INFO(this->get_logger(), "near_reader_depth=%zu near_writer_depth=%zu", depth, max_queue_size_);
++    }
+     sub_input_ = this->template create_subscription<PointCloud2>(
+-      "input", rclcpp::SensorDataQoS().keep_last(max_queue_size_), cb);
++      "input", rclcpp::SensorDataQoS().keep_last(depth), cb);
+   }
+ }
