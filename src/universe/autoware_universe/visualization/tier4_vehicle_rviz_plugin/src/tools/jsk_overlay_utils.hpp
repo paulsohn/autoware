@@ -65,11 +65,11 @@
 #include <OGRE/OgreOverlayManager.h>
 #include <OGRE/OgrePanelOverlayElement.h>
 #else
-#include <Overlay/OgreOverlay.h>
-#include <Overlay/OgreOverlayContainer.h>
-#include <Overlay/OgreOverlayElement.h>
-#include <Overlay/OgreOverlayManager.h>
-#include <Overlay/OgrePanelOverlayElement.h>
+#include <OgreOverlay.h>
+#include <OgreOverlayContainer.h>
+#include <OgreOverlayElement.h>
+#include <OgreOverlayManager.h>
+#include <OgrePanelOverlayElement.h>
 #endif
 
 #include <QColor>
