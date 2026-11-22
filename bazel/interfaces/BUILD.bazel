@@ -1,3 +1,4 @@
+load("//bazel/tests/ros_interfaces:defs.bzl", "interface_serialization_test")
 load("@rules_python//python:defs.bzl", "py_test")
 load(":interfaces.bzl", "ros_interface_package", "ros_interface_set")
 
@@ -9,11 +10,12 @@ ros_interface_set(
         ros_interface_package(
             "@autoware_adapi_v1_msgs//:cc",
             "@autoware_adapi_v1_msgs//:cc_shared",
-            roots = ["@autoware_adapi_v1_msgs//localization/msg:LocalizationInitializationState"],
         ),
+        ros_interface_package("@autoware_adapi_version_msgs//:cc", "@autoware_adapi_version_msgs//:cc_shared"),
         ros_interface_package("@agnocast_cie_config_msgs//:cc", "@agnocast_cie_config_msgs//:cc_shared"),
         ros_interface_package("@autoware_common_msgs//:cc", "@autoware_common_msgs//:cc_shared"),
         ros_interface_package("@autoware_control_msgs//:cc", "@autoware_control_msgs//:cc_shared"),
+        ros_interface_package("@autoware_control_validator//:cc", "@autoware_control_validator//:cc_shared"),
         ros_interface_package("@autoware_internal_debug_msgs//:cc", "@autoware_internal_debug_msgs//:cc_shared"),
         ros_interface_package(
             "@autoware_internal_localization_msgs//:cc",
@@ -25,6 +27,9 @@ ros_interface_set(
         ros_interface_package("@autoware_map_msgs//:cc", "@autoware_map_msgs//:cc_shared"),
         ros_interface_package("@autoware_perception_msgs//:cc", "@autoware_perception_msgs//:cc_shared"),
         ros_interface_package("@autoware_planning_msgs//:cc", "@autoware_planning_msgs//:cc_shared"),
+        ros_interface_package("@autoware_planning_validator//:cc", "@autoware_planning_validator//:cc_shared"),
+        ros_interface_package("@autoware_vehicle_cmd_gate//:cc", "@autoware_vehicle_cmd_gate//:cc_shared"),
+        ros_interface_package("@autoware_operation_mode_transition_manager//:cc", "@autoware_operation_mode_transition_manager//:cc_shared"),
         ros_interface_package("@autoware_sensing_msgs//:cc", "@autoware_sensing_msgs//:cc_shared"),
         ros_interface_package("@autoware_simulation_msgs//:cc", "@autoware_simulation_msgs//:cc_shared"),
         ros_interface_package("@autoware_system_msgs//:cc", "@autoware_system_msgs//:cc_shared"),
@@ -45,6 +50,7 @@ ros_interface_set(
             "@sensor_msgs//:cc_shared",
             roots = [
                 "@sensor_msgs//msg:Imu",
+                "@sensor_msgs//msg:LaserScan",
                 "@sensor_msgs//msg:NavSatFix",
             ],
         ),
@@ -74,3 +80,7 @@ py_test(
     args = ["$(rootpath :all_interfaces)"],
     data = [":all_interfaces"],
 )
+
+interface_serialization_test(package = "autoware_adapi_v1_msgs", name = "adapi_v1_serialization_test")
+interface_serialization_test(package = "autoware_adapi_version_msgs", name = "adapi_version_serialization_test")
+interface_serialization_test(package = "sensor_msgs", name = "sensor_serialization_test")

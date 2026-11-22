@@ -16,6 +16,19 @@ class TestDescriptors(unittest.TestCase):
         self.assertNotIn('tier4_perception_msgs/object_recognition/DetectedObjectWithFeature', descriptors)
         self.assertNotIn('tier4_perception_msgs/traffic_light/TrafficLight', descriptors)
 
+    def test_mixed_component_package(self):
+        descriptors = MANIFEST.read_text().splitlines()
+        for name in ['autoware_planning_validator/msg/PlanningValidatorStatus',
+                     'autoware_control_validator/msg/ControlValidatorStatus',
+                     'autoware_vehicle_cmd_gate/msg/IsFilterActivated',
+                     'autoware_operation_mode_transition_manager/msg/OperationModeTransitionManagerDebug',
+                     'autoware_adapi_version_msgs/srv/InterfaceVersion',
+                     'autoware_adapi_v1_msgs/msg/Heartbeat',
+                     'autoware_adapi_v1_msgs/srv/GetVehicleDimensions',
+                     'autoware_adapi_v1_msgs/srv/ListMrmDescription',
+                     'sensor_msgs/msg/LaserScan']:
+            self.assertIn(name, descriptors)
+
     def test_dependency_repository_package_identity(self):
         descriptors = MANIFEST.read_text().splitlines()
         for interface in ['msg/GridMap', 'msg/GridMapInfo', 'srv/GetGridMap',

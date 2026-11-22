@@ -15845,3 +15845,103 @@ native materialization/compilation took longer. No failures or introduced skips,
 CPU/Cyclone DDS with ENABLE_AGNOCAST=0. No source edits, Fast DDS, Agnocast-enabled
 runtime, older ROS/colcon, full simulator or real-time performance claim. Complete
 the accumulated typed-interface gate next, before full simulator composition.
+
+## 2026-11-22: Phase 7.3.2 — Selected implementation interfaces in product composition
+
+Purpose: close the accumulated interface gate after the selected planning,
+control and system/API module suites. Inspect their package-local message BUILD
+rules/default_generators and the existing root collection/bridge provider.
+Generated interfaces in mixed implementation packages own concrete :cc and
+:cc_shared providers independently of the node/plugin library. Preserve that
+boundary; components acquire no metarepository dependency.
+
+Add the planning-validator status, control-validator status, vehicle-gate filter
+status and operation-mode transition debug provider pairs to
+bazel/interfaces/BUILD.bazel. Include the selected service-only
+Autoware AD API version provider too. The product list is the sole registration
+point; Agnocast still consumes only all_interfaces and requires no matching list.
+The earlier AD API root selected only initialization state; the full API now
+needs its declared provider closure. Remove that narrow root selection and add
+LaserScan, used by the CPU occupancy pipeline, to the explicit sensor roots.
+Extend the descriptor test to require canonical identities for the status/API
+types and the actual API/occupancy endpoints. Reuse the generated serialization
+helper for the AD API v1/version and published sensor providers.
+Undeclared .msg files remain outside the build; no source inventory validator is
+introduced. DEVELOPING describes the mixed-package pattern and the adoption
+checklist links that authoritative convention.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast \
+  --local_test_jobs=1 --test_output=errors \
+  //bazel/interfaces:descriptor_test //bazel/agnocast:template_tests \
+  //bazel/interfaces:adapi_v1_serialization_test \
+  //bazel/interfaces:adapi_version_serialization_test \
+  //bazel/interfaces:sensor_serialization_test \
+  //bazel/tests/planning_validator:generated_serialization_test \
+  //bazel/tests/control_safety:generated_serialization_test \
+  //bazel/tests/command_nodes:gate_serialization_test \
+  //bazel/tests/command_nodes:mode_serialization_test
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel build --config=runtime --config=no-agnocast //bazel/agnocast:plugins
+python3 -m flake8 --max-line-length=150 bazel/interfaces/descriptor_test.py
+git diff --check
+```
+
+All nine descriptor/template/wire targets pass; unchanged wire results are reused.
+Seven wire targets round-trip 152 generated types: AD API v1 115, version 3,
+sensor 30 and the four mixed-package statuses. The manifest contains 433
+canonical interfaces, including 72 services. Their service events expand the
+plugin set to 505 typed instantiations, plus one generic CPP (506 translation
+units). Metadata selection and wire round trips alone do not establish
+successful compilation of those templates.
+
+The final complete typed-plugin target compiles and links successfully in
+363.647 seconds, reusing 812 unchanged actions. Initial compilation after the
+provider include closure changed took 1397.359 seconds; the metadata-only API/
+LaserScan expansion then required 101 additional CPP compilations and linking.
+This explains why a clean run takes longer than the final cached invocation.
+Inspect its exported C factory symbols against the manifest, not stale files
+left in a Bazel output directory. Every message/service/event has both r2a/a2r
+factories: 1010 expected and exported typed factories, with no missing or extra
+names. The 506 declared CPP outputs include the generic helper. Reproduce the
+symbol comparison after building, using Python and an ELF symbol reader:
+
+```sh
+python3 - <<'PY'
+from pathlib import Path
+import re
+import subprocess
+
+names = Path("bazel-bin/bazel/interfaces/all_interfaces.interfaces").read_text().splitlines()
+expected = set()
+for name in names:
+    service = "/srv/" in name
+    kind = "service" if service else "pubsub"
+    identity = name.replace("/", "_")
+    for direction in ["r2a", "a2r"]:
+        expected.add(f"create_{direction}_{kind}_bridge_{identity}")
+        if service:
+            expected.add(f"create_{direction}_pubsub_bridge_{identity}_Event")
+symbols = subprocess.check_output([
+    "nm", "-D", "--defined-only",
+    "bazel-bin/bazel/agnocast/libagnocast_bridge_plugins.so",
+], text=True)
+actual = {line.split()[-1] for line in symbols.splitlines()
+          if re.search(r" create_(?:r2a|a2r)_(?:pubsub|service)_bridge_", line)}
+assert actual == expected, (expected - actual, actual - expected)
+print(len(actual), "typed factories verified")
+PY
+```
+
+The merged provider adds compile include paths to the whole plugin library;
+changing that closure recompiles existing templates even when their source text
+is unchanged. Run focused module/wire gates during integration and batch this
+full compilation at the stable selected-product boundary. Do not replace it
+with descriptor-only success or automatically rerun unrelated runtime matrices.
+
+The selected Phase 7.3.2 implementation closure and its accumulated interface
+gate are complete. The original module suites and scoped behavior evidence are
+in the preceding entries; no full simulator composition/startup, Fast DDS,
+Agnocast-enabled runtime matrix or real-time performance result is claimed here.
+Pause before the full planning_simulator.launch.xml task in Phase 7.3.3.

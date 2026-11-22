@@ -63,6 +63,7 @@ only when your current target demonstrates the need.
   [logical asset dependencies and colcon](JOURNAL.md#2026-11-21-general-map-asset-identity-and-colcon-resource-installation).
   [Evidence: root-owned interface consumers](JOURNAL.md#2026-11-15-build-root-owned-typed-agnocast-plugins-from-the-interface-graph).
   [Canonical interface identity](DEVELOPING.md#interface-declarations-and-bridge-plugins);
+  [mixed-package product selection](DEVELOPING.md#editing-interface-packages);
   [evidence: nested source categories](JOURNAL.md#2026-11-21-phase-732--nested-interface-source-namespaces).
   [Native plugin registration](DEVELOPING.md#native-plugin-libraries);
   [combined-plugin type identity](JOURNAL.md#2026-11-22-phase-732--distinct-motion-plugin-internal-types);
@@ -1756,188 +1757,103 @@ Phase 7.3 task boundaries (selected 2026-11-21):
   20 cases in six targets, zero failures/skips. Interpreter lifetime corrections
   are separate source commits; package build boundaries are committed separately.
   [Evidence](JOURNAL.md#2026-11-21-phase-731--vehicle-door-simulator).
-- **7.3.2 — Selected Universe implementation closure.** Adopt the default
-  rule-based planning, control, simulated perception and supporting system/API
-  dependencies in related groups, starting from their actual local launch and
-  source declarations. The mission-planning group is complete (2026-11-21):
-  local tier4_planning_msgs/RerouteAvailability, tier4_external_api_msgs/SetPreferredLane,
-  autoware_mission_planner_universe and autoware_manual_lane_change_handler.
-  Its complete gate passes 42 cases in six targets, plus collector/template
-  regression checks and the full 252-interface/289-instantiation plugin build.
-  Runtime coverage is CPU/Cyclone DDS with ENABLE_AGNOCAST=0, including real
-  routing, goal echo, arrival, preferred-primitive update/reset and shutdown.
-  [Evidence](JOURNAL.md#2026-11-21-phase-732--manual-lane-selection).
-  Shared traffic-light and boundary-departure libraries are also complete:
-  all 68 original cases pass, with the boundary expected-header correction
-  independently verified against matching merged AWF PR #13622.
-  [Library evidence](JOURNAL.md#2026-11-21-phase-732--shared-boundary-departure-library).
-  The freespace library/Python binding gate is complete (14 cases), followed by
-  the interface/RTC prerequisite group: nine local Tier IV provider surfaces
-  expose 89 registered interfaces and pass 115 generated wire-type round trips.
-  The standard-service baseline, existing payload/namespace/template checks and
-  the complete original RTC lifecycle suite pass together: 15 test targets,
-  zero failures/skips. The full 339-interface/388-instantiation bridge library
-  also builds, CPU/Cyclone DDS with ENABLE_AGNOCAST=0.
-  [Collector and gate evidence](JOURNAL.md#2026-11-21-phase-732--simulator-interface-collector-and-bridge-compilation).
-  Behavior-path planning is complete for the selected profile: the shared
-  library, planner node/test helpers and all eight factories (static avoidance,
-  avoidance-by-lane-change, left/right lane-change, goal/start planning,
-  side-shift and bidirectional traffic) pass their complete original suites and
-  individual executable gates. The joint gate loads all factories in one actual
-  planner, checks configuration updates and clean shutdown. Preserve the original
-  disabled cases; bidirectional traffic has no implemented parameter-update
-  callback. [Shared-library evidence](JOURNAL.md#2026-11-21-phase-732--shared-behavior-path-planning-library),
-  [planner](JOURNAL.md#2026-11-22-phase-732--behavior-path-planner-node),
-  [selected-scene composition](JOURNAL.md#2026-11-22-phase-732--goal-planner-scene-plugin).
-  Its sampler-common/Frenet/Bézier prerequisites are complete. Sampler-common
-  preserves two original explicit edge/benchmark skips; the added native
-  consumers exercise actual trajectory generation. Goal-planner opts into
-  libc++ PSTL locally; its pinned backend is serial. Lane-change's direct fmt
-  include matches merged AWF #13594 and is a separate source fix.
-  [Sampler evidence](JOURNAL.md#2026-11-22-phase-732--sampler-common-library),
-  [Frenet](JOURNAL.md#2026-11-22-phase-732--frenet-planning-library),
-  [Bézier](JOURNAL.md#2026-11-22-phase-732--bézier-sampler-library),
-  [header alignment](JOURNAL.md#2026-11-22-phase-732--lane-change-scene-plugins).
+- **7.3.2 — Selected Universe implementation closure (complete, 2026-11-22).**
+  The default rule-based planning, control, simulated perception and supporting
+  system/API implementation dependencies have package-owned Bazel definitions,
+  separate validated module commits and complete scoped gates. Evidence uses
+  CPU/Cyclone DDS with ENABLE_AGNOCAST=0; preserved original disabled/skipped or
+  unregistered cases are identified in each module's journal, not silently
+  counted as passing. Full simulator composition remains the next task.
 
-  Behavior-velocity planning has its existing core planner/stop-line support,
-  the local RTC scene helper and four selected plugins available: traffic light,
-  detection area, virtual traffic light and no-stopping area. Complete original
-  suites and both standard/experimental executable lifecycles pass; the launcher
-  selects the experimental factories. The four-plugin group passes 47 active
-  cases without failures/skips. [RTC evidence](JOURNAL.md#2026-11-22-phase-732--behavior-velocity-rtc-scene-support),
-  [signal/area group and command](JOURNAL.md#2026-11-22-phase-732--traffic-light-behavior-velocity-plugin).
-  Crosswalk, walkway, intersection and blind spot are also complete for the
-  selected profile: fourteen compatible original cases, eight executable
-  lifecycles and one UUID regression pass. Blind spot preserves upstream
-  unregistered obsolete utility coverage; no pass is claimed for that file.
-  [Scene gate and limitations](JOURNAL.md#2026-11-22-phase-732--crosswalk-behavior-velocity-plugin).
-  The grid-map 2.5.0 provider is complete for core/CV/ROS/messages: all 109
-  original-suite/factory cases pass. Its source archive, Eigen hooks and runtime
-  resources are pinned under third_party/grid_map. The local iterator helper
-  also passes its complete seven-case suite and builds its benchmark; its
-  const-correctness source fix is separate from build rules.
-  [Iterator evidence](JOURNAL.md#2026-11-22-phase-732--local-grid-map-polygon-iterator). [SDK evidence](JOURNAL.md#2026-11-22-phase-732--grid-map-dependency-provider).
-  Keep these generic dependency inputs below source components.
-  Its concrete interface providers are registered at the root: canonical
-  descriptor/template regressions and full 345-interface/398-instantiation
-  plugin compilation pass in the CPU/Cyclone DDS configuration.
-  [Composition evidence](JOURNAL.md#2026-11-22-phase-732--grid-map-interfaces-in-product-composition).
+  **Dependencies and interfaces.** Shared traffic-light/boundary libraries,
+  freespace/Python bindings, RTC support, local Tier IV messages, Universe
+  utilities and grid-map iterator are available with their complete gates.
+  Generic grid-map 2.5.0 core/CV/ROS/messages/costmap definitions, Eigen hooks,
+  pinned archive and resource indexes stay below components in third_party.
+  [Grid-map convention](../../third_party/grid_map/README.md),
+  [interface/RTC gate](JOURNAL.md#2026-11-21-phase-732--simulator-interface-collector-and-bridge-compilation),
+  [Universe utilities](JOURNAL.md#2026-11-22-phase-732--local-universe-utility-library).
 
-  Path smoothing and scenario selection are complete: all four original native
-  cases and indexed startup/script checks pass. The wrapper preserves ROS-aware
-  executor selection; registered Python executables retain their runfiles.
-  [Evidence](JOURNAL.md#2026-11-22-phase-732--scenario-selector).
-  External velocity limit selection also passes its complete original
-  arbitration/parameter-update launch suite and clean shutdown.
-  [Evidence](JOURNAL.md#2026-11-22-phase-732--external-velocity-limit-selection).
-  Selected slow-down, cruise and dynamic-obstacle-stop motion plugins are
-  complete: their seven original cases and four real planner profiles pass.
-  Cruise preserves updated node parameters across plugin reload.
-  [Evidence](JOURNAL.md#2026-11-22-phase-732--obstacle-slow-down-motion-plugin).
-  The remaining five motion factories are complete: run-out, out-of-lane,
-  obstacle velocity limiter, experimental boundary prevention and road-user
-  stop. Their original suites plus affected cruise/slow-down suites and nine
-  individual/one joint planner profiles pass 49 cases in 16 targets. Distinct
-  internal type identities prevent cross-plugin destructor collisions; limiter
-  parameters survive reload. The joint gate uses component-default configs and
-  does not establish simulator driving behavior.
-  [Complete motion group](JOURNAL.md#2026-11-22-phase-732--run-out-motion-plugin),
-  [composition defect](JOURNAL.md#2026-11-22-phase-732--distinct-motion-plugin-internal-types).
-  The local Universe utility dependency is complete: 118 active original
-  cases and the core/Universe conversion regression pass, preserving four
-  original disabled cases. Its duplicate global TF definition is corrected
-  separately from the build definitions.
-  [Evidence](JOURNAL.md#2026-11-22-phase-732--local-universe-utility-library).
-  Selected parking costmap/freespace nodes are complete: twenty active original
-  cases plus indexed executable/affected adapter checks pass in eight targets.
-  Two original disabled freespace cases remain disabled. The costmap uses the
-  current message_filters headers; standalone freespace declares logger-service
-  introspection typesupport. These gates do not establish simulator parking.
-  [Parking evidence](JOURNAL.md#2026-11-22-phase-732--costmap-generator).
-  Remaining-distance/time, hazard-light selection and planning evaluation are
-  available. The complete 30-case original evaluator suite, both evaluator
-  executables, live hazard arbitration and affected indexed-node/costmap checks
-  pass 51 active cases in 12 targets. The remaining-distance startup gate does
-  not establish full-route numeric accuracy. Keep that distinction for driving
-  acceptance. [Support group evidence](JOURNAL.md#2026-11-22-phase-732--planning-evaluator).
-  Planning validation and all four default-enabled checker factories are
-  complete for the selected component gate: 27 original validator/checker cases,
-  sixteen angles cases, seven individual/joint executable checks and the status
-  wire round trip pass in twelve targets. Plugin API and node entrypoint have
-  separate native libraries inside the same source module; generated status
-  interfaces share its owning resource index. The only source change is the
-  diagnostic fixture's constant-initializer compatibility fix.
-  [Validator group and limits](JOURNAL.md#2026-11-22-phase-732--planning-validator-node-and-status-interface).
-  Product interface registration/full typed-bridge compilation remains a final
-  accumulated-interface gate before 7.3.2 closes; do not infer that result from
-  component suites or the status wire check.
-  The selected trajectory-follower closure is complete: local follower-base,
-  MPC/PID controllers, required pure pursuit, FakeTestNode and both installed
-  follower entrypoints pass 139 active cases in seven targets. One original
-  implementation-formula-specific pure-pursuit case stays disabled. The normal
-  installed node uses MPC/PID defaults; the simple profile also publishes and
-  verifies control commands. Expected headers align with merged AWF #13622;
-  unused experimental optional headers are removed separately from build rules.
-  [Follower group](JOURNAL.md#2026-11-22-phase-732--trajectory-follower-node).
-  Command conversion, gating, operation-mode transition and shift selection are
-  complete: the complete original suites and installed component/plotting/gear
-  checks pass 45 native/runtime cases plus eleven wire types in sixteen targets.
-  Mixed status providers keep one component-owned index. The two source fixture/
-  math portability fixes are separate commits; full simulator behavior remains
-  deferred. [Command group](JOURNAL.md#2026-11-22-phase-732--external-command-conversion).
-  The default-enabled control-safety group is complete: control validation,
-  emergency braking, collision detection, lane departure and control evaluation
-  pass all nine gate targets (57 active original cases, five installed-node
-  lifecycles and one status wire type). Preserve the one original disabled
-  validator case. The logging API fix is separate; debug-message introspection
-  providers are declared explicitly for installed processes.
-  [Safety group](JOURNAL.md#2026-11-22-phase-732--control-evaluation).
-  Simulated-perception tracking, map-based prediction, dummy traffic lights
-  and analytics/evaluation are complete, including local muSSP and both local
-  pointcloud/laserscan converters. Their full original suites, eight installed
-  behavior profiles and two clock-boundary regressions pass 183 active cases
-  in fourteen targets. Preserve four original disabled tracker benchmarks.
-  Recorded bag loading, conversion in both directions and traffic passthrough/
-  expiry are exercised. The selected system/API closure remains before
-  simulator composition.
-  [Perception group](JOURNAL.md#2026-11-22-phase-732--dummy-traffic-light-publication).
-  The selected CPU occupancy pipeline is complete. Its original launch loads
-  the real converter and mapper and produces the expected probability grid;
-  127 original SDK/factory cases and two launch/teardown checks pass in seven
-  targets. RCR supplies Nav2; the generic grid-map module owns its missing
-  header adapter. Current filter and raytrace API corrections are separate
-  source changes. GPU pointcloud/fusion variants remain outside this CPU scope.
-  [Occupancy evidence](JOURNAL.md#2026-11-22-phase-732--cpu-occupancy-grid-pipeline).
-  The selected system monitor/MRM/diagnostic implementations are complete:
-  eleven source modules, fourteen node entrypoints and tree CLI pass 77 original
-  graph cases plus fifteen installed behavior profiles in sixteen targets.
-  Static logic registration is retained explicitly; processing-time logging API
-  compatibility is a separate source fix. MRM handler startup does not claim
-  full vehicle-state arbitration. Universe AD API and the accumulated interface
-  compilation gate remain before simulator composition.
-  [System group](JOURNAL.md#2026-11-22-phase-732--dummy-diagnostic-publication-and-system-gate).
-  Continue in dependency order through shared planner helpers, the
-  preset-selected behavior/motion plugins and controller libraries, then
-  simulated perception and the selected system/API closure. The selected local
-  path optimizer and its acados native/code-generation dependency are complete:
-  all 6836 SDK assertions in seven native cases, the generated numerical solve,
-  original optimizer node case and installed startup/script checks pass.
-  [Evidence](JOURNAL.md#2026-11-22-phase-732--local-path-optimizer-with-generated-mpc). Preserve
-  the control preset's enabled lane-departure, validator, AEB and collision gates;
-  obstacle-collision and predicted-path checkers are disabled unless another
-  selected implementation actually depends on their libraries. CMake-only shims
-  are not standalone implementation targets; preserve their actual effects
-  through native providers. Default-disabled planners, monitors and control
-  checkers do not enter the selected profile merely because they have launch
-  declarations. The complete selected closure must pass before 7.3.2 closes.
-  Refine each group from the actual selected launch/source declarations;
-  do not replace the Universe stack with the smaller core-only launch.
-  Execution scope agreed 2026-11-22: continue through the remaining selected
-  implementation dependencies and their complete component gates, then pause
-  immediately before full simulator composition/startup in 7.3.3. Individual
-  module launches and behavior tests remain part of 7.3.2 validation. This does
-  not authorize substituting a smaller stack or starting the deferred Pixi
-  comparison; preserve the original simulator entrypoint for the next task.
+  **Mission and behavior-path planning.** Mission planner/manual lane selection
+  cover real routing, goal/arrival and preferred-primitive update/reset. The
+  behavior-path shared API, planner/helper and all eight selected scene factories
+  pass their original suites and individual/joint planner gates. Sampler-common,
+  Frenet and Bézier prerequisites generate actual trajectories; goal planning
+  opts into libc++ PSTL locally with the pinned serial backend. Bidirectional
+  traffic has no implemented parameter-update callback.
+  [Mission gate](JOURNAL.md#2026-11-21-phase-732--manual-lane-selection),
+  [scene composition](JOURNAL.md#2026-11-22-phase-732--goal-planner-scene-plugin),
+  [sampler decisions](JOURNAL.md#2026-11-22-phase-732--sampler-common-library).
+
+  **Behavior-velocity planning.** The existing core planner/stop-line foundation
+  and RTC helper support the selected traffic light, detection area, virtual
+  traffic light, no-stopping area, crosswalk, walkway, intersection and blind-spot
+  factories. Standard/experimental entrypoints and complete compatible original
+  suites pass; the launcher selects the experimental factories. Blind spot's
+  obsolete unregistered utility file remains outside the supported suite.
+  [Signal/area gate](JOURNAL.md#2026-11-22-phase-732--traffic-light-behavior-velocity-plugin),
+  [remaining scene gate](JOURNAL.md#2026-11-22-phase-732--crosswalk-behavior-velocity-plugin).
+
+  **Motion, parking and planning support.** Path smoothing, scenario selection,
+  external velocity limiting, all selected motion factories and the acados-backed
+  path optimizer pass complete component gates. Distinct plugin-private types
+  and node-owned parameter lifetime preserve joint loading/reloading. Keep
+  executable Python runfiles and declared solver generation in the graph.
+  Costmap/freespace parking, remaining-distance/time, hazard-light selection,
+  planning evaluation and all four enabled validation factories are available.
+  Joint component gates use component configs; they do not prove simulator
+  driving, parking or full-route numerical accuracy.
+  [Motion group](JOURNAL.md#2026-11-22-phase-732--run-out-motion-plugin),
+  [optimizer/SDK](JOURNAL.md#2026-11-22-phase-732--local-path-optimizer-with-generated-mpc),
+  [parking](JOURNAL.md#2026-11-22-phase-732--costmap-generator),
+  [support](JOURNAL.md#2026-11-22-phase-732--planning-evaluator),
+  [validation](JOURNAL.md#2026-11-22-phase-732--planning-validator-node-and-status-interface).
+
+  **Control.** Follower-base, MPC/PID controllers, required pure pursuit and both
+  follower entrypoints pass their suites and scoped control-output checks.
+  Command conversion/gating, mode transition, shift selection, lane departure,
+  control validation, AEB, collision detection and control evaluation pass their
+  complete gates. Preserve the selected safety defaults; obstacle-collision and
+  predicted-path checkers stay disabled unless another selected implementation
+  needs their libraries. Compatibility/source fixes remain separate commits.
+  [Follower](JOURNAL.md#2026-11-22-phase-732--trajectory-follower-node),
+  [command group](JOURNAL.md#2026-11-22-phase-732--external-command-conversion),
+  [safety](JOURNAL.md#2026-11-22-phase-732--control-evaluation).
+
+  **Simulated perception.** Tracking, map-based prediction, dummy traffic lights,
+  evaluation/analytics, local muSSP and both local pointcloud/laserscan converters
+  pass 183 active cases in fourteen targets. Recorded bag loading, conversion,
+  traffic passthrough/expiry and ROS-time boundaries are exercised. The original
+  CPU occupancy launch loads the real converter/mapper and produces the expected
+  probability grid: 127 SDK/factory cases plus two launch/teardown checks pass.
+  GPU pointcloud/fusion implementations remain outside this CPU scope.
+  [Perception](JOURNAL.md#2026-11-22-phase-732--dummy-traffic-light-publication),
+  [occupancy](JOURNAL.md#2026-11-22-phase-732--cpu-occupancy-grid-pipeline).
+
+  **System and API.** Eleven monitor/MRM/diagnostic modules, fourteen node
+  entrypoints and tree CLI pass 77 original graph cases plus fifteen installed
+  profiles in sixteen targets. MRM handler startup is not full vehicle-state
+  arbitration. Universe AD API passes sixteen standalone profiles and its
+  original nineteen-node composed launch, service/heartbeat/HTTP/shutdown gate,
+  retaining all fifteen existing core conversion tests (33 cases/three targets).
+  [System](JOURNAL.md#2026-11-22-phase-732--dummy-diagnostic-publication-and-system-gate),
+  [API](JOURNAL.md#2026-11-22-phase-732--universe-default-ad-api).
+
+  **Closing product gate.** Root collection registers the mixed-package status
+  providers and API version service once, expands the selected AD API closure
+  and includes the occupancy LaserScan. All nine descriptor/template/wire checks
+  (152 generated wire types) and the complete 433-interface/505-instantiation
+  typed plugin build pass.
+  This is compilation evidence; runtime middleware matrices are not rerun for
+  unchanged bridge code in this CPU phase.
+  [Evidence and commands](JOURNAL.md#2026-11-22-phase-732--selected-implementation-interfaces-in-product-composition).
+
+  Keep default-disabled planners/monitors and orthogonal system-designer packages
+  outside this selected profile. Omit CMake-only shims only after preserving their
+  actual native-provider effects and validating consumers. Follow actual local
+  source/launch declarations; the smaller core-only launch is not a substitute.
+  Pause immediately before full planning_simulator.launch.xml composition/startup
+  in 7.3.3. Pixi comparison remains deferred until full Universe integration.
 - **7.3.3 — Original launch and resources (in progress).** The first resource
   group is complete (2026-11-21): the tutorial's local sample_vehicle_description
   and sample_sensor_kit_description own their original model/calibration/mesh
@@ -1954,9 +1870,9 @@ Phase 7.3 task boundaries (selected 2026-11-21):
   relocation and affected description-launch gates pass 12 cases in seven
   targets, CPU/Cyclone DDS with ENABLE_AGNOCAST=0.
   [Evidence](JOURNAL.md#2026-11-21-phase-733--official-tutorial-map-and-scenario-resources).
-  Compose the actual planning_simulator.launch.xml after the remaining 7.3.2
-  implementation closure is available; this resource gate does not close that
-  dependency or establish full simulator startup. Keep default rule-based
+  Phase 7.3.2 now supplies the validated implementation closure. Next compose
+  the actual planning_simulator.launch.xml; the resource and component gates
+  do not establish full simulator startup. Keep default rule-based
   behavior; migrate any selected model provider and affected launcher paths
   together under the indexed-resource convention.
 - **7.3.4 — Lane-driving acceptance.** Demonstrate the original RViz workflow

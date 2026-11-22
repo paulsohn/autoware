@@ -124,6 +124,9 @@ Maintain the top-level selection in `bazel/interfaces/BUILD.bazel`. Each
 `ros_interface_package(cc, shared, roots = ...)` entry pairs the package's
 explicit C++ and shared-provider targets once. Its default selection is the
 whole `cc` interface closure; supply `roots` to select individual interfaces.
+An explicit roots list remains a fixed subset when other interfaces are added
+to the package. Expand that list or select the whole provider when the product
+starts consuming more of the package.
 For example:
 
 ```starlark
@@ -330,6 +333,22 @@ through that target's `deps`. If a package is not reachable from any root,
 add or update its central `ros_interface_package` entry, including the selected
 roots and explicit compile/shared providers. The plugin consumer needs no
 matching list update.
+For a mixed package, select the generated providers directly, for example:
+
+```starlark
+ros_interface_package(
+    "@autoware_planning_validator//:cc",
+    "@autoware_planning_validator//:cc_shared",
+)
+```
+
+The package's node/plugin library remains a separate target. Its generated
+interfaces, owned package index and implementation may share one Bazel module;
+collecting the generated provider does not require linking the node into the
+bridge. Register service-only providers too, such as the AD API version service.
+The descriptor test checks canonical identities and selected supported types;
+it does not check source-directory completeness or discover undeclared files.
+
 Keep collection roots independent of the plugin library to avoid a cycle.
 An interface source that is not registered remains outside the Bazel build.
 
