@@ -1,0 +1,11 @@
+--- a/muSSP/Graph.cpp
++++ b/muSSP/Graph.cpp
+@@ -353,7 +353,7 @@
+     //// Mark the current node as visited
+     node_in_visited[v] = 3;
+     //// Recur for all the vertices adjacent to this vertex
+-    if (!node_in_visited[parent_node_id[v]]) {
++    if (parent_node_id[v] != -1 && !node_in_visited[parent_node_id[v]]) {
+         topologicalSort_counter_order(parent_node_id[v]);
+     }
+     //// Push current vertex to stack which stores topological sort

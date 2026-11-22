@@ -2103,3 +2103,118 @@ a cluster supported by an input arriving within 100 ms of appearance for
 every impaired trace. This replay establishes a geometric detection effect.
 Tracking identity, motion prediction and live scheduling remain open.
 [Per-trace results](../rmw-agnocast/cluster-replay-results.txt).
+
+## 2026-11-22 — Track identity and confirmation after near-branch losses
+
+Use the production Universe multi-object tracker to follow the cluster replay
+one stage further. Start with the preceding Lyrical perception and Agnocast
+overlays. Build the local message/utility dependencies and muSSP, then the
+full tracker executable with ordinary ROS endpoints. The previous detector
+was stateless. Here every trace starts a separate tracker process and
+retains its state from acquisition 0 through 31.
+
+The first muSSP compile failed to find the C++ standard header vector.
+Its CMake clears CMAKE_CXX_FLAGS and discards Clang's GCC installation hint.
+Build that dependency with GCC. Clang 21 rejected the geometry utility's
+GCC-only diagnostic pragma under -Werror; allow unknown warning options
+to remain warnings in this colcon experiment. The tracker then failed on
+Boost hash lookup and deprecated TF headers. Apply the Boost include and
+odometry TF changes from the main worktree's 019919f2, and select the
+installed .hpp TF buffer/listener headers where .h wrappers emit errors.
+The script builds a copy so the Universe source subtree stays pristine.
+
+```bash
+export LYRICAL_ROOT=$(cat build/agnocast-lyrical/universe-root)
+experiments/buffer/run-lyrical.sh bash experiments/rmw-agnocast/build-track-replay.sh
+BUFFER_RUNTIME_ONLY=1 experiments/buffer/run-lyrical.sh \
+  bash experiments/rmw-agnocast/run-track-replay.sh
+```
+
+The fixture runs the preceding Euclidean cluster node on all 32 source
+scenes. It fits the measured rectangular XY extent of each planar cluster,
+supplies a 0.1 m height, and preserves its label and centroid. This fixture
+adapts cluster features to polygon-shaped DetectedObjects. Use a static
+identity map-to-base_link transform and the tracker's shipped lidar_clustering
+channel and association matrix. The other eleven inputs are disabled.
+Prediction and confidence checks use the stock measurement-triggered
+configuration. The sink reads confirmed TrackedObjects. A second stationary
+landmark at y = 8.1 m has detections at groups 0–3, 9–11 and 25–31 to
+exercise identity after occlusion. This visibility pattern deliberately
+probes the observations only native retained. The original persistent
+landmark and all 30 transient windows supply independent comparisons.
+
+For each trace, shift the acquisition and arrival timestamps together to the
+current epoch. Release detections in observed arrival order on local Cyclone
+DDS, waiting for each matching tracker output before the next release.
+Record any scheduling slip, first confirmed receipt relative to first
+acquisition, UUID continuity and longest interval between outputs containing
+the persistent landmark. These measurements include tracker processing and
+replay transport. Cluster execution is outside the timed region. All paths
+use the same tracker binary and replay transport.
+
+Two runtime issues surfaced before the comparison. On the healthy trace,
+checked libstdc++ aborted inside muSSP's topologicalSort_counter_order.
+The backtrace passed through PolarAssociation::assign. The traversal recognizes
+a missing parent on function entry but indexed the visited vector at that
+parent before recursing. Check for the missing parent at the lookup as well;
+keep the current vertex in the ordering. Rebuilding the solver copy with
+this guard allowed the same healthy trace to finish with bounds checks active.
+
+The healthy tracker then published two UUIDs at the same persistent landmark.
+InputStream::getObjectsOlderThan exports through an inclusive timestamp but
+only removed entries strictly older than that timestamp. An entry at the
+boundary could be processed again with its old association. The baseline
+published duplicates in the healthy, native-stalled and RMW-stalled controls.
+Changing removal to use the same inclusive boundary eliminated those duplicate
+outputs in the three matched runs. The baseline already includes the solver
+fix. Use REPLAY_CONSUME_STAMP=0 for its build and the default for the corrected
+comparison. The local correction has been exercised on a single ordered
+channel. For the related upstream implementation see the
+[AWF input manager](https://github.com/autowarefoundation/autoware_universe/blob/main/perception/autoware_multi_object_tracker/src/processor/input_manager.cpp).
+Neither fix changes rmw_agnocast or the Bazel tree.
+
+The corrected 4 m scene ran all 64 archived traces (1,816 matched tracker
+outputs). Every trace retained one UUID on the continuously visible landmark
+from initial confirmation through group 31. Every trace reacquired the
+long-occluded landmark with a new UUID at or after group 25. Native stalled
+traces put confirmed tracks at 25 transient positions, versus 23 for the
+other three stacks; all four reached 12 within 100 ms. At this spacing,
+UUIDs sometimes moved between different target positions, including in the
+healthy control. Consequently these figures describe coverage of positions.
+
+Repeat trial 1 at 8 m spacing to separate association from delivery. The
+coordinate change translates each cluster-derived detection along X, keeping
+the measured shape. All five replays had zero UUIDs shared across positions.
+Native reached 25 of 30 distinct targets, the other impaired inputs 21,
+and the healthy control 30. These counts match the number of visibility
+windows with at least two delivered detections. Maximum release slip in
+the full 4 m matrix was 7.63 ms; the 100 ms measure includes replay slip.
+The full tracker build had at least 2,886 MiB host memory available.
+The full matrix had at least 4,937 MiB available under the runtime guard.
+
+Use the existing exported Lyrical root and run the following controls
+sequentially. The trace arguments select the inputs independently of the
+tracker's shared Cyclone DDS runtime.
+
+```bash
+r=experiments/rmw-agnocast
+export BUFFER_RUNTIME_ONLY=1 REPLAY_TARGET_SPACING_M=8
+for group in 18 20 22 24 25; do
+  REPLAY_RETURN_GROUP=$group experiments/buffer/run-lyrical.sh bash "$r/run-track-replay.sh" \
+    "$r"/pipeline-busy-results/1-{stock-healthy,stock-slow-near,native-slow-near}.log
+done
+for hide in 0 1; do
+  REPLAY_RETURN_GROUP=18 REPLAY_HIDE_GLIMPSE=$hide experiments/buffer/run-lyrical.sh \
+    bash "$r/run-track-replay.sh" "$r"/pipeline-{busy,isolation}-results/2-{stock,native}-slow-near.log
+done
+```
+
+For groups 20, 22 and 24, hiding the glimpse also changed native's UUID,
+while rmw_agnocast reacquired with a new UUID in both scenes. Repeat the
+second command with REPLAY_RETURN_GROUP=20 for the matched group-20
+confirmation on trial 2 from each stall workload. At group 18 native kept
+the ID even with the glimpse hidden. Thus the schedule difference alone
+can affect identity at some return times. The causal observation benefit
+was reproduced at group 20 on both workloads. The continuously visible
+landmark remained confirmed throughout each run after its initial
+confirmation. See the [comparison and archived evidence](../rmw-agnocast/README.md#delayed-observations-and-multi-object-track-identity).

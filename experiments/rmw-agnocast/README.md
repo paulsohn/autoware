@@ -2751,3 +2751,53 @@ latency and could change the graph's scheduling.
 
 [Per-trace detections](cluster-replay-results.txt) ·
 [Build and replay instructions](../buffer/JOURNAL.md#2026-11-22--replay-near-cloud-losses-through-universe-euclidean-clustering).
+
+### Delayed observations and multi-object track identity
+
+The tracker can use a late observation to preserve a UUID. In the controlled
+scene, a landmark visible through group 3 disappeared, was briefly visible
+in groups 9–11, and returned at group 20 (about 850 ms after group 3).
+The native trace delivered those three clouds late. The rmw_agnocast trace
+missed all three. With the native delivery schedule held fixed, hiding only
+that landmark from those three messages changed its UUID on return.
+Every other object, message and acquisition stamp stayed the same.
+
+| Group where the landmark returned | Native, glimpse visible | Native, glimpse hidden | rmw_agnocast, either scene |
+|---|---|---|---|
+| 18 | Preserved | Preserved | New UUID |
+| 20, 22, 24 | Preserved | New UUID | New UUID |
+| 25 | New UUID | Unmeasured | New UUID with glimpse visible |
+
+At group 18 the schedules differed in their outcomes even when the three
+observations were hidden. At groups 20–24 the within-native comparison
+isolates the benefit of the observations themselves. Group 25 puts the
+result in perspective: the original identity eventually expired on both
+paths. These are scene-specific reappearance times on one laptop.
+
+Across 64 recorded delivery traces (1,816 tracker outputs), the continuously
+visible landmark kept a single UUID. On the original 4 m scene the tracker
+also reassigned some IDs between target positions. Moving the transient
+positions to 8 m spacing removed those switches in the five-run control.
+With a busy near branch and this wider spacing, the following counts refer
+to distinct confirmed targets. The 100 ms interval runs from first acquisition
+to tracked-object receipt; cluster preparation was performed ahead of replay.
+
+| Trace, one representative run each | Distinct brief targets confirmed | Confirmed within 100 ms of appearance |
+|---|---:|---:|
+| Healthy control | 30/30 | 30/30 |
+| Native Agnocast | 25/30 | 12/30 |
+| rmw_agnocast | 21/30 | 12/30 |
+| Cyclone DDS | 21/30 | 12/30 |
+| Zenoh | 21/30 | 12/30 |
+
+All replays used the same Lyrical tracker on Cyclone DDS and the configured
+LiDAR clustering channel. Build-copy fixes addressed a muSSP parent-index
+assertion and duplicate tracker inputs at an inclusive timestamp boundary.
+This measures consequences of the recorded cloud deliveries with controlled
+polygon detections. A live mixed-sensor tracker would have additional
+observations and different association opportunities.
+
+[Full matrix](track-replay-results/matrix.txt) ·
+[Wider spacing](track-replay-results/wider.txt) ·
+[Occlusion controls](track-replay-results/occlusion.txt) ·
+[Reproduction and build fixes](../buffer/JOURNAL.md#2026-11-22--track-identity-and-confirmation-after-near-branch-losses).

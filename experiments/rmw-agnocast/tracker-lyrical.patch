@@ -1,0 +1,54 @@
+diff --git a/lib/odometry.cpp b/lib/odometry.cpp
+index 5337328d..5b378255 100644
+--- a/lib/odometry.cpp
++++ b/lib/odometry.cpp
+@@ -16,10 +16,10 @@
+
+ #include "autoware/multi_object_tracker/uncertainty/uncertainty_processor.hpp"
+
+-#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
++#include <tf2/LinearMath/Quaternion.hpp>
++#include <tf2/utils.hpp>
+
+-#include <tf2/LinearMath/Quaternion.h>
+-#include <tf2/utils.h>
++#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
+
+ #include <array>
+ #include <cmath>
+diff --git a/src/debugger/debug_object.hpp b/src/debugger/debug_object.hpp
+index 00779dd7..5c8baf6c 100644
+--- a/src/debugger/debug_object.hpp
++++ b/src/debugger/debug_object.hpp
+@@ -23,6 +23,7 @@
+ #include <geometry_msgs/msg/point.hpp>
+ #include <visualization_msgs/msg/marker_array.hpp>
+
++#include <boost/functional/hash.hpp>
+ #include <boost/uuid/uuid.hpp>
+ #include <boost/uuid/uuid_hash.hpp>
+
+--- a/src/multi_object_tracker_core.hpp
++++ b/src/multi_object_tracker_core.hpp
+@@ -30,7 +30,7 @@
+ #include <geometry_msgs/msg/pose_stamped.hpp>
+ #include <geometry_msgs/msg/transform.hpp>
+
+-#include <tf2_ros/buffer.h>
++#include <tf2_ros/buffer.hpp>
+
+ #include <functional>
+ #include <memory>
+--- a/include/autoware/multi_object_tracker/odometry.hpp
++++ b/include/autoware/multi_object_tracker/odometry.hpp
+@@ -24,8 +24,8 @@
+ #include <geometry_msgs/msg/pose_stamped.hpp>
+ #include <nav_msgs/msg/odometry.hpp>
+
+-#include <tf2_ros/buffer.h>
+-#include <tf2_ros/transform_listener.h>
++#include <tf2_ros/buffer.hpp>
++#include <tf2_ros/transform_listener.hpp>
+
+ #include <map>
+ #include <memory>
