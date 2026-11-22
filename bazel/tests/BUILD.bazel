@@ -164,6 +164,7 @@ py_test(
     )
     for kind, product in [
         ("native", "//bazel/runtime:planning_simulator_bundle"),
+        ("oci", "//images:planning_simulator_docker_archive"),
     ]
 ]
 

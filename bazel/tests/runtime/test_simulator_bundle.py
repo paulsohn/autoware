@@ -9,7 +9,9 @@ import subprocess
 import sys
 import tarfile
 import tempfile
+import time
 import unittest
+import uuid
 import xml.etree.ElementTree as ET
 
 MODE, PRODUCT, COMPANION = sys.argv[1:]
@@ -17,8 +19,8 @@ PRODUCT, COMPANION = str(Path(PRODUCT).resolve()), str(Path(COMPANION).resolve()
 del sys.argv[1:]
 
 
-def docker(*args):
-    return subprocess.run(['docker', *args], check=True, capture_output=True, text=True)
+def docker(*args, check=True):
+    return subprocess.run(['docker', *args], check=check, capture_output=True, text=True)
 
 
 class SimulatorDistribution(unittest.TestCase):
@@ -92,6 +94,40 @@ class SimulatorDistribution(unittest.TestCase):
             metrics = re.search(r'Arrived: displacement=.*', output)
             self.assertIsNotNone(metrics)
             print(f'{MODE}: {len(cases)} driving/shutdown cases; {len(started)} clean processes; {metrics[0]}', flush=True)
+            if MODE == 'oci':
+                self.check_normal_entrypoint(image)
+
+    def check_normal_entrypoint(self, image):
+        name = 'autoware-simulator-test-' + uuid.uuid4().hex[:12]
+        try:
+            docker('run', '--detach', '--name', name, '--pull=never', '--network=none',
+                   '--read-only', '--cap-drop=ALL', '--security-opt=no-new-privileges',
+                   '--tmpfs', '/tmp:rw,exec,nosuid,nodev', '-e', 'ROS_DOMAIN_ID=113', image)
+            deadline = time.monotonic() + 60
+            while time.monotonic() < deadline:
+                logs = docker('logs', name)
+                output = logs.stdout + logs.stderr
+                state = json.loads(docker('inspect', name).stdout)[0]['State']
+                self.assertTrue(state['Running'], output)
+                started = set(re.findall(r'\[([^\[\]]+)\]: process started with pid', output))
+                if len(started) == 56 and output.count('Loaded node ') == 41:
+                    break
+                time.sleep(0.2)
+            else:
+                self.fail('Normal image entrypoint did not load the complete graph: ' + output)
+            docker('stop', '--time', '30', name)
+            state = json.loads(docker('inspect', name).stdout)[0]['State']
+            logs = docker('logs', name)
+            output = logs.stdout + logs.stderr
+            self.assertEqual(state['ExitCode'], 0, output)
+            self.assertFalse(state['OOMKilled'])
+            self.assertNotIn('process has died', output)
+            self.assertNotIn('failed to terminate', output)
+            stopped = set(re.findall(r'\[([^\[\]]+)\]: process has finished cleanly', output))
+            self.assertEqual(started, stopped)
+            print('Normal OCI entrypoint: 56 processes, 41 components, clean SIGINT stop', flush=True)
+        finally:
+            docker('rm', '--force', name, check=False)
 
 
 if __name__ == '__main__':

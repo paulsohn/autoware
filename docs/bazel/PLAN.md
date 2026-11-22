@@ -116,7 +116,8 @@ only when your current target demonstrates the need.
   [distribution convention](DEVELOPING.md#native-core-distribution);
   [evidence: native runtime closure](JOURNAL.md#2026-11-20-phase-71--native-headless-core-distribution).
   [OCI image convention](DEVELOPING.md#oci-core-distribution);
-  [evidence: payload and image execution](JOURNAL.md#2026-11-20-phase-72--thin-oci-core-distribution).
+  [evidence: payload and image execution](JOURNAL.md#2026-11-20-phase-72--thin-oci-core-distribution);
+  [full simulator distribution and loaded-library audit](JOURNAL.md#2026-11-23-phase-734--isolated-simulator-oci-distribution).
 - [ ] Separate immutable release/domain resources from persistent vehicle records,
   and define activation/state compatibility before updating them.
   [Application update convention](DEVELOPING.md#ostree-application-distribution);
@@ -1637,7 +1638,7 @@ Phase 8. No new Fast DDS acceptance run was performed; it still requires
 explicit approval. The x86 TensorRT 10.16.1 versus JetPack 7.2.1's 10.16.2 gap
 remains explicit for Phase 8.
 
-## Phase 7 — Runtime packaging and headless planning simulation (in progress)
+## Phase 7 — Runtime packaging and planning simulation (complete, 2026-11-23)
 
 Follow the [packaging and deployment requirements](#runtime-packaging-and-deployment-requirements).
 Complete each distribution boundary before expanding the application closure.
@@ -1666,12 +1667,13 @@ Complete each distribution boundary before expanding the application closure.
    variants below are additional completion gates. A pinned QEMU guest is an
    optional additional OCI packaging check; a bootable OSTree deployment would
    require its own guest boot gate. Neither establishes real-time or GPU support.
-3. **7.3 — AWF planning simulation (in progress).** Establish the exact tutorial/source/input
-   contract, then demonstrate the original planning_simulator.launch.xml
-   workflow and repeatable headless functional assertions. Integrate the
-   selected autoware_universe planning/launch dependency closure first where
-   required by that workflow. A smaller core-only experiment is optional and
-   does not satisfy the AWF workflow gate by itself.
+3. **7.3 — AWF planning simulation (complete, 2026-11-23).** The original
+   planning_simulator.launch.xml and selected autoware_universe closure support
+   the documented RViz pose/goal/Auto workflow and repeatable headless driving.
+   All nine launch targets pass nineteen cases. Relocated native and isolated
+   OCI distributions each pass the complete startup/driving/shutdown gate.
+   Scope is the selected sample-vehicle, rule-based CPU/Cyclone DDS profile
+   with Agnocast disabled; this does not establish full Universe coverage.
 
 Phase 7.2 task boundaries:
 
@@ -1894,21 +1896,24 @@ Phase 7.3 task boundaries (selected 2026-11-21):
   not autonomous driving. RViz, route/engagement/motion and expanded distribution
   acceptance remain 7.3.4; no Fast DDS or enabled-Agnocast product result is claimed.
   [Exact product gate and remaining scope](JOURNAL.md#2026-11-22-phase-733--original-headless-planning-simulator-product).
-- **7.3.4 — Lane-driving acceptance (in progress).** Complete the original RViz
-  workflow and its equivalent headless case, then expanded native/OCI runtime
-  closure acceptance. The fourteen local RViz plugin modules pass all forty
-  exported factories; the original window renders the map/panels/overlays with
-  OpenGL 4.6 and all 57 processes exit cleanly. Typed pose/route/Auto driving
-  passes with 16.70 m displacement, 3.60 m/s peak speed and 0.03 m final error,
-  arrival, stop and clean shutdown. The combined affected module gate passes
-  29 targets. Source compatibility and collision-type fixes are separate from
-  package BUILD definitions. The actual GUI pose/goal/Auto interaction also passes: visible motion, Routing
-  Arrived, Motion Stopped and 0 km/h, followed by 57 clean exits. Only isolated
-  OCI behavior remains. Expanded native extraction passes
-  the complete three-case startup/driving/shutdown gate, with 57 clean processes
-  and 0.01 m final error. Routine evidence
+- **7.3.4 — Lane-driving acceptance (complete, 2026-11-23).** The fourteen
+  local RViz plugin modules pass all forty exported factories. The original
+  window renders the map/panels/overlays with OpenGL 4.6; its actual
+  pose/goal/Auto interaction produces visible motion, Routing Arrived,
+  Motion Stopped and 0 km/h, followed by 57 clean exits. Typed driving passes
+  with 16.70 m displacement, 3.60 m/s peak speed and 0.03 m final error.
+  The combined affected module gate passes 29 targets. Source compatibility
+  and collision-type fixes are separate from package BUILD definitions.
+  Expanded native and isolated OCI distributions each pass all three
+  startup/driving/shutdown cases with 57 clean processes, reaching final errors
+  of 0.01 m and 0.04 m respectively. The normal OCI entrypoint loads all 41
+  components and stops all 56 processes cleanly; its loaded-library audit
+  permits only the base loader/glibc outside the application. Routine evidence
   stays CPU/Cyclone DDS with Agnocast off; Fast DDS requires fresh approval.
   [Product composition and exact driving gate](JOURNAL.md#2026-11-22-phase-734--original-rviz-runtime-and-typed-lane-driving).
+  [GUI interaction](JOURNAL.md#2026-11-23-phase-734--original-rviz-lane-driving-interaction);
+  [native distribution](JOURNAL.md#2026-11-23-phase-734--extracted-native-simulator-distribution);
+  [isolated OCI distribution](JOURNAL.md#2026-11-23-phase-734--isolated-simulator-oci-distribution).
 
 The version 1.4.0 tutorial and the current
 [lane-driving page](https://docs.autoware.org/main/simulation/planning-simulation/lane-driving/)
@@ -1957,9 +1962,9 @@ when Phase 8 begins; any baseline change must be explicit and journaled.
 These are scope markers, not implementation decisions. Refine each phase only
 when the preceding phase meets its exit criteria.
 
-Priority agreed 2026-11-21: finish the current 7.2 distribution variants, then
-use 7.3's original planning-simulator workflow to integrate its selected
-autoware_universe closure. Broaden Universe coverage in groups of related
+Priority agreed 2026-11-21: the completed 7.2 distribution variants and 7.3
+original planning-simulator workflow establish the selected autoware_universe
+closure. Broaden Universe coverage in groups of related
 packages with complete package suites and relevant behavior gates. Preserve
 existing phase identifiers; refine broader coverage tasks when that closure is
 known. Vehicle-specific provisioning and operating-domain redeployment remain
@@ -1983,8 +1988,8 @@ target requires them.
 
 Priority agreed 2026-11-22: complete the full autoware_universe Bazel integration
 before starting a direct Pixi comparison. The selected planning-simulator
-dependency closure alone does not satisfy this prerequisite. Continue Phase 7.3
-and broader Universe adoption in related package groups; keep the comparison
+dependency closure alone does not satisfy this prerequisite. After Phase 7.3,
+continue broader Universe adoption in related package groups; keep the comparison
 outside current phase gates and preserve the existing phase identifiers.
 Do not introduce Pixi manifests, recipes, packaging adapters or benchmarks now.
 

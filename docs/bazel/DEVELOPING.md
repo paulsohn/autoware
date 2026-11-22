@@ -983,6 +983,46 @@ The common Cyclone configuration is expanded into executable application/verifie
 scripts from bazel/runtime/cyclonedds.bzl; update that source when the topology
 requires another tested discovery profile.
 
+## OCI simulator distribution
+
+The simulator image puts the native application bundle at /opt/autoware over
+the root-selected Ubuntu 24.04 base. Its headless entrypoint is run_simulator,
+running as UID/GID 1000 with SIGINT for orderly shutdown. Build the OCI layout
+or load the same manifest into the local Docker daemon:
+
+```sh
+bazel build --config=runtime --config=no-agnocast \
+  //images:planning_simulator_oci //images:planning_simulator_docker_archive
+bazel run --config=runtime --config=no-agnocast //images:planning_simulator_load
+docker run --rm --name autoware-planning-simulator --pull=never \
+  --network=none --read-only --cap-drop=ALL --security-opt=no-new-privileges \
+  --tmpfs /tmp:rw,exec,nosuid,nodev \
+  docker.io/library/autoware-planning-simulator:bazel
+```
+
+Stop it from another terminal with
+docker stop --time 30 autoware-planning-simulator. The indexed map, model
+descriptions, parameters, interpreter and libraries are application inputs;
+no workspace/cache mounts, installed ROS/Python or dependency-install step is
+needed. The local tag is a convenience, not an immutable release identifier.
+Use the generated image manifest digest for release identity. The supported
+runtime remains Linux x86_64/Ubuntu 24.04, CPU/Cyclone DDS with Agnocast off.
+GUI display/device forwarding is not part of this image's acceptance gate;
+use the native RViz instructions above for graphical lane driving.
+
+For image changes, run the uncached local Docker gate:
+
+```sh
+bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_output=errors //bazel/tests:planning_simulator_oci_runtime_test
+```
+
+It uses the separate verification companion, checks all three original
+startup/driving/shutdown cases in an isolated read-only image, and then checks
+startup and SIGINT shutdown through the normal image entrypoint. Keep the
+verifier outside the application image. Run the native archive/closure gates
+above as well when changing the shared application payload.
+
 ## Original test source layout
 
 Keep original tests in their source packages and expose their inputs through

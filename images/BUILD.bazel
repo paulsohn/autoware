@@ -175,3 +175,54 @@ filegroup(
     srcs = [":core_systemd_load"],
     output_group = "tarball",
 )
+
+pkg_tar(
+    name = "planning_simulator_payload",
+    allow_duplicates_with_different_content = False,
+    compression_level = 1,
+    extension = "tar.gz",
+    package_dir = "opt/autoware",
+    preserve_mode = True,
+    stamp = 0,
+    deps = ["//bazel/runtime:planning_simulator_bundle"],
+)
+
+layer_from_tar(
+    name = "planning_simulator_layer",
+    src = ":planning_simulator_payload",
+    compress = "gzip",
+    estargz = "disabled",
+)
+
+image_manifest(
+    name = "planning_simulator",
+    base = "@ubuntu_runtime",
+    cmd = [],
+    entrypoint = ["/opt/autoware/run_simulator"],
+    env = {"HOME": "/tmp", "LOGNAME": "autoware"},
+    layers = [":planning_simulator_layer"],
+    stop_signal = "SIGINT",
+    target_compatible_with = ["@platforms//cpu:x86_64", "@platforms//os:linux"],
+    user = "1000:1000",
+    working_dir = "/",
+)
+
+filegroup(
+    name = "planning_simulator_oci",
+    srcs = [":planning_simulator"],
+    output_group = "oci_tarball",
+)
+
+image_load(
+    name = "planning_simulator_load",
+    daemon = "docker",
+    image = ":planning_simulator",
+    strategy = "eager",
+    tag = "docker.io/library/autoware-planning-simulator:bazel",
+)
+
+filegroup(
+    name = "planning_simulator_docker_archive",
+    srcs = [":planning_simulator_load"],
+    output_group = "tarball",
+)

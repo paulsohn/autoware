@@ -17689,3 +17689,125 @@ RViz, exit cleanly; all 41 configured components loaded, no process dies, and th
 runner returns zero. The GUI gate is complete. Reuse the unchanged passing
 factory/module tests; only the isolated OCI gate remains in Phase 7.3.4.
 No additional middleware, inference, traffic-light scenario or QEMU claim.
+
+## 2026-11-23: Phase 7.3.4 — Isolated simulator OCI distribution
+
+Purpose: demonstrate that the complete planning simulator can drive and stop
+from its packaged runtime, without borrowing the builder's dependencies.
+Prerequisites are the validated native application and separate verification
+archives above, a compatible Linux x86_64 kernel and Docker Engine. Image
+assembly itself needs no daemon. Inspect the existing core image pattern in
+images/BUILD.bazel, the shared simulator launcher and the original three-case
+Composition/LaneDriving/Shutdown suite before extending the distribution.
+
+Use rules_img's layer_from_tar to place the unchanged native application at
+/opt/autoware. image_manifest selects the existing Ubuntu 24.04 linux/amd64
+base pinned by images/images.MODULE.bazel to
+sha256:73b999393d07f2bf65a40373778a44dc9a6d54ad7718d29247d8ff9413c4d6a8.
+Set the entrypoint to /opt/autoware/run_simulator, empty Cmd, UID/GID 1000,
+working directory /, HOME=/tmp and StopSignal=SIGINT. Export both the OCI layout
+and Docker-load archive from that manifest; do not add dependency installation
+commands, a second application inventory or the test verifier to the image.
+
+Extend the existing distribution test with its OCI input. Load the actual
+archive, assert image architecture/configuration and two layers, then run the
+separate verifier in a network-isolated, read-only container with all
+capabilities dropped and no-new-privileges. Mount only the verification
+companion and result directory. Assert that ROS, Bazel, OS Python and builder
+source/cache directories are absent. The product still establishes its own
+interpreter/library/index paths; the companion must not repair it. A writable
+ephemeral /tmp supports logs and state without making the application writable.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_output=errors //bazel/tests:planning_simulator_oci_runtime_test
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel build --config=runtime --config=no-agnocast \
+  //images:planning_simulator_oci
+```
+
+The complete OCI runtime gate passes in 142.5 s. All three original
+startup/driving/shutdown cases pass with no skips, 57 clean process exits,
+16.71 m displacement, 3.62 m/s peak speed and 0.04 m final goal error.
+The same test separately starts the normal image entrypoint, waits for all
+56 processes and 41 components, sends Docker's SIGINT stop and requires zero
+exit status, no process deaths and every started process to finish cleanly.
+The OCI layout export also builds successfully. The preceding native gate
+and unchanged complete component suites remain valid; these results cover
+the shared payload and the distinct image execution boundary.
+
+Audit actual loaded libraries as well as archive contents. To repeat the audit
+after loading the image through the test or //images:planning_simulator_load,
+run the following Python with Docker access. It waits for the full graph,
+examines all readable process maps inside the container and stops/removes its
+own container afterward. The base shell/cat used for inspection can themselves
+map the same allowed loader/glibc family.
+
+```python
+import json
+from pathlib import Path
+import re
+import subprocess
+import time
+import uuid
+
+def docker(*args, check=True):
+    return subprocess.run(["docker", *args], check=check,
+                          capture_output=True, text=True)
+
+name = "autoware-simulator-audit-" + uuid.uuid4().hex[:10]
+try:
+    docker("run", "--detach", "--name", name, "--pull=never",
+           "--network=none", "--read-only", "--cap-drop=ALL",
+           "--security-opt=no-new-privileges",
+           "--tmpfs", "/tmp:rw,exec,nosuid,nodev", "-e", "ROS_DOMAIN_ID=114",
+           "docker.io/library/autoware-planning-simulator:bazel")
+    deadline = time.monotonic() + 60
+    while time.monotonic() < deadline:
+        logs = docker("logs", name)
+        output = logs.stdout + logs.stderr
+        state = json.loads(docker("inspect", name).stdout)[0]["State"]
+        assert state["Running"], output
+        started = set(re.findall(r"\[([^\[\]]+)\]: process started with pid", output))
+        if len(started) == 56 and output.count("Loaded node ") == 41:
+            break
+        time.sleep(0.2)
+    else:
+        raise AssertionError("Incomplete simulator startup")
+    maps = docker("exec", name, "/bin/sh", "-ec",
+                  'test -r /proc/1/maps; for p in /proc/[0-9]*/maps; '
+                  'do cat "$p" 2>/dev/null || :; done').stdout
+    paths = set()
+    for line in maps.splitlines():
+        fields = line.split(maxsplit=5)
+        if len(fields) == 6 and fields[5].startswith("/"):
+            path = fields[5].removesuffix(" (deleted)")
+            if re.search(r"\.so(?:\.|$)", Path(path).name):
+                paths.add(path)
+    assert len(paths) > 100, len(paths)
+    glibc = {"ld-linux-x86-64.so.2", "libc.so.6", "libm.so.6", "libpthread.so.0",
+             "libdl.so.2", "librt.so.1", "libresolv.so.2", "libutil.so.1"}
+    external = sorted(p for p in paths if not p.startswith("/opt/autoware/"))
+    print("Mapped shared-library paths:", len(paths), "outside:", external)
+    assert all(Path(p).name in glibc for p in external), external
+    docker("stop", "--time", "30", name)
+    state = json.loads(docker("inspect", name).stdout)[0]["State"]
+    assert state["ExitCode"] == 0 and not state["OOMKilled"], state
+finally:
+    docker("rm", "--force", name, check=False)
+```
+
+The audit observes 693 distinct mapped shared-library paths: 686 within
+/opt/autoware and seven base loader/glibc paths (loader, libc, libdl, libm,
+libpthread, librt and libutil). No host/application dependency escapes the
+declared payload. The audited entrypoint also exits zero on SIGINT. This is
+headless runtime evidence; the native desktop GUI check separately covers
+OpenGL and actual pose/goal/Auto controls.
+
+Phase 7 is complete for the selected sample-vehicle, rule-based CPU/Cyclone DDS
+profile with ENABLE_AGNOCAST=0. The normal entrypoint and verifier are stopped
+and audit containers removed. Fast DDS, GPU inference, enabled Agnocast product
+execution, full Universe coverage, QEMU and production OTA remain outside this
+gate. Broader Universe adoption and the existing later-phase plans remain
+separate work. Targeted Python and whitespace checks pass; no pre-commit runs.
