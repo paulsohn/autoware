@@ -16,5 +16,6 @@ load("@pip_ros//:requirements.bzl", "requirement")
         ("autoware_control_config", "config/preset/default_preset.yaml"),
         ("autoware_perception_config", "config/occupancy_grid_map/laserscan_based_occupancy_grid_map.param.yaml"),
         ("autoware_map_config", "config/lanelet2_map_loader.param.yaml"),
+        ("autoware_localization_config", "config/pose_initializer.param.yaml"),
     ]
 ]
