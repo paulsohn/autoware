@@ -17079,3 +17079,20 @@ Run bazel test --config=runtime --config=no-agnocast --local_test_jobs=1
 environment. All 1 exported factories construct/destroy; the unchanged original
 RViz configuration also loads and renders. Keep its Bazel definitions in the
 following module boundary. Older Qt/ROS and upstream CMake/GCC were not run.
+
+## 2026-11-22: Phase 7.3.4 — tier4_datetime_rviz_plugin compatibility
+
+Purpose: compile and load this original plugin package with RCR RViz 15.2.6,
+Qt 6.10.2, TF 0.45.10 and LLVM/libc++ 21.1.8 on Ubuntu 24.04.
+Qt6 removes QString::rightRef. Use right(4) to retain the same four-character
+fractional-second suffix. Both methods return the displayed text needed here;
+no formatting or time-source change is intended.
+
+The original package registers lint only, with no functional CPP/launch suite.
+Its complete exported-factory/resource gate is
+//bazel/tests/rviz_plugins:tier4_datetime_rviz_plugin_factories_test.
+Run bazel test --config=runtime --config=no-agnocast --local_test_jobs=1
+--test_output=errors with that target from an authenticated DISPLAY/XAUTHORITY
+environment. All 1 exported factories construct/destroy; the unchanged original
+RViz configuration also loads and renders. Keep its Bazel definitions in the
+following module boundary. Older Qt/ROS and upstream CMake/GCC were not run.

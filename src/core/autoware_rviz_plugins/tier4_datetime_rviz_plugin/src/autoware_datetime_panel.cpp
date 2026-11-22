@@ -27,7 +27,7 @@ void set_format_time(QLineEdit * line, double time)
   char buffer[128];
   auto seconds = static_cast<time_t>(time);
   strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", localtime(&seconds));
-  line->setText(QString(buffer) + QString::number((time - seconds), 'f', 3).rightRef(4));
+  line->setText(QString(buffer) + QString::number((time - seconds), 'f', 3).right(4));
 }
 
 AutowareDateTimePanel::AutowareDateTimePanel(QWidget * parent) : rviz_common::Panel(parent)
