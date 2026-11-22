@@ -13,5 +13,6 @@ load("@pip_ros//:requirements.bzl", "requirement")
     )
     for package, fixture in [
         ("autoware_planning_config", "config/preset/default_preset.yaml"),
+        ("autoware_control_config", "config/preset/default_preset.yaml"),
     ]
 ]

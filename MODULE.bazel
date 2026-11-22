@@ -1574,3 +1574,9 @@ local_path_override(
     module_name = "autoware_planning_config",
     path = "src/launcher/autoware_launch/autoware_universe_launch/autoware_planning_config",
 )
+
+bazel_dep(name = "autoware_control_config", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_control_config",
+    path = "src/launcher/autoware_launch/autoware_universe_launch/autoware_control_config",
+)
