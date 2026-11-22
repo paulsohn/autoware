@@ -1,0 +1,17 @@
+load("@rosdistro//ament:defs.bzl", "register_ament_files")
+
+package(default_visibility = ["//visibility:public"])
+
+# Install the executable without the CMake/build-tool closure of ament_package.
+register_ament_files(
+    name = "executable",
+    files = ["@rviz2//:rviz2"],
+    package_name = "rviz2",
+    prefix = "lib/rviz2",
+    strip_prefix = "*",
+)
+
+filegroup(
+    name = "runtime",
+    srcs = [":executable", "@rviz2//:rviz2"],
+)

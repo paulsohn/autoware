@@ -17167,3 +17167,35 @@ Run bazel test --config=runtime --config=no-agnocast --local_test_jobs=1
 environment. All 4 exported factories construct/destroy; the unchanged original
 RViz configuration also loads and renders. Keep its Bazel definitions in the
 following module boundary. Older Qt/ROS and upstream CMake/GCC were not run.
+
+## 2026-11-22: Phase 7.3.4 — RViz SDK runtime boundary
+
+Purpose: supply the original launcher with a real RViz executable, selected
+SDK/Qt providers and their runtime resources. Pin rviz2 15.2.6-1.rcr.0 and
+Qt/qtbase 6.10.2.rcr.0 at the root, plus registry rviz_2d_overlay_msgs/plugins
+1.4.2-1.rcr.0, which are absent locally. Expose the concrete rviz_common,
+rviz_rendering and pluginlib providers to product tests; retain registry-first
+root declarations and local source selection for Autoware plugins.
+
+Inspect the SDK BUILD: its rviz2 binary carries the common/default/rendering
+indexes, while its ament_index does not publish the binary at lib/rviz2/rviz2.
+The ament_package provider also brings CMake/build-tool dependency exports.
+Create a small generic third_party/rviz2 adapter: register the actual binary at
+lib/rviz2 using register_ament_files and forward that binary's default runfiles.
+It owns no Autoware plugin list or root-product dependency. Products supply
+selected plugin indexes and native graphics files separately. Do not fork the
+SDK or introduce an empty facade module merely for this directory.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel build --config=runtime --config=no-agnocast \
+  @rviz2//:rviz2 //third_party/rviz2:runtime
+```
+
+The binary builds and the adapter is exercised by the real original simulator
+command from outside the checkout: lib/rviz2 resolves, original configuration
+and SDK resources load, OpenGL 4.6 renders, and RViz exits cleanly on SIGINT.
+The following plugin boundaries use the documented
+[owned RViz pattern](DEVELOPING.md#rviz-plugin-packages), with complete exported
+factory checks. Graphical prerequisites and GNU ABI evidence are recorded in
+the earlier desktop-GLX entry; driving and packaging are separate product gates.

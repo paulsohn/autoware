@@ -66,6 +66,7 @@ only when your current target demonstrates the need.
   [mixed-package product selection](DEVELOPING.md#editing-interface-packages);
   [evidence: nested source categories](JOURNAL.md#2026-11-21-phase-732--nested-interface-source-namespaces).
   [Native plugin registration and utility SDK ownership](DEVELOPING.md#native-plugin-libraries);
+  [Qt/RViz runtime ownership and graphical prerequisites](DEVELOPING.md#rviz-plugin-packages);
   [evidence: composed utility closure](JOURNAL.md#2026-11-22-phase-733--shared-utility-sdk-ownership-in-containers);
   [combined-plugin type identity](JOURNAL.md#2026-11-22-phase-732--distinct-motion-plugin-internal-types);
   [validator collision-type evidence](JOURNAL.md#2026-11-22-phase-734--distinct-validator-collision-checker-debug-types);

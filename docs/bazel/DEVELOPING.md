@@ -848,6 +848,39 @@ Run //third_party/graphics_runtime:all with authenticated DISPLAY/XAUTHORITY whe
 changing that boundary. An EGL dispatch-only check does not prove that a Mesa
 or vendor GLX driver can load and create RViz's visual.
 
+## RViz plugin packages
+
+Each supported plugin package owns its MODULE/BUILD declarations, original
+plugin XML, icons/fonts/meshes and one indexed runtime. Build its implementation
+with qt_cc_library and publish its original library filename through
+qt_cc_shared_library. Use the selected Qt moc rules, explicit Q_OBJECT headers
+and shared ROS/Qt/Ogre providers; preserve original QT_NO_KEYWORDS/visibility
+flags. If moc headers share a basename, isolate their compilations in separate
+qt_cc_library targets rather than renaming the source headers.
+
+Keep compile providers and shared owners distinct. Collect concrete SDK dynamic
+dependencies with collect_transitive_dynamic_deps and pass that aggregate to the
+shared library. Consumers of Ogre's legacy UTFString ABI use the SDK-provided
+char_traits_patch.h where required. Do not introduce a different character-traits
+implementation or duplicate SDK globals across plugin libraries.
+
+Register the original XML with ament_index(plugin_categories = {xml:
+"rviz_common"}), the original package.xml, runtime resources and shared library.
+Compose @rviz_common//:ament_index, and @rviz_default_plugins//:ament_index when
+its SDK is used: the latter brings the indexed image/point-cloud transport
+runtime as well. These runtime indexes avoid the unrelated build-tool exports
+of SDK ament_package targets. The generic //third_party/rviz2:runtime adapter
+publishes the RViz executable; product plugin selection belongs to
+//bazel/runtime:planning_simulator_rviz. Components use logical SDK labels.
+
+Add a package/XML pair to bazel/tests/rviz_plugins/BUILD.bazel when registering a
+plugin. Its <package>_factories_test parses that original XML and constructs,
+destroys and unloads every exported Display/Panel/Tool class. Run it with
+--config=runtime --config=no-agnocast --local_test_jobs=1 --test_output=errors.
+DISPLAY and XAUTHORITY must identify an accessible X11 session: some original
+constructors query X11 directly even with Qt's offscreen platform. Factory
+success does not replace the product's real rendering and interaction check.
+
 ## Universe planning simulator
 
 The supported original simulator profile uses sample_vehicle/sample_sensor_kit,
