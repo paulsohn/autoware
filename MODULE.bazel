@@ -92,7 +92,10 @@ bazel_dep(name = "rosbag2_storage_sqlite3", version = "0.33.4-1.rcr.0")
 single_version_override(
     module_name = "rosdistro",
     patch_strip = 1,
-    patches = ["//third_party/rosdistro:register_executables.patch"],
+    patches = [
+        "//third_party/rosdistro:register_executables.patch",
+        "//third_party/rosdistro:package_executables.patch",
+    ],
     version = "lyrical.2026-10-05.rcr.4",
 )
 

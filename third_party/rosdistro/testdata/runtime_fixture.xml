@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>runtime_fixture</name>
+  <version>0.0.0</version>
+  <description>Generic runtime executable-index test fixture.</description>
+  <maintainer email="test@example.invalid">Runtime fixture</maintainer>
+  <license>Apache-2.0</license>
+</package>

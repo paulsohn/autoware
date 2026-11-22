@@ -120,3 +120,45 @@ finding is not an Autoware implementation or Lyrical source correction.
   ordinary data pass, followed by the affected original planning-node/wrapper
   suites and installed script/startup checks. Exact commands/results are in the
   journal. Suggest upstreaming this rule correction with the generic regression.
+
+### Standard ROS CLI runtime discovery needs distribution metadata and package-qualified executables
+
+- [ ] Associate missing CLI distribution metadata with an upstream RCR change.
+- [ ] Associate package-qualified executable aliases with an upstream RCR change.
+
+Inspected and reproduced 2026-11-23 on Ubuntu 24.04 x86_64, Bazel 9.3.2,
+LLVM/libc++ 21 and the selected Lyrical registry snapshot. These observations
+refer to the pinned releases, not a claim about every subsequent registry release.
+
+The public Python libraries for ros2action, ros2component, ros2lifecycle,
+ros2node, ros2param, ros2run and ros2service 0.40.9-1.rcr.0, plus ros2launch
+0.29.9-1.rcr.0, omit distribution metadata for entry_points declared in setup.py.
+A CLI containing those dependencies rejects node as an unknown command; the
+already registered bag/doctor/interface/pkg/topic commands remain visible.
+Python importability alone does not establish importlib.metadata discovery.
+The local `//third_party/ros2cli:entry_points` compatibility provider generates
+metadata with pinned setuptools from each dependency's declared setup.py.
+All eight version/plugin-table comparisons pass, and the consuming CLI loads
+all thirteen selected command families. No SDK source/BUILD patch is needed
+for that local adapter. Upstream could generate metadata once from authoritative
+package inputs and expose it to both Python runfiles and installed-underlay
+consumers, avoiding separate hand-maintained entrypoint tables.
+
+Separately, rosdistro lyrical.2026-10-05.rcr.4's ament_index executable mapping
+exports bin/<name>, whereas standard ros2pkg/ros2run APIs search
+lib/<package>/<name>. The CLI resolves rclcpp_components but lists no executables.
+The local [package alias patch](../../third_party/rosdistro/package_executables.patch)
+adds the package-qualified path while retaining bin/. Its generic regression
+checks file identity, discovery and invocation through those standard APIs.
+The actual component container then becomes discoverable; its separate
+source-lifetime issue is recorded below.
+
+Reproduction/verification targets:
+
+```sh
+bazel test --config=runtime --config=no-agnocast --test_output=errors \
+  //third_party/ros2cli:metadata_test //third_party/rosdistro:executable_index_test
+```
+
+[Metadata adoption evidence](JOURNAL.md#2026-11-23-phase-76--dependency-owned-ros-cli-extension-metadata);
+[index adoption evidence](JOURNAL.md#2026-11-23-phase-76--package-qualified-runtime-executable-indexes).

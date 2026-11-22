@@ -1,0 +1,27 @@
+Subject: Export package-qualified runtime executable paths
+
+Applies to: rosdistro lyrical.2026-10-05.rcr.4, ament/ament_index.bzl.
+
+Observed failure: ros2 pkg executables rclcpp_components returns no entries,
+and ros2 run cannot find component_container in an extracted native runtime.
+ament_index registers executables under bin/, while standard ROS CLI discovery
+looks under lib/<package>/. The installed ament_package layout already performs
+that package-qualified mapping.
+
+Rationale and scope: add lib/<package>/<basename> aliases for the same declared
+executable files. Retain bin/ aliases and existing runfiles propagation. Do not
+infer ownership from an aggregate bin directory or change component sources.
+
+Verification: //third_party/rosdistro:executable_index_test passes with
+--config=runtime --config=no-agnocast. It verifies both aliases refer to the
+same file and exercises standard package discovery, executable lookup and a
+real subprocess. The consuming distribution has a separate extracted CLI gate.
+
+Upstream: the selected published rule lacks these aliases, inspected
+2026-11-23. No matching upstream association is recorded.
+https://bazel.ros.org/modules/rosdistro/lyrical.2026-10-05.rcr.4/source.json
+
+--- a/ament/ament_index.bzl
++++ b/ament/ament_index.bzl
+@@ -208,0 +209 @@
++            symlinks["lib/" + package_name + "/" + file.basename] = file

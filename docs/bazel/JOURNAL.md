@@ -18294,3 +18294,42 @@ the added metadata provider, not every CLI verb or the SDK's unchanged test
 suites. The consuming debug distribution separately checks command loading
 and real topic/service/parameter behavior after relocation. No GPU, Fast DDS
 or pre-commit run is part of this helper task.
+
+## 2026-11-23: Phase 7.6 — Package-qualified runtime executable indexes
+
+Purpose: let standard ROS CLI tools discover executables in the same runtime
+closure used by the application. The debug distribution can resolve the
+rclcpp_components package but ros2 pkg executables returns no entries.
+Inspect rosdistro lyrical.2026-10-05.rcr.4 ament/ament_index.bzl and
+ros2pkg.api.get_executable_paths: the runtime index exports executables under
+bin/, while CLI discovery searches lib/<package>/. The installed ament_package
+mapping already uses that package-qualified location.
+
+Keep the pinned registry release and add package_executables.patch under
+third_party/rosdistro to its root single_version_override patches list.
+The one-line rule change adds lib/<owning-package>/<basename> for every declared
+executable file, preserving the existing bin alias and runfiles propagation.
+Ownership comes from each index's computed package name, including export_name;
+do not guess package ownership from a product's aggregated bin directory.
+This applies to declared executable targets without another application list.
+
+Add a generic SDK fixture and executable_index_test alongside the patch. Use
+export_name=runtime_fixture, a non-package.xml fixture filename to avoid
+colcon package discovery, and a tiny executable printing its argument. Assert
+that old/new paths resolve to the same file, then use standard ros2pkg and
+ros2run APIs to find and invoke it with an argument containing spaces. Command:
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --test_output=errors \
+  //third_party/rosdistro:executable_index_test
+python3 -m flake8 --max-line-length=150 third_party/rosdistro/test_executable_index.py
+sh -n third_party/rosdistro/testdata/echo_argument
+git diff --check
+```
+
+The complete regression passes (one case, 0.3 s). The extracted CLI subsequently
+finds and invokes the actual component_container; its separate early-return
+logging-lifetime failure is handled in the SDK source task below. No component
+source, installed-underlay layout or middleware selection changes in this index
+correction. No GPU, Fast DDS or pre-commit run.

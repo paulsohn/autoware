@@ -1,1 +1,21 @@
-exports_files(["register_executables.patch"])
+load("@rosdistro//ament:defs.bzl", "ament_index")
+load("@rules_python//python:defs.bzl", "py_test")
+
+exports_files(["register_executables.patch", "package_executables.patch"])
+
+ament_index(
+    name = "runtime_fixture_index",
+    testonly = True,
+    export_name = "runtime_fixture",
+    package_xml = "testdata/runtime_fixture.xml",
+    executables = ["testdata/echo_argument"],
+)
+
+py_test(
+    name = "executable_index_test",
+    srcs = ["test_executable_index.py"],
+    data = [":runtime_fixture_index"],
+    env = {"AMENT_PREFIX_PATH": "."},
+    main = "test_executable_index.py",
+    deps = ["@ament_index_python", "@ros2pkg", "@ros2run"],
+)
