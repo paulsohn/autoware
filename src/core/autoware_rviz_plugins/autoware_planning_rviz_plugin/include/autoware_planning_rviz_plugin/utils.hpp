@@ -18,7 +18,7 @@
 #include <autoware_utils/geometry/geometry.hpp>
 #include <autoware_utils/math/normalization.hpp>
 
-#include <tf2/utils.h>
+#include <tf2/utils.hpp>
 
 namespace rviz_plugins
 {
