@@ -1692,3 +1692,9 @@ local_path_override(
     module_name = "autoware_localization_rviz_plugin",
     path = "src/core/autoware_rviz_plugins/autoware_localization_rviz_plugin",
 )
+
+bazel_dep(name = "autoware_planning_rviz_plugin", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_planning_rviz_plugin",
+    path = "src/core/autoware_rviz_plugins/autoware_planning_rviz_plugin",
+)
