@@ -16552,3 +16552,29 @@ The full launch takes 12.4 seconds, with clean shutdown, no failures/skips.
 Only the source-reference comment changes afterward to match upstream metadata;
 no runtime rerun is needed for that comment. CPU/Cyclone DDS/Agnocast off.
 No Fast DDS, colcon/older ROS or autonomous-driving result is claimed.
+
+## 2026-11-22: Phase 7.3.3 — Indexed map defaults and selected launch arguments
+
+Purpose: make the original simulator resolve its deployment-selectable map by
+package identity and avoid an unused common model-directory requirement in the
+selected rule-based path. Inspect the simulator, main Autoware XML, map/planning
+component XML, planning launcher and manifest before changing their argument
+contracts. The map provider already owns a portable resource index/module.
+
+Default map_path to $(find-pkg-share autoware_map_asset) at the three relevant
+boundaries and declare the asset's exec dependency. Callers need no map-path
+injection, HOME convention or absolute checkout path. Preserve filename options
+and the underlying map argument. Remove the common data_path declaration and
+propagation from the supported simulator/main/planning path. Move the planning
+launcher's existing data_path declaration into its unselected diffusion branch;
+do not fetch models or alter unrelated perception/neural branches here. Actual
+model consumers must migrate with their repository-owned indexed providers.
+
+The original map launch verifies retained lanelet data and all 1757841 cloud
+points, the original planning gate loads the default plugin set, and the full
+headless simulator exercises both without map_path/data_path arguments. Run
+//bazel/tests/universe_launch:{map,planning,full}_launch_test with the same clean
+CPU/Cyclone/no-Agnocast flags as above: both cases in each pass, no failures/skips,
+with all processes exiting zero. No algorithm/safety defaults or original tests
+change. Colcon dependencies must likewise provide the indexed asset package;
+full colcon/older ROS, unselected neural profiles and driving are not validated.

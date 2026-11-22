@@ -4,7 +4,7 @@
   <arg name="map_config_pkg" default="autoware_map_config" description="package that ships the map config/ tree; overriding it relocates every parameter file"/>
 
   <!-- Map files -->
-  <arg name="map_path" description="point cloud and lanelet2 map directory path"/>
+  <arg name="map_path" default="$(find-pkg-share autoware_map_asset)" description="point cloud and lanelet2 map directory path"/>
   <arg name="lanelet2_map_file" default="lanelet2_map.osm" description="lanelet2 map file name"/>
   <arg name="pointcloud_map_file" default="pointcloud_map.pcd" description="pointcloud map file name"/>
   <let name="pointcloud_map_path" value="$(var map_path)/$(var pointcloud_map_file)"/>

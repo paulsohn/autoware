@@ -21,9 +21,6 @@
   <arg name="vehicle_model" default="sample_vehicle"/>
   <arg name="vehicle_param_file" default="$(find-pkg-share $(var vehicle_model)_description)/config/vehicle_info.param.yaml"/>
 
-  <!-- Artifacts -->
-  <arg name="data_path" default="$(env HOME)/autoware_data/ml_models" description="packages data and artifacts directory path"/>
-
   <!-- Config tree -->
   <let name="planning_config_dir" value="$(find-pkg-share $(var planning_config_pkg))/config"/>
   <let name="planning_common_config_dir" value="$(var planning_config_dir)/scenario_planning/common"/>
@@ -162,6 +159,7 @@
 
     <!-- diffusion planner module -->
     <group if="$(eval &quot;'$(var planning_setting)'=='diffusion_planner'&quot;)">
+      <arg name="data_path" default="$(env HOME)/autoware_data/ml_models" description="packages data and artifacts directory path"/>
       <include file="$(find-pkg-share autoware_planning_launch)/launch/learning_based_planning/diffusion_planner.launch.xml">
         <arg name="is_simulation" value="$(var is_simulation)"/>
         <arg name="input_objects_topic_name" value="$(var input_objects_topic_name)"/>
