@@ -54,8 +54,13 @@ experiments, and milestones belong in PLAN.md and JOURNAL.md.
   The root owns version selection from `third_party/`, registry releases and
   local overrides; architecture/product settings also remain root-owned.
   Directory placement alone does not require a new facade Bazel module.
-- Keep container definitions under `images/` and integration documentation under
-  `docs/bazel/`.
+- Keep runnable product composition and launchers under `bazel/runtime/`;
+  native bundles, OCI/OSTree assembly and service definitions belong under
+  `bazel/deployments/`. Keep verification companions under `bazel/tests/`.
+  `images/` contains only `dev.Dockerfile`, the optional Bazel builder bootstrap
+  environment; use a source mount and persistent cache rather than maintaining
+  a prebuilt workspace/cache image. Keep integration documentation under
+  `docs/bazel/`. See [directory conventions](docs/bazel/DEVELOPING.md#source-and-package-layout).
 - Keep interface collection and product-level plugin assembly under `bazel/`.
   Defer a separate `autoware_bazel` source repository until a concrete
   cross-repository need requires it. Keep component-specific build support with

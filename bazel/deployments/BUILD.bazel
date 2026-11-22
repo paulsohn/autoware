@@ -1,3 +1,4 @@
+load("@rules_cc//cc:defs.bzl", "cc_binary")
 load("@rules_img//img:image.bzl", "image_manifest")
 load("@rules_img//img:layer.bzl", "image_layer", "layer_from_tar")
 load("@rules_img//img:load.bzl", "image_load")
@@ -5,7 +6,39 @@ load("@rules_pkg//pkg:tar.bzl", "pkg_tar")
 
 package(default_visibility = ["//visibility:public"])
 
-exports_files(["images.MODULE.bazel"])
+exports_files(["deployments.MODULE.bazel"])
+
+cc_binary(
+    name = "demo_prerequisite",
+    srcs = ["services/prerequisite.c"],
+)
+
+pkg_tar(
+    name = "core_bundle",
+    srcs = [
+        "//bazel/runtime:run",
+        "//bazel/runtime:core_headless",
+    ],
+    allow_duplicates_with_different_content = False,
+    compression_level = 1,
+    extension = "tar.gz",
+    include_runfiles = True,
+    preserve_mode = True,
+    stamp = 0,
+    strip_prefix = "/bazel/runtime",
+)
+
+pkg_tar(
+    name = "planning_simulator_bundle",
+    srcs = ["//bazel/runtime:planning_simulator_launcher", "//bazel/runtime:planning_simulator"],
+    allow_duplicates_with_different_content = False,
+    compression_level = 1,
+    extension = "tar.gz",
+    include_runfiles = True,
+    preserve_mode = True,
+    stamp = 0,
+    strip_prefix = "/bazel/runtime",
+)
 
 # Add only the image install prefix to the existing native distribution.
 pkg_tar(
@@ -16,7 +49,7 @@ pkg_tar(
     package_dir = "opt/autoware",
     preserve_mode = True,
     stamp = 0,
-    deps = ["//bazel/runtime:core_bundle"],
+    deps = [":core_bundle"],
 )
 
 pkg_tar(
@@ -29,7 +62,7 @@ pkg_tar(
 
 image_layer(
     name = "prerequisite_layer",
-    srcs = {"/usr/lib/autoware-services/demo_prerequisite": "//bazel/runtime:demo_prerequisite"},
+    srcs = {"/usr/lib/autoware-services/demo_prerequisite": ":demo_prerequisite"},
     estargz = "disabled",
     include_runfiles = True,
 )
@@ -184,7 +217,7 @@ pkg_tar(
     package_dir = "opt/autoware",
     preserve_mode = True,
     stamp = 0,
-    deps = ["//bazel/runtime:planning_simulator_bundle"],
+    deps = [":planning_simulator_bundle"],
 )
 
 layer_from_tar(

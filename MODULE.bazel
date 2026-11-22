@@ -137,7 +137,7 @@ include("//third_party/graphics_runtime:graphics_runtime.MODULE.bazel")
 include("//third_party/s6:s6.MODULE.bazel")
 include("//third_party/systemd:systemd.MODULE.bazel")
 include("//third_party/ostree:ostree.MODULE.bazel")
-include("//images:images.MODULE.bazel")
+include("//bazel/deployments:deployments.MODULE.bazel")
 
 # Reusable dependency provider; selected before application source modules.
 bazel_dep(name = "acados", version = "0.0.0")

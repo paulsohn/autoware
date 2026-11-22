@@ -51,7 +51,7 @@ _TEST_DEPS = [
 
 launch_test(
     name = "lane_driving_test",
-    visibility = ["//bazel/runtime:__pkg__"],
+    visibility = ["//bazel/tests:__pkg__"],
     timeout = "long",
     src = "test_drive.py",
     data = _RUNTIME_DATA + [

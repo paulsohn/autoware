@@ -17890,3 +17890,131 @@ inference and its dependency closure remain unintegrated by this task. Reuse
 the prior passing simulator behavior/distribution results for unchanged code
 and runtime resources; no GUI, OCI, GPU, enabled-Agnocast or Fast DDS rerun is
 needed for these file-label changes. No pre-commit is run. Phase 8 is not started.
+
+## 2026-11-23: Phase 7.5 — Deployment directory and builder-container conventions
+
+Purpose: establish separate ownership for runnable product composition,
+delivery artifacts and the optional Bazel builder container. Inspect
+bazel/runtime/BUILD.bazel, images/BUILD.bazel, the OSTree application assembler,
+service definitions and all existing distribution checks before moving them.
+This task covers the metarepository deployment boundary; it changes no source
+package, SDK pin, ROS launch profile or service policy. Phase 8 is not started.
+
+Use the existing selected CPU/Cyclone DDS profile with ENABLE_AGNOCAST=0.
+Prerequisites are the pinned application/SDK inputs and local Docker Engine for
+the existing OCI, supervisor and OSTree-harness tests. The systemd harness keeps
+its previously validated private-cgroup/SYS_ADMIN/container-local configuration;
+no host systemd service or OS conversion is introduced. The completion gate is
+the complete twelve-target deployment suite below plus analysis of both OCI
+layout export labels. Reuse unchanged passing OCI format evidence instead of
+assembling extra archives solely for the directory move.
+
+Move native application archive rules to bazel/deployments/BUILD.bazel and
+images/' OCI/service rules and files to the same directory. Move the dummy
+prerequisite C program with its service composition. Move
+bazel/runtime/ostree/ to bazel/deployments/ostree/ without changing its assembler.
+Rename images.MODULE.bazel to deployments.MODULE.bazel and update the root
+include; it still selects the same immutable Ubuntu base as a root-owned input.
+Do not add a facade module or compatibility aliases for the old target paths.
+
+Keep core_headless, planning_simulator, their selected resource/runtime providers,
+portable launchers and Cyclone configuration in bazel/runtime/. Export the
+existing run script for the deployment consumer. The application archives now
+consume labels from another package: use strip_prefix="/bazel/runtime" to retain
+the executable/launcher names at the archive root. Leaving the old package-
+relative strip_prefix="." would tie installation paths to the archive rule's
+new source location. Keep the executable-adjacent runfiles layout and indexed
+resource closure rather than inventing another packaging inventory.
+
+Move the two testonly verification archive rules to bazel/tests/BUILD.bazel.
+Their explicit /bazel/tests strip prefix preserves the existing external test
+entrypoints. The first simulator analysis reports that lane_driving_test is not
+visible to the moved companion. Its old visibility grants access only to
+bazel/runtime; change that grant to bazel/tests, the new archive owner, without
+making the test globally public. Retarget all distribution checks and the
+developer commands to the new labels/output paths. Service contents and their image install prefixes
+stay unchanged. Generic s6/systemd/OSTree providers remain under third_party/;
+application/source products have no dependency back to delivery formats or
+verification targets.
+
+Leave only images/dev.Dockerfile under images/. It is the optional bootstrap
+environment in which developers run Bazel with a source mount and persistent
+cache volume. Defer an image containing source, prebuilt launchers and a filled
+Bazel cache: normal builds already populate that cache, and no offline/onboarding
+requirement currently justifies another versioned image. Its Dockerfile is
+unchanged, so no bootstrap image rebuild is required here. Document that its
+base/Bazelisk pins do not freeze live apt bootstrap-package selection; retain
+the built image digest when that exact environment matters. Deployment images
+continue to obtain their target closure through Bazel without apt/pip/rosdep.
+
+AGENTS.md and the developer [directory convention](DEVELOPING.md#source-and-package-layout)
+record ownership; PLAN.md's adoption checklist links this experiment. Keep older
+journal paths as historical evidence and use the current developer commands
+after this relocation. The s6 provider README points to the new product owner.
+
+Run these groups sequentially with user.bazelrc limits and local_test_jobs=1:
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_output=errors //bazel/tests:core_bundle_structure_test \
+  //bazel/tests:core_image_payload_test //bazel/tests:core_image_structure_test \
+  //bazel/tests:core_s6_structure_test //bazel/tests:core_systemd_structure_test
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_output=errors //bazel/tests:core_image_runtime_test \
+  //bazel/tests:core_s6_runtime_test //bazel/tests:core_systemd_runtime_test
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_output=errors //bazel/tests:planning_simulator_bundle_structure_test \
+  //bazel/tests:planning_simulator_native_runtime_test \
+  //bazel/tests:planning_simulator_oci_runtime_test
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_output=errors //bazel/tests:core_ostree_runtime_test
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel build --config=runtime --config=no-agnocast --nobuild \
+  //bazel/deployments:core_oci //bazel/deployments:planning_simulator_oci
+python3 -m flake8 --max-line-length=150 bazel/deployments/ostree/make_repository.py
+for script in bazel/deployments/services/core \
+  bazel/deployments/systemd/usr/lib/autoware-services/* \
+  bazel/deployments/s6/etc/s6-overlay/s6-rc.d/*/run \
+  bazel/deployments/s6/etc/s6-overlay/s6-rc.d/*/finish; do
+  sh -n "$script"
+done
+git diff --check
+```
+
+The five archive/payload/image-structure targets pass. The application archive
+keeps its original root paths and closed links; its image layer adds only
+/opt/autoware and preserves all bytes, modes and link targets. Core, s6 and
+systemd image configuration/resource assertions pass. All three core runtime
+gates pass, including both original core cases, delayed readiness, prerequisite
+loss, explicit restart, startup failure and clean ordered shutdown.
+
+All three simulator distribution targets pass after the visibility correction.
+Native and OCI each run all three startup/driving/shutdown cases with 57 clean
+processes. Native drives 16.68 m, peaks at 3.61 m/s and stops 0.01 m from its
+goal; OCI drives 16.71 m, peaks at 3.62 m/s and stops 0.04 m from its goal. The
+normal OCI entrypoint loads 41 components and stops all 56 processes cleanly.
+
+Before moving the rules, record SHA-256 digests of the existing two application
+archives and two verification archives. Compare their new outputs after the
+build with the same inputs. All four complete tar.gz files retain their exact
+hashes in this experiment, so the native payload and verifier relocation is
+byte-for-byte equivalent; changed Bazel labels do not alter installation paths.
+The core and simulator application archive hashes are respectively
+67ded8dd0a8c306f7c68a06962133c18383c2c54bb2fd9675cb3bccde0a8fdbb and
+c6f92ac078fcb835969acfb5fcbf92310c3c778b559ce8523cf97eadc82bb4b1.
+The verifier hashes are respectively
+55c7334e1033469530647d4dcb910c8a6ead4f76bd4a0a5e567b7849f83fdbdc and
+83e6989e3f3414126ac9845c26f8e13d547a80493dc23ab8bacedf91bf925d38.
+All 24 moved provider/service files also retain their bytes and executable
+modes. Targeted Python, eight POSIX shell syntax checks and whitespace checks
+pass. The OSTree integrity/corruption rejection, interrupted preparation,
+A → B → A activation and vehicle-record preservation gate passes, including
+the complete managed-core suite for each selected release. All twelve targets
+pass. Both OCI export labels analyze successfully with zero actions; do not
+reassemble their archives for unchanged image rules and payloads. The directory
+relocation is validated; an opt-in policy for costly targets follows as a separate task in
+Phase 7.5. No simulator or OCI runtime rerun is needed for that policy alone.

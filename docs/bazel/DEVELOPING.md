@@ -218,9 +218,17 @@ Keep:
 - package-owned `MODULE.bazel` and BUILD files beside package source;
 - original upstream tests in their existing package directories;
 - all newly added tests, adapters and fixtures under `bazel/tests/<package>/`;
-- root-level integration test targets and runtime composition under `bazel/tests/`;
-- development and runtime container definitions under `images/`;
+- root-level integration test targets and verification archives under `bazel/tests/`;
+- runnable product composition, launchers and runtime configuration under `bazel/runtime/`;
+- native bundles, OCI/OSTree assembly, install layouts and service definitions under `bazel/deployments/`;
+- only the optional builder bootstrap recipe, `dev.Dockerfile`, under `images/`;
 - integration strategy and evidence under `docs/bazel/`.
+
+Deployment targets consume the product's declared runtime closure; maintain
+one selection of application resources. Runtime products and source components
+must not depend on deployment formats or test targets. Tests may consume both
+products and deployment artifacts, with their verification companions marked
+testonly. Reusable SDK/build support stays with its third-party owner.
 
 Interface collection and product plugin assembly belong under `bazel/`.
 Assemble interface sets with `//bazel/interfaces:interfaces.bzl`; bridges,
@@ -659,14 +667,29 @@ well-known Unix-domain socket.
 
 ## Development image
 
-Build the pinned development image when its definition changes:
+The optional base image provides bootstrap tools for running Bazel builds.
+Source, Bazel-managed dependencies and application outputs are supplied or
+created when the container runs. Keep deployment-image rules under
+bazel/deployments/; images/dev.Dockerfile is the only file under images/.
+Do not maintain an image containing a prebuilt workspace or populated Bazel
+cache. A source mount and persistent cache volume support normal incremental
+development; an offline/prepared image needs a separate concrete requirement.
+
+Build the development image when its definition changes:
 
 ```bash
 docker build -f images/dev.Dockerfile -t autoware-bazel-dev:bootstrap .
 ```
 
-Use a named cache volume and mount the source read-only. Disable convenience
-symlinks because Bazel cannot create them in the mounted workspace:
+The Dockerfile pins its Ubuntu base and Bazelisk version, but its bootstrap apt
+packages come from live repositories. Record the built image digest when an
+exact bootstrap environment must be preserved. Target dependencies remain
+selected by Bazel; this image does not replace their pins or host kernel/device
+prerequisites.
+
+Use a named cache volume and mount the source read-only for build validation.
+Use a writable source mount when editing inside the container. Disable
+convenience symlinks for a read-only workspace:
 
 ```bash
 docker volume create autoware-bazel-bootstrap-cache
@@ -678,7 +701,8 @@ docker run --rm \
   --nocache_test_results //path/to/package:target_test
 ```
 
-Add `--config=fastdds` to the Bazel command for the compatibility gate.
+Fast DDS compatibility checks require explicit approval before adding
+`--config=fastdds` to the Bazel command.
 
 ## Dependency patches
 
@@ -969,7 +993,7 @@ products retain their own scope; they do not package this simulator automaticall
 
 ## Native simulator distribution
 
-Build //bazel/runtime:planning_simulator_bundle with --config=runtime
+Build //bazel/deployments:planning_simulator_bundle with --config=runtime
 --config=no-agnocast. Extract its tar.gz at the desired installation prefix and
 execute run_simulator from any working directory. It selects its own bundled
 interpreter, libraries and indexed resources; no source checkout, Bazel command,
@@ -977,8 +1001,8 @@ ROS setup script, Python installation or HOME model directory is a runtime input
 The supported native OS/ABI baseline still applies. The launcher defaults to the
 headless original simulator; its subsequent arguments are original launch args.
 
-The test-only planning_simulator_bundle_tests archive stays separate. Use
-//bazel/tests:planning_simulator_bundle_structure_test and
+The test-only //bazel/tests:planning_simulator_bundle_tests archive stays
+separate. Use //bazel/tests:planning_simulator_bundle_structure_test and
 //bazel/tests:planning_simulator_native_runtime_test for distribution changes.
 They check closed archive links, extraction at another prefix, complete startup,
 real lane driving and clean shutdown. The shared archive checker also retains
@@ -1002,8 +1026,8 @@ or load the same manifest into the local Docker daemon:
 
 ```sh
 bazel build --config=runtime --config=no-agnocast \
-  //images:planning_simulator_oci //images:planning_simulator_docker_archive
-bazel run --config=runtime --config=no-agnocast //images:planning_simulator_load
+  //bazel/deployments:planning_simulator_oci //bazel/deployments:planning_simulator_docker_archive
+bazel run --config=runtime --config=no-agnocast //bazel/deployments:planning_simulator_load
 docker run --rm --name autoware-planning-simulator --pull=never \
   --network=none --read-only --cap-drop=ALL --security-opt=no-new-privileges \
   --tmpfs /tmp:rw,exec,nosuid,nodev \
@@ -1116,7 +1140,7 @@ Python bootstrap configuration:
 
 ```sh
 bazel build --config=runtime --config=no-agnocast \
-  //bazel/runtime:core_bundle //bazel/runtime:core_bundle_tests
+  //bazel/deployments:core_bundle //bazel/tests:core_bundle_tests
 bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
   --test_output=errors //bazel/tests:core_system_headless_launch_test \
   //bazel/tests:core_bundle_structure_test
@@ -1131,6 +1155,12 @@ in bazel/runtime/BUILD.bazel. Do not add a second package-by-package file list.
 Conflicting archive destinations fail. Build distributions with --config=runtime;
 ordinary Python bootstraps otherwise require python3 before reaching their
 declared interpreter.
+
+Application archive rules under bazel/deployments/ consume product targets from
+bazel/runtime/ with strip_prefix="/bazel/runtime". Verification archives under
+bazel/tests/ use strip_prefix="/bazel/tests". Keep installed entrypoints and
+adjacent runfiles independent of the archive rule's package location; moving a
+BUILD target must not silently move files inside the deployment artifact.
 
 Register Python executable targets through register_ament_files, preserving the
 launcher rather than flattening all DefaultInfo files to an executable name.
@@ -1179,28 +1209,29 @@ for the recorded relocation/isolation commands and supported OS baseline.
 ## OCI core distribution
 
 The image reuses the native application archive verbatim beneath /opt/autoware.
-Keep its prefix, OS selection, user and entrypoint in images/, outside component
-BUILD files. The root selects rules_img and the pinned Ubuntu base through
-images/images.MODULE.bazel. Assembly downloads declared blobs with Bazel and
-requires no Docker daemon; image execution requires a compatible Linux host
-kernel and container engine. The supported product remains Ubuntu 24.04 x86_64,
+Keep its prefix, OS selection, user and entrypoint in bazel/deployments/,
+outside component BUILD files. The root selects rules_img and the pinned Ubuntu
+base through bazel/deployments/deployments.MODULE.bazel. Assembly downloads
+declared blobs with Bazel and requires no Docker daemon; image execution requires
+a compatible Linux host kernel and container engine. The supported product remains Ubuntu 24.04 x86_64,
 CPU/Cyclone DDS, with Agnocast disabled.
 
 ```sh
 bazel build --config=runtime --config=no-agnocast \
-  //images:core_oci //images:core_docker_archive
-bazel run --config=runtime --config=no-agnocast //images:core_load
+  //bazel/deployments:core_oci //bazel/deployments:core_docker_archive
+bazel run --config=runtime --config=no-agnocast //bazel/deployments:core_load
 bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
   --test_output=errors //bazel/tests:core_image_structure_test \
   //bazel/tests:core_image_payload_test //bazel/tests:core_image_runtime_test
 ```
 
-The OCI layout archive is bazel-bin/images/core_oci_layout.tar; the Docker-load
-archive is bazel-bin/images/core_load_docker.tar. The core_load target loads the
-same image as docker.io/library/autoware-core:bazel into the selected local
-daemon. That tag is a local convenience; use the generated images/core_digest
-manifest digest as the immutable release identity, with a registry reference
-when publishing. No registry upload occurs in these commands.
+The OCI layout archive is bazel-bin/bazel/deployments/core_oci_layout.tar;
+the Docker-load archive is bazel-bin/bazel/deployments/core_load_docker.tar.
+The core_load target loads the same image as docker.io/library/autoware-core:bazel
+into the selected local daemon. That tag is a local convenience; use the
+generated bazel/deployments/core_digest manifest digest as the immutable release
+identity, with a registry reference when publishing. No registry upload occurs
+in these commands.
 
 The structure and payload tests need no daemon. The runtime test loads its own
 archive and is an uncached local test: Docker access is a prerequisite, not a
@@ -1233,7 +1264,7 @@ with nonzero status; recover by explicitly restarting the product. Ordinary
 shutdown stops the core and its nodes before the prerequisite.
 
 ```sh
-bazel run --config=runtime --config=no-agnocast //images:core_s6_load
+bazel run --config=runtime --config=no-agnocast //bazel/deployments:core_s6_load
 bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
   --test_output=errors //bazel/tests:core_s6_structure_test \
   //bazel/tests:core_s6_runtime_test
@@ -1252,9 +1283,9 @@ selection is the root's declared asset module, shared with the native bundle.
 AUTOWARE_READY_GATE is a demonstration/testing gate: when supplied,
 the prerequisite waits for that file before announcing readiness.
 
-Keep product service edges and failure policies under images/. Preserve each
-added executable's runfiles, including toolchain-injected native runtimes;
-copying only its ELF can omit required DSOs. The root verification adapter
+Keep product service edges and failure policies under bazel/deployments/.
+Preserve each added executable's runfiles, including toolchain-injected native
+runtimes; copying only its ELF can omit required DSOs. The root verification adapter
 checks the actual supervised core PID, reuses both original core cases and
 asks the supervisor to stop the group. It does not start another core graph.
 See [the s6 adoption gate](JOURNAL.md#2026-11-21-phase-722--s6-core-service-supervision)
@@ -1274,7 +1305,7 @@ does not cancel the service's failure policy. PartOf propagates requested
 product stops to both services.
 
 ```sh
-bazel run --config=runtime --config=no-agnocast //images:core_systemd_load
+bazel run --config=runtime --config=no-agnocast //bazel/deployments:core_systemd_load
 bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
   --test_output=errors //bazel/tests:core_systemd_structure_test \
   //bazel/tests:core_systemd_runtime_test
@@ -1304,7 +1335,7 @@ Stopping the target alone can return before its members finish. See the
 
 ### OSTree application distribution
 
-//bazel/runtime/ostree:core_repository produces core_ostree.tar.gz (an archive-mode
+//bazel/deployments/ostree:core_repository produces core_ostree.tar.gz (an archive-mode
 OSTree repository plus releases.json) and core_ostree.json (the same manifest).
 It reuses the complete native core bundle. The two demo releases have identical
 application binaries and distinct synthetic release/domain metadata; they test
@@ -1316,7 +1347,7 @@ and the prerequisite stay in that OS/harness and are outside the update tree.
 
 ```sh
 bazel build --config=runtime --config=no-agnocast \
-  //bazel/runtime/ostree:core_repository
+  //bazel/deployments/ostree:core_repository
 bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
   --nocache_test_results --test_output=errors //bazel/tests:core_ostree_runtime_test
 ```
@@ -1338,7 +1369,7 @@ Bazel runs tools from its execution environment):
 
 ```sh
 deploy_root=$(mktemp -d)
-tar -xf bazel-bin/bazel/runtime/ostree/core_ostree.tar.gz -C "$deploy_root"
+tar -xf bazel-bin/bazel/deployments/ostree/core_ostree.tar.gz -C "$deploy_root"
 ostree=(bazel run --config=runtime //third_party/ostree:ostree --)
 "${ostree[@]}" --repo="$deploy_root/repo" fsck
 "${ostree[@]}" --repo="$deploy_root/local" init --mode=archive

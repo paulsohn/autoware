@@ -1,16 +1,11 @@
 load(":defs.bzl", "executable_template")
 load(":cyclonedds.bzl", "PLANNING_SIMULATOR_CYCLONEDDS_URI")
 load("@launch_ros//:defs.bzl", "launch_ros_binary")
-load("@rules_cc//cc:defs.bzl", "cc_binary")
-load("@rules_pkg//pkg:tar.bzl", "pkg_tar")
 load("//third_party/runtime:defs.bzl", "runtime_libraries")
 
 package(default_visibility = ["//visibility:public"])
 
-cc_binary(
-    name = "demo_prerequisite",
-    srcs = ["services/prerequisite.c"],
-)
+exports_files(["run"])
 
 runtime_libraries(
     name = "native_runtime",
@@ -75,70 +70,9 @@ launch_ros_binary(
     deps = ["@autoware_agnocast_wrapper//:python", "@launch_yaml"],
 )
 
-pkg_tar(
-    name = "core_bundle",
-    srcs = [
-        "run",
-        ":core_headless",
-    ],
-    allow_duplicates_with_different_content = False,
-    compression_level = 1,
-    extension = "tar.gz",
-    include_runfiles = True,
-    preserve_mode = True,
-    stamp = 0,
-    strip_prefix = ".",
-)
-
-# Verification peers/fixtures are separate from the application distribution.
-pkg_tar(
-    name = "core_bundle_tests",
-    testonly = True,
-    srcs = [
-        "//bazel/tests:core_system_headless_launch_test",
-        "//bazel/tests:runtime/service_launcher",
-        "//bazel/tests:runtime/verify",
-    ],
-    allow_duplicates_with_different_content = False,
-    compression_level = 1,
-    extension = "tar.gz",
-    include_runfiles = True,
-    preserve_mode = True,
-    stamp = 0,
-    strip_prefix = "/bazel/tests",
-)
-
 executable_template(
     name = "planning_simulator_launcher",
     out = "run_simulator",
     substitutions = {"@CYCLONEDDS_URI@": PLANNING_SIMULATOR_CYCLONEDDS_URI},
     template = "run_simulator.sh.in",
-)
-
-pkg_tar(
-    name = "planning_simulator_bundle",
-    srcs = [":planning_simulator_launcher", ":planning_simulator"],
-    allow_duplicates_with_different_content = False,
-    compression_level = 1,
-    extension = "tar.gz",
-    include_runfiles = True,
-    preserve_mode = True,
-    stamp = 0,
-    strip_prefix = ".",
-)
-
-pkg_tar(
-    name = "planning_simulator_bundle_tests",
-    testonly = True,
-    srcs = [
-        "//bazel/tests:verify_simulator",
-        "//bazel/tests/universe_launch:lane_driving_test",
-    ],
-    allow_duplicates_with_different_content = False,
-    compression_level = 1,
-    extension = "tar.gz",
-    include_runfiles = True,
-    preserve_mode = True,
-    stamp = 0,
-    strip_prefix = "/bazel/tests",
 )

@@ -8,6 +8,6 @@ exposes an image layer without depending on any application or product label.
 
 Release/provenance: https://github.com/just-containers/s6-overlay/releases/tag/v3.2.3.2
 
-Product service definitions and runtime settings belong in images/. The
-service-supervision gate is defined there and composed by bazel/tests/; these
+Product service definitions and deployment settings belong in bazel/deployments/.
+The service-supervision gate is composed by bazel/tests/; these
 archives do not provide application readiness or failure policies themselves.

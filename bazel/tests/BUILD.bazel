@@ -6,6 +6,7 @@ load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
 load("@rosdistro//python:defs.bzl", "py_pytest")
 load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_test")
 load("@rules_img//img:test.bzl", "image_structure_test")
+load("@rules_pkg//pkg:tar.bzl", "pkg_tar")
 load("@rules_python//python:defs.bzl", "py_binary", "py_test")
 load("@rules_shell//shell:sh_test.bzl", "sh_test")
 load("@tensorrt//:defs.bzl", "tensorrt_cc_test")
@@ -17,10 +18,44 @@ exports_files([
     "runtime/service_launcher",
 ])
 
+# Verification peers/fixtures are separate from application distributions.
+pkg_tar(
+    name = "core_bundle_tests",
+    testonly = True,
+    srcs = [
+        ":core_system_headless_launch_test",
+        "runtime/service_launcher",
+        "runtime/verify",
+    ],
+    allow_duplicates_with_different_content = False,
+    compression_level = 1,
+    extension = "tar.gz",
+    include_runfiles = True,
+    preserve_mode = True,
+    stamp = 0,
+    strip_prefix = "/bazel/tests",
+)
+
+pkg_tar(
+    name = "planning_simulator_bundle_tests",
+    testonly = True,
+    srcs = [
+        ":verify_simulator",
+        "//bazel/tests/universe_launch:lane_driving_test",
+    ],
+    allow_duplicates_with_different_content = False,
+    compression_level = 1,
+    extension = "tar.gz",
+    include_runfiles = True,
+    preserve_mode = True,
+    stamp = 0,
+    strip_prefix = "/bazel/tests",
+)
+
 image_structure_test(
     name = "core_systemd_structure_test",
     configs = ["runtime/core_systemd.yaml"],
-    image = "//images:core_systemd",
+    image = "//bazel/deployments:core_systemd",
 )
 
 py_test(
@@ -29,12 +64,12 @@ py_test(
     srcs = ["runtime/test_supervised_image.py"],
     args = [
         "systemd",
-        "$(rootpath //images:core_systemd_docker_archive)",
-        "$(rootpath //bazel/runtime:core_bundle_tests)",
+        "$(rootpath //bazel/deployments:core_systemd_docker_archive)",
+        "$(rootpath //bazel/tests:core_bundle_tests)",
     ],
     data = [
-        "//bazel/runtime:core_bundle_tests",
-        "//images:core_systemd_docker_archive",
+        ":core_bundle_tests",
+        "//bazel/deployments:core_systemd_docker_archive",
     ],
     main = "runtime/test_supervised_image.py",
     tags = [
@@ -47,7 +82,7 @@ py_test(
 image_structure_test(
     name = "core_s6_structure_test",
     configs = ["runtime/core_s6.yaml"],
-    image = "//images:core_s6",
+    image = "//bazel/deployments:core_s6",
 )
 
 py_test(
@@ -56,12 +91,12 @@ py_test(
     srcs = ["runtime/test_supervised_image.py"],
     args = [
         "s6",
-        "$(rootpath //images:core_s6_docker_archive)",
-        "$(rootpath //bazel/runtime:core_bundle_tests)",
+        "$(rootpath //bazel/deployments:core_s6_docker_archive)",
+        "$(rootpath //bazel/tests:core_bundle_tests)",
     ],
     data = [
-        "//bazel/runtime:core_bundle_tests",
-        "//images:core_s6_docker_archive",
+        ":core_bundle_tests",
+        "//bazel/deployments:core_s6_docker_archive",
     ],
     main = "runtime/test_supervised_image.py",
     tags = [
@@ -74,7 +109,7 @@ py_test(
 image_structure_test(
     name = "core_image_structure_test",
     configs = ["runtime/core_image.yaml"],
-    image = "//images:core",
+    image = "//bazel/deployments:core",
 )
 
 py_test(
@@ -82,12 +117,12 @@ py_test(
     size = "large",
     srcs = ["runtime/test_image_payload.py"],
     args = [
-        "$(rootpath //bazel/runtime:core_bundle)",
-        "$(rootpath //images:core_payload)",
+        "$(rootpath //bazel/deployments:core_bundle)",
+        "$(rootpath //bazel/deployments:core_payload)",
     ],
     data = [
-        "//bazel/runtime:core_bundle",
-        "//images:core_payload",
+        "//bazel/deployments:core_bundle",
+        "//bazel/deployments:core_payload",
     ],
     main = "runtime/test_image_payload.py",
 )
@@ -97,12 +132,12 @@ py_test(
     size = "large",
     srcs = ["runtime/test_image_runtime.py"],
     args = [
-        "$(rootpath //images:core_docker_archive)",
-        "$(rootpath //bazel/runtime:core_bundle_tests)",
+        "$(rootpath //bazel/deployments:core_docker_archive)",
+        "$(rootpath //bazel/tests:core_bundle_tests)",
     ],
     data = [
-        "//bazel/runtime:core_bundle_tests",
-        "//images:core_docker_archive",
+        ":core_bundle_tests",
+        "//bazel/deployments:core_docker_archive",
     ],
     main = "runtime/test_image_runtime.py",
     tags = [
@@ -116,12 +151,12 @@ py_test(
     name = "core_bundle_structure_test",
     srcs = ["runtime/test_bundle.py"],
     args = [
-        "$(rootpath //bazel/runtime:core_bundle)",
-        "$(rootpath //bazel/runtime:core_bundle_tests)",
+        "$(rootpath //bazel/deployments:core_bundle)",
+        "$(rootpath //bazel/tests:core_bundle_tests)",
     ],
     data = [
-        "//bazel/runtime:core_bundle",
-        "//bazel/runtime:core_bundle_tests",
+        "//bazel/deployments:core_bundle",
+        ":core_bundle_tests",
     ],
     main = "runtime/test_bundle.py",
 )
@@ -137,12 +172,12 @@ py_test(
     name = "planning_simulator_bundle_structure_test",
     srcs = ["runtime/test_bundle.py"],
     args = [
-        "$(rootpath //bazel/runtime:planning_simulator_bundle)",
-        "$(rootpath //bazel/runtime:planning_simulator_bundle_tests)",
+        "$(rootpath //bazel/deployments:planning_simulator_bundle)",
+        "$(rootpath //bazel/tests:planning_simulator_bundle_tests)",
     ],
     data = [
-        "//bazel/runtime:planning_simulator_bundle",
-        "//bazel/runtime:planning_simulator_bundle_tests",
+        "//bazel/deployments:planning_simulator_bundle",
+        ":planning_simulator_bundle_tests",
     ],
     main = "runtime/test_bundle.py",
 )
@@ -156,15 +191,15 @@ py_test(
         args = [
             kind,
             "$(rootpath " + product + ")",
-            "$(rootpath //bazel/runtime:planning_simulator_bundle_tests)",
+            "$(rootpath //bazel/tests:planning_simulator_bundle_tests)",
         ],
-        data = [product, "//bazel/runtime:planning_simulator_bundle_tests"],
+        data = [product, ":planning_simulator_bundle_tests"],
         main = "runtime/test_simulator_bundle.py",
         tags = ["external", "no-remote", "no-sandbox"],
     )
     for kind, product in [
-        ("native", "//bazel/runtime:planning_simulator_bundle"),
-        ("oci", "//images:planning_simulator_docker_archive"),
+        ("native", "//bazel/deployments:planning_simulator_bundle"),
+        ("oci", "//bazel/deployments:planning_simulator_docker_archive"),
     ]
 ]
 
@@ -1911,16 +1946,16 @@ py_test(
     ],
     args = [
         "$(rootpath //third_party/ostree:runtime)",
-        "$(rootpath //bazel/runtime/ostree:archive)",
-        "$(rootpath //images:core_systemd_docker_archive)",
-        "$(rootpath //bazel/runtime:core_bundle_tests)",
-        "$(rootpath //bazel/runtime:core_bundle)",
+        "$(rootpath //bazel/deployments/ostree:archive)",
+        "$(rootpath //bazel/deployments:core_systemd_docker_archive)",
+        "$(rootpath //bazel/tests:core_bundle_tests)",
+        "$(rootpath //bazel/deployments:core_bundle)",
     ],
     data = [
-        "//bazel/runtime:core_bundle",
-        "//bazel/runtime:core_bundle_tests",
-        "//bazel/runtime/ostree:archive",
-        "//images:core_systemd_docker_archive",
+        "//bazel/deployments:core_bundle",
+        ":core_bundle_tests",
+        "//bazel/deployments/ostree:archive",
+        "//bazel/deployments:core_systemd_docker_archive",
         "//third_party/ostree:runtime",
     ],
     main = "runtime/test_ostree.py",

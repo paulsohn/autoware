@@ -57,6 +57,8 @@ only when your current target demonstrates the need.
   [Evidence: tests outside component packages](JOURNAL.md#2026-11-17-keep-added-integration-tests-outside-component-packages).
 - [ ] Separate component ownership from product-level composition.
   [Dependency layers and root selection](DEVELOPING.md#repository-dependency-layers);
+  [Product, deployment and builder-container ownership](DEVELOPING.md#source-and-package-layout);
+  [evidence: deployment layout](JOURNAL.md#2026-11-23-phase-75--deployment-directory-and-builder-container-conventions);
   [Package-owned file exports](DEVELOPING.md#launch-resource-composition);
   [evidence: launcher resource boundary](JOURNAL.md#2026-11-23-phase-74--package-owned-perception-launcher-exports);
   [evidence: reusable dependency relocation](JOURNAL.md#2026-11-18-reusable-dependency-layers-under-third_party).
@@ -1640,7 +1642,7 @@ Phase 8. No new Fast DDS acceptance run was performed; it still requires
 explicit approval. The x86 TensorRT 10.16.1 versus JetPack 7.2.1's 10.16.2 gap
 remains explicit for Phase 8.
 
-## Phase 7 — Runtime packaging and planning simulation (complete, 2026-11-23)
+## Phase 7 — Runtime packaging and planning simulation (in progress)
 
 Follow the [packaging and deployment requirements](#runtime-packaging-and-deployment-requirements).
 Complete each distribution boundary before expanding the application closure.
@@ -1684,6 +1686,18 @@ Complete each distribution boundary before expanding the application closure.
    without a root package. Scope is file exports only, with no perception
    :ament_index or claim of a complete perception runtime.
    [Integration pattern and gate](JOURNAL.md#2026-11-23-phase-74--package-owned-perception-launcher-exports).
+5. **7.5 — Deployment directory and builder-container conventions (in progress).**
+   Keep runnable products in bazel/runtime/, move native/OCI/OSTree delivery
+   and service definitions to bazel/deployments/, and put verification archives
+   under bazel/tests/. Leave only the optional builder dev.Dockerfile under
+   images/; use source mounts and persistent caches rather than a prepopulated
+   workspace image. Preserve runtime layout, resource selection and service
+   behavior. The gate covers the existing archive, image, supervisor, simulator
+   distribution and OSTree update/rollback suites with Cyclone DDS/Agnocast off,
+   plus analysis of both OCI layout exports. Add an explicit opt-in for costly
+   simulator/deployment artifacts and tests, disabled by default. Reuse unchanged
+   behavior evidence and run these gates only for affected work or requested
+   milestones. Phase 8 is not started by this cleanup.
 
 Phase 7.2 task boundaries:
 
@@ -1696,7 +1710,7 @@ Phase 7.2 task boundaries:
   the failure; recovery requires an explicit product restart. Define orderly
   reverse shutdown; startup dependencies alone do not implement this policy.
   SHA-256-pinned 3.2.3.2 release inputs live under third_party/s6/; product
-  definitions stay under images/ and tests under bazel/tests/. Both original
+  definitions stay under bazel/deployments/ and tests under bazel/tests/. Both original
   core cases and all readiness/failure/restart/shutdown checks pass with a
   read-only image, UID/GID 1000, dropped capabilities and no network/source/cache
   mount. The complete affected native/plain-image regressions also pass.
@@ -2054,6 +2068,16 @@ single-host packaging form of the same application closure. Preserve ROS launch
 as the owner of the ROS node graph. The s6 and systemd image variants demonstrate
 management of surrounding services, with core launch as one managed service;
 they do not require one service unit or container per ROS node.
+
+Runnable application composition, launchers and runtime configuration belong
+under bazel/runtime/. Packaging formats, installation layouts, OS image
+selection and service definitions belong under bazel/deployments/. Verification
+companions stay under bazel/tests/. The only images/ file is dev.Dockerfile for
+the optional builder bootstrap environment. A source mount plus a persistent
+Bazel cache is the developer workflow; defer a source/cache-filled image until
+offline onboarding or another concrete requirement justifies its maintenance.
+The [directory convention](DEVELOPING.md#source-and-package-layout) is authoritative;
+older journal paths describe the layout at the time of those experiments.
 
 Do not pursue multi-container composition, multi-host placement profiles,
 mixed-backend configuration generation or a universal deployment abstraction in
