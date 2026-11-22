@@ -16735,3 +16735,34 @@ Both behavior/shutdown cases pass in 4.1 seconds, no failures/skips.
 The complete original full headless launch also passes both cases in 12.4 seconds.
 CPU/Cyclone DDS, ENABLE_AGNOCAST=0. No Fast DDS, enabled-Agnocast, full colcon,
 RViz or autonomous-driving result is claimed. Continue original product assembly.
+
+## 2026-11-22: Phase 7.3.3 — autoware_control_launch resource closure
+
+Purpose: run the original control subsystem with the default simulator profile.
+Inspect package.xml, CMake install directories and conditional launch includes;
+CMake registers no original functional suite in this resource package.
+
+Use the [launch-group integration pattern](#2026-11-22-phase-733--autoware_map_launch-resource-closure)
+for MODULE/BUILD ownership, indexed resources and conditional runtime selection.
+
+Compose default MPC/PID trajectory following, command gate/mode transition,
+raw/external conversion/selection and all enabled control safety checks. Require
+all three command-container components fully loaded and parameter responses from
+the follower, gate, validator, collision detector, AEB and lane-departure checker,
+then clean shutdown. Preserve defaults: alternate command gate, smart controller,
+obstacle-collision and predicted-path checks are not selected. Shared SDK closure
+is fixed separately above; no controller algorithm or process layout changes.
+
+The external fixture in bazel/tests/universe_launch includes original XML;
+it is committed with the final product composition. Exact standalone gate:
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_output=errors //bazel/tests/universe_launch:control_launch_test
+```
+
+Both behavior/shutdown cases pass in 4.2 seconds, no failures/skips.
+The complete original full headless launch also passes both cases in 12.4 seconds.
+CPU/Cyclone DDS, ENABLE_AGNOCAST=0. No Fast DDS, enabled-Agnocast, full colcon,
+RViz or autonomous-driving result is claimed. Continue original product assembly.
