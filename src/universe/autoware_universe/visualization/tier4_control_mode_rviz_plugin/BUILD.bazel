@@ -1,0 +1,52 @@
+load("@qt//:qt.bzl", "qt_cc_library", "qt_cc_shared_library")
+load("@rosdistro//ament:defs.bzl", "ament_index")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+
+package(default_visibility = ["//visibility:public"])
+
+qt_cc_library(
+    name = "tier4_control_mode_rviz_plugin_library",
+    moc_hdrs = ["include/control_mode_display.hpp"],
+    srcs = glob(["src/**/*.cpp"]),
+    hdrs = glob(["include/**/*.hpp", "src/**/*.hpp"], allow_empty = True),
+    includes = ["include", "src"],
+    defines = ["PLUGINLIB__DISABLE_BOOST_FUNCTIONS"],
+    deps = [
+        "@autoware_vehicle_msgs//:cc",
+        "@pluginlib//:pluginlib_library",
+        "@qtbase//:widgets",
+        "@rclcpp//:rclcpp_library",
+        "@rosdistro//cc:OgreMain_library",
+        "@rosdistro//cc:OgreOverlay_library",
+        "@rosdistro//cc:boost.geometry",
+        "@rosdistro//cc:eigen",
+        "@rviz_common//:rviz_common_library",
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = [
+        "@autoware_vehicle_msgs//:cc_shared",
+        "@pluginlib//:pluginlib",
+        "@rclcpp//:rclcpp",
+        "@rosdistro//cc:OgreMain",
+        "@rosdistro//cc:OgreOverlay",
+        "@rviz_common//:rviz_common",
+    ],
+)
+
+qt_cc_shared_library(
+    name = "tier4_control_mode_rviz_plugin",
+    shared_lib_name = "libtier4_control_mode_rviz_plugin.so",
+    dynamic_deps = [":runtime_dynamic_deps"],
+    deps = [":tier4_control_mode_rviz_plugin_library"],
+)
+
+ament_index(
+    package_xml = "package.xml",
+    data = glob(["plugins/**"]),
+    libraries = [":tier4_control_mode_rviz_plugin"],
+    deps = ["@rviz_common//:ament_index"],
+    plugin_categories = {"plugins/plugin_description.xml": "rviz_common"},
+)

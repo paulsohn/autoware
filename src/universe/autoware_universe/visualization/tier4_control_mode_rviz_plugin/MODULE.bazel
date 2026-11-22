@@ -1,0 +1,9 @@
+module(name = "tier4_control_mode_rviz_plugin", version = "0.53.0")
+
+bazel_dep(name = "autoware_vehicle_msgs", version = "0.0.0")
+bazel_dep(name = "pluginlib", version = "0.0.0")
+bazel_dep(name = "qt", version = "6.10.2.rcr.0")
+bazel_dep(name = "qtbase", version = "6.10.2.rcr.0")
+bazel_dep(name = "rclcpp", version = "0.0.0")
+bazel_dep(name = "rosdistro", version = "0.0.0")
+bazel_dep(name = "rviz_common", version = "0.0.0")

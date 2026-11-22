@@ -1728,3 +1728,9 @@ local_path_override(
     module_name = "tier4_adapi_rviz_plugin",
     path = "src/universe/autoware_universe/visualization/tier4_adapi_rviz_plugin",
 )
+
+bazel_dep(name = "tier4_control_mode_rviz_plugin", version = "0.0.0")
+local_path_override(
+    module_name = "tier4_control_mode_rviz_plugin",
+    path = "src/universe/autoware_universe/visualization/tier4_control_mode_rviz_plugin",
+)

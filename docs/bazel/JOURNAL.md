@@ -17369,3 +17369,23 @@ probe parses the owned XML, constructs/destroys every exported class and unloads
 its library. The actual original RViz configuration also loads and renders with
 this provider; its root UI composition is recorded separately. No functional
 suite is skipped; older ROS/Qt and upstream CMake are not claimed.
+
+## 2026-11-22: Phase 7.3.4 — tier4_control_mode_rviz_plugin Bazel module
+
+Purpose: make src/universe/autoware_universe/visualization/tier4_control_mode_rviz_plugin available to the original simulator GUI.
+Inspect its manifest, CMake, Q_OBJECT declarations and plugins/plugin_description.xml.
+The original package registers lint only, with no functional CPP/launch suite.
+Apply the [owned Qt/RViz pattern](DEVELOPING.md#rviz-plugin-packages): package-local
+MODULE/BUILD, shared SDK ownership, original XML/resources and an ament_index;
+root selects a paired 0.0.0 dependency/local override after registry SDK inputs.
+Build the original control-mode panel and register its XML/resources with
+its own ament package identity and concrete external-API interfaces.
+
+Verification: bazel test --config=runtime --config=no-agnocast
+--local_test_jobs=1 --test_output=errors
+//bazel/tests/rviz_plugins:tier4_control_mode_rviz_plugin_factories_test
+passes all 1 exported factories with authenticated DISPLAY/XAUTHORITY. The
+probe parses the owned XML, constructs/destroys every exported class and unloads
+its library. The actual original RViz configuration also loads and renders with
+this provider; its root UI composition is recorded separately. No functional
+suite is skipped; older ROS/Qt and upstream CMake are not claimed.
