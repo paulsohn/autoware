@@ -2910,3 +2910,85 @@ selection, multi-host behavior and reliable/durable QoS remain open.
 
 The unchanged outbound healthy mode of the shared driver also passed its
 regression run with 150/150 verified local and recorded frames.
+
+## 2026-11-22 — Supervise a configured bridge with ROS launch
+
+Use the standard Lyrical LaunchService and ExecuteProcess to own a single
+explicit PointCloud2 route. Set respawn=True, respawn_delay=0.25 s and
+respawn_max_retries=3. These are experiment settings. The operator selects
+the direction and topics at startup. Only the relay child receives the
+Agnocast allocator preload and middleware selection. The driver starts the
+deployment once, kills specific child PIDs, and stops the launch service
+with SIGINT. ROS launch handles child exit, replacement and shutdown. Its
+ProcessStarted and ProcessExited handler timestamps and PIDs provide an
+independent record of each generation. An exit timestamp denotes observation
+of the exit by launch, and a start timestamp denotes its start event.
+
+Use the prior inbound/outbound colcon overlays, kernel module, standalone
+ioctl observation library and unchanged Universe crop. A writer supplies
+100 numbered 512 KiB PointCloud2 messages at nominal 20 Hz. An independent
+DDS endpoint validates the raw cloud and a local sink validates the cropped
+cloud. On ingress the DDS endpoint witnesses the source and the crop output
+measures recovery. On egress the local crop witnesses the source and the DDS
+endpoint measures recovery. The sensor-data QoS DDS endpoint checks every
+point and records callback time. The preceding outbound study separately
+qualified SQLite bag recording. Keep all application endpoints running
+through shutdown to expose accidental respawns.
+
+Kill the first relay after frame 10 and kill its replacement four frame
+periods into recovery. Observe the kernel route count return to baseline
+and subsequently to baseline plus one on each crash. In the active stop
+case signal the supervisor after verified frame 60. In the pending stop
+case first kill its third child, observe the exit and endpoint removal,
+then signal the supervisor before its retry delay expires. Three retries
+permit a fourth generation if cancellation fails. Require three distinct
+PIDs, ordered supervisor events, no surviving child, native counts back at
+baseline, no bridge endpoint in the persistent DDS graph and a complete
+witness through frame 99. Allow up to 30 s for DDS discovery to clear
+dead participants. Check sequence and content throughout, including that
+the first forwarded frame after each restart was generated after spawn.
+
+Reproduce after preparing build/inbound/libagnocast_ioctl_wrapper.so as in
+the preceding entry. From the experimental worktree run:
+
+```bash
+out=build/reproduce-supervision
+export LYRICAL_ROOT=$(cat build/agnocast-lyrical/universe-root)
+mkdir "$out"
+for trial in outbound-active inbound-pending inbound-active outbound-pending; do
+ extra=()
+ if [[ $trial == inbound-* ]]; then extra=(--inbound); fi
+ BUFFER_RUNTIME_ONLY=1 experiments/buffer/run-lyrical.sh timeout -k 5 65 bash -ec '
+ source build/agnocast-lyrical/install/local_setup.bash
+ source build/rmw-agnocast/load-install/local_setup.bash
+ source build/universe-sync/install/local_setup.bash
+ source build/universe-pipeline/install/local_setup.bash
+ export LD_LIBRARY_PATH=/ws/build/inbound:$LD_LIBRARY_PATH
+ export CYCLONEDDS_URI="<CycloneDDS><Domain><General><Interfaces><NetworkInterface name=\"lo\"/></Interfaces><AllowMulticast>false</AllowMulticast></General><Discovery><ParticipantIndex>auto</ParticipantIndex><Peers><Peer Address=\"127.0.0.1\"/></Peers></Discovery></Domain></CycloneDDS>"
+ python3 experiments/rmw-agnocast/bridge-restart.py "$@"' bash "${trial#*-}" "$out/$trial" "${extra[@]}" >"$out/$trial.txt" 2>&1 || exit 1
+done
+```
+
+Repeat in reverse order for round B. The second round additionally records
+the kill-to-launch-exit-event interval for every crash. Across both rounds
+all 16 automatic replacements succeeded. Each crash lost six frames at the
+bridged consumer, with no duplicate, stale or reordered delivery. The
+independent witness verified 100/100 in every run. The bridged consumer
+verified 49 unique frames through sequence 60 before intentional shutdown.
+All four active stops had a clean relay exit. All four pending stops
+cancelled the scheduled fourth generation, including both directions.
+Native endpoint counts returned to baseline and the DDS graph cleared
+the bridge endpoint in each case.
+
+Round B ranges across eight replacements were 2.526–3.656 ms from sending
+SIGKILL to the observed exit event, 251.080–251.517 ms from exit event to
+replacement start event, and 86.738–93.490 ms from start event to the
+first valid consumer callback. Exit event to first frame was 337.899–344.656
+ms. Last-good to first-recovered interarrival was 349.900–351.072 ms.
+These are single-laptop observations with one explicit route and a fixed
+delay. Process respawn handles observed crashes. Hung but live relays,
+automatic topic selection, cross-host recovery and retry-budget exhaustion
+remain outside this test. Use ordinary deployment supervision for the
+explicit-route pilot; revisit route selection separately.
+
+[Both run orders and raw evidence](../rmw-agnocast/bridge-supervision-results/)

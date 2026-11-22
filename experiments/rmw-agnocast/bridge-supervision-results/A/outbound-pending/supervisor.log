@@ -1,0 +1,27 @@
+[INFO] [launch]: All log files can be found below /tmp/.ros/log/2026-11-22-13-33-59-209791-paulsohn-tuf-105144
+[INFO] [launch]: Default logging verbosity is set to INFO
+[INFO] [route_bridge-1]: process started with pid [105184]
+event 1795354439211444803 105184 started
+[route_bridge-1] [WARN] [1795354439.262756762] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[route_bridge-1] [WARN] [1795354439.262926310] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[route_bridge-1] rmw_agnocast host-cloud reader /input
+[route_bridge-1] [INFO] [1795354439.929352989] [agnocast_route_bridge]: ingress_gid=rmw_cyclonedds_cpp/ac90ec42300192180000000000000000 egress_gid=rmw_cyclonedds_cpp/81f9d482319bd6c10000000000000000
+[ERROR] [route_bridge-1]: process has died [pid 105184, exit code -9, cmd '/ws/build/rmw-agnocast/load-install/agnocast_rmw_loan_probe/lib/agnocast_rmw_loan_probe/route_bridge a2r cloud /input /mirror'].
+event 1795354440437290434 105184 -9
+[INFO] [route_bridge-1]: process started with pid [105233]
+event 1795354440688581261 105233 started
+[route_bridge-1] [WARN] [1795354440.753451058] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[route_bridge-1] [WARN] [1795354440.753625275] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[route_bridge-1] rmw_agnocast host-cloud reader /input
+[route_bridge-1] [INFO] [1795354440.778427253] [agnocast_route_bridge]: ingress_gid=rmw_cyclonedds_cpp/ac90ec42300192180000000000000000 egress_gid=rmw_cyclonedds_cpp/37e6db9201554c7e0000000000000000
+[ERROR] [route_bridge-1]: process has died [pid 105233, exit code -9, cmd '/ws/build/rmw-agnocast/load-install/agnocast_rmw_loan_probe/lib/agnocast_rmw_loan_probe/route_bridge a2r cloud /input /mirror'].
+event 1795354440934047769 105233 -9
+[INFO] [route_bridge-1]: process started with pid [105265]
+event 1795354441185424406 105265 started
+[route_bridge-1] [WARN] [1795354441.249923118] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[route_bridge-1] [WARN] [1795354441.250101402] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[route_bridge-1] rmw_agnocast host-cloud reader /input
+[route_bridge-1] [INFO] [1795354441.278546491] [agnocast_route_bridge]: ingress_gid=rmw_cyclonedds_cpp/ac90ec42300192180000000000000000 egress_gid=rmw_cyclonedds_cpp/a41f81e93a4811990000000000000000
+[ERROR] [route_bridge-1]: process has died [pid 105265, exit code -9, cmd '/ws/build/rmw-agnocast/load-install/agnocast_rmw_loan_probe/lib/agnocast_rmw_loan_probe/route_bridge a2r cloud /input /mirror'].
+event 1795354442936079593 105265 -9
+[WARNING] [launch]: user interrupted with ctrl-c (SIGINT)

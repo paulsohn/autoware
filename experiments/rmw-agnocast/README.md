@@ -2946,3 +2946,15 @@ both paths. The Agnocast kernel reported one native writer before each kill,
 zero after death and one after replacement. The driver supplied supervision.
 
 [Run evidence](bridge-ingress-results/) · [Reproduction and limits](../buffer/JOURNAL.md#2026-11-22--replace-the-only-native-writer-on-an-inbound-bridge)
+
+### Automatic restart of an explicitly configured bridge
+
+The Lyrical ROS launch supervisor owns one route and respawns its relay
+after an unexpected exit. The pilot fixture sets a 250 ms retry delay and
+allows three retries. One DDS witness and one Universe crop sink keep running
+while the first and second relay processes are killed. Each direction also
+exercises intentional shutdown with the third relay active and with another
+respawn pending. The previous manual-relaunch controls provide the healthy
+delivery and data-path baseline.
+
+[Supervisor](supervise-route.py) · [Sequences and process events](bridge-supervision-results/) · [Reproduction and results](../buffer/JOURNAL.md#2026-11-22--supervise-a-configured-bridge-with-ros-launch)

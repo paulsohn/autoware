@@ -1,0 +1,30 @@
+[INFO] [launch]: All log files can be found below /tmp/.ros/log/2026-11-22-13-34-49-565263-paulsohn-tuf-106562
+[INFO] [launch]: Default logging verbosity is set to INFO
+[INFO] [route_bridge-1]: process started with pid [106603]
+event 1795354489567060258 106603 started
+[route_bridge-1] [WARN] [1795354489.615953242] [Agnocast]: Agnocast publishers do not honor the BestEffort reliability QoS policy. Messages are delivered through shared memory regardless of this setting.
+[route_bridge-1] [WARN] [1795354489.615992916] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[route_bridge-1] rmw_agnocast host-cloud writer /input
+[route_bridge-1] [INFO] [1795354490.301765124] [agnocast_route_bridge]: ingress_gid=rmw_cyclonedds_cpp/4043154c9e06b72c0000000000000000 egress_gid=rmw_cyclonedds_cpp/31b159c5ec5c74a60000000000000000
+[ERROR] [route_bridge-1]: process has died [pid 106603, exit code -9, cmd '/ws/build/rmw-agnocast/load-install/agnocast_rmw_loan_probe/lib/agnocast_rmw_loan_probe/route_bridge r2a cloud /mirror /input'].
+event 1795354490814880135 106603 -9
+[INFO] [route_bridge-1]: process started with pid [106666]
+event 1795354491066041991 106666 started
+[route_bridge-1] [WARN] [1795354491.130082733] [Agnocast]: Agnocast publishers do not honor the BestEffort reliability QoS policy. Messages are delivered through shared memory regardless of this setting.
+[route_bridge-1] [WARN] [1795354491.130137837] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[route_bridge-1] rmw_agnocast host-cloud writer /input
+[route_bridge-1] [INFO] [1795354491.151808535] [agnocast_route_bridge]: ingress_gid=rmw_cyclonedds_cpp/e81cf3783cc4aaa70000000000000000 egress_gid=rmw_cyclonedds_cpp/d3cad18f884c83670000000000000000
+[ERROR] [route_bridge-1]: process has died [pid 106666, exit code -9, cmd '/ws/build/rmw-agnocast/load-install/agnocast_rmw_loan_probe/lib/agnocast_rmw_loan_probe/route_bridge r2a cloud /mirror /input'].
+event 1795354491312858419 106666 -9
+[INFO] [route_bridge-1]: process started with pid [106682]
+event 1795354491563999415 106682 started
+[route_bridge-1] [WARN] [1795354491.629625119] [Agnocast]: Agnocast publishers do not honor the BestEffort reliability QoS policy. Messages are delivered through shared memory regardless of this setting.
+[route_bridge-1] [WARN] [1795354491.629673370] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[route_bridge-1] rmw_agnocast host-cloud writer /input
+[route_bridge-1] [INFO] [1795354491.652007602] [agnocast_route_bridge]: ingress_gid=rmw_cyclonedds_cpp/cd660c7ea58047940000000000000000 egress_gid=rmw_cyclonedds_cpp/2e3e77a32fb4e4f00000000000000000
+[WARNING] [launch]: user interrupted with ctrl-c (SIGINT)
+[INFO] [route_bridge-1]: sending signal 'SIGINT' to process[route_bridge-1]
+[route_bridge-1] [INFO] [1795354493.311973262] [rclcpp]: signal_handler(signum=2)
+[route_bridge-1] [INFO] [1795354493.312220083] [agnocast_route_bridge]: received=34 forwarded=34
+[INFO] [route_bridge-1]: process has finished cleanly [pid 106682]
+event 1795354493520898476 106682 0

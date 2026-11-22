@@ -1,0 +1,4 @@
+gap=10->17 missing=6 kill_to_exit_event_ms=3.232 exit_to_spawn_ms=251.080 spawn_to_frame_ms=87.031 exit_to_frame_ms=338.112 interarrival_ms=350.008
+gap=20->27 missing=6 kill_to_exit_event_ms=2.772 exit_to_spawn_ms=251.306 spawn_to_frame_ms=89.195 exit_to_frame_ms=340.501 interarrival_ms=350.310
+direction=a2r stop=pending request_ns=1795354478268294139 generations=3 witness=100/100 final_forwarded=60 native_baseline=1 dds_routes=0
+Minimum host MemAvailable: 20305 MiB

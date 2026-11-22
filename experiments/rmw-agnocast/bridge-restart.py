@@ -18,7 +18,7 @@ from sensor_msgs.msg import PointCloud2
 mode, target = sys.argv[1:3]
 ingress = sys.argv[3:] == ["--inbound"]
 assert ingress or len(sys.argv) == 3
-assert mode in ("healthy", "restart")
+assert mode in ("healthy", "restart", "active", "pending")
 out = Path(target).resolve()
 out.mkdir()
 limit = out / "limit"
@@ -222,6 +222,113 @@ def inbound():
           f"distinct_bridge_egress_gids={len(gids)} native_counts={'1/0/1/0/1' if gaps else '1'}")
 
 
+def supervised():
+    import ctypes
+
+    ioctl = ctypes.CDLL("libagnocast_ioctl_wrapper.so")
+    query = ioctl.get_agnocast_pub_nodes if ingress else ioctl.get_agnocast_sub_nodes
+    query.argtypes = [ctypes.c_char_p, ctypes.POINTER(ctypes.c_int), ctypes.c_uint32]
+    query.restype = ctypes.c_void_p
+    ioctl.free_agnocast_topic_info_ret.argtypes = [ctypes.c_void_p]
+    ioctl.free_agnocast_topic_info_ret.restype = None
+    baseline = 0 if ingress else 1  # Outbound keeps the native crop subscription.
+
+    def members():
+        n = ctypes.c_int()
+        wire = b"/input/_rmw_agnocast_v2/sensor_msgs/msg/PointCloud2/host_cloud/best_effort"
+        ptr = query(wire, ctypes.byref(n), int(os.environ["ROS_DOMAIN_ID"]))
+        ioctl.free_agnocast_topic_info_ret(ptr)
+        return n.value
+
+    def events():
+        return [(int(t), int(pid), status) for t, pid, status in re.findall(
+            r"^event (\d+) (\d+) (started|-?\d+)$", (out/"supervisor.log").read_text(), re.M)]
+
+    def data(name):
+        path = out/(name + ".csv")
+        return list(csv.reader(path.read_text().splitlines())) if path.exists() else []
+
+    def ids(name):
+        return [int(row[0]) for row in data(name) if len(row) == 2]
+
+    def dds_endpoints():
+        get = graph.get_subscriptions_info_by_topic if ingress else graph.get_publishers_info_by_topic
+        return [info for info in get("/mirror") if info.node_name == "agnocast_route_bridge"]
+
+    killed_at = []
+
+    def kill_generation(i):
+        history = events()
+        assert len(history) == 2*i+1 and history[-1][2] == "started", history
+        pid = history[-1][1]
+        killed_at.append(time.time_ns())
+        os.kill(pid, signal.SIGKILL)
+        wait(lambda: len(events()) == 2*i+2 and members() == baseline, "exit event and endpoint cleanup")
+
+    dds = dict(os.environ, ENABLE_AGNOCAST="0", BENCH_LIFECYCLE_LIMIT=str(limit))
+    start("dds", [endpoint, "--ros-args", "-r", "output:=/mirror"], base=dds, BENCH_ROLE="sub",
+          BENCH_RAW_READER="1", BENCH_CSV=str(out/"dds.csv"))
+    pub_args = [endpoint, "--ros-args", "-p", "period_ms:=50"]
+    if ingress:
+        pub_args.extend(["-r", "input:=/mirror"])
+    start("writer", pub_args, base=dds if ingress else env, BENCH_ROLE="pub", BENCH_TRACE_STAMPS="1")
+    args = ["r2a", "/mirror", "/input"] if ingress else ["a2r", "/input", "/mirror"]
+    start("supervisor", [sys.executable, Path(__file__).with_name("supervise-route.py"), *args],
+          base=os.environ)
+    consumer, witness = ("crop", "dds") if ingress else ("dds", "crop")
+    wait(lambda: members() == baseline+1 and len(dds_endpoints()) == 1 and
+         graph.count_subscribers("/mirror") == (2 if ingress else 1) and
+         graph.count_subscribers("/output") == 1 and graph.count_publishers("/output") == 1,
+         "initial matches")
+    time.sleep(.4)
+    limit.write_text("100")
+    wait(lambda: 10 in ids(consumer), "steady delivery")
+    for i in range(2):
+        kill_generation(i)
+        wait(lambda: len(events()) == 2*i+3 and members() == baseline+1, "automatic replacement")
+        reference = ids(witness)[-1]
+        wait(lambda: any(seq >= reference+4 for seq in ids(consumer)), "four more frame periods")
+    wait(lambda: 60 in ids(consumer), "stable stream after second recovery")
+    if mode == "pending":
+        kill_generation(2)
+    requested = time.time_ns()
+    stop("supervisor")
+    stopped = time.time_ns()
+    wait(lambda: members() == baseline and not dds_endpoints(), "final native and DDS cleanup", timeout=30)
+    wait(lambda: 99 in ids(witness), "independent post-stop traffic")
+    time.sleep(.55)
+    history = events()
+    assert [status for _,_,status in history] == ["started","-9","started","-9","started",
+                                                   "-9" if mode == "pending" else "0"], history
+    if mode == "pending":
+        assert 0 <= requested-history[-1][0] < 250_000_000
+    assert len({pid for _,pid,_ in history}) == 3
+    assert all(history[i][1] == history[i+1][1] for i in (0,2,4))
+    assert all(not Path(f"/proc/{pid}").exists() for _,pid,_ in history)
+    assert members() == baseline and not dds_endpoints()
+    for name in list(children):
+        stop(name)
+    seqs = ids(consumer)
+    assert ids(witness) == list(range(100)) and seqs == sorted(set(seqs))
+    assert seqs[0] == 0 and 60 <= seqs[-1] < 99
+    gaps = [(a,b) for a,b in zip(seqs,seqs[1:]) if b != a+1]
+    assert len(gaps) == 2, gaps
+    stamps = {int(i): int(s) for i,s in re.findall(r"^sent (\d+) (\d+)$", (out/"writer.log").read_text(), re.M)}
+    assert list(stamps) == list(range(100))
+    arrivals = {int(i): stamps[int(i)]+int(lat) for i,lat in data(consumer)}
+    assert stamps[seqs[-1]] <= stopped < stamps[99]
+    for i,(a,b) in enumerate(gaps):
+        exited, spawned = history[2*i+1][0], history[2*i+2][0]
+        assert stamps[a] < exited < spawned <= stamps[b]
+        print(f"gap={a}->{b} missing={b-a-1} kill_to_exit_event_ms={(exited-killed_at[i])/1e6:.3f} "
+              f"exit_to_spawn_ms={(spawned-exited)/1e6:.3f} "
+              f"spawn_to_frame_ms={(arrivals[b]-spawned)/1e6:.3f} "
+              f"exit_to_frame_ms={(arrivals[b]-exited)/1e6:.3f} "
+              f"interarrival_ms={(arrivals[b]-arrivals[a])/1e6:.3f}")
+    print(f"direction={args[0]} stop={mode} request_ns={requested} generations=3 "
+          f"witness=100/100 final_forwarded={seqs[-1]} native_baseline={baseline} dds_routes=0")
+
+
 try:
     rclpy.init()
     graph = rclpy.create_node("restart_driver")
@@ -231,6 +338,9 @@ try:
     start("crop", [binary("universe_crop_benchmark", "crop"), "--ros-args", "--params-file", config,
                    "-p", "input_frame:=base_link", "-p", "output_frame:=base_link"], AGNOCAST_RMW_DIRECT_WAIT="1")
     start("sink", [endpoint], BENCH_ROLE="sub", BENCH_CSV=str(out / "crop.csv"))
+    if mode in ("active", "pending"):
+        supervised()
+        sys.exit(0)
     if ingress:
         inbound()
         sys.exit(0)
@@ -284,6 +394,10 @@ try:
     for name in list(children):
         stop(name)
 finally:
+    supervisor = children.get("supervisor")
+    if supervisor is not None and supervisor.poll() is None:
+        supervisor.send_signal(signal.SIGINT)
+        supervisor.wait(timeout=12)
     for child in children.values():
         if child.poll() is None:
             child.kill()
