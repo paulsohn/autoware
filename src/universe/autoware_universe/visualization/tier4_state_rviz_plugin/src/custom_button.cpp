@@ -124,7 +124,11 @@ void CustomElevatedButton::paintEvent(QPaintEvent *)
   painter.drawText(r, Qt::AlignCenter, text());
 }
 
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+void CustomElevatedButton::enterEvent(QEnterEvent * event)
+#else
 void CustomElevatedButton::enterEvent(QEvent * event)
+#endif
 {
   isHovered = true;
   update();

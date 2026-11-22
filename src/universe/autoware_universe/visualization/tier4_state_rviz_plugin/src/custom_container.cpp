@@ -20,7 +20,7 @@ CustomContainer::CustomContainer(QWidget * parent) : QFrame(parent), cornerRadiu
   setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
   setContentsMargins(0, 0, 0, 0);
   layout = new QGridLayout(this);
-  layout->setMargin(0);                      // Margin between the border and child widgets
+  layout->setContentsMargins(0, 0, 0, 0);    // Margin between the border and child widgets
   layout->setSpacing(0);                     // Spacing between child widgets
   layout->setContentsMargins(10, 0, 10, 0);  // Margin between the border and the layout
   setLayout(layout);

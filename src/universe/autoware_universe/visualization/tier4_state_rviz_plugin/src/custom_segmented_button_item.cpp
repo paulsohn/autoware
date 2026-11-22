@@ -162,7 +162,11 @@ void CustomSegmentedButtonItem::paintEvent(QPaintEvent *)
   painter.drawText(rect(), Qt::AlignCenter, text());
 }
 
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+void CustomSegmentedButtonItem::enterEvent(QEnterEvent * event)
+#else
 void CustomSegmentedButtonItem::enterEvent(QEvent * event)
+#endif
 {
   if (isCheckable()) {
     isHovered = true;

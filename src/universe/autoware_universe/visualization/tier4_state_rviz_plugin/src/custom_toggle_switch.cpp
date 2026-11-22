@@ -99,7 +99,11 @@ void CustomToggleSwitch::setCheckedState(bool state)
   update();  // Force repaint
 }
 
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+void CustomToggleSwitch::enterEvent(QEnterEvent * event)
+#else
 void CustomToggleSwitch::enterEvent(QEvent * event)
+#endif
 {
   isHovered = true;
   update();
