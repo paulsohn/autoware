@@ -2295,3 +2295,64 @@ during the graph matrix was 3737 MiB.
 
 [Per-run transport and tracker measurements](../rmw-agnocast/pipeline-depth-results/summary.txt)
 and [hidden-glimpse controls](../rmw-agnocast/pipeline-depth-results/hidden.txt).
+
+## 2026-11-22 — Rejecting stale near-crop inputs at depth 8
+
+Keep the three-LiDAR CPU overload, reader depth 8, writer depth 5, and
+100 ms freshness budget from the preceding experiment. Compare processing
+every callback with dropping clouds whose acquisition stamp is already
+more than 100 ms old at callback entry. Both policies sample age at the
+same point. Both run the six 150 ms busy intervals on near callbacks 5–10,
+including rejected callbacks, before invoking the real filter or returning.
+This placement models unavoidable interference on the callback thread.
+It avoids crediting the policy with eliminating the injected overload.
+An input that was fresh when admitted can still leave the crop stale.
+
+Repeat the two guarded sequential colcon builds above. With the same
+Lyrical root and overlays, run:
+
+```bash
+r=experiments/rmw-agnocast
+out=build/universe-freshness
+bash "$r/bench-native-graph.sh" "$out" freshness
+REPLAY_TARGET_SPACING_M=8 REPLAY_RETURN_GROUP=20 BUFFER_RUNTIME_ONLY=1 \
+  experiments/buffer/run-lyrical.sh bash "$r/run-track-replay.sh" "$out"/*/*.log > "$out/tracker.log" 2>&1
+rg '^trace=' "$out/tracker.log" > "$out/tracker.txt"
+python3 "$r/summarize-freshness.py" "$out"
+```
+
+Run both orders serially. Recovery is elapsed wall time from the end of the
+sixth busy interval to the first received near cloud aged at most 100 ms.
+The fixture checks fused clouds, metadata, and far-branch payloads. Replay
+uses the same tracker and timed releases for each recorded graph trace.
+The summary also cross-checks explicit discards against the missing input
+stamps to distinguish application drops from queue loss.
+
+All 16 graphs passed. All 512 fused cloud/metadata pairs and 512 far
+outputs were present. Near-thread busy CPU totaled 898.7–899.9 ms per
+graph. The guard recorded up to 492.2 MiB for a graph, with at least
+3034 MiB available on the host during graph runs and 3046 MiB during builds.
+
+On rmw_agnocast the first fresh delivery came 2.27–2.33 ms after the end of
+the stall with keep and 1.10–1.15 ms with reject. Oldest received age fell
+from 555 ms to 153 ms, while delivered near frames fell from 27 to 16.
+Native fell from 26 to 16, Cyclone DDS and Zenoh from 27 to 16. In every
+transport transient confirmations fell from 25 to 14 out of 30. Timely
+confirmations stayed at 12. Reject missed all transient onsets 4–19.
+
+The returning object retained its UUID in all 16 replays. Under rejection
+there were no delivered inputs from groups 5–20, including the glimpse.
+This differs from hiding the object in otherwise delivered inputs in the
+preceding experiment. UUID continuity across that silence is compatible
+with a long interval between tracker outputs. For the continuously visible
+landmark on rmw_agnocast the largest gap between reported observations rose
+from 161 ms to 751 ms. This replay does not establish tracker-internal
+lifecycle behavior under other inputs.
+
+Keep the depth-8 backlog policy for this fixture. The paired reduction in
+recovery time buys no additional timely confirmations. A subsequent
+executor-isolation experiment should distinguish competing callbacks from
+work that must execute on the cloud callback's own thread.
+
+[Per-run metrics and missed targets](../rmw-agnocast/pipeline-freshness-results/summary.txt) ·
+[Tracker timing and identities](../rmw-agnocast/pipeline-freshness-results/tracker.txt).

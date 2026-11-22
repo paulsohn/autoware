@@ -2825,3 +2825,16 @@ These results describe this bounded burst and the tracker replay fixture.
 
 [Per-run latency, resource usage and identities](pipeline-depth-results/summary.txt) ·
 [Reproduction and controls](../buffer/JOURNAL.md#2026-11-22--near-reader-history-depth-and-track-identity).
+
+### Admission age at near-crop callback entry
+
+At reader depth 8, rejecting inputs already over 100 ms old shortened
+rmw_agnocast's post-stall wait for a fresh cloud from 2.27–2.33 ms to
+1.10–1.15 ms. Across native Agnocast, rmw_agnocast, Cyclone DDS and Zenoh,
+this cut eventual confirmations from 25/30 to 14/30 with the same 12/30
+confirmed within 100 ms. Both policies kept the returning object's UUID.
+On rmw_agnocast the longest gap between tracker reports of the continuous
+landmark increased from 161 ms to 751 ms. Keep the backlog for this fixture.
+
+[Transport matrix](pipeline-freshness-results/summary.txt) ·
+[Setup and interpretation](../buffer/JOURNAL.md#2026-11-22--rejecting-stale-near-crop-inputs-at-depth-8).
