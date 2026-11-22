@@ -1,3 +1,4 @@
+load("//bazel:expensive.bzl", "EXPENSIVE_TARGET_COMPATIBILITY")
 load("//bazel/runtime:cyclonedds.bzl", "PLANNING_SIMULATOR_CYCLONEDDS_URI")
 load("@rules_python//python:defs.bzl", "py_test")
 
@@ -16,4 +17,26 @@ py_test(
         "//bazel/runtime:planning_simulator_launcher", "//bazel/runtime:planning_simulator_setup",
     ],
     main = "test_launchers.py",
+)
+
+py_test(
+    name = "bundle_test",
+    size = "large",
+    timeout = "long",
+    target_compatible_with = EXPENSIVE_TARGET_COMPATIBILITY,
+    srcs = ["test_bundle.py"],
+    args = [
+        "$(rootpath //bazel/deployments:planning_simulator_debug_bundle)",
+        "$(rootpath //bazel/runtime:planning_simulator_runtime_manifest)",
+        "$(rootpath //bazel/interfaces:all_interfaces)",
+        "$(rootpath peer.py)",
+    ],
+    data = [
+        "peer.py",
+        "//bazel/deployments:planning_simulator_debug_bundle",
+        "//bazel/runtime:planning_simulator_runtime_manifest",
+        "//bazel/interfaces:all_interfaces",
+    ],
+    main = "test_bundle.py",
+    tags = ["no-remote", "no-sandbox"],
 )

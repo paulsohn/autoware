@@ -48,6 +48,24 @@ pkg_tar(
     strip_prefix = "/bazel/runtime",
 )
 
+pkg_tar(
+    name = "planning_simulator_debug_bundle",
+    target_compatible_with = EXPENSIVE_TARGET_COMPATIBILITY,
+    srcs = ["//bazel/runtime:planning_simulator_debug"],
+    files = {
+        "//bazel/runtime:planning_simulator_debug_setup": "setup.bash",
+        "//bazel/runtime:debug/bin/ros2": "bin/ros2",
+    },
+    allow_duplicates_with_different_content = False,
+    compression_level = 1,
+    extension = "tar.gz",
+    include_runfiles = True,
+    preserve_mode = True,
+    stamp = 0,
+    strip_prefix = "/bazel/runtime",
+    symlinks = {"install.bash": "setup.bash", "bin/python3": "ros2"},
+)
+
 # Add only the image install prefix to the existing native distribution.
 pkg_tar(
     name = "core_payload",

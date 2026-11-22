@@ -18475,12 +18475,13 @@ the second decoded value. Do not change production serializers or mask selected
 byte positions. Identify every interface_serialization_test macro caller under
 bazel/ before changing the shared test; all seventeen callers form its gate.
 
-Reproduce the caller inventory with this query, then test those labels. During
+Reproduce the seventeen callers with this source-attribute query, then test
+those labels; it avoids traversing unrelated product dependencies. During
 this run the equivalent macro-call inventory was written to the target-pattern
 file, together with the collection descriptor/Python and SDK index regressions.
 
 ```sh
-bazel query 'kind("py_test", rdeps(//bazel/..., //bazel/tests/ros_interfaces:serialization_test.py, 1))' \
+bazel query 'attr(srcs, "//bazel/tests/ros_interfaces:serialization_test.py", //bazel/...)' \
   > /tmp/autoware-serialization-tests.txt
 env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
   bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
@@ -18630,3 +18631,99 @@ correction extends that existing filter to the observed leading-package form.
 No matching upstream association is recorded for the selected published version,
 inspected 2026-11-23. The relocated distribution separately tests real indexed
 schemas and bindings. No Autoware source, GPU, Fast DDS or pre-commit change.
+
+## 2026-11-23: Phase 7.6 — Sourceable simulator debugging distribution
+
+Purpose: provide an extracted native environment in which developers can source
+install.bash and inspect the running product with standard ROS CLI tools and its
+matching Python interpreter. Use the original planning_simulator entrypoint,
+the existing all_interfaces package selection, the selected RCR CLI libraries,
+the generic runtime_python collector and rules_pkg runfile packaging. This is a
+runtime/development inspection environment, not a CMake/compiler SDK or a second
+source-package inventory.
+
+In bazel/runtime/BUILD.bazel, collect Python providers from planning_simulator
+and all_interfaces_python, plus one py_library grouping the thirteen selected
+standard CLI libraries and dependency-owned metadata adapter. Include that CLI
+group among collector roots: its SDK data dependencies carry Python bindings
+such as test_msgs whose import paths do not propagate through ordinary Python
+deps. The collector carries all roots' default runfiles and writes a manifest
+of their declared ament/resource symlink paths. Build one py_binary depending
+on the collected provider. Its small entrypoint
+calls ros2cli.cli.main; --python execs sys.executable with caller arguments, so
+both paths use the same bundled interpreter and rules_python dependency setup.
+The default CPU/Cyclone DDS profile disables Agnocast.
+
+Expand the shared native setup template for this binary. Source setup.bash from
+the bin/ros2 wrapper and set RUNFILES_DIR privately before exec; dispatch the
+bin/python3 alias through --python. Keep interpreter/runfiles variables out of
+the caller's shell. Generate an opt-in planning_simulator_debug_bundle tar from
+the executable and its complete runfiles. Use rules_pkg's explicit files mapping
+for setup.bash and bin/ros2, with install.bash -> setup.bash and bin/python3 ->
+ros2 aliases. A remap_paths key relative to debug/ does not match once
+strip_prefix leaves the leading slash; explicit installed destinations avoid
+that mismatch. Preserve executable modes, disable timestamps and keep compression
+consistent with the existing native archives. Usage:
+
+```sh
+bazel build --config=expensive --config=runtime --config=no-agnocast \
+  //bazel/deployments:planning_simulator_debug_bundle
+mkdir -p /tmp/autoware-debug
+tar -xzf bazel-bin/bazel/deployments/planning_simulator_debug_bundle.tar.gz \
+  -C /tmp/autoware-debug
+source /tmp/autoware-debug/install.bash
+ros2 pkg prefix autoware_launch
+ros2 interface show autoware_planning_msgs/msg/Trajectory
+python3 -c 'from autoware_planning_msgs.msg import Trajectory; print(Trajectory())'
+```
+
+The consuming gate extracts to a path containing spaces, checks that every
+symlink stays inside the distribution and that all manifest resource paths
+exist, then activates twice from a clean shell. It checks PATH idempotence,
+private runfiles state, preserved ROS_DOMAIN_ID, all thirteen command families,
+indexed assets/vehicle/launch packages, package-qualified executable discovery,
+real component_container help and launch argument introspection. Bundled Python
+imports every message/service/action declared by the existing all_interfaces
+manifest and its native type support. Keep this binding inventory separate from
+schema discovery: the SDK also indexes test_interface_files, a raw schema-fixture
+package with no generated binding target. A resource marker alone is not a
+promise of compiled bindings. The existing BUILD/provider manifest defines the
+supported generated types; do not generate bindings for arbitrary fixture files
+or silently skip declared types. CLI interface listing separately checks grid_map
+ownership and rejects the misattributed grid_map_msgs/msg/Time entry.
+A small live peer validates node discovery, Trajectory echo, String publication,
+Trigger service calls and parameter get/set; require clean peer shutdown and
+stop the CLI daemon before cleanup.
+
+Acceptance command, after the SDK/helper and shared-launcher gates recorded
+above have passed:
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=expensive --config=runtime --config=no-agnocast \
+  --local_test_jobs=1 --test_output=errors //bazel/tests/runtime_debug:bundle_test
+python3 -m flake8 --max-line-length=150 bazel/runtime/debug/cli.py \
+  bazel/tests/runtime_debug
+bash -n bazel/runtime/debug/bin/ros2
+git diff --check
+```
+
+The complete relocated gate passes (one case, 61.7 s). It preserves all 5,212
+manifest resource paths and imports all 433 declared interface types with the
+bundled interpreter. All thirteen command families load; real executable help,
+launch arguments, asset/package lookup, schema ownership and clean-shell
+activation pass. The live peer is discovered, its Trajectory is echoed, a String
+publication is received through the Trigger service, and its parameter changes
+from 42 to 43. The peer exits normally and the CLI daemon is stopped. Targeted
+Python, Bash syntax and whitespace checks pass.
+
+Reuse the passing generic collector, metadata, index and complete SDK suite
+results recorded above. Both shared launcher profiles, native core/simulator
+archive structures and the two original core behavior cases also passed before
+the final debug-only composition update; no launcher/profile/archive-layout
+change follows that evidence. The later SDK normalization changes interface
+introspection, with its complete SDK and extracted CLI consumer gates passing.
+Simulator driving, OCI export, GPU and Fast DDS checks are unchanged milestone
+evidence, not rerun or newly claimed here. This completes Phase 7.6 and Phase 7's
+selected runtime distribution scope; full Universe integration remains later
+work. No TensorRT engine-generation implementation changes in this task.

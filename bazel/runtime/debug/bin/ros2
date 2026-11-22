@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+# Copyright 2026 Taeseung Sohn
+# SPDX-License-Identifier: Apache-2.0
+set -eu
+
+bundle=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)
+source "$bundle/setup.bash"
+export RUNFILES_DIR="$bundle/planning_simulator_debug.runfiles"
+if [[ "${0##*/}" == python3 ]]; then
+  exec "$bundle/planning_simulator_debug" --python "$@"
+fi
+exec "$bundle/planning_simulator_debug" "$@"

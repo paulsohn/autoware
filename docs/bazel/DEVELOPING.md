@@ -1141,6 +1141,77 @@ bazel test --config=runtime --config=no-agnocast \
   //third_party/runtime:runtime_python_test
 ```
 
+## Sourceable native debugging environment
+
+Build a debugging distribution from the planning_simulator entrypoint's
+declared runtime closure, the existing all_interfaces selection and the selected
+RCR ROS CLI extensions:
+
+```sh
+bazel build --config=expensive --config=runtime --config=no-agnocast \
+  //bazel/deployments:planning_simulator_debug_bundle
+mkdir -p /tmp/autoware-debug
+tar -xzf bazel-bin/bazel/deployments/planning_simulator_debug_bundle.tar.gz \
+  -C /tmp/autoware-debug
+source /tmp/autoware-debug/install.bash
+ros2 pkg prefix autoware_launch
+ros2 pkg executables rclcpp_components
+ros2 interface show autoware_planning_msgs/msg/Trajectory
+python3 -c 'from autoware_planning_msgs.msg import Trajectory; print(Trajectory())'
+```
+
+setup.bash and its install.bash alias activate this distribution's bin directory,
+ament prefix, native libraries, ROS Lyrical and CPU/Cyclone DDS profile with
+Agnocast disabled. Activation replaces inherited ROS/Python discovery paths;
+use a separate shell for another ROS installation. ROS_DOMAIN_ID, display
+settings and an explicitly selected CYCLONEDDS_URI remain caller-owned. Match
+ROS_DOMAIN_ID and discovery/network settings to the processes being inspected.
+Use ros2 node/topic/service/param commands normally. The python3 wrapper selects
+the same bundled interpreter and Python dependency environment as the CLI.
+Runfiles variables remain private to each wrapper's subprocess so sourcing the
+environment does not impose this tree on unrelated Bazel executables.
+
+The product's indexes supply registered binaries, components, shared libraries,
+interfaces, configuration, map/vehicle assets and RViz resources. Python
+providers are collected from that product. The same top-level interface
+selection used by compiled consumers supplies its Python/index projection;
+compiled message libraries alone do not expose Python bindings or schema indexes.
+Include the CLI group among the runtime_python roots too: its data edges can
+carry Python providers that ordinary py_library deps do not forward. CLI
+extensions add their own runtime dependencies. Undeclared
+source packages and compiler/header/CMake SDK exports are outside this runtime
+distribution. Add missing runtime exports to their owning package/index and
+update the product's dependencies when its supported functionality changes.
+
+The pinned RCR also provides ament_package and ament_underlay from
+`@rosdistro//ament:defs.bzl`. They describe conventional installed package trees
+and generate setup scripts/environment hooks. Use them when exporting that
+package-install contract. The underlay aspect collects AmentPackageInfo through
+deps; it does not consume an arbitrary entrypoint's data/runfile closure.
+Our components currently export ament_index runtime providers, and some registry
+ament_package declarations include build/lint/test dependencies. This debug
+distribution therefore reuses the existing runtime indexes and RCR CLI Python
+libraries, with a small shared activation template rather than substituting a
+different package-install closure. The core run and run_simulator launchers source generated
+instances of the same template before executing their fixed launch profiles.
+
+Run the focused gates when changing this environment or its packaged closure:
+
+```sh
+bazel test --config=runtime --config=no-agnocast \
+  //third_party/runtime:runtime_python_test \
+  //bazel/tests/runtime_debug:launchers_test
+bazel test --config=expensive --config=runtime --config=no-agnocast \
+  --test_output=errors //bazel/tests/runtime_debug:bundle_test
+```
+
+The bundle gate extracts to a path containing spaces, checks preservation of
+the entrypoint's declared index/resource paths, activates from a clean shell,
+imports every interface in the declared all_interfaces selection and exercises
+the CLI against a small live
+peer. It does not start the full simulator or export an OCI image; select those
+costly gates only when their behavior is affected.
+
 ## OCI simulator distribution
 
 The simulator image puts the native application bundle at /opt/autoware over

@@ -2,7 +2,9 @@ load(":defs.bzl", "executable_template")
 load(":cyclonedds.bzl", "PLANNING_SIMULATOR_CYCLONEDDS_URI")
 load("@launch_ros//:defs.bzl", "launch_ros_binary")
 load("@bazel_skylib//rules:expand_template.bzl", "expand_template")
+load("@rules_python//python:defs.bzl", "py_binary", "py_library")
 load("//third_party/runtime:defs.bzl", "runtime_libraries")
+load("//third_party/runtime:python.bzl", "runtime_python")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -78,6 +80,46 @@ executable_template(
     template = "run_simulator.sh.in",
 )
 
+py_library(
+    name = "planning_simulator_cli",
+    deps = [
+        "//third_party/ros2cli:entry_points",
+        "@ros2action",
+        "@ros2bag",
+        "@ros2cli",
+        "@ros2component",
+        "@ros2doctor",
+        "@ros2interface",
+        "@ros2launch",
+        "@ros2lifecycle",
+        "@ros2node",
+        "@ros2param",
+        "@ros2pkg",
+        "@ros2run",
+        "@ros2service",
+        "@ros2topic",
+    ],
+)
+
+runtime_python(
+    name = "planning_simulator_python",
+    roots = [":planning_simulator", ":planning_simulator_cli", "//bazel/interfaces:all_interfaces_python"],
+)
+
+filegroup(
+    name = "planning_simulator_runtime_manifest",
+    srcs = [":planning_simulator_python"],
+    output_group = "manifest",
+)
+
+py_binary(
+    name = "planning_simulator_debug",
+    srcs = ["debug/cli.py"],
+    main = "debug/cli.py",
+    precompile = "disabled",
+    deps = [":planning_simulator_python"],
+)
+
 expand_template(
     name = "core_setup",
     out = "core_setup.bash",
@@ -91,3 +133,15 @@ expand_template(
     substitutions = {"@ENTRYPOINT@": "planning_simulator", "@DISCOVERY_ENV@": ""},
     template = "setup.bash.in",
 )
+
+expand_template(
+    name = "planning_simulator_debug_setup",
+    out = "debug/setup.bash",
+    substitutions = {
+        "@ENTRYPOINT@": "planning_simulator_debug",
+        "@DISCOVERY_ENV@": 'export CYCLONEDDS_URI="${CYCLONEDDS_URI:-' + PLANNING_SIMULATOR_CYCLONEDDS_URI + '}"',
+    },
+    template = "setup.bash.in",
+)
+
+exports_files(["debug/bin/ros2"])
