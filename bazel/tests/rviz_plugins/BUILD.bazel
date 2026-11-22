@@ -56,5 +56,6 @@ collect_transitive_dynamic_deps(
         ("tier4_planning_factor_rviz_plugin", "plugins.xml"),
         ("tier4_vehicle_rviz_plugin", "plugins/plugin_description.xml"),
         ("tier4_dummy_object_rviz_plugin", "plugins/plugin_description.xml"),
+        ("tier4_datetime_rviz_plugin", "plugins/plugin_description.xml"),
     ]
 ]
