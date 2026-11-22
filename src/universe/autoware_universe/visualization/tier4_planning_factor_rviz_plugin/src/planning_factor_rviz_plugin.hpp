@@ -25,9 +25,11 @@
 
 #include <autoware_internal_planning_msgs/msg/planning_factor_array.hpp>
 
+#include <chrono>
 #include <mutex>
 #include <optional>
 #include <string>
+#include <type_traits>
 
 namespace autoware::rviz_plugins
 {
@@ -76,7 +78,10 @@ public:
     config.mapSetValue("show_safety_factors", show_safety_factors_.getBool());
   }
 
-  void update(float wall_dt, float ros_dt) override { marker_common_.update(wall_dt, ros_dt); }
+  void update(float wall_dt, float ros_dt) override
+  {
+    updateMarkerCommon(marker_common_, wall_dt, ros_dt);
+  }
 
   void reset() override
   {
@@ -113,6 +118,19 @@ private:
   static std::optional<double> s_baselink2front_;
   static std::optional<double> s_baselink2rear_;
   static bool s_request_started_;
+
+private:
+  template <class Common>
+  static void updateMarkerCommon(Common & common, float wall_dt, float ros_dt)
+  {
+    if constexpr (std::is_invocable_v<decltype(&Common::update), Common &, float, float>) {
+      common.update(wall_dt, ros_dt);
+    } else {
+      common.update(
+        std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::duration<float>(wall_dt)),
+        std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::duration<float>(ros_dt)));
+    }
+  }
 };
 }  // namespace autoware::rviz_plugins
 
