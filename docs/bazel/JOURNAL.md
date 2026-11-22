@@ -16614,3 +16614,33 @@ Both behavior/shutdown cases pass in 2.6 seconds, no failures/skips.
 The complete original full headless launch also passes both cases in 12.4 seconds.
 CPU/Cyclone DDS, ENABLE_AGNOCAST=0. No Fast DDS, enabled-Agnocast, full colcon,
 RViz or autonomous-driving result is claimed. Continue original product assembly.
+
+## 2026-11-22: Phase 7.3.3 — tier4_vehicle_launch resource closure
+
+Purpose: run the original vehicle subsystem with the default simulator profile.
+Inspect package.xml, CMake install directories and conditional launch includes;
+CMake registers no original functional suite in this resource package.
+
+Use the [launch-group integration pattern](#2026-11-22-phase-733--autoware_map_launch-resource-closure)
+for MODULE/BUILD ownership, indexed resources and conditional runtime selection.
+
+Supply original launch/urdf resources, native robot_state_publisher, indexed
+xacro and the raw command converter. Runtime-selected sample vehicle and sensor
+descriptions/launch identities are caller-owned data. Disable the physical
+vehicle interface as the original simulator does. Require retained expanded
+robot_description containing base_link and no xacro syntax, then clean exit.
+This is not physical driver validation.
+
+The external fixture in bazel/tests/universe_launch includes original XML;
+it is committed with the final product composition. Exact standalone gate:
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_output=errors //bazel/tests/universe_launch:vehicle_launch_test
+```
+
+Both behavior/shutdown cases pass in 2.2 seconds, no failures/skips.
+The complete original full headless launch also passes both cases in 12.4 seconds.
+CPU/Cyclone DDS, ENABLE_AGNOCAST=0. No Fast DDS, enabled-Agnocast, full colcon,
+RViz or autonomous-driving result is claimed. Continue original product assembly.
