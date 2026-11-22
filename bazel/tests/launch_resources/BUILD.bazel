@@ -18,5 +18,6 @@ load("@pip_ros//:requirements.bzl", "requirement")
         ("autoware_map_config", "config/lanelet2_map_loader.param.yaml"),
         ("autoware_localization_config", "config/pose_initializer.param.yaml"),
         ("sample_vehicle_launch", "launch/vehicle_interface.launch.xml"),
+        ("sample_sensor_kit_launch", "config/dummy_diag_publisher/sensor_kit.param.yaml"),
     ]
 ]

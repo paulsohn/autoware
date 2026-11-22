@@ -16161,3 +16161,39 @@ failures/skips. Native DDS processes are not needed for this resource-only gate;
 Cyclone/no-Agnocast is selected for subsequent launch work. No Fast DDS, physical
 hardware, full simulator startup or RViz result is claimed. Continue to original
 launch composition and its actual runtime prerequisites.
+
+## 2026-11-22: Phase 7.3.3 — Sample sensor-kit launch resources
+
+Purpose: provide sample_sensor_kit_launch's original resources to the selected planning
+simulator launch. Inspect package.xml, CMake's INSTALL_TO_SHARE list and the
+selected config/dummy_diag_publisher/sensor_kit.param.yaml. This package has no original functional test suite;
+resource lookup and relocation are the scoped behavior gate.
+
+Add a package-owned MODULE (rosdistro dependency) and ament_index BUILD with
+package.xml and its original launch/data/config resources. Root selects the local snapshot
+with an adjacent 0.0.0 dependency/override pair. This is a real configuration/
+launch provider, not an empty CMake dependency shim. No source/CMake changes,
+implementation imports, host installs or metarepository labels in the component.
+The system launcher dynamically selects this resource package for the dummy diagnostic overlay. Hardware driver launchers remain indexed resources, not a validated physical sensor stack.
+
+Add the external root resource adapter: check manifest identity, selected XML/
+YAML shape and preset choice where applicable; copy the owned share directory
+and package marker to a disposable prefix and resolve the same file through
+ament_index with only that prefix. This tests relocation, not source-directory
+completeness or every possible launch option.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_output=errors @sample_sensor_kit_launch//... \
+  //bazel/tests/launch_resources:sample_sensor_kit_launch_test
+python3 -m flake8 --max-line-length=150 bazel/tests/launch_resources/test_resources.py
+git diff --check
+```
+
+Both resource cases pass, with the complete seven-package resource invocation
+also passing all seven targets/fourteen cases (0.4 seconds per target), no
+failures/skips. Native DDS processes are not needed for this resource-only gate;
+Cyclone/no-Agnocast is selected for subsequent launch work. No Fast DDS, physical
+hardware, full simulator startup or RViz result is claimed. Continue to original
+launch composition and its actual runtime prerequisites.
