@@ -206,9 +206,10 @@ struct Writer
   }
   const bool host_loan = type.host_cloud && std::getenv("AGNOCAST_RMW_HOST_LOAN");
   size_t published_loans = 0, private_copies = 0;
+  size_t backend_materializations = 0, extra_host_copies = 0;
   uintptr_t pool_begin = 0, pool_end = 0;
   // Linux maps this writer's native loan and its shared vector storage in one VMA.
-  bool owns_payload(const Cloud & msg, const void * loan)
+  bool owns_payload(const std::vector<uint8_t> & bytes, const void * loan)
   {
     if (!pool_end) {
       std::ifstream maps("/proc/self/maps");
@@ -224,14 +225,27 @@ struct Writer
         }
       }
     }
-    const auto & bytes = static_cast<const std::vector<uint8_t> &>(msg.data);
     if (bytes.empty()) return !bytes.capacity();
     const auto ptr = reinterpret_cast<uintptr_t>(bytes.data());
     return pool_begin <= ptr && ptr < pool_end && bytes.capacity() <= pool_end - ptr;
   }
+  // Plugins may return a vector allocated before the shared allocation scope.
+  // A reader in another process must only see bytes owned by this writer's pool.
+  void ensure_shared_bytes(HostCloud & wire, const void * loan)
+  {
+    if (!owns_payload(wire.bytes, loan)) {
+      std::vector<uint8_t> shared(wire.bytes);
+      if (!owns_payload(shared, loan)) throw std::runtime_error("fallback payload outside writer pool");
+      wire.bytes.swap(shared);
+      ++extra_host_copies;
+    }
+    ++backend_materializations;
+  }
   ~Writer()
   {
     for (auto & entry : borrowed) cancel(std::move(entry.second));
+    if (backend_materializations) std::fprintf(stderr, "host-cloud materializations=%zu extra_host_copies=%zu\n",
+      backend_materializations, extra_host_copies);
     if (host_loan) std::fprintf(stderr, "host-cloud publisher loans=%zu private_copies=%zu\n", published_loans, private_copies);
   }
   auto borrow()
@@ -616,13 +630,14 @@ extern "C" rmw_ret_t rmw_publish_loaned_message(
   if (it == w->borrowed.end()) return error("unknown publisher loan");
   if (w->host_loan) {
     auto * cloud = static_cast<Cloud *>(msg);
-    if (cloud->data.get_backend_type() != "cpu") return error("publisher loan requires CPU data");
     static thread_local HopTrace trace("BENCH_HOP_WRITER");
     const auto stamp = trace.path ? cloud_stamp(cloud->header) : 0;
     trace.mark("publish_entry", stamp);
-    const bool shared = w->owns_payload(*cloud, msg);
+    const bool cpu = cloud->data.get_backend_type() == "cpu";
+    const bool shared = cpu && w->owns_payload(cloud->data, msg);
     try {
       HostCloud wire = shared ? HostCloud(std::move(*cloud)) : HostCloud(*cloud);
+      if (!cpu) w->ensure_shared_bytes(wire, msg);
       std::destroy_at(cloud);
       static_assert(std::is_nothrow_move_constructible_v<HostCloud>);
       new (msg) HostCloud(std::move(wire));
@@ -631,7 +646,7 @@ extern "C" rmw_ret_t rmw_publish_loaned_message(
       w->borrowed.erase(it);
       return error(e.what());
     }
-    if (!shared) ++w->private_copies;
+    if (cpu && !shared) ++w->private_copies;
     w->stamp(msg);
     trace.mark("handoff", stamp);
     w->pub.publish(std::move(it->second), [](void * p) {
@@ -670,10 +685,14 @@ extern "C" rmw_ret_t rmw_publish(
   if (w->type.host_cloud) {
     try {
       const auto & cloud = *static_cast<const Cloud *>(msg);
-      if (cloud.data.get_backend_type() != "cpu") return error("host cloud requires CPU data");
       auto loan = w->pub.borrow_loaned_message(w->type.wire_size(sizeof(HostCloud)));
       try {
-        new (loan.get()) HostCloud(cloud);
+        HostCloud wire(cloud);
+        if (cloud.data.get_backend_type() != "cpu") {
+          std::lock_guard lock(w->mutex);
+          w->ensure_shared_bytes(wire, loan.get());
+        }
+        new (loan.get()) HostCloud(std::move(wire));
       } catch (...) {
         w->pub.cancel_message(std::move(loan), [](void * p) { ::operator delete(p); });
         throw;

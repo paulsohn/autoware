@@ -28,8 +28,12 @@ parser.add_argument("--gaps", choices=["short-first", "long-first", "steady"])
 parser.add_argument("--gap-profile", action="store_true")
 parser.add_argument("--resources", type=Path)
 parser.add_argument("--buffer", choices=["cpu", "shmem", "cuda"], default="cpu")
+parser.add_argument("--source-buffer", choices=["cuda", "shmem"], help="materialize this source backend on the Agnocast host-cloud route")
 parser.add_argument("--ros-cie", action="store_true", help="use the mixed-capable CIE for the ROS crop")
 args = parser.parse_args()
+if args.source_buffer and not (args.transport in ("mixed", "fixed") and
+                               (args.host_cloud or args.payload_scope) and args.buffer == "cpu"):
+    parser.error("--source-buffer requires a CPU host-cloud pipeline")
 if args.ros_cie and args.transport == "agnocast":
     parser.error("native Agnocast already uses its Agnocast-only CIE")
 if args.buffer != "cpu" and args.transport != "zenoh":
@@ -94,6 +98,8 @@ with tempfile.TemporaryDirectory() as tmp:
     def launch(argv, role, label=None):
         label = label or role
         child_env = dict(env, BENCH_ROLE=role, BENCH_CSV=str(samples))
+        if role == "pub" and args.source_buffer:
+            child_env["BENCH_BUFFER"] = args.source_buffer
         if args.gaps and role == "pub":
             child_env["BENCH_GAP_STAMPS"] = str(out.with_suffix(".stamps"))
             if args.gaps == "steady":
@@ -145,7 +151,7 @@ with tempfile.TemporaryDirectory() as tmp:
                 raise RuntimeError(f"{label}: unexpected scheduler utilization minimum")
 
     logs = {role: tempfile.TemporaryFile(mode="w+") for role in ("filter", "sub")} if args.transport == "fixed" else {}
-    if args.host_loan:
+    if args.host_loan or args.source_buffer:
         logs["pub"] = tempfile.TemporaryFile(mode="w+")
     if args.branched and args.transport == "fixed":
         for label in ("tap", "filter2"):
@@ -216,6 +222,9 @@ with tempfile.TemporaryDirectory() as tmp:
             log.close()
             if args.host_loan and role in ("pub", "filter", "filter2"):
                 loan_counts[role] = re.findall(r"host-cloud publisher loans=(\d+) private_copies=(\d+)", output)
+            if args.source_buffer and role == "pub":
+                if not re.search(r"^host-cloud materializations=60 extra_host_copies=\d+$", output, re.MULTILINE):
+                    raise RuntimeError("missing source materializations")
             if role != "pub":
                 summaries[role] = matches
     for role, counts in loan_counts.items():

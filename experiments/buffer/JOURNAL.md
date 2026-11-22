@@ -2597,3 +2597,67 @@ dynamic component unloading and multiple hosts remain distinct cases.
 
 [Trial one](../rmw-agnocast/mixed-reader-results/trial-1/summary.txt) ·
 [Trial two](../rmw-agnocast/mixed-reader-results/trial-2/summary.txt).
+
+## 2026-11-22 — Materializing non-CPU PointCloud2 input on the Agnocast host route
+
+Lyrical's generated C++ byte buffer provides CPU vector access and an
+explicit to_vector() operation. For a non-CPU implementation the latter
+calls the backend's to_cpu() method. The host-cloud writer previously
+rejected such inputs on both rmw_publish and rmw_publish_loaned_message.
+This is a local transport decision. Lyrical release notes list Fast DDS
+and Zenoh for Buffer-aware transport; the preceding Cyclone 4.1.5 results
+document a failed non-CPU shmem publication even though CPU data works.
+
+Use to_vector() when constructing a copied HostCloud. Retain the direct
+move for loaned CPU storage already owned by the writer. For converted
+buffers, check the resulting vector against the publisher's shared mapping.
+If the backend returned private storage, copy into a shared vector and
+verify ownership before handing the frame to another process. The writer
+counts successful backend materializations and additional host copies
+separately from the existing CPU publisher-loan/private-copy counters.
+Ordinary readers receive CPU storage and an opted-in reader retains the
+host view. The publisher uses the buffer interface without linking a CUDA
+backend into rmw_agnocast or transmitting device descriptors.
+
+Use the existing built Lyrical Buffer-matrix crop/endpoint from
+build-universe-lyrical.sh, the GPU device, the Agnocast kernel module,
+and the patched rclcpp/probe overlays. Run the guarded build once and
+the six runtime cells sequentially in a fresh directory:
+
+```bash
+export LYRICAL_ROOT=$(cat build/agnocast-lyrical/universe-root)
+experiments/buffer/run-lyrical.sh bash experiments/rmw-agnocast/build-loadable.sh
+out=build/host-fallback-check
+mkdir "$out"
+for mode in mixed fixed; do
+  for backend in cpu shmem cuda; do
+    BUFFER_RUNTIME_ONLY=1 experiments/buffer/run-lyrical.sh timeout 65 bash -ec '
+      source build/agnocast-lyrical/install/local_setup.bash
+      source build/rmw-agnocast/install/local_setup.bash
+      source build/rmw-agnocast/load-install/local_setup.bash
+      export CYCLONEDDS_URI="<CycloneDDS><Domain><General><Interfaces><NetworkInterface name=\"lo\"/></Interfaces><AllowMulticast>false</AllowMulticast></General><Discovery><ParticipantIndex>auto</ParticipantIndex><Peers><Peer Address=\"127.0.0.1\"/></Peers></Discovery></Domain></CycloneDDS>"
+      flags=(--host-cloud)
+      if [[ $1 == fixed ]]; then flags=(--payload-scope); fi
+      if [[ $2 != cpu ]]; then flags+=(--source-buffer "$2"); fi
+      python3 src/universe_crop_benchmark/run_case.py "$1" "$3/$1-$2.csv" "${flags[@]}"' \
+      bash "$mode" "$backend" "$out" > "$out/$mode-$backend.log" 2>&1 || exit 1
+  done
+done
+```
+
+Only the source receives the non-CPU backend selection. Each receiver
+checks the crop result, including point bytes and order. The mixed row uses
+ordinary publication and CPU consumers. The fixed row uses scoped publisher
+loans and host-view subscribers on both edges. This checks fallback on the
+first edge and normal CPU output on the second.
+
+All six cases delivered 60/60 verified frames. Each CUDA and shmem source
+reported 60 backend materializations and zero extra copies to relocate the
+result into the shared pool. The scoped CPU controls reported 60 loans and
+zero private payload copies on both edges. These counters exclude copies
+made by a backend internally, CPU-reader materialization and crop processing.
+The lowest available host memory in the final runtime matrix was 22202 MiB.
+The experiment covers the optimized PointCloud2 route. Generic Buffer
+messages, CUDA descriptor forwarding and compatibility in Cyclone's own
+serialization path are separate work.
+[Raw runs](../rmw-agnocast/host-fallback-results/).

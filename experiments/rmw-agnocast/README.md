@@ -2893,3 +2893,16 @@ single-writer results with a surviving explicit outbound bridge.
 [Measured windows and ownership checks](mixed-reader-results/trial-1/summary.txt) ·
 [Independent repeat](mixed-reader-results/trial-2/summary.txt) ·
 [Reproduction and controls](../buffer/JOURNAL.md#2026-11-22--local-retained-and-copying-pointcloud2-readers-with-a-late-dds-recorder).
+
+### Non-CPU source on the host-cloud route
+
+The PointCloud2 host route now accepts source buffers that implement
+to_cpu(), for both ordinary and loaned publication. The source materializes
+the payload into shared host storage for local host views or CPU readers.
+In the Universe crop matrix CPU, POSIX shmem and CUDA sources each delivered
+60/60 frames in each publish mode. CUDA and shmem each materialized once
+per frame with zero additional RMW copies to relocate the resulting bytes.
+Cross-process GPU descriptor import remains a separate transport feature.
+
+[Measurements](host-fallback-results/) ·
+[Reproduction](../buffer/JOURNAL.md#2026-11-22--materializing-non-cpu-pointcloud2-input-on-the-agnocast-host-route).

@@ -1,0 +1,26 @@
+[WARN] [1795350723.377097453] [Agnocast]: Agnocast publishers do not honor the BestEffort reliability QoS policy. Messages are delivered through shared memory regardless of this setting.
+[WARN] [1795350723.377146836] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+rmw_agnocast host-cloud writer /output
+[WARN] [1795350723.377797484] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[WARN] [1795350723.377853108] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+rmw_agnocast host-cloud reader /input
+[INFO] [1795350733.849956394] [rclcpp]: signal_handler(signum=2)
+fixed_wait arms=1 completions=1 native=58 both=0 native_interrupts=0 stop_interrupts=1
+host-cloud publisher loans=60 private_copies=0
+[WARN] [1795350723.006261430] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[WARN] [1795350723.006425267] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+rmw_agnocast host-cloud reader /output
+[INFO] [1795350733.849969549] [rclcpp]: signal_handler(signum=2)
+fixed_wait arms=1 completions=1 native=59 both=0 native_interrupts=0 stop_interrupts=1
+[INFO] [1795350725.043034399] [endpoint]: Starting node with rclcpp mode (compiled with agnocast support)
+[WARN] [1795350725.065112475] [Agnocast]: Agnocast publishers do not honor the BestEffort reliability QoS policy. Messages are delivered through shared memory regardless of this setting.
+[WARN] [1795350725.065157099] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+rmw_agnocast host-cloud writer /input
+[INFO] [1795350725.065422816] [endpoint]: AgnocastOnly executor specified but ENABLE_AGNOCAST is not set, falling back to ROS 2 executor
+source_rate_hz=10.19
+[INFO] [1795350733.849975220] [rclcpp]: signal_handler(signum=2)
+host-cloud materializations=60 extra_host_copies=0
+host-cloud publisher loans=60 private_copies=0
+verified fixed wait filter: 58 native wakes
+verified fixed wait sub: 59 native wakes
+Minimum host MemAvailable: 22389 MiB

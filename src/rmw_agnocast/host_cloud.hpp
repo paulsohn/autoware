@@ -13,7 +13,7 @@ struct HostCloud
     big_endian(msg.is_bigendian),
     point_step(msg.point_step),
     row_step(msg.row_step),
-    bytes(static_cast<const std::vector<uint8_t> &>(msg.data)),
+    bytes(msg.data.to_vector()),
     dense(msg.is_dense)
   {
   }

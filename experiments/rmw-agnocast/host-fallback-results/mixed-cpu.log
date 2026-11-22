@@ -1,0 +1,19 @@
+[WARN] [1795350677.137449343] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[WARN] [1795350677.137631674] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+rmw_agnocast host-cloud reader /output
+[WARN] [1795350677.526977745] [Agnocast]: Agnocast publishers do not honor the BestEffort reliability QoS policy. Messages are delivered through shared memory regardless of this setting.
+[WARN] [1795350677.527032587] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+rmw_agnocast host-cloud writer /output
+[WARN] [1795350677.527663128] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+[WARN] [1795350677.527720235] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+rmw_agnocast host-cloud reader /input
+[INFO] [1795350679.181577579] [endpoint]: Starting node with rclcpp mode (compiled with agnocast support)
+[WARN] [1795350679.204881320] [Agnocast]: Agnocast publishers do not honor the BestEffort reliability QoS policy. Messages are delivered through shared memory regardless of this setting.
+[WARN] [1795350679.204935130] [Agnocast]: Pre-existing shared libraries in LD_PRELOAD may have been overwritten by libagnocast_heaphook.so
+rmw_agnocast host-cloud writer /input
+[INFO] [1795350679.205198704] [endpoint]: AgnocastOnly executor specified but ENABLE_AGNOCAST is not set, falling back to ROS 2 executor
+source_rate_hz=10.00
+[INFO] [1795350685.283270177] [rclcpp]: signal_handler(signum=2)
+[INFO] [1795350685.283273203] [rclcpp]: signal_handler(signum=2)
+[INFO] [1795350685.283261782] [rclcpp]: signal_handler(signum=2)
+Minimum host MemAvailable: 22202 MiB
