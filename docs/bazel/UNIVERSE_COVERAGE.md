@@ -230,11 +230,19 @@ Reuse 9.4 and existing map/GridMap providers. Order shape estimation before clus
 - [ ] [autoware_detected_object_validation](../../src/universe/autoware_universe/perception/autoware_detected_object_validation/package.xml)
 - [ ] [autoware_elevation_map_loader](../../src/universe/autoware_universe/perception/autoware_elevation_map_loader/package.xml)
 - [x] [autoware_ground_segmentation](../../src/universe/autoware_universe/perception/autoware_ground_segmentation/package.xml)
-- [ ] [autoware_occupancy_grid_map_outlier_filter](../../src/universe/autoware_universe/perception/autoware_occupancy_grid_map_outlier_filter/package.xml)
+- [x] [autoware_occupancy_grid_map_outlier_filter](../../src/universe/autoware_universe/perception/autoware_occupancy_grid_map_outlier_filter/package.xml)
 - [ ] [autoware_shape_estimation](../../src/universe/autoware_universe/perception/autoware_shape_estimation/package.xml)
 - [ ] [autoware_euclidean_cluster](../../src/universe/autoware_universe/perception/autoware_euclidean_cluster/package.xml)
 - [ ] [autoware_raindrop_cluster_filter](../../src/universe/autoware_universe/perception/autoware_raindrop_cluster_filter/package.xml)
 - [ ] [autoware_detection_by_tracker](../../src/universe/autoware_universe/perception/autoware_detection_by_tracker/package.xml)
+
+Phase 9.5 progress, 2026-11-24: cluster merger, ground segmentation and occupancy-
+grid outlier filtering close their complete selected module gates. The shared
+filter-base prerequisite also passes the full preprocessor gate. Definition
+coverage reaches 120/244, leaving 124 packages without definitions; seven
+packages remain in this group. The map and conditional learned-shape boundaries
+remain pending, so this phase is not complete. See the module journals for exact
+profiles and separate source fixes; the final contract audit remains 9.20.
 
 ### Phase 9.6: Object association, geometry and postprocessing
 

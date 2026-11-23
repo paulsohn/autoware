@@ -2274,14 +2274,22 @@ journals separate, with sequential builds and Cyclone DDS for routine gates.
 Select added Agnocast-only behavior checks for the newly introduced wrapper nodes.
 No Fast DDS or expensive product gate is automatically required for this group.
 
-Completed module: autoware_cluster_merger — component/executable/index/resources,
-three original ROS cases and two identity/transformed-frame payload cases pass
-with Cyclone/RCLCPP, zero failures/errors/skips. Lyrical and header-frame fixes
-are separate source corrections. Ground segmentation also completes all three original PCD cases and both added
-grid/non-grid transport cases with Cyclone/RCLCPP; the added cases pass Agnocast-
-only as well. Its shared filter-base prerequisite preserves the original CMake
-API and passes the full preprocessor suite. Eight modules remain pending.
+Completed first CPU batch, 2026-11-24:
 
+| Module | Complete acceptance |
+| --- | --- |
+| autoware_cluster_merger | Component/executable/index/resources, all three original ROS cases and two identity/transformed-frame payload cases pass with Cyclone/RCLCPP. |
+| autoware_ground_segmentation | All three original PCD cases, components/executables/resources and both explicitly selected grid/non-grid transport cases pass; added cases also pass Agnocast-only with heaphook preload. |
+| autoware_occupancy_grid_map_outlier_filter | Component/executable/configuration build; no original functional suite; both added radius-mode cases pass with connected-input ExactTime, TF, confidence partition and payload checks. |
+
+The shared filter-base prerequisite preserves the original CMake API and passes
+the complete preprocessor suite and selected enabled checks. Source compatibility
+and output-data fixes are separate commits from Bazel declarations. No Fast DDS,
+GPU or expensive product gate is claimed by this CPU batch. Definition coverage
+is 120/244, leaving 124 packages without definitions. Seven Phase 9.5 packages
+remain pending; next is the required GridMap/PCL provider and map comparison/
+elevation, followed by shape/clustering/detection and validation/raindrop filtering.
+The conditional learned-shape configuration remains part of this group's gate.
 
 ### Execution order through complete Universe coverage
 

@@ -2152,6 +2152,7 @@ and rclcpp-major-32+ QoS objects, preserving the earlier profile API and existin
 best-effort cloud/reliable map policies. The full module builds and both external
 radius/synchronization/frame/payload scenarios pass with Cyclone/RCLCPP, zero
 failures/errors/skips. Older distributions are not locally qualified.
+Local source correction: 398695f2.
 [Reproduction](JOURNAL.md#2026-11-24-phase-95--occupancy-grid-outlier-filtering).
 
 ## Radius-disabled occupancy filtering appends fabricated zero points
@@ -2170,4 +2171,5 @@ concatenation so the now-empty retained cloud is appended safely. Preserve the o
 occupancy-only discard policy. Both radius profiles pass the complete module
 gate afterward; the enabled-radius scenario already passes before the fix.
 This is output-data correctness, not Lyrical compatibility.
+Local source correction: 398695f2.
 [Reproduction](JOURNAL.md#2026-11-24-phase-95--occupancy-grid-outlier-filtering).

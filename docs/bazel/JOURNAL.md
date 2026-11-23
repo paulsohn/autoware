@@ -20878,4 +20878,6 @@ point fields and packed counts. No OpenMP code is present in this snapshot;
 its optional CMake flag is unnecessary for the selected implementation.
 Targeted clang-format and diff checks pass. This direct RCLCPP node does not
 introduce an Agnocast-only transport path; no Fast DDS/GPU/expensive product gate
-is required. Source corrections are separate from the module definitions.
+is required. Source corrections are separate from the module definitions
+(398695f2). This closes the initial three-package CPU batch; next are the
+GridMap/PCL provider and map comparison/elevation modules within Phase 9.5.

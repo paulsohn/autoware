@@ -1,0 +1,68 @@
+load("@rclcpp_components//:defs.bzl", "rclcpp_components_register_node")
+load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "autoware_occupancy_grid_map_outlier_filter_library",
+    srcs = ["src/occupancy_grid_map_outlier_filter_node.cpp"],
+    hdrs = ["src/occupancy_grid_map_outlier_filter_node.hpp"],
+    includes = ["src"],
+    deps = [
+        "@autoware_pointcloud_preprocessor//:filter_base_headers",
+        "@autoware_utils",
+        "@message_filters//:message_filters_library",
+        "@nav_msgs//:cc",
+        "@pcl_ros//:pcl_ros_tf_library",
+        "@rclcpp_components//:rclcpp_components_library",
+        "@rosdistro//cc:pcl_filters",
+        "@rosdistro//cc:pcl_search",
+        "@sensor_msgs//:cc",
+        "@tf2_eigen//:tf2_eigen_library",
+        "@tf2_ros//:tf2_ros_library",
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = [
+        "@autoware_pointcloud_preprocessor//:filter_base_runtime_dynamic_deps",
+        "@nav_msgs//:cc_shared",
+        "@pcl_ros//:pcl_ros_tf",
+        "@rclcpp_components//:rclcpp_components",
+        "@tf2_eigen//:tf2_eigen",
+    ],
+)
+
+cc_shared_library(
+    name = "autoware_occupancy_grid_map_outlier_filter",
+    shared_lib_name = "libautoware_occupancy_grid_map_outlier_filter.so",
+    dynamic_deps = [":runtime_dynamic_deps"],
+    deps = [":autoware_occupancy_grid_map_outlier_filter_library"],
+)
+
+rclcpp_components_register_node(
+    name = "autoware_occupancy_grid_map_outlier_filter_node",
+    node_name = "autoware_occupancy_grid_map_outlier_filter_node",
+    component = ":autoware_occupancy_grid_map_outlier_filter",
+    plugin = "autoware::occupancy_grid_map_outlier_filter::OccupancyGridMapOutlierFilterComponent",
+)
+
+register_ament_files(
+    name = "executables",
+    files = [":autoware_occupancy_grid_map_outlier_filter_node"],
+    prefix = "lib/autoware_occupancy_grid_map_outlier_filter",
+    strip_prefix = "*",
+)
+
+ament_index(
+    package_xml = "package.xml",
+    components = [":autoware_occupancy_grid_map_outlier_filter_node_record"],
+    data = glob(["config/**"]) + [":executables"],
+    deps = ["@autoware_pointcloud_preprocessor//:ament_index"],
+    libraries = [":autoware_occupancy_grid_map_outlier_filter"],
+)
+
+exports_files(["config/occupancy_grid_map_outlier_filter.param.yaml"])

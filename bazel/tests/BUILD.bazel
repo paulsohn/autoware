@@ -2304,3 +2304,13 @@ cc_test(
     deps = ["@autoware_ground_segmentation//:autoware_ground_segmentation_library", "@googletest//:gtest"],
     tags = ["no-sandbox", "no-remote"],
 )
+
+cc_test(
+    name = "occupancy_outlier_filter_test",
+    srcs = ["autoware_occupancy_grid_map_outlier_filter/test_filter.cpp"],
+    data = ["@autoware_occupancy_grid_map_outlier_filter//:config/occupancy_grid_map_outlier_filter.param.yaml"],
+    env = {"FILTER_PARAMS": "$(rootpath @autoware_occupancy_grid_map_outlier_filter//:config/occupancy_grid_map_outlier_filter.param.yaml)"},
+    dynamic_deps = ["@autoware_occupancy_grid_map_outlier_filter//:runtime_dynamic_deps"],
+    deps = ["@autoware_occupancy_grid_map_outlier_filter//:autoware_occupancy_grid_map_outlier_filter_library", "@googletest//:gtest"],
+    tags = ["no-sandbox", "no-remote"],
+)
