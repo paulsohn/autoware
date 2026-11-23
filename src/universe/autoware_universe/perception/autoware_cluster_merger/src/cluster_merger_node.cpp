@@ -16,6 +16,8 @@
 
 #include "autoware/object_recognition_utils/object_recognition_utils.hpp"
 
+#include <rclcpp/version.h>
+
 #include <memory>
 #include <string>
 #include <vector>
@@ -27,8 +29,13 @@ ClusterMergerNode::ClusterMergerNode(const rclcpp::NodeOptions & node_options)
 : rclcpp::Node("cluster_merger_node", node_options),
   tf_buffer_(get_clock()),
   tf_listener_(tf_buffer_),
+#if RCLCPP_VERSION_MAJOR >= 32
+  objects0_sub_(this, "input/cluster0", rclcpp::QoS{1}),
+  objects1_sub_(this, "input/cluster1", rclcpp::QoS{1}),
+#else
   objects0_sub_(this, "input/cluster0", rclcpp::QoS{1}.get_rmw_qos_profile()),
   objects1_sub_(this, "input/cluster1", rclcpp::QoS{1}.get_rmw_qos_profile()),
+#endif
   sync_(SyncPolicy(10), objects0_sub_, objects1_sub_)
 {
   output_frame_id_ = declare_parameter<std::string>("output_frame_id");
@@ -60,7 +67,7 @@ void ClusterMergerNode::objectsCallback(
   }
 
   DetectedObjectsWithFeature output_objects;
-  output_objects.header = input_objects0_msg->header;
+  output_objects.header = transformed_objects0.header;
   // add check frame id and transform if they are different
   output_objects.feature_objects = transformed_objects0.feature_objects;
   output_objects.feature_objects.insert(

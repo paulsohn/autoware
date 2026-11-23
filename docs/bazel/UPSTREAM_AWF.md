@@ -2081,3 +2081,35 @@ the two added cases also pass with Agnocast-only execution and heap-hook preload
 zero failures/errors/skips. Original tests/tolerances remain unchanged.
 Local source correction: 8ab8007f.
 [Reproduction and commands](JOURNAL.md#2026-11-23-phase-94--imu-correction-and-gyro-estimation).
+
+## Cluster merger needs current Message Filters headers and QoS
+
+- [ ] Associate with a matching upstream compatibility change. Checked
+  2026-11-23: current [header](https://github.com/autowarefoundation/autoware_universe/blob/main/perception/autoware_cluster_merger/src/cluster_merger_node.hpp)
+  retains removed .h Message Filters names, and current
+  [source](https://github.com/autowarefoundation/autoware_universe/blob/main/perception/autoware_cluster_merger/src/cluster_merger_node.cpp)
+  constructs subscribers with raw profiles. Scoped cluster-merger PR results
+  contain no matching correction; AWF #7404/core #1538 are related trackers.
+
+Package: autoware_cluster_merger. Lyrical compilation first fails on the removed
+headers, then on the Subscriber QoS argument. Use .hpp headers and the QoS-object
+API for rclcpp major 32+, retaining the older profile branch and identical
+reliable depth-one semantics. All three original ROS cases and both external
+frame/payload cases pass with Cyclone/RCLCPP, zero failures/errors/skips.
+Older distributions are not locally qualified.
+[Reproduction](JOURNAL.md#2026-11-23-phase-95--cluster-merger).
+
+## Cluster merger labels transformed objects with their original frame
+
+- [ ] Associate with a matching upstream correction. Checked 2026-11-23:
+  current [implementation](https://github.com/autowarefoundation/autoware_universe/blob/main/perception/autoware_cluster_merger/src/cluster_merger_node.cpp)
+  still copies the original first input's header after transforming its features.
+  The scoped cluster-merger PR search has no matching fix.
+
+Package: autoware_cluster_merger. A rotated/translated first input yields correct
+base_link coordinates but a sensor-frame header. Copy transformed_objects0.header,
+which already carries the target frame and original stamp. The external identity
+case passes before the fix; the transformed-frame assertion fails before and
+passes after. The full module gate passes as described above. This is message
+frame correctness, not a Lyrical API change.
+[Reproduction](JOURNAL.md#2026-11-23-phase-95--cluster-merger).

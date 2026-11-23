@@ -16,9 +16,9 @@
 #define CLUSTER_MERGER_NODE_HPP_
 
 #include "autoware_utils/ros/transform_listener.hpp"
-#include "message_filters/subscriber.h"
-#include "message_filters/sync_policies/approximate_time.h"
-#include "message_filters/synchronizer.h"
+#include "message_filters/subscriber.hpp"
+#include "message_filters/sync_policies/approximate_time.hpp"
+#include "message_filters/synchronizer.hpp"
 #include "rclcpp/rclcpp.hpp"
 
 #include "tier4_perception_msgs/msg/detected_objects_with_feature.hpp"

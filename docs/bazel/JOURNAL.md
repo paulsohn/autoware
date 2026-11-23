@@ -20626,3 +20626,52 @@ consumer changes here. Revisit that complete surface in its GPU/contract gate.
 Local IMU source correction: 8ab8007f; its build definitions and added checks
 are committed separately. Next: Phase 9.5 clustering, shape estimation and map-aware detection; no work on
 that group is included in this module task.
+
+## 2026-11-23: Phase 9.5 — cluster merger
+
+Purpose: start the clustering/map-aware group with its independent cluster-merger
+module. Inspect CMake, manifest, node implementation/header, config/launch and
+all three original ROS test cases. Acceptance: component, standalone executable,
+index/resources and every original test, plus an external non-identity-frame
+message check covering coordinates, frame identity and retained feature data.
+The complete gate below qualifies this module.
+
+Pattern: compile the source/header once, retain a unique shared component owner,
+register the original class/executable and index its resources. Root selects the
+local module; use local object-recognition/test/utility/message dependencies.
+Keep the original test source and its per-case ROS lifecycle unchanged; provide
+its package index so its parameter YAML lookup works. The added test stays under
+bazel/tests, independent of the component's source boundary. Routine profile is
+Cyclone DDS with no-agnocast: this node directly uses RCLCPP, not wrapper transport.
+
+Observed compatibility blockers: selected Lyrical message_filters removes the
+legacy subscriber/synchronizer/policy .h headers, then rejects raw RMW profiles
+in Subscriber construction. Use canonical .hpp names and rclcpp::QoS on rclcpp
+major 32+, preserving the old profile branch for earlier APIs. Keep reliable
+queue depth one and the existing approximate-time synchronization policy.
+
+Behavior regression: with a +90-degree sensor transform and translation (10,20),
+the first object/cluster (1,2) correctly becomes (8,21), but the merged header
+still says cluster_sensor instead of base_link. The identity-frame case passes;
+the transformed case fails only its frame assertion. Copy the already-transformed
+first input's header, retaining its timestamp, instead of its original header.
+Both added cases also check point-cloud intensity, classification, probability,
+cluster frame, object coordinates and second-input retention. Original tests and
+tolerances remain unchanged. Current upstream main retains both issues on
+2026-11-23; eight cluster-merger PR results are historical feature/refactor/test
+work, not matching corrections. AWF #7404/core #1538 remain open Lyrical trackers.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  @autoware_cluster_merger//... //bazel/tests:cluster_merger_frames_test
+```
+
+Result: all nine non-test module targets and both test targets build. All three
+original ROS cases and both external frame/payload cases pass, zero failures/
+errors/skips; final gate 19.0 s, original suite 2.3 s and external cases 0.5 s.
+Targeted clang-format and diff checks pass. This qualifies synchronized cluster
+merging with the selected middleware; no Fast DDS, Agnocast transport, GPU or
+expensive product check is required for this RCLCPP-only module. Source fixes
+are committed separately from build definitions. Next: ground/occupancy filters.
