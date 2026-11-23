@@ -2079,3 +2079,18 @@ cc_test(
     ],
     tags = ["no-sandbox", "no-remote"],
 )
+
+cc_test(
+    name = "radar_static_behavior_test",
+    srcs = ["radar/test_static.cpp", "radar/ros_fixture.hpp"],
+    dynamic_deps = [
+        "@autoware_radar_static_pointcloud_filter//:autoware_radar_static_pointcloud_filter_component",
+        "@autoware_radar_static_pointcloud_filter//:runtime_dynamic_deps",
+    ],
+    deps = [
+        "@autoware_radar_static_pointcloud_filter//:autoware_radar_static_pointcloud_filter_library",
+        "@rclcpp//:rclcpp_library",
+        "@googletest//:gtest_main",
+    ],
+    tags = ["no-sandbox", "no-remote"],
+)

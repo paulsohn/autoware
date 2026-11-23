@@ -19687,6 +19687,10 @@ env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
 
 The complete static module rerun passes in 9.7 s, its three-case ROS suite in
 0.5 s. Unchanged passing results from the other four packages are reused.
+
+Bazel registration completed with the matching package-local MODULE/BUILD, root
+override and behavior inputs. Reuse the complete passing module evidence above.
+The compatibility/frame correction is af93a61e; build definitions remain separate.
 ## 2026-11-23: Phase 9.1 — Radar scan to PointCloud2
 
 Purpose: adopt the polar-return to point-cloud converter as a runnable component

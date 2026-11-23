@@ -1,0 +1,66 @@
+load("@rclcpp_components//:defs.bzl", "rclcpp_components_register_node")
+load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "autoware_radar_static_pointcloud_filter_library",
+    srcs = glob(["src/*.cpp"]),
+    hdrs = glob(["src/*.hpp"]),
+    includes = ["src"],
+    deps = [
+        "@rclcpp//:rclcpp_library",
+        "@rclcpp_components//:rclcpp_components_library",
+        "@autoware_utils",
+        "@geometry_msgs//:cc",
+        "@nav_msgs//:cc",
+        "@radar_msgs//:cc",
+        "@message_filters//:message_filters_library",
+        "@tf2//:tf2_library",
+        "@tf2_ros//:tf2_ros_library",
+        "@tf2_geometry_msgs//:tf2_geometry_msgs_library",
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = [
+        "@rclcpp_components//:rclcpp_components",
+        "@autoware_utils//:runtime_dynamic_deps",
+        "@geometry_msgs//:cc_shared",
+        "@nav_msgs//:cc_shared",
+        "@radar_msgs//:cc_shared",
+        "@message_filters//:message_filters",
+        "@tf2//:tf2",
+        "@tf2_ros//:tf2_ros",
+        "@tf2_geometry_msgs//:tf2_geometry_msgs",
+    ],
+)
+
+cc_shared_library(
+    name = "autoware_radar_static_pointcloud_filter_component",
+    dynamic_deps = [":runtime_dynamic_deps"],
+    deps = [":autoware_radar_static_pointcloud_filter_library"],
+)
+
+rclcpp_components_register_node(
+    name = "radar_static_pointcloud_filter_node",
+    component = ":autoware_radar_static_pointcloud_filter_component",
+    node_name = "radar_static_pointcloud_filter_node",
+    plugin = "autoware::radar_static_pointcloud_filter::RadarStaticPointcloudFilterNode",
+)
+
+register_ament_files(
+    name = "executables",
+    files = [":radar_static_pointcloud_filter_node"],
+    prefix = "lib/autoware_radar_static_pointcloud_filter",
+    strip_prefix = "*",
+)
+
+ament_index(
+    package_xml = "package.xml",
+    components = [":radar_static_pointcloud_filter_node_record"],
+    data = glob(["config/**", "launch/**"]) + [":executables"],
+)
