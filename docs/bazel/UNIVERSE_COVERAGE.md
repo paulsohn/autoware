@@ -209,7 +209,7 @@ snapshot until a source refresh explicitly changes the census.
 Integrate PCL extensions before their consumers. Inventory every preprocessor filter/plugin/executable and original fixture, including parameter, TF, timestamp and point-field contracts. Recheck affected existing occupancy-grid consumers when the local provider enters their actual build graph.
 
 - [ ] [autoware_imu_corrector](../../src/universe/autoware_universe/sensing/autoware_imu_corrector/package.xml)
-- [ ] [autoware_pcl_extensions](../../src/universe/autoware_universe/sensing/autoware_pcl_extensions/package.xml)
+- [x] [autoware_pcl_extensions](../../src/universe/autoware_universe/sensing/autoware_pcl_extensions/package.xml)
 - [ ] [autoware_pointcloud_preprocessor](../../src/universe/autoware_universe/sensing/autoware_pointcloud_preprocessor/package.xml)
 
 ### Phase 9.5: Clustering, shape estimation and map-aware detection

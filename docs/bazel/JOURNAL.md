@@ -20290,3 +20290,6 @@ pass, zero failures/errors/skips. Full passing gate 12.1 s including recompilati
 Targeted clang-format and git diff --check pass. This qualifies library behavior,
 not sensor accuracy/performance; no DDS transport, GPU, Fast DDS or costly system/
 deployment run is needed. Next prerequisite: local managed_transform_buffer.
+
+Bazel definitions and root consumer registration reuse the complete passing gate
+above. The separately committed source correction is 3869e259.

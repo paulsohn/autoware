@@ -2180,3 +2180,9 @@ cc_test(
     ],
     deps = ["@autoware_command_mode_types", "@googletest//:gtest_main"],
 )
+
+cc_test(
+    name = "pcl_extensions_behavior_test",
+    srcs = ["autoware_pcl_extensions/test_voxel_grid.cpp"],
+    deps = ["@autoware_pcl_extensions", "@googletest//:gtest_main"],
+)

@@ -1967,6 +1967,7 @@ not a Lyrical-specific API or system-behavior change.
   search indices without clearing them. Scoped extension/centroid PR search
   finds no match.
 
+Local source correction: 3869e259.
 Package: autoware_pcl_extensions. Setting a field limit reaches representative
 selection with an empty leaf point vector and throws. Reusing a searchable filter
 for a changed voxel grid maps new nearest/radius-search results to old leaves.

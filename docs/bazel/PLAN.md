@@ -2231,6 +2231,24 @@ Upstream Universe#13540 has removed command-mode packages in favor of
 driving_mode_manager. This plan covers the retained snapshot; source-refresh
 work must revisit that architecture and the inventory explicitly.
 
+### Phase 9.4: CPU point-cloud and IMU preprocessing (in progress)
+
+Integrate PCL extensions first, then the preprocessor's required local transform
+buffer/dependency closure, followed by IMU correction. Build sequentially and
+commit each complete module separately. Routine ROS gates use Cyclone DDS and
+no-agnocast; explicitly check newly introduced enabled-only transport behavior.
+
+| Module | Complete acceptance scope/status |
+| --- | --- |
+| autoware_pcl_extensions | Complete: all original point-type instantiations/index and six compiled API cases; field-limited and repeat-search regressions fixed separately. |
+| managed_transform_buffer (prerequisite) | Pending: full original TF/buffer suite, public library/index/example and required backend behavior. |
+| autoware_pointcloud_preprocessor | Pending: all 23 registered nodes, exported helper/core libraries, 16 original C++ suites, Python component suite and relevant filter/resource behavior. |
+| autoware_imu_corrector | Pending: both original test groups, correction/estimator node behavior and indexed executables/configuration. |
+
+Inventory optional/source contracts before adding providers; CGAL/Sophus and
+other SDK choices remain hypotheses until their actual consumers validate them.
+Do not claim this group complete on a smaller passing slice of the preprocessor.
+
 ### Execution order through complete Universe coverage
 
 The following groups are the initial route through every remaining package.

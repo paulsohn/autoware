@@ -1,0 +1,20 @@
+load("@rosdistro//ament:defs.bzl", "ament_index")
+load("@rules_cc//cc:defs.bzl", "cc_library")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "autoware_pcl_extensions",
+    srcs = ["src/voxel_grid_nearest_centroid.cpp"],
+    hdrs = glob(["include/**/*.hpp"]),
+    strip_include_prefix = "include",
+    deps = [
+        "@rosdistro//cc:eigen",
+        "@rosdistro//cc:pcl_common",
+        "@rosdistro//cc:pcl_filters",
+        "@rosdistro//cc:pcl_kdtree",
+        "@rosdistro//cc:range-v3",
+    ],
+)
+
+ament_index(package_xml = "package.xml")

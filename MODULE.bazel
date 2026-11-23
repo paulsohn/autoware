@@ -1903,3 +1903,9 @@ local_path_override(
     module_name = "autoware_command_mode_types",
     path = "src/universe/autoware_universe/system/autoware_command_mode_types",
 )
+
+bazel_dep(name = "autoware_pcl_extensions", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_pcl_extensions",
+    path = "src/universe/autoware_universe/sensing/autoware_pcl_extensions",
+)
