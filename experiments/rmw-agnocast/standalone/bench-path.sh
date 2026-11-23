@@ -7,12 +7,12 @@ mkdir "$out"
 rounds=4
 case ${2:-} in
   --compare-builds|--compare-release|--compare-events) rounds=6;;
-  ""|--compare-handoff) ;;
+  ""|--compare-handoff|--compare-cie) ;;
   *) echo "Unknown comparison: $2" >&2; exit 2;;
 esac
 release_baseline=0
 case ${2:-} in
-  ""|--compare-handoff|--compare-events)
+  ""|--compare-handoff|--compare-events|--compare-cie)
     release_baseline=1
     for flags in \
       build/standalone/o3-obj/agnocastlib/CMakeFiles/agnocast.dir/flags.make \
@@ -23,7 +23,14 @@ case ${2:-} in
     done;;
 esac
 for ((round=1;round<=rounds;round++)); do
-  if [[ ${2:-} == --compare-handoff ]]; then
+  if [[ ${2:-} == --compare-cie ]]; then
+    case $round in
+      1) modes=(native o3 standalone-cie bundled-cie);;
+      2) modes=(o3 bundled-cie native standalone-cie);;
+      3) modes=(bundled-cie standalone-cie o3 native);;
+      4) modes=(standalone-cie native bundled-cie o3);;
+    esac
+  elif [[ ${2:-} == --compare-handoff ]]; then
     case $round in
       1) modes=(native o2 inline handoff);;
       2) modes=(o2 handoff native inline);;
@@ -83,12 +90,17 @@ for ((round=1;round<=rounds;round++)); do
         source build/standalone/o3-install/local_setup.bash
         source build/standalone/release-path/install/local_setup.bash
         probe=/ws/build/standalone/release-path/probe/path_benchmark
+        if [[ $4 == --compare-cie ]]; then
+          source build/standalone/release-cie/install/local_setup.bash
+          probe=/ws/build/standalone/release-cie/probe/path_benchmark
+        fi
         libs=$(ldd "$probe")
         grep -F "libagnocast.so => /ws/build/standalone/o3-install/agnocastlib/lib/libagnocast.so" <<< "$libs"
         grep -F "librclcpp.so => /ws/build/standalone/release-path/install/rclcpp/lib/librclcpp.so" <<< "$libs"
       fi
       arm=rmw
       if [[ $1 == inline || $1 == handoff || $1 == events ]]; then arm=$1; fi
+      if [[ $1 == *-cie ]]; then arm=$1; fi
       if [[ $1 == native ]]; then arm=native; fi
       if [[ $1 == *-trace ]]; then
         export PATH_TIMING_FILE="/ws/$2/$1-$3.stages"

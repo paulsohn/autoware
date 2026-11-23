@@ -190,3 +190,28 @@ bash experiments/rmw-agnocast/standalone/bench-path.sh build/standalone/fresh-re
 ```
 
 To reproduce the historical O2 handoff experiment use the runner at 4bc5899c. [All plain-Release frame measurements](path-handoff-release.csv)
+
+## Callback isolation on the single-hop Path workload
+
+Compare the two CIE implementations against the Release native and SingleThreadedExecutor controls. The application subscription uses the default mutually exclusive ROS callback group. Standalone AWF CIE assigns it a child SingleThreadedExecutor; the bundled CIE also selects that executor for an ordinary ROS group. Both therefore keep the native receiver-to-ROS-worker handoff. No affinity, real-time priorities or competing workload were configured.
+
+| Reader | Median µs | p95 µs | Child CPU s |
+|---|---:|---:|---:|
+| Native Agnocast control | 46.34 | 71.79 | 0.137 |
+| Standalone RMW, SingleThreadedExecutor | 76.02 | 125.07 | 0.179 |
+| Standalone RMW, standalone AWF CIE | 84.04 | 137.02 | 0.192 |
+| Standalone RMW, Agnocast-bundled CIE | 77.93 | 120.54 | 0.188 |
+
+Each reader passed all 240 frames, including loan addresses, payloads and retention. The table pools 200 frames per reader after ten warmups per launch in four balanced rounds. CPU is median combined child CPU per launch. Minimum available host memory across timed runs was 13856 MiB.
+
+The standalone AWF CIE build uses subtree revision 06713baf plus the local Lyrical port. Unmodified announcement QoS failed at startup on this RMW: both CIE variants request reliable transient-local KeepAll for callback-group metadata; standalone rmw_agnocast supports KeepLast. Only in this diagnostic executable, replace history on those two announcement topics with KeepLast(16). Per-launch logs confirm one override for each CIE reader and none for control arms. Path QoS and loan semantics are unchanged. This does not qualify arbitrary late-starting configurators or deployments requiring unbounded announcement history.
+
+On the provisioned laptop with the ordinary Release experiment built:
+
+```bash
+export LYRICAL_ROOT="$(cat build/agnocast-lyrical/universe-root)"
+experiments/buffer/run-lyrical.sh bash experiments/rmw-agnocast/standalone/build-cie-path.sh
+bash experiments/rmw-agnocast/standalone/bench-path.sh build/standalone/fresh-cie --compare-cie
+```
+
+[All 960 frames](path-cie.csv). For a separate question about scheduling under competing callbacks, see the [earlier Universe saturation experiment](../../pipeline-saturation-results/summary.txt).

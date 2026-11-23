@@ -4,6 +4,11 @@
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp/executors/events_cbg_executor/events_cbg_executor.hpp>
 
+#ifdef PATH_BENCH_CIE
+#include <callback_isolated_executor/callback_isolated_executor.hpp>
+#include <agnocast/agnocast_callback_isolated_executor.hpp>
+#endif
+
 #include <utility>
 
 #include <nav_msgs/msg/path.hpp>
@@ -248,6 +253,27 @@ void receive_on_notification(
   sub->clear_on_new_message_callback();
   receiver.finish();
 }
+#ifdef PATH_BENCH_CIE
+// The standalone parent spin joins child executors that stop on ROS context shutdown.
+class PathStandaloneCie : public CallbackIsolatedExecutor
+{
+public:
+  void cancel() { rclcpp::shutdown(); }
+};
+
+template<class Executor>
+void cie_reader(const rclcpp::Node::SharedPtr & node)
+{
+  Executor exec;
+  Receiver<Path::ConstSharedPtr, Executor> receiver{exec};
+  auto sub = node->create_subscription<Path>(
+    topic, 4, [&](Path::ConstSharedPtr msg) { receiver.receive(std::move(msg)); });
+  check(sub->can_loan_messages(), "CIE reader cannot loan");
+  exec.add_node(node);
+  receiver.run();
+}
+#endif
+
 void middleware(bool writer, bool trace, bool single, const std::string & mode)
 {
   check(std::string(rmw_get_implementation_identifier()) == "rmw_agnocast", "wrong RMW");
@@ -256,6 +282,12 @@ void middleware(bool writer, bool trace, bool single, const std::string & mode)
     auto pub = node->create_publisher<Path>(topic, 4);
     check(pub->can_loan_messages(), "writer cannot loan");
     send(*pub);
+#ifdef PATH_BENCH_CIE
+  } else if (mode == "standalone-cie") {
+    cie_reader<PathStandaloneCie>(node);
+  } else if (mode == "bundled-cie") {
+    cie_reader<agnocast::CallbackIsolatedAgnocastExecutor>(node);
+#endif
   } else if (mode == "events") {
     rclcpp::executors::EventsCBGExecutor exec(rclcpp::ExecutorOptions(), 1);
     Receiver<Path::ConstSharedPtr, decltype(exec)> receiver{exec};
@@ -298,7 +330,7 @@ int main(int argc, char ** argv)
     } else {
       rclcpp::init(argc, argv);
       middleware(writer, std::string(argv[1]) == "rmw-traced", std::string(argv[1]) == "single", argv[1]);
-      rclcpp::shutdown();
+      if (rclcpp::ok()) rclcpp::shutdown();
     }
   } catch (const std::exception & e) {
     std::cerr << e.what() << std::endl;
