@@ -27,6 +27,8 @@
 
 #include <boost/optional.hpp>
 
+#include <rclcpp/version.h>
+
 namespace autoware::detected_object_validation
 {
 namespace occupancy_grid_map
@@ -36,8 +38,13 @@ using Polygon2d = autoware_utils::Polygon2d;
 
 OccupancyGridBasedValidator::OccupancyGridBasedValidator(const rclcpp::NodeOptions & node_options)
 : rclcpp::Node("occupancy_grid_based_validator", node_options),
+#if RCLCPP_VERSION_MAJOR >= 32
+  objects_sub_(this, "~/input/detected_objects", rclcpp::QoS{1}),
+  occ_grid_sub_(this, "~/input/occupancy_grid_map", rclcpp::QoS{1}),
+#else
   objects_sub_(this, "~/input/detected_objects", rclcpp::QoS{1}.get_rmw_qos_profile()),
   occ_grid_sub_(this, "~/input/occupancy_grid_map", rclcpp::QoS{1}.get_rmw_qos_profile()),
+#endif
   tf_buffer_(get_clock()),
   tf_listener_(tf_buffer_),
   sync_(SyncPolicy(10), objects_sub_, occ_grid_sub_)

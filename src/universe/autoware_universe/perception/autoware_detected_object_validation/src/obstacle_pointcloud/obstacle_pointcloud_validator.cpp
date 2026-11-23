@@ -25,6 +25,8 @@
 
 #include <boost/geometry.hpp>
 
+#include <rclcpp/version.h>
+
 #include <cmath>
 #include <memory>
 #include <vector>
@@ -275,10 +277,16 @@ bool Validator3D::validate_object(
 ObstaclePointCloudBasedValidator::ObstaclePointCloudBasedValidator(
   const rclcpp::NodeOptions & node_options)
 : rclcpp::Node("obstacle_pointcloud_based_validator", node_options),
+#if RCLCPP_VERSION_MAJOR >= 32
+  objects_sub_(this, "~/input/detected_objects", rclcpp::QoS{1}),
+  obstacle_pointcloud_sub_(
+    this, "~/input/obstacle_pointcloud", rclcpp::SensorDataQoS{}.keep_last(1)),
+#else
   objects_sub_(this, "~/input/detected_objects", rclcpp::QoS{1}.get_rmw_qos_profile()),
   obstacle_pointcloud_sub_(
     this, "~/input/obstacle_pointcloud",
     rclcpp::SensorDataQoS{}.keep_last(1).get_rmw_qos_profile()),
+#endif
   tf_buffer_(get_clock()),
   tf_listener_(tf_buffer_),
   sync_(SyncPolicy(10), objects_sub_, obstacle_pointcloud_sub_)

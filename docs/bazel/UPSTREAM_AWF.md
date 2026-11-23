@@ -2246,3 +2246,23 @@ Local source fix: `e4ec802d2`.
   all four original cases and ten added cases, with no source-test assertions
   removed or weakened. These are algorithm/unit corrections independent of
   Bazel and Lyrical, not claims of an older ROS/CMake verification or submission.
+
+### Object validators need Lyrical Message Filters headers and QoS objects
+
+- [ ] Associate with a matching upstream fix. Reviewed 2026-11-24: current
+  [occupancy validator](https://github.com/autowarefoundation/autoware_universe/blob/main/perception/autoware_detected_object_validation/src/occupancy_grid_map/occupancy_grid_map_validator.cpp)
+  and obstacle-cloud source still use raw QoS profiles; both headers retain
+  removed Message Filters .h aliases. Scoped detected_object_validation PR
+  searches for Lyrical and message_filters find no matching fix.
+  [autoware#7404](https://github.com/autowarefoundation/autoware/issues/7404)
+  is the general transition tracker, not a specific association.
+- Reproduce with the complete validation-module command in the Phase 9.5 journal,
+  LLVM 21.1.8/libc++, Lyrical RCR/Cyclone DDS. Initial compilation fails on
+  message_filters/subscriber.h. Use .hpp includes in both validator headers;
+  select QoS-object subscriptions on rclcpp-major-32+, preserving older raw
+  profiles and the existing reliable/best-effort queue choices.
+- All twelve original cases and five new occupancy/cloud/lanelet cases pass;
+  both added wrapper lanelet cases also pass Agnocast-only with heaphook.
+  No implementation/threshold/test-assertion change or older ROS/CMake run is
+  claimed. The plain occupancy/cloud nodes remain ROS subscriptions; only the
+  lanelet classes support Agnocast-only execution. No upstream submission made.

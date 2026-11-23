@@ -21371,3 +21371,66 @@ changed. Targeted clang-format and diff checks pass. No Fast DDS/GPU/expensive
 product gate selected; sequential RPC and lane-filtered generation are not
 behavior-qualified by this selected launch profile. Five Phase 9.5 package
 boundaries remain; next are validation and raindrop filtering.
+
+## 2026-11-24: Phase 9.5 — detected-object validation
+
+Purpose: integrate the local position, occupancy-grid, obstacle-cloud and detected/
+tracked lanelet validators. Inspect CMake's four libraries/five executables,
+manifest, public/private headers and every source/test/YAML. Preserve both
+original functional targets: four position/utility cases and eight lanelet/
+utility cases. Acceptance adds three plain-RCLCPP occupancy/2D/3D cloud cases
+and two detected/tracked lanelet transport cases; the latter also run Agnocast-
+only with built/preloaded heaphook. No Fast DDS/GPU/product gate is selected.
+
+Pattern: package-owned module and root local override; keep the original library
+boundaries with unique shared names and all five executable/component records.
+Publish the original FilterTargetLabel/shape helper as a narrow compile provider
+(:utils) with one shared owner (:utils_shared). Both filtering libraries and the
+next raindrop consumer can use it without linking validation-node implementations
+or duplicating compiled helper ownership. Component-specific SDK/test resources
+remain local; new tests live under bazel/tests. Expose the existing inline lanelet
+fixture as test-only headers for added peers rather than copying its implementation.
+
+Compatibility blocker/cause/fix: Lyrical removes the Message Filters .h aliases
+and the current Subscriber constructor takes rclcpp::QoS. Change the three includes
+in both plain-validator headers to .hpp and select the QoS-object constructor
+for rclcpp-major-32+, retaining the original raw-profile branch on older ROS.
+Keep reliable depth-one detected-object/grid queues and best-effort depth-one
+cloud queues. This is a separate source compatibility fix; no assertions or
+synchronization policy change. Current upstream retains both paths, with no
+matching scoped PR found on 2026-11-24 (UPSTREAM_AWF.md).
+
+The obstacle validator is actually a plain rclcpp::Node despite its wrapper
+registration: preserve the ROS-aware mixed executable (agnocast_only=False),
+not an unsafe Agnocast-only cast. Its message-filter subscriptions remain ROS.
+The two lanelet classes are wrapper::Node and support Agnocast-only execution.
+Test both actual architectures; do not infer transport capability from CMake
+registration syntax alone.
+
+Added behavior: occupancy confidence keeps a car over occupied cells, rejects
+the car over free cells and preserves the non-car exception. Both point-cloud
+validator dimensions keep a supported nearby box, reject an unsupported box and
+retain an out-of-range object. Verify entire retained objects and header/stamp.
+Lanelet peers reuse the original 50 m road fixture and YAML, selecting CAR as a
+filter target. Retain the in-road object, reject the off-road one and check
+covariance/header/UUID payload equality. Enabled peers assert RCLCPP stays off.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  @autoware_detected_object_validation//... \
+  //bazel/tests:detected_object_validators_test \
+  //bazel/tests:object_lanelet_validation_transport_test
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --local_test_jobs=1 --strategy=TestRunner=local \
+  --run_under=//bazel/agnocast:with_heaphook \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  //bazel/tests:object_lanelet_validation_transport_test
+```
+
+Results: all 41 non-test targets and four test targets build; all twelve original
+and five added cases pass with Cyclone/RCLCPP in 74.2 s. Both lanelet cases pass
+Agnocast-only in 12.2 s. Zero failures/errors/skips. Targeted clang-format and
+diff checks pass. Older-ROS compatibility branches are preserved but not executed
+here. No existing test changes; next is the narrow helper's raindrop consumer.
