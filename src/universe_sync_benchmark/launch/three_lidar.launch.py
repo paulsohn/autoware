@@ -38,7 +38,7 @@ def graph(context):
                    AGNOCAST_BRIDGE_MODE="OFF", AGNOCAST_NO_DISCOVERY_AGENT="1")
     sync_env = dict(env, SYNC_BYTE_INPUT="1")
     ownership = os.environ.get("SYNC_STANDALONE_OWNERSHIP")
-    if ownership in ("view", "loan"):
+    if ownership in ("view", "loan", "crop-copy", "crop-view"):
         sync_env.update(SYNC_VIEW_INPUT="1", AGNOCAST_RMW_HOST_VIEW="1")
         if ownership == "loan":
             sync_env.update(SYNC_LOAN_OUTPUT="1", SYNC_SHARED_OUTPUT="1",
@@ -66,10 +66,18 @@ def graph(context):
                             "--params-file", config])
         for key, value in bounds.items():
             native_args.extend(["-p", f"{key}:={value}"])
+    container_env = env.copy()
+    if ownership in ("crop-copy", "crop-view"):
+        # Use the same view-capable component for both arms of this comparison.
+        prefix = os.environ["SYNC_CROP_COMPONENT_PREFIX"]
+        container_env.update(AMENT_PREFIX_PATH=prefix + ":" + os.environ["AMENT_PREFIX_PATH"],
+                             BENCH_TYPED_INPUT="1", BENCH_BUFFER="cpu")
+        if ownership == "crop-view":
+            container_env["AGNOCAST_RMW_HOST_VIEW"] = "1"
     container = ComposableNodeContainer(
         name="lidar_crops", namespace="", package="rclcpp_components",
         executable="component_container", composable_node_descriptions=crop_nodes,
-        additional_env=env, output="screen",
+        additional_env=container_env, output="screen",
     )
     if mode == "native":
         container = Node(package="universe_crop_benchmark", executable="native_crop_container",

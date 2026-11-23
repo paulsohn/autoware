@@ -327,3 +327,30 @@ Only the synchronizer opts in. Its three cloud subscriptions request retained in
 | Zenoh | 2.921 / 3.160 | 42.044 / 44.806 |
 
 Minimum host MemAvailable across launches was 12573 MiB. [All three-LiDAR samples](lidar-ownership.csv).
+
+## Retained inputs at the three Universe crops
+
+Select the view-capable crop component from the previously built Agnocast Lyrical overlay for **both** standalone arms. Its library SHA-256 was `42df4dd74f9dd44c274a06d733d4307dabf7d774c9b7e627572969a68a3940fd`. Only the crop container gets the component-prefix override. Both cases create explicit typed subscriptions and run the same ROS component container with native Agnocast disabled. The treatment sets AGNOCAST_RMW_HOST_VIEW in that container. Each invocation of the crop's InputBytes constructor checks the backend and requires the local HostCloudView implementation in this mode. The verified sensor segments exercise left and right 24 times each and top 12 times per launch. The synchronizer reported 60 views and zero copies in each standalone launch. Source, crop and synchronizer outputs used ordinary publication, and the sink used CPU data. No direct-poll setting, CIE change or publisher loans in either standalone case.
+
+Reused the installed laptop binaries without rebuilding. Effective optimization was -O3 for the standalone RMW and -O1 for the existing Release Universe crop and synchronizer fixtures, including the native control. Published graphs used the two 10 Hz and one 5 Hz inputs with a 40 ms timeout. Run from the provisioned colcon worktree:
+
+```bash
+bash experiments/rmw-agnocast/standalone/bench-universe.sh build/standalone/fresh-crop-input --crop-inputs
+bash experiments/rmw-agnocast/standalone/bench-universe.sh build/standalone/fresh-crop-repeat --crop-repeat
+```
+
+The initial four paired rounds reverse which standalone arm runs first twice. They include four native launches and two each of Cyclone DDS and Zenoh. After observing a slow view launch, repeat four additional standalone pairs in both orders. Retain every successful run including the slow one. The first four groups per launch are warmup. Full-group age spans the first source stamp to the sink callback. The logged top_release_ns splits that age immediately before the source publishes its third cloud. Compute the remaining interval per sample before taking its median. This interval includes the third publication, crop processing, synchronization, output transport and sink dispatch; concurrent processing of earlier inputs can overlap it.
+
+Two additional diagnostic launches used the crop-view configuration with SYNC_OUTPUT_PROFILE=1. Run the standalone command inside the same stripped, guarded Lyrical shell as run-universe.sh with SYNC_STANDALONE_OWNERSHIP=crop-view and SYNC_CROP_COMPONENT_PREFIX=/ws/build/agnocast-lyrical/install/universe_crop_benchmark. After warmup, full outputs were 786432 bytes. Per-launch median reserve times were 0.0013 and 0.0015 ms, append times 0.024 and 0.030 ms, and publish calls 0.234 and 0.323 ms. These timers cover only the named synchronous operations. They exclude input conversion, TF work and delivery after publication returns. The diagnostic runs are outside the latency matrix. [Profile samples](lidar-crop-input-profile.csv).
+
+| Receiver configuration | Launches | Complete median / p95 ms | Partial median / p95 ms | Before third publish median ms | Third publish start to sink median ms |
+|---|---:|---:|---:|---:|---:|
+| Native Agnocast | 4 | 2.508 / 3.565 | 41.872 / 42.663 | 0.764 | 1.764 |
+| Standalone, CPU crop inputs | 8 | 5.568 / 7.133 | 41.573 / 42.146 | 0.773 | 4.885 |
+| Standalone, retained crop inputs | 8 | 5.581 / 11.328 | 41.646 / 44.821 | 0.795 | 4.850 |
+| Cyclone DDS | 2 | 2.838 / 4.503 | 42.049 / 42.484 | 0.764 | 2.210 |
+| Zenoh | 2 | 2.575 / 2.792 | 41.917 / 42.298 | 0.448 | 2.121 |
+
+The matrix verified all 576 clouds and matching metadata. Minimum sampled host availability was 11476 MiB. For each standalone arm the pooled table uses 80 complete and 80 partial groups and nearest-rank p95. Changing the crop inputs left pooled complete median within 0.013 ms of the CPU case. One retained-input launch had a 10.845 ms median; all other retained-input launch medians were between 4.755 and 6.383 ms. The repeat batch measured copy/view median 5.565/5.662 ms and p95 7.081/6.972 ms. The original tail remains part of the pooled result, with no identified cause.
+
+The remaining full-group median difference to native is about 3 ms. Most of it occurs after the source reaches the third publish. The separate output timers leave that interval largely unaccounted for. A follow-up should timestamp third-cloud publish return, crop callback entry/exit, last synchronizer input callback entry, and sink entry in both native and standalone processes, paired by original stamp. Use separate uninstrumented controls. [All timed groups and source timing boundaries](lidar-crop-input.csv).
