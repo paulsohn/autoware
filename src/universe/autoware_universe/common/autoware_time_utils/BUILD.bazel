@@ -1,0 +1,14 @@
+load("@rosdistro//ament:defs.bzl", "ament_index")
+load("@rules_cc//cc:defs.bzl", "cc_library")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "autoware_time_utils",
+    srcs = ["src/time_utils/time_utils.cpp"],
+    hdrs = glob(["include/**/*.hpp"]),
+    strip_include_prefix = "include",
+    deps = ["@builtin_interfaces//:cc"],
+)
+
+ament_index(package_xml = "package.xml")

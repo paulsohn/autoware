@@ -1879,3 +1879,9 @@ local_path_override(
     module_name = "autoware_simple_object_merger",
     path = "src/universe/autoware_universe/perception/autoware_simple_object_merger",
 )
+
+bazel_dep(name = "autoware_time_utils", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_time_utils",
+    path = "src/universe/autoware_universe/common/autoware_time_utils",
+)

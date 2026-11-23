@@ -195,7 +195,7 @@ Publish the actual time/logging/type APIs and resources, with clock-boundary, lo
 
 - [ ] [autoware_command_mode_types](../../src/universe/autoware_universe/system/autoware_command_mode_types/package.xml)
 - [ ] [autoware_glog_component](../../src/universe/autoware_universe/common/autoware_glog_component/package.xml)
-- [ ] [autoware_time_utils](../../src/universe/autoware_universe/common/autoware_time_utils/package.xml)
+- [x] [autoware_time_utils](../../src/universe/autoware_universe/common/autoware_time_utils/package.xml)
 
 ### Phase 9.4: CPU point-cloud and IMU preprocessing
 

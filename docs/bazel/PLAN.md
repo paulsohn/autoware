@@ -2204,6 +2204,20 @@ results are reused rather than rerunning the group. No Fast DDS, GPU, simulator
 or deployment gate is required by this slice. Next: 9.3 shared time, logging and
 command-mode types. CARLA v2 import remains deferred until near 9.20.
 
+### Phase 9.3: Shared time, logging and command-mode types (in progress)
+
+Inventory each public header/library and component contract before implementation.
+These packages register no original functional suites. Add standalone consumer
+checks under bazel/tests and build each module's full public targets and index.
+Use the pinned LLVM/Lyrical profile, Cyclone DDS for ROS behavior and no-agnocast;
+no new communication-layer or costly product/deployment gate is implied.
+
+| Module | Acceptance status |
+| --- | --- |
+| autoware_time_utils | Complete: library/index and four public interpolation/stopwatch cases. |
+| autoware_glog_component | Pending: local glog prerequisite, logger initialization/reuse and indexed component/executable. |
+| autoware_command_mode_types | Pending: independently compilable public headers and a representative command-mode consumer. |
+
 ### Execution order through complete Universe coverage
 
 The following groups are the initial route through every remaining package.

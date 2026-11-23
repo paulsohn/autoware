@@ -20053,3 +20053,34 @@ Phase 9.2 is complete: four independently validated modules, 25 native cases
 results above. Definition inventory is now 111/244; 133 packages remain without
 MODULE/BUILD pairs. That count does not replace the full-contract audit. Next is
 9.3; no CARLA repository is imported before its agreed near-9.20 timing.
+
+## 2026-11-23: Phase 9.3 — Shared time utilities
+
+Purpose: publish the snapshot's chrono interpolation library and stopwatch header
+through a package-local module/library/index and root-selected local override.
+Inspect CMake, package.xml and all three public headers plus the sole source.
+No original functional test is registered. Acceptance is all package targets and
+four external public-API cases under bazel/tests/autoware_time_utils.
+
+Pattern: cc_library with the existing builtin_interfaces generated provider and
+original include layout; ament_index owns the package manifest. Do not fabricate
+conversion APIs from the package description: the actual compiled API is chrono
+interpolation, while stopwatch is header-only. Preserve this snapshot's published
+stopwatch namespace rather than folding unrelated API cleanup into adoption.
+
+Checks: interpolation endpoint clamping, descending/negative/equal intervals,
+nanosecond truncation and stopwatch duration-unit/restart behavior. Bound restart
+measurement with timestamps around the call rather than assuming a short
+scheduler delay. Source and original build/test files remain unchanged.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  @autoware_time_utils//... //bazel/tests:time_utils_behavior_test
+```
+
+Result: all module targets build and four consumer cases pass, zero failures,
+errors or skips; full gate 6.7 s. Targeted clang-format and git diff --check pass.
+No source fix, new third-party provider, GPU, middleware matrix or expensive
+system/deployment rerun is required. Next: glog prerequisite/component contract.
