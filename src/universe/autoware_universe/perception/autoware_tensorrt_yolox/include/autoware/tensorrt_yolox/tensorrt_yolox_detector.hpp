@@ -64,6 +64,9 @@ struct TrtYoloXDetectorConfig
   bool is_roi_overlap_semseg;
   bool is_publish_color_mask;
   float overlap_roi_score_threshold;
+
+  // Empty preserves the model-adjacent cache; explicit paths allow read-only model resources.
+  std::string engine_path;
 };
 
 /**

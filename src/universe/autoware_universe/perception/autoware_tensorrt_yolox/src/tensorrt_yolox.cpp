@@ -68,23 +68,8 @@ TrtYoloX::TrtYoloX(
   *profile_dims_ptr = profile_dims;
 
   if (trt_config.precision == "int8") {
-    if (calib_config.clip_value <= 0.0) {
-      if (calibration_image_list_path.empty()) {
-        throw std::runtime_error(
-          "calibration_image_list_path should be passed to generate int8 engine "
-          "or specify values larger than zero to clip_value.");
-      }
-    } else {
-      // if clip value is larger than zero, calibration file is not needed
-      calibration_image_list_path = "";
-    }
-
-    std::vector<std::string> calibration_images;
-    if (calibration_image_list_path != "") {
-      calibration_images = load_image_list(calibration_image_list_path);
-    }
-    tensorrt_yolox::ImageStream stream(batch_size_, network_input_dims, calibration_images);
-    fs::path calibration_table{trt_config.onnx_path};
+    // Supplied tables stay with the model; generated tables follow the engine cache.
+    fs::path calibration_table{trt_config.engine_path};
     std::string ext = "";
     if (calib_config.calib_type_str == "Entropy") {
       ext = "EntropyV2-";
@@ -97,24 +82,47 @@ TrtYoloX::TrtYoloX(
 
     ext += "calibration.table";
     calibration_table.replace_extension(ext);
-    fs::path histogram_table{trt_config.onnx_path};
+    fs::path calibration_input{trt_config.onnx_path};
+    calibration_input.replace_extension(ext);
+    fs::path histogram_table{trt_config.engine_path};
     ext = "histogram.table";
     histogram_table.replace_extension(ext);
+    fs::path histogram_input{trt_config.onnx_path};
+    histogram_input.replace_extension(ext);
 
+    if (calib_config.clip_value <= 0.0) {
+      if (
+        calibration_image_list_path.empty() && !fs::exists(calibration_table) &&
+        !fs::exists(calibration_input) && !fs::exists(trt_config.engine_path)) {
+        throw std::runtime_error(
+          "INT8 requires calibration images, a supplied/cached calibration table, "
+          "an existing engine, or a positive clip_value.");
+      }
+    } else {
+      // if clip value is larger than zero, calibration file is not needed
+      calibration_image_list_path = "";
+    }
+
+    std::vector<std::string> calibration_images;
+    if (calibration_image_list_path != "") {
+      calibration_images = load_image_list(calibration_image_list_path);
+    }
+    tensorrt_yolox::ImageStream stream(batch_size_, network_input_dims, calibration_images);
     std::unique_ptr<nvinfer1::IInt8Calibrator> calibrator;
     if (calib_config.calib_type_str == "Entropy") {
-      calibrator.reset(
-        new tensorrt_yolox::Int8EntropyCalibrator(stream, calibration_table, norm_factor_));
+      calibrator.reset(new tensorrt_yolox::Int8EntropyCalibrator(
+        stream, calibration_table, norm_factor_, true, calibration_input));
 
     } else if (
       calib_config.calib_type_str == "Legacy" || calib_config.calib_type_str == "Percentile") {
       const double quantile = 0.999999;
       const double cutoff = 0.999999;
       calibrator.reset(new tensorrt_yolox::Int8LegacyCalibrator(
-        stream, calibration_table, histogram_table, norm_factor_, true, quantile, cutoff));
+        stream, calibration_table, histogram_table, norm_factor_, true, quantile, cutoff,
+        calibration_input, histogram_input));
     } else {
-      calibrator.reset(
-        new tensorrt_yolox::Int8MinMaxCalibrator(stream, calibration_table, norm_factor_));
+      calibrator.reset(new tensorrt_yolox::Int8MinMaxCalibrator(
+        stream, calibration_table, norm_factor_, true, calibration_input));
     }
     if (!trt_common_->setupWithCalibrator(
           std::move(calibrator), calib_config, std::move((profile_dims_ptr)))) {

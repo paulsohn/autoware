@@ -171,10 +171,14 @@ public:
   Int8LegacyCalibrator(
     ImageStream & stream, const std::string calibration_cache_file,
     const std::string histogram_cache_file, double scale = 1.0, bool read_cache = true,
-    double quantile = 0.999999, double cutoff = 0.999999)
+    double quantile = 0.999999, double cutoff = 0.999999,
+    const std::string calibration_cache_input_file = "",
+    const std::string histogram_cache_input_file = "")
   : stream_(stream),
     calibration_cache_file_(calibration_cache_file),
     histogram_cache_file_(histogram_cache_file),
+    calibration_cache_input_file_(calibration_cache_input_file),
+    histogram_cache_input_file_(histogram_cache_input_file),
     read_cache_(read_cache)
   {
     auto d = stream_.getInputDims();
@@ -228,6 +232,10 @@ public:
   {
     calib_cache_.clear();
     std::ifstream input(calibration_cache_file_, std::ios::binary);
+    if (!input.is_open() && !calibration_cache_input_file_.empty()) {
+      input.clear();
+      input.open(calibration_cache_input_file_, std::ios::binary);
+    }
     input >> std::noskipws;
     if (read_cache_ && input.good()) {
       std::copy(
@@ -266,6 +274,10 @@ public:
   {
     hist_cache_.clear();
     std::ifstream input(histogram_cache_file_, std::ios::binary);
+    if (!input.is_open() && !histogram_cache_input_file_.empty()) {
+      input.clear();
+      input.open(histogram_cache_input_file_, std::ios::binary);
+    }
     input >> std::noskipws;
     if (read_cache_ && input.good()) {
       std::copy(
@@ -291,6 +303,8 @@ private:
   ImageStream stream_;
   const std::string calibration_cache_file_;
   const std::string histogram_cache_file_;
+  const std::string calibration_cache_input_file_;
+  const std::string histogram_cache_input_file_;
   bool read_cache_{true};
   size_t input_count_;
   void * device_input_{nullptr};
@@ -311,8 +325,11 @@ class Int8EntropyCalibrator : public nvinfer1::IInt8EntropyCalibrator2
 public:
   Int8EntropyCalibrator(
     ImageStream & stream, const std::string calibration_cache_file, double scale = 1.0,
-    bool read_cache = true)
-  : stream_(stream), calibration_cache_file_(calibration_cache_file), read_cache_(read_cache)
+    bool read_cache = true, const std::string calibration_cache_input_file = "")
+  : stream_(stream),
+    calibration_cache_file_(calibration_cache_file),
+    calibration_cache_input_file_(calibration_cache_input_file),
+    read_cache_(read_cache)
   {
     auto d = stream_.getInputDims();
     input_count_ = stream_.getBatchSize() * d.d[1] * d.d[2] * d.d[3];
@@ -363,6 +380,10 @@ public:
   {
     calib_cache_.clear();
     std::ifstream input(calibration_cache_file_, std::ios::binary);
+    if (!input.is_open() && !calibration_cache_input_file_.empty()) {
+      input.clear();
+      input.open(calibration_cache_input_file_, std::ios::binary);
+    }
     input >> std::noskipws;
     if (read_cache_ && input.good()) {
       std::copy(
@@ -388,6 +409,7 @@ public:
 private:
   ImageStream stream_;
   const std::string calibration_cache_file_;
+  const std::string calibration_cache_input_file_;
   bool read_cache_{true};
   size_t input_count_;
   void * device_input_{nullptr};
@@ -406,8 +428,11 @@ class Int8MinMaxCalibrator : public nvinfer1::IInt8MinMaxCalibrator
 public:
   Int8MinMaxCalibrator(
     ImageStream & stream, const std::string calibration_cache_file, double scale = 1.0,
-    bool read_cache = true)
-  : stream_(stream), calibration_cache_file_(calibration_cache_file), read_cache_(read_cache)
+    bool read_cache = true, const std::string calibration_cache_input_file = "")
+  : stream_(stream),
+    calibration_cache_file_(calibration_cache_file),
+    calibration_cache_input_file_(calibration_cache_input_file),
+    read_cache_(read_cache)
   {
     auto d = stream_.getInputDims();
     input_count_ = stream_.getBatchSize() * d.d[1] * d.d[2] * d.d[3];
@@ -458,6 +483,10 @@ public:
   {
     calib_cache_.clear();
     std::ifstream input(calibration_cache_file_, std::ios::binary);
+    if (!input.is_open() && !calibration_cache_input_file_.empty()) {
+      input.clear();
+      input.open(calibration_cache_input_file_, std::ios::binary);
+    }
     input >> std::noskipws;
     if (read_cache_ && input.good()) {
       std::copy(
@@ -483,6 +512,7 @@ public:
 private:
   ImageStream stream_;
   const std::string calibration_cache_file_;
+  const std::string calibration_cache_input_file_;
   bool read_cache_{true};
   size_t input_count_;
   void * device_input_{nullptr};

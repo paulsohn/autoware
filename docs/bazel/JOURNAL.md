@@ -18999,3 +18999,124 @@ quantization flags and with first/prediction convolutions retained in FP16.
 It is not accepted as an inference profile or SDK downgrade. Restore all six
 10.16 package pins; CUDA 13.2.2 and the driver remain unchanged throughout.
 The comparison changes the SDK's CUDA-tagged payload too, not just its version.
+
+## 2026-11-23: Phase 6.5.2 — YOLOX engine paths and calibration input/output separation
+
+Purpose: run the selected YOLOX consumer/model group against indexed read-only
+model resources while placing derived engines and sidecars in a separate cache.
+Use the Phase 6.5.1 GPU/driver/toolchain identities and retain TensorRT
+10.16.1.11-1+cuda13.2. Required configurations are the published traffic-light
+FP16 and segmentation INT8/clipping profiles, a positive fresh-calibration/cache
+control on the segmentation model, and explicit failure handling for the pinned
+SDK's unsupported traffic-light calibration profile. Require the complete
+existing YOLOX suites plus every added case; no dependency-related skips.
+
+Inspected inputs: package configs/launches, TrtYoloXDetectorConfig and its callers,
+TrtYoloX, all three calibrator implementations, original test suites, and the
+indexed model repository's ONNX, labels, remaps, color map and supplied tables.
+The segmentation launch config selects INT8, Entropy and clip_value=6, supplying
+fixed activation ranges; the traffic-light config selects FP16. The calibrator
+header explicitly warns about Entropy accuracy loss and recommends MinMax.
+The original detector tests intentionally use FP16 for both models. Inspect
+those actual profiles before choosing a calibration fixture.
+
+Diagnosed failures: forcing fresh single-image Entropy calibration on the
+traffic-light model exposed the 10.16 compiler error described in the SDK entry.
+The 10.15 comparison built an engine but returned no detections. Keeping its
+first/prediction layers in FP16 did not fix that result. MinMax still triggers
+the pinned 10.16 compiler error for that traffic-light model, but the published
+segmentation INT8/clipping profile and fresh segmentation MinMax both build and
+produce detections. Keep the SDK pin and the original model/configuration files;
+do not treat an arbitrary one-image calibration as an accuracy qualification.
+The negative traffic-light profile remains an explicit exception regression,
+not a successful engine-generation or inference claim. There is no omitted test
+or skipped calibration case; the accepted positive control uses a real model in
+the selected model group and the source-recommended calibration algorithm.
+
+Minimum source integration:
+
+- Append optional engine_path to the detector config, forward it into
+  TrtCommonConfig and declare the node's string parameter with an empty default.
+  Add the typed string argument/parameter to all three single-node launch XMLs;
+  preserve the existing launch symlink. Empty keeps legacy model-adjacent output.
+- Derive generated calibration and histogram filenames from engine_path; JSON
+  already follows that path in the common library. Continue deriving supplied
+  input table names from the ONNX stem and selected algorithm. Keep metadata in
+  its model repository rather than duplicating it into a root resource package.
+- Append optional read-only input paths to the three calibrator constructors
+  (and the Legacy histogram reader). Read an existing generated cache first,
+  otherwise the supplied model table. Write only the output path. Default-empty
+  appended arguments retain existing caller behavior. No copying, header
+  rewriting or mutation of the model-owned table is needed.
+- Permit absent calibration images when an engine or supplied/generated table
+  exists, or clipping supplies the ranges. The old unconditional empty-list
+  rejection prevents even a valid prepared engine/table from being used. An
+  invalid/incompatible supplied table remains subject to SDK rejection; the
+  filename's existence is not a compatibility guarantee. Cache parents and
+  qualified model/SDK/GPU/settings identities remain caller-owned.
+
+Added tests stay under bazel/tests/autoware_tensorrt_yolox. Register both new
+native sources through the existing tensorrt_cc_test helper, declaring the
+package/model indexes, component/shared runtime providers and GTest. The five
+real-model cases exercise: FP16 cold/warm inference; two build_only node runs
+with context shutdown and stable engine mtime; fresh segmentation MinMax output
+beside the engine followed by reuse without the deleted image list, rebuilding
+from that current-SDK table supplied read-only with the model, and reuse with a
+read-only cache; the caught traffic-light SDK failure with preserved model
+inputs and generated calibration output; and published segmentation INT8/clipping
+cold/warm inference. Require detections, propagated image headers and applicable
+segmentation/color masks for positive inference. Four additional cases exercise
+Entropy/MinMax/Legacy input fallback, output preference and write isolation,
+Legacy histogram separation, and missing/disabled cache reads.
+
+The private fixture carries the actual supplied Entropy tables (TRT-8402 for
+traffic lights, TRT-8502 for segmentation). Their bytes remain unchanged. The
+current-SDK MinMax table used for the supplied-table rebuild is created only in
+the test fixture; it does not replace repository metadata or qualify a production
+calibration dataset. NVIDIA documents that calibration caches generally are not
+portable across TensorRT releases. No version header is rewritten.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --nocache_test_results --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp \
+  --test_env=ROS_DOMAIN_ID=113 --test_output=errors \
+  //bazel/tests:yolox_runtime_cache_test
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --nocache_test_results --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp \
+  --test_env=ROS_DOMAIN_ID=113 --test_output=errors \
+  @autoware_tensorrt_yolox//... //bazel/tests:yolox_detector_test \
+  //bazel/tests:yolox_node_test //bazel/tests:yolox_fixture_adapter_test \
+  //bazel/tests:yolox_launch_paths_test //bazel/tests:yolox_model_resources_test
+clang-format --dry-run --Werror \
+  bazel/tests/autoware_tensorrt_yolox/test_runtime_cache.cpp \
+  bazel/tests/autoware_tensorrt_yolox/test_calibration_cache.cpp
+python3 - <<'XML'
+from pathlib import Path
+import xml.etree.ElementTree as ET
+root = Path('src/universe/autoware_universe/perception/autoware_tensorrt_yolox/launch')
+for name in ['yolox_s_plus_opt', 'yolox_tiny', 'yolox_traffic_light_detector']:
+    ET.parse(root / (name + '.launch.xml'))
+XML
+git diff --check
+```
+
+Results: all nine new native cases execute with zero failures/errors/skips;
+135.3 s target time. The FP16 inference/build_only cases take 16.119/15.667 s,
+the full fresh/supplied/warm MinMax case 56.671 s, the explicit SDK-error case
+15.409 s and the published segmentation profile 30.827 s. The original fourteen
+native cases (ten labels, three detectors, one ROS node) pass, as do all three
+Python support targets with two cases each; six targets pass in 82.9 s. The
+node checks real FP16 inference and Cyclone DDS delivery. Reuse unchanged common
+library/SDK/plugin/classifier results from 90525982. Targeted formatting, XML
+parsing and whitespace checks pass. Source changes and root Bazel registration
+are committed separately. No source model/default-precision changes, SDK
+substitution, CMake/GCC run, Fast DDS, simulator or OCI-export check is claimed.
+
+The cache contract is validated for these profiles. Fresh traffic-light INT8
+calibration remains unsupported on this pinned SDK/GPU profile; do not enable it
+in a product without resolving and testing that profile. The explicit error test
+must be revisited when SDK/model/GPU selection changes. This is separate from
+successful segmentation INT8 generation/reuse and from calibration accuracy.
+[Vendor calibration/cache guidance](https://docs.nvidia.com/deeplearning/tensorrt/10.x.x/inference-library/work-quantized-types.html#post-training-quantization-using-calibration).
