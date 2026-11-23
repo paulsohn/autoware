@@ -826,3 +826,28 @@ python3 experiments/rmw-agnocast/standalone/analyze-crop-reader.py "$root/crop-r
 Assigned source, crop and sink two distinct physical cores each within one shared L3 domain of the Ryzen 9 8940HX. Verified the inherited masks for every process, including native in each batch. On cores 1–6, the combined mode measured 453.3 / 728.1 µs against native 387.8 / 711.9 (1.17× / 1.02×). Repeating on cores 9–14 measured 398.8 / 804.3 against 330.4 / 657.1 (1.21× / 1.22×). The relative and absolute tails varied by placement. Use unrestricted scheduling as the reference and keep placement a host-specific option.
 
 The combined profile meets the approximate engineering milestone on aggregate with independent replay evidence. The observed batch range remains relevant to any deployment deadline. Unrestricted median whole-launch child CPU was 0.679 seconds compared with native 0.588. All 9,360 frames in the 156 accepted launches passed the sink's geometry, point content and sequence checks. Lowest sampled host MemAvailable was 13,176 MiB. The next comprehensive Universe workloads are pressured scheduling and graph churn during delivery. [Batch summaries](crop-reader-0823dbd9/summary.csv), [per-frame measurements](crop-reader-0823dbd9/frames.csv) and [per-launch CPU, memory, affinity and shutdown diagnostics](crop-reader-0823dbd9/launches.csv).
+
+## Pressured three-LiDAR delivery and live component replacement
+
+On the provisioned Lyrical colcon laptop, use fresh output directories and run sequentially. Both runners check the existing Release artifacts and use the memory-guarded runtime. The standalone runs select rmw_agnocast inside the stripped ROS prefix. The near crop pressure fixture needs three available physical cores. Set BENCH_NEAR_CPUS if CPUs 2,3,4 are unsuitable.
+
+```bash
+bash experiments/rmw-agnocast/standalone/bench-pressure.sh build/standalone/pressure-new
+bash experiments/rmw-agnocast/standalone/bench-churn.sh build/standalone/churn-new
+python3 experiments/rmw-agnocast/standalone/analyze-pressure.py build/standalone/pressure-new build/standalone/churn-new build/standalone/regression-summary
+```
+
+The pressure matrix runs three LiDAR streams at 20/20/10 Hz through the Universe synchronizer and near/far crops. Two CPU-bound callbacks occupy separate callback groups in the near crop. Each consumed approximately 900 ms CPU, with approximately 900 ms wall-clock overlap in every launch. Standalone used the standalone CIE at the synchronizer and near crop. Native used its existing native executors. Cyclone and Zenoh used the standalone CIE at the near crop. The initial standalone pilot failed at startup when taskset inherited the heap hook before executing the crop. The launcher now applies the inherited hook to the crop child. The table uses the complete fresh matrix after this change.
+
+The table gives end-to-end age in ms, median / nearest-rank p95 for complete groups stamped during simultaneous timer activity, excluding the first four groups per launch. CPU is median user plus system seconds for the entire graph launch including startup and shutdown.
+
+| Transport | Timed groups | Synchronizer | Near crop | Far crop | CPU s |
+|---|---:|---:|---:|---:|---:|
+| Native Agnocast | 36 | 2.265 / 3.556 | 2.621 / 4.310 | 2.527 / 4.480 | 4.54 |
+| Standalone rmw_agnocast | 36 | 2.419 / 3.462 | 2.589 / 3.768 | 2.846 / 3.663 | 5.58 |
+| Cyclone DDS | 18 | 4.007 / 5.310 | 4.136 / 5.550 | 4.250 / 5.695 | 4.80 |
+| Zenoh | 18 | 2.976 / 3.871 | 3.187 / 4.157 | 3.070 / 4.069 | 6.47 |
+
+Across 12 launches the synchronizer verified 384 sets of clouds and metadata, including 192 expected timeout groups. Each region delivered all 384 outputs. Each Agnocast synchronizer launch counted 80 input views and zero copies. Between the two crops the largest overlap standalone/native median ratio was 1.13× and the largest p95 ratio was 0.87×. CPU was 1.23× native over the whole launch. Minimum host MemAvailable was 12,965 MiB. The small overlap samples limit tail precision. [All groups](universe-f3af2723/pressure-frames.csv), [window summaries](universe-f3af2723/pressure-summary.csv) and [per-launch resources and timer overlap](universe-f3af2723/pressure-launches.csv).
+
+The component churn runner uses the stock ROS component manager and a real Universe crop. It checks first delivery after idle load, three loaded generations, two unloads during 20 Hz input, shutdown while loaded and idle, and continued raw delivery afterward. In both orders, standalone, Cyclone and Zenoh each observed 78/78 raw frames and 59 crop outputs per run. Every sequence in all three steady loaded windows arrived. The native static crop container lacks matching load/unload services, so this test establishes standalone lifecycle correctness without a native latency comparison. [Per-launch component results](universe-f3af2723/component-churn.csv).

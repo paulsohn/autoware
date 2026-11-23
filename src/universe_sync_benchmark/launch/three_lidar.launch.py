@@ -124,11 +124,14 @@ def graph(context):
         executable = "crop"
         if topic == "/region/near" and mode != "native" and os.getenv("BENCH_EXECUTOR") in ("cie", "two", "three"):
             executable = "crop_" + os.environ["BENCH_EXECUTOR"]
+        if topic == "/region/near" and mode != "native" and os.getenv("SYNC_NEAR_CIE_EXECUTABLE"):
+            executable = os.environ["SYNC_NEAR_CIE_EXECUTABLE"]
         prefix = None
         if topic == "/region/near" and os.getenv("BENCH_SECOND_TIMER"):
             args = ["taskset", "-c", os.environ["BENCH_NEAR_CPUS"]]
-            if crop_env.get("LD_PRELOAD"):
-                args.extend(["env", "LD_PRELOAD=" + crop_env["LD_PRELOAD"]])
+            preload = crop_env.get("LD_PRELOAD", os.getenv("LD_PRELOAD"))
+            if preload:
+                args.extend(["env", "LD_PRELOAD=" + preload])
                 crop_env["LD_PRELOAD"] = ""
             prefix = shlex.join(args)
         regions.append(Node(package="universe_crop_benchmark", executable=executable, prefix=prefix,

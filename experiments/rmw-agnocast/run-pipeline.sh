@@ -32,5 +32,6 @@ if [[ $mode == zenoh ]]; then
   kill -0 "$router"
 fi
 launch_file=(universe_sync_benchmark three_lidar.launch.py)
-if [[ -n ${SYNC_COUNT_PROBE:-} ]]; then launch_file=(/ws/src/universe_sync_benchmark/launch/three_lidar.launch.py); fi
+if [[ -n ${SYNC_NEAR_CIE_EXECUTABLE:-} ]]; then source build/standalone/release-cie/install/local_setup.bash; fi
+if [[ -n ${SYNC_COUNT_PROBE:-} || -n ${SYNC_NEAR_CIE_EXECUTABLE:-} ]]; then launch_file=(/ws/src/universe_sync_benchmark/launch/three_lidar.launch.py); fi
 ros2 launch "${launch_file[@]}" mode:="$mode" fixture_directory:="$dir"

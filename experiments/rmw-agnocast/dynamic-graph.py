@@ -14,12 +14,14 @@ from composition_interfaces.srv import ListNodes, LoadNode, UnloadNode
 from rclpy.parameter import Parameter
 
 mode, target = sys.argv[1:]
-assert mode in ("stock", "direct", "scoped", "cyclone", "zenoh")
+assert mode in ("standalone", "stock", "direct", "scoped", "cyclone", "zenoh")
 out = Path(target).resolve()
 out.mkdir()
 limit_path = out / "limit"
 env = dict(os.environ, BENCH_LIFECYCLE_LIMIT=str(limit_path), ENABLE_AGNOCAST="0")
-if mode in ("stock", "direct", "scoped"):
+if mode == "standalone":
+    assert env["RMW_IMPLEMENTATION"] == "rmw_agnocast" and not Path("/opt/ros/lyrical/lib/libddsc.so").exists()
+elif mode in ("stock", "direct", "scoped"):
     env.update(RMW_IMPLEMENTATION="rmw_agnocast", AGNOCAST_RMW_TOPIC="/input:/output",
                AGNOCAST_RMW_HOST_CLOUD="1", AGNOCAST_BRIDGE_MODE="OFF", AGNOCAST_NO_DISCOVERY_AGENT="1",
                LD_PRELOAD=str(Path(get_package_prefix("agnocastlib")) / "lib/libagnocast_heaphook.so"))
