@@ -3870,3 +3870,19 @@ four-second recording contained seven std_msgs/msg/String CDR samples.
 Minimum available host memory during the two builds was 14,323 MiB. The
 peer and host shared the laptop kernel; physical two-host deployment remains
 unverified. [Self-contained migration tutorial](../rmw-agnocast/TUTORIAL.md)
+
+### Verify reuse of the packaged Agnocast 2.4.1 runtime
+
+Compared the hook and kmod directories with import b1249a6f (upstream
+a6034b52). The only diff was a new hook Cargo.lock. The installed host
+packages were agnocast-heaphook-v2.4.1 and agnocast-kmod-v2.4.1, both
+2.4.1-1. Used the package-owned /opt/ros/jazzy/lib/libagnocast_heaphook.so
+(SHA256 cedeec37b527823fa1340e5b5ad3250562d2382ad37cbb1b367077471a502634)
+by copying the binary into the Lyrical runner's visible workspace. With
+the matching module already loaded and ENABLE_AGNOCAST unset, ran the
+ordinary ROS minimal publisher/subscriber binaries from the preceding
+migration example on /topic. Observed 15 Hello, world! callbacks and 15
+completed native handoffs. Neither runtime component nor the application
+was rebuilt for this check. The tutorial now assumes a clean first application
+build and reuses the packaged native runtime. Fresh DKMS installation and
+package availability for a native Resolute host remain unverified.

@@ -1,19 +1,12 @@
 # Migrate one topic in an existing Cyclone DDS project to rmw_agnocast
 
-Start with a working **ROS 2 Lyrical C++ project using rmw_cyclonedds_cpp on Linux**. Pick one publisher and one subscriber on the same host. You will build the pilot alongside your project, run the same two nodes with one topic selected for shared memory, and check that the subscriber took native samples. Add a bridge only if an ordinary DDS participant also needs that topic.
+Start with the source of an **ordinary ROS 2 Lyrical C++ project that uses Cyclone DDS on Linux**. Assume a clean workspace and an application written against rclcpp, with no previous Agnocast or Autoware wrapper integration. Pick one publisher and one subscriber on the same host. You will build the pilot alongside your project, run the same two nodes with one topic selected for shared memory, and check that the subscriber took native samples. Add a bridge only if an ordinary DDS participant also needs that topic.
 
 Keep your current ROS_DOMAIN_ID, CYCLONEDDS_URI, message definitions, remappings and DDS discovery setup. The worked example uses the existing ROS C++ minimal publisher and subscriber, which exchange std_msgs/msg/String on /topic. Substitute your own workspace, executables and **fully resolved** topic name where indicated. Run each command individually in Bash. Check each result before continuing.
 
-## 1. Record a baseline with your current launch
+## 1. Pick one local edge from your project
 
-Start your project as usual with Cyclone. In an ordinary project terminal run:
-
-```bash
-ros2 topic info --verbose /topic
-ros2 topic echo --once /topic std_msgs/msg/String
-```
-
-Record the resolved name, type, publisher and subscriber nodes, offered/requested QoS, and an example payload. For the example the payload contains `Hello, world!` and an increasing counter. Choose a topic using volatile durability and KeepLast history with positive depth; those are the pilot's supported native settings. Stop the existing nodes before starting the migrated pair. A second DDS publisher on the same name makes the transport check ambiguous.
+Use the topic name after namespaces and remappings, its message type, and the QoS configured by the two nodes. Start with a publisher and subscriber on one host using volatile durability and KeepLast history with positive depth. In the worked example both nodes resolve their topic to /topic and use std_msgs/msg/String at depth 10. If you want a Cyclone baseline, run it after the single application build in step 4.
 
 ## 2. Build the middleware overlay from source
 
@@ -30,7 +23,7 @@ cat src/core/agnocast/agnocast_kmod/version.txt
 Save the commit ID alongside your project's dependencies. The kernel module version for this recipe is **2.4.1**. Install the build tools on the development host if missing. These instructions assume your existing ROS apt repository and rosdep initialization.
 
 ```bash
-sudo apt install clang-21 g++-15 cargo rustc curl python3-colcon-common-extensions python3-rosdep ros-lyrical-rmw-cyclonedds-cpp
+sudo apt install clang-21 g++-15 curl python3-colcon-common-extensions python3-rosdep ros-lyrical-rmw-cyclonedds-cpp
 rosdep update
 rosdep install --rosdistro lyrical --ignore-src -t build -t buildtool -t build_export -t buildtool_export --from-paths \
   src/rclcpp/rclcpp \
@@ -81,57 +74,54 @@ ros2 pkg prefix rmw_agnocast
 ros2 pkg executables agnocast_rmw_loan_probe
 ```
 
-Expect eight packages finished. Both prefixes should be under this checkout's build/migration-guide/install. Look for `route_bridge` in the executable list. Build and install the allocator hook from the **same checkout**:
+Expect eight packages finished. Both prefixes should be under this checkout's build/migration-guide/install. Look for `route_bridge` in the executable list.
 
 ```bash
-export CARGO_BUILD_JOBS=1
-export CARGO_TARGET_DIR="$PWD/build/migration-guide/cargo"
-cargo build --locked --release --manifest-path src/core/agnocast/agnocast_heaphook/Cargo.toml
-install -m 755 "$CARGO_TARGET_DIR/release/libagnocast_heaphook.so" "$(ros2 pkg prefix agnocastlib)/lib/libagnocast_heaphook.so"
-ls -l "$(ros2 pkg prefix agnocastlib)/lib/libagnocast_heaphook.so"
 ldd "$(ros2 pkg prefix rmw_agnocast)/lib/librmw_agnocast.so"
 ```
 
-Check that ldd resolves librmw_cyclonedds_cpp and the local transport library and reports no missing libraries. The preload is a **runtime** setting for native processes. Leave it unset during builds.
+Check that the Cyclone and local transport libraries resolve. Leave LD_PRELOAD unset during builds.
 
-## 3. Prepare each host that will run native nodes
+## 3. Use the released hook and kernel module
 
-Check the running host kernel, including when your ROS userspace lives in a container. The container must also have access to the host device:
+Use the upstream **2.4.1** runtime for native processes. Relative to the imported Agnocast source, the kernel module is unchanged. The only addition under the heap hook is a Cargo.lock for reproducing source builds. The released hook works with this pilot.
+
+On the **native host**, check what is already available:
 
 ```bash
 cat /sys/module/agnocast/version
 ls -l /dev/agnocast
 test -r /dev/agnocast
 test -w /dev/agnocast
+dpkg-query -L agnocast-heaphook-v2.4.1
 ```
 
-If the version is 2.4.1 and both access checks succeed, proceed to step 4. If the matching module is installed but unloaded, run `sudo modprobe agnocast` and repeat the checks. If you need a new installation on Ubuntu, the checkout includes the DKMS packaging. On the **host**, from the checkout, build the package and install it for the running kernel:
+If the running module reports 2.4.1, the device checks succeed, and you have the matching hook, skip installation. Otherwise, on an Ubuntu host with the upstream packages available, check the candidates and install the missing components:
 
 ```bash
-sudo apt install dkms dh-dkms debhelper dpkg-dev fakeroot rsync "linux-headers-$(uname -r)"
-cd "$HOME/rmw-agnocast-pilot/src/core/agnocast/agnocast_kmod"
-dpkg-buildpackage -b -us -uc
-sudo apt install ../agnocast-kmod-v2.4.1_2.4.1-1_all.deb
-dkms status
+apt-cache policy agnocast-kmod-v2.4.1 agnocast-heaphook-v2.4.1
+sudo apt install "linux-headers-$(uname -r)" agnocast-kmod-v2.4.1 agnocast-heaphook-v2.4.1
 sudo modprobe agnocast
 cat /sys/module/agnocast/version
 ls -l /dev/agnocast
+dpkg-query -L agnocast-heaphook-v2.4.1
 ```
 
-Expect DKMS to report an installed module for the running kernel. Resolve a DKMS build, Secure Boot signing, or device-access error before starting the nodes. Coordinate replacement of an older loaded module with other users of the host. A stock remote Cyclone subscriber or recorder skips this entire step.
+Use a package source supporting your host release. The tested packages came from the upstream `t4-system-software/agnocast` Noble PPA on the host. A candidate for Ubuntu 26.04 was not verified. DKMS may compile the released module for the host kernel during installation. Coordinate replacement of any different loaded version before proceeding.
 
-## 4. Rebuild your application against the overlay
+Find the **absolute path** of libagnocast_heaphook.so in the package listing. The tested package installs it at `/opt/ros/jazzy/lib/libagnocast_heaphook.so`; use your actual path in the two LD_PRELOAD commands below. Continue to source Lyrical throughout. For containerized nodes, expose the host device and mount or copy the matching .so into the userspace at a known path. A remote stock Cyclone reader needs neither component.
 
-In a clean shell, source Lyrical, then the new overlay, then build the same packages you use today into a **separate install directory**. Your existing Cyclone build serves as the rollback. Ordinary typed rclcpp publishers and subscriptions keep their source API. Rebuilding picks up the branch's headers, which matters for subscription callbacks that retain loaned data.
+## 4. Build your ordinary ROS project once
 
-In your own project, change to its workspace root and run your normal dependency selection with these output directories. For an Autoware package that uses autoware_agnocast_wrapper, set `export ENABLE_AGNOCAST=0` **before building and running** so it takes its ordinary rclcpp path.
+In a fresh shell, source Lyrical and then the new middleware overlay **before the first application build**. This gives typed subscriptions the pilot's rclcpp headers, including support for callbacks that retain loans. Keep your project's existing packages, source and launch files. There is no Agnocast-specific application build flag to set.
+
+From your own project's clean workspace root, run your usual colcon build. For example:
 
 ```bash
 source /opt/ros/lyrical/setup.bash
 source "$HOME/rmw-agnocast-pilot/build/migration-guide/install/local_setup.bash"
 export CMAKE_BUILD_PARALLEL_LEVEL=1
-colcon --log-base log-rmw-agnocast build --executor sequential \
-  --build-base build-rmw-agnocast --install-base install-rmw-agnocast
+colcon build --executor sequential
 ```
 
 **To run the concrete example instead**, use the existing Lyrical ROS examples as your application workspace:
@@ -143,12 +133,13 @@ git checkout cc721964a79192e46db0111c0ba9f6a831fc9395
 source /opt/ros/lyrical/setup.bash
 source "$HOME/rmw-agnocast-pilot/build/migration-guide/install/local_setup.bash"
 export CMAKE_BUILD_PARALLEL_LEVEL=1
-colcon --log-base log-rmw-agnocast build --executor sequential \
+colcon build --executor sequential \
   --base-paths rclcpp/topics \
   --packages-select examples_rclcpp_minimal_publisher examples_rclcpp_minimal_subscriber \
-  --build-base build-rmw-agnocast --install-base install-rmw-agnocast \
   --cmake-args -DBUILD_TESTING=OFF
 ```
+
+For an optional baseline, source the new application install in two ordinary Cyclone terminals and run the publisher and subscriber commands from step 5 with RMW_IMPLEMENTATION=rmw_cyclonedds_cpp and LD_PRELOAD unset. Expect successive Hello, world! messages. Stop both nodes before switching. The same application binaries serve both runs.
 
 ## 5. Migrate the publisher and subscriber together
 
@@ -157,12 +148,12 @@ Open two application terminals on the same host. In **each**, source these in or
 ```bash
 source /opt/ros/lyrical/setup.bash
 source "$HOME/rmw-agnocast-pilot/build/migration-guide/install/local_setup.bash"
-source "$HOME/ros-examples/install-rmw-agnocast/local_setup.bash"
+source "$HOME/ros-examples/install/local_setup.bash"
 ros2 pkg prefix rclcpp
 export RMW_IMPLEMENTATION=rmw_agnocast
 export AGNOCAST_BRIDGE_MODE=OFF
 export AGNOCAST_NO_DISCOVERY_AGENT=1
-export LD_PRELOAD="$(ros2 pkg prefix agnocastlib)/lib/libagnocast_heaphook.so"
+export LD_PRELOAD="/opt/ros/jazzy/lib/libagnocast_heaphook.so"
 ```
 
 Check that rclcpp still resolves to the pilot prefix. These runtime settings apply to processes started from the configured terminals. The pilot uses its own directed bridge; the upstream bridge and discovery agent can stay off.
@@ -218,7 +209,7 @@ source "$HOME/rmw-agnocast-pilot/build/migration-guide/install/local_setup.bash"
 export RMW_IMPLEMENTATION=rmw_agnocast
 export AGNOCAST_BRIDGE_MODE=OFF
 export AGNOCAST_NO_DISCOVERY_AGENT=1
-export LD_PRELOAD="$(ros2 pkg prefix agnocastlib)/lib/libagnocast_heaphook.so"
+export LD_PRELOAD="/opt/ros/jazzy/lib/libagnocast_heaphook.so"
 export AGNOCAST_BRIDGE_DEMAND=1
 ros2 run agnocast_rmw_loan_probe route_bridge a2r std_msgs/msg/String /topic /dds/topic
 ```
@@ -253,4 +244,4 @@ Set `AGNOCAST_RMW_SUBSCRIBE_TOPICS=/local/poses` on the local subscriber. A full
 | Must I change my executor or message definitions? | The example uses ordinary ROS C++ messages and its existing executor. Advanced loan retention and GPU buffers have separate application requirements. |
 | The recorder went offline | A volatile best-effort export can lose data. After reconnection, verify new bag rows. If recreating a network interface leaves the recorder unmatched, stop it and start a fresh bag segment. |
 
-To roll back, stop the gateway and both migrated nodes. Open fresh terminals, source your original application install, select rmw_cyclonedds_cpp and rerun your original launch. For a project that keeps the pilot loaded, you can also remove **the same edge from both native selection lists** and restart those processes to carry that topic over Cyclone.
+To roll back, stop the gateway and both migrated nodes. Open fresh terminals, source Lyrical, the middleware overlay and the application install from step 4. Leave LD_PRELOAD unset, set RMW_IMPLEMENTATION=rmw_cyclonedds_cpp and run the same application binaries. For a project that keeps the pilot loaded, you can also remove **the same edge from both native selection lists** and restart those processes to carry that topic over Cyclone.
