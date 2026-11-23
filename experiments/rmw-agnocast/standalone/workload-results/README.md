@@ -4,6 +4,8 @@ Middleware source at 5f72b6ad, using the staged Lyrical colcon overlays and Agno
 
 ## Single-hop loaned Path at 10 Hz
 
+This first run used the unoptimized standalone qualification build. The [optimized comparison below](#correcting-the-path-build-comparison) is the performance baseline.
+
 The original fixture publishes 64 poses with an 80-character frame ID per pose. Both sides verify the payload, previous retained sample and three matching addresses. Latency spans the timestamp immediately before publish to callback entry. All 240 frames per mode passed. The table pools the final 50 of 60 frames in each of four runs per mode, with alternating launch order. CPU and RSS are medians over runs and include startup and teardown. RSS is the largest individual child peak.
 
 | Transport | Median µs | p95 µs | Child CPU s | RSS MiB |
@@ -57,4 +59,49 @@ for mode in native cyclone zenoh zenoh cyclone native; do
     time bash experiments/rmw-agnocast/run-pipeline.sh "$1"
   ' bash "$mode"
 done
+```
+
+## Correcting the Path build comparison
+
+The standalone qualification build used Clang 21 with an empty CMAKE_BUILD_TYPE. The effective flags for both rmw_agnocast and agnocastlib omitted optimization. The historical native comparator used an optimized Agnocast library. Keep the qualification row above as a measurement of that binary. Use the following same-source Release build for conclusions about optimized standalone performance.
+
+Four additional rounds alternated standalone qualification/native/standalone Release and their reverse. Same probe executable, released hook, 60 frames per arm, first ten excluded. The native comparator kept its original support stack. Release changed both standalone libraries to Clang -O2 -DNDEBUG. All 720 frames in the primary comparison passed content, retained-sample and address checks.
+
+| Original Path fixture | Median µs | p95 µs | Median child CPU s |
+|---|---:|---:|---:|
+| Native Agnocast control | 44.43 | 63.07 | 0.139 |
+| Standalone qualification build | 149.64 | 211.29 | 0.190 |
+| Standalone Release | 77.15 | 132.62 | 0.166 |
+
+Release/native was 1.74× median and 2.10× p95. Release reduced the median by 48% versus qualification. Two additional native runs loading the exact same Release agnocastlib and patched rclcpp as the standalone process gave 49.68/82.93 µs. Those two runs followed the main comparison. This remains a one-host, single-hop estimate.
+
+Two extra reader timing runs per standalone build in opposite order instrumented rcl_wait and rcl_take_loaned_message. Publication and admission timestamps come from the RMW message info; take return samples both realtime and monotonic clocks to align the benchmark timestamps. Every traced sequence had ordered boundaries and the intervals summed to the original elapsed time. The table gives per-stage medians across the 100 post-warmup frames per arm. Marginal medians need not sum to the end-to-end median.
+
+| Interval | Qualification µs | Release µs |
+|---|---:|---:|
+| Benchmark publish timestamp to RMW sample header | 2.62 | 1.72 |
+| Header to receive queue timestamp | 89.93 | 48.57 |
+| Receive queue timestamp to rcl_wait return | 20.67 | 23.61 |
+| Wait return to loan take entry | 11.44 | 4.88 |
+| Loan take call | 11.67 | 1.67 |
+| Take return to callback entry | 3.07 | 1.58 |
+
+The current implementation admits a sample on the native receiver thread and wakes an application executor waiting on a condition variable. The observed 23.61 µs includes notification, scheduling and the wait-set checks. This split cannot isolate scheduler cost. The earlier near-native Universe measurements included node computation and used the mixed implementation. The current single-hop workload answers a different question. PointCloud2 support remains the prerequisite to measuring the standalone version of the Universe graph.
+
+[Frame records including optional stage durations](path-build-comparison.csv)
+
+To reproduce, enter the stripped Lyrical shell, source build/migration-guide/install/local_setup.bash and set the compiler and one-job settings as in the standalone build instructions. Use a separate optimized prefix:
+
+```bash
+export RMW_IMPLEMENTATION=rmw_zenoh_cpp
+export XML_CATALOG_FILES=/ws/build/agnocast-lyrical/catalog.xml
+colcon --log-base build/standalone/o2-log build --build-base build/standalone/o2-obj --install-base build/standalone/o2-install --paths src/core/agnocast/src/agnocastlib src/rmw_agnocast --executor sequential --cmake-args -DRMW_IMPLEMENTATION=rmw_zenoh_cpp -DCMAKE_CXX_FLAGS=--gcc-install-dir=/usr/lib/gcc/x86_64-linux-gnu/15 -DCMAKE_BUILD_TYPE=Release '-DCMAKE_CXX_FLAGS_RELEASE=-O2 -DNDEBUG' -DBUILD_TESTING=OFF
+incs=$(sed -n 's/^CXX_INCLUDES = //p' build/rmw-agnocast/load-obj/agnocast_rmw_loan_probe/CMakeFiles/path_benchmark.dir/flags.make)
+/usr/bin/clang++-21 --gcc-install-dir=/usr/lib/gcc/x86_64-linux-gnu/15 -O2 -shared -fPIC $incs experiments/rmw-agnocast/standalone/path_timing.cpp -o build/standalone/path-timing.so
+```
+
+From the host worktree:
+
+```bash
+bash experiments/rmw-agnocast/standalone/bench-path.sh build/standalone/fresh-build-comparison --compare-builds
 ```

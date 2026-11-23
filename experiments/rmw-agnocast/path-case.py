@@ -56,6 +56,9 @@ with tempfile.TemporaryDirectory() as directory:
         return [list(map(int, line.split())) for line in lines]
 
     tx, rx = records("writer"), records("reader")
+    if os.environ.get("PATH_TIMING_FILE"):
+        with open(prefix + ".endpoints", "x") as f:
+            csv.writer(f, lineterminator="\n").writerows((a[0], b[0]) for a, b in zip(tx, rx))
     if len(tx) != 60 or len(rx) != 60:
         raise ValueError("expected 60 delivered frames")
     with open(prefix + ".csv", "x") as f:
