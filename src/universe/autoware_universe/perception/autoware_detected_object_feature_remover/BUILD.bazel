@@ -1,0 +1,75 @@
+load("@autoware_agnocast_wrapper//:defs.bzl", "autoware_agnocast_node")
+load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "autoware_detected_object_feature_remover_library",
+    srcs = ["lib/convert.cpp", "src/detected_object_feature_remover_node.cpp"],
+    hdrs = glob(["include/**/*.hpp", "src/*.hpp"]),
+    includes = ["include", "src"],
+    deps = [
+        "@autoware_agnocast_wrapper//:autoware_agnocast_wrapper_library",
+        "@autoware_perception_msgs//:cc",
+        "@autoware_utils",
+        "@geometry_msgs//:cc",
+        "@pcl_conversions//:pcl_conversions_library",
+        "@rclcpp//:rclcpp_library",
+        "@rclcpp_components//:rclcpp_components_library",
+        "@rosdistro//cc:opencv_library",
+        "@rosdistro//cc:pcl_common",
+        "@tier4_perception_msgs//:cc",
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = [
+        "@autoware_agnocast_wrapper",
+        "@autoware_perception_msgs//:cc_shared",
+        "@autoware_utils//:runtime_dynamic_deps",
+        "@geometry_msgs//:cc_shared",
+        "@pcl_conversions//:pcl_conversions",
+        "@rclcpp_components//:rclcpp_components",
+        "@rosdistro//cc:opencv",
+        "@rosdistro//cc:pcl",
+        "@tier4_perception_msgs//:cc_shared",
+    ],
+)
+
+cc_shared_library(
+    name = "autoware_detected_object_feature_remover",
+    shared_lib_name = "libautoware_detected_object_feature_remover.so",
+    dynamic_deps = [":runtime_dynamic_deps"],
+    deps = [":autoware_detected_object_feature_remover_library"],
+)
+
+autoware_agnocast_node(
+    name = "detected_object_feature_remover_node",
+    component = ":autoware_detected_object_feature_remover",
+    package_name = "autoware_detected_object_feature_remover",
+    plugin = "autoware::detected_object_feature_remover::DetectedObjectFeatureRemover",
+)
+
+register_ament_files(
+    name = "executables",
+    files = [":detected_object_feature_remover_node"],
+    prefix = "lib/autoware_detected_object_feature_remover",
+    strip_prefix = "*",
+)
+
+ament_index(
+    package_xml = "package.xml",
+    components = [":detected_object_feature_remover_node_components"],
+    data = glob(["launch/**"]) + [":executables", ":detected_object_feature_remover_node_plugin"],
+    libraries = [":autoware_detected_object_feature_remover"],
+)
+
+cc_test(
+    name = "test_autoware_detected_object_feature_remover",
+    srcs = ["test/test_detected_object_feature_remover_node.cpp"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+    deps = [":autoware_detected_object_feature_remover_library", "@googletest//:gtest_main"],
+)

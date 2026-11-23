@@ -248,7 +248,7 @@ profiles and separate source fixes; the final contract audit remains 9.20.
 
 Validate transforms, projection/association, covariance/identity preservation, ordering, feature removal and path outputs. Preserve all original suites and add actual message-flow checks for untested adapters. Reuse 9.2 outputs and existing tracking/geometry libraries.
 
-- [ ] [autoware_detected_object_feature_remover](../../src/universe/autoware_universe/perception/autoware_detected_object_feature_remover/package.xml)
+- [x] [autoware_detected_object_feature_remover](../../src/universe/autoware_universe/perception/autoware_detected_object_feature_remover/package.xml)
 - [ ] [autoware_image_object_locator](../../src/universe/autoware_universe/perception/autoware_image_object_locator/package.xml)
 - [ ] [autoware_object_merger](../../src/universe/autoware_universe/perception/autoware_object_merger/package.xml)
 - [ ] [autoware_object_sorter](../../src/universe/autoware_universe/perception/autoware_object_sorter/package.xml)

@@ -20881,3 +20881,48 @@ introduce an Agnocast-only transport path; no Fast DDS/GPU/expensive product gat
 is required. Source corrections are separate from the module definitions
 (398695f2). This closes the initial three-package CPU batch; next are the
 GridMap/PCL provider and map comparison/elevation modules within Phase 9.5.
+
+## 2026-11-24: Phase 9.6 — detected-object feature removal
+
+Purpose: expose the local feature-remover component, standalone wrapper executable
+and indexed launch resources. Inspect CMake, manifest, conversion/node headers and
+sources and the complete original suite: one target containing two conversion
+cases. Required profiles are Cyclone/RCLCPP for the complete module and added
+transport checks, plus Agnocast-only with heap-hook preload for the new wrapper
+message flow. No model, map or GPU input is required.
+
+Pattern: add a package-owned MODULE/BUILD pair, select it with a root local
+override, and keep conversion/node code in one compile library with a unique
+shared owner. Reuse wrapper, message, PCL/OpenCV and utility SDK owners through
+runtime_dynamic_deps. Register the original executable and component/plugin
+records in the package index. Preserve both original tests unchanged; compose
+new checks under bazel/tests/autoware_detected_object_feature_remover.
+
+The added parameterized peer publishes a nonempty featured object carrying ROI,
+cluster, classification, pose covariance and velocity. With conversion disabled,
+the detected object is byte-field equivalent after features are dropped. With
+conversion enabled, a known eight-point cluster yields a four-vertex convex hull,
+centroid (2,3,2), height 2 and polygon type; other metadata remains unchanged.
+Both modes preserve the original frame and nonzero timestamp. Assert the actual
+selected parameter and check publication, rather than calling conversion directly.
+The enabled peer asserts RCLCPP remains uninitialized.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  @autoware_detected_object_feature_remover//... \
+  //bazel/tests:feature_remover_transport_test
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --local_test_jobs=1 --strategy=TestRunner=local \
+  --run_under=//bazel/agnocast:with_heaphook \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  //bazel/tests:feature_remover_transport_test
+```
+
+Results: all 11 non-test targets and both test targets build; original two cases
+and added two cases pass with Cyclone/RCLCPP in 51.8 s. Both added cases pass
+Agnocast-only with the built/preloaded hook in 14.2 s. Zero failures/errors/skips.
+No existing implementation or tests changed. Targeted clang-format and diff
+checks pass. Fast DDS, GPU and expensive product gates are not selected. Next:
+object sorting; Phase 9.5 remains open independently.

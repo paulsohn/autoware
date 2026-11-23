@@ -2314,3 +2314,12 @@ cc_test(
     deps = ["@autoware_occupancy_grid_map_outlier_filter//:autoware_occupancy_grid_map_outlier_filter_library", "@googletest//:gtest"],
     tags = ["no-sandbox", "no-remote"],
 )
+
+cc_test(
+    name = "feature_remover_transport_test",
+    srcs = ["autoware_detected_object_feature_remover/test_transport.cpp"],
+    data = ["@agnocast_heaphook"],
+    dynamic_deps = ["@autoware_detected_object_feature_remover//:runtime_dynamic_deps"],
+    deps = ["@autoware_detected_object_feature_remover//:autoware_detected_object_feature_remover_library", "@googletest//:gtest"],
+    tags = ["no-sandbox", "no-remote"],
+)

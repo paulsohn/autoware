@@ -2291,6 +2291,24 @@ remain pending; next is the required GridMap/PCL provider and map comparison/
 elevation, followed by shape/clustering/detection and validation/raindrop filtering.
 The conditional learned-shape configuration remains part of this group's gate.
 
+### Phase 9.6: Object association, geometry and postprocessing (in progress)
+
+Integrate the six ledger packages in provider-first batches: feature removal and
+object sorting, image localization, association/fusion and tracking merge, then
+predicted-path processing. Preserve all four original functional test targets
+(six source files), both sorter executables and both object-merger executables.
+Add external message-flow checks for adapters, including payload/header and
+covariance/identity preservation, TF/projection, filtering and path behavior.
+Validate wrapper-node behavior with Cyclone/RCLCPP and Agnocast-only plus heaphook;
+plain RCLCPP nodes need only their applicable transport profile. Build sequentially
+and commit validated package boundaries separately. No Fast DDS or expensive
+product gate is selected for this CPU group. Phase 9.5 remains independently
+in progress with seven packages pending.
+
+Completed: feature removal, including both original cases and both added
+conversion profiles with Cyclone/RCLCPP and Agnocast-only transport. Current
+definition coverage is 121/244; five Phase 9.6 packages remain.
+
 ### Execution order through complete Universe coverage
 
 The following groups are the initial route through every remaining package.
