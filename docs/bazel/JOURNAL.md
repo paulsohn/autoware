@@ -21325,3 +21325,49 @@ ten added cases pass, zero failures/errors/skips, in 76.4 s (added suite 3.6 s).
 Targeted clang-format/diff checks pass. No Fast DDS/GPU/expensive product gate is
 required. This closes one of the seven remaining Phase 9.5 package boundaries;
 next is elevation generation and saved-cache reload.
+
+## 2026-11-24: Phase 9.5 — elevation-map generation and cache reload
+
+Purpose: integrate the local elevation-loader component/executable and indexed
+configuration/launch/data. Inspect manifest/CMake, node/header, GridMap PCL YAML
+and generation/inpainting/SQLite cache paths. There are no original functional
+tests. Select the original launcher's non-sequential point-cloud subscription
+profile, with inpainting off/on and generation followed by cache reload, using
+Cyclone/RCLCPP. The sequential service-loading implementation also builds but
+is not a selected behavior profile. This plain RCLCPP node has no Agnocast-only
+transport path.
+
+Pattern: package MODULE/BUILD and root source override. Consume GridMap PCL/CV/
+ROS, local grid-map/lanelet/utility and message providers, PCL/Boost/OpenCV SDKs
+and the real SQLite storage plugin. Declare Filters filter_chain explicitly:
+the public node header includes it even though the original manifest relies on
+transitive include visibility. Publish the component and original executable
+under the package index. Compose GridMap/SQLite indexes through ament_index.deps,
+not data: data would remap a dependency's installation files under this package's
+share directory, causing overlapping runfile symlinks. Keep only this package's
+resources/executable in its data list. No SDK implementation/source patch needed.
+
+Added tests stay in bazel/tests/autoware_elevation_map_loader. Load the original
+PCL extraction YAML; supply a dense 60x60-point plane and map hash through the
+real subscriptions. In both inpainting profiles, require more than ten finite
+elevation cells at height 3 and a saved cache metadata.yaml. Destroy the node and
+start another with the same hash/cache and a height-7 cloud; expect height 3,
+proving actual persisted-cache consumption. Verify indexed SQLite plugin lookup,
+elevation layer and map frame. Tests use a temporary writable cache selected via
+elevation_map_directory; generated bags belong outside immutable indexed package
+resources. A deployment/product caller must likewise provide a writable cache
+path rather than relying on the original launcher's package-share default.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  @autoware_elevation_map_loader//... //bazel/tests:elevation_map_loader_test
+```
+
+Results: all nine non-test targets build and both generation/reload cases pass,
+zero failures/errors/skips, in 61.7 s (suite 1.0 s). No existing source/tests
+changed. Targeted clang-format and diff checks pass. No Fast DDS/GPU/expensive
+product gate selected; sequential RPC and lane-filtered generation are not
+behavior-qualified by this selected launch profile. Five Phase 9.5 package
+boundaries remain; next are validation and raindrop filtering.

@@ -2296,10 +2296,10 @@ Resumed after Phase 9.6, 2026-11-24: the GridMap PCL provider passes its complet
 137-case provider gate. Map comparison now exposes all six components and passes
 four original plus ten static/dynamic/elevation/lanelet cases. Reproduced ROS
 context teardown, dynamic-grid/index/distance and lanelet sampling corrections
-are separate source commits. Six Phase 9.5 packages remain; current definition
-coverage is 127/244, leaving 117 without definitions. Next: elevation generation
-and cache reload, validation/raindrop filtering, then geometric/learned shape,
-clustering and detection-by-tracker.
+are separate source commits. Elevation generation and saved-cache reload also pass both selected inpainting
+profiles. Five Phase 9.5 packages remain; current definition coverage is 128/244,
+leaving 116 without definitions. Next: validation/raindrop filtering, then
+geometric/learned shape, clustering and detection-by-tracker.
 
 ### Phase 9.6: Object association, geometry and postprocessing (complete)
 

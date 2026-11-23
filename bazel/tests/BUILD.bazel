@@ -2410,3 +2410,13 @@ cc_test(
     deps = ["@autoware_compare_map_segmentation//:autoware_compare_map_segmentation_library", "@point_cloud_msg_wrapper", "@googletest//:gtest"],
     tags = ["no-sandbox", "no-remote"],
 )
+
+cc_test(
+    name = "elevation_map_loader_test",
+    srcs = ["autoware_elevation_map_loader/test_cache.cpp"],
+    data = ["@autoware_elevation_map_loader//:ament_index", "@autoware_elevation_map_loader//:config/elevation_map_parameters.yaml"],
+    env = {"ELEVATION_PARAMS": "$(rootpath @autoware_elevation_map_loader//:config/elevation_map_parameters.yaml)"},
+    dynamic_deps = ["@autoware_elevation_map_loader//:runtime_dynamic_deps"],
+    deps = ["@autoware_elevation_map_loader//:autoware_elevation_map_loader_library", "@googletest//:gtest"],
+    tags = ["no-sandbox", "no-remote"],
+)
