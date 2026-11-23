@@ -518,3 +518,32 @@ experiments/buffer/run-lyrical.sh bash experiments/rmw-agnocast/standalone/build
 bash experiments/rmw-agnocast/standalone/bench-path.sh build/standalone/fresh-path-waits --trace-cie
 python3 experiments/rmw-agnocast/standalone/analyze-cie-path.py build/standalone/fresh-path-waits build/standalone/fresh-path-waits.csv
 ```
+
+## Acquire the loan from the route reported by ppoll
+
+Compared native Agnocast, standalone CIE with the existing blocking direct wait, and the same CIE with AGNOCAST_RMW_READY_ROUTE=1. The treatment caches the private reader's Agnocast registrations when the endpoint starts. When ppoll reports a route ready, it reads that route's nonblocking notification counter and calls the existing Agnocast receive function. The kernel loan, coalesced-batch continuation, RMW queue and ROS callback-group selection remain in use. Ordinary take without a preceding wait uses the original acquisition path.
+
+| Uninstrumented 10 Hz Path | Median µs | p95 µs | Median child CPU s/launch | Median largest child RSS MiB |
+|---|---:|---:|---:|---:|
+| Native Agnocast | 40.09 | 59.00 | 0.133 | 26.59 |
+| Standalone CIE, inner epoll lookup | 63.45 | 102.07 | 0.191 | 26.33 |
+| Standalone CIE, ready route | 60.46 | 96.90 | 0.189 | 26.64 |
+
+Two batches each used all six launch orders on the laptop. Each batch used the same O3 binary for both RMW arms in the Cyclone-stripped environment. Each arm contributes 600 uninstrumented timed frames after ten warmups per launch. The table pools samples with nearest-rank p95. The ready-route median improved in eight of twelve paired rounds, p95 in nine. The first batch measured 66.94/103.75 µs median/p95 for the control and 60.72/101.00 for the treatment. The confirmation measured 60.60/99.50 and 60.12/90.46. Native measured 41.86/60.41 and 38.66/55.42. Pooled treatment/native ratios were 1.51× median and 1.64× p95. Keep the new path opt-in. [Per-frame latencies](ready-route-frames.csv) and [launch resources](ready-route-resources.csv).
+
+In four separate instrumented launches we joined each acquired loan to its publish and callback by address and time window. Every control frame saw the inner native epoll event, and all 120 ready-route frames bypassed it. Excluding warmup, ppoll return to completed loan took 19.64/27.37 µs median/p95 in the control and 13.35/30.81 µs in the treatment. Both traced round pairs had a lower treatment median (14.62 to 11.54 and 23.28 to 18.22 µs). The treatment also removes native deferred-call setup on the initial receive, so these savings cover the whole dispatch change. After queue insertion, the treatment still spent a median 9.69 µs returning through rcl_wait. The checkpoint includes wait-set handling and cleanup. [Absolute trace timestamps in ns](ready-route-stages.csv).
+
+Verified all 2,400 published frames across the 40 launches, including nested payload addresses and retained loans. Minimum available host memory across the timing runs was 9841 MiB. The blocking-wait suite passed on both paths, covering timeout, guard/data readiness, independent take, service, deadline, shutdown and two simultaneous durability routes, each holding 16 messages against a ten-entry kernel receive limit. It verified ordering per publisher, all 32 samples and an empty wait afterward. The stripped regression suite passed on the final build. Between the batches we tightened switch parsing to the literal value 1 and moved the receive lock inside the signalled-route branch. Each 10 Hz frame uses one signalled route. The first runner reported a shell error after all 18 child runs because the runner script was edited while executing. We validated each completed child log and frame file and ran the entire confirmation with the final script.
+
+Use fresh result directories on the provisioned laptop. For the trace build, prepare build-path-hooks.sh --with-waits as in the preceding section. The tests and workload use standalone CIE's existing fixture-only bounded announcement QoS.
+
+```bash
+export LYRICAL_ROOT="$(cat build/agnocast-lyrical/universe-root)"
+experiments/buffer/run-lyrical.sh bash experiments/rmw-agnocast/standalone/build-poll.sh
+experiments/buffer/run-lyrical.sh bwrap --ro-bind / / --dev-bind /dev /dev --bind /ws /ws --bind /tmp /tmp --ro-bind /ws/build/standalone/distro /opt/ros/lyrical --chdir /ws timeout -k 8 150 bash experiments/rmw-agnocast/standalone/check-poll.sh
+bash experiments/rmw-agnocast/standalone/bench-path.sh build/standalone/fresh-ready-a --ready-route
+bash experiments/rmw-agnocast/standalone/bench-path.sh build/standalone/fresh-ready-trace --ready-route-trace
+bash experiments/rmw-agnocast/standalone/bench-path.sh build/standalone/fresh-ready-b --ready-route
+mkdir build/standalone/fresh-ready-export
+python3 experiments/rmw-agnocast/standalone/analyze-ready-route.py build/standalone/fresh-ready-a build/standalone/fresh-ready-b build/standalone/fresh-ready-trace build/standalone/fresh-ready-export
+```

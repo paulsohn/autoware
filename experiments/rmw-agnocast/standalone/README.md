@@ -116,3 +116,23 @@ lease on process death invalidates the snapshot. Queue overflow also triggers
 a rescan. If the extra watch is unavailable, queries scan the leases directly. The allocation probe counts ordinary C++ operator new
 calls on the taking thread. It does not measure allocations by other threads
 or C allocator calls.
+
+### Experimental direct acquisition from a ready route
+
+For a blocking wait-set subscriber already selected with AGNOCAST_RMW_POLL_TOPIC,
+the following reader settings let the executor acquire the loan from the exact
+native route returned by ppoll. During endpoint creation the RMW looks up the
+registration for each of that reader's notification descriptors. After a wake
+it drains the signalled counter and uses Agnocast's existing loan receive and
+continuation handling. The application still receives its callback through
+rclcpp. The standalone CIE Path comparison uses the following environment:
+
+```bash
+export AGNOCAST_RMW_POLL_TOPIC=/path_latency
+export AGNOCAST_RMW_READY_ROUTE=1
+```
+
+To select the original blocking path for the same topic, unset
+AGNOCAST_RMW_READY_ROUTE. Taking without a preceding wait still uses the
+existing nonblocking native acquisition path. The selected subscription has
+the existing wait-set-only restriction on asynchronous new-message callbacks.

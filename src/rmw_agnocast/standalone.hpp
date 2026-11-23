@@ -45,7 +45,7 @@ inline Context * state(const rmw_context_t * ctx)
 }
 bool ready(void * subscription);
 void append_routes(void * subscription, std::vector<pollfd> & descriptors);
-void acquire_routes(void * subscription);
+void acquire_routes(void * subscription, const pollfd * descriptors, size_t count);
 bool rpc_ready(void * endpoint);
 rmw_publisher_t * rpc_writer(const rmw_node_t *, const char *, const rmw_qos_profile_t &);
 rmw_subscription_t * rpc_reader(const rmw_node_t *, const char *, const rmw_qos_profile_t &);

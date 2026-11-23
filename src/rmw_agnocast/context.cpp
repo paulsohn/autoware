@@ -303,11 +303,8 @@ rmw_ret_t rmw_wait(
           }
           for (size_t i = 0; i < starts.size(); ++i) {
             size_t stop = i + 1 < starts.size() ? starts[i + 1].first : descriptors.size() - 1;
-            for (size_t j = starts[i].first; j < stop; ++j)
-              if (descriptors[j].revents & POLLIN) {
-                acquire_routes(starts[i].second);
-                break;
-              }
+            auto first = starts[i].first;
+            acquire_routes(starts[i].second, descriptors.data() + first, stop - first);
           }
         }
         lock.lock();

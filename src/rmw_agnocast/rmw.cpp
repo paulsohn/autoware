@@ -17,6 +17,7 @@
 #include <rosidl_runtime_c/type_description/type_description__struct.h>
 #include <sys/random.h>
 
+#include <algorithm>
 #include <cstdio>
 #include <deque>
 #include <fstream>
@@ -481,6 +482,21 @@ public:
 class PollExecutor : public agnocast::AgnocastOnlySingleThreadedExecutor
 {
 public:
+  void acquire_ready(const std::pair<uint32_t, agnocast::CallbackInfo> & registration)
+  {
+    const auto & [id, info] = registration;
+    eventfd_t count;
+    while (eventfd_read(info.notify_eventfd, &count) < 0) {
+      if (errno == EINTR) continue;
+      if (errno == EAGAIN) return;  // A concurrent take already drained this notification.
+      throw std::runtime_error("cannot read ready Agnocast route");
+    }
+    agnocast::receive_and_execute_message(
+      id, my_pid_, info, ready_agnocast_executables_mutex_, ready_agnocast_executables_);
+    // A kernel receive may schedule a continuation for a coalesced burst.
+    agnocast::AgnocastExecutable next;
+    while (get_next_ready_agnocast_executable(next)) execute_agnocast_executable(next);
+  }
   void prepare()
   {
     add_callback_groups_from_nodes_associated_to_executor();
@@ -505,6 +521,7 @@ struct Reader : Endpoint
   uint64_t sequence{};
   // Native subscriptions must still exist when queued and held loans release their references.
   std::vector<std::shared_ptr<PollSubscription>> routes;
+  std::vector<std::pair<uint32_t, agnocast::CallbackInfo>> ready_routes;
   std::deque<QueuedSample> pending;
   Filter filter;
   std::recursive_mutex callback_mutex;
@@ -586,9 +603,23 @@ struct Reader : Endpoint
     executor.add_node(node);
     const char * selected = std::getenv("AGNOCAST_RMW_POLL_TOPIC");
     direct = !rpc && selected && topic == selected;
-    if (direct)
+    if (direct) {
       executor.prepare();
-    else
+      const char * exact_route = std::getenv("AGNOCAST_RMW_READY_ROUTE");
+      if (exact_route && std::string_view(exact_route) == "1") {
+        // Each registration belongs to this reader's private native node. Its callback only
+        // admits a loan to the RMW queue. ROS callback-group dispatch stays with rclcpp.
+        std::lock_guard lock(agnocast::id2_callback_info_mtx);
+        for (const auto & route : routes) {
+          const auto & registry = agnocast::id2_callback_info;
+          auto it = std::find_if(registry.begin(), registry.end(), [&](const auto & entry) {
+            return entry.second.notify_eventfd == route->fd();
+          });
+          if (it == registry.end()) throw std::runtime_error("missing Agnocast route registration");
+          ready_routes.push_back(*it);
+        }
+      }
+    } else
       thread = std::thread([this] { executor.spin(); });
   }
   void acquire()
@@ -625,9 +656,18 @@ void standalone::append_routes(void * sub, std::vector<pollfd> & descriptors)
   if (reader.direct)
     for (auto & route : reader.routes) descriptors.push_back({route->fd(), POLLIN, 0});
 }
-void standalone::acquire_routes(void * sub)
+void standalone::acquire_routes(void * sub, const pollfd * descriptors, size_t count)
 {
-  static_cast<Reader *>(sub)->acquire();
+  auto & reader = *static_cast<Reader *>(sub);
+  for (size_t i = 0; i < count; ++i) {
+    if (!(descriptors[i].revents & POLLIN)) continue;
+    std::lock_guard lock(reader.acquire_mutex);
+    if (reader.ready_routes.empty()) {
+      reader.executor.acquire();
+      return;
+    }
+    reader.executor.acquire_ready(reader.ready_routes[i]);
+  }
 }
 bool standalone::ready(void * sub)
 {

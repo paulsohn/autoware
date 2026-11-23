@@ -18,8 +18,8 @@ int main(int argc, char ** argv)
   auto node = std::make_shared<rclcpp::Node>("poll_check");
   auto context = node->get_node_base_interface()->get_context()->get_rcl_context();
   auto ctx = rcl_context_get_rmw_context(context.get());
-  auto sub = node->create_subscription<Msg>(topic, 4, [](const Msg &) {});
-  auto pub = node->create_publisher<Msg>(topic, rclcpp::QoS(4).deadline(120ms));
+  auto sub = node->create_subscription<Msg>(topic, 64, [](const Msg &) {});
+  auto pub = node->create_publisher<Msg>(topic, rclcpp::QoS(64).deadline(120ms));
   auto server = node->create_service<Service>(
     "poll_rpc", [](Service::Request::SharedPtr, Service::Response::SharedPtr) {});
   auto client = node->create_client<Service>("poll_rpc");
@@ -68,6 +68,26 @@ int main(int argc, char ** argv)
   pub->publish(sample);
   if (rmw_take(raw, &received, &taken, nullptr) != RMW_RET_OK || !taken || received != sample)
     return 8;
+  // Exceed MAX_RECEIVE_NUM on each of two compatible native durability routes.
+  auto durable = node->create_publisher<Msg>(topic, rclcpp::QoS(64).transient_local());
+  for (int seq = 0; seq < 16; ++seq) {
+    sample.data = seq;
+    pub->publish(sample);
+    sample.data = 100 + seq;
+    durable->publish(sample);
+  }
+  int volatile_seq = 0, durable_seq = 0;
+  for (int i = 0; i < 32; ++i) {
+    if (
+      wait(&short_timeout) != RMW_RET_OK || !subscription ||
+      rmw_take(raw, &received, &taken, nullptr) != RMW_RET_OK || !taken)
+      return 16;
+    if (received.data >= 100) {
+      if (received.data != 100 + durable_seq++) return 17;
+    } else if (received.data != volatile_seq++)
+      return 18;
+  }
+  if (volatile_seq != 16 || durable_seq != 16 || wait(&zero) != RMW_RET_TIMEOUT) return 19;
   wake = later([&] { client->async_send_request(std::make_shared<Service::Request>()); });
   result = wait(nullptr, true);
   wake.join();
@@ -91,6 +111,6 @@ int main(int argc, char ** argv)
   if (result != RMW_RET_OK || subscription || trigger) return 10;
   if (rmw_destroy_wait_set(set) != RMW_RET_OK || rmw_destroy_guard_condition(guard) != RMW_RET_OK)
     return 11;
-  std::cout << "timeout, guard, simultaneous data and guard, independent take, RPC, deadline and "
+  std::cout << "timeout, guard, simultaneous data and guard, independent take, two-route burst, RPC, deadline and "
                "shutdown passed\n";
 }

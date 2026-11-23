@@ -6,13 +6,14 @@ out=${1:?fresh directory relative to worktree}
 mkdir "$out"
 rounds=4
 case ${2:-} in
-  --compare-builds|--compare-release|--compare-events|--compare-poll) rounds=6;;
+  --compare-builds|--compare-release|--compare-events|--compare-poll|--ready-route) rounds=6;;
+  --ready-route-trace) rounds=2;;
   ""|--compare-handoff|--compare-cie|--replay-cie|--trace-cie) ;;
   *) echo "Unknown comparison: $2" >&2; exit 2;;
 esac
 release_baseline=0
 case ${2:-} in
-  ""|--compare-handoff|--compare-events|--compare-cie|--compare-poll|--replay-cie|--trace-cie)
+  ""|--compare-handoff|--compare-events|--compare-cie|--compare-poll|--replay-cie|--trace-cie|--ready-route|--ready-route-trace)
     release_baseline=1
     for flags in \
       build/standalone/o3-obj/agnocastlib/CMakeFiles/agnocast.dir/flags.make \
@@ -22,7 +23,7 @@ case ${2:-} in
       grep -Eq '^CXX_FLAGS = .* -O3( |$)' "$flags"
     done;;
 esac
-if [[ ${2:-} == --replay-cie || ${2:-} == --trace-cie ]]; then
+if [[ ${2:-} == --replay-cie || ${2:-} == --trace-cie || ${2:-} == --ready-route || ${2:-} == --ready-route-trace ]]; then
   for flags in \
     build/standalone/poll-obj/rmw_agnocast/CMakeFiles/rmw_agnocast.dir/flags.make \
     build/standalone/release-cie/obj/callback_isolated_executor/CMakeFiles/callback_isolated_executor.dir/flags.make \
@@ -31,7 +32,19 @@ if [[ ${2:-} == --replay-cie || ${2:-} == --trace-cie ]]; then
   done
 fi
 for ((round=1;round<=rounds;round++)); do
-  if [[ ${2:-} == --trace-cie ]]; then
+  if [[ ${2:-} == --ready-route-trace ]]; then
+    modes=(poll-cie-instrumented route-cie-instrumented)
+    if [[ $round == 2 ]]; then modes=(route-cie-instrumented poll-cie-instrumented); fi
+  elif [[ ${2:-} == --ready-route ]]; then
+    case $round in
+      1) modes=(native poll-cie route-cie);;
+      2) modes=(poll-cie route-cie native);;
+      3) modes=(route-cie native poll-cie);;
+      4) modes=(route-cie poll-cie native);;
+      5) modes=(native route-cie poll-cie);;
+      6) modes=(poll-cie native route-cie);;
+    esac
+  elif [[ ${2:-} == --trace-cie ]]; then
     modes=(native standalone-cie poll-cie)
     if ((round % 2 == 0)); then modes=(poll-cie standalone-cie native); fi
     if ((round == 2 || round == 3)); then
@@ -114,7 +127,7 @@ for ((round=1;round<=rounds;round++)); do
         source build/standalone/o3-install/local_setup.bash
         source build/standalone/release-path/install/local_setup.bash
         probe=/ws/build/standalone/release-path/probe/path_benchmark
-        if [[ $4 == --compare-cie || $4 == --replay-cie || $4 == --trace-cie ]]; then
+        if [[ $4 == --compare-cie || $4 == --replay-cie || $4 == --trace-cie || $4 == --ready-route || $4 == --ready-route-trace ]]; then
           source build/standalone/release-cie/install/local_setup.bash
           probe=/ws/build/standalone/release-cie/probe/path_benchmark
         fi
@@ -122,16 +135,17 @@ for ((round=1;round<=rounds;round++)); do
         grep -F "libagnocast.so => /ws/build/standalone/o3-install/agnocastlib/lib/libagnocast.so" <<< "$libs"
         grep -F "librclcpp.so => /ws/build/standalone/release-path/install/rclcpp/lib/librclcpp.so" <<< "$libs"
       fi
-      unset AGNOCAST_RMW_POLL_TOPIC
-      if [[ ( $4 == --compare-poll || $4 == --replay-cie || $4 == --trace-cie ) && $1 != native ]]; then
+      unset AGNOCAST_RMW_POLL_TOPIC AGNOCAST_RMW_READY_ROUTE
+      if [[ ( $4 == --compare-poll || $4 == --replay-cie || $4 == --trace-cie || $4 == --ready-route || $4 == --ready-route-trace ) && $1 != native ]]; then
         source build/standalone/poll-install/local_setup.bash
         test "$(ros2 pkg prefix rmw_agnocast)" = /ws/build/standalone/poll-install/rmw_agnocast
-        if [[ $1 == poll || $1 == poll-cie ]]; then export AGNOCAST_RMW_POLL_TOPIC=/path_latency; fi
+        if [[ $1 == route-cie ]]; then export AGNOCAST_RMW_READY_ROUTE=1; fi
+        if [[ $1 == poll || $1 == poll-cie || $1 == route-cie ]]; then export AGNOCAST_RMW_POLL_TOPIC=/path_latency; fi
       fi
       arm=rmw
       if [[ $1 == inline || $1 == handoff || $1 == events ]]; then arm=$1; fi
       if [[ $1 == *-cie ]]; then arm=$1; fi
-      if [[ $1 == poll-cie ]]; then arm=standalone-cie; fi
+      if [[ $1 == poll-cie || $1 == route-cie ]]; then arm=standalone-cie; fi
       if [[ $1 == native ]]; then arm=native; fi
       if [[ $1 == *-trace ]]; then
         export PATH_TIMING_FILE="/ws/$2/$1-$3.stages"
