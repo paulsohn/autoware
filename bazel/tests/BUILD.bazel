@@ -2477,3 +2477,33 @@ tensorrt_cc_test(
         'SHAPE_BATCH2=\\"$(rootpath autoware_shape_estimation/shape_batch2.onnx)\\"',
     ],
 )
+
+cc_test(
+    name = "euclidean_cluster_transport_test",
+    srcs = ["autoware_euclidean_cluster/test_transport.cpp"],
+    data = ["@autoware_euclidean_cluster//:ament_index", "@agnocast_heaphook"],
+    dynamic_deps = ["@autoware_euclidean_cluster//:runtime_dynamic_deps"],
+    deps = ["@autoware_euclidean_cluster//:euclidean_cluster_node_library", "@ament_index_cpp//:ament_index_cpp_library", "@googletest//:gtest"],
+    local_defines = ["CLUSTER_KIND=0", "CLUSTER_CLASS=EuclideanClusterNode", 'CLUSTER_PARAMS=\\"euclidean_cluster.param.yaml\\"'],
+    tags = ["no-sandbox", "no-remote"],
+)
+
+cc_test(
+    name = "voxel_grid_based_euclidean_cluster_transport_test",
+    srcs = ["autoware_euclidean_cluster/test_transport.cpp"],
+    data = ["@autoware_euclidean_cluster//:ament_index", "@agnocast_heaphook"],
+    dynamic_deps = ["@autoware_euclidean_cluster//:runtime_dynamic_deps"],
+    deps = ["@autoware_euclidean_cluster//:voxel_grid_based_euclidean_cluster_node_library", "@ament_index_cpp//:ament_index_cpp_library", "@googletest//:gtest"],
+    local_defines = ["CLUSTER_KIND=1", "CLUSTER_CLASS=VoxelGridBasedEuclideanClusterNode", 'CLUSTER_PARAMS=\\"voxel_grid_based_euclidean_cluster.param.yaml\\"'],
+    tags = ["no-sandbox", "no-remote"],
+)
+
+cc_test(
+    name = "label_based_euclidean_cluster_transport_test",
+    srcs = ["autoware_euclidean_cluster/test_transport.cpp"],
+    data = ["@autoware_euclidean_cluster//:ament_index", "@agnocast_heaphook"],
+    dynamic_deps = ["@autoware_euclidean_cluster//:runtime_dynamic_deps"],
+    deps = ["@autoware_euclidean_cluster//:label_based_euclidean_cluster_node_library", "@ament_index_cpp//:ament_index_cpp_library", "@googletest//:gtest"],
+    local_defines = ["CLUSTER_KIND=2", "CLUSTER_CLASS=LabelBasedEuclideanClusterNode", 'CLUSTER_PARAMS=\\"label_based_euclidean_cluster.param.yaml\\"'],
+    tags = ["no-sandbox", "no-remote"],
+)

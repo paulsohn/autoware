@@ -2020,3 +2020,9 @@ local_path_override(
     module_name = "autoware_shape_estimation",
     path = "src/universe/autoware_universe/perception/autoware_shape_estimation",
 )
+
+bazel_dep(name = "autoware_euclidean_cluster", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_euclidean_cluster",
+    path = "src/universe/autoware_universe/perception/autoware_euclidean_cluster",
+)

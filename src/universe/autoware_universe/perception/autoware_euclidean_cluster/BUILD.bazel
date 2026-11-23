@@ -1,0 +1,174 @@
+load("@rclcpp_components//:defs.bzl", "rclcpp_components_register_node")
+load("@autoware_agnocast_wrapper//:defs.bzl", "autoware_agnocast_node")
+load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "euclidean_cluster_library",
+    srcs = glob(["lib/*.cpp"]),
+    hdrs = glob(["include/**/*.hpp"]),
+    includes = ["include"],
+    deps = [
+        "@autoware_object_recognition_utils",
+        "@autoware_perception_msgs//:cc",
+        "@autoware_point_types",
+        "@autoware_shape_estimation//:shape_estimator_library",
+        "@autoware_utils",
+        "@geometry_msgs//:cc",
+        "@pcl_conversions//:pcl_conversions_library",
+        "@rclcpp//:rclcpp_library",
+        "@sensor_msgs//:cc",
+        "@tier4_perception_msgs//:cc",
+        "@rosdistro//cc:eigen",
+        "@rosdistro//cc:pcl_common",
+        "@rosdistro//cc:pcl_filters",
+        "@rosdistro//cc:pcl_kdtree",
+        "@rosdistro//cc:pcl_search",
+        "@rosdistro//cc:pcl_segmentation",
+        "@rosdistro//cc:tl_expected",
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "sdk_dynamic_deps",
+    dynamic_deps = [
+        "@autoware_agnocast_wrapper",
+        "@autoware_object_recognition_utils//:runtime_dynamic_deps",
+        "@autoware_perception_msgs//:cc_shared",
+        "@autoware_shape_estimation//:shape_estimator_runtime_dynamic_deps",
+        "@autoware_utils//:runtime_dynamic_deps",
+        "@geometry_msgs//:cc_shared",
+        "@pcl_conversions//:pcl_conversions",
+        "@rclcpp_components//:rclcpp_components",
+        "@sensor_msgs//:cc_shared",
+        "@tier4_perception_msgs//:cc_shared",
+        "@rosdistro//cc:pcl",
+    ],
+)
+
+cc_shared_library(
+    name = "euclidean_cluster",
+    shared_lib_name = "libautoware_euclidean_cluster_lib.so",
+    deps = [":euclidean_cluster_library"],
+    dynamic_deps = [":sdk_dynamic_deps"],
+)
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = [":euclidean_cluster", ":sdk_dynamic_deps"],
+)
+
+cc_library(
+    name = "euclidean_cluster_node_library",
+    srcs = ["src/euclidean_cluster_node.cpp"],
+    hdrs = ["src/euclidean_cluster_node.hpp"],
+    includes = ["src"],
+    deps = [":euclidean_cluster_library", "@autoware_agnocast_wrapper//:autoware_agnocast_wrapper_library", "@rclcpp_components//:rclcpp_components_library"],
+)
+cc_shared_library(
+    name = "euclidean_cluster_component",
+    shared_lib_name = "libautoware_euclidean_cluster_node.so",
+    deps = [":euclidean_cluster_node_library"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+)
+rclcpp_components_register_node(
+    name = "euclidean_cluster_node",
+    node_name = "euclidean_cluster_node",
+    component = ":euclidean_cluster_component",
+    plugin = "autoware::euclidean_cluster::EuclideanClusterNode",
+)
+cc_library(
+    name = "voxel_grid_based_euclidean_cluster_node_library",
+    srcs = ["src/voxel_grid_based_euclidean_cluster_node.cpp"],
+    hdrs = ["src/voxel_grid_based_euclidean_cluster_node.hpp"],
+    includes = ["src"],
+    deps = [":euclidean_cluster_library", "@autoware_agnocast_wrapper//:autoware_agnocast_wrapper_library", "@rclcpp_components//:rclcpp_components_library"],
+)
+cc_shared_library(
+    name = "voxel_grid_based_euclidean_cluster_component",
+    shared_lib_name = "libautoware_voxel_grid_based_euclidean_cluster_node.so",
+    deps = [":voxel_grid_based_euclidean_cluster_node_library"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+)
+autoware_agnocast_node(
+    name = "voxel_grid_based_euclidean_cluster_node",
+    component = ":voxel_grid_based_euclidean_cluster_component",
+    package_name = "autoware_euclidean_cluster",
+    plugin = "autoware::euclidean_cluster::VoxelGridBasedEuclideanClusterNode",
+    agnocast_only = False,
+)
+cc_library(
+    name = "label_based_euclidean_cluster_node_library",
+    srcs = ["src/label_based_euclidean_cluster_node.cpp"],
+    hdrs = ["src/label_based_euclidean_cluster_node.hpp"],
+    includes = ["src"],
+    deps = [":euclidean_cluster_library", "@autoware_agnocast_wrapper//:autoware_agnocast_wrapper_library", "@rclcpp_components//:rclcpp_components_library"],
+)
+cc_shared_library(
+    name = "label_based_euclidean_cluster_component",
+    shared_lib_name = "libautoware_label_based_euclidean_cluster_node.so",
+    deps = [":label_based_euclidean_cluster_node_library"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+)
+autoware_agnocast_node(
+    name = "label_based_euclidean_cluster_node",
+    component = ":label_based_euclidean_cluster_component",
+    package_name = "autoware_euclidean_cluster",
+    plugin = "autoware::euclidean_cluster::LabelBasedEuclideanClusterNode",
+    agnocast_only = True,
+)
+register_ament_files(
+    name = "executables",
+    files = [
+        ":euclidean_cluster_node",
+        ":voxel_grid_based_euclidean_cluster_node",
+        ":label_based_euclidean_cluster_node",
+    ],
+    prefix = "lib/autoware_euclidean_cluster",
+    strip_prefix = "*",
+)
+ament_index(
+    package_xml = "package.xml",
+    components = [
+        ":euclidean_cluster_node_record",
+        ":voxel_grid_based_euclidean_cluster_node_components",
+        ":label_based_euclidean_cluster_node_components",
+    ],
+    libraries = [":euclidean_cluster"] + [
+        ":euclidean_cluster_component",
+        ":voxel_grid_based_euclidean_cluster_component",
+        ":label_based_euclidean_cluster_component",
+    ],
+    data = glob(["config/**", "launch/**", "test/**"]) + [":executables"] + [
+        ":voxel_grid_based_euclidean_cluster_node_plugin",
+        ":label_based_euclidean_cluster_node_plugin",
+    ],
+)
+cc_test(
+    name = "test_voxel_grid_based_euclidean_cluster_fusion",
+    srcs = ["test/test_voxel_grid_based_euclidean_cluster.cpp"],
+    data = [":ament_index"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+    deps = [":euclidean_cluster_library", "@googletest//:gtest"],
+    tags = ["no-sandbox", "no-remote"],
+)
+cc_test(
+    name = "test_label_based_euclidean_cluster",
+    srcs = ["test/test_label_based_euclidean_cluster.cpp"],
+    data = [":ament_index"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+    deps = [":euclidean_cluster_library", "@googletest//:gtest_main"],
+    tags = ["no-sandbox", "no-remote"],
+)
+cc_test(
+    name = "test_label_based_euclidean_cluster_node",
+    srcs = ["test/test_label_based_euclidean_cluster_node.cpp"],
+    data = [":ament_index"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+    deps = [":label_based_euclidean_cluster_node_library", "@googletest//:gtest_main"],
+    tags = ["no-sandbox", "no-remote"],
+)
+
+exports_files(glob(["config/*.yaml"]))

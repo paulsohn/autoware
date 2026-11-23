@@ -21622,8 +21622,7 @@ pcl::toROSMsg requests padding removal, producing 21-byte points from required
 24-byte PointXYZCPE input. This violates the downstream input-layout contract.
 Use the padded default pcl::toPCLPointCloud2 overload, then moveFromPCL. All
 original byte/layout assertions now pass. UPSTREAM_AWF.md records current-source
-checks and PR association status; both source changes are committed separately
-from Bazel declarations. Neither change weakens tests or changes label policy.
+checks and PR association status; both source changes are in d35185207, separately from Bazel declarations. Neither change weakens tests or changes label policy.
 
 Added tests under bazel/tests publish two separated 16-point nondegenerate
 clusters using original YAML. Plain and voxel nodes must retain all 32 points,

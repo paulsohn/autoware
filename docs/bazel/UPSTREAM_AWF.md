@@ -2286,6 +2286,8 @@ Local source fix: `487efbeb1`.
 
 ### Euclidean clustering portability and semantic-cloud layout
 
+Local source fix: `d35185207`.
+
 - [ ] Associate the standard-random fixture fix with upstream. Checked 2026-11-24:
   [current voxel test](https://github.com/autowarefoundation/autoware_universe/blob/main/perception/autoware_euclidean_cluster/test/test_voxel_grid_based_euclidean_cluster.cpp)
   retains experimental/random; scoped module/header PR search finds no fix.

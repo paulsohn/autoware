@@ -21,10 +21,10 @@ may contain multiple package commits and smaller execution batches. Update the
 ledger when a package closes or the source snapshot changes; this is a planning
 record, not a new build-time completeness validator.
 
-Current adoption progress, 2026-11-24: **131/244** packages have both definitions
-and root local overrides; **113** remain without definitions. The census table
+Current adoption progress, 2026-11-24: **132/244** packages have both definitions
+and root local overrides; **112** remain without definitions. The census table
 below preserves the initial 2026-11-23 baseline. Checked ledger items record
-completed module gates; Phase 9.5 has two pending packages. See PLAN.md and the
+completed module gates; Phase 9.5 has one pending package. See PLAN.md and the
 package journals for configuration and behavior evidence.
 
 ## Census by source category
@@ -238,7 +238,7 @@ Reuse 9.4 and existing map/GridMap providers. Order shape estimation before clus
 - [x] [autoware_ground_segmentation](../../src/universe/autoware_universe/perception/autoware_ground_segmentation/package.xml)
 - [x] [autoware_occupancy_grid_map_outlier_filter](../../src/universe/autoware_universe/perception/autoware_occupancy_grid_map_outlier_filter/package.xml)
 - [x] [autoware_shape_estimation](../../src/universe/autoware_universe/perception/autoware_shape_estimation/package.xml)
-- [ ] [autoware_euclidean_cluster](../../src/universe/autoware_universe/perception/autoware_euclidean_cluster/package.xml)
+- [x] [autoware_euclidean_cluster](../../src/universe/autoware_universe/perception/autoware_euclidean_cluster/package.xml)
 - [x] [autoware_raindrop_cluster_filter](../../src/universe/autoware_universe/perception/autoware_raindrop_cluster_filter/package.xml)
 - [ ] [autoware_detection_by_tracker](../../src/universe/autoware_universe/perception/autoware_detection_by_tracker/package.xml)
 

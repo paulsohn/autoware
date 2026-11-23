@@ -2301,8 +2301,10 @@ profiles. Detected-object validation also passes all twelve original and five ad
 the two added lanelet cases pass Agnocast-only. Raindrop filtering passes its five original cases and a nonempty policy/transport
 case in both RCLCPP and ROS-aware Agnocast execution. Shape estimation passes its 37 original cases in CPU-only and CUDA-enabled
 builds, geometric transport in both backends and real GPU full/partial batches.
-Two Phase 9.5 packages remain; definition coverage is 131/244, leaving 113
-without definitions. Next: clustering and detection-by-tracker.
+Clustering passes all 27 original and three added cases, including mixed voxel
+and Agnocast-only semantic transport. PCL padding and standard-random fixture
+corrections are separate source fixes. One Phase 9.5 package remains; definition
+coverage is 132/244, leaving 112 without definitions. Next: detection-by-tracker.
 
 ### Phase 9.6: Object association, geometry and postprocessing (complete)
 
