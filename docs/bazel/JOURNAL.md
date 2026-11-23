@@ -19687,3 +19687,39 @@ env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
 
 The complete static module rerun passes in 9.7 s, its three-case ROS suite in
 0.5 s. Unchanged passing results from the other four packages are reused.
+## 2026-11-23: Phase 9.1 — Radar scan to PointCloud2
+
+Purpose: adopt the polar-return to point-cloud converter as a runnable component
+and standalone executable. The original package has lint registrations but no
+C++ behavior suite. Keep its source unchanged and add ROS-facing checks at the
+root for Cartesian geometry, amplitude versus Doppler intensity, frame/stamp
+preservation and live publication enablement.
+
+Pattern: use radar_msgs/sensor_msgs generated providers, the existing RCR
+pcl_conversions library/shared provider and published rosdistro cc:pcl_common
+compile/link provider. Do not invent a pcl_common_shared target; the registry
+has no such label. Match CMake's PCL common dependency without a new dependency
+shim or system installation. Export original launch/config/indexed executable
+resources from the component module.
+
+Gate: @autoware_radar_scan_to_pointcloud2//... and
+//bazel/tests:radar_scan_behavior_test (two cases) in the same sequential
+Cyclone/no-agnocast configuration. Result: both cases pass in 0.5 s, with zero
+failures/errors/skips. Geometry includes the zero-angle point and a nonzero-angle
+point yielding approximately x=6.4, y=4.8, z=6.0 at range 10; both intensity
+projections and the header are checked. The amplitude-disabled/enabled path uses
+the actual ROS parameter callback. No original test is replaced or skipped.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_env=ROS_DOMAIN_ID=114 \
+  --test_output=errors @autoware_radar_scan_to_pointcloud2//... \
+  //bazel/tests:radar_scan_behavior_test
+```
+
+The final geometry-enhanced module gate passes in 24.5 s including cached graph
+work; other unchanged passing module evidence is reused.
+
+Bazel registration completed with the matching package-local MODULE/BUILD, root
+override and behavior inputs. Reuse the complete passing module evidence above.

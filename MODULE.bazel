@@ -1837,3 +1837,9 @@ local_path_override(
     module_name = "autoware_radar_threshold_filter",
     path = "src/universe/autoware_universe/sensing/autoware_radar_threshold_filter",
 )
+
+bazel_dep(name = "autoware_radar_scan_to_pointcloud2", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_radar_scan_to_pointcloud2",
+    path = "src/universe/autoware_universe/sensing/autoware_radar_scan_to_pointcloud2",
+)
