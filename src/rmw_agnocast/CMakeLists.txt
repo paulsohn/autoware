@@ -1,11 +1,11 @@
 cmake_minimum_required(VERSION 3.16)
 project(rmw_agnocast)
 find_package(ament_cmake REQUIRED)
-foreach(pkg IN ITEMS sensor_msgs agnocastlib rosidl_typesupport_introspection_cpp rclcpp rmw)
+foreach(pkg IN ITEMS rcl_interfaces sensor_msgs agnocastlib rosidl_typesupport_introspection_cpp rclcpp rmw)
   find_package(${pkg} REQUIRED)
 endforeach()
 add_library(${PROJECT_NAME} SHARED rmw.cpp context.cpp unsupported.cpp)
-target_link_libraries(${PROJECT_NAME} PRIVATE ${sensor_msgs_TARGETS} ${agnocastlib_TARGETS} ${rosidl_typesupport_introspection_cpp_TARGETS}
+target_link_libraries(${PROJECT_NAME} PRIVATE ${rcl_interfaces_TARGETS} ${sensor_msgs_TARGETS} ${agnocastlib_TARGETS} ${rosidl_typesupport_introspection_cpp_TARGETS}
   rclcpp::rclcpp rmw::rmw)
 register_rmw_implementation("cpp:rosidl_typesupport_introspection_cpp")
 install(TARGETS ${PROJECT_NAME} DESTINATION lib)

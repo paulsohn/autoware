@@ -1,6 +1,6 @@
 # Standalone same-host RMW milestone
 
-The rmw_agnocast library in this revision owns its context, node and endpoint handles, guard conditions and blocking wait. The publisher lends native objects through Agnocast. The subscriber queues kernel loans and wakes its local RMW context. Two matching processes on one host need the compatible device and heap hook. Ordinary supported topic names go directly to native transport without topic lists. Native route identity includes the ROS domain, resolved name, C++ message type and offered reliability.
+The rmw_agnocast library in this revision owns its context, node and endpoint handles, guard conditions and blocking wait. The publisher lends native objects through Agnocast. The subscriber queues kernel loans and wakes its local RMW context. Two matching processes on one host need the compatible device and heap hook. Ordinary supported topic names go directly to native transport without topic lists. Native route identity includes the ROS domain, resolved name, canonical C++ message type, reliability and durability. This revision versions the native route because the shared sample now carries a publisher expiry time. Upgrade communicating processes together.
 
 The release package of the heap hook and the running kernel module are unchanged. The Agnocast **userspace library** built from this revision suppresses its legacy automatic bridge and discovery processes when rmw_agnocast is selected. Build that library alongside the RMW. Use a fresh install prefix to avoid stale bridge executables from earlier builds.
 
@@ -47,7 +47,7 @@ Use the actual location of the Agnocast 2.4.1 hook visible in the userspace. The
 
 ## Scope
 
-This is a transport isolation milestone. The test uses standard rclcpp with rosout, parameter endpoints and the type-description service disabled. Default node startup still requests these facilities. Graph listings, service/client operations, event callbacks, serialized operations and Buffer representations are incomplete. Unsupported RMW calls report failure. The old per-topic gateway used Cyclone-delegated endpoints in the same process and is not built as a standalone bridge.
+This is a transport isolation milestone. The topic tests disable auxiliary node endpoints. A separate test enables the standard rcl logging publisher on /rosout with its default QoS. The RMW converts the C Log into the same native C++ Log used by ordinary typed subscribers. C publisher loans and generic C message support remain open. The stock minimal publisher now reaches service creation during default node startup. Graph listings, service/client operations, event callbacks, serialized operations and Buffer representations are incomplete. Unsupported RMW calls report failure. The old per-topic gateway used Cyclone-delegated endpoints in the same process and is not built as a standalone bridge.
 
 The separate Cyclone control used the same ROS domain and topic name. While native writer and reader completed delivery, the stock DDS echo received no sample and timed out. A stock Cyclone publisher then delivered a control string to a fresh stock echo with the same settings. Previous Autoware pipeline and latency results belong to the mixed implementation at 1a7d9b42. No standalone latency or Autoware compatibility result is claimed.
 
@@ -56,4 +56,6 @@ For the reverse control, run a stock Cyclone publisher at 5 Hz and a stock echo 
 The standalone check also runs a batch reader against a three-message burst.
 It checks ordering, publisher metadata, destination capacity and empty takes.
 Each trial exercises the native QoS compatibility query for both reliability
-directions and for an unsupported durability policy.
+directions and for an incompatible durability pairing.
+
+The rosout check keeps its writer alive and attaches a C++ subscriber after both log messages were emitted. Expect `late rosout fresh=1 expired=0` and `queued rosout after expiry=0`. Allow about half a minute for the default ten-second lifespan checks.

@@ -4,3 +4,7 @@ find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
 add_executable(topic_check topic_check.cpp)
 target_link_libraries(topic_check PRIVATE rclcpp::rclcpp std_msgs::std_msgs)
+
+find_package(rcl_interfaces REQUIRED)
+add_executable(rosout_check rosout_check.cpp)
+target_link_libraries(rosout_check PRIVATE rclcpp::rclcpp ${rcl_interfaces_TARGETS})

@@ -3945,3 +3945,33 @@ sets its profile to reliable transient-local KeepLast(1000) with a ten-second
 lifespan. Include late-reader replay and expiry alongside the C-writer to
 C++-reader layout test. The QoS compatibility query alone does not implement
 these policies or the corresponding QoS event callbacks.
+
+## 2026-11-23 — Default rosout publisher to native C++ subscribers
+
+The default rcl logging publisher uses the C layout of rcl_interfaces/msg/Log,
+including four runtime C strings. The RMW now copies the initialized fields to
+a C++ Log when publishing from this C type. C++ readers use the ordinary native
+path. This adapter is specific to the C Log writer. It advertises no C loans.
+
+Lyrical's default rosout QoS requests reliable transient-local KeepLast(1000)
+with a ten-second lifespan. Native Agnocast exposes transient-local history but
+ignores lifespan. The RMW routes by offered durability and reliability, lets
+Agnocast replay retained history, and stamps each shared sample with the
+publisher's monotonic expiry (zero for unlimited). Readers check expiry both
+on admission and before delivering queued samples. The changed shared layout
+uses v2 routes to isolate older binaries. A volatile reader subscribes to both
+durability routes. Its performance on an Autoware graph needs remeasurement.
+
+Using the Cyclone-stripped build and check.sh in the standalone README, the
+ordinary, loaned and batch trials passed. The rosout writer emitted warnings
+eleven seconds apart using RCLCPP_WARN before the late reader started. That
+reader verified name, level, text, stamp, file, function and line, and printed
+late rosout fresh=1 expired=0. A second subscription joined before expiry,
+delayed its take for eleven seconds with the publisher still matched, and
+printed queued rosout after expiry=0. Minimum host MemAvailable was 14599 MiB.
+
+In the same stripped runtime, launching the project-install binary
+examples_rclcpp_minimal_publisher/lib/examples_rclcpp_minimal_publisher/publisher_member_function
+with default options reached rmw_create_service and failed with its explicit
+unsupported error. Service request/reply and executor readiness are the next
+default-node milestone.

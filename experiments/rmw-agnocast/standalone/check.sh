@@ -28,3 +28,17 @@ for mode in ordinary loan batch; do
   fi
   wait "$reader"
 done
+
+dir=$(mktemp -d)
+trap 'rm -rf "$dir"' EXIT
+rosout=$(dirname "$probe")/rosout_check
+timeout -k 2 35 "$rosout" writer "$dir" &
+writer=$!
+for ((i=0; i<160; ++i)); do
+  [[ -f $dir/published ]] && break
+  kill -0 "$writer" || break
+  sleep .1
+done
+test -f "$dir/published"
+timeout -k 2 18 "$rosout" reader "$dir"
+wait "$writer"
