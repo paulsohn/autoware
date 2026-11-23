@@ -2009,3 +2009,25 @@ tensorrt_cc_test(
         "@googletest//:gtest_main",
     ],
 )
+
+tensorrt_cc_test(
+    name = "yolox_sdk_compiler_test",
+    timeout = "long",
+    tags = ["manual"],
+    srcs = ["autoware_tensorrt_yolox/test_sdk_compiler.cpp"],
+    data = [
+        "@autoware_tensorrt_yolox//:test/test_image.jpg",
+        "@autoware_tensorrt_yolox_models//:yolox_s_car_ped_tl_detector_960_960_batch_1.onnx",
+    ],
+    local_defines = [
+        'CALIBRATION_IMAGE_PATH=\\"$(rootpath @autoware_tensorrt_yolox//:test/test_image.jpg)\\"',
+        'TRAFFIC_LIGHT_ONNX_PATH=\\"$(rootpath @autoware_tensorrt_yolox_models//:yolox_s_car_ped_tl_detector_960_960_batch_1.onnx)\\"',
+    ],
+    dynamic_deps = ["@rosdistro//cc:opencv"],
+    deps = [
+        "@cuda//:cuda_runtime",
+        "@googletest//:gtest_main",
+        "@rosdistro//cc:opencv_library",
+        "@tensorrt",
+    ],
+)

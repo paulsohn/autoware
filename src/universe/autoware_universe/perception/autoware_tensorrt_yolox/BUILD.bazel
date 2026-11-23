@@ -198,6 +198,7 @@ cc_test(
 )
 
 exports_files([
+    "test/test_image.jpg",
     "test/test_tensorrt_yolox_detector.cpp",
     "test/test_tensorrt_yolox_node.cpp",
 ])

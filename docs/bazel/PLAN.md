@@ -1694,9 +1694,9 @@ boundaries when their integration exposes a need.
   native cache cases and the existing fixture/launch/model-resource checks with
   Cyclone DDS and Agnocast disabled. Positive real-model profiles are traffic-light
   FP16, published segmentation INT8/clipping and fresh segmentation MinMax.
-  Retain TensorRT 10.16. Fresh traffic-light INT8 calibration remains an explicitly
-  unsupported SDK/GPU profile, checked as a caught-error regression rather than a
-  successful calibration/inference claim. The single-image calibration probe does
+  Retain TensorRT 10.16. Fresh traffic-light INT8 calibration at default builder
+  level 3 remains unsupported, checked as a caught-error regression. The later
+  6.5.4 gate qualifies an explicit level-0 workaround. The single-image calibration probe does
   not qualify production accuracy. No test/dependency skip is accepted.
   [Source pattern, profile decisions and exact gates](JOURNAL.md#2026-11-23-phase-652--yolox-engine-paths-and-calibration-inputoutput-separation).
 - **6.5.3 — Record the compilation-placement decision (complete, 2026-11-23).**
@@ -1712,6 +1712,21 @@ boundaries when their integration exposes a need.
   product needs a hardware-qualified prebuilt engine and has a provisioned GPU
   execution profile. Preserve separate compilation and inference acceptance.
   [Decision, evidence and limits](JOURNAL.md#2026-11-23-phase-653--retain-on-device-engine-preparation).
+
+- **6.5.4 — Isolate the traffic-light compiler failure (complete, 2026-11-23).**
+  A TensorRT/CUDA/OpenCV-only diagnostic reproduces the Myelin failure with the
+  matching flags and after removing Autoware's preference/input-range overrides.
+  FP16 at level 3 builds/runs; fresh MinMax INT8 at level 3 fails; level 0 builds
+  and runs with actual Int8/Half tensor formats. Expose builder_optimization_level
+  (0..5, default 3) through the YOLOX detector/node and three launchers. Validate
+  level-0 cold/warm traffic-light inference and image-free build_only reuse; keep
+  the default-level error regression. SDK/model/driver pins and original precision
+  defaults stay fixed. Lower optimization can worsen inference performance;
+  single-image success does not qualify production accuracy or latency. The
+  independent compiler matrix is manual/opt-in; the complete module gate remains
+  required. Deeper vendor compiler debugging is outside the bounded task; resume
+  broader Universe adoption.
+  [Reproducer, observations and workaround](JOURNAL.md#2026-11-23-phase-654--isolate-the-traffic-light-compiler-failure-and-expose-level-zero).
 
 A later Bazel experiment would declare ONNX/weights, compiler/plugins, build
 settings and calibration inputs, with engine/sidecar outputs. Pin SDK inputs;

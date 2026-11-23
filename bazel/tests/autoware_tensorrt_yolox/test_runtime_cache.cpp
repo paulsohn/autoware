@@ -263,6 +263,64 @@ TEST_F(YoloXCache, UnsupportedTrafficLightCalibrationFailsWithoutModifyingModelI
     std::distance(fs::directory_iterator(model.parent_path()), fs::directory_iterator()), 2);
 }
 
+TEST_F(YoloXCache, InvalidBuilderOptimizationLevelIsRejected)
+{
+  for (auto level : {int64_t{-1}, int64_t{6}, INT64_MAX}) {
+    config.builder_optimization_level = level;
+    EXPECT_THROW({ TrtYoloXDetector detector(config); }, std::invalid_argument);
+  }
+}
+
+TEST_F(YoloXCache, TrafficLightInt8AtLevelZeroSupportsInferenceAndBuildOnlyReuse)
+{
+  config.precision = "int8";
+  config.calibration_algorithm = "MinMax";
+  config.clip_value = 0.0;
+  config.builder_optimization_level = 0;
+  engine = directory / "cache/traffic-light-minmax-opt0.engine";
+  config.engine_path = engine;
+  const auto list = directory / "calibration_images.txt";
+  std::ofstream(list) << (package / "test/test_image.jpg").string() << '\n';
+  config.calibration_image_list_path = list;
+  {
+    TrtYoloXDetector detector(config);
+    infer(detector);
+  }
+  ASSERT_TRUE(fs::exists(engine));
+  const auto changed = fs::last_write_time(engine);
+  config.calibration_image_list_path.clear();
+  fs::remove(list);
+  {
+    TrtYoloXDetector detector(config);
+    infer(detector);
+  }
+  EXPECT_EQ(fs::last_write_time(engine), changed);
+  rclcpp::init(0, nullptr);
+  const auto source = ament_index_cpp::get_package_share_path("autoware_tensorrt_yolox_models");
+  rclcpp::NodeOptions options;
+  options.arguments(
+    {"--ros-args", "--params-file",
+     (package / "config/yolox_traffic_light_detector.param.yaml").string()});
+  options.append_parameter_override("model_path", model.string());
+  options.append_parameter_override("engine_path", engine.string());
+  options.append_parameter_override("precision", "int8");
+  options.append_parameter_override("calibration_algorithm", "MinMax");
+  options.append_parameter_override("clip_value", 0.0);
+  options.append_parameter_override("builder_optimization_level", 0);
+  options.append_parameter_override(
+    "label_path", (source / "car_ped_tl_detector_labels.txt").string());
+  options.append_parameter_override(
+    "roi_remap_path", (package / "config/traffic_light_roi_label_remap.csv").string());
+  options.append_parameter_override("build_only", true);
+  TrtYoloXNode node(options);
+  EXPECT_FALSE(rclcpp::ok());
+  EXPECT_EQ(node.get_parameter("builder_optimization_level").as_int(), 0);
+  EXPECT_EQ(fs::last_write_time(engine), changed);
+  EXPECT_EQ(read(supplied), supplied_bytes);
+  EXPECT_EQ(
+    std::distance(fs::directory_iterator(model.parent_path()), fs::directory_iterator()), 2);
+}
+
 TEST_F(YoloXCache, PublishedSegmentationInt8ProfileSupportsColdAndWarmInference)
 {
   use_segmentation_model();

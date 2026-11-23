@@ -19315,3 +19315,10 @@ config/<name>.param.yaml. Deep-copy that mapping and assign
 config['/**']['ros__parameters']['builder_optimization_level'] to each of
 0, 3 and 5, requiring acceptance; assign -1, 6, 2**63-1, 0.5 and '0', requiring
 ValidationError. This changes no published parameter defaults or runtime inputs.
+
+Bazel-support completion for this task: source correction 009b2cd7 is separate
+from the raw-JPEG export, opt-in SDK diagnostic registration and two added
+application tests. Reuse the complete passing gate and diagnostic-only metadata
+rerun above; subsequent changes are parameter-schema validation, formatting and
+documentation only. The source schemas accept the existing configurations and
+optional valid levels without making the new parameter mandatory.

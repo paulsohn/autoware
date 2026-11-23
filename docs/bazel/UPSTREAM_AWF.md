@@ -1731,3 +1731,44 @@ checks pass on LLVM/libc++ 21.1.8, RCR Lyrical/Cyclone DDS, CUDA 13.2.2, TensorR
 correctness change, not a Lyrical-only fix or a production calibration-accuracy
 claim. Upstream CMake/GCC and other SDK/GPU profiles were not run.
 [Reproducer, exact source pattern and limitations](JOURNAL.md#2026-11-23-phase-652--yolox-engine-paths-and-calibration-inputoutput-separation).
+
+## YOLOX exposes a bounded TensorRT compiler-workaround setting
+
+- [x] Associate related vendor report: [NVIDIA TensorRT#4906](https://github.com/NVIDIA/TensorRT/issues/4906),
+  still open when checked 2026-11-23. Its other YOLO/Blackwell models show the
+  matching Myelin signature; the identical proprietary compiler defect is not
+  established by that similarity.
+- [ ] Associate an AWF fix. Universe main
+  8361f0ef2dd4558864f0d00d8bfb9e036c7102af does not expose
+  builder_optimization_level in TrtYoloXNode; a scoped yolox/builder_optimization
+  PR search found no match on 2026-11-23. Not submitted.
+- Local source correction: 009b2cd7, autoware_tensorrt_yolox. This is a vendor
+  compatibility workaround and source-compatible option, not a Lyrical-only fix.
+
+A separate TensorRT/CUDA/OpenCV-only binary, with no Autoware/ROS/ament library
+or cache wrapper linked, reproduces the traffic-light model's fresh MinMax INT8
+failure at optimization level 3. Removing precision preference and the input
+range override still fails. FP16 at level 3 succeeds. Level 0 builds/restores/runs
+an INT8-enabled engine with Int8 and Half tensor formats and finite output;
+peak usable traffic-light confidence is 0.917599 versus 0.35 threshold. The
+pinned SDK's documented level-0 tactic policy avoids dynamic kernel generation;
+this localizes the issue to the SDK optimization path without identifying the
+faulty internal transform. No driver, model or SDK-version substitution is used.
+
+Expose an optional 0..5 builder optimization level in the detector, node,
+constructor, launchers and parameter schemas. Default 3 preserves all existing
+profiles. Validate the full integer range before narrowing/SDK calls and apply
+it through the existing public builder-config API. Keep optimization level in
+the caller-owned cache identity. The complete gate passes fourteen original
+YOLOX cases, eleven cache/workaround cases, four SDK diagnostic cases, one ABI
+case and six Python support cases with zero native skips. It checks real
+traffic-light cold/warm inference and build_only reuse at level 0, plus invalid
+-1/6/INT64_MAX values and the retained level-3 error regression.
+
+Profile: TensorRT 10.16.1.11, CUDA 13.2.2, LLVM/libc++ 21.1.8 plus pinned GNU ABI
+runtime, RTX 5070 Laptop/SM12.0, driver 595.99.02. No inference-performance or
+production calibration-accuracy qualification, CMake/GCC build or other hardware
+profile is claimed. Lower optimization may hurt runtime performance; users must
+opt in and qualify their workload. The diagnostic is available for an upstream
+report; no issue/comment was posted.
+[Exact inputs, source pattern, matrix and commands](JOURNAL.md#2026-11-23-phase-654--isolate-the-traffic-light-compiler-failure-and-expose-level-zero).

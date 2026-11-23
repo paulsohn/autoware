@@ -1646,7 +1646,7 @@ providers satisfy the actual consumer.
 
 For native GTest targets that build engines, load `tensorrt_cc_test` and
 `TENSORRT_VERSION_MAJOR` from `@tensorrt//:defs.bzl`. The helper supports source,
-dependency/dynamic-dependency, data and local-definition inputs; its native
+dependency/dynamic-dependency, data, local-definition and extra-tag inputs; its native
 binary uses the SDK-owned runtime launcher. Declare model fixtures with data and
 rootpath definitions. The launcher resolves runtime anchors through runfiles,
 adds the SDK/GNU directories for bare-name builder dlopen, preloads the selected
@@ -1725,8 +1725,23 @@ selection; retain those declared runtime resources even on a warm launch.
 The validated profiles are traffic-light FP16, published segmentation INT8 with
 clip_value=6, and fresh segmentation MinMax calibration as a functional smoke
 check. Single-image calibration is not production accuracy qualification. Fresh
-traffic-light INT8 calibration still fails on the pinned 10.16/Blackwell profile;
-its explicit error regression must be reviewed when SDK/model/GPU inputs change.
+traffic-light INT8 calibration fails at the default builder optimization level 3
+on the pinned 10.16/Blackwell profile. Its explicit error regression must be
+reviewed when SDK/model/GPU inputs change. An opt-in workaround is validated:
+set builder_optimization_level=0 with precision=int8, calibration_algorithm=MinMax
+and clip_value=0. Supply a calibration image list for initial generation, or a
+compatible supplied/generated table. The detector and TrtYoloXNode accept levels
+0..5, default 3. With the three provided single-node launchers, pass the
+builder_optimization_level launch argument explicitly; it overrides the YAML value.
+The optional setting is also declared in the package's parameter schemas.
+
+Choose a different engine cache key for each optimization level. Level 0 disables
+dynamic kernel generation and may worsen inference performance; it is a workaround
+for the qualified profile, not a new default or production performance claim.
+To revisit the failure/setting independently of Autoware implementation code,
+explicitly run //bazel/tests:yolox_sdk_compiler_test. This manual diagnostic saves
+engines, calibration tables and detailed level-0 tensor formats under its test
+outputs. It is not a routine wildcard test or an inference-performance benchmark.
 Run the full original module/consumer suites and added cache gate from the
 [YOLOX journal](JOURNAL.md#2026-11-23-phase-652--yolox-engine-paths-and-calibration-inputoutput-separation).
 
