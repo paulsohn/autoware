@@ -18880,3 +18880,12 @@ the caller's responsibility. This proves explicit cache placement at the common
 library API, not automatic content/settings identity, INT8 calibration, full
 YOLOX node path wiring or crash-safe concurrent cache publication. No Fast DDS,
 OCI/simulator, upstream CMake/GCC or pre-commit check is claimed.
+
+Bazel-support completion for the same common-library task: export only the
+existing dummy_network.onnx fixture from its owning module and register the
+standalone test at //bazel/tests:tensorrt_runtime_cache_test through the existing
+generic TensorRT runner. Declare its common-library shared/runtime providers,
+CUDA utilities and GTest; preserve escaped quotes in the DUMMY_ONNX_PATH compiler
+definition as in the original module. The source correction is 59ad8b43; no
+production source changes in this support commit. Reuse the complete passing
+command/results above, since only whitespace changed after that gate.

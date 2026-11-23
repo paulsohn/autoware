@@ -1969,3 +1969,19 @@ py_test(
     ],
     deps = ["//third_party/ostree:tool"],
 )
+
+tensorrt_cc_test(
+    name = "tensorrt_runtime_cache_test",
+    srcs = ["autoware_tensorrt_common/test_runtime_cache.cpp"],
+    data = ["@autoware_tensorrt_common//:test/data/dummy_network.onnx"],
+    local_defines = ['DUMMY_ONNX_PATH=\\"$(rootpath @autoware_tensorrt_common//:test/data/dummy_network.onnx)\\"'],
+    dynamic_deps = [
+        "@autoware_tensorrt_common",
+        "@autoware_tensorrt_common//:runtime_dynamic_deps",
+    ],
+    deps = [
+        "@autoware_tensorrt_common//:autoware_tensorrt_common_library",
+        "@autoware_cuda_utils",
+        "@googletest//:gtest_main",
+    ],
+)

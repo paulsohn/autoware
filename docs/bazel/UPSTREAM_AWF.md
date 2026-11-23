@@ -1671,6 +1671,7 @@ while deriving a sidecar name. After successful setup, the public configuration
 reports cache/dummy.json instead of the requested cache/dummy.engine. A caller
 reusing that configuration no longer has the serialized engine's identity.
 Copy the path before replacing its extension; preserve output filenames.
+Local source correction: `59ad8b43`, separate from Bazel support declarations.
 
 The standalone GPU regression fails that public-path assertion before the fix
 and passes afterward. It also proves read-only model/separate-cache cold/warm

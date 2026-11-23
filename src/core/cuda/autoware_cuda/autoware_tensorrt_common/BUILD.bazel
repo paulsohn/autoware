@@ -53,3 +53,5 @@ tensorrt_cc_test(
         "@googletest//:gtest_main",
     ],
 )
+
+exports_files(["test/data/dummy_network.onnx"])
