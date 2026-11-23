@@ -283,7 +283,7 @@ public:
     }
 
     current_voxel_grid_array_.assign(
-      map_grids_x_ * map_grid_size_y_, std::make_shared<MapGridVoxelInfo>());
+      static_cast<size_t>(map_grids_x_) * static_cast<size_t>(map_grids_y_), nullptr);
     for (const auto & kv : current_voxel_grid_dict_) {
       int index = static_cast<int>(
         std::floor((kv.second.min_b_x - origin_x_) / map_grid_size_x_) +

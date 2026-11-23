@@ -2196,6 +2196,8 @@ Local source fix: `ad53a176e`.
 
 ### Compare-map tests leave the global ROS context active
 
+Local source test fix: `b470cfbcf`.
+
 - [ ] Associate with a matching upstream fix. Reviewed 2026-11-24: current
   [distance-filter test](https://github.com/autowarefoundation/autoware_universe/blob/main/perception/autoware_compare_map_segmentation/test/test_distance_based_compare_map_filter.cpp)
   still has init without shutdown; scoped `compare_map_segmentation shutdown`
@@ -2211,3 +2213,34 @@ Local source fix: `ad53a176e`.
   also passes ten new static/dynamic/elevation/lanelet scenarios. Reproducer
   and exact command are in the Phase 9.5 map-comparison journal. No upstream
   CMake or older ROS validation is claimed.
+
+### Dynamic map indexing and lanelet sampling lose valid map coverage
+
+- [ ] Associate with matching fixes. Reviewed 2026-11-24: current main retains
+  the erroneous array dimensions/empty placeholders in
+  [voxel_grid_map_loader.hpp](https://github.com/autowarefoundation/autoware_universe/blob/main/perception/autoware_compare_map_segmentation/include/autoware/compare_map_segmentation/voxel_grid_map_loader.hpp),
+  reversed neighbor guard, omitted origin remainders in both KD-tree overrides,
+  unsquared threshold in the distance-only dynamic path, and integer division
+  in lanelet sampling. Searches for compare_map dynamic, map_grids,
+  DistanceBasedDynamicMapLoader and lanelet_elevation_filter find no matching
+  correction. [universe#11289](https://github.com/autowarefoundation/autoware_universe/pull/11289)
+  introduces the lanelet code including that integer division (actual files
+  reviewed); it is related feature history, not a fix association.
+- Scope: local autoware_compare_map_segmentation, LLVM 21.1.8/libc++,
+  Lyrical RCR/Cyclone DDS. A real differential-map service supplies 10 m cells
+  with min x/y -5. Array sizing mixes cell counts with metres and fails with
+  vector bounds errors; KD-tree overrides additionally omit the grid-origin
+  offsets, so they miss loaded cells. Use counts on both axes, null unloaded
+  entries and a null-neighbor guard; initialize the same offsets as the base.
+- Compare squared nearest-neighbor distances with threshold squared. The new
+  0.6 m/0.5 m case rejects the prior over-removal policy. The shifted/sparse
+  fixture also checks unloaded and boundary-neighbor cells through all four
+  dynamic algorithms and their static counterparts.
+- Sampling a multi-metre line with 1/num_samples makes every interpolation
+  fraction zero. Use floating-point division; a nonempty LaneletMapBin fixture
+  then retains a ground point in the middle of the road and rejects a high
+  point and a point outside coverage.
+- The complete module command in the Phase 9.5 map-comparison journal passes
+  all four original cases and ten added cases, with no source-test assertions
+  removed or weakened. These are algorithm/unit corrections independent of
+  Bazel and Lyrical, not claims of an older ROS/CMake verification or submission.

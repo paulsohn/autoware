@@ -111,7 +111,7 @@ bool DistanceBasedDynamicMapLoader::is_close_to_map(
     return false;
   }
 
-  return nn_distances[0] <= distance_threshold;
+  return nn_distances[0] <= distance_threshold * distance_threshold;
 }
 
 DistanceBasedCompareMapFilterComponent::DistanceBasedCompareMapFilterComponent(

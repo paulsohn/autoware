@@ -78,6 +78,8 @@ public:
       std::lock_guard<std::mutex> lock(dynamic_map_loader_mutex_);
       map_grid_size_x_ = map_cell_to_add.metadata.max_x - map_cell_to_add.metadata.min_x;
       map_grid_size_y_ = map_cell_to_add.metadata.max_y - map_cell_to_add.metadata.min_y;
+      origin_x_remainder_ = std::remainder(map_cell_to_add.metadata.min_x, map_grid_size_x_);
+      origin_y_remainder_ = std::remainder(map_cell_to_add.metadata.min_y, map_grid_size_y_);
     }
 
     pcl::PointCloud<pcl::PointXYZ> map_cell_pc_tmp;
