@@ -18728,13 +18728,13 @@ evidence, not rerun or newly claimed here. This completes Phase 7.6 and Phase 7'
 selected runtime distribution scope; full Universe integration remains later
 work. No TensorRT engine-generation implementation changes in this task.
 
-## 2026-11-23: Phase 6.5 — Runtime engine/cache experiment plan
+## 2026-11-23: Phase 6.5.1 — YOLOX runtime engine baseline
 
 Purpose: investigate TensorRT engine preparation without assuming that engine
 compilation must become a Bazel build action. Keep runtime generation/build_only
 as the baseline, establish a writable-cache contract for immutable model
 resources, then decide from measured behavior. The task sequence and acceptance
-scope are authoritative in [Phase 6.5](PLAN.md#phase-65-tensorrt-runtime-enginecache-experiments-planned).
+scope are authoritative in [Phase 6.5](PLAN.md#phase-65-tensorrt-runtime-enginecache-experiments-in-progress).
 Completed GPU and runtime-distribution gates retain their original scope.
 
 Inspected inputs: TrtCommonConfig defaults an empty engine_path to the ONNX path
@@ -18772,8 +18772,57 @@ that does not establish that none exists. References for a later experiment:
 - [torchtrtc BUILD](https://github.com/pytorch/TensorRT/blob/13658aa29828e09c514f2855946faa7b719f5a4b/cpp/bin/torchtrtc/BUILD)
 - [Compiler CLI and engine output](https://github.com/pytorch/TensorRT/blob/13658aa29828e09c514f2855946faa7b719f5a4b/docsrc/cli/torchtrtc.rst)
 
-This entry records a plan only. Verification: git diff --check and review of the
-linked phase sequence/source paths; no builds, GPU execution, middleware checks
-or pre-commit run. Phase 6.5 experiments and the compilation-placement decision
-remain pending; update this entry with exact commands and observations when
-implementation begins. DEVELOPING.md continues to describe established workflows.
+Baseline implementation: extend the existing root-owned with_models.py fixture
+with opt-in YOLOX_CACHE_EXPERIMENT=1. Keep its normal one-pass behavior. In the
+opt-in mode, copy indexed inputs once, then run the unchanged complete detector
+suite twice in the same temporary model/cache directory. Reject failures, skipped
+or empty suites on each pass. Require engine files after generation and identical
+size/SHA-256/mtime_ns records after the warm pass. Preserve cold.xml, warm.xml and
+runtime_cache_baseline.json under TEST_UNDECLARED_OUTPUTS_DIR. The report includes
+both ONNX hashes and full native-process wall times; timing excludes fixture
+copying and output hashing. Do not compare engines from independent compilations
+for bit identity or treat the elapsed ratio as a general benchmark.
+
+Environment: Ubuntu 24.04 x86_64, LLVM/libc++ 21.1.8, RCR Lyrical, CUDA 13.2.2,
+TensorRT 10.16.1.11-1+cuda13.2, RTX 5070 Laptop GPU (compute capability 12.0),
+NVIDIA driver 595.99.02. Confirm GPU/device access in the actual test execution
+context with nvidia-smi. Keep model revision and LFS hashes pinned by the existing
+model module. Selected model hashes: detection 0b8478553f2f0374a1236e65f669f11335b1fea7756ca7bcdfcf9646657ed594;
+multitask 73b3812432cedf65cebf02ca4cb630542fc3b1671c4c0fbf7cee50fa38e416a8.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel query 'tests(@autoware_tensorrt_common//... + @autoware_tensorrt_yolox//...)'
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --nocache_test_results --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp \
+  --test_env=ROS_DOMAIN_ID=113 --test_env=YOLOX_CACHE_EXPERIMENT=1 \
+  --test_output=errors //bazel/tests:yolox_detector_test
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --nocache_test_results --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp \
+  --test_env=ROS_DOMAIN_ID=113 --test_output=errors \
+  @autoware_tensorrt_common//... @autoware_tensorrt_yolox//... \
+  //bazel/tests:yolox_node_test //bazel/tests:yolox_fixture_adapter_test \
+  //bazel/tests:yolox_launch_paths_test //bazel/tests:yolox_model_resources_test
+python3 -m flake8 --max-line-length=150 bazel/tests/autoware_tensorrt_yolox/with_models.py
+git diff --check
+```
+
+Results: cold native-process time 38.0397 s, warm 1.5931 s; all three original
+detector cases pass on each pass with no skips. Engine sizes are 18,960,588 bytes
+(detection) and 33,871,820 bytes (multitask). Each engine's SHA-256 and nanosecond
+mtime remain unchanged on warm reuse. View the JSON and both native XML reports
+under bazel-testlogs/bazel/tests/yolox_detector_test/test.outputs/. The separate
+complete gate passes all thirteen common-library cases, all ten labels and the
+original real-model ROS node case, plus both fixture-rejection cases and the
+launcher/model-resource checks. The node verifies actual FP16 inference and
+Cyclone DDS delivery; no dependency-related skips occur. Python and whitespace
+checks pass. No production source, model payload, GPU build rule, Fast DDS,
+simulator driving, OCI export or pre-commit change.
+
+This establishes that cached runtime generation works on this GPU/SDK profile;
+it does not establish read-only deployment placement, automatic model/settings
+invalidation, INT8 calibration accuracy or cross-device engine compatibility.
+Next, exercise explicit output paths with read-only model inputs and diagnose
+cache validity/failure behavior before selecting the long-term compilation path.

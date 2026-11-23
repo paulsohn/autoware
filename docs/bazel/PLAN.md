@@ -1346,7 +1346,7 @@ resources explicitly. No full driving behavior or GUI rendering is claimed.
 Prior unchanged Agnocast/module evidence remains applicable; no new middleware
 matrix is required to close this phase. Phase 6 is next.
 
-## Phase 6: CUDA and TensorRT on x86 (6.1–6.4 complete; 6.5 planned)
+## Phase 6: CUDA and TensorRT on x86 (6.1–6.4 complete; 6.5 in progress)
 
 Bring the required GPU SDK and local CUDA consumers into the Bazel graph,
 without host toolkit discovery or apt/pip installation. GPU drivers/devices
@@ -1657,7 +1657,7 @@ Phase 8. No new Fast DDS acceptance run was performed; it still requires
 explicit approval. The x86 TensorRT 10.16.1 versus JetPack 7.2.1's 10.16.2 gap
 remains explicit for Phase 8.
 
-### Phase 6.5: TensorRT runtime engine/cache experiments (planned)
+### Phase 6.5: TensorRT runtime engine/cache experiments (in progress)
 
 Decision recorded 2026-11-23: retain on-device engine generation and the current
 build_only behavior as the starting point. Make the runtime/cache path compatible
@@ -1675,7 +1675,7 @@ Keep existing runtime generation available while these experiments establish
 which changes are necessary. Broader Universe consumers follow their own module
 boundaries when their integration exposes a need.
 
-- **6.5.1 — Establish the runtime baseline.** Inventory engine, JSON and applicable
+- **6.5.1 — Establish the runtime baseline (complete, 2026-11-23).** Inventory engine, JSON and applicable
   calibration/histogram outputs and the existing complete module suites. Record
   model/SDK/plugin identities, GPU/driver profile, precision and shape settings.
   Measure cold generation, warm reuse and representative inference behavior.
@@ -1703,8 +1703,13 @@ GPU/SDK profiles. No GPU executor framework or cross-platform engine production
 is introduced by this plan.
 
 Record reproducible commands, measurements, diagnosed failures and the final
-choice in the same module-task journal as the experiments progress. No engine
-implementation or new GPU build rule has been validated by this planning entry.
+choice in the same module-task journal as the experiments progress. The initial YOLOX baseline takes 38.04 s cold and 1.59 s warm, with all three
+existing detector cases passing on each pass and unchanged engine hashes/mtimes.
+This is one full-test-process observation on the selected GPU, not a portable
+performance threshold. The complete existing common/YOLOX suites also pass with
+no skips. Runtime cache placement/invalidation work and the final choice remain
+pending; no new GPU build rule is accepted.
+[Reproducer and results](JOURNAL.md#2026-11-23-phase-651--yolox-runtime-engine-baseline).
 
 ## Phase 7 — Runtime packaging and planning simulation (complete, 2026-11-23)
 
