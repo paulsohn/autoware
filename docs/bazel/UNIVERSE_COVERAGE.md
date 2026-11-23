@@ -194,7 +194,7 @@ still includes the 9.20 contract/evidence audit.
 Publish the actual time/logging/type APIs and resources, with clock-boundary, logger lifecycle and compiled-consumer checks. Inspect exported effects before adding any source-less facade. Keep command-mode types below later gates/managers.
 
 - [ ] [autoware_command_mode_types](../../src/universe/autoware_universe/system/autoware_command_mode_types/package.xml)
-- [ ] [autoware_glog_component](../../src/universe/autoware_universe/common/autoware_glog_component/package.xml)
+- [x] [autoware_glog_component](../../src/universe/autoware_universe/common/autoware_glog_component/package.xml)
 - [x] [autoware_time_utils](../../src/universe/autoware_universe/common/autoware_time_utils/package.xml)
 
 ### Phase 9.4: CPU point-cloud and IMU preprocessing

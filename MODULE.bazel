@@ -1891,3 +1891,9 @@ local_path_override(
     module_name = "autoware_time_utils",
     path = "src/universe/autoware_universe/common/autoware_time_utils",
 )
+
+bazel_dep(name = "autoware_glog_component", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_glog_component",
+    path = "src/universe/autoware_universe/common/autoware_glog_component",
+)

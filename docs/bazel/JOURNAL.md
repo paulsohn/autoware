@@ -20160,3 +20160,38 @@ graph/cache work). The local dependency task is complete on this Linux LLVM/
 Lyrical/Cyclone profile, including enabled Agnocast behavior. No GPU, Fast DDS,
 simulator, export or full-system matrix was run. Broader platform/CMake package
 installation parity is not claimed. Next: qualify the glog ROS component itself.
+
+## 2026-11-23: Phase 9.3 — ROS glog component
+
+Purpose: expose the existing glog-initializing ROS component and its standalone
+executable/resource index. Inspect the source/header, README example and CMake/
+package declarations; no original functional suite is registered. Prerequisite:
+the local glog module and existing-container consumer gate above are complete.
+Acceptance is every module target and two external logger contract cases.
+
+Pattern: consume rosdistro's glog_library compile provider and cc:glog shared
+owner, which now resolve to the local snapshot. Do not create another logging
+copy or process-global flag registry in the component DSO. Register the original
+plugin name, standalone executable and ament component record through RCR rules.
+Keep added tests under bazel/tests/autoware_glog_component.
+
+Checks: cold initialization installs an abort handler, two simultaneous node
+instances share the logger, output still works after their destruction, and an
+externally initialized logger retains its configured severity threshold. Capture
+logs through the public LogSink API, inspect signal installation with sigaction,
+and check the indexed component registration. The initialization-query helper
+in glog internals is not a public API; tests need no internal header dependency.
+No implementation, original test, CMake or package.xml change is needed.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  @autoware_glog_component//... //bazel/tests:glog_component_behavior_test
+```
+
+Result: complete library/component/executable/index build and both cases pass,
+zero failures/errors/skips. Full gate 5.2 s; behavior target 0.1 s. Targeted
+clang-format and git diff --check pass. Reuse the unchanged glog and Agnocast
+container evidence above. No Fast DDS, GPU or costly system/deployment check is
+required. Next: independently usable command-mode/source constant headers.

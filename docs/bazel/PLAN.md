@@ -2217,7 +2217,7 @@ no new communication-layer or costly product/deployment gate is implied.
 | Module | Acceptance status |
 | --- | --- |
 | autoware_time_utils | Complete: library/index and four public interpolation/stopwatch cases. |
-| autoware_glog_component | Local glog prerequisite complete; component initialization/reuse and indexed executable remain pending. |
+| autoware_glog_component | Complete: local dependency gate, indexed component/executable and two logger lifecycle/configuration cases. |
 | autoware_command_mode_types | Pending: independently compilable public headers and a representative command-mode consumer. |
 
 ### Execution order through complete Universe coverage

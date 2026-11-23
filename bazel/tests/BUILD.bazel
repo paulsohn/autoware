@@ -2161,3 +2161,12 @@ cc_test(
     srcs = ["autoware_time_utils/test_time_utils.cpp"],
     deps = ["@autoware_time_utils", "@googletest//:gtest_main"],
 )
+
+cc_test(
+    name = "glog_component_behavior_test",
+    srcs = ["autoware_glog_component/test_component.cpp"],
+    data = ["@autoware_glog_component//:ament_index"],
+    dynamic_deps = ["@autoware_glog_component", "@autoware_glog_component//:runtime_dynamic_deps"],
+    deps = ["@autoware_glog_component//:autoware_glog_component_library", "@ament_index_cpp//:ament_index_cpp_library", "@googletest//:gtest_main"],
+    tags = ["no-sandbox", "no-remote"],
+)
