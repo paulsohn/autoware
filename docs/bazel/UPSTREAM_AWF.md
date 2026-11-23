@@ -1992,5 +1992,66 @@ regression fails on all four forms before the fix (matrix error about 0.022509).
 All 12 original buffer cases and both external cases pass with Cyclone/RCLCPP
 and Agnocast-only behavior; all 25 unchanged preprocessor distortion cases pass,
 including seven that failed before normalization. No tolerance changes or skips.
+Local source correction: 05309f1d.
 This is transform correctness, not a Lyrical-only API change.
 [Reproduction and gates](JOURNAL.md#2026-11-23-phase-94--managed-transform-buffer).
+
+## CPU voxel filtering accepts invalid coordinates and scales TF by intensity
+
+- [x] Transform correction associated with open
+  [Universe#13398](https://github.com/autowarefoundation/autoware_universe/pull/13398),
+  checked 2026-11-23. The local xyz/homogeneous-coordinate correction matches
+  its actual one-file patch. It is not merged into main; its reported tests
+  are not local verification evidence.
+- [ ] Associate the finite-coordinate correction. Current
+  [implementation](https://github.com/autowarefoundation/autoware_universe/blob/main/sensing/autoware_pointcloud_preprocessor/src/downsample_filter/faster_voxel_grid_downsample_filter.cpp)
+  still uses a comma instead of &&. Scoped faster-voxel and voxel/finite searches
+  find no matching PR; #13398 does not cover this predicate.
+
+Package: autoware_pointcloud_preprocessor. Public helper regressions show an
+extra non-finite voxel and translation scaled by mean intensity: x=200.5 rather
+than 10.5 for a 10-unit translation at intensity 20. Require all xyz coordinates
+to be finite before indexing; apply homogeneous TF with w=1 and retain intensity.
+The transform regression also checks rotation. These are algorithm defects,
+not Lyrical API changes. Both regressions and the complete selected RCLCPP module gate pass.
+[Reproduction](JOURNAL.md#2026-11-23-phase-94--cpu-point-cloud-preprocessor).
+
+## Point-cloud filters need current message-filter and PCL headers/APIs
+
+- [ ] Associate with a matching upstream compatibility change. Checked
+  2026-11-23: current
+  [filter header](https://github.com/autowarefoundation/autoware_universe/blob/main/sensing/autoware_pointcloud_preprocessor/include/autoware/pointcloud_preprocessor/filter.hpp)
+  retains legacy .h includes and the two-argument Subscriber template; current
+  [source](https://github.com/autowarefoundation/autoware_universe/blob/main/sensing/autoware_pointcloud_preprocessor/src/filter.cpp)
+  uses pcl/io/io.h and raw QoS profiles. Scoped pointcloud/Lyrical,
+  message_filters and literal PCL-header PR searches found no matching fix.
+  [Universe#13331](https://github.com/autowarefoundation/autoware_universe/pull/13331)
+  is the related FilterBase feature. The broader
+  [AWF transition](https://github.com/autowarefoundation/autoware/issues/7404)
+  and [core tracker](https://github.com/autowarefoundation/autoware_core/issues/1538)
+  were rechecked; none is local test evidence.
+
+Package: autoware_pointcloud_preprocessor. The selected Lyrical/PCL SDK fails
+on removed message-filter .h names, the Subscriber template and pcl/io/io.h.
+Use canonical .hpp message-filter headers and pcl/common/io.h. Select the
+one-argument RCLCPP subscriber and QoS-object API for rclcpp major 32+, while
+retaining older template/profile branches and the wrapper's profile API.
+The selected full RCLCPP module gate passes;
+older distributions are not locally qualified.
+[Reproduction](JOURNAL.md#2026-11-23-phase-94--cpu-point-cloud-preprocessor).
+
+## Concatenation tests assume an unspecified sensor-cloud row order
+
+- [x] Associated with merged
+  [Universe#13619](https://github.com/autowarefoundation/autoware_universe/pull/13619),
+  checked 2026-11-23. Its actual test-only diff matches the observed failure;
+  the local original-test correction follows that patch.
+
+Package: autoware_pointcloud_preprocessor. Six Python scenarios fail with correct
+point coordinates because unordered-map iteration changes sensor-cloud order.
+Use the upstream fixture-specific rounded y/z ordering and assert_allclose;
+retain all counts, scenarios and numerical tolerances. This is test portability,
+not a Lyrical API change or a production ordering requirement. All eight original
+scenarios and three external assertion checks pass in the local Cyclone/RCLCPP
+gate. The merged PR's reported checks are not substituted for this local result.
+[Reproduction](JOURNAL.md#2026-11-23-phase-94--cpu-point-cloud-preprocessor).

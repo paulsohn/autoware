@@ -20416,3 +20416,129 @@ takes 7.6 s and reuses its passing numerical result. The resolved shared rule
 baseline remains 0.27.0.rcr.0. No ROS transport, GPU or deployment gate is needed
 for this generic dependency. The actual preprocessor consumer suite remains the
 next acceptance gate; optional CGAL packages/backends are not qualified here.
+
+## 2026-11-23: Phase 9.4 — CPU point-cloud preprocessor
+
+Purpose: expose the complete local CPU preprocessing package after PCL extensions,
+managed_transform_buffer and CGAL. Inspect CMake, manifest, source/public headers,
+all 23 registrations, 16 original C++ test files, the eight-scenario Python
+component test and optional node-free example. Acceptance: every module target,
+the full original suite with Cyclone/RCLCPP, plus the external polygon/crop-box
+checks, standalone example and an enabled Agnocast-only crop-box exchange.
+The acceptance gate covers this entire module; the smaller dependency gates alone
+do not complete it.
+
+Pattern: preserve the filter-base, fast voxel helper, ROS concatenation glue,
+main filter and node-free concatenation boundaries. Declare the core sources
+once and share that target with ROS glue. Keep its public headers/dependencies
+independent of RCLCPP/ROS TF/executors; build the original example against only
+that API. Keep other public headers with their complete SDK/component providers.
+Use local package snapshots transitively, including the transform buffer. Use
+the accepted CGAL provider and RCR Sophus, PCL/OpenCV/message/TF providers.
+Register all original classes/executable names; wrapper-aware nodes also export
+autoware_node_plugins metadata. Index original configuration/launch resources.
+Preserve original test drivers; two suites are CMake-disabled under enabled
+Agnocast, so their required original-suite profile is RCLCPP. The separate
+Agnocast-only behavior case exercises the new wrapper-filter transport path.
+All test inputs are synthetic; no map, model or simulator is needed.
+
+Integration setup: retain the physical include directory for sibling relative
+includes across the core/ROS header boundary; separate virtual include trees
+hide cloud_collector_core.hpp from its sibling. Declare all include-tree files,
+including the three .ipp template bodies. The core's point-types dependency
+carries PCL common code, so its DSO must delegate to the same shared PCL SDK
+owner as the filter DSO. Otherwise analysis reports two static owners of PCL
+common. Supply image_transport's package index through the ROS header/library
+provider: its shared library initializes a plugin loader before main, even in
+a helper-only test. Without the index that test aborts before assertions.
+
+Demonstrated implementation failures: the fast voxel helper accepts non-finite
+x/y because a comma expression discards their checks, producing two output voxels
+instead of one for the mixed-validity fixture. Replace that comma with &&. Its
+centroid stores intensity in the fourth vector element; multiplying that vector
+by a homogeneous transform scales translation by intensity. A mean intensity of
+20 yields x=200.5 instead of 10.5 for a 10-unit translation. Transform xyz with
+homogeneous coordinate 1 while preserving intensity. Both public-API regressions
+fail before these corrections; the transform case additionally checks rotation.
+Upstream main retains both defects on 2026-11-23. Open Universe PR #13398 exactly
+matches the transform correction; the finite predicate is outside that PR.
+Keep the source corrections separate from Bazel definitions.
+
+Lyrical exposes removed message_filters .h includes, then the one-argument
+Subscriber template and QoS-object subscription API. Use canonical .hpp headers;
+select the one-argument RCLCPP subscriber on rclcpp major 32+, retaining the
+older template branch. Pass a QoS object on that standard path and the original
+profile to wrapper subscribers. Preserve queue depth and SensorDataQoS policy.
+The external crop-box test exercises plain, exact-index-sync and approximate-
+index-sync delivery, including no output before matching indices, payload fields
+and timestamp preservation, in both selected runtime modes. AWF trackers
+#7404/#1538 and relevant Universe PR searches were reviewed; #13331 is the
+related FilterBase feature, not this compatibility fix. Older ROS distributions
+are not locally qualified by this gate.
+
+The standalone fast-voxel target keeps its CMake dependency boundary (PCL,
+pcl_conversions, rclcpp and sensor messages), with a shared transform-info header
+provider. Its regression target uses that smaller runtime closure; image
+transport is needed only on the ROS filter side. Also replace removed
+pcl/io/io.h with pcl/common/io.h, which declares the used getFieldsList API.
+Current upstream retains the old include; a scoped literal-header PR search
+finds no match. The focused filter-base build passes after these compatibility
+changes, but completion still requires the full gate below.
+
+Test setup lessons: expose the ROS component manager library and package index to
+the original characterization driver. Its 56 cases include actual load/unload
+and timed behavior. test_blockage_diag's namespaced main is not a C++ entrypoint;
+use the original CMake gtest_main contract. The Python launch test needs the
+rclcpp_components ament_package (installed container executable), not just its
+index. Explicitly carry image_transport's index in the preprocessor index too:
+a component loaded by another process cannot inherit a C++ consumer's data edge.
+The unchanged distortion suite exposes rounded-quaternion conversion failures
+in its dependency; see the managed-transform-buffer entry and source fix
+05309f1d. Preserve its existing numerical tolerances.
+
+The Python suite initially fails six scenarios despite correct coordinates:
+expected and actual sensor clouds appear in different row orders. Production
+concatenation traverses an unordered_map and promises no sensor order. Upstream
+Universe PR #13619, merged and checked 2026-11-23, corrects this exact assumption.
+Align the original test with its fixture-specific sort_points helper and
+assert_allclose calls. The fixture has integral sensor y/z positions; round
+those stable keys to order clouds while motion compensation changes x. Keep
+all eight scenarios, point counts and numerical tolerances. Three external
+negative checks establish that the sorted assertions still reject missing,
+duplicated or changed points and preserve tolerance/empty-shape behavior.
+Do not impose an ordering change on production code to satisfy the old test.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  @autoware_pointcloud_preprocessor//... \
+  //bazel/tests:pointcloud_preprocessor_behavior_test \
+  //bazel/tests:pointcloud_fast_voxel_test \
+  //bazel/tests:pointcloud_concatenate_core_example_test \
+  //bazel/tests:pointcloud_concatenate_component_test \
+  //bazel/tests:pointcloud_comparison_test
+
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --local_test_jobs=1 --strategy=TestRunner=local \
+  --run_under=//bazel/agnocast:with_heaphook \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  //bazel/tests:pointcloud_preprocessor_behavior_test
+
+readelf -d bazel-bin/external/autoware_pointcloud_preprocessor+/concatenate_without_ros_node
+```
+
+Standard result: all 118 non-test module targets and 21 test targets build;
+185 original C++ cases across 16 groups, all eight original Python scenarios,
+four external polygon/crop-box cases, two voxel regressions, three comparison
+checks and the standalone example pass, zero failures/errors/skips. Final gate
+16.8 s, reusing unchanged passing C++ results; the Python launch suite takes
+12.8 s and comparison checks 1.5 s. The example's DT_NEEDED entries contain only
+the compiler/C runtime and libm, with no RCLCPP, ROS TF or PCL ROS library.
+Enabled result: all four polygon/crop-box cases pass in an Agnocast-only context
+with the built heap hook and kernel device, zero failures/errors/skips, in
+17.5 s (test 1.4 s). The test asserts RCLCPP stays uninitialized and covers plain,
+exact and approximate index synchronization. Targeted formatting, Python AST,
+shell syntax and diff checks pass. This completes the CPU preprocessor module;
+it does not qualify GPU filters, Fast DDS or a complete sensor pipeline.
+Next: both IMU nodes and their complete original suite.
