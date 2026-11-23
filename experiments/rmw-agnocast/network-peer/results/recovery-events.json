@@ -1,0 +1,407 @@
+[
+  {
+    "run": "2",
+    "case": "gateway",
+    "events": {
+      "interrupt_begin": 1795415072714085971,
+      "inactive_observed": 1795415072927921308,
+      "restore_begin": 1795415074710475919,
+      "rematch_observed": 1795415075590920681
+    },
+    "transitions": [
+      [
+        "1795415069.951371099",
+        "1",
+        "0",
+        "0"
+      ],
+      [
+        "1795415075.588455454",
+        "1",
+        "0",
+        "0"
+      ]
+    ],
+    "local": 60,
+    "recorded": 31,
+    "last_before": 11,
+    "first_after": 41,
+    "forwarded_without_bag": [],
+    "restore_to_bag_ms": 1001.126261
+  },
+  {
+    "run": "2",
+    "case": "lease",
+    "events": {
+      "interrupt_begin": 1795415042145710056,
+      "inactive_observed": 1795415043079889193,
+      "restore_begin": 1795415044138722853,
+      "rematch_timeout": 1795415056208858030
+    },
+    "transitions": [
+      [
+        "1795415039.327956803",
+        "1",
+        "0",
+        "0"
+      ],
+      [
+        "1795415043.078410770",
+        "0",
+        "21",
+        "21"
+      ]
+    ],
+    "local": 60,
+    "recorded": 12,
+    "last_before": 11,
+    "first_after": null,
+    "forwarded_without_bag": [
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20
+    ],
+    "restore_to_bag_ms": null
+  },
+  {
+    "run": "2",
+    "case": "recorder",
+    "events": {
+      "interrupt_begin": 1795415060997543408,
+      "inactive_observed": 1795415061421185816,
+      "restore_begin": 1795415063006937728,
+      "rematch_observed": 1795415063492654815
+    },
+    "transitions": [
+      [
+        "1795415058.282635484",
+        "1",
+        "0",
+        "0"
+      ],
+      [
+        "1795415061.060453179",
+        "0",
+        "13",
+        "13"
+      ],
+      [
+        "1795415063.482012268",
+        "1",
+        "13",
+        "13"
+      ]
+    ],
+    "local": 60,
+    "recorded": 36,
+    "last_before": 12,
+    "first_after": 37,
+    "forwarded_without_bag": [],
+    "restore_to_bag_ms": 588.560052
+  },
+  {
+    "run": "controls",
+    "case": "lease-restart",
+    "events": {
+      "interrupt_begin": 1795415121055996282,
+      "inactive_observed": 1795415122062980610,
+      "restore_begin": 1795415123060421926,
+      "rematch_observed": 1795415123823349652
+    },
+    "transitions": [
+      [
+        "1795415118.319285624",
+        "1",
+        "0",
+        "0"
+      ],
+      [
+        "1795415122.058616265",
+        "0",
+        "22",
+        "22"
+      ],
+      [
+        "1795415123.816115784",
+        "1",
+        "22",
+        "22"
+      ]
+    ],
+    "local": 60,
+    "recorded": 33,
+    "last_before": 11,
+    "first_after": 39,
+    "forwarded_without_bag": [
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21
+    ],
+    "restore_to_bag_ms": 793.53395
+  },
+  {
+    "run": "controls",
+    "case": "suspend",
+    "events": {
+      "interrupt_begin": 1795415109042893953,
+      "inactive_observed": 1795415110076189239,
+      "restore_begin": 1795415111042353276,
+      "rematch_observed": 1795415111348041892
+    },
+    "transitions": [
+      [
+        "1795415106.326901101",
+        "1",
+        "0",
+        "0"
+      ],
+      [
+        "1795415110.062389972",
+        "0",
+        "22",
+        "22"
+      ],
+      [
+        "1795415111.330317460",
+        "1",
+        "22",
+        "22"
+      ]
+    ],
+    "local": 60,
+    "recorded": 39,
+    "last_before": 13,
+    "first_after": 35,
+    "forwarded_without_bag": [
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21
+    ],
+    "restore_to_bag_ms": 398.541291
+  },
+  {
+    "run": "repeat",
+    "case": "lease",
+    "status": "no zero-match event before graph exit; restoration only during cleanup",
+    "received_by_gateway": 60,
+    "forwarded": 21,
+    "recorded": 12
+  },
+  {
+    "run": "final",
+    "case": "gateway",
+    "events": {
+      "interrupt_begin": 1795415222138594003,
+      "inactive_observed": 1795415222402437251,
+      "restore_begin": 1795415224130139007,
+      "rematch_observed": 1795415224966934401
+    },
+    "transitions": [
+      [
+        "1795415219.401745127",
+        "1",
+        "0",
+        "0"
+      ],
+      [
+        "1795415224.966520187",
+        "1",
+        "0",
+        "0"
+      ]
+    ],
+    "local": 60,
+    "recorded": 32,
+    "last_before": 11,
+    "first_after": 40,
+    "forwarded_without_bag": [],
+    "restore_to_bag_ms": 861.727805
+  },
+  {
+    "run": "final",
+    "case": "lease",
+    "events": {
+      "interrupt_begin": 1795415257246218990,
+      "inactive_observed": 1795415258222980381,
+      "restore_begin": 1795415259250262261,
+      "rematch_timeout": 1795415271329153052
+    },
+    "transitions": [
+      [
+        "1795415254.492305371",
+        "1",
+        "0",
+        "0"
+      ],
+      [
+        "1795415258.220291709",
+        "0",
+        "21",
+        "21"
+      ]
+    ],
+    "local": 60,
+    "recorded": 12,
+    "last_before": 11,
+    "first_after": null,
+    "forwarded_without_bag": [
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20
+    ],
+    "restore_to_bag_ms": null
+  },
+  {
+    "run": "final",
+    "case": "lease-restart",
+    "events": {
+      "interrupt_begin": 1795415245524842230,
+      "inactive_observed": 1795415246466803434,
+      "restore_begin": 1795415247525564157,
+      "rematch_observed": 1795415248191505449
+    },
+    "transitions": [
+      [
+        "1795415242.764144189",
+        "1",
+        "0",
+        "0"
+      ],
+      [
+        "1795415246.456311337",
+        "0",
+        "21",
+        "21"
+      ],
+      [
+        "1795415248.180337731",
+        "1",
+        "21",
+        "21"
+      ]
+    ],
+    "local": 60,
+    "recorded": 33,
+    "last_before": 11,
+    "first_after": 39,
+    "forwarded_without_bag": [
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20
+    ],
+    "restore_to_bag_ms": 791.371993
+  },
+  {
+    "run": "final",
+    "case": "recorder",
+    "events": {
+      "interrupt_begin": 1795415210589504142,
+      "inactive_observed": 1795415211013328209,
+      "restore_begin": 1795415212584763717,
+      "rematch_observed": 1795415212963933238
+    },
+    "transitions": [
+      [
+        "1795415207.872388952",
+        "1",
+        "0",
+        "0"
+      ],
+      [
+        "1795415210.638213396",
+        "0",
+        "12",
+        "12"
+      ],
+      [
+        "1795415212.954681199",
+        "1",
+        "12",
+        "12"
+      ]
+    ],
+    "local": 60,
+    "recorded": 37,
+    "last_before": 11,
+    "first_after": 35,
+    "forwarded_without_bag": [],
+    "restore_to_bag_ms": 399.522815
+  },
+  {
+    "run": "final",
+    "case": "suspend",
+    "events": {
+      "interrupt_begin": 1795415233743420179,
+      "inactive_observed": 1795415234791388786,
+      "restore_begin": 1795415235742975362,
+      "rematch_observed": 1795415236008252069
+    },
+    "transitions": [
+      [
+        "1795415230.972835691",
+        "1",
+        "0",
+        "0"
+      ],
+      [
+        "1795415234.785214848",
+        "0",
+        "22",
+        "22"
+      ],
+      [
+        "1795415235.990800136",
+        "1",
+        "22",
+        "22"
+      ]
+    ],
+    "local": 60,
+    "recorded": 38,
+    "last_before": 11,
+    "first_after": 34,
+    "forwarded_without_bag": [
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21
+    ],
+    "restore_to_bag_ms": 258.156852
+  }
+]

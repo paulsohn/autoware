@@ -26,6 +26,10 @@ finish() {
 }
 trap finish EXIT
 cd "$out"
+if [[ $mode == recovery-relay ]]; then
+  echo "$$" >"$1.pid"
+  exec "${native[@]}" AGNOCAST_BRIDGE_DEMAND=1 AGNOCAST_BRIDGE_PROFILE="$out/$1.csv" "$bin/route_bridge" a2r cloud /output /dds/synchronized
+fi
 if [[ $mode == ingress ]]; then
   "${native[@]}" "$bin/route_bridge" r2a auto /peer/poses /local/poses >relay.log 2>&1 &
   relay=$!

@@ -96,3 +96,23 @@ Copy out any bags before removing the peer. To retire this named setup:
 ```bash
 sg docker -c 'docker stop awpilot0-stock && docker rm awpilot0-stock && docker network rm awpilot0'
 ```
+
+## Exercise discovery expiry and process restarts
+
+Use the idle prepared peer with no other applications on domain 84. From the
+colcon worktree, run the cases sequentially in a fresh directory:
+
+```bash
+sg docker -c 'python3 experiments/rmw-agnocast/network-peer/recovery.py build/recovery-test'
+```
+
+The runner interrupts at 12 locally received clouds and begins restoration
+at 32. A one-second DDS participant lease and a 200 ms SPDP interval allow
+expiry within the six-second stream. These settings apply only to the test
+processes. Each case restores the peer network or resumes the recorder before
+exiting. Select individual cases by appending their names to the command.
+The runner copies the SQLite bags back, verifies each cloud against the local
+graph, and keeps the large artifacts under build/. The first resumed sequence
+uses the source stamp. The restore interval uses the bag reception timestamp
+and includes process startup when applicable. See the
+[observations and operator recovery procedure](results/recovery.md).

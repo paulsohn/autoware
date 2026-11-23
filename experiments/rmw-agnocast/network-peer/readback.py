@@ -16,14 +16,16 @@ local = {int(i): (kind, int(ns)) for i,kind,ns in re.findall(r"sample,(\d+),(ful
 assert len(local) == 60
 received = {}
 if sys.argv[2:] != ["idle"]:
-    db, = (root/"bag").glob("*.db3")
-    with sqlite3.connect(f"file:{db}?mode=ro", uri=True) as conn:
-        for raw, bag_ns in conn.execute("select data,timestamp from messages order by id"):
-            msg = deserialize_message(raw, PointCloud2)
-            stamp = msg.header.stamp.sec * 10**9 + msg.header.stamp.nanosec
-            seq = stamps[stamp]
-            assert seq not in received and msg == deserialize_message((root/f"local-{seq}").read_bytes(), PointCloud2)
-            received[seq] = bag_ns
+    databases = sorted((root/"bag").rglob("*.db3"))
+    assert databases
+    for db in databases:
+        with sqlite3.connect(f"file:{db}?mode=ro", uri=True) as conn:
+            for raw, bag_ns in conn.execute("select data,timestamp from messages order by id"):
+                msg = deserialize_message(raw, PointCloud2)
+                stamp = msg.header.stamp.sec * 10**9 + msg.header.stamp.nanosec
+                seq = stamps[stamp]
+                assert seq not in received and msg == deserialize_message((root/f"local-{seq}").read_bytes(), PointCloud2)
+                received[seq] = bag_ns
 assert list(received) == sorted(received)
 trace = root/"forward.csv"
 forwarded = {stamps[int(row[0])] for row in csv.reader(trace.open())} if trace.exists() else set()

@@ -124,3 +124,15 @@ after reattachment while local delivery continued. Use this recipe for a
 plain ROS logger with an explicit export. A physical second host, discovery
 lease expiry, and middleware-owned startup remain separate qualifications.
 [Prepared peer and operator commands](network-peer/README.md) · [Results](network-peer/results/summary.md)
+
+### Recovery after loss of a matched logger
+
+The demand-driven export usually detached its local reader after the last
+remote reader expired. One repeat continued taking clouds after forwarding stopped. An independently restarted gateway or recorder can match the
+surviving endpoint and resume the stream. Docker network reattachment after
+lease expiry exposed a separate recorder recovery case. For now, verify that
+bag rows advance after reconnection and restart the recorder into a fresh bag
+segment if necessary. Preserve the healthy gateway and local graph.
+Before choosing middleware-owned recovery, compare this interface replacement
+with a plain Cyclone publisher under the same profile and a link outage that
+preserves both interfaces. [Recovery evidence](network-peer/results/recovery.md)

@@ -3773,3 +3773,32 @@ directions. The prepared image and the idle awpilot0-stock container on the
 awpilot0 bridge were left available for subsequent experiments. The runbook
 covers startup, direct operator commands, cleanup and transfer to a real host.
 [Peer recipe](../rmw-agnocast/network-peer/README.md) · [Frame audits and results](../rmw-agnocast/network-peer/results/summary.md)
+
+### 2026-11-23 — Qualify remote logger recovery on the prepared peer
+
+Reused the idle stock Lyrical awpilot0-stock peer and existing colcon binaries.
+Ran recovery.py from the colcon worktree via the default Docker Engine under
+sg docker. Each trial starts the three-LiDAR graph, a separate demand-driven
+route_bridge and a stock sqlite3 recorder. Per-process Cyclone XML selects
+a one-second lease and 200 ms discovery announcements. Neither the prepared
+peer defaults nor its image need to change. The 60 groups run at 10 Hz.
+The operator command, timing boundaries and grouped cases are in the
+[peer runbook](../rmw-agnocast/network-peer/README.md#exercise-discovery-expiry-and-process-restarts).
+
+Restarted the stock recorder and the explicit gateway independently. Also
+disconnected and reattached the peer, suspended and resumed only the recorder,
+and started a fresh recorder after network reattachment. Match logs report
+when the gateway attaches or drops its local reader. The verifier joins
+SQLite rows from both recorder segments by source stamp to local serialized
+PointCloud2 samples, checks every field, sequence order, and absence of
+duplicates, and requires all 150 synchronizer loans released. Compare the
+per-case transport and application counters in the
+[recovery report](../rmw-agnocast/network-peer/results/recovery.md).
+
+A short outage with a surviving DDS match and an outage that expires the
+lease produced different results. A fresh recorder after Docker reattachment
+restored recording. One repeat missed the gateway's zero-match notification
+and continued taking unused local clouds. Keep endpoint discovery, data
+delivery and idle gateway cost as separate acceptance checks. The first
+exploratory harness ended observation when the source exited; the final
+lease case also monitors the endpoints for 12 seconds after reconnection.
