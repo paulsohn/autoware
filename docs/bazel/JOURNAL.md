@@ -21613,6 +21613,12 @@ contracts rather than assuming both registration APIs are identical.
 Build-provider blocker: the first downstream shared consumer exposed four more
 compiled utility dependencies hidden by the shape DSO. The preceding provider
 entry records explicit exports of all six utility owners and full revalidation.
+The detection consumer also needs the compiled object-recognition/interpolation
+symbols held by this DSO. Export both as direct roots, declaring interpolation
+in the module. The separate core-provider contraction below removes the unrelated
+PCL ROS filters/bag tools. Final combined verification passes all 27 original
+clustering and three transport cases, plus both selected enabled transports;
+commands/results are recorded in that prerequisite and the detection entry.
 
 Source blockers/cause/fix: libc++ lacks experimental/random, used by the original
 voxel fixture. Replace it with standard mt19937/uniform_int_distribution with

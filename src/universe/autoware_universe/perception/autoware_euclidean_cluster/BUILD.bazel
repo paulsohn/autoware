@@ -52,7 +52,11 @@ collect_transitive_dynamic_deps(
 cc_shared_library(
     name = "euclidean_cluster",
     shared_lib_name = "libautoware_euclidean_cluster_lib.so",
-    deps = [":euclidean_cluster_library"],
+    deps = [
+        ":euclidean_cluster_library",
+        "@autoware_object_recognition_utils",
+        "@autoware_interpolation",
+    ],
     dynamic_deps = [":sdk_dynamic_deps"],
 )
 collect_transitive_dynamic_deps(
