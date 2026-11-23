@@ -89,8 +89,8 @@ RadarObjectFusionToDetectedObjectNode::RadarObjectFusionToDetectedObjectNode(
   radar_fusion_to_detected_object_->setParam(core_param_);
 
   // Subscriber
-  sub_object_.subscribe(this, "~/input/objects", rclcpp::QoS{1}.get_rmw_qos_profile());
-  sub_radar_.subscribe(this, "~/input/radars", rclcpp::QoS{1}.get_rmw_qos_profile());
+  sub_object_.subscribe(this, "~/input/objects", rclcpp::QoS{1});
+  sub_radar_.subscribe(this, "~/input/radars", rclcpp::QoS{1});
 
   sync_ptr_ = std::make_shared<Sync>(SyncPolicy(20), sub_object_, sub_radar_);
   sync_ptr_->registerCallback(

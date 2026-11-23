@@ -1892,3 +1892,20 @@ checks also pass. All three native cases execute without failures/errors/skips.
 This is a frame-conversion defect independent of Lyrical. It is not a production
 radar-accuracy qualification or an older-ROS/GCC/CMake result.
 [Numeric setup and complete module gate](JOURNAL.md#2026-11-23-phase-91--static-radar-point-cloud-filtering).
+
+## Radar fusion needs the current Message Filters API
+
+- [ ] Associate with a matching upstream change. Checked 2026-11-23: current
+  [fusion header](https://github.com/autowarefoundation/autoware_universe/blob/main/perception/autoware_radar_fusion_to_detected_object/src/include/node.hpp)
+  and node retain .h Message Filters includes and raw rmw QoS subscribe arguments.
+  Targeted fusion/Lyrical and message_filters/Lyrical PR searches find no match;
+  [autoware#7404](https://github.com/autowarefoundation/autoware/issues/7404)
+  is related tracking scope.
+
+Package: autoware_radar_fusion_to_detected_object. The component's new Bazel
+build fails on subscriber.h with Message Filters 7.4.2. Use .hpp counterparts
+and pass reliable depth-one rclcpp::QoS directly; preserve synchronization and
+fusion behavior. This is the same API transition as the static radar filter
+above. The complete component/executable/index build and six estimator plus two
+synchronized ROS cases pass on Lyrical/Cyclone with LLVM/libc++ 21.1.8, zero skips.
+[Reproduction and verification](JOURNAL.md#2026-11-23-phase-92--radar-fusion-into-detected-objects).

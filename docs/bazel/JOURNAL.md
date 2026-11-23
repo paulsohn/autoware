@@ -19918,3 +19918,42 @@ work; final source formatting is checked with the same gate. No dependency or
 implementation fix is required. Targeted clang-format and git diff --check pass.
 No GPU, Fast DDS, simulator or deployment checks are part of this module gate.
 Next module: radar fusion into detected objects.
+
+## 2026-11-23: Phase 9.2 — Radar fusion into detected objects
+
+Purpose: expose the synchronized detected-object/radar fusion component,
+standalone executable and config/launch index. Inspect CMake/package, node/core
+sources and parameter schema. There is no original C++ behavior suite. Define
+acceptance as every package target plus six velocity-estimator cases and two
+real synchronized ROS cases under bazel/tests/radar. Use Cyclone DDS/no-agnocast.
+
+Pattern: local perception messages and autoware_utils plus existing Eigen,
+Message Filters, TF and geometry providers. Keep src/include headers available
+to the root test without moving them or making the source depend on root labels.
+Test all five estimator choices and the zero-weight fallback, confidence/debug
+partition, covariance propagation, live probability compensation, empty-radar
+passthrough and rejection/recovery of differing input frames.
+
+Observed build blocker: Message Filters subscriber.h is absent. This package
+also uses approximate_time.h/synchronizer.h and raw rmw subscription profiles,
+the same removed API already exposed by the static radar filter. Replace only
+those includes with .hpp and pass the unchanged reliable depth-one rclcpp QoS
+objects directly. Preserve the synchronization policy and core algorithm. Checked
+upstream main and targeted fusion/Lyrical and message_filters/Lyrical PR searches
+on 2026-11-23: current main retains the old API; no matching PR was found.
+The AWF Lyrical tracker autoware#7404 remains related scope, not test evidence.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_env=ROS_DOMAIN_ID=114 \
+  --test_output=errors @autoware_radar_fusion_to_detected_object//... \
+  //bazel/tests:radar_fusion_behavior_test
+```
+
+Result after the scoped API fix: every component/executable/index target builds;
+all eight cases pass in 0.7 s (complete gate 23.6 s), zero failures/errors/skips.
+Source compatibility correction is committed separately from Bazel definitions.
+This verifies the selected Lyrical/LLVM/Cyclone profile, not older-ROS CMake builds.
+No GPU, Fast DDS or expensive system/deployment reruns are required. Next: radar
+object tracking and its complete original utility suite.
