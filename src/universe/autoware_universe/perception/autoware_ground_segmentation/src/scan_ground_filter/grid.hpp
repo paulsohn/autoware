@@ -35,35 +35,35 @@ float pseudoArcTan2(const float y, const float x)
   // avoid divide-by-zero
   if (y == 0.0f) {
     if (x >= 0.0f) return 0.0f;
-    return M_PIf;
+    return static_cast<float>(M_PI);
   }
   if (x == 0.0f) {
-    if (y >= 0.0f) return M_PI_2f;
-    return -M_PI_2f;
+    if (y >= 0.0f) return static_cast<float>(M_PI_2);
+    return -static_cast<float>(M_PI_2);
   }
 
   const float x_abs = std::abs(x);
   const float y_abs = std::abs(y);
 
   // divide to 8 zones
-  constexpr float M_2PIf = 2.0f * M_PIf;
-  constexpr float M_3PI_2f = 3.0f * M_PI_2f;
+  constexpr float M_2PIf = 2.0f * static_cast<float>(M_PI);
+  constexpr float M_3PI_2f = 3.0f * static_cast<float>(M_PI_2);
   if (x_abs > y_abs) {
     const float ratio = y_abs / x_abs;
-    const float angle = ratio * M_PI_4f;
+    const float angle = ratio * static_cast<float>(M_PI_4);
     if (y >= 0.0f) {
-      if (x >= 0.0f) return angle;  // 1st zone
-      return M_PIf - angle;         // 2nd zone
+      if (x >= 0.0f) return angle;              // 1st zone
+      return static_cast<float>(M_PI) - angle;  // 2nd zone
     } else {
-      if (x >= 0.0f) return M_2PIf - angle;  // 4th zone
-      return M_PIf + angle;                  // 3rd zone
+      if (x >= 0.0f) return M_2PIf - angle;     // 4th zone
+      return static_cast<float>(M_PI) + angle;  // 3rd zone
     }
   } else {
     const float ratio = x_abs / y_abs;
-    const float angle = ratio * M_PI_4f;
+    const float angle = ratio * static_cast<float>(M_PI_4);
     if (y >= 0.0f) {
-      if (x >= 0.0f) return M_PI_2f - angle;  // 1st zone
-      return M_PI_2f + angle;                 // 2nd zone
+      if (x >= 0.0f) return static_cast<float>(M_PI_2) - angle;  // 1st zone
+      return static_cast<float>(M_PI_2) + angle;                 // 2nd zone
     } else {
       if (x >= 0.0f) return M_3PI_2f + angle;  // 4th zone
       return M_3PI_2f - angle;                 // 3rd zone
@@ -281,16 +281,17 @@ private:
       azimuth_grids_per_radial_.resize(radial_grid_num);
       azimuth_interval_per_radial_.resize(radial_grid_num);
       azimuth_grids_per_radial_[0] = 1;
-      azimuth_interval_per_radial_[0] = 2.0f * M_PIf;
+      azimuth_interval_per_radial_[0] = 2.0f * static_cast<float>(M_PI);
 
-      const int max_azimuth_grid_num = static_cast<int>(2.0 * M_PIf / grid_azimuth_size_);
+      const int max_azimuth_grid_num =
+        static_cast<int>(2.0 * static_cast<float>(M_PI) / grid_azimuth_size_);
 
       int divider = 1;
       for (size_t i = radial_grid_num - 1; i > 0; --i) {
         // set azimuth grid number
         const int grid_num = static_cast<int>(max_azimuth_grid_num / divider);
         const int azimuth_grid_num = std::max(std::min(grid_num, max_azimuth_grid_num), 1);
-        const float azimuth_interval_evened = 2.0f * M_PIf / azimuth_grid_num;
+        const float azimuth_interval_evened = 2.0f * static_cast<float>(M_PI) / azimuth_grid_num;
 
         azimuth_grids_per_radial_[i] = azimuth_grid_num;
         azimuth_interval_per_radial_[i] = azimuth_interval_evened;

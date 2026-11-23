@@ -20747,3 +20747,71 @@ The combined commands require the adjacent ground-module declarations and its
 separately documented portability fixes; the provider can also be checked alone
 by omitting those consumer labels from each command. Provider declarations are
 committed separately from the consumer's implementation fixes and module rules.
+
+## 2026-11-24: Phase 9.5 — ground segmentation
+
+Purpose: expose all three CPU ground filters after the preprocessor provider.
+Inspect the four implementation files, private headers, original launches/config,
+CMake's optional OpenMP and YAML setup, all three original ROS suites and their
+tracked PCD fixture. Acceptance: ray/RANSAC/scan components and executables,
+resources and complete original suites with Cyclone/RCLCPP, plus an external
+scan-filter pub/sub partition check with RCLCPP and Agnocast-only execution.
+The complete gate below qualifies this task.
+
+Pattern: preserve one compiled library and shared owner, delegate filter-base
+symbols to the preprocessor's existing shared owner, and retain the managed-TF
+singleton provider. Register ray/RANSAC as RCLCPP nodes and scan as the upstream
+wrapper-aware node. Index original launches/configuration and register test/data
+as share/autoware_ground_segmentation/data, matching original CMake install
+semantics and the tests' indexed lookup. Use Bazel PCL/OpenCV/Eigen/YAML providers,
+not pkg-config/apt. HAVE_NEW_YAMLCPP is not referenced by this source snapshot.
+The initial CPU profile omits optional OpenMP; both orphaned omp-for directives
+have no enclosing parallel region in the original implementation.
+
+Ground setup findings: the original scan implementation uses newer GNU float pi
+macros unavailable in the pinned Linux ABI headers. Replace M_PIf/M_PI_2f/M_PI_4f
+with explicit float casts of the available double constants, retaining C++17
+compatibility and float precision. The original RANSAC test also includes unused
+experimental/random, absent in libc++; remove that unused include without
+changing the test body. Current upstream main retains the float macros on
+2026-11-23; scoped macro, Clang/Lyrical and experimental/random PR searches find
+no matching correction. Original CMake source dependencies use the existing
+vehicle-info compiled library, which has no runtime_dynamic_deps facade.
+
+The shared filter-base prerequisite and its full preprocessor revalidation are
+recorded in the preceding shared-provider entry (aac0330e); consumer rules use that provider
+rather than the complete plugin library.
+
+Transport fixture setup: the filter publishes SensorDataQoS (best effort). A
+reliable-only peer would not match it; use SensorDataQoS without changing
+production QoS. The observed timeout log identifies the other fixture issue:
+the callback rejects legacy PointXYZI before filtering. Build the input with the
+existing PointXYZIRCGenerator and retain its uint8 intensity/channel fields.
+Original helper-level PCD tests intentionally bypass that callback and still
+use their legacy layout; do not weaken production validation or alter them. Both grid and non-grid scan modes use the same synthetic flat-ground/two-
+obstacle fixture, preserving its header, field layout and obstacle intensities.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  @autoware_ground_segmentation//... //bazel/tests:scan_ground_filter_transport_test
+
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --local_test_jobs=1 --strategy=TestRunner=local \
+  --run_under=//bazel/agnocast:with_heaphook \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  //bazel/tests:scan_ground_filter_transport_test
+```
+
+Result: the shared-provider combined gate builds all 20 non-test ground targets
+and its four test targets. All three original ray/scan/RANSAC PCD cases pass,
+zero failures/errors/skips, in 0.6/0.5/0.5 s. Both added grid/non-grid cases pass
+with Cyclone/RCLCPP (0.5 s) and Agnocast-only execution with the built heaphook
+and kernel device (0.6 s). See the provider entry for exact combined-gate totals
+and elapsed times; these results are reused without another unchanged rerun.
+The enabled peer asserts RCLCPP stays uninitialized. Targeted clang-format and
+diff checks pass. Original test assertions, PCD fixture and production input
+layout checks are unchanged. Optional OpenMP is not qualified by this CPU profile;
+no Fast DDS/GPU/expensive product gate is claimed. Source portability corrections
+are separate from Bazel definitions. Next: occupancy-grid outlier filtering.

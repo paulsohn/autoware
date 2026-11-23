@@ -2115,3 +2115,24 @@ passes after. The full module gate passes as described above. This is message
 frame correctness, not a Lyrical API change.
 Local source correction: 5b7ef54a.
 [Reproduction](JOURNAL.md#2026-11-23-phase-95--cluster-merger).
+
+## Ground scan constants and an unused RANSAC test include limit portability
+
+- [ ] Associate portable scan constants with a matching upstream correction.
+  Checked 2026-11-23: current [grid header](https://github.com/autowarefoundation/autoware_universe/blob/main/perception/autoware_ground_segmentation/src/scan_ground_filter/grid.hpp)
+  retains M_PIf/M_PI_2f/M_PI_4f. Scoped macro and ground/Clang/Lyrical PR searches
+  find no matching fix. AWF #7404/core #1538 are related distribution trackers.
+- [ ] Associate removal of the unused test header. Checked 2026-11-24: current
+  [RANSAC test](https://github.com/autowarefoundation/autoware_universe/blob/main/perception/autoware_ground_segmentation/test/test_ransac_ground_filter.cpp)
+  still includes experimental/random without using it; scoped literal-header and
+  RANSAC/random PR searches find no matching change.
+
+Package: autoware_ground_segmentation. The selected LLVM/libc++ toolchain and
+Linux ABI headers fail compilation on newer GNU float-pi macros and the unused
+experimental library header. Cast the available double pi constants explicitly
+to float, preserving C++17 compatibility and float precision. Remove only the
+unused test include. All three original PCD cases and both added scan modes pass
+with Cyclone/RCLCPP; both added modes also pass Agnocast-only with heap-hook
+preload, zero failures/errors/skips. Original test bodies and tolerances remain
+unchanged. These are C-library/libc++ portability findings, not new ROS APIs.
+[Reproduction](JOURNAL.md#2026-11-24-phase-95--ground-segmentation).
