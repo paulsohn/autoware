@@ -1985,3 +1985,27 @@ tensorrt_cc_test(
         "@googletest//:gtest_main",
     ],
 )
+
+tensorrt_cc_test(
+    name = "yolox_runtime_cache_test",
+    timeout = "long",
+    srcs = [
+        "autoware_tensorrt_yolox/test_runtime_cache.cpp",
+        "autoware_tensorrt_yolox/test_calibration_cache.cpp",
+    ],
+    data = [
+        "@autoware_tensorrt_yolox//:ament_index",
+        "@autoware_tensorrt_yolox_models//:ament_index",
+    ],
+    dynamic_deps = [
+        "@autoware_tensorrt_yolox",
+        "@autoware_tensorrt_yolox//:node_component",
+        "@autoware_tensorrt_yolox//:gpu_preprocess",
+        "@autoware_tensorrt_yolox//:runtime_dynamic_deps",
+    ],
+    deps = [
+        "@ament_index_cpp//:ament_index_cpp_library",
+        "@autoware_tensorrt_yolox//:node_library",
+        "@googletest//:gtest_main",
+    ],
+)

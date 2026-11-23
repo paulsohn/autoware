@@ -19120,3 +19120,10 @@ in a product without resolving and testing that profile. The explicit error test
 must be revisited when SDK/model/GPU selection changes. This is separate from
 successful segmentation INT8 generation/reuse and from calibration accuracy.
 [Vendor calibration/cache guidance](https://docs.nvidia.com/deeplearning/tensorrt/10.x.x/inference-library/work-quantized-types.html#post-training-quantization-using-calibration).
+
+Root Bazel-support completion for the same module task: register both standalone
+native test sources at //bazel/tests:yolox_runtime_cache_test with the owning
+package/model ament indexes, component/shared runtime providers and GTest. The
+source correction is b695d51b. Reuse the two complete passing commands above;
+only whitespace and documentation changed afterward. No runtime matrix, SDK
+version or product/deployment closure changes in this support commit.

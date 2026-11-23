@@ -1701,3 +1701,33 @@ with complete existing affected classifier/YOLOX/plugin suites on the retained
 Phase 6.5.1 SDK/GPU profile. This identifies an out-of-range source read; no
 sanitizer run or deterministic pre-fix crash is claimed. See the
 [reproducer, failure contract and full gate](JOURNAL.md#2026-11-23-phase-652--preserve-the-tensorrt-engine-output-identity).
+
+## YOLOX separates immutable model inputs from generated engine/calibration files
+
+- [ ] Associate with a matching upstream fix. Inspected 2026-11-23: Universe
+  main 8361f0ef2dd4558864f0d00d8bfb9e036c7102af still hardcodes an empty
+  TrtCommonConfig engine path in the detector, couples calibration table reads
+  and writes to the ONNX location, and rejects an empty image list even with a
+  usable engine/table. Scoped yolox engine_path and calibration-cache PR searches
+  found no match. Not submitted. Local source correction: b695d51b.
+
+Package: autoware_tensorrt_yolox. Read-only indexed or installed model resources
+cannot host generated engines/tables. Expose the common library's existing
+engine-path option through detector, node and three single-node launchers. Derive
+outputs from that path, retain supplied-table lookup beside ONNX, and give
+calibrators optional separate input paths. Prefer generated cache reads; write
+only the output path. Preserve existing empty/default behavior and append
+optional arguments so callers retain source compatibility. Permit image-free
+setup when an engine or supplied/generated table exists; the SDK still decides
+whether a table/engine is usable. Do not rewrite table version headers.
+
+Nine added native cases pass, including real FP16 and segmentation INT8 cold/warm
+inference, supplied read-only table rebuild, cache-only reuse after image-list
+removal, a read-only warm cache, build_only shutdown, all three calibrators' file
+contracts and controlled handling of the pinned SDK's traffic-light calibration
+failure. All fourteen original native YOLOX cases plus fixture/launcher/model
+checks pass on LLVM/libc++ 21.1.8, RCR Lyrical/Cyclone DDS, CUDA 13.2.2, TensorRT
+10.16.1.11, RTX 5070 Laptop/595.99.02. No skipped cases. This is a resource/cache
+correctness change, not a Lyrical-only fix or a production calibration-accuracy
+claim. Upstream CMake/GCC and other SDK/GPU profiles were not run.
+[Reproducer, exact source pattern and limitations](JOURNAL.md#2026-11-23-phase-652--yolox-engine-paths-and-calibration-inputoutput-separation).

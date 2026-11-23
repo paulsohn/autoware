@@ -1694,6 +1694,42 @@ bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
   @autoware_tensorrt_common//... //bazel/tests:tensorrt_runtime_cache_test
 ```
 
+### YOLOX model inputs and engine caches
+
+Set the YOLOX engine_path node parameter (or the same argument in its three
+single-node launch files) to a provisioned, profile-qualified cache filename.
+An empty value preserves legacy model-adjacent output and is unsuitable for
+immutable model resources. Resolve model/label/color-map inputs through their
+own model package's ament index. For example, a composed node can use:
+
+```xml
+<param name="model_path" value="$(find-pkg-share autoware_tensorrt_yolox_models)/yolox_s_car_ped_tl_detector_960_960_batch_1.onnx"/>
+<param name="engine_path" value="$(var yolox_engine_path)" type="str"/>
+```
+
+Apply the common-library cache identity rules above. Engine and layer JSON use
+that cache stem. Generated calibration tables use its algorithm-specific
+EntropyV2-/MinMax-/Legacy-calibration.table suffix; generated Legacy histograms
+use histogram.table. Readers prefer the generated cache, then the supplied table
+beside the ONNX. Writers only use the output path. Provided tables stay immutable
+in their model repository; a matching filename does not guarantee SDK compatibility.
+
+For on-device preparation, run a standalone YOLOX process with build_only=true,
+then start inference with the same engine path and compilation settings. That
+flag shuts down the ROS context, so prepare separately from the live composed
+application. Warm reuse can use a prepared read-only cache and needs no
+calibration image list when a valid engine/table is available. The current common
+implementation still initializes its builder/parser and reads ONNX before cache
+selection; retain those declared runtime resources even on a warm launch.
+
+The validated profiles are traffic-light FP16, published segmentation INT8 with
+clip_value=6, and fresh segmentation MinMax calibration as a functional smoke
+check. Single-image calibration is not production accuracy qualification. Fresh
+traffic-light INT8 calibration still fails on the pinned 10.16/Blackwell profile;
+its explicit error regression must be reviewed when SDK/model/GPU inputs change.
+Run the full original module/consumer suites and added cache gate from the
+[YOLOX journal](JOURNAL.md#2026-11-23-phase-652--yolox-engine-paths-and-calibration-inputoutput-separation).
+
 ## Sparse SDK and TensorRT plugins
 
 The pinned spconv 2.3.8/cumm 0.5.3 SDK exposes GNU C++ containers. Use

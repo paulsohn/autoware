@@ -91,7 +91,8 @@ only when your current target demonstrates the need.
   [evidence: TensorRT SDK](JOURNAL.md#2026-11-18-phase-62--tensorrt-binary-sdk);
   [vendor RTTI and exception binding](JOURNAL.md#2026-11-23-phase-652--tensorrt-calibration-and-c-runtime-compatibility).
   [Writable engine caches and caller-owned identity](DEVELOPING.md#common-library-engine-cache);
-  [cache failure/invalidation evidence](JOURNAL.md#2026-11-23-phase-652--preserve-the-tensorrt-engine-output-identity).
+  [cache failure/invalidation evidence](JOURNAL.md#2026-11-23-phase-652--preserve-the-tensorrt-engine-output-identity);
+  [immutable supplied tables versus generated cache](DEVELOPING.md#yolox-model-inputs-and-engine-caches).
   [Vendor C++ ABI boundaries](DEVELOPING.md#sparse-sdk-and-tensorrt-plugins);
   [evidence: sparse SDK](JOURNAL.md#2026-11-19-phase-641--sparse-convolution-sdk-compatibility).
 - [ ] Declare caller-owned resources for dynamic runtime package selection.
@@ -1682,20 +1683,22 @@ boundaries when their integration exposes a need.
   calibration/histogram outputs and the existing complete module suites. Record
   model/SDK/plugin identities, GPU/driver profile, precision and shape settings.
   Measure cold generation, warm reuse and representative inference behavior.
-- **6.5.2 — Exercise a separate writable cache.** Wire explicit output locations
-  through the selected consumer and common configuration where needed. Preserve
-  indexed model lookup. Validate generation/reuse with read-only model resources,
-  cache invalidation after relevant input/profile changes, and failure behavior
-  for unavailable/unwritable or incomplete cache entries. Require the affected
-  complete suites with Cyclone DDS and relevant GPU inference checks; reuse
-  unchanged communication/system evidence. The common-library API now passes
-  all thirteen original and eight added cache cases, including truncated-file
-  handling, profile changes and caller-selected model-revision keys. The YOLOX
-  node/cache prototype remains incomplete: FP16 inference/build_only pass, but
-  the real-model INT8 calibration gate fails. TensorRT 10.15 is not adopted
-  merely because compilation succeeds without usable detections; retain 10.16
-  while resolving a usable calibration input/profile and the SDK compiler error.
-  Do not mark this subphase complete or infer a production GPU deployment gate.
+- **6.5.2 — Exercise a separate writable cache (complete, 2026-11-23).**
+  The common library passes thirteen original and eight cache cases. YOLOX now
+  forwards an optional engine_path through detector/node/launches; generated
+  engine/JSON/calibration/histogram outputs follow its stem, while supplied
+  calibration/histogram inputs remain with the read-only model. Generated tables
+  take read precedence. Valid prepared engines/tables no longer require an image
+  list, and warm inference passes with a read-only cache.
+  Acceptance covers the complete fourteen-case original YOLOX suites, nine added
+  native cache cases and the existing fixture/launch/model-resource checks with
+  Cyclone DDS and Agnocast disabled. Positive real-model profiles are traffic-light
+  FP16, published segmentation INT8/clipping and fresh segmentation MinMax.
+  Retain TensorRT 10.16. Fresh traffic-light INT8 calibration remains an explicitly
+  unsupported SDK/GPU profile, checked as a caught-error regression rather than a
+  successful calibration/inference claim. The single-image calibration probe does
+  not qualify production accuracy. No test/dependency skip is accepted.
+  [Source pattern, profile decisions and exact gates](JOURNAL.md#2026-11-23-phase-652--yolox-engine-paths-and-calibration-inputoutput-separation).
 - **6.5.3 — Record the compilation-placement decision.** Compare observed startup,
   cache reuse, deployment size/permissions and compatibility costs. Decide whether
   to retain runtime generation, use explicit on-device preparation, or conduct a
@@ -1717,8 +1720,8 @@ choice in the same module-task journal as the experiments progress. The initial 
 existing detector cases passing on each pass and unchanged engine hashes/mtimes.
 This is one full-test-process observation on the selected GPU, not a portable
 performance threshold. The complete existing common/YOLOX suites also pass with
-no skips. Runtime cache placement/invalidation work and the final choice remain
-pending; no new GPU build rule is accepted.
+no skips. The separate-cache gate is complete for the selected profiles above;
+the final compilation-placement choice remains pending for 6.5.3; no new GPU build rule is accepted.
 [Reproducer and results](JOURNAL.md#2026-11-23-phase-651--yolox-runtime-engine-baseline).
 
 ## Phase 7 — Runtime packaging and planning simulation (complete, 2026-11-23)
