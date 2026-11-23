@@ -1831,3 +1831,9 @@ local_path_override(
     module_name = "autoware_radar_tracks_noise_filter",
     path = "src/universe/autoware_universe/sensing/autoware_radar_tracks_noise_filter",
 )
+
+bazel_dep(name = "autoware_radar_threshold_filter", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_radar_threshold_filter",
+    path = "src/universe/autoware_universe/sensing/autoware_radar_threshold_filter",
+)

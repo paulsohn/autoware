@@ -19634,6 +19634,10 @@ original threshold case and root ROS case pass, with zero failures/errors/skips.
 All original amplitude/range/azimuth/z blocks remain. Test-source corrections
 are committed apart from Bazel definitions; no production implementation changes
 are needed.
+
+Bazel registration completed with the matching package-local MODULE/BUILD, root
+override and behavior inputs. Reuse the complete passing module evidence above.
+The original context correction is 9a8c69df; build definitions remain separate.
 ## 2026-11-23: Phase 9.1 — Static radar point-cloud filtering
 
 Purpose: adopt synchronized radar/odometry input and TF-based static/dynamic

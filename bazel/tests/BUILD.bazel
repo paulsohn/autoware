@@ -2049,3 +2049,18 @@ cc_test(
     ],
     tags = ["no-sandbox", "no-remote"],
 )
+
+cc_test(
+    name = "radar_threshold_behavior_test",
+    srcs = ["radar/test_threshold.cpp", "radar/ros_fixture.hpp"],
+    dynamic_deps = [
+        "@autoware_radar_threshold_filter//:autoware_radar_threshold_filter_component",
+        "@autoware_radar_threshold_filter//:runtime_dynamic_deps",
+    ],
+    deps = [
+        "@autoware_radar_threshold_filter//:autoware_radar_threshold_filter_library",
+        "@rclcpp//:rclcpp_library",
+        "@googletest//:gtest_main",
+    ],
+    tags = ["no-sandbox", "no-remote"],
+)
