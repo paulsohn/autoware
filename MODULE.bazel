@@ -1861,3 +1861,9 @@ local_path_override(
     module_name = "autoware_radar_tracks_msgs_converter",
     path = "src/universe/autoware_universe/perception/autoware_radar_tracks_msgs_converter",
 )
+
+bazel_dep(name = "autoware_radar_fusion_to_detected_object", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_radar_fusion_to_detected_object",
+    path = "src/universe/autoware_universe/perception/autoware_radar_fusion_to_detected_object",
+)

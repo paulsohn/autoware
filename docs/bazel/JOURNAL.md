@@ -19957,3 +19957,6 @@ Source compatibility correction is committed separately from Bazel definitions.
 This verifies the selected Lyrical/LLVM/Cyclone profile, not older-ROS CMake builds.
 No GPU, Fast DDS or expensive system/deployment reruns are required. Next: radar
 object tracking and its complete original utility suite.
+
+Bazel definitions and root behavior registration reuse the complete passing gate
+above. The independently committed compatibility correction is 52ada3cb.

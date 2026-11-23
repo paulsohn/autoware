@@ -1,0 +1,65 @@
+load("@rclcpp_components//:defs.bzl", "rclcpp_components_register_node")
+load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "autoware_radar_fusion_to_detected_object_library",
+    srcs = glob(["src/*.cpp"]),
+    hdrs = glob(["src/**/*.hpp"]),
+    includes = ["src", "src/include"],
+    deps = [
+        "@rclcpp//:rclcpp_library",
+        "@rclcpp_components//:rclcpp_components_library",
+        "@autoware_utils",
+        "@message_filters//:message_filters_library",
+        "@rosdistro//cc:eigen",
+        "@geometry_msgs//:cc",
+        "@autoware_perception_msgs//:cc",
+        "@tf2//:tf2_library",
+        "@tf2_ros//:tf2_ros_library",
+        "@tf2_geometry_msgs//:tf2_geometry_msgs_library",
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = [
+        "@rclcpp_components//:rclcpp_components",
+        "@autoware_utils//:runtime_dynamic_deps",
+        "@message_filters//:message_filters",
+        "@geometry_msgs//:cc_shared",
+        "@autoware_perception_msgs//:cc_shared",
+        "@tf2//:tf2",
+        "@tf2_ros//:tf2_ros",
+        "@tf2_geometry_msgs//:tf2_geometry_msgs",
+    ],
+)
+
+cc_shared_library(
+    name = "autoware_radar_fusion_to_detected_object_component",
+    dynamic_deps = [":runtime_dynamic_deps"],
+    deps = [":autoware_radar_fusion_to_detected_object_library"],
+)
+
+rclcpp_components_register_node(
+    name = "radar_fusion_to_detected_object_node",
+    component = ":autoware_radar_fusion_to_detected_object_component",
+    node_name = "radar_fusion_to_detected_object_node",
+    plugin = "autoware::radar_fusion_to_detected_object::RadarObjectFusionToDetectedObjectNode",
+)
+
+register_ament_files(
+    name = "executables",
+    files = [":radar_fusion_to_detected_object_node"],
+    prefix = "lib/autoware_radar_fusion_to_detected_object",
+    strip_prefix = "*",
+)
+
+ament_index(
+    package_xml = "package.xml",
+    components = [":radar_fusion_to_detected_object_node_record"],
+    data = glob(["config/**", "launch/**"]) + [":executables"],
+)

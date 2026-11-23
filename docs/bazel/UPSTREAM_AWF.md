@@ -1902,6 +1902,7 @@ radar-accuracy qualification or an older-ROS/GCC/CMake result.
   [autoware#7404](https://github.com/autowarefoundation/autoware/issues/7404)
   is related tracking scope.
 
+Local source correction: 52ada3cb.
 Package: autoware_radar_fusion_to_detected_object. The component's new Bazel
 build fails on subscriber.h with Message Filters 7.4.2. Use .hpp counterparts
 and pass reliable depth-one rclcpp::QoS directly; preserve synchronization and
