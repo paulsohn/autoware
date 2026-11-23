@@ -2193,3 +2193,21 @@ Local source fix: `ad53a176e`.
   added ROS projection/truncation cases pass. No original functional tests
   exist. Older ROS and upstream CMake builds were not run. This is a separate
   source compatibility commit; no upstream submission is claimed.
+
+### Compare-map tests leave the global ROS context active
+
+- [ ] Associate with a matching upstream fix. Reviewed 2026-11-24: current
+  [distance-filter test](https://github.com/autowarefoundation/autoware_universe/blob/main/perception/autoware_compare_map_segmentation/test/test_distance_based_compare_map_filter.cpp)
+  still has init without shutdown; scoped `compare_map_segmentation shutdown`
+  PR search finds no matching fix. Lyrical tracker
+  [autoware#7404](https://github.com/autowarefoundation/autoware/issues/7404)
+  is general transition context, not this test correction.
+- Local scope: all four compare-map original ROS cases, LLVM 21.1.8/libc++,
+  Lyrical RCR/Cyclone DDS. Assertions pass but normal test processes segfault
+  during logging shutdown; GDB identifies spdlog registry access from
+  rcl_logging_external_shutdown during global-context destruction.
+- Call rclcpp::shutdown at each case's end, preserving assertions. All four
+  normal test binaries then pass and exit cleanly. The complete module gate
+  also passes ten new static/dynamic/elevation/lanelet scenarios. Reproducer
+  and exact command are in the Phase 9.5 map-comparison journal. No upstream
+  CMake or older ROS validation is claimed.

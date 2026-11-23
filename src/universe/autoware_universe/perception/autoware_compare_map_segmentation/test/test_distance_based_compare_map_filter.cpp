@@ -111,4 +111,5 @@ TEST(DistanceBasedCompareMapFilterComponentTest, testEmptyInputPointcloud)
   EXPECT_EQ(counter, 1);
   EXPECT_GT(output_pc_msg.data.size(), 0);
   EXPECT_GT(input_pc_msg.data.size(), output_pc_msg.data.size());
+  rclcpp::shutdown();
 }

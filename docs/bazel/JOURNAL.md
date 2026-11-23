@@ -21249,3 +21249,78 @@ none are skipped. The PCL loader, shared library and indexed resources build.
 The new fixture adapter parses with Python AST and diff checks pass. No source
 patch, dependency installation or unrelated product rebuild is required. Next:
 local map-comparison and elevation-loader consumers. Phase 9.5 remains open.
+
+## 2026-11-24: Phase 9.5 — map comparison and lanelet/elevation filtering
+
+Purpose: integrate all six local compare-map components/executables, resources
+and original tests. Inspect CMake, manifest, nine implementation sources, shared
+map-loader/public/private headers, parameter YAML and all four original test
+sources. The original cases have "EmptyInput" names but actually publish
+nonempty maps/clouds and assert map removal. Acceptance includes these four
+cases plus ten external cases: four static-map modes, four default dynamic-map
+modes, elevation-grid comparison and lanelet elevation filtering. Use Cyclone/
+RCLCPP: all six classes are plain RCLCPP filters, not Agnocast-only nodes.
+
+Pattern: package MODULE/BUILD and root local override. Link the existing narrow
+preprocessor filter-base compile/runtime providers, GridMap PCL/CV/ROS providers,
+local lanelet/message/utility providers and explicit PCL/OpenCV/TF SDK owners.
+Keep the nine CMake sources together in one uniquely named component library;
+register all six original executables/component records and index launch/config/
+data. Retain the four original test binaries and indexed YAML. New scenarios
+live under bazel/tests/autoware_compare_map_segmentation. Optional OpenMP is
+not selected by this CPU profile; no extra CMake-only finder module is needed.
+
+Test-lifecycle failure/cause/fix: each original test passes all assertions, then
+segfaults during process exit. A diagnostic GDB run locates rcl_logging_external_
+shutdown/spdlog registry destruction with an active global ROS context. The
+original bodies initialize RCLCPP but never shut it down. Close the context at
+the end of each of the four original cases, preserving every assertion. Normal
+Bazel test execution then exits cleanly. GDB's own exit code can mask a child
+signal, so the debugger run is diagnosis, not acceptance evidence.
+
+Production failures/cause/fix, reproduced by the nonempty scenarios:
+
+- Dynamic 10 m cells fail with an out-of-range vector access: the array uses
+  horizontal cell count times vertical physical cell size. Allocate horizontal
+  count times vertical count, with null entries for unloaded cells. Guard null
+  neighbors before lookup; retain actual loaded cells. This also makes sparse
+  map coverage explicit instead of creating empty, non-null placeholders.
+- The two KD-tree variants omit the cell-origin remainder used by the base
+  voxel loader. Shifted cells (min x/y -5, width/height 10) are stored and queried
+  in different slots. Initialize both origin remainders in their overrides.
+- The distance-only dynamic path compares squared KD-tree distance with a
+  linear threshold. Compare against the squared threshold, matching static mode;
+  a point 0.6 m away must remain with a 0.5 m threshold.
+- Lanelet sampling computes 1/num_samples with integer division, putting every
+  sample at the segment start. Use 1.0/num_samples; a straight road then has
+  valid elevation coverage at its interior, not just near boundary endpoints.
+
+The external peer sends modern PointXYZIRC clouds with nonzero stamp and finite,
+dense input. Static/dynamic modes remove near-map points and retain obstacle/
+out-of-map points with original fields and order. Dynamic fixtures provide the
+real differential-map service and odometry, 10 m cells offset from zero, unloaded
+cells, a boundary-neighbor point and the 0.6 m threshold regression; require an
+actual service request. Elevation comparison keeps the above-grid obstacle and
+rejects ground/out-of-map points. Lanelet mode uses a declared flat LaneletMapBin
+and writable cache with map coverage required, retaining the near-road point
+and rejecting height/out-of-map points. Verify coordinates and frame/stamp.
+
+Upstream review 2026-11-24: current main retains the demonstrated grid allocation,
+neighbor predicate, missing KD-tree offsets, unsquared distance and integer
+sampling. The representative original test still lacks shutdown. Scoped PR
+searches find no matching corrections. PR #11289 actually introduces the lanelet
+sampling implementation; it is feature history, not a fix. See UPSTREAM_AWF.md.
+Source fixes are separate commits from the Bazel declarations.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  @autoware_compare_map_segmentation//... //bazel/tests:compare_map_segmentation_test
+```
+
+Results: all 29 non-test targets and five test targets build; four original and
+ten added cases pass, zero failures/errors/skips, in 76.4 s (added suite 3.6 s).
+Targeted clang-format/diff checks pass. No Fast DDS/GPU/expensive product gate is
+required. This closes one of the seven remaining Phase 9.5 package boundaries;
+next is elevation generation and saved-cache reload.
