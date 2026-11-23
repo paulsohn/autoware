@@ -2058,3 +2058,25 @@ scenarios and three external assertion checks pass in the local Cyclone/RCLCPP
 gate. The merged PR's reported checks are not substituted for this local result.
 Local source correction: e7221ecc.
 [Reproduction](JOURNAL.md#2026-11-23-phase-94--cpu-point-cloud-preprocessor).
+
+## IMU measurement and bias transforms request the inverse rotation
+
+- [ ] Associate with a matching upstream correction. Checked 2026-11-23:
+  current [correction source](https://github.com/autowarefoundation/autoware_universe/blob/main/sensing/autoware_imu_corrector/src/imu_corrector_core.cpp)
+  and [estimator source](https://github.com/autowarefoundation/autoware_universe/blob/main/sensing/autoware_imu_corrector/src/gyro_bias_estimator.cpp)
+  retain all three reversed sensor/base lookups. Scoped imu_corrector/transform
+  searches find historical feature/refactor work, not this correction;
+  [Universe#2360](https://github.com/autowarefoundation/autoware_universe/pull/2360)
+  is the related base-frame output feature. The scoped Lyrical search finds none.
+
+Package: autoware_imu_corrector. A +90-degree static sensor mounting rotates
+corrected acceleration and angular velocity by -90 degrees instead. The utility
+listener forwards its from/to arguments to tf2 lookupTransform(target, source).
+Swap the correction and estimator sensor-to-base calls and the estimator's
+base-to-sensor bias call. Preserve the already-correct pose lookup and shared
+helper API. Independent forward/inverse assertions prevent two wrong rotations
+from cancelling in a round trip. These are measurement defects, not Lyrical API
+changes. All nine original cases and two added cases pass with Cyclone/RCLCPP;
+the two added cases also pass with Agnocast-only execution and heap-hook preload,
+zero failures/errors/skips. Original tests/tolerances remain unchanged.
+[Reproduction and commands](JOURNAL.md#2026-11-23-phase-94--imu-correction-and-gyro-estimation).

@@ -208,7 +208,7 @@ void GyroBiasEstimator::callback_imu(
 
   imu_frame_ = imu_msg_ptr->header.frame_id;
   geometry_msgs::msg::TransformStamped::ConstSharedPtr tf_imu2base_ptr =
-    transform_listener_->get_latest_transform(imu_frame_, output_frame_);
+    transform_listener_->get_latest_transform(output_frame_, imu_frame_);
   if (!tf_imu2base_ptr) {
     RCLCPP_ERROR_ONCE(
       this->get_logger(), "Please publish TF %s to %s", output_frame_.c_str(),
@@ -714,7 +714,7 @@ void GyroBiasEstimator::timer_callback()
   gyro_bias_estimation_module_->update_bias(pose_buf, gyro_filtered);
 
   geometry_msgs::msg::TransformStamped::ConstSharedPtr tf_base2imu_ptr =
-    transform_listener_->get_latest_transform(output_frame_, imu_frame_);
+    transform_listener_->get_latest_transform(imu_frame_, output_frame_);
   if (!tf_base2imu_ptr) {
     RCLCPP_ERROR_ONCE(
       this->get_logger(), "Please publish TF %s to %s", imu_frame_.c_str(), output_frame_.c_str());

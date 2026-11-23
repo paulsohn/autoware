@@ -20543,3 +20543,85 @@ shell syntax and diff checks pass. This completes the CPU preprocessor module;
 it does not qualify GPU filters, Fast DDS or a complete sensor pipeline.
 Local source correction: e7221ecc; Bazel definitions and added checks are
 committed separately. Next: both IMU nodes and their complete original suite.
+
+## 2026-11-23: Phase 9.4 — IMU correction and gyro estimation
+
+Purpose: finish CPU preprocessing with both local IMU nodes. Inspect CMake,
+manifest, both implementation libraries, parameter/launch resources and both
+original test groups: three pure bias-estimation cases and six ROS node/EKF
+cases. Required acceptance is every module target and all nine original cases
+with Cyclone/RCLCPP, plus an external pub/sub correction check in RCLCPP and
+Agnocast-only contexts. The original node group is CMake-disabled under
+ENABLE_AGNOCAST=1; the added check covers the enabled correction path instead.
+The complete gates below qualify this task.
+
+Pattern: retain separate correction/estimator compiled libraries, unique shared
+owners, original node names and wrapper registrations. Export both component and
+autoware_node_plugins records, indexed executables, original config and launch
+files. Use the selected RCR TF/messages/diagnostic SDK and local wrapper/utils;
+root selects the local module with an adjacent dependency/override pair. Keep
+the two original drivers intact. The added test belongs under bazel/tests and
+sends biased IMU data with a non-identity static sensor transform, checking
+rotation, covariance, frame and timestamp, using the selected backend executor.
+
+Behavior failure/cause/fix: a +90-degree sensor mounting produces a -90-degree
+corrected acceleration and angular velocity. The shared TransformListenerT
+forwards its ambiguously named from/to arguments directly to tf2's
+lookupTransform(target, source). The correction call reverses those arguments.
+The estimator has the same error in both sensor-to-base measurement conversion
+and base-to-sensor bias conversion; independent checks fail in each direction.
+Swap those three call sites. Keep the already-correct pose-frame lookup and the
+shared helper API unchanged; an API-wide swap would break other consumers.
+The estimator check uses the existing upstream friend seam and original YAML
+parameter resources. Supply known base-frame samples for the inverse assertion
+so a reversed forward conversion cannot cancel a reversed inverse conversion.
+TF readiness is polled with a deadline; no fixed discovery sleep is required.
+
+Upstream status checked 2026-11-23: current Universe main retains all three calls.
+A scoped imu_corrector/transform PR search finds three historical feature/refactor
+changes, not a matching correction; the imu_corrector/Lyrical search finds none.
+PR #2360 introduced base-frame output but does not fix this direction. This is
+measurement correctness, not a new Lyrical incompatibility. The legacy TF .h
+headers still compile through the selected SDK; no speculative header patch is
+needed. Keep the demonstrated source fix separate from Bazel declarations.
+
+Verification prerequisites: the pinned SDK/toolchain selected at root, built
+heap hook and loaded compatible Agnocast kernel module exposing /dev/agnocast
+for the enabled check. Declare all three original parameter YAML files as test
+data; resolve them with rootpath into NodeOptions --params-file arguments. This
+uses the real parameter contract without copying dozens of defaults into a test.
+Both original groups keep their upstream source files and drivers unchanged.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  @autoware_imu_corrector//... //bazel/tests:imu_corrector_behavior_test
+
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --local_test_jobs=1 --strategy=TestRunner=local \
+  --run_under=//bazel/agnocast:with_heaphook \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  //bazel/tests:imu_corrector_behavior_test
+```
+
+Result: all 21 non-test module targets and three test targets build. All three
+original bias cases, six original node/EKF cases and both added correction/frame
+cases pass with RCLCPP, zero failures/errors/skips; gate 34.6 s, original groups
+0.4 s each and added group 0.5 s. Both added cases also pass with Agnocast-only
+execution and the preloaded heap hook, zero failures/errors/skips, in 24.8 s
+(test 0.5 s). The pub/sub case asserts RCLCPP stays uninitialized in enabled mode;
+the estimator case independently checks forward and inverse TF directions.
+Targeted clang-format and diff checks pass. This is synthetic sensor/node
+qualification, not vehicle calibration or a full sensing pipeline. No Fast DDS,
+GPU, simulator or deployment check is claimed.
+
+Phase 9.4 closes with PCL extensions, the complete CPU preprocessor and both IMU
+nodes, plus the required managed TF and CGAL providers. The existing occupancy-
+grid BUILD currently exports the CPU laserscan implementation, which has no
+preprocessor edge. Its original point-cloud launches name the new provider but
+require the still-unadopted point-cloud/CUDA implementation too; adding the index
+alone would not qualify those launches. No compiled existing occupancy-grid
+consumer changes here. Revisit that complete surface in its GPU/contract gate.
+Next: Phase 9.5 clustering, shape estimation and map-aware detection; no work on
+that group is included in this module task.
