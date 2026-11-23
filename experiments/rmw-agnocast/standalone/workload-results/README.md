@@ -123,3 +123,38 @@ Each of six rounds used a different permutation of native, O2 and O3. All 360 fr
 | Standalone -O3 | 84.55 | 145.77 | 0.171 |
 
 O3/native was 1.95× median and 2.27× p95. Every O3 run exceeded the paired native median and p95 by over 1.2×. O3 had a higher median than O2 in four rounds and a lower median in two. This laptop experiment establishes no consistent latency gain from switching to O3. Lowest observed host MemAvailable was 15238 MiB during the build and 13629 MiB during the trials. [All frame measurements](path-release-levels.csv)
+
+## Isolate the receiver-thread handoff
+
+Used the same optimized standalone writer, RMW, 10 Hz Path message and patched typed-loan dispatch for all ROS arms. The fixed-subscription controls both register an arrival callback. The handoff arm signals a condition variable and the waiting application thread executes the subscription. The inline arm executes the subscription on the native arrival thread before signalling. The main thread blocks in both cases. Inline bypasses ordinary executor selection and callback-group arbitration and runs application work in the middleware notification callback. It is a diagnostic for one subscription.
+
+Four balanced rounds yielded 240 verified frames per arm. Independent six-round trials compared the general-purpose one-worker EventsCBGExecutor against the ordinary SingleThreadedExecutor and native. Each mode in that comparison verified 360 frames. Percentiles pool the last 50 frames per launch. CPU is median total child CPU seconds per run.
+
+| Fixed-subscription comparison | Median µs | p95 µs | CPU s |
+|---|---:|---:|---:|
+| Native | 46.33 | 84.54 | 0.137 |
+| Ordinary executor | 78.20 | 133.71 | 0.169 |
+| Fixed subscription, blocking handoff | 74.51 | 121.26 | 0.168 |
+| Fixed subscription, inline take and callback | 55.93 | 88.57 | 0.168 |
+
+Inline had a lower median than the fixed handoff in each paired round. Its pooled median was 18.58 µs lower. Relative to the same-series native control it reached 1.21× median and 1.05× p95. This includes scheduling and signalling costs in both configurations and does not isolate a kernel context-switch time. A preliminary four-round series showed a similar fixed-handoff/inline difference (73.94/56.36 µs median). Its driver returned a shell error after completing all frame files because it was edited during execution; the reported final matrix was repeated successfully with the final binary and unmodified runner.
+
+| Ordinary ROS executor comparison | Median µs | p95 µs | CPU s |
+|---|---:|---:|---:|
+| Native | 45.50 | 65.05 | 0.131 |
+| SingleThreadedExecutor | 81.35 | 112.72 | 0.173 |
+| EventsCBGExecutor, one worker | 76.81 | 107.28 | 0.172 |
+
+The stock event executor still schedules work onto an executor thread. The smaller median improvement leaves it at 1.69× native on this workload. The next comparison should let the ordinary executor's blocking wait observe native subscription descriptors and acquire ready samples on that executor thread. Retain wakeups for guards, shutdown, services and other wait-set entities. Check callback-group behavior and simultaneous arrivals before considering that path for general use.
+
+To reproduce on the provisioned laptop, build the probe in its existing Lyrical build directory, then run both matrices from the worktree root. All launches ran sequentially with the memory guard (minimum available host memory 11502 MiB).
+
+```bash
+export LYRICAL_ROOT="$(cat build/agnocast-lyrical/universe-root)"
+experiments/buffer/run-lyrical.sh bash -ec 'source build/rmw-agnocast/install/local_setup.bash
+cmake --build build/rmw-agnocast/load-obj/agnocast_rmw_loan_probe --target path_benchmark -j1'
+bash experiments/rmw-agnocast/standalone/bench-path.sh build/standalone/fresh-fixed-handoff --compare-handoff
+bash experiments/rmw-agnocast/standalone/bench-path.sh build/standalone/fresh-events --compare-events
+```
+
+[All 2,040 frames from the two final comparisons](path-handoff.csv)

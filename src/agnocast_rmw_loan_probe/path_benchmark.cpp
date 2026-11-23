@@ -2,10 +2,14 @@
 #include <agnocast/node/agnocast_node.hpp>
 #include <agnocast/node/agnocast_only_single_threaded_executor.hpp>
 #include <rclcpp/rclcpp.hpp>
+#include <rclcpp/executors/events_cbg_executor/events_cbg_executor.hpp>
+
+#include <utility>
 
 #include <nav_msgs/msg/path.hpp>
 
 #include <array>
+#include <condition_variable>
 #include <filesystem>
 #include <fstream>
 #include <thread>
@@ -152,6 +156,10 @@ struct Receiver
   {
     std::ofstream("ready").close();
     exec.spin();
+    finish();
+  }
+  void finish()
+  {
     check(count == frames, "incomplete run");
     verify(*held, frames - 1);
     held.reset();
@@ -183,6 +191,7 @@ void native(bool writer, bool trace)
 class PathExecutor : public rclcpp::executors::SingleThreadedExecutor
 {
 public:
+  using Executor::execute_subscription;
   rclcpp::SubscriptionBase::SharedPtr only;
   void spin() override
   {
@@ -198,7 +207,48 @@ public:
     }
   }
 };
-void middleware(bool writer, bool trace, bool single)
+// Fixed-subscription experiment. Both arms start at the same arrival callback.
+void receive_on_notification(
+  PathExecutor & exec, const rclcpp::Subscription<Path>::SharedPtr & sub,
+  Receiver<Path::ConstSharedPtr, PathExecutor> & receiver, bool inline_take)
+{
+  std::mutex mutex;
+  std::condition_variable changed;
+  size_t arrivals = 0;
+  std::exception_ptr error;
+  sub->set_on_new_message_callback([&](size_t n) {
+    std::lock_guard lock(mutex);
+    try {
+      if (inline_take)
+        for (size_t i = 0; i < n; ++i) exec.execute_subscription(sub);
+      arrivals += n;
+    } catch (...) {
+      error = std::current_exception();
+    }
+    changed.notify_one();
+  });
+  try {
+    std::ofstream("ready").close();
+    std::unique_lock lock(mutex);
+    while (receiver.count < frames) {
+      if (!changed.wait_for(lock, 12s, [&] { return arrivals || error; }))
+        throw std::runtime_error("notification timed out");
+      if (error) std::rethrow_exception(error);
+      const auto n = std::exchange(arrivals, size_t{});
+      if (!inline_take) {
+        lock.unlock();
+        for (size_t i = 0; i < n; ++i) exec.execute_subscription(sub);
+        lock.lock();
+      }
+    }
+  } catch (...) {
+    sub->clear_on_new_message_callback();
+    throw;
+  }
+  sub->clear_on_new_message_callback();
+  receiver.finish();
+}
+void middleware(bool writer, bool trace, bool single, const std::string & mode)
 {
   check(std::string(rmw_get_implementation_identifier()) == "rmw_agnocast", "wrong RMW");
   auto node = std::make_shared<rclcpp::Node>(writer ? "path_writer" : "path_reader");
@@ -206,6 +256,14 @@ void middleware(bool writer, bool trace, bool single)
     auto pub = node->create_publisher<Path>(topic, 4);
     check(pub->can_loan_messages(), "writer cannot loan");
     send(*pub);
+  } else if (mode == "events") {
+    rclcpp::executors::EventsCBGExecutor exec(rclcpp::ExecutorOptions(), 1);
+    Receiver<Path::ConstSharedPtr, decltype(exec)> receiver{exec};
+    auto sub = node->create_subscription<Path>(
+      topic, 4, [&](Path::ConstSharedPtr msg) { receiver.receive(std::move(msg)); });
+    check(sub->can_loan_messages(), "reader cannot loan");
+    exec.add_node(node);
+    receiver.run();
   } else {
     PathExecutor exec;
     Receiver<Path::ConstSharedPtr, decltype(exec)> receiver{exec};
@@ -221,7 +279,10 @@ void middleware(bool writer, bool trace, bool single)
     check(sub->can_loan_messages(), "reader cannot loan");
     exec.add_node(node);
     FixedScope fixed;
-    receiver.run();
+    if (mode == "handoff" || mode == "inline")
+      receive_on_notification(exec, sub, receiver, mode == "inline");
+    else
+      receiver.run();
   }
 }
 int main(int argc, char ** argv)
@@ -236,7 +297,7 @@ int main(int argc, char ** argv)
       agnocast::shutdown();
     } else {
       rclcpp::init(argc, argv);
-      middleware(writer, std::string(argv[1]) == "rmw-traced", std::string(argv[1]) == "single");
+      middleware(writer, std::string(argv[1]) == "rmw-traced", std::string(argv[1]) == "single", argv[1]);
       rclcpp::shutdown();
     }
   } catch (const std::exception & e) {
