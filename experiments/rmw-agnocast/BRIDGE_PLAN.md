@@ -43,3 +43,15 @@ Test stock tools with a fresh CLI daemon per RMW/domain or direct discovery wher
 3. **Network boundary.** On the laptop, when available, use a peer network namespace/container with its own address, no Agnocast device/hook or application overlay, and DDS configured for that interface. Verify the UDP interface and byte counts, remote bag readback, remote ingress, peer loss and recovery. The present loopback-only Cyclone profile must be replaced for this test. Repeat on a real second host when available, including MTU/fragmentation for large clouds and disconnect/rejoin. Test host A native to host B native via two gateways separately from host A native to a stock remote recorder. One-way latency across machines needs measured clock uncertainty; use sequence/readback and round-trip timings otherwise.
 4. **Startup choice.** Compare explicit, demand-driven manual startup with true middleware startup using identical routes, then run the ownership/failure cases above. Default to explicit startup for the pilot until automatic startup earns its operational complexity.
 5. **Decision evidence.** For each workload keep per-process bridge and logger CPU, idle wakeups, native takes and loan release, serialization/materialization counts, DDS bytes, queue/peak memory, local median/p95, recorder receive latency, sequence gaps/duplicates, startup and recovery times. Include disk and receiver backlog separately. Alternate run order, keep the pressure trace and shared-host caveat. Use matched native Agnocast with upstream bridge, direct Cyclone DDS and Zenoh recorder baselines where available; label differing graphs and unavailable cells. Run sequentially under the laptop memory guard. Advance on verified delivery, isolated failure and measured overhead; the earlier 1.2× latency objective remains an engineering reference. Bazel follows the colcon deployment decision and layout work.
+
+### Recorder lifecycle evidence
+
+The first colcon experiment passed for the explicit typed PointCloud2 export.
+A matched DDS publisher event activated and detached one native reader.
+Across two paired runs the demand-driven route took 16 clouds and the eager
+route took 24, with identical recorded sequences in every bag. The distinct
+DDS export was discoverable before recording. Immediate detach was sufficient
+for the paced attach/detach test. Next run the ungated producer during
+discovery and throttle the recorder to measure loss, backpressure and local
+loan lifetime. Direct local recording and the network boundary remain open.
+[Lifecycle results](recorder-lifecycle-results/)

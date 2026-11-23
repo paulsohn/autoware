@@ -1,0 +1,5 @@
+a2r off passed
+a2r on passed
+r2a off passed
+r2a on passed
+Minimum host MemAvailable: 14717 MiB

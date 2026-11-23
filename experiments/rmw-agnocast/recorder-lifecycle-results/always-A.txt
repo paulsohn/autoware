@@ -1,0 +1,6 @@
+always relay_cpu_s=0.130 received=24 forwarded=16
+A verified sequences [4, 5, 6, 7, 8, 9, 10, 11]
+B verified sequences [8, 9, 10, 11, 12, 13, 14, 15]
+C verified sequences [20, 21, 22, 23]
+local=24/24
+Minimum host MemAvailable: 14468 MiB

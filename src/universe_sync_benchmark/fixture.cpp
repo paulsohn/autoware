@@ -30,6 +30,7 @@ using Clock = std::chrono::steady_clock;
 using namespace std::chrono_literals;
 const bool extended = std::getenv("PIPELINE_DIR") && std::getenv("SYNC_EXTENDED");
 const bool route_pilot = std::getenv("SYNC_ROUTE_PILOT") != nullptr;
+const bool recorder_steps = route_pilot && std::getenv("SYNC_RECORDER_STEPS");
 const bool regions = std::getenv("PIPELINE_DIR") && std::getenv("SYNC_REGIONS");
 const std::array<std::string, 2> region_topics{"/region/near", "/region/far"};
 const bool isolation = regions && std::getenv("SYNC_ISOLATION");
@@ -154,13 +155,21 @@ int pipeline_source(rclcpp::Node::SharedPtr node, const std::filesystem::path & 
   std::this_thread::sleep_for(500ms);
   const bool jitter = std::getenv("SYNC_TOP_JITTER") != nullptr;
   const auto period = std::getenv("SYNC_DOUBLE_RATE") ? 50ms : 100ms;
-  const auto start = Clock::now();
+  auto start = Clock::now();
   std::vector<int64_t> top_release_ns(sets);
   std::vector<int64_t> stamps(sets);
   for (int seq = 0; seq < sets; ++seq) {
     if (extended || sustained) {
       for (int sensor = 0; sensor < (seq % 2 ? 2 : 3); ++sensor)
         inputs[seq].push_back(cloud(seq, sensor));
+    }
+    if (recorder_steps && seq % 4 == 0) {
+      const auto end = Clock::now() + 15s;
+      while (!std::filesystem::exists(directory / ("release-" + std::to_string(seq)))) {
+        check(Clock::now() < end, "recorder step timed out");
+        std::this_thread::sleep_for(5ms);
+      }
+      start = Clock::now() - seq * period;
     }
     std::this_thread::sleep_until(start + seq * period);
     const auto group_start = Clock::now();
@@ -277,6 +286,8 @@ int main(int argc, char ** argv)
     }
     check(clouds.emplace(rclcpp::Time(c->header.stamp).nanoseconds(), c).second, "duplicate cloud");
     ++cloud_count;
+    if (recorder_steps && cloud_count % 4 == 0)
+      std::ofstream(std::filesystem::path(directory) / ("seen-" + std::to_string(cloud_count.load()))) << stamp;
     if (route_pilot && cloud_count == 7) std::ofstream(std::filesystem::path(directory) / "fault-window") << stamp;
   };
 #ifdef SYNC_NATIVE

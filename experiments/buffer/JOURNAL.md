@@ -3426,3 +3426,60 @@ on the laptop, then qualify generic types, stock CLI, network boundaries and
 middleware-owned startup. Physical inter-host qualification awaits a second
 host. Bazel remains deferred. Documentation-only; prior runs supply the
 baseline and no new runtime behavior is claimed. [Design and acceptance tests](../rmw-agnocast/BRIDGE_PLAN.md)
+
+### 2026-11-23 — Attach the native export reader only while a DDS recorder is matched
+
+On the existing Lyrical laptop pilot, keep the typed PointCloud2 export publisher
+advertised at /dds/synchronized. In an explicitly launched a2r relay with
+AGNOCAST_BRIDGE_DEMAND set, use its DDS publisher matched callback in the
+single-threaded executor to create one native /output subscription on first
+match and destroy it at zero. Match changes between positive counts reuse the
+subscription. Require distinct topic names for this mode. Existing ingress
+and same-name route controls use the original eager reader by default.
+
+Use the 24-group three-crop/synchronizer graph with a continuously attached
+local verifier. The source waits at each four-group boundary for the driver,
+then resumes 100 ms pacing. A stock Cyclone topic listing sees the export
+before traffic. Run four groups each with no recorder, A only, A+B, B only,
+none, and a newly started recorder C. Read each SQLite bag to completion and
+compare each message to the decoded cloud saved by the local verifier for
+that source timestamp. Demand-mode readiness is the matched callback after
+subscription creation. The phase barriers deliberately exclude discovery
+races; a live producer can publish during attachment.
+
+From the experimental worktree with the built Lyrical pilot prerequisites:
+
+```bash
+set -e
+export LYRICAL_ROOT=$(cat build/agnocast-lyrical/universe-root)
+experiments/buffer/run-lyrical.sh bash experiments/rmw-agnocast/build-loadable.sh
+experiments/buffer/run-lyrical.sh bash experiments/rmw-agnocast/build-pipeline.sh
+mkdir -p build/recorder-lifecycle
+for trial in demand-A always-A always-B demand-B; do
+  BUFFER_RUNTIME_ONLY=1 experiments/buffer/run-lyrical.sh timeout -k 5 80 bash -ec '
+    source build/agnocast-lyrical/install/local_setup.bash
+    source build/rmw-agnocast/install/local_setup.bash
+    source build/rmw-agnocast/load-install/local_setup.bash
+    source build/universe-sync/install/local_setup.bash
+    source build/universe-pipeline/install/local_setup.bash
+    export CYCLONEDDS_URI="<CycloneDDS><Domain><General><Interfaces><NetworkInterface name=\"lo\"/></Interfaces><AllowMulticast>false</AllowMulticast></General><Discovery><ParticipantIndex>auto</ParticipantIndex><Peers><Peer Address=\"127.0.0.1\"/></Peers></Discovery></Domain></CycloneDDS>"
+    python3 experiments/rmw-agnocast/recorder-lifecycle.py "$@"' bash \
+    "${trial%-*}" "build/recorder-lifecycle/$trial"
+done
+BUFFER_RUNTIME_ONLY=1 experiments/buffer/run-lyrical.sh timeout -k 5 90 \
+  bash experiments/rmw-agnocast/run-loadable.sh route-bridge
+```
+
+Both alternating pairs delivered 24/24 locally and identical expected bags
+(A 4–11, B 8–15, C 20–23, inclusive). Each demand relay received 16 clouds
+and published 16. Each eager control received 24 and published 16. With
+two recorders attached, four source samples produced four relay publications
+and eight verified bag entries. CPU is user+system for the relay process
+from /proc, sampled before shutdown at clock-tick resolution. These short
+runs establish avoided payload work, not a sustained CPU saving.
+[Run outputs and match counters](../rmw-agnocast/recorder-lifecycle-results/)
+
+After the final rebuild, the Path route contract passed its four ingress/egress
+and bridge on/off controls. A final cloud lifecycle run reproduced all bag
+sequences and counters. Builds and runtime cases ran sequentially under the
+existing 1,200 MiB and 512 MiB limits respectively.
