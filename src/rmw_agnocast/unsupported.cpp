@@ -46,16 +46,3 @@ rmw_ret_t rmw_fini_publisher_allocation(rmw_publisher_allocation_t * allocation)
 {
   return unsupported(__func__);
 }
-
-rmw_ret_t rmw_init_subscription_allocation(
-  const rosidl_message_type_support_t * type_support,
-  const rosidl_runtime_c__Sequence__bound * message_bounds,
-  rmw_subscription_allocation_t * allocation)
-{
-  return unsupported(__func__);
-}
-
-rmw_ret_t rmw_fini_subscription_allocation(rmw_subscription_allocation_t * allocation)
-{
-  return unsupported(__func__);
-}

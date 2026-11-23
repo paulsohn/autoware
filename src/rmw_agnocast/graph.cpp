@@ -287,6 +287,7 @@ void standalone::GraphWatch::start(const rmw_node_t * node, rmw_guard_condition_
           }
         }
         if (!live.empty()) {
+          auto snapshot_start = std::chrono::steady_clock::now();
           std::vector<Peer> peers;
           for (auto & r : snapshot(node))
             if (r.meta.kind == 'P' || r.meta.kind == 'S')
@@ -294,7 +295,7 @@ void standalone::GraphWatch::start(const rmw_node_t * node, rmw_guard_condition_
                 {r.name, r.type,
                  std::string(reinterpret_cast<const char *>(r.meta.gid), sizeof(r.meta.gid)),
                  r.meta.kind, r.meta.qos});
-          for (auto & e : live) e->update(peers);
+          for (auto & e : live) e->update(peers, snapshot_start);
         }
       } catch (const std::exception & e) {
         RCUTILS_LOG_ERROR_NAMED("Agnocast", "graph update failed: %s", e.what());
@@ -480,4 +481,23 @@ rmw_ret_t rmw_get_subscriptions_info_by_topic(
   rmw_topic_endpoint_info_array_t * subscriptions_info)
 {
   return endpoint_info(node, allocator, topic_name, 'S', subscriptions_info);
+}
+
+rmw_ret_t standalone::count_compatible(
+  const rmw_node_t * node, const std::string & topic, const std::string & type,
+  const rmw_qos_profile_t & qos, bool publisher, size_t * count)
+{
+  return inspect(node, [&](const auto & rows) {
+    *count = 0;
+    for (const auto & row : rows) {
+      if (row.name != topic || row.type != type || row.meta.kind != (publisher ? 'S' : 'P'))
+        continue;
+      rmw_qos_compatibility_type_t compatible;
+      auto ret = rmw_qos_profile_check_compatible(
+        publisher ? qos : row.meta.qos, publisher ? row.meta.qos : qos, &compatible, nullptr, 0);
+      if (ret != RMW_RET_OK) return ret;
+      if (compatible == RMW_QOS_COMPATIBILITY_OK) ++*count;
+    }
+    return static_cast<rmw_ret_t>(RMW_RET_OK);
+  });
 }

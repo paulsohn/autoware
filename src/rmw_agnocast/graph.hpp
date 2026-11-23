@@ -16,6 +16,9 @@ struct Lease
     const rmw_qos_profile_t * qos = nullptr, const rmw_gid_t * gid = nullptr);
   ~Lease();
 };
+rmw_ret_t count_compatible(
+  const rmw_node_t *, const std::string &, const std::string &, const rmw_qos_profile_t &,
+  bool publisher, size_t *);
 struct GraphWatch
 {
   int events = -1, stop = -1;

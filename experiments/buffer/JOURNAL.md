@@ -4044,3 +4044,42 @@ operations. unsupported.cpp now contains seven unconditional stubs. Rebuilt
 with the sequential stripped-prefix recipe in the standalone README and reran
 check.sh successfully. Comparing sorted rmw_ exports from nm -D --defined-only
 before and after gave the same 97 names.
+
+## 2026-11-23 — Fixed-size subscription allocation and native deadline events
+
+Moved rmw_init_subscription_allocation and rmw_fini_subscription_allocation
+from unsupported.cpp into the typed topic implementation. Initialization walks
+generated C++ introspection to prepare a list of primitive spans, including
+nested objects and fixed arrays. Each typed take validates the plan against the
+subscription and copies into the caller-initialized message. Dynamic fields,
+Buffer members and C-layout conversion remain outside this allocation scope.
+
+For an unkeyed topic with a finite deadline, track the interval from publication
+or admission with a steady clock. Timer expiry increments total and delta
+counters and signals the standard RMW wait set even in the absence of data.
+Requested timers disarm when graph discovery sees no compatible writer. The
+new v4 topic header carries the offered period. The graph, compatibility query
+and reader admission compare offered and requested periods. Private service
+routes reject finite deadlines. Upgrade both peers to the new layout.
+
+Use the sequential build and check.sh commands in the standalone README. The
+new deadline_check probe uses a nested geometry_msgs/PoseWithCovariance with
+its fixed 36-element array. It checks field equality, rejects a String allocation
+and counts taking-thread C++ operator new calls. It excludes an unlimited
+writer from a finite reader, checks events during two silent intervals, and
+checks steady traffic and writer departure. The other standalone cases cover
+ordinary, loaned, batched and serialized transport, rosout, graph and services.
+No Fast DDS runtime, DynamicData provider or kernel change is required.
+
+The full isolated suite and two additional deadline/allocation runs passed.
+Each run alternated 32 typed single and batch takes and observed zero ordinary
+C++ operator new calls on the taking thread after one empty call through each
+dispatch entry point. A cold run including first-time dispatch recorded one
+allocation. C allocator calls and background threads were outside the counter.
+With 180 ms offered and 250 ms requested, each run saw both callbacks wake
+the executor during silence, stop incrementing during regular publication,
+and fire after the next pause. The reader stopped accruing misses after the
+last compatible writer exited. Lowest observed host MemAvailable across these
+three runs was 18437 MiB. Deadline matching is enforced at receiver admission;
+behavior under heavy incompatible traffic in the underlying native queue and
+the cost of graph-backed matched-count queries need load qualification.

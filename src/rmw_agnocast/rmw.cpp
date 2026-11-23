@@ -85,6 +85,73 @@ void copy_message(const MessageMembers & members, const void * from, void * to)
     }
   }
 }
+// Build the copy schedule once. Only primitive subobjects are copied, never
+// message padding, container control blocks or C++ object headers.
+struct CopyPlan
+{
+  const MessageMembers * type;
+  struct Span
+  {
+    size_t offset, bytes;
+  };
+  std::vector<Span> spans;
+  bool append(const MessageMembers & members, size_t base)
+  {
+    for (size_t i = 0; i < members.member_count_; ++i) {
+      const auto & f = members.members_[i];
+      if (f.is_rosidl_buffer_ || (f.is_array_ && (!f.array_size_ || f.is_upper_bound_)))
+        return false;
+      size_t offset = base + f.offset_, count = f.is_array_ ? f.array_size_ : 1;
+      if (f.type_id_ == ROS_TYPE_MESSAGE) {
+        const auto & nested = *static_cast<const MessageMembers *>(f.members_->data);
+        for (size_t n = 0; n < count; ++n)
+          if (!append(nested, offset + n * nested.size_of_)) return false;
+        continue;
+      }
+      size_t width;
+      switch (f.type_id_) {
+        case ROS_TYPE_BOOLEAN:
+          width = sizeof(bool);
+          break;
+        case ROS_TYPE_CHAR:
+        case ROS_TYPE_OCTET:
+        case ROS_TYPE_INT8:
+        case ROS_TYPE_UINT8:
+          width = 1;
+          break;
+        case ROS_TYPE_WCHAR:
+        case ROS_TYPE_INT16:
+        case ROS_TYPE_UINT16:
+          width = 2;
+          break;
+        case ROS_TYPE_FLOAT:
+        case ROS_TYPE_INT32:
+        case ROS_TYPE_UINT32:
+          width = 4;
+          break;
+        case ROS_TYPE_DOUBLE:
+        case ROS_TYPE_INT64:
+        case ROS_TYPE_UINT64:
+          width = 8;
+          break;
+        case ROS_TYPE_LONG_DOUBLE:
+          width = sizeof(long double);
+          break;
+        default:
+          return false;
+      }
+      spans.push_back({offset, count * width});
+    }
+    return true;
+  }
+  void copy(const void * source, void * dest) const
+  {
+    for (auto span : spans)
+      std::memcpy(
+        static_cast<char *>(dest) + span.offset, static_cast<const char *>(source) + span.offset,
+        span.bytes);
+  }
+};
 bool has_buffer(const MessageMembers & m)
 {
   for (size_t i = 0; i < m.member_count_; ++i) {
@@ -109,8 +176,7 @@ const char * resolve_qos(rmw_qos_profile_t & qos)
   if (
     (qos.reliability != RMW_QOS_POLICY_RELIABILITY_RELIABLE &&
      qos.reliability != RMW_QOS_POLICY_RELIABILITY_BEST_EFFORT) ||
-    qos.deadline.sec || qos.deadline.nsec || qos.liveliness_lease_duration.sec ||
-    qos.liveliness_lease_duration.nsec ||
+    qos.liveliness_lease_duration.sec || qos.liveliness_lease_duration.nsec ||
     (qos.liveliness != RMW_QOS_POLICY_LIVELINESS_AUTOMATIC &&
      qos.liveliness != RMW_QOS_POLICY_LIVELINESS_SYSTEM_DEFAULT) ||
     qos.avoid_ros_namespace_conventions)
@@ -130,15 +196,39 @@ struct Endpoint
   std::map<rmw_event_type_t, std::shared_ptr<Event>> events;
   std::mutex events_mutex;
   Lease lease;
+  std::shared_ptr<Deadline> deadline;
+  bool internal;
+  void configure_deadline(bool publisher)
+  {
+    if (deadline_period == INT64_MAX) return;
+    if (internal || members->has_any_key_member_)
+      throw std::invalid_argument("finite deadlines require unkeyed topic endpoints");
+    auto kind = publisher ? RMW_EVENT_OFFERED_DEADLINE_MISSED : RMW_EVENT_REQUESTED_DEADLINE_MISSED;
+    auto event = std::shared_ptr<Event>(
+      new Event{state(owner_node->context), topic, type, publisher, qos, kind});
+    events.emplace(kind, event);
+    deadline = std::make_shared<Deadline>(event);
+    if (!publisher) {
+      event->requested_timer = deadline;
+      observe_event(owner_node, event);
+    }
+  }
   std::shared_ptr<rcpputils::SharedLibrary> library;
   const rosidl_message_type_support_t * native_ts;
   const MessageMembers * members;
   rmw_qos_profile_t qos;
+  const int64_t deadline_period;
   std::shared_ptr<agnocast::Node> node;
   Endpoint(
     const rmw_node_t * owner, const rosidl_message_type_support_t * ts, const char * name,
     const rmw_qos_profile_t & requested, bool rpc)
-  : topic(name), application_ts(ts), owner_node(owner), native_ts(ts), qos(requested)
+  : topic(name),
+    application_ts(ts),
+    owner_node(owner),
+    internal(rpc),
+    native_ts(ts),
+    qos(requested),
+    deadline_period(deadline_ns(requested.deadline))
   {
     auto intro = get_message_typesupport_handle(ts, "rosidl_typesupport_introspection_cpp");
     if (!intro) {
@@ -161,7 +251,7 @@ struct Endpoint
     type = std::string(members->message_namespace_) + "/" + members->message_name_;
     for (auto pos = type.find("::"); pos != std::string::npos; pos = type.find("::"))
       type.replace(pos, 2, "/");
-    route = std::string(rpc ? "/_rmw_agnocast/rpc2/d" : "/_rmw_agnocast/v3/d") +
+    route = std::string(rpc ? "/_rmw_agnocast/rpc3/d" : "/_rmw_agnocast/v4/d") +
             std::to_string(owner->context->actual_domain_id) + topic + "/" + type;
     static std::once_flag once;
     std::call_once(once, [] { agnocast::init(0, nullptr); });
@@ -171,6 +261,7 @@ struct Endpoint
   }
   ~Endpoint()
   {
+    deadline.reset();
     for (auto & entry : events) {
       auto & event = *entry.second;
       std::lock_guard lock(event.callback_mutex);
@@ -180,6 +271,7 @@ struct Endpoint
   auto ros_qos() const
   {
     auto native = qos;
+    native.deadline = {};
     native.lifespan = {};  // The RMW enforces publisher lifespan at receive and take.
     return rclcpp::QoS(rclcpp::QoSInitialization::from_rmw(native), native);
   }
@@ -199,6 +291,7 @@ int64_t system_ns()
 struct SampleHeader
 {
   uint8_t gid[RMW_GID_STORAGE_SIZE];
+  int64_t offered_deadline;
   int64_t expiry;
   int64_t stamp;
   uint64_t sequence;
@@ -256,6 +349,7 @@ struct Writer : Endpoint
     std::lock_guard lock(send_mutex);
     SampleHeader header{};
     std::memcpy(header.gid, gid.data, sizeof(header.gid));
+    header.offered_deadline = deadline_period;
     header.sequence = ++sequence;
     header.stamp = system_ns();
     auto duration = rmw_time_total_nsec(qos.lifespan);
@@ -265,6 +359,7 @@ struct Writer : Endpoint
     }
     std::memcpy(static_cast<char *>(loan.get()) + members->size_of_, &header, sizeof(header));
     native.publish(std::move(loan), [this](void * p) { destroy(p); });
+    if (deadline) deadline->sample();
   }
   ~Writer()
   {
@@ -280,6 +375,7 @@ struct Writer : Endpoint
         (qos.durability == RMW_QOS_POLICY_DURABILITY_TRANSIENT_LOCAL ? "/t" : "/v"),
       type, ros_qos(), {}, agnocast::PublisherRole::AgnocastOnly)
   {
+    configure_deadline(true);
     if (getrandom(gid.data, sizeof(gid.data), 0) != sizeof(gid.data))
       throw std::runtime_error("native publisher ID unavailable");
     gid.implementation_identifier = id;
@@ -309,6 +405,7 @@ struct Reader : Endpoint
     const rmw_qos_profile_t & q, const rmw_subscription_options_t & options, bool rpc = false)
   : Endpoint(owner, ts, name, q, rpc), context(state(owner->context))
   {
+    configure_deadline(false);
     if (options.content_filter_options) filter = Filter(*members, *options.content_filter_options);
     auto attach = [&](const std::string & suffix) {
       agnocast::SubscriptionOptions opt;
@@ -323,8 +420,10 @@ struct Reader : Endpoint
               std::memcpy(
                 &header, static_cast<const char *>(sample.get()) + members->size_of_,
                 sizeof(header));
+              if (header.offered_deadline > deadline_period) return;
               if (header.expiry && monotonic_ns() >= header.expiry) return;
               if (filter.matches && !filter.matches(sample.get())) return;
+              if (deadline) deadline->sample();
               if (pending.size() == qos.depth) pending.pop_front();
               pending.push_back({std::move(sample), header, system_ns(), ++sequence});
             }
@@ -454,8 +553,16 @@ rmw_ret_t rmw_publish(const rmw_publisher_t * p, const void * msg, rmw_publisher
 }
 // The caller holds the context mutex for the entire take (including a batch).
 static rmw_ret_t take_locked(
-  Reader & r, void * msg, void ** loan, bool * taken, rmw_message_info_t * info)
+  Reader & r, void * msg, void ** loan, bool * taken, rmw_message_info_t * info,
+  const rmw_subscription_allocation_t * allocation = nullptr)
 {
+  const CopyPlan * plan = nullptr;
+  if (allocation) {
+    if (allocation->implementation_identifier != standalone::id)
+      return RMW_RET_INCORRECT_RMW_IMPLEMENTATION;
+    plan = static_cast<const CopyPlan *>(allocation->data);
+    if (!plan || plan->type != r.members || r.library) return RMW_RET_INVALID_ARGUMENT;
+  }
   *taken = false;
   if (!r.ready()) return RMW_RET_OK;
   auto & sample = r.pending.front().loan;
@@ -467,7 +574,9 @@ static rmw_ret_t take_locked(
       auto ret = rmw_serialize(sample.get(), r.native_ts, &bytes);
       if (ret == RMW_RET_OK) ret = rmw_deserialize(&bytes, r.application_ts, msg);
       if (ret != RMW_RET_OK) return ret;
-    } else if (msg)
+    } else if (plan && msg)
+      plan->copy(sample.get(), msg);
+    else if (msg)
       copy_message(*r.members, sample.get(), msg);
   } catch (const std::exception & e) {
     RMW_SET_ERROR_MSG(e.what());
@@ -488,17 +597,50 @@ static rmw_ret_t take_locked(
   return RMW_RET_OK;
 }
 static rmw_ret_t take(
-  const rmw_subscription_t * sub, void * msg, void ** loan, bool * taken, rmw_message_info_t * info)
+  const rmw_subscription_t * sub, void * msg, void ** loan, bool * taken, rmw_message_info_t * info,
+  rmw_subscription_allocation_t * allocation = nullptr)
 {
   if (!sub || sub->implementation_identifier != standalone::id || (!msg && !loan) || !taken)
     return RMW_RET_INVALID_ARGUMENT;
   auto & r = *static_cast<Reader *>(sub->data);
   std::lock_guard lock(r.context->mutex);
-  return take_locked(r, msg, loan, taken, info);
+  return take_locked(r, msg, loan, taken, info, allocation);
+}
+rmw_ret_t rmw_init_subscription_allocation(
+  const rosidl_message_type_support_t * ts, const rosidl_runtime_c__Sequence__bound *,
+  rmw_subscription_allocation_t * allocation)
+{
+  if (!ts || !allocation || allocation->data || allocation->implementation_identifier)
+    return RMW_RET_INVALID_ARGUMENT;
+  auto intro = get_message_typesupport_handle(ts, "rosidl_typesupport_introspection_cpp");
+  if (!intro) {
+    RMW_SET_ERROR_MSG("subscription allocation requires C++ introspection");
+    return RMW_RET_UNSUPPORTED;
+  }
+  try {
+    auto plan = std::make_unique<CopyPlan>();
+    plan->type = static_cast<const MessageMembers *>(intro->data);
+    if (!plan->append(*plan->type, 0)) {
+      RMW_SET_ERROR_MSG("subscription allocation requires fixed-size fields");
+      return RMW_RET_UNSUPPORTED;
+    }
+    *allocation = {standalone::id, plan.release()};
+    return RMW_RET_OK;
+  } catch (const std::bad_alloc &) {
+    return RMW_RET_BAD_ALLOC;
+  }
+}
+rmw_ret_t rmw_fini_subscription_allocation(rmw_subscription_allocation_t * a)
+{
+  if (!a || !a->data) return RMW_RET_INVALID_ARGUMENT;
+  if (a->implementation_identifier != standalone::id) return RMW_RET_INCORRECT_RMW_IMPLEMENTATION;
+  delete static_cast<CopyPlan *>(a->data);
+  *a = {};
+  return RMW_RET_OK;
 }
 rmw_ret_t rmw_take_sequence(
   const rmw_subscription_t * sub, size_t count, rmw_message_sequence_t * messages,
-  rmw_message_info_sequence_t * infos, size_t * taken, rmw_subscription_allocation_t *)
+  rmw_message_info_sequence_t * infos, size_t * taken, rmw_subscription_allocation_t * allocation)
 {
   if (
     !sub || !taken || !messages || !infos || !count || messages->capacity < count ||
@@ -519,10 +661,10 @@ rmw_ret_t rmw_take_sequence(
   auto & reader = *static_cast<Reader *>(sub->data);
   std::lock_guard lock(reader.context->mutex);
   *taken = 0;
-  while (*taken < count && reader.ready()) {
+  while (*taken < count) {
     bool received;
-    auto result =
-      take_locked(reader, messages->data[*taken], nullptr, &received, &infos->data[*taken]);
+    auto result = take_locked(
+      reader, messages->data[*taken], nullptr, &received, &infos->data[*taken], allocation);
     if (result != RMW_RET_OK) return result;
     if (!received) break;
     ++*taken;
@@ -532,9 +674,9 @@ rmw_ret_t rmw_take_sequence(
 }
 rmw_ret_t rmw_take_with_info(
   const rmw_subscription_t * s, void * m, bool * t, rmw_message_info_t * i,
-  rmw_subscription_allocation_t *)
+  rmw_subscription_allocation_t * allocation)
 {
-  return take(s, m, nullptr, t, i);
+  return take(s, m, nullptr, t, i, allocation);
 }
 rmw_ret_t rmw_take_loaned_message_with_info(
   const rmw_subscription_t * s, void ** m, bool * t, rmw_message_info_t * i,
@@ -637,7 +779,9 @@ rmw_ret_t rmw_publisher_count_matched_subscriptions(const rmw_publisher_t * p, s
 {
   if (!p || p->implementation_identifier != standalone::id || !count)
     return RMW_RET_INVALID_ARGUMENT;
-  *count = static_cast<Writer *>(p->data)->native.get_subscription_count();
+  auto & w = *static_cast<Writer *>(p->data);
+  if (!w.internal) return count_compatible(w.owner_node, w.topic, w.type, w.qos, true, count);
+  *count = w.native.get_subscription_count();
   return RMW_RET_OK;
 }
 rmw_ret_t rmw_subscription_count_matched_publishers(const rmw_subscription_t * s, size_t * count)
@@ -645,8 +789,9 @@ rmw_ret_t rmw_subscription_count_matched_publishers(const rmw_subscription_t * s
   if (!s || s->implementation_identifier != standalone::id || !count)
     return RMW_RET_INVALID_ARGUMENT;
   *count = 0;
-  for (auto & route : static_cast<Reader *>(s->data)->routes)
-    *count += route->get_publisher_count();
+  auto & r = *static_cast<Reader *>(s->data);
+  if (!r.internal) return count_compatible(r.owner_node, r.topic, r.type, r.qos, false, count);
+  for (auto & route : r.routes) *count += route->get_publisher_count();
   return RMW_RET_OK;
 }
 
@@ -676,6 +821,8 @@ rmw_ret_t rmw_qos_profile_check_compatible(
   };
   report("publisher: ", publisher_error);
   report("subscription: ", subscription_error);
+  if (deadline_ns(publisher.deadline) > deadline_ns(subscription.deadline))
+    report("", "offered deadline exceeds requested deadline");
   if (mismatch) report("", "best-effort publisher cannot satisfy reliable subscription");
   if (
     publisher.durability == RMW_QOS_POLICY_DURABILITY_VOLATILE &&
@@ -809,7 +956,7 @@ rmw_ret_t init_event(rmw_event_t * handle, Endpoint & ep, bool publisher, rmw_ev
     if (it == ep.events.end()) {
       auto event = std::shared_ptr<Event>(
         new Event{state(ep.owner_node->context), ep.topic, ep.type, publisher, ep.qos, kind});
-      observe_event(ep.owner_node, event);
+      if (!deadline_event(kind)) observe_event(ep.owner_node, event);
       it = ep.events.emplace(kind, event).first;
     }
     *handle = {standalone::id, it->second.get(), kind};
