@@ -3823,3 +3823,16 @@ zero and subsequent rematch or process exit to verify detachment. A peer
 with the original interface restored resumed recording. Docker interface
 replacement still required fresh discovery in a new recorder process in the
 tested setup. [Control matrix and graph evidence](../rmw-agnocast/network-peer/results/match-status.md)
+
+### 2026-11-23 — Follow the manual bridge tutorial in fresh shells
+
+Started the provisioned laptop's Lyrical runtime and prepared awpilot0-stock
+peer with fresh Bash processes. Used the shell blocks from steps 1–3 of the
+[user tutorial](../rmw-agnocast/TUTORIAL.md), launching both directed gateways
+on the native host. The stock peer published PoseArray on /demo/in. Its stock
+echo read tutorial_42 and x=42.0 on /demo/out through the local native topic.
+A five-second recorder invocation produced nine CDR PoseArray messages. Bag
+info reported /demo/out and four seconds between first and last sample. Both
+gateways received SIGINT during cleanup. Minimum host MemAvailable was
+15,509 MiB. This exercised the existing colcon install in fresh shells;
+fresh-machine provisioning and physical two-host deployment remain untested.

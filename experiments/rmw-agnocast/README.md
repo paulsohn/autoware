@@ -1,5 +1,7 @@
 # Whole-message loans with Agnocast storage
 
+Start with the [step-by-step Lyrical user tutorial](TUTORIAL.md) to configure an application and manually bridge a topic to a Cyclone DDS peer.
+
 The current pilot decision and latency milestone are recorded in
 [Pilot bridge choice and interpretation of performance](#pilot-bridge-choice-and-interpretation-of-performance).
 
