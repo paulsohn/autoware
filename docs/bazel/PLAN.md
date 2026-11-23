@@ -12,6 +12,12 @@ not require a container. After the x86 experiment, target software build
 compatibility with JetPack 7.2.1, a release supporting Jetson Thor. Physical
 Thor hardware is not required to complete this experiment.
 
+Phase 9 expands x86 integration to the complete tracked autoware_universe
+package set and its required dependency closure. The dated
+[coverage ledger](UNIVERSE_COVERAGE.md) accounts for all 244 current ROS packages;
+future snapshot changes require a refreshed inventory. Build declarations alone
+do not establish complete package or vehicle behavior qualification.
+
 ## Method
 
 Advance one runnable slice at a time. Each phase begins with the smallest target
@@ -2132,6 +2138,25 @@ identifiers and package-level validation/commit boundaries. Group related
 packages for implementation and sequential builds; do not reopen the completed
 simulator/packaging gate or run expensive targets automatically.
 
+### Whole-repository scope and inventory
+
+The 2026-11-23 census at 3f34693a finds 244 ROS packages under
+src/universe/autoware_universe: 107 package-local MODULE/BUILD pairs with matching
+root overrides and 137 packages without them. See the
+[package ledger](UNIVERSE_COVERAGE.md) for category counts and exact assignments.
+The presence of a definition is not a completion metric. Previous phase results
+qualify their recorded targets/configurations; the final audit checks complete
+package contracts and reuses unchanged passing evidence.
+
+Keep all current Universe packages in scope, including examples, Python/tools,
+resource providers, optional plugins and GPU/model consumers. Existing
+system-designer exclusions are outside this census. Other local repositories,
+including scenario-simulator sources, enter transitively when required; this
+roadmap does not imply full adoption of every imported repository. Use direct
+providers for an inspected source-less shim only under the existing working
+rule and full affected-consumer gate. Do not create dummy libraries or silently
+exclude packages to improve coverage counts.
+
 ### Phase 9.1: Radar input conversion and filtering (complete, 2026-11-23)
 
 | Module | Complete acceptance |
@@ -2159,6 +2184,110 @@ before ego compensation; the rotated-frame regression fails before that return
 fix and passes afterward. No GPU, Fast DDS or expensive simulator/deployment
 rerun is part of this group. Further Universe groups follow runnable dependency
 closures; Phase 8 and engine-profile infrastructure remain deferred.
+
+### Execution order through complete Universe coverage
+
+The following groups are the initial route through every remaining package.
+Their exact package lists live once in the ledger. Implement related packages
+together and build sequentially; preserve module-sized commits/journals. Refine
+within-group execution batches at task start. A prerequisite exposed by a real
+consumer can be integrated earlier without changing these stable identifiers.
+Dependency versions and source patches remain hypotheses until a current
+consumer exposes and validates their need.
+
+| Phase | Package group | Pending packages | Principal gate |
+| --- | --- | ---: | --- |
+| 9.2 | [Radar object conversion, fusion and tracking](UNIVERSE_COVERAGE.md#phase-92-radar-object-conversion-fusion-and-tracking) | 4 | Conversion/fusion/tracking/merge outputs and complete original/ROS suites |
+| 9.3 | [Shared time, logging and command-mode types](UNIVERSE_COVERAGE.md#phase-93-shared-time-logging-and-command-mode-types) | 3 | Time/logging/type consumers and resource/entrypoint contracts |
+| 9.4 | [CPU point-cloud and IMU preprocessing](UNIVERSE_COVERAGE.md#phase-94-cpu-point-cloud-and-imu-preprocessing) | 3 | All CPU filter/IMU suites, point fields, TF and timestamps |
+| 9.5 | [Clustering, shape estimation and map-aware detection](UNIVERSE_COVERAGE.md#phase-95-clustering-shape-estimation-and-map-aware-detection) | 10 | Geometry/map detection plus any required CUDA/learned-shape configuration |
+| 9.6 | [Object association, geometry and postprocessing](UNIVERSE_COVERAGE.md#phase-96-object-association-geometry-and-postprocessing) | 6 | Association, covariance/identity, ordering and message flow |
+| 9.7 | [Traffic-light geometry, fusion and postprocessing](UNIVERSE_COVERAGE.md#phase-97-traffic-light-geometry-fusion-and-postprocessing) | 9 | Map/ROI/visibility, synchronization, state arbitration and visualization outputs |
+| 9.8 | [Localization adapters, landmarks and monitoring](UNIVERSE_COVERAGE.md#phase-98-localization-adapters-landmarks-and-monitoring) | 9 | Initialization, projection/covariance, landmarks, arbitration and diagnostics |
+| 9.9 | [YabLoc visual localization](UNIVERSE_COVERAGE.md#phase-99-yabloc-visual-localization) | 5 | Image/map fixtures, particle-filter state, initialization and monitor behavior |
+| 9.10 | [Trajectory contracts and common motion checks](UNIVERSE_COVERAGE.md#phase-910-trajectory-contracts-and-common-motion-checks) | 12 | Bounds/rules, trajectory continuity, ranking/selection and gate state |
+| 9.11 | [Additional planners and behavior plugins](UNIVERSE_COVERAGE.md#phase-911-additional-planners-and-behavior-plugins) | 13 | Complete planner suites, plugin factories, lifecycle/reload and outputs |
+| 9.12 | [Control gates, operators and vehicle calibration tools](UNIVERSE_COVERAGE.md#phase-912-control-gates-operators-and-vehicle-calibration-tools) | 9 | Control/operator transitions, command outputs and calibration replay/tools |
+| 9.13 | [Traffic-light model execution and image tracking](UNIVERSE_COVERAGE.md#phase-913-traffic-light-model-execution-and-image-tracking) | 5 | Declared models, actual GPU inference, composed pipeline and image tracking |
+| 9.14 | [CUDA sensing and LiDAR model inference](UNIVERSE_COVERAGE.md#phase-914-cuda-sensing-and-lidar-model-inference) | 7 | CUDA filters and LiDAR model/plugin profiles with actual GPU execution |
+| 9.15 | [BEV and multimodal perception fusion](UNIVERSE_COVERAGE.md#phase-915-bev-and-multimodal-perception-fusion) | 5 | Multi-camera/LiDAR association, temporal state and GPU outputs |
+| 9.16 | [Learned prediction, planning and control](UNIVERSE_COVERAGE.md#phase-916-learned-prediction-planning-and-control) | 4 | Declared model/Python/native closures and prediction/planning/control outputs |
+| 9.17 | [System command modes, MRM, diagnostics and monitoring](UNIVERSE_COVERAGE.md#phase-917-system-command-modes-mrm-diagnostics-and-monitoring) | 18 | Service/plugin state, diagnostics, monitors and required OS/device/tool inputs |
+| 9.18 | [Evaluation and simulator adapters](UNIVERSE_COVERAGE.md#phase-918-evaluation-and-simulator-adapters) | 8 | Metrics, protocol/scenario inputs, simulator services and failure/recovery |
+| 9.19 | [Remaining RViz and interactive tools](UNIVERSE_COVERAGE.md#phase-919-remaining-rviz-and-interactive-tools) | 7 | Factories, Qt resources/slots, interactions and required graphical checks |
+| 9.20 | Existing declarations and full package-contract audit | All 244 | Reconcile targets/tests/resources/configurations with accepted evidence |
+| 9.21 | Composed products and distribution closure | Product gates | Affected end-to-end runtime and deployment acceptance |
+
+The 137 pending packages are assigned exactly once across 9.2–9.19. A manifest
+prerequisite check finds no remaining-package edge from an earlier group to a
+later group; within-group providers precede consumers. This is a manifest-level
+planning check, not proof of complete build/launch dependencies. In particular,
+existing occupancy-grid and behavior-path packages name the still-unadopted
+preprocessor/sampler in their manifests; inspect actual optional/source contracts
+when 9.4/9.11 provide them and again during the baseline audit.
+
+### Per-group adoption and acceptance
+
+Before implementing each module, inventory its CMake targets, original test
+files/drivers/data, optional compile branches, parameter schemas, executables,
+components, plugins, Python entrypoints and indexed resources. Identify required
+backend/platform/model configurations and real runtime prerequisites. Later
+ledger entries are planning scopes, not frozen test counts or supported-profile
+claims. Preserve source and original tests under the working rules; added peers,
+adapters and fixtures belong in bazel/. Introduce dependencies/compatibility fixes
+only after the current target demonstrates their need, preferring local snapshots.
+
+Build the affected libraries/executables/indexes and pass the complete existing
+suite plus relevant behavior checks in every required configuration. Packages
+without original functional tests need meaningful public-API/ROS behavior gates.
+Resource-only/header-only packages are checked against their actual contract and
+compiled/runnable consumers. Missing models/services/devices or dependency-related
+skips leave a gate incomplete; do not rename a smaller passing slice as full
+package integration. Record exact results and remaining limitations per module.
+
+Use Cyclone DDS for routine checks; select Agnocast configurations according to
+the actual module/test contract and communication changes. Preserve unconditional
+wrapper support and validate newly required enabled-path behavior when that path
+enters a product. Reserve broader communication matrices for explicitly scoped
+milestones. Propose a Tier-2 Fast DDS milestone after primary gates pass, and
+obtain fresh approval before any Fast DDS build/test/check. GPU consumers need
+real required GPU checks; CPU-only compilation is not their completion gate.
+
+Reuse the existing pinned SDK/toolchain/runtime providers where applicable.
+Bring new SDK/tool/Python inputs into controlled Bazel providers when exposed;
+apt/pip/rosdep/Ansible installation is not a target dependency strategy. Models
+follow the existing per-repository subtree/LFS/index/colcon convention and
+launch-selected flat diffusion layout. Declare required images, bags, maps,
+calibration and external services. A mock/replay is useful evidence but does not
+replace an original required real-service/device test or qualify vehicle accuracy.
+
+Concrete precision/calibration/optimization/model choices remain product-owned.
+The first actual model consumer needing an engine in its launch closure triggers
+one explicit product preparation profile, possibly in 9.5 or a later GPU group.
+Keep the qualified engine APIs until a replacement passes its full consumer
+gate; defer generic profile rules and GPU build actions until needed. Keep source-owned resources with src/,
+deployment-selectable resources under assets/ and product composition under bazel/.
+
+### Phase 9 completion gate
+
+Close 9.20 only when every ledger package has a documented build/resource role,
+its supported public targets/entrypoints/plugins/interfaces are represented and
+its complete required test/configuration evidence is accounted for. Audit baseline
+modules as well as new ones; reuse unchanged passing results and run only gates
+affected by uncovered gaps or changed closures. Correct platform constraints and
+Bazel declarations alone do not substitute for required runtime evidence. Track
+external prerequisites as incomplete rather than silently narrowing acceptance.
+
+In 9.21, compose affected representative sensing-to-perception, localization,
+planning/control and system flows with explicit models/maps/parameters; check
+plugin coexistence, data/control delivery, state/recovery and ordered shutdown.
+Check the changed native distribution/debug environment and affected simulator/
+OCI/OSTree outputs only when their closures actually change, with --config=expensive
+for the costly gates. Do not run the full simulator/export suite after each group.
+This remains functional software integration; production accuracy, timing and
+physical-vehicle qualification require their own evidence. Publish the exact
+platform/backend/model profile matrix and unresolved scope before claiming full
+Universe support. Phase 8 retains its separate JetPack compatibility definition.
 
 ## Later phases
 

@@ -19755,3 +19755,101 @@ part of this ordinary new-consumer gate.
 
 Bazel registration completed with the matching package-local MODULE/BUILD, root
 override and behavior inputs. Reuse the complete passing module evidence above.
+
+## 2026-11-23: Phase 9 — Whole-Universe adoption roadmap
+
+Purpose: plan complete coverage of the tracked autoware_universe snapshot before
+starting the next package group, retaining stable phase identifiers and separate
+module acceptance/commit boundaries. This task changes documentation only.
+Prerequisite: the Phase 9.1 module gates are complete; inventory source at bazel
+commit 3f34693a. Inspect package.xml names/build types/dependency declarations,
+package-local MODULE.bazel/BUILD.bazel presence, root local overrides and the
+current CMake dependency/test declarations needed to classify the next groups.
+
+The census finds 244 ROS packages: 107 have canonical package-local definitions
+and matching root overrides; 137 lack those definitions. There are 243
+ament_cmake packages and one ament_python package. Definitions are an adoption
+inventory, not proof that every optional branch, original test, tool or resource
+has been integrated. Keep the exact package assignments in UNIVERSE_COVERAGE.md
+and sequence/acceptance policy in PLAN.md rather than duplicating full lists.
+
+Pattern: assign each pending package once to a related dependency group, check
+manifest prerequisite direction, and inventory the actual CMake/source/test/
+launch contract before implementing it. Phases 9.2–9.19 cover radar, shared
+providers, CPU perception, localization, motion/planning/control, GPU/model
+consumers, system behavior, evaluation/simulator adapters and remaining RViz
+plugins. Phase 9.20 reconciles all 244 package contracts with evidence, including
+the baseline 107; 9.21 checks affected composed products and distributions.
+Related packages may share an execution batch, while module commits and complete
+suite gates remain separate. Model/SDK/device requirements stay visible; missing
+prerequisites keep a task incomplete. No future patch or version is selected by
+this inventory.
+
+Know-how: inspect manifests across the whole source tree, not only the next
+category. Shape estimation has conditional CUDA/TensorRT support, and calibration
+status classification also requires TensorRT, so their groups cannot be declared
+complete using CPU compilation alone. Existing occupancy-grid and behavior-path
+manifests name pending preprocessor/sampler providers; these are audit leads,
+not proof that an unused dependency must be added to current targets. Inspect
+actual optional/public contracts when those providers enter the graph. A
+manifest graph does not capture every CMake, runtime or dynamically loaded edge.
+
+Reproduce the census and the ledger assignment/prerequisite checks from the
+repository root (standard Python only; no Bazel server or SDK required):
+
+```sh
+rg --files src/universe/autoware_universe -g package.xml
+python3 - <<'PY'
+from collections import Counter
+from pathlib import Path
+import re
+import xml.etree.ElementTree as ET
+
+root = Path('src/universe/autoware_universe')
+packages = {}
+for path in root.rglob('package.xml'):
+    manifest = ET.parse(path).getroot()
+    name = manifest.findtext('name')
+    assert name not in packages, name
+    packages[name] = (path, manifest)
+ledger = Path('docs/bazel/UNIVERSE_COVERAGE.md').read_text()
+entries = re.findall(r'\[([^\]]+)\]\(([^)]+/package\.xml)\)', ledger)
+assert Counter(name for name, _ in entries) == Counter(packages.keys())
+for name, link in entries:
+    assert (Path('docs/bazel') / link).resolve() == packages[name][0].resolve()
+existing = {name for name, (path, _) in packages.items()
+            if all((path.parent / f).exists()
+                   for f in ('MODULE.bazel', 'BUILD.bazel'))}
+overrides = dict(re.findall(
+    r'local_path_override\(\s*module_name = "([^"]+)",\s*path = "([^"]+)"',
+    Path('MODULE.bazel').read_text()))
+for name in existing:
+    assert overrides[name] == str(packages[name][0].parent)
+phase = None
+assigned = {}
+for line in ledger.splitlines():
+    if line.startswith('### Phase 9.'):
+        phase = tuple(map(int, line.split()[2].rstrip(':').split('.')))
+    match = re.match(r'- \[ \] \[([^\]]+)\]', line)
+    if match:
+        name = match[1]
+        assert name not in assigned
+        assigned[name] = phase
+assert set(assigned) == packages.keys() - existing
+for name, group in assigned.items():
+    for dependency in packages[name][1]:
+        if dependency.tag == 'depend' or dependency.tag.endswith('_depend'):
+            if dependency.text in assigned:
+                assert assigned[dependency.text] <= group, (name, dependency.text)
+print(len(packages), len(existing), len(assigned))
+PY
+```
+
+Result: `244 107 137`; every package has one ledger entry, each pending package
+has one phase, all existing pairs have matching overrides, and no pending-package
+manifest dependency points to a later group. Local Markdown paths/phase anchors
+and whitespace were checked as well. This one-time planning check is not a
+build-time interface/source completeness validator. No Bazel build, runtime,
+GPU, DDS, simulator or export checks were run: source, build definitions and
+accepted configurations are unchanged. The next implementation task is 9.2;
+refine its complete original/ROS gate before starting. Phase 8 remains deferred.
