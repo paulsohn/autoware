@@ -6,13 +6,13 @@ out=${1:?fresh directory relative to worktree}
 mkdir "$out"
 rounds=4
 case ${2:-} in
-  --compare-builds|--compare-release|--compare-events) rounds=6;;
+  --compare-builds|--compare-release|--compare-events|--compare-poll) rounds=6;;
   ""|--compare-handoff|--compare-cie) ;;
   *) echo "Unknown comparison: $2" >&2; exit 2;;
 esac
 release_baseline=0
 case ${2:-} in
-  ""|--compare-handoff|--compare-events|--compare-cie)
+  ""|--compare-handoff|--compare-events|--compare-cie|--compare-poll)
     release_baseline=1
     for flags in \
       build/standalone/o3-obj/agnocastlib/CMakeFiles/agnocast.dir/flags.make \
@@ -37,7 +37,7 @@ for ((round=1;round<=rounds;round++)); do
       3) modes=(handoff inline o2 native);;
       4) modes=(inline native handoff o2);;
     esac
-  elif [[ ${2:-} == --compare-release || ${2:-} == --compare-events ]]; then
+  elif [[ ${2:-} == --compare-release || ${2:-} == --compare-events || ${2:-} == --compare-poll ]]; then
     case $round in
       1) modes=(native o2 o3);;
       2) modes=(o2 o3 native);;
@@ -46,6 +46,7 @@ for ((round=1;round<=rounds;round++)); do
       5) modes=(native o3 o2);;
       6) modes=(o2 native o3);;
     esac
+    if [[ ${2:-} == --compare-poll ]]; then modes=("${modes[@]/o3/poll}"); fi
     if [[ ${2:-} == --compare-events ]]; then modes=("${modes[@]/o3/events}"); fi
   elif [[ $rounds == 4 ]]; then
     modes=(rmw native)
@@ -97,6 +98,12 @@ for ((round=1;round<=rounds;round++)); do
         libs=$(ldd "$probe")
         grep -F "libagnocast.so => /ws/build/standalone/o3-install/agnocastlib/lib/libagnocast.so" <<< "$libs"
         grep -F "librclcpp.so => /ws/build/standalone/release-path/install/rclcpp/lib/librclcpp.so" <<< "$libs"
+      fi
+      unset AGNOCAST_RMW_POLL_TOPIC
+      if [[ $4 == --compare-poll && $1 != native ]]; then
+        source build/standalone/poll-install/local_setup.bash
+        test "$(ros2 pkg prefix rmw_agnocast)" = /ws/build/standalone/poll-install/rmw_agnocast
+        if [[ $1 == poll ]]; then export AGNOCAST_RMW_POLL_TOPIC=/path_latency; fi
       fi
       arm=rmw
       if [[ $1 == inline || $1 == handoff || $1 == events ]]; then arm=$1; fi

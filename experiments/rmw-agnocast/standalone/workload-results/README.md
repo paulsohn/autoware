@@ -215,3 +215,28 @@ bash experiments/rmw-agnocast/standalone/bench-path.sh build/standalone/fresh-ci
 ```
 
 [All 960 frames](path-cie.csv). For a separate question about scheduling under competing callbacks, see the [earlier Universe saturation experiment](../../pipeline-saturation-results/summary.txt).
+
+## Blocking rmw_wait on native notification descriptors
+
+Can the ordinary SingleThreadedExecutor keep its callback scheduling and avoid waking a second thread for each Path? In the experimental RMW, selecting a subscription by exact ROS topic with `AGNOCAST_RMW_POLL_TOPIC` leaves its receiver thread unstarted. A mixed wait set blocks in Linux ppoll on each selected native route and a private eventfd for context notifications. After a native wake the waiting thread drains the native executor, queues the loan and reports subscription readiness. rclcpp then selects the callback group and takes the loan normally. A take issued without a preceding wait can also acquire data. The opt-in is limited to wait-set executors. Registration of an asynchronous new-message callback on the selected subscription returns unsupported. Other subscriptions and internal service endpoints retain their receiver threads.
+
+| 10 Hz Path reader | Median µs | p95 µs | Child CPU s | Peak child RSS MiB |
+|---|---:|---:|---:|---:|
+| Native Agnocast | 45.60 | 80.02 | 0.130 | 26.0 |
+| Standalone RMW, receiver thread | 85.47 | 132.02 | 0.173 | 25.9 |
+| Standalone RMW, blocking direct wait | 78.90 | 116.42 | 0.169 | 26.0 |
+
+Both RMW arms loaded the same new Release library in the Cyclone-stripped distribution. Only the selected topic differed. All six launch orders ran serially. Each arm passed 360/360 frames with the payload, retained loan and all three addresses checked. The table pools 300 frames per arm after ten warmups per launch and uses nearest-rank p95. CPU and RSS are medians over six launches. Minimum available host memory across timed launches was 12124 MiB.
+
+Direct wait improved the median and p95 in each paired round. Pooled latency was still 1.73× native median and 1.45× native p95. Native per-round p95 ranged from 62.64 to 206.79 µs. This measures the whole intervention on one laptop. It cannot assign the remaining time to ROS scheduling alone. The direct arm still enters a second nonblocking native epoll wait after ppoll identifies a ready descriptor, updates a queue, and walks the ordinary ROS executor path. A follow-up can time these stages and compare dispatch by the already-ready route. Keep the mode experimental pending multiple active readers, competing callback groups, and larger graph measurements.
+
+From the worktree on the provisioned laptop, reuse the Release Path dependencies above. The build uses Clang 21, one job and the default Release optimization flags. The functional probe blocks with a selected subscription present and exercises timeout, guard, simultaneous guard and data, service request, deadline and shutdown. It also takes a second sample without calling wait. An external timeout bounds each test.
+
+```bash
+export LYRICAL_ROOT="$(cat build/agnocast-lyrical/universe-root)"
+experiments/buffer/run-lyrical.sh bash experiments/rmw-agnocast/standalone/build-poll.sh
+bash experiments/rmw-agnocast/standalone/bench-path.sh build/standalone/fresh-poll --compare-poll
+experiments/buffer/run-lyrical.sh bwrap --ro-bind / / --dev-bind /dev /dev --bind /ws /ws --bind /tmp /tmp --ro-bind /ws/build/standalone/distro /opt/ros/lyrical --chdir /ws bash experiments/rmw-agnocast/standalone/check-poll.sh
+```
+
+[All frame latencies](path-poll.csv) and [child resources by launch](path-poll-resources.csv).

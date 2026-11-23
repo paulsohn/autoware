@@ -71,7 +71,7 @@ void Event::update(
     pending = true;
     if (joins) policy = last;
   }
-  context->changed.notify_all();
+  context->notify();
   std::lock_guard lock(callback_mutex);
   if (callback)
     callback(data, joins + leaves);
@@ -192,7 +192,7 @@ void Deadline::run()
       event->total += count;
       event->pending = true;
     }
-    event->context->changed.notify_all();
+    event->context->notify();
     {
       std::lock_guard guard(event->callback_mutex);
       if (event->callback)

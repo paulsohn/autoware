@@ -108,7 +108,7 @@ rmw_ret_t rmw_shutdown(rmw_context_t * ctx)
     std::lock_guard lock(s->mutex);
     s->stopped = true;
   }
-  s->changed.notify_all();
+  s->notify();
   return RMW_RET_OK;
 }
 rmw_ret_t rmw_context_fini(rmw_context_t * ctx)
@@ -145,7 +145,7 @@ rmw_ret_t rmw_trigger_guard_condition(const rmw_guard_condition_t * handle)
     std::lock_guard lock(guard->context->mutex);
     guard->triggered = true;
   }
-  guard->context->changed.notify_all();
+  guard->context->notify();
   return RMW_RET_OK;
 }
 struct LocalNode
@@ -227,11 +227,100 @@ rmw_ret_t rmw_wait(
     return false;
   };
   bool awake = true;
-  if (timeout)
-    awake = s->changed.wait_for(
-      lock, std::chrono::seconds(timeout->sec) + std::chrono::nanoseconds(timeout->nsec), active);
-  else
-    s->changed.wait(lock, active);
+  std::vector<pollfd> descriptors;
+  std::vector<std::pair<size_t, void *>> starts;
+  try {
+    if (subs)
+      for (size_t i = 0; i < subs->subscriber_count; ++i) {
+        auto sub = subs->subscribers[i];
+        if (!sub) continue;
+        auto start = descriptors.size();
+        append_routes(sub, descriptors);
+        if (descriptors.size() > start) starts.emplace_back(start, sub);
+      }
+    if (!starts.empty()) {
+      descriptors.push_back({-1, POLLIN, 0});
+      const int fd = eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
+      if (fd < 0) {
+        RMW_SET_ERROR_MSG("wait eventfd failed");
+        return RMW_RET_ERROR;
+      }
+      struct Signal
+      {
+        Context & context;
+        int fd;
+        ~Signal()
+        {
+          std::lock_guard guard(context.signals_mutex);
+          context.signals.remove(fd);
+          close(fd);
+        }
+      } signal{*s, fd};
+      {
+        std::lock_guard guard(s->signals_mutex);
+        s->signals.push_back(fd);
+      }
+      descriptors.back().fd = fd;
+      using Clock = std::chrono::steady_clock;
+      auto start = Clock::now();
+      auto end = Clock::time_point::max();
+      if (
+        timeout &&
+        timeout->sec < static_cast<uint64_t>(
+                         std::chrono::duration_cast<std::chrono::seconds>(end - start).count()))
+        end = start + std::chrono::seconds(timeout->sec) + std::chrono::nanoseconds(timeout->nsec);
+      while (true) {
+        const bool already_ready = active();
+        timespec ts{};
+        if (!already_ready && timeout) {
+          auto remaining = std::max(Clock::duration::zero(), end - Clock::now());
+          auto ns = std::chrono::duration_cast<std::chrono::nanoseconds>(remaining).count();
+          ts = {ns / 1000000000, ns % 1000000000};
+        }
+        lock.unlock();
+        int n = ppoll(
+          descriptors.data(), descriptors.size(), timeout || already_ready ? &ts : nullptr,
+          nullptr);
+        if (n < 0 && errno != EINTR) {
+          RMW_SET_ERROR_MSG("native ppoll failed");
+          return RMW_RET_ERROR;
+        }
+        if (n > 0) {
+          for (auto & d : descriptors)
+            if (d.revents & (POLLERR | POLLHUP | POLLNVAL)) {
+              RMW_SET_ERROR_MSG("invalid native wait descriptor");
+              return RMW_RET_ERROR;
+            }
+          if (descriptors.back().revents & POLLIN) {
+            eventfd_t count;
+            while (eventfd_read(fd, &count) < 0 && errno == EINTR) {
+            }
+          }
+          for (size_t i = 0; i < starts.size(); ++i) {
+            size_t stop = i + 1 < starts.size() ? starts[i + 1].first : descriptors.size() - 1;
+            for (size_t j = starts[i].first; j < stop; ++j)
+              if (descriptors[j].revents & POLLIN) {
+                acquire_routes(starts[i].second);
+                break;
+              }
+          }
+        }
+        lock.lock();
+        awake = active();
+        if (awake || (timeout && Clock::now() >= end)) break;
+      }
+    } else if (timeout)
+      awake = s->changed.wait_for(
+        lock, std::chrono::seconds(timeout->sec) + std::chrono::nanoseconds(timeout->nsec), active);
+    else
+      s->changed.wait(lock, active);
+  } catch (const std::bad_alloc &) {
+    RMW_SET_ERROR_MSG("native wait allocation failed");
+    return RMW_RET_BAD_ALLOC;
+  } catch (const std::exception & error) {
+    RMW_SET_ERROR_MSG(error.what());
+    return RMW_RET_ERROR;
+  }
   if (guards)
     for (size_t i = 0; i < guards->guard_condition_count; ++i) {
       auto g = static_cast<Guard *>(guards->guard_conditions[i]);

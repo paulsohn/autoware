@@ -1,6 +1,7 @@
 #include "filter.hpp"
 #include "graph.hpp"
 
+#include <agnocast/agnocast_executor.hpp>
 #include <agnocast/node/agnocast_node.hpp>
 #include <agnocast/node/agnocast_only_single_threaded_executor.hpp>
 #include <rclcpp/typesupport_helpers.hpp>
@@ -383,13 +384,40 @@ struct Writer : Endpoint
     handle = {id, this, topic.c_str(), options, !library};
   }
 };
+class PollSubscription : public agnocast::Subscription<void>
+{
+public:
+  using agnocast::Subscription<void>::Subscription;
+  int fd() const { return notify_eventfd_; }
+};
+
+class PollExecutor : public agnocast::AgnocastOnlySingleThreadedExecutor
+{
+public:
+  void prepare()
+  {
+    add_callback_groups_from_nodes_associated_to_executor();
+    epoll_manager_->prepare_epoll(
+      [this](const auto & group) { return is_callback_group_associated(group); });
+  }
+  void acquire()
+  {
+    agnocast::AgnocastExecutable executable;
+    if (get_next_agnocast_executable(executable, 0)) {
+      do {
+        execute_agnocast_executable(executable);
+      } while (get_next_ready_agnocast_executable(executable));
+    }
+  }
+};
+
 struct Reader : Endpoint
 {
   Context * context;
   rmw_subscription_t handle{};
   uint64_t sequence{};
   // Native subscriptions must still exist when queued and held loans release their references.
-  std::vector<std::shared_ptr<agnocast::Subscription<void>>> routes;
+  std::vector<std::shared_ptr<PollSubscription>> routes;
   std::deque<QueuedSample> pending;
   Filter filter;
   std::recursive_mutex callback_mutex;
@@ -398,7 +426,9 @@ struct Reader : Endpoint
   size_t unreported{};
 
   std::map<const void *, Loan> held;
-  agnocast::AgnocastOnlySingleThreadedExecutor executor;
+  PollExecutor executor;
+  bool direct{};
+  std::mutex acquire_mutex;
   std::thread thread;
   Reader(
     const rmw_node_t * owner, const rosidl_message_type_support_t * ts, const char * name,
@@ -411,7 +441,7 @@ struct Reader : Endpoint
       agnocast::SubscriptionOptions opt;
       opt.ignore_local_publications = options.ignore_local_publications;
       routes.push_back(
-        std::make_shared<agnocast::Subscription<void>>(
+        std::make_shared<PollSubscription>(
           node.get(), route + suffix, type, ros_qos(),
           [this](Loan sample) {
             {
@@ -427,7 +457,7 @@ struct Reader : Endpoint
               if (pending.size() == qos.depth) pending.pop_front();
               pending.push_back({std::move(sample), header, system_ns(), ++sequence});
             }
-            context->changed.notify_all();
+            context->notify();
             std::lock_guard callback_lock(callback_mutex);
             if (callback)
               callback(callback_data, 1);
@@ -451,7 +481,26 @@ struct Reader : Endpoint
     handle.is_cft_supported = true;
     if (!rpc) lease.announce(owner, 'S', topic, type, ts->get_type_hash_func(ts), &qos);
     executor.add_node(node);
-    thread = std::thread([this] { executor.spin(); });
+    const char * selected = std::getenv("AGNOCAST_RMW_POLL_TOPIC");
+    direct = !rpc && selected && topic == selected;
+    if (direct)
+      executor.prepare();
+    else
+      thread = std::thread([this] { executor.spin(); });
+  }
+  void acquire()
+  {
+    std::lock_guard lock(acquire_mutex);
+    executor.acquire();
+  }
+  void before_take()
+  {
+    if (!direct) return;
+    {
+      std::lock_guard lock(context->mutex);
+      if (ready()) return;
+    }
+    acquire();
   }
   bool ready()
   {
@@ -463,10 +512,20 @@ struct Reader : Endpoint
   ~Reader()
   {
     executor.cancel();
-    thread.join();
+    if (thread.joinable()) thread.join();
   }
 };
 }  // namespace
+void standalone::append_routes(void * sub, std::vector<pollfd> & descriptors)
+{
+  auto & reader = *static_cast<Reader *>(sub);
+  if (reader.direct)
+    for (auto & route : reader.routes) descriptors.push_back({route->fd(), POLLIN, 0});
+}
+void standalone::acquire_routes(void * sub)
+{
+  static_cast<Reader *>(sub)->acquire();
+}
 bool standalone::ready(void * sub)
 {
   return static_cast<Reader *>(sub)->ready();
@@ -603,6 +662,7 @@ static rmw_ret_t take(
   if (!sub || sub->implementation_identifier != standalone::id || (!msg && !loan) || !taken)
     return RMW_RET_INVALID_ARGUMENT;
   auto & r = *static_cast<Reader *>(sub->data);
+  r.before_take();
   std::lock_guard lock(r.context->mutex);
   return take_locked(r, msg, loan, taken, info, allocation);
 }
@@ -659,6 +719,7 @@ rmw_ret_t rmw_take_sequence(
     }
   }
   auto & reader = *static_cast<Reader *>(sub->data);
+  reader.before_take();
   std::lock_guard lock(reader.context->mutex);
   *taken = 0;
   while (*taken < count) {
@@ -859,6 +920,7 @@ rmw_ret_t rmw_take_serialized_message_with_info(
   if (!sub || sub->implementation_identifier != standalone::id || !msg || !taken || !info)
     return RMW_RET_INVALID_ARGUMENT;
   auto & reader = *static_cast<Reader *>(sub->data);
+  reader.before_take();
   std::lock_guard lock(reader.context->mutex);
   *taken = false;
   if (!reader.ready()) return RMW_RET_OK;
@@ -900,6 +962,10 @@ rmw_ret_t rmw_subscription_set_on_new_message_callback(
 {
   if (!sub || sub->implementation_identifier != standalone::id) return RMW_RET_INVALID_ARGUMENT;
   auto & r = *static_cast<Reader *>(sub->data);
+  if (r.direct && callback) {
+    RMW_SET_ERROR_MSG("experimental directly polled topic requires a wait-set executor");
+    return RMW_RET_UNSUPPORTED;
+  }
   std::lock_guard lock(r.callback_mutex);
   r.callback = callback;
   r.callback_data = data;
