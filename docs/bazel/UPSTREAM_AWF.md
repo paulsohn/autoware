@@ -1942,3 +1942,18 @@ fails. Replace the test format with %p. No library implementation changes.
 All 15 native targets, including the complete original signal shell driver,
 pass with LLVM/libc++ 21.1.8 after the required native build features/drivers
 are prepared. [Reproduction and setup](JOURNAL.md#2026-11-23-phase-93--local-glog-prerequisite).
+
+## Retained command-source header needs its own cstdint dependency
+
+- [x] Upstream status associated: checked 2026-11-23, merged
+  [Universe#13540](https://github.com/autowarefoundation/autoware_universe/pull/13540)
+  removed the command-mode packages in favor of driving_mode_manager. This is
+  removal, not a matching include fix; no forward patch proposal is needed.
+
+Package: autoware_command_mode_types in the retained snapshot. Compiling
+sources.hpp before any other header fails because uint16_t is undeclared.
+Include cstdint directly, as modes.hpp already does. Preserve the numeric and
+namespace contracts. Both standalone-header translation units and two ID-domain
+consumer cases pass with LLVM/libc++ 21.1.8. This is header self-containment,
+not a Lyrical-specific API or system-behavior change.
+[Reproduction and scope](JOURNAL.md#2026-11-23-phase-93--command-modesource-type-headers).

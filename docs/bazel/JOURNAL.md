@@ -20195,3 +20195,45 @@ zero failures/errors/skips. Full gate 5.2 s; behavior target 0.1 s. Targeted
 clang-format and git diff --check pass. Reuse the unchanged glog and Agnocast
 container evidence above. No Fast DDS, GPU or costly system/deployment check is
 required. Next: independently usable command-mode/source constant headers.
+
+## 2026-11-23: Phase 9.3 — Command-mode/source type headers
+
+Purpose: expose the retained snapshot's command-mode/source constants as a
+header-only module and indexed package. Inspect both public headers, CMake,
+README's ID/type/reservation contract and existing gate/decider consumers.
+There are no original functional tests. Acceptance: complete header/index
+surface, independently compile each header before any other include, and two
+external consumer cases for the documented 16-bit/reserved/unique ID domains.
+No fabricated compiled library or runtime node is needed for constants.
+
+Pattern: cc_library exporting original include paths plus ament_index; root
+selects the local module. Keep new header translation units and contract checks
+under bazel/tests/autoware_command_mode_types. This does not implement a new
+mode-selection policy or validate the later command-gate/manager behavior.
+
+Observed failure: the sources-only translation unit fails on all seven uint16_t
+declarations. sources.hpp has no cstdint include; including modes.hpp or a ROS
+header first hides the defect. Add cstdint directly, matching the sibling mode
+header. Preserve every ID, type and namespace. Commit the source correction
+separately from build definitions and retain both independent-header inputs.
+
+Upstream check on 2026-11-23: current main no longer contains the header. Path
+history and merged Universe PR #13540 (2026-11-09) show removal of five command-
+mode packages in favor of driving_mode_manager. This is an architecture change,
+not the same header fix. The current tracked-snapshot census and later 9.17
+package scope remain unchanged; a source refresh would require a new inventory.
+No forward fix proposal is needed for code already removed upstream.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  @autoware_command_mode_types//... //bazel/tests:command_mode_types_contract_test
+```
+
+Result: both independent headers compile, all module targets build and both
+contract cases pass, zero failures/errors/skips; full gate 3.7 s. This verifies
+public header/constant use on the LLVM/Lyrical profile, not system mode behavior.
+No runtime DDS communication, Fast DDS, GPU or expensive system/deployment check
+is required by this header-only module. Phase status will close with its build
+registration; no source-selection change is implied.

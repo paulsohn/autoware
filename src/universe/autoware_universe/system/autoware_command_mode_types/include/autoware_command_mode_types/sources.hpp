@@ -15,6 +15,8 @@
 #ifndef AUTOWARE_COMMAND_MODE_TYPES__SOURCES_HPP_
 #define AUTOWARE_COMMAND_MODE_TYPES__SOURCES_HPP_
 
+#include <cstdint>
+
 namespace autoware::command_mode_types::sources
 {
 
