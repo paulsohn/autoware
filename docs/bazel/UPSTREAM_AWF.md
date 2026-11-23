@@ -1910,3 +1910,17 @@ fusion behavior. This is the same API transition as the static radar filter
 above. The complete component/executable/index build and six estimator plus two
 synchronized ROS cases pass on Lyrical/Cyclone with LLVM/libc++ 21.1.8, zero skips.
 [Reproduction and verification](JOURNAL.md#2026-11-23-phase-92--radar-fusion-into-detected-objects).
+
+## Radar tracker model sources require standard-library includes
+
+- [ ] Associate with a matching upstream change. Checked 2026-11-23: current
+  [constant-turn-rate source](https://github.com/autowarefoundation/autoware_universe/blob/main/perception/autoware_radar_object_tracker/src/tracker/model/constant_turn_rate_motion_tracker.cpp)
+  retains bits/stdc++.h; the scoped tracker/stdc++.h PR search finds no match.
+
+Package: autoware_radar_object_tracker. Both model translation units use GNU's
+bits/stdc++.h and fail to compile with LLVM/libc++. Replace it with cmath and
+numeric, retaining the model equations and APIs. This is standard C++ portability,
+not a Lyrical-specific behavior change. Complete component/executable/index
+builds, four original lanelet cases and four ROS cases covering both motion
+models/publication modes pass with LLVM/libc++ 21.1.8 and Lyrical/Cyclone DDS,
+zero skips. [Reproduction and verification](JOURNAL.md#2026-11-23-phase-92--radar-object-tracking).

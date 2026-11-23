@@ -35,7 +35,8 @@
 
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 
-#include <bits/stdc++.h>
+#include <cmath>
+#include <numeric>
 #include <yaml-cpp/yaml.h>
 
 #include <string>

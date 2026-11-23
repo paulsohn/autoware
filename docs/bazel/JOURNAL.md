@@ -19960,3 +19960,46 @@ object tracking and its complete original utility suite.
 
 Bazel definitions and root behavior registration reuse the complete passing gate
 above. The independently committed compatibility correction is 52ada3cb.
+
+## 2026-11-23: Phase 9.2 — Radar object tracking
+
+Purpose: adopt the local tracker with both motion models, its public utility
+library, component/executable and indexed runtime YAML/launch resources. Inspect
+CMake/package, the sole original test file, association solver, model loaders and
+node publication/lifecycle parameters. Gate: all four original lanelet-condition
+cases plus four added ROS cases (linear/constant-turn-rate model crossed with
+measurement/timer publication) using Cyclone DDS/no-agnocast.
+
+Pattern: compile the CMake-listed sources and utilities, excluding the unused
+alternative SSP implementation. Reuse local Kalman/lanelet/object-recognition/
+geometry providers, existing muSSP, Eigen, nlohmann JSON and yaml-cpp providers.
+Keep shared SDK owners in runtime_dynamic_deps. Use ament_index to locate the
+original node/association/model files in tests; override the YAML's launch-time
+find-pkg-share expression with that indexed config/tracking directory. This
+exercises runtime model loading without absolute workspace paths or copied YAML.
+
+Build failure: both model sources include GNU-only bits/stdc++.h, absent from
+LLVM/libc++. Replace it with cmath and numeric for their math and accumulate
+operations. This changes includes only, not model equations. Upstream main still
+has the GNU header; the targeted tracker/stdc++.h PR search on 2026-11-23 finds
+no matching change. Commit this portability correction separately from rules.
+
+ROS cases use the original association matrices and model configuration, two
+well-separated detections, a subsequent position measurement, stable distinct
+UUIDs and expiration after the input becomes empty. Both publication modes and
+both models must pass; the original suite checks lane distance/heading behavior.
+These gates do not establish physical radar accuracy or vehicle tracking quality.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_env=ROS_DOMAIN_ID=114 \
+  --test_output=errors @autoware_radar_object_tracker//... \
+  //bazel/tests:radar_tracker_behavior_test
+```
+
+Result after the include fix: all package targets build, all four original cases
+and four ROS cases pass, zero failures/errors/skips. Original and ROS targets
+complete in 0.6 s and 2.0 s; the full gate takes 51.7 s including compilation.
+No dependency-related omission, extra middleware matrix, GPU or expensive
+simulator/deployment check is used. Next module: simple detected/tracked merging.
