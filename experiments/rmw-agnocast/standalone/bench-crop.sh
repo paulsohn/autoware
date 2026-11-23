@@ -5,11 +5,11 @@ bash "$(dirname "$0")/check-universe-o3.sh" crop "${2:-}"
 mkdir "$out"
 export LYRICAL_ROOT="$(cat build/agnocast-lyrical/universe-root)" BUFFER_RUNTIME_ONLY=1
 rounds=(1 2)
-if [[ ${2:-} == --ownership ]]; then rounds=(1 2 3 4); fi
+if [[ ${2:-} == --ownership || ${2:-} == --ownership-cie ]]; then rounds=(1 2 3 4); fi
 for round in "${rounds[@]}"; do
   modes=(agnocast standalone cyclone zenoh)
   if [[ $round == 2 ]]; then modes=(zenoh cyclone standalone agnocast); fi
-  if [[ ${2:-} == --ownership ]]; then
+  if [[ ${2:-} == --ownership || ${2:-} == --ownership-cie ]]; then
     case $round in
       1) modes=(agnocast standalone view loan);;
       2) modes=(standalone loan agnocast view);;
@@ -33,7 +33,11 @@ for round in "${rounds[@]}"; do
       opts=()
       if [[ $1 == view || $1 == loan || $1 == standalone ]]; then
         arm=standalone
-        if [[ $3 == --ownership ]]; then opts+=(--typed-input); fi
+        if [[ $3 == --ownership || $3 == --ownership-cie ]]; then opts+=(--typed-input); fi
+        if [[ $3 == --ownership-cie ]]; then
+          source build/standalone/release-cie/install/local_setup.bash
+          opts+=(--standalone-cie /ws/build/agnocast-lyrical/clang-obj/universe_crop_benchmark/crop_standalone_cie)
+        fi
         if [[ $1 == view ]]; then opts+=(--host-view); fi
         if [[ $1 == loan ]]; then opts+=(--host-loan); export ROS_DISABLE_LOANED_MESSAGES=0; fi
         source build/standalone/poll-install/local_setup.bash
@@ -43,5 +47,8 @@ for round in "${rounds[@]}"; do
       fi
       python3 src/universe_crop_benchmark/run_case.py "$arm" "$2.csv" "${opts[@]}" --resources "$2-resources.csv"
     ' bash "$mode" "$out/$mode-$round" "${2:-}" >"$out/$mode-$round.log" 2>&1 || { tail -25 "$out/$mode-$round.log"; exit 1; }
+    if [[ ${2:-} == --ownership-cie && $mode != agnocast ]]; then
+      grep -q 'CIE benchmark announcement KeepLast(16)' "$out/$mode-$round.log"
+    fi
   done
 done

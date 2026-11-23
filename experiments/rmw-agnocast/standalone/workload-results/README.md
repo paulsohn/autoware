@@ -661,3 +661,46 @@ logs=build/standalone/universe-cie-repeat
 bash experiments/rmw-agnocast/standalone/bench-universe.sh "$logs" --cie-regression
 python3 experiments/rmw-agnocast/standalone/analyze-lidar-stages.py "$logs" "$logs"
 ```
+
+## Two-edge Universe crop regression after the standalone CIE synchronizer replay
+
+On the same laptop, ran the 10 Hz source → Universe crop-box → sink fixture at 32,768 input points per frame. The sender stamps after filling the payload. The latency ends at the receiving endpoint. Each launch verified 60 sequential outputs. Discard the first ten and pool the remainder by arm, using median and nearest-rank p95. The transport matrix used two reverse-order rounds. The stock and standalone CIE ownership batches each used four counterbalanced rounds and their own native controls. All 2,400 frames across 40 sequential launches passed. The lowest measured host availability was 12,972 MiB. [Frames](crop-regression-552ed613/frames.csv) and [launch resources](crop-regression-552ed613/launches.csv).
+
+| Batch and arm | Median / p95 ms | Median child CPU s |
+|---|---:|---:|
+| Transport matrix, native | 0.337 / 0.571 | 0.570 |
+| Transport matrix, ordinary standalone | 0.936 / 1.093 | 0.661 |
+| Transport matrix, CycloneDDS | 1.357 / 3.651 | 0.728 |
+| Transport matrix, Zenoh | 1.089 / 1.314 | 1.459 |
+| Stock ownership, native | 0.342 / 0.618 | 0.570 |
+| Stock ownership, typed CPU copies | 0.954 / 1.158 | 0.684 |
+| Stock ownership, retained views | 0.502 / 0.670 | 0.662 |
+| Stock ownership, loans + views | 0.474 / 0.826 | 0.646 |
+| CIE ownership, native | 0.364 / 0.711 | 0.567 |
+| CIE ownership, typed CPU copies | 0.551 / 0.696 | 0.710 |
+| CIE ownership, retained views | 0.510 / 0.660 | 0.684 |
+| CIE ownership, loans + views | 0.477 / 1.304 | 0.682 |
+
+The CIE executable runs the standalone AWF executor on the crop only. Source and sink use the original endpoints. Each standalone CIE launch verified the fixture-only KeepLast(16) override for the thread announcement. All loan runs verified 59 output loans and zero private payload copies at each publisher. Data QoS and RMW defaults were retained. The stock and CIE launches were in separate batches, so their difference alone cannot isolate an executor effect.
+
+Retained views with CIE measured 1.31–1.47× native median in all four paired rounds and 0.81–1.00× native p95. Against the 1.2× milestone this is about 73 µs excess at the pooled median. Stock views also exceeded 1.2× in all four rounds. Loaning outputs with CIE narrowed the pooled median gap to 1.31×. Its 1.83× pooled p95 included a single slow launch with 17 of 50 timed frames over 1 ms. Paired p95 ratios were 0.94, 1.08, 1.03 and 3.84. The stock loan arm had a smaller but consistent 1.27–1.42× p95 ratio. External machine activity was uncontrolled. The persistent crop median meets the stop condition independently of the loan tail. The pending Universe matrix resumes with pressured scheduling and graph churn during delivery. For attribution, compare native and standalone across input publication, crop callback entry and exit, output handoff and sink dispatch with separate uninstrumented controls.
+
+From the provisioned Lyrical worktree, reuse the installed standalone AWF CIE and existing O3 Universe crop library. Build only the optional launcher:
+
+```bash
+export LYRICAL_ROOT="$(cat build/agnocast-lyrical/universe-root)"
+experiments/buffer/run-lyrical.sh bash -ec '
+source build/agnocast-lyrical/install/local_setup.bash
+source build/standalone/o3-install/local_setup.bash
+source build/standalone/release-path/install/local_setup.bash
+source build/standalone/release-cie/install/local_setup.bash
+obj=build/agnocast-lyrical/clang-obj/universe_crop_benchmark
+cmake -S src/universe_crop_benchmark -B "$obj" -DCROP_STANDALONE_CIE=ON
+cmake --build "$obj" --target crop_standalone_cie/fast -j1'
+bench=experiments/rmw-agnocast/standalone/bench-crop.sh
+bash "$bench" build/standalone/fresh-crop-matrix
+bash "$bench" build/standalone/fresh-crop-cie --ownership-cie
+bash "$bench" build/standalone/fresh-crop-stock --ownership
+```
+
+During collection the first shell encountered an end-of-script parse error after the eighth matrix launch because the running script had been edited. The archived matrix includes all eight verified resource records, complete sequences and memory-guard exits. The two four-round ownership batches ran from a fresh shell and exited successfully.

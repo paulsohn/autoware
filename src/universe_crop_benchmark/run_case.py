@@ -29,8 +29,11 @@ parser.add_argument("--gap-profile", action="store_true")
 parser.add_argument("--resources", type=Path)
 parser.add_argument("--buffer", choices=["cpu", "shmem", "cuda"], default="cpu")
 parser.add_argument("--source-buffer", choices=["cuda", "shmem"], help="materialize this source backend on the Agnocast host-cloud route")
+parser.add_argument("--standalone-cie", type=Path, help="standalone AWF CIE crop executable")
 parser.add_argument("--ros-cie", action="store_true", help="use the mixed-capable CIE for the ROS crop")
 args = parser.parse_args()
+if args.standalone_cie and (args.transport != "standalone" or args.ros_cie):
+    parser.error("--standalone-cie requires the standalone RMW crop")
 if args.source_buffer and not (args.transport in ("mixed", "fixed") and
                                (args.host_cloud or args.payload_scope) and args.buffer == "cpu"):
     parser.error("--source-buffer requires a CPU host-cloud pipeline")
@@ -176,7 +179,7 @@ with tempfile.TemporaryDirectory() as tmp:
             if children[-1].poll() is not None:
                 raise RuntimeError("Zenoh router startup failed")
         launch([bin_dir / "endpoint"], "sub")
-        crop = [bin_dir / ("crop_cie" if args.ros_cie else "crop"), "--ros-args", "--params-file", config,
+        crop = [args.standalone_cie or bin_dir / ("crop_cie" if args.ros_cie else "crop"), "--ros-args", "--params-file", config,
                 "-p", "input_frame:=base_link", "-p", "output_frame:=base_link"]
         if args.branched:
             launch([bin_dir / "endpoint", "--ros-args", "-r", "__node:=tap", "-r", "output:=/stage1"], "sub", "tap")

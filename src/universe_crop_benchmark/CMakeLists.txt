@@ -84,6 +84,18 @@ if(NOT UNIVERSE_BUFFER_MATRIX AND NOT "$ENV{ENABLE_AGNOCAST}" STREQUAL "1")
     EXECUTOR crop_benchmark::ThreeWorkerExecutor RESOURCE_INDEX universe_crop_benchmark_three)
   target_compile_options(crop_three PRIVATE -include "${CMAKE_CURRENT_SOURCE_DIR}/two_worker_executor.hpp")
 endif()
+option(CROP_STANDALONE_CIE "Build standalone AWF CIE crop benchmark executable" OFF)
+if(CROP_STANDALONE_CIE)
+  find_package(callback_isolated_executor REQUIRED)
+  rclcpp_components_register_node(universe_crop
+    PLUGIN "autoware::pointcloud_preprocessor::CropBoxFilterComponent"
+    EXECUTOR CallbackIsolatedExecutor EXECUTABLE crop_standalone_cie
+    RESOURCE_INDEX universe_crop_benchmark_standalone_cie)
+  target_compile_options(crop_standalone_cie PRIVATE -include callback_isolated_executor/callback_isolated_executor.hpp)
+  target_sources(crop_standalone_cie PRIVATE ../agnocast_rmw_loan_probe/cie_benchmark_qos.cpp)
+  target_link_options(crop_standalone_cie PRIVATE -Wl,--export-dynamic-symbol=rcl_publisher_init)
+  target_link_libraries(crop_standalone_cie callback_isolated_executor::callback_isolated_executor)
+endif()
 if(UNIVERSE_BUFFER_MATRIX OR NOT "$ENV{ENABLE_AGNOCAST}" STREQUAL "1")
   # ROS-only crop process using the CIE shipped with our pinned Agnocast.
   rclcpp_components_register_node(universe_crop
