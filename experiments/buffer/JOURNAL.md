@@ -3836,3 +3836,37 @@ info reported /demo/out and four seconds between first and last sample. Both
 gateways received SIGINT during cleanup. Minimum host MemAvailable was
 15,509 MiB. This exercised the existing colcon install in fresh shells;
 fresh-machine provisioning and physical two-host deployment remain untested.
+
+### 2026-11-23 — Migrate an existing stock ROS example from a fresh middleware build
+
+Replaced the provisioned-shell walkthrough with a developer migration tutorial.
+Its starting point is a working Lyrical Cyclone DDS project. It now includes
+dependency selection, the source build, kernel/device checks, a per-project
+rebuild, per-process topic selection, a native take check, launch configuration,
+directed bridge commands and rollback. The build and migration steps are in
+the tutorial itself. Commands are individual shell commands.
+
+Verified in the laptop's Lyrical userspace with fresh build, install, log,
+and Cargo output directories under build/migration-guide. Before sourcing the
+distribution setup, cleared inherited workspace prefix, library and Python
+paths. Used the tutorial's eight package paths and CMake options, one
+compiler job and sequential colcon. All eight packages finished in 7 min
+23 s. Used the two cached package schemas and Cargo's locked, vendored inputs
+from the provisioned laptop. Built the heap hook from the checkout. The
+existing device and loaded version 2.4.1 module were reused. Apt/rosdep
+provisioning and the optional DKMS installation were not performed on this host.
+
+Built ROS examples commit cc721964a79192e46db0111c0ba9f6a831fc9395 from
+source over the new overlay. Both minimal publisher and subscriber packages
+finished with the default compiler in 1 min 23 s. Ran their ordinary
+publisher_member_function and subscriber_member_function executables first
+under rmw_cyclonedds_cpp and then under rmw_agnocast with /topic selected in
+each direction. The baseline subscriber logged 17 messages. In the migrated
+run all 19 subscriber callbacks had a matching completed native take in the
+handoff trace. The observation windows differ; these counts verify delivery.
+The plain container peer timed out after three seconds listening directly on
+/topic. After manual export it read 'Hello, world! 10' on /dds/topic and a
+four-second recording contained seven std_msgs/msg/String CDR samples.
+Minimum available host memory during the two builds was 14,323 MiB. The
+peer and host shared the laptop kernel; physical two-host deployment remains
+unverified. [Self-contained migration tutorial](../rmw-agnocast/TUTORIAL.md)
