@@ -125,6 +125,7 @@ void pcl::VoxelGridNearestCentroid<PointT>::applyFilter(PointCloud & output)
 
   // Clear the leaves
   leaves_.clear();
+  voxel_centroids_leaf_indices_.clear();
 
   // cspell: ignore divb
   // Set up the division multiplier
@@ -227,6 +228,7 @@ void pcl::VoxelGridNearestCentroid<PointT>::applyFilter(PointCloud & output)
           NdCopyPointEigenFunctor<PointT>(input_->points[cp], centroid));
         leaf.centroid += centroid;
       }
+      leaf.points.push_back(input_->points[cp]);
       ++leaf.nr_points;
     }
   } else {  // No distance filtering, process all data

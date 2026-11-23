@@ -1958,3 +1958,20 @@ namespace contracts. Both standalone-header translation units and two ID-domain
 consumer cases pass with LLVM/libc++ 21.1.8. This is header self-containment,
 not a Lyrical-specific API or system-behavior change.
 [Reproduction and scope](JOURNAL.md#2026-11-23-phase-93--command-modesource-type-headers).
+
+## PCL voxel representatives omit filtered points and retain stale search indices
+
+- [ ] Associate with matching upstream fixes. Checked 2026-11-23:
+  [current implementation](https://github.com/autowarefoundation/autoware_universe/blob/main/sensing/autoware_pcl_extensions/include/autoware/pcl_extensions/voxel_grid_nearest_centroid_impl.hpp)
+  still appends leaf points only in the unfiltered branch and reserves/appends
+  search indices without clearing them. Scoped extension/centroid PR search
+  finds no match.
+
+Package: autoware_pcl_extensions. Setting a field limit reaches representative
+selection with an empty leaf point vector and throws. Reusing a searchable filter
+for a changed voxel grid maps new nearest/radius-search results to old leaves.
+Retain accepted points in the field-limited branch and clear the search-index
+vector when clearing leaves. Six compiled-library cases pass on LLVM/libc++
+21.1.8 with the selected PCL SDK; the two regressions fail before the fix. No
+algorithm/type/API change or sensor-accuracy claim is made.
+[Reproduction and gate](JOURNAL.md#2026-11-23-phase-94--pcl-voxel-extensions).

@@ -20248,3 +20248,45 @@ cases). All required selected gates pass without failures/errors/skips. Existing
 unaffected passing evidence is reused; no GPU, Fast DDS or costly simulator/
 export gate is claimed. Definition inventory is now 114/244, with 130 pending;
 full-contract evidence audit remains 9.20. Next: 9.4 CPU point-cloud/IMU providers.
+
+## 2026-11-23: Phase 9.4 — PCL voxel extensions
+
+Purpose: expose the local voxel-grid extension and its full precompiled point-
+type surface before integrating point-cloud preprocessing. Inspect CMake,
+package.xml, README, both public headers and the explicit-instantiation source.
+There is no original functional suite. Acceptance: all module targets and six
+external API cases under bazel/tests/autoware_pcl_extensions.
+
+Pattern: package-local cc_library and ament index, root local selection, existing
+SDK Eigen/PCL common/filters/kdtree/range-v3 providers. Compile the original
+PCL_XYZ_POINT_TYPES instantiations; do not bypass them with a header-only build.
+Tests link the compiled library and cover nearest original-point selection and
+field preservation, sparse-leaf threshold/search behavior, non-finite filtering,
+missing input, inherited field limits and reuse after input-grid changes.
+
+Two demonstrated failures require source correction. Field-limited filtering
+throws vector out_of_range because that branch accumulates centroids/counts but
+never retains accepted points for representative selection. Push accepted points
+into the leaf just as the unfiltered branch does. Repeated searchable filtering
+returns the prior leaf's centroid (0.4 instead of a value above 5): the point-to-
+leaf index vector is appended across calls. Clear it alongside leaves_ before
+rebuilding. Preserve the algorithm, data types and public API; both regressions
+fail before these two lines and pass after them.
+
+Upstream main retains both omissions on 2026-11-23; a targeted extension/centroid
+PR search finds no matching fix. These are algorithm/state defects, not Lyrical
+API changes. Keep the source fix separate from Bazel definitions and retain both
+regressions as root consumers.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  @autoware_pcl_extensions//... //bazel/tests:pcl_extensions_behavior_test
+```
+
+Result: all original type instantiations and module targets build; all six cases
+pass, zero failures/errors/skips. Full passing gate 12.1 s including recompilation.
+Targeted clang-format and git diff --check pass. This qualifies library behavior,
+not sensor accuracy/performance; no DDS transport, GPU, Fast DDS or costly system/
+deployment run is needed. Next prerequisite: local managed_transform_buffer.
