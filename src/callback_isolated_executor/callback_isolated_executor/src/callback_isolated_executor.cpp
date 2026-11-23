@@ -118,8 +118,8 @@ void CallbackIsolatedExecutor::spin_reentrant_callback_group(
 }
 
 void CallbackIsolatedExecutor::add_callback_group(
-    rclcpp::CallbackGroup::SharedPtr group_ptr,
-    rclcpp::node_interfaces::NodeBaseInterface::SharedPtr node_ptr,
+    CIE_EXECUTOR_PTR_PARAM(rclcpp::CallbackGroup::SharedPtr) group_ptr,
+    CIE_EXECUTOR_PTR_PARAM(rclcpp::node_interfaces::NodeBaseInterface::SharedPtr) node_ptr,
     bool notify) {
   (void)notify;
 
@@ -224,7 +224,7 @@ std::vector<rclcpp::CallbackGroup::WeakPtr> CallbackIsolatedExecutor::
 }
 
 void CallbackIsolatedExecutor::remove_callback_group(
-    rclcpp::CallbackGroup::SharedPtr group_ptr, bool notify) {
+    CIE_EXECUTOR_PTR_PARAM(rclcpp::CallbackGroup::SharedPtr) group_ptr, bool notify) {
   (void)notify;
 
   std::lock_guard<std::mutex> guard{mutex_};
@@ -241,7 +241,7 @@ void CallbackIsolatedExecutor::remove_callback_group(
 }
 
 void CallbackIsolatedExecutor::add_node(
-    rclcpp::node_interfaces::NodeBaseInterface::SharedPtr node_ptr,
+    CIE_EXECUTOR_PTR_PARAM(rclcpp::node_interfaces::NodeBaseInterface::SharedPtr) node_ptr,
     bool notify) {
   (void)notify;
 
@@ -277,14 +277,14 @@ void CallbackIsolatedExecutor::add_node(
   }
 }
 
-void CallbackIsolatedExecutor::add_node(rclcpp::Node::SharedPtr node_ptr,
+void CallbackIsolatedExecutor::add_node(CIE_EXECUTOR_PTR_PARAM(rclcpp::Node::SharedPtr) node_ptr,
                                         bool notify) {
   (void)notify;
   add_node(node_ptr->get_node_base_interface(), notify);
 }
 
 void CallbackIsolatedExecutor::remove_node(
-    rclcpp::node_interfaces::NodeBaseInterface::SharedPtr node_ptr,
+    CIE_EXECUTOR_PTR_PARAM(rclcpp::node_interfaces::NodeBaseInterface::SharedPtr) node_ptr,
     bool notify) {
   (void)notify;
 
@@ -304,7 +304,7 @@ void CallbackIsolatedExecutor::remove_node(
   }
 }
 
-void CallbackIsolatedExecutor::remove_node(rclcpp::Node::SharedPtr node_ptr,
+void CallbackIsolatedExecutor::remove_node(CIE_EXECUTOR_PTR_PARAM(rclcpp::Node::SharedPtr) node_ptr,
                                            bool notify) {
   remove_node(node_ptr->get_node_base_interface(), notify);
 }

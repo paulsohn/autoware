@@ -4,6 +4,13 @@
 
 #include "cie_config_msgs/msg/callback_group_info.hpp"
 #include "rclcpp/rclcpp.hpp"
+#include "rclcpp/version.h"
+
+#if RCLCPP_VERSION_MAJOR >= 32
+#define CIE_EXECUTOR_PTR_PARAM(T) const T &
+#else
+#define CIE_EXECUTOR_PTR_PARAM(T) T
+#endif
 
 class CallbackIsolatedExecutor : public rclcpp::Executor {
   RCLCPP_DISABLE_COPY(CallbackIsolatedExecutor)
@@ -61,8 +68,8 @@ public:
 
   RCLCPP_PUBLIC
   void add_callback_group(
-      rclcpp::CallbackGroup::SharedPtr group_ptr,
-      rclcpp::node_interfaces::NodeBaseInterface::SharedPtr node_ptr,
+      CIE_EXECUTOR_PTR_PARAM(rclcpp::CallbackGroup::SharedPtr) group_ptr,
+      CIE_EXECUTOR_PTR_PARAM(rclcpp::node_interfaces::NodeBaseInterface::SharedPtr) node_ptr,
       bool notify = true) override;
 
   RCLCPP_PUBLIC
@@ -78,22 +85,22 @@ public:
   get_automatically_added_callback_groups_from_nodes() override;
 
   RCLCPP_PUBLIC
-  void remove_callback_group(rclcpp::CallbackGroup::SharedPtr group_ptr,
+  void remove_callback_group(CIE_EXECUTOR_PTR_PARAM(rclcpp::CallbackGroup::SharedPtr) group_ptr,
                              bool notify = true) override;
 
   RCLCPP_PUBLIC
-  void add_node(rclcpp::node_interfaces::NodeBaseInterface::SharedPtr node_ptr,
+  void add_node(CIE_EXECUTOR_PTR_PARAM(rclcpp::node_interfaces::NodeBaseInterface::SharedPtr) node_ptr,
                 bool notify = true) override;
 
   RCLCPP_PUBLIC
-  void add_node(rclcpp::Node::SharedPtr node_ptr, bool notify = true) override;
+  void add_node(CIE_EXECUTOR_PTR_PARAM(rclcpp::Node::SharedPtr) node_ptr, bool notify = true) override;
 
   RCLCPP_PUBLIC
   void
-  remove_node(rclcpp::node_interfaces::NodeBaseInterface::SharedPtr node_ptr,
+  remove_node(CIE_EXECUTOR_PTR_PARAM(rclcpp::node_interfaces::NodeBaseInterface::SharedPtr) node_ptr,
               bool notify = true) override;
 
   RCLCPP_PUBLIC
-  void remove_node(rclcpp::Node::SharedPtr node_ptr,
+  void remove_node(CIE_EXECUTOR_PTR_PARAM(rclcpp::Node::SharedPtr) node_ptr,
                    bool notify = true) override;
 };

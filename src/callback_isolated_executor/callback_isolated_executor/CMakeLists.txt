@@ -31,13 +31,13 @@ add_executable(component_container_callback_isolated
 target_include_directories(component_container_callback_isolated PRIVATE
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
 )
-ament_target_dependencies(component_container_callback_isolated rclcpp rclcpp_components cie_thread_configurator)
+target_link_libraries(component_container_callback_isolated rclcpp::rclcpp rclcpp_components::component_manager cie_thread_configurator::thread_configurator)
 
 add_executable(component_container_single src/component_container_single.cpp)
-ament_target_dependencies(component_container_single rclcpp rclcpp_components cie_thread_configurator)
+target_link_libraries(component_container_single rclcpp::rclcpp rclcpp_components::component_manager cie_thread_configurator::thread_configurator)
 
 add_library(callback_isolated_executor SHARED src/callback_isolated_executor.cpp src/multi_threaded_executor_internal.cpp)
-ament_target_dependencies(callback_isolated_executor rclcpp cie_thread_configurator cie_config_msgs)
+target_link_libraries(callback_isolated_executor rclcpp::rclcpp cie_thread_configurator::thread_configurator ${cie_config_msgs_TARGETS})
 target_include_directories(callback_isolated_executor PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>
@@ -70,7 +70,7 @@ if(BUILD_TESTING)
 
   add_executable(cie_pubsub_test_node test/cie_pubsub_test_node.cpp)
   target_link_libraries(cie_pubsub_test_node callback_isolated_executor)
-  ament_target_dependencies(cie_pubsub_test_node rclcpp std_msgs)
+  target_link_libraries(cie_pubsub_test_node rclcpp::rclcpp ${std_msgs_TARGETS})
 
   install(TARGETS cie_pubsub_test_node
     RUNTIME DESTINATION lib/${PROJECT_NAME}

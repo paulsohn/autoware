@@ -12,18 +12,18 @@ find_package(cie_config_msgs REQUIRED)
 find_package(yaml-cpp REQUIRED)
 
 add_library(thread_configurator SHARED src/util.cpp)
-ament_target_dependencies(thread_configurator rclcpp cie_config_msgs)
+target_link_libraries(thread_configurator rclcpp::rclcpp ${cie_config_msgs_TARGETS})
 
 add_library(thread_configurator_node_core STATIC src/thread_configurator_node.cpp)
-ament_target_dependencies(thread_configurator_node_core rclcpp cie_config_msgs)
+target_link_libraries(thread_configurator_node_core rclcpp::rclcpp ${cie_config_msgs_TARGETS})
 target_link_libraries(thread_configurator_node_core yaml-cpp thread_configurator)
 
 add_executable(thread_configurator_node src/thread_configurator_node_main.cpp)
-ament_target_dependencies(thread_configurator_node rclcpp cie_config_msgs)
+target_link_libraries(thread_configurator_node rclcpp::rclcpp ${cie_config_msgs_TARGETS})
 target_link_libraries(thread_configurator_node thread_configurator_node_core)
 
 add_executable(prerun_node src/prerun_node_main.cpp src/prerun_node.cpp)
-ament_target_dependencies(prerun_node rclcpp cie_config_msgs)
+target_link_libraries(prerun_node rclcpp::rclcpp ${cie_config_msgs_TARGETS})
 target_link_libraries(prerun_node yaml-cpp thread_configurator)
 
 target_include_directories(prerun_node PRIVATE
@@ -72,13 +72,13 @@ if(BUILD_TESTING)
 
   ament_add_ros_isolated_gtest(test_util test/test_util.cpp)
   target_link_libraries(test_util thread_configurator)
-  ament_target_dependencies(test_util rclcpp std_msgs std_srvs)
+  target_link_libraries(test_util rclcpp::rclcpp ${std_msgs_TARGETS} ${std_srvs_TARGETS})
 
   ament_add_ros_isolated_gtest(test_thread_configurator_node
     test/test_thread_configurator_node.cpp
   )
   target_link_libraries(test_thread_configurator_node thread_configurator_node_core)
-  ament_target_dependencies(test_thread_configurator_node rclcpp cie_config_msgs)
+  target_link_libraries(test_thread_configurator_node rclcpp::rclcpp ${cie_config_msgs_TARGETS})
 endif()
 
 ament_package()
