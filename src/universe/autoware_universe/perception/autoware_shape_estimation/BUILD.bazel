@@ -1,0 +1,162 @@
+load("@autoware_agnocast_wrapper//:defs.bzl", "autoware_agnocast_node")
+load("@bazel_skylib//rules:common_settings.bzl", "bool_flag")
+load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
+load("@tensorrt//:defs.bzl", "TENSORRT_VERSION_MAJOR")
+
+package(default_visibility = ["//visibility:public"])
+
+bool_flag(name = "enable_cuda", build_setting_default = True)
+config_setting(name = "cuda_enabled", flag_values = {":enable_cuda": "true"})
+
+cc_library(
+    name = "shape_estimator_library",
+    srcs = [
+        "lib/shape_estimator.cpp",
+        "lib/model/bounding_box.cpp",
+        "lib/model/convex_hull.cpp",
+        "lib/model/cylinder.cpp",
+        "lib/filter/car_filter.cpp",
+        "lib/filter/bus_filter.cpp",
+        "lib/filter/truck_filter.cpp",
+        "lib/filter/trailer_filter.cpp",
+        "lib/filter/no_filter.cpp",
+        "lib/filter/utils.cpp",
+        "lib/corrector/utils.cpp",
+        "lib/corrector/no_corrector.cpp",
+        "lib/corrector/vehicle_corrector.cpp",
+        "lib/corrector/reference_object_based_corrector.cpp",
+        "lib/corrector/reference_shape_size_corrector.cpp",
+    ],
+    hdrs = glob(["include/**/*.hpp"], exclude = ["include/autoware/shape_estimation/tensorrt_shape_estimator.hpp"]),
+    includes = ["include"],
+    deps = [
+        "@autoware_perception_msgs//:cc",
+        "@autoware_utils",
+        "@geometry_msgs//:cc",
+        "@pcl_conversions//:pcl_conversions_library",
+        "@rclcpp//:rclcpp_library",
+        "@rosdistro//cc:eigen",
+        "@rosdistro//cc:opencv_library",
+        "@rosdistro//cc:pcl_common",
+        "@tf2//:tf2_library",
+        "@tf2_eigen//:tf2_eigen_library",
+        "@tf2_geometry_msgs//:tf2_geometry_msgs_library",
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "sdk_dynamic_deps",
+    dynamic_deps = [
+        "@autoware_agnocast_wrapper",
+        "@autoware_perception_msgs//:cc_shared",
+        "@autoware_utils//:runtime_dynamic_deps",
+        "@geometry_msgs//:cc_shared",
+        "@pcl_conversions//:pcl_conversions",
+        "@rclcpp_components//:rclcpp_components",
+        "@rosdistro//cc:opencv",
+        "@rosdistro//cc:pcl",
+        "@tf2_eigen//:tf2_eigen",
+        "@tf2_geometry_msgs//:tf2_geometry_msgs",
+        "@tier4_perception_msgs//:cc_shared",
+    ],
+)
+
+cc_shared_library(
+    name = "shape_estimator",
+    shared_lib_name = "libautoware_shape_estimation_geometry.so",
+    deps = [":shape_estimator_library", "@autoware_utils_geometry", "@autoware_utils_math"],
+    dynamic_deps = [":sdk_dynamic_deps"],
+)
+
+collect_transitive_dynamic_deps(
+    name = "shape_estimator_runtime_dynamic_deps",
+    dynamic_deps = [":shape_estimator", ":sdk_dynamic_deps"],
+)
+
+cc_library(
+    name = "tensorrt_shape_estimator_library",
+    srcs = ["lib/tensorrt_shape_estimator.cpp"],
+    hdrs = ["include/autoware/shape_estimation/tensorrt_shape_estimator.hpp"],
+    includes = ["include"],
+    copts = ["-Wno-deprecated-declarations"],
+    deps = [
+        "@autoware_cuda_utils",
+        "@autoware_perception_msgs//:cc",
+        "@autoware_tensorrt_common//:autoware_tensorrt_common_library",
+        "@cuda//:cuda_runtime",
+        "@pcl_ros//:pcl_ros_tf_library",
+        "@tf2_geometry_msgs//:tf2_geometry_msgs_library",
+        "@tier4_perception_msgs//:cc",
+    ],
+)
+
+cc_shared_library(
+    name = "tensorrt_shape_estimator",
+    shared_lib_name = "libautoware_shape_estimation_tensorrt.so",
+    deps = [":tensorrt_shape_estimator_library"],
+    dynamic_deps = [":sdk_dynamic_deps", "@autoware_tensorrt_common", "@pcl_ros//:pcl_ros_tf"],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = [":shape_estimator_runtime_dynamic_deps"] + select({
+        ":cuda_enabled": [":tensorrt_shape_estimator", "@autoware_tensorrt_common", "@pcl_ros//:pcl_ros_tf"],
+        "//conditions:default": [],
+    }),
+)
+
+cc_library(
+    name = "shape_estimation_node_library",
+    srcs = ["src/shape_estimation_node.cpp"],
+    hdrs = ["src/shape_estimation_node.hpp"],
+    includes = ["src"],
+    defines = select({":cuda_enabled": ["USE_CUDA"], "//conditions:default": []}),
+    local_defines = ["TENSORRT_VERSION_MAJOR=" + TENSORRT_VERSION_MAJOR],
+    deps = [
+        ":shape_estimator_library",
+        "@autoware_agnocast_wrapper//:autoware_agnocast_wrapper_library",
+        "@rclcpp_components//:rclcpp_components_library",
+        "@tier4_perception_msgs//:cc",
+    ] + select({":cuda_enabled": [":tensorrt_shape_estimator_library"], "//conditions:default": []}),
+)
+
+cc_shared_library(
+    name = "autoware_shape_estimation",
+    shared_lib_name = "libautoware_shape_estimation.so",
+    deps = [":shape_estimation_node_library"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+)
+
+autoware_agnocast_node(
+    name = "shape_estimation_node",
+    component = ":autoware_shape_estimation",
+    package_name = "autoware_shape_estimation",
+    plugin = "autoware::shape_estimation::ShapeEstimationNode",
+)
+
+register_ament_files(
+    name = "executables",
+    files = [":shape_estimation_node"],
+    prefix = "lib/autoware_shape_estimation",
+    strip_prefix = "*",
+)
+
+ament_index(
+    package_xml = "package.xml",
+    components = [":shape_estimation_node_components"],
+    libraries = [":autoware_shape_estimation", ":shape_estimator"] + select({":cuda_enabled": [":tensorrt_shape_estimator"], "//conditions:default": []}),
+    data = glob(["config/**", "launch/**"]) + [":executables", ":shape_estimation_node_plugin"],
+)
+
+cc_test(
+    name = "test_autoware_shape_estimation",
+    srcs = glob(["test/**/*.cpp"]),
+    data = [":ament_index"],
+    dynamic_deps = [":runtime_dynamic_deps", "@autoware_test_utils//:runtime_dynamic_deps"],
+    deps = [":shape_estimation_node_library", "@autoware_test_utils", "@googletest//:gtest"],
+    tags = ["no-sandbox", "no-remote"],
+)
+
+exports_files(glob(["config/*.yaml"]))

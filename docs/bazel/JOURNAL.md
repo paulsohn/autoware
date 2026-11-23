@@ -21489,8 +21489,8 @@ accuracy. No Fast DDS or full-product gate is selected.
 The CPU build exposed removed TF2 test includes. Replace Quaternion.h/utils.h
 with .hpp, preserving all assertions. Current upstream retains these aliases;
 UPSTREAM_AWF.md records the 2026-11-24 check and tracker association status.
-CPU verification below passes all 37 original cases and the geometric transport
-case (38.1 s); CUDA-enabled and Agnocast gates are still in progress.
+The separate source compatibility commit is 487efbeb1. CPU verification below
+passes all 37 original cases and the geometric transport case (38.1 s).
 
 ```sh
 env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
@@ -21501,3 +21501,61 @@ env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
   @autoware_shape_estimation//:test_autoware_shape_estimation \
   //bazel/tests:shape_estimation_transport_test
 ```
+
+Pattern: a package module and root override expose three distinct shared owners:
+geometry, optional TensorRT implementation and wrapper node. Match the original
+fifteen-source geometry set and keep all original tests, including their own
+main. Publish :shape_estimator_library and :shape_estimator_runtime_dynamic_deps
+as the CUDA-free API for clustering consumers. The node capability flag defaults
+to CUDA enabled; selecting false removes USE_CUDA and TensorRT from the node,
+index and its runtime closure. Independent TensorRT capability targets remain
+buildable, so use explicit CPU entrypoint/index/test labels rather than //... for
+the CPU-only gate. Root selects SDKs through the rules_cuda extension and pinned
+TensorRT module; cuda is an extension repository, not a registry module. No
+empty autoware_cuda_dependency_meta shim is needed: direct CUDA runtime and
+common-library providers preserve its actual exported effects.
+
+The first link analysis diagnosed compiled autoware_utils math/geometry hidden
+inside the geometry DSO. Declare those providers as direct shared-library roots
+so consumers of their symbols reuse the exported owner. Public USE_CUDA defines
+keep node-header layout consistent with the selected node implementation.
+Original test main replaces gtest_main to avoid duplicate entrypoints.
+
+The added geometry peer checks a nondegenerate box's centre, area, height and
+orientation plus retained classification/covariance/features/header. The GPU
+peer copies a tiny declared ONNX fixture into TEST_TMPDIR for the node's writable
+engine cache. The committed dependency-free protobuf fixture writer creates
+batch-one/two networks using point means and class-selected fixed box sizes.
+Three CAR/TRUCK/CAR inputs exercise repeated/full/partial batches, both 32-point
+repetition and 600-point downsampling, real CUDA transfers/TensorRT inference,
+coordinate/heading/size decoding and preservation of feature/payload/header.
+This checks protocol and integration, not production model accuracy or every
+precision profile. The installed launcher defaults ML off; no production model
+repository is introduced for this gate. Product callers must provision writable,
+identity-specific caches; this estimator still derives its cache beside ONNX.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  @autoware_shape_estimation//... //bazel/tests:shape_estimation_transport_test \
+  //bazel/tests:shape_estimation_gpu_test
+# Rerun the changed GPU fixture after adding the downsampling input:
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  //bazel/tests:shape_estimation_gpu_test
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --local_test_jobs=1 --strategy=TestRunner=local \
+  --run_under=//bazel/agnocast:with_heaphook \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  //bazel/tests:shape_estimation_transport_test
+```
+
+Results: all eighteen non-test targets and three test targets build with CUDA
+selected; 37 original plus geometry/GPU cases pass (177.2 s). Final expanded GPU
+case passes in 23.6 s (12.3 s execution) on RTX 5070 Laptop, driver 595.99.02.
+Geometry passes Agnocast-only with built/preloaded heaphook in 23.2 s and asserts
+RCLCPP remains off. Zero failures/errors/skips. GPU inference was selected with
+RCLCPP, not Agnocast; geometry covers enabled node transport. Targeted C++ format,
+Python syntax and diff checks pass. Next: CPU clustering and detection-by-tracker.

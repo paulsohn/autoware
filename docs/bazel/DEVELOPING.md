@@ -1721,6 +1721,14 @@ prerequisites follow the preceding CUDA convention. Ordinary applications need
 the equivalent declared runtime/resource loading contract; a successful link
 alone does not prove engine-building runtime closure.
 
+For shape geometry consumers, depend on
+`@autoware_shape_estimation//:shape_estimator_library` and link
+`:shape_estimator_runtime_dynamic_deps`. This provider excludes the TensorRT
+implementation and node. The node's `--@autoware_shape_estimation//:enable_cuda=false`
+flag selects its CPU-only capability; explicitly published TensorRT targets
+remain available, so a recursive module build still includes them. Model paths,
+precision and batch selection remain caller/product parameters.
+
 ### Common-library engine cache
 
 Pass an explicit engine_path to TrtCommonConfig when ONNX resources are indexed

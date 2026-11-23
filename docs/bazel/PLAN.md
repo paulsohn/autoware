@@ -2299,9 +2299,10 @@ context teardown, dynamic-grid/index/distance and lanelet sampling corrections
 are separate source commits. Elevation generation and saved-cache reload also pass both selected inpainting
 profiles. Detected-object validation also passes all twelve original and five added cases;
 the two added lanelet cases pass Agnocast-only. Raindrop filtering passes its five original cases and a nonempty policy/transport
-case in both RCLCPP and ROS-aware Agnocast execution. Three Phase 9.5 packages
-remain; current definition coverage is 130/244, leaving 114 without definitions.
-Next: geometric/learned shape, clustering and detection-by-tracker.
+case in both RCLCPP and ROS-aware Agnocast execution. Shape estimation passes its 37 original cases in CPU-only and CUDA-enabled
+builds, geometric transport in both backends and real GPU full/partial batches.
+Two Phase 9.5 packages remain; definition coverage is 131/244, leaving 113
+without definitions. Next: clustering and detection-by-tracker.
 
 ### Phase 9.6: Object association, geometry and postprocessing (complete)
 

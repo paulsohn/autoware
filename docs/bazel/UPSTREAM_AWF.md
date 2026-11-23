@@ -2271,6 +2271,8 @@ Local source fix: `f066695ec`.
 
 ### Shape-estimation original tests use removed TF2 headers
 
+Local source fix: `487efbeb1`.
+
 - [ ] Associate with a matching upstream fix. Checked 2026-11-24: the
   [current corrector test](https://github.com/autowarefoundation/autoware_universe/blob/main/perception/autoware_shape_estimation/test/test_corrector_utils.cpp)
   retains Quaternion.h and utils.h; a scoped shape/Lyrical PR search finds no

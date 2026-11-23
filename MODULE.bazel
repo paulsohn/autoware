@@ -2014,3 +2014,9 @@ local_path_override(
     module_name = "autoware_raindrop_cluster_filter",
     path = "src/universe/autoware_universe/perception/autoware_raindrop_cluster_filter",
 )
+
+bazel_dep(name = "autoware_shape_estimation", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_shape_estimation",
+    path = "src/universe/autoware_universe/perception/autoware_shape_estimation",
+)

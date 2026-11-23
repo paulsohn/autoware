@@ -2456,3 +2456,24 @@ cc_test(
     deps = ["@autoware_raindrop_cluster_filter//:autoware_raindrop_cluster_filter_library", "@autoware_point_types", "@point_cloud_msg_wrapper", "@googletest//:gtest"],
     tags = ["no-sandbox", "no-remote"],
 )
+
+cc_test(
+    name = "shape_estimation_transport_test",
+    srcs = ["autoware_shape_estimation/test_transport.cpp"],
+    data = ["@autoware_shape_estimation//:ament_index", "@agnocast_heaphook"],
+    dynamic_deps = ["@autoware_shape_estimation//:runtime_dynamic_deps"],
+    deps = ["@autoware_shape_estimation//:shape_estimation_node_library", "@ament_index_cpp//:ament_index_cpp_library", "@googletest//:gtest"],
+    tags = ["no-sandbox", "no-remote"],
+)
+
+tensorrt_cc_test(
+    name = "shape_estimation_gpu_test",
+    srcs = ["autoware_shape_estimation/test_transport.cpp"],
+    data = ["@autoware_shape_estimation//:ament_index", "autoware_shape_estimation/shape_batch1.onnx", "autoware_shape_estimation/shape_batch2.onnx"],
+    dynamic_deps = ["@autoware_shape_estimation//:runtime_dynamic_deps"],
+    deps = ["@autoware_shape_estimation//:shape_estimation_node_library", "@ament_index_cpp//:ament_index_cpp_library", "@googletest//:gtest"],
+    local_defines = [
+        'SHAPE_BATCH1=\\"$(rootpath autoware_shape_estimation/shape_batch1.onnx)\\"',
+        'SHAPE_BATCH2=\\"$(rootpath autoware_shape_estimation/shape_batch2.onnx)\\"',
+    ],
+)
