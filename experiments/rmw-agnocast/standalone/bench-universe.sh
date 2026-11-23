@@ -38,17 +38,21 @@ for round in "${rounds[@]}"; do
     modes=(crop-view-count crop-view-reuse cyclone-count cyclone-reuse)
     if [[ $round == 2 ]]; then modes=(cyclone-reuse cyclone-count crop-view-reuse crop-view-count); fi
   fi
+  if [[ ${2:-} == --live-count ]]; then
+    modes=(crop-view-count cyclone-count)
+    if [[ $round == 2 ]]; then modes=(cyclone-count crop-view-count); fi
+  fi
   for mode in "${modes[@]}"; do
     log="$out/$mode-$round.log"
     unset AGNOCAST_RMW_POLL_TOPIC SYNC_STANDALONE_OWNERSHIP SYNC_STAGE_TRACE SYNC_TYPED_CROP_CONTROL
     unset SYNC_COUNT_PROBE SYNC_COUNT_REUSE
-    if [[ ${2:-} == --count ]]; then
+    if [[ ${2:-} == --count || ${2:-} == --live-count ]]; then
       export SYNC_COUNT_PROBE=/ws/build/standalone/crop-count.so
       if [[ $mode == *-reuse ]]; then export SYNC_COUNT_REUSE=1; fi
       mode=${mode%-*}
     fi
     if [[ $mode == *-trace ]]; then export SYNC_STAGE_TRACE=1; mode=${mode%-trace}; fi
-    if [[ ( ${2:-} == --stages || ${2:-} == --count ) && $mode != native ]]; then
+    if [[ ( ${2:-} == --stages || ${2:-} == --count || ${2:-} == --live-count ) && $mode != native ]]; then
       export SYNC_TYPED_CROP_CONTROL=1
       export SYNC_CROP_COMPONENT_PREFIX=/ws/build/agnocast-lyrical/install/universe_crop_benchmark
     fi
@@ -73,11 +77,11 @@ for round in "${rounds[@]}"; do
       grep -q 'verified 24 synchronized clouds and metadata' "$log"
     fi
     if [[ $mode == loan ]]; then grep -q 'host-cloud publisher loans=24 private_copies=0' "$log"; fi
-    if [[ ( ${2:-} == --stages || ${2:-} == --count ) && $mode != native ]]; then
+    if [[ ( ${2:-} == --stages || ${2:-} == --count || ${2:-} == --live-count ) && $mode != native ]]; then
       grep -Fq "$SYNC_CROP_COMPONENT_PREFIX/lib/libuniverse_crop.so" "$log"
       grep -q 'verified 24 synchronized clouds and metadata' "$log"
     fi
-    if [[ ${2:-} == --count ]]; then test "$(grep -c 'crop_count,' "$log")" = 60; fi
+    if [[ ${2:-} == --count || ${2:-} == --live-count ]]; then test "$(grep -c 'crop_count,' "$log")" = 60; fi
     test "$(grep -c 'sample,[0-9]' "$log")" = 24
   done
 done

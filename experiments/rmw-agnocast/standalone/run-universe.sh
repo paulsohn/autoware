@@ -36,6 +36,7 @@ if [[ ${1:-} == --ownership ]]; then
   exit 0
 fi
 if [[ ${1:-} == --check ]]; then
+  python3 experiments/rmw-agnocast/standalone/check-matches.py
   python3 experiments/rmw-agnocast/standalone/check-cloud.py
   exec bash experiments/rmw-agnocast/standalone/check.sh build/standalone/qualified-probe/topic_check
 fi

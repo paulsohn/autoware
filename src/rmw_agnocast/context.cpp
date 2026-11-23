@@ -153,8 +153,13 @@ struct LocalNode
   std::string name, ns;
   std::unique_ptr<rmw_guard_condition_t, decltype(&rmw_destroy_guard_condition)> graph;
   Lease lease;
+  MatchGraph matches;
   GraphWatch watch;
 };
+standalone::MatchGraph & standalone::match_graph(const rmw_node_t * node)
+{
+  return static_cast<LocalNode *>(node->data)->matches;
+}
 rmw_node_t * rmw_create_node(rmw_context_t * ctx, const char * name, const char * ns)
 {
   if (!state(ctx) || !name || !ns) return nullptr;

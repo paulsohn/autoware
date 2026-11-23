@@ -19,6 +19,15 @@ struct Lease
 rmw_ret_t count_compatible(
   const rmw_node_t *, const std::string &, const std::string &, const rmw_qos_profile_t &,
   bool publisher, size_t *);
+struct MatchGraph
+{
+  std::mutex mutex;
+  int events = -1;
+  bool valid = false;
+  std::vector<Peer> peers;
+  ~MatchGraph();
+};
+MatchGraph & match_graph(const rmw_node_t * node);
 struct GraphWatch
 {
   int events = -1, stop = -1;

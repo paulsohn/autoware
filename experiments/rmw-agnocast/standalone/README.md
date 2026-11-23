@@ -108,7 +108,11 @@ checks that offer before admission to its RMW queue. Keyed finite deadlines
 and finite service deadlines are currently rejected.
 
 The v4 topic sample includes the offered deadline. Restart peers together on
-this build. Public matched-count queries inspect logical graph records and the
-offered/requested QoS. The allocation probe counts ordinary C++ operator new
+this build. Public matched-count queries share an endpoint snapshot per node and apply
+the offered/requested QoS on every call. The first query subscribes to local
+graph directory events before taking the snapshot. Each later query checks
+that queue synchronously. A peer joining, leaving, or closing its writable
+lease on process death invalidates the snapshot. Queue overflow also triggers
+a rescan. If the extra watch is unavailable, queries scan the leases directly. The allocation probe counts ordinary C++ operator new
 calls on the taking thread. It does not measure allocations by other threads
 or C allocator calls.

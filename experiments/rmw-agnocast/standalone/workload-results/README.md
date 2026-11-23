@@ -419,3 +419,30 @@ experiments/buffer/run-lyrical.sh bash -ec '
   /usr/bin/clang++-21 --gcc-install-dir=/usr/lib/gcc/x86_64-linux-gnu/15 -O3 -shared -fPIC "${incs[@]}" experiments/rmw-agnocast/standalone/crop-count.cpp -o build/standalone/crop-count.so'
 bash experiments/rmw-agnocast/standalone/bench-universe.sh build/standalone/fresh-o3-count --count
 ```
+
+## Live matched counts on the three-LiDAR graph
+
+Repeated the preceding all-O3 comparison after changing the standalone graph lookup. Same laptop, same Universe components and ordinary executor, ordinary publications, retained standalone crop and synchronizer inputs. Every debug publisher queried the middleware on every invocation. Standalone ran in the stripped Lyrical environment. Four uninstrumented launches per arm (two for Zenoh), four traced launches each for standalone and Cyclone, and two additional live-count launches each for standalone and Cyclone verified **624/624** output groups and metadata. Each launch expected 12 complete and 12 partial groups. Minimum observed host availability was 10059 MiB.
+
+| Uninstrumented transport | Complete median / p95 ms | Partial median / p95 ms |
+|---|---:|---:|
+| Native Agnocast | 2.447 / 3.639 | 41.643 / 42.688 |
+| Standalone rmw_agnocast | 2.516 / 3.416 | 41.580 / 42.269 |
+| Cyclone DDS | 3.057 / 3.488 | 42.124 / 42.358 |
+| Zenoh | 2.759 / 3.193 | 41.975 / 42.281 |
+
+Pooled after the first four warmup groups per launch, using nearest-rank p95. Standalone/native was 1.03× at the complete median and 0.94× at p95. The prior uninstrumented standalone measured 5.779 / 7.380 ms. The median interval from the third publish returning to its crop callback starting fell from 3.451 to 0.216 ms in separate traces. In the count probes, all 240 calls reached the middleware. Excluding the first two calls per sensor left 108 per transport. The median/p95 query took 3.732 / 6.191 µs standalone and 0.381 / 1.002 µs Cyclone. The previous standalone live-query median was 1642 µs. [Uninstrumented and traced ages](matched-live-ages.csv), [stage timestamps](matched-live-stages.csv), [individual live queries](matched-live-count-calls.csv).
+
+Reproduce from the provisioned worktree with the Release fixtures and crop-count probe built as above. Run each command from the worktree root. The correctness suite covers immediate live counts after join, clean removal, peer kill and restart, plus same-name type and QoS mismatches in both directions.
+
+```bash
+export LYRICAL_ROOT="$(cat build/agnocast-lyrical/universe-root)"
+experiments/buffer/run-lyrical.sh bash experiments/rmw-agnocast/standalone/build-poll.sh
+BUFFER_RUNTIME_ONLY=1 experiments/buffer/run-lyrical.sh bwrap --ro-bind / / --dev-bind /dev /dev --bind /ws /ws --bind /tmp /tmp --ro-bind /ws/build/standalone/distro /opt/ros/lyrical --chdir /ws timeout -k 8 100 bash experiments/rmw-agnocast/standalone/run-universe.sh --check
+bash experiments/rmw-agnocast/standalone/bench-universe.sh build/standalone/fresh-match-stages --stages
+bash experiments/rmw-agnocast/standalone/bench-universe.sh build/standalone/fresh-match-count --live-count
+mkdir build/standalone/fresh-match-export
+python3 experiments/rmw-agnocast/standalone/analyze-lidar-stages.py build/standalone/fresh-match-stages build/standalone/fresh-match-export
+```
+
+A graph change still incurs a lease scan on the next query per querying node. Sustained graph churn and larger endpoint populations require separate timing. This single-host workload has 40 timed complete groups for each Agnocast arm.

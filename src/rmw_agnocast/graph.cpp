@@ -96,6 +96,17 @@ std::vector<Record> snapshot(const rmw_node_t * node)
   }
   return out;
 }
+std::vector<Peer> endpoint_snapshot(const rmw_node_t * node)
+{
+  std::vector<Peer> peers;
+  for (auto & r : snapshot(node))
+    if (r.meta.kind == 'P' || r.meta.kind == 'S')
+      peers.push_back(
+        {r.name, r.type,
+         std::string(reinterpret_cast<const char *>(r.meta.gid), sizeof(r.meta.gid)), r.meta.kind,
+         r.meta.qos});
+  return peers;
+}
 template <class F>
 rmw_ret_t inspect(const rmw_node_t * node, F f)
 {
@@ -288,13 +299,7 @@ void standalone::GraphWatch::start(const rmw_node_t * node, rmw_guard_condition_
         }
         if (!live.empty()) {
           auto snapshot_start = std::chrono::steady_clock::now();
-          std::vector<Peer> peers;
-          for (auto & r : snapshot(node))
-            if (r.meta.kind == 'P' || r.meta.kind == 'S')
-              peers.push_back(
-                {r.name, r.type,
-                 std::string(reinterpret_cast<const char *>(r.meta.gid), sizeof(r.meta.gid)),
-                 r.meta.kind, r.meta.qos});
+          auto peers = endpoint_snapshot(node);
           for (auto & e : live) e->update(peers, snapshot_start);
         }
       } catch (const std::exception & e) {
@@ -483,21 +488,69 @@ rmw_ret_t rmw_get_subscriptions_info_by_topic(
   return endpoint_info(node, allocator, topic_name, 'S', subscriptions_info);
 }
 
+standalone::MatchGraph::~MatchGraph()
+{
+  if (events >= 0) close(events);
+}
+
 rmw_ret_t standalone::count_compatible(
   const rmw_node_t * node, const std::string & topic, const std::string & type,
   const rmw_qos_profile_t & qos, bool publisher, size_t * count)
 {
-  return inspect(node, [&](const auto & rows) {
+  if (!node || !count) return RMW_RET_INVALID_ARGUMENT;
+  if (node->implementation_identifier != id) return RMW_RET_INCORRECT_RMW_IMPLEMENTATION;
+  try {
+    auto & graph = match_graph(node);
+    std::lock_guard lock(graph.mutex);
+    if (graph.events < 0) {
+      auto path = directory(node);
+      graph.events = inotify_init1(IN_NONBLOCK | IN_CLOEXEC);
+      if (
+        graph.events >= 0 &&
+        inotify_add_watch(
+          graph.events, path.c_str(),
+          IN_MOVED_TO | IN_DELETE | IN_CLOSE_WRITE | IN_MOVE_SELF | IN_DELETE_SELF) < 0) {
+        close(graph.events);
+        graph.events = -1;
+      }
+    }
+    // Register before scanning. Events arriving during the scan invalidate the next query.
+    // A killed process closes its writable lease even when the .live file survives.
+    alignas(inotify_event) char events[4096];
+    while (graph.events >= 0) {
+      auto n = read(graph.events, events, sizeof(events));
+      if (n < 0 && errno == EINTR) continue;
+      if (n < 0 && errno == EAGAIN) break;
+      graph.valid = false;  // Includes queue overflow.
+      bool lost_watch = n <= 0;
+      for (ssize_t offset = 0; offset < n;) {
+        auto * ev = reinterpret_cast<const inotify_event *>(events + offset);
+        lost_watch |= (ev->mask & (IN_IGNORED | IN_MOVE_SELF | IN_DELETE_SELF)) != 0;
+        offset += sizeof(inotify_event) + ev->len;
+      }
+      if (lost_watch) {
+        close(graph.events);
+        graph.events = -1;
+      }
+    }
+    if (!graph.valid) {
+      graph.peers = endpoint_snapshot(node);
+      graph.valid = graph.events >= 0;
+    }
     *count = 0;
-    for (const auto & row : rows) {
-      if (row.name != topic || row.type != type || row.meta.kind != (publisher ? 'S' : 'P'))
-        continue;
+    for (const auto & row : graph.peers) {
+      if (row.name != topic || row.type != type || row.kind != (publisher ? 'S' : 'P')) continue;
       rmw_qos_compatibility_type_t compatible;
       auto ret = rmw_qos_profile_check_compatible(
-        publisher ? qos : row.meta.qos, publisher ? row.meta.qos : qos, &compatible, nullptr, 0);
+        publisher ? qos : row.qos, publisher ? row.qos : qos, &compatible, nullptr, 0);
       if (ret != RMW_RET_OK) return ret;
       if (compatible == RMW_QOS_COMPATIBILITY_OK) ++*count;
     }
-    return static_cast<rmw_ret_t>(RMW_RET_OK);
-  });
+    return RMW_RET_OK;
+  } catch (const std::bad_alloc &) {
+    return RMW_RET_BAD_ALLOC;
+  } catch (const std::exception & e) {
+    RMW_SET_ERROR_MSG(e.what());
+    return RMW_RET_ERROR;
+  }
 }
