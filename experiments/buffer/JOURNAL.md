@@ -3721,3 +3721,55 @@ regressions passed. For the three-LiDAR recorder lifecycle, run the previous
 AGNOCAST_BRIDGE_FORCE_GENERIC=1. Both delivered 24 local groups, published
 16 clouds for the recorder sessions and verified the same 20 bag entries
 across the three bags. [Regression outcomes](../rmw-agnocast/type-fallback-results/regressions.txt)
+
+### 2026-11-23 — Stock Cyclone recorder on a dedicated Docker bridge
+
+Run on the default Docker Engine with the provisioned colcon pilot and the
+two locally retained Lyrical images. The ros-base image supplied rosbag2,
+SQLite, sensor_msgs and geometry_msgs. Cyclone was absent. The migration
+baseline had its original Cyclone 11.0.1, rmw_cyclonedds_cpp 4.1.5 and
+iceoryx dependency debs in /tmp/cyclone-debs. Use it only as an archive
+source. Install those stock packages offline over the pinned ros-base and
+record the resulting image ID. No workspace installation is mounted on the
+peer. The preflight checked /opt/ros/lyrical as the only ament prefix,
+absence of /dev/agnocast and LD_PRELOAD, separate network/IPC namespaces,
+1500-byte MTU and a 384 MiB container memory limit. Host runs use the
+512 MiB runtime scope. Lowest sampled host MemAvailable in the final batch
+was 15,526 MiB.
+
+```bash
+sg docker -c 'bash experiments/rmw-agnocast/network-peer/prepare.sh'
+sg docker -c 'python3 experiments/rmw-agnocast/network-peer/batch.py build/peer-test'
+```
+
+Generate two unicast Cyclone configurations from the assigned Docker
+addresses. Bind the host to its dedicated bridge and peer to eth0. The
+existing loopback-only test profile cannot reach this peer. Use domain 84.
+An initial rerun of stock topic echo contacted a daemon configured for the
+previous ephemeral bridge. Its node creation failed via XML-RPC. Using
+--no-daemon makes the probe use this run's interface and peers. Stock String
+messages passed in both directions. The stock peer then published 48 varied
+PoseArrays. The generic gateway imported them and a native typed reader
+verified every element and sequence.
+
+Run one graph per case. Start the recorder after group 3; read all SQLite
+rows back and compare to the exact locally verified cloud matched by source
+stamp. Keep the same peer process and IP across the two Docker disconnect
+and reconnect trials. An ordinary subscriber to the unbridged /output
+discovered it and recorded zero samples. With an advertised export but no
+recorder the gateway took and forwarded zero samples. Healthy bags recorded
+all 52 and 53 forwarded clouds respectively. Active healthy bridge traffic
+was 35.36–35.87 MiB TX including discovery, compared with 1.62 MiB idle.
+All six graphs verified 60/60 local clouds and released 150/150 loans.
+During each outage the gateway published 53, the peer recorded 37, lost
+16–31 and recovered at 32 through 59. First recovered bag timestamps came
+52–58 ms after Docker began restoring the connection. This exercises
+a brief outage with an existing match; lease expiration remains open.
+Frame and network data use the laptop clock. Physical NIC and independent
+clock behavior require a second machine.
+
+A fresh prepare-only instance also exchanged PointStamped messages in both
+directions. The prepared image and the idle awpilot0-stock container on the
+awpilot0 bridge were left available for subsequent experiments. The runbook
+covers startup, direct operator commands, cleanup and transfer to a real host.
+[Peer recipe](../rmw-agnocast/network-peer/README.md) · [Frame audits and results](../rmw-agnocast/network-peer/results/summary.md)

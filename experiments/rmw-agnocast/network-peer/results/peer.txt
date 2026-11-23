@@ -1,0 +1,16 @@
+sha256:5df53ec39a5bf71458e86c95e494f5361f9620630702173f4dca58d3dd9889d3 mounts=0 ipc=private
+/opt/ros/lyrical
+/opt/ros/lyrical
+/opt/ros/lyrical
+/opt/ros/lyrical
+/opt/ros/lyrical
+net:[4026532815]
+ipc:[4026532812]
+1500
+402653184
+ros-lyrical-cyclonedds	11.0.1-4resolute.20260728.175307
+ros-lyrical-rmw-cyclonedds-cpp	4.1.5-1resolute.20260915.051853
+ros-lyrical-rosbag2	0.33.4-1resolute.20260919.194218
+host namespaces
+net:[4026531833]
+ipc:[4026531839]

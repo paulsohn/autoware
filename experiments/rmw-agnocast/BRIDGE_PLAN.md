@@ -113,3 +113,14 @@ type name; a later schema change requires restarting the route. Type-hash
 validation, automatic QoS selection, physical inter-host delivery and
 middleware-owned startup are still open.
 [Type fallback comparison](type-fallback-results/summary.md)
+
+### Network-isolated peer result
+
+The explicit gateway exported three-LiDAR clouds to stock Cyclone rosbag2
+across a Docker bridge and imported a remote PoseArray into native storage.
+A late recorder captured every forwarded cloud in both healthy runs. Both
+brief link outages lost the same 16 groups and recovered at the first group
+after reattachment while local delivery continued. Use this recipe for a
+plain ROS logger with an explicit export. A physical second host, discovery
+lease expiry, and middleware-owned startup remain separate qualifications.
+[Prepared peer and operator commands](network-peer/README.md) · [Results](network-peer/results/summary.md)

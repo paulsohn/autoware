@@ -1,0 +1,10 @@
+{
+  "before": {
+    "tx_bytes": 1191,
+    "rx_bytes": 56
+  },
+  "after": {
+    "tx_bytes": 97071,
+    "rx_bytes": 84804
+  }
+}
