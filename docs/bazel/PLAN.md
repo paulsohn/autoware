@@ -2185,6 +2185,19 @@ fix and passes afterward. No GPU, Fast DDS or expensive simulator/deployment
 rerun is part of this group. Further Universe groups follow runnable dependency
 closures; Phase 8 and engine-profile infrastructure remain deferred.
 
+### Phase 9.2: Radar object conversion, fusion and tracking (in progress)
+
+Integrate one module at a time, preserving original suites and adding root ROS
+behavior coverage for previously untested nodes. Routine gates use Cyclone DDS
+and no-agnocast; preserve wrapper support where the component uses it.
+
+| Module | Acceptance status |
+| --- | --- |
+| autoware_radar_tracks_msgs_converter | Complete: component/executable/index and three ROS behavior cases; no original C++ suite. |
+| autoware_radar_fusion_to_detected_object | Pending: fusion algorithm and synchronized ROS outputs, frame and confidence behavior. |
+| autoware_radar_object_tracker | Pending: all four original utility cases plus tracking/association/lifecycle behavior. |
+| autoware_simple_object_merger | Pending: all four original ROS cases, detected/tracked executables/plugins and indexed resources. |
+
 ### Execution order through complete Universe coverage
 
 The following groups are the initial route through every remaining package.

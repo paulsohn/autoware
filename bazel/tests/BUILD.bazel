@@ -2094,3 +2094,18 @@ cc_test(
     ],
     tags = ["no-sandbox", "no-remote"],
 )
+
+cc_test(
+    name = "radar_tracks_behavior_test",
+    srcs = ["radar/test_tracks.cpp", "radar/ros_fixture.hpp"],
+    dynamic_deps = [
+        "@autoware_radar_tracks_msgs_converter//:autoware_radar_tracks_msgs_converter_component",
+        "@autoware_radar_tracks_msgs_converter//:runtime_dynamic_deps",
+    ],
+    deps = [
+        "@autoware_radar_tracks_msgs_converter//:autoware_radar_tracks_msgs_converter_library",
+        "@rclcpp//:rclcpp_library",
+        "@googletest//:gtest_main",
+    ],
+    tags = ["no-sandbox", "no-remote"],
+)

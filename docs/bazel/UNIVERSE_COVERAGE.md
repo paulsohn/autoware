@@ -179,7 +179,7 @@ Build on 9.1. Preserve the tracker/merger original suites and add conversion, sy
 
 - [ ] [autoware_radar_fusion_to_detected_object](../../src/universe/autoware_universe/perception/autoware_radar_fusion_to_detected_object/package.xml)
 - [ ] [autoware_radar_object_tracker](../../src/universe/autoware_universe/perception/autoware_radar_object_tracker/package.xml)
-- [ ] [autoware_radar_tracks_msgs_converter](../../src/universe/autoware_universe/perception/autoware_radar_tracks_msgs_converter/package.xml)
+- [x] [autoware_radar_tracks_msgs_converter](../../src/universe/autoware_universe/perception/autoware_radar_tracks_msgs_converter/package.xml)
 - [ ] [autoware_simple_object_merger](../../src/universe/autoware_universe/perception/autoware_simple_object_merger/package.xml)
 
 ### Phase 9.3: Shared time, logging and command-mode types

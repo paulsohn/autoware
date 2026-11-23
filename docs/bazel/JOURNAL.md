@@ -19880,3 +19880,41 @@ test/test_carla_server.py. The latter is conditionally skipped without CARLA_HOS
 that skip cannot satisfy our required real-server gate. Verification for this
 documentation task: local link/anchor and git diff --check review only. No code,
 subtree, server, build or runtime configuration changed; no runtime tests ran.
+
+## 2026-11-23: Phase 9.2 — Radar tracks message conversion
+
+Purpose: expose the local RadarTracks-to-detected/tracked converter with its
+component, standalone executable and indexed config/launch resources. Inspect
+its CMake/package declarations, converter source/header and parameter schema.
+There are lint registrations but no original C++ behavior tests. Acceptance is
+all package targets plus three added ROS tests under bazel/tests/radar, using
+Cyclone DDS/no-agnocast; no source implementation or original test is changed.
+
+Pattern: package-local MODULE/BUILD using the existing radar_msgs, local
+perception messages, autoware_utils, nav_msgs and TF providers; root selects the
+local override after those dependencies. Export component registration and the
+indexed executable through the registry ament helpers. Collect shared runtime
+owners explicitly so the node and its ROS peers share the same SDK definitions.
+The existing .bazelignore src entry already excludes nested module discovery.
+
+The root tests publish real radar/odometry and static TF through ROS. Check both
+output types, UUID/classification, shape, position/stamp/frame and covariance
+layout; rotated velocity and the live compensation switch; missing-TF empty
+outputs followed by recovery and all supported classification mappings. Keep
+message snapshots alive across executor spins in assertions. This qualifies
+software conversion behavior, not radar measurement accuracy or timing.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_env=ROS_DOMAIN_ID=114 \
+  --test_output=errors @autoware_radar_tracks_msgs_converter//... \
+  //bazel/tests:radar_tracks_behavior_test
+```
+
+Result: all module targets build and all three ROS cases pass, zero failures,
+errors or skips. The initial complete gate takes 49.8 s including graph/cache
+work; final source formatting is checked with the same gate. No dependency or
+implementation fix is required. Targeted clang-format and git diff --check pass.
+No GPU, Fast DDS, simulator or deployment checks are part of this module gate.
+Next module: radar fusion into detected objects.
