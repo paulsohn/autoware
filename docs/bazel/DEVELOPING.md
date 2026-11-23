@@ -1687,10 +1687,16 @@ not compare model contents or every builder option. Reusing a path for a changed
 same-shaped model can silently reuse the old engine. Product configuration owns
 that identity; automatic content-addressed cache selection is not implemented.
 
-A short version header triggers rebuilding. A matching header with an invalid
-serialized body is rejected; remove that entry before retrying. Use one writer
-per cache key: these checks do not make publication atomic or coordinate parallel
-builders. Validate changes with the full original common suite plus the added
+By default TrtCommon retains build-on-miss behavior: a short version header
+triggers rebuilding, while a matching header with an invalid serialized body is
+rejected. To prohibit generation, set the final TrtCommonConfig argument
+allow_engine_build=false and supply an engine_path. This mode restores the plan
+without initializing builder/network/parser or reading ONNX; getBuilderConfig()
+and getNetwork() return nullptr. setup() checks declared IO/profiles against the
+restored engine and never rebuilds on mismatch. Missing, truncated or incompatible
+engines fail explicitly. Model/GPU/SDK/profile identity is still caller-owned.
+Use one writer per cache key: these checks do not make publication atomic or
+coordinate parallel builders. Validate changes with the full original common suite plus the added
 runtime-cache gate on a real GPU:
 
 ```sh

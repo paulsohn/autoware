@@ -93,13 +93,15 @@ struct TrtCommonConfig
   explicit TrtCommonConfig(
     const std::string onnx_path, const std::string precision = "fp16",
     const std::string engine_path = "", const size_t max_workspace_size = (1ULL << 30U),
-    const int32_t dla_core_id = -1, const bool profile_per_layer = false)
+    const int32_t dla_core_id = -1, const bool profile_per_layer = false,
+    const bool allow_engine_build = true)
   : onnx_path(onnx_path),
     precision(precision),
     engine_path(engine_path),
     max_workspace_size(max_workspace_size),
     dla_core_id(dla_core_id),
-    profile_per_layer(profile_per_layer)
+    profile_per_layer(profile_per_layer),
+    allow_engine_build(allow_engine_build)
   {
     validatePrecision();
 
@@ -147,6 +149,9 @@ struct TrtCommonConfig
 
   //!< @brief Flag for per-layer profiler using IProfiler.
   const bool profile_per_layer;
+
+  //!< @brief Permit ONNX parsing and engine generation; false requires a prepared engine.
+  const bool allow_engine_build;
 };
 
 /**

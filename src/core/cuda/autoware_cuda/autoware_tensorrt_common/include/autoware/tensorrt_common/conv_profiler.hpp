@@ -19,6 +19,7 @@
 
 #include <NvInfer.h>
 
+#include <cstdint>
 #include <map>
 #include <string>
 #include <vector>
@@ -34,17 +35,17 @@ namespace tensorrt_common
 struct ConvLayerInfo
 {
   //! @brief Input channel.
-  int in_c;
+  int64_t in_c;
   //! @brief Output channel.
-  int out_c;
+  int64_t out_c;
   //! @brief Width.
-  int w;
+  int64_t w;
   //! @brief Height.
-  int h;
+  int64_t h;
   //! @brief Kernel size.
-  int k;
+  int64_t k;
   //! @brief Stride.
-  int stride;
+  int64_t stride;
   //! @brief Number of groups.
   int groups;
   //! @brief Layer type.
@@ -89,8 +90,8 @@ public:
       nvinfer1::Dims k_dims = conv->getKernelSizeNd();
       nvinfer1::Dims s_dims = conv->getStrideNd();
 
-      int32_t kernel = k_dims.d[0];
-      int32_t stride = s_dims.d[0];
+      const auto kernel = k_dims.d[0];
+      const auto stride = s_dims.d[0];
       int32_t groups = conv->getNbGroups();
 
       layer_dict_.insert_or_assign(

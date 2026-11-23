@@ -19348,3 +19348,60 @@ FP16/INT8 inference pass in the complete YOLOX gate below; all existing affected
 native wrappers pass the common/classifier/plugin gate. The public binary
 helper is validated by those real consumers, not just by an analysis-only check.
 Runfiles are required; relocatable inference-only SDK packaging is not claimed.
+
+## 2026-11-23: Phase 6.5.5 — Prepared-only common TensorRT loading
+
+Purpose: allow an inference process to restore a qualified engine without reading
+ONNX or constructing a builder, parsed network or ONNX parser. Keep the existing
+build-on-miss API as the default for unrelated callers. This is functional startup
+separation, not an inference-only SDK packaging claim.
+
+Prerequisites/inspected inputs: the Phase 6.5.4 SDK/toolchain/GPU profile, the
+TrtCommon constructor/setup/metadata getters, all thirteen original common cases,
+the eight existing cache cases and the YOLOX/classifier/plugin consumers. The
+constructor previously called initialize() unconditionally, so even a warm plan
+required ONNX and initialized compiler state before setup() selected the cache.
+
+Minimum pattern: append allow_engine_build=true to TrtCommonConfig. With false,
+initialize only the existing runtime/plugin environment, validate the configured
+plan header and deserialize its engine/context. Missing or incompatible plans
+throw without generating anything. Resolve metadata from the restored engine
+before consulting the parsed network. setup() reconciles offered IO and validates
+IO/profile contracts; reject mismatches without rebuilding. Keep getBuilderConfig
+and getNetwork null in this mode. Existing callers still take the original
+builder/parser path unless they explicitly opt out. Supply an explicit engine
+path; the caller owns model/SDK/GPU/settings identity and its cache-key changes.
+
+A standalone preparer compilation also exposed four Clang narrowing errors in
+ConvProfiler: TensorRT 10 Dims uses int64_t while ConvLayerInfo stored dimensions
+as int. Store channel/spatial/kernel/stride dimensions in int64_t and retain their
+width when collecting them. This removes the compile error without suppressing
+warnings or changing dimensions. The public struct layout changes, so rebuild its
+consumers together. Upstream autoware_cuda main a5929dde0bacecae60c5f32dc34416f784a60cb4,
+inspected 2026-11-23, retains the int fields. The Lyrical tracker and current CUDA
+PR search supplied no matching profiler/prepared-only fix; the separately opened
+CUDA PR #7 concerns the already-known engine-path mutation, not these changes.
+
+New root cache cases remove ONNX after preparation and perform actual inference,
+assert null builder/network and valid engine metadata, reject missing/truncated
+plans without modifying them, and reject a changed optimization profile with
+stable plan mtime. Preserve all original cases and the existing build-mode cache
+regressions. Final common/consumer validation passes thirteen original plus eleven
+cache cases, five classifier cases, eighteen plugin reference-kernel cases and
+two plugin interop cases. All native XML has zero failures/errors/skips.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --nocache_test_results --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp \
+  --test_env=ROS_DOMAIN_ID=113 --test_output=errors \
+  @autoware_tensorrt_common//... //bazel/tests:tensorrt_runtime_cache_test \
+  //bazel/tests:tensorrt_classifier_test @autoware_tensorrt_plugins//... \
+  //bazel/tests:tensorrt_plugins_test //bazel/tests:yolox_node_test \
+  //bazel/tests:yolox_fixture_adapter_test
+```
+
+Result: all seven targets pass in 143.1 s, including the original prepared-engine
+YOLOX pub/sub case and both fixture rejection checks. This completes the shared
+module gate with the YOLOX acceptance below. No Fast DDS, simulator/OCI, other
+GPU/SDK, or colcon gate is included.

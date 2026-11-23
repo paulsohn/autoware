@@ -52,7 +52,8 @@ public:
   /**
    * @brief Construct TrtCommonCalib.
    *
-   * @param[in] trt_config base trt common configuration, ONNX model path is mandatory
+   * @param[in] trt_config Base configuration; ONNX is required only when engine building is
+   * allowed.
    * @param[in] profiler per-layer profiler
    * @param[in] plugin_paths paths for TensorRT plugins
    */

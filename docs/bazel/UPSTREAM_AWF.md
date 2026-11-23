@@ -1659,10 +1659,12 @@ from the source callers validated by Bazel.
 
 ## TensorRT layer-JSON export mutates the engine configuration path
 
-- [ ] Associate with a matching upstream fix. Reviewed 2026-11-23: upstream
-  autoware_cuda main a5929dde0bacecae60c5f32dc34416f784a60cb4 retains the expression;
-  no matching fix is associated. Lyrical trackers are related build context,
-  not this runtime path bug.
+- [x] Associate with a matching upstream fix. Reviewed 2026-11-23:
+  [autoware_cuda#7](https://github.com/autowarefoundation/autoware_cuda/pull/7)
+  is open and makes the same copy-before-replace correction, with an original-suite
+  regression. Main a5929dde0bacecae60c5f32dc34416f784a60cb4 still has the bug;
+  association does not mean merged or locally validated through that PR.
+  Lyrical trackers are related build context, not this runtime path bug.
 
 Repository/package: autowarefoundation/autoware_cuda, autoware_tensorrt_common.
 In [buildEngineFromOnnx](https://github.com/autowarefoundation/autoware_cuda/blob/a5929dde0bacecae60c5f32dc34416f784a60cb4/autoware_tensorrt_common/src/tensorrt_common.cpp),
@@ -1772,3 +1774,23 @@ profile is claimed. Lower optimization may hurt runtime performance; users must
 opt in and qualify their workload. The diagnostic is available for an upstream
 report; no issue/comment was posted.
 [Exact inputs, source pattern, matrix and commands](JOURNAL.md#2026-11-23-phase-654--isolate-the-traffic-light-compiler-failure-and-expose-level-zero).
+
+## TensorRT 10 convolution-profiler dimensions narrow to int
+
+- [ ] Associate with a matching upstream fix. Inspected 2026-11-23:
+  autoware_cuda main a5929dde0bacecae60c5f32dc34416f784a60cb4 still stores
+  ConvLayerInfo dimensions as int. No matching fix is associated.
+
+A standalone C++ translation unit including tensorrt_conv_calib.hpp exposes four
+Clang errors in the ConvLayerInfo aggregate initializer: TensorRT 10 Dims::d is
+int64_t, and narrowing its channel/spatial dimensions to int is ill-formed.
+Preserve int64_t for channel, spatial, kernel and stride fields and avoid
+intermediate narrowing of kernel/stride values. This is TensorRT 10 header
+compatibility, not a Lyrical-specific API issue. The struct layout changes, so
+rebuild consumers together.
+
+The standalone preparer compiles after the correction with LLVM 21.1.8/TensorRT
+10.16.1.11. Thirteen original common cases, eleven cache cases, fourteen original
+YOLOX cases and the complete affected classifier/plugin suites pass with zero
+native skips. CMake/GCC and other SDK versions were not validated.
+[Observed failure and complete gate](JOURNAL.md#2026-11-23-phase-655--prepared-only-common-tensorrt-loading).

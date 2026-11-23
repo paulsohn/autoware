@@ -207,4 +207,56 @@ TEST_F(RuntimeCache, ModelRevisionUsesAnExplicitNewCacheKey)
   EXPECT_EQ(fs::last_write_time(first_engine), changed);
   EXPECT_TRUE(fs::exists(engine));
 }
+TEST_F(RuntimeCache, PreparedEngineLoadsWithoutOnnxOrBuilder)
+{
+  {
+    auto trt = make();
+    ASSERT_TRUE(setup(*trt));
+  }
+  const auto changed = fs::last_write_time(engine);
+  fs::permissions(model.parent_path(), fs::perms::owner_all);
+  fs::remove(model);
+  TrtCommon trt(TrtCommonConfig(model, "fp32", engine, 1ULL << 26U, -1, false, false));
+  EXPECT_EQ(trt.getBuilderConfig(), nullptr);
+  EXPECT_EQ(trt.getNetwork(), nullptr);
+  EXPECT_EQ(trt.getNbIOTensors(), 4);
+  EXPECT_STREQ(trt.getIOTensorName(3), "sum");
+  EXPECT_EQ(trt.getIOTensorName(-1), nullptr);
+  EXPECT_EQ(trt.getInputDims(0).d[1], 4);
+  EXPECT_EQ(trt.getOutputDims(0).d[1], 4);
+  EXPECT_TRUE(setup(trt));
+  infer(trt);
+  EXPECT_EQ(trt.getBuilderConfig(), nullptr);
+  EXPECT_EQ(trt.getNetwork(), nullptr);
+  EXPECT_EQ(fs::last_write_time(engine), changed);
+}
+
+TEST_F(RuntimeCache, PreparedOnlyRejectsMissingAndCorruptEnginesWithoutGenerating)
+{
+  const auto config = TrtCommonConfig(model, "fp32", engine, 1ULL << 26U, -1, false, false);
+  EXPECT_THROW({ TrtCommon trt(config); }, std::runtime_error);
+  EXPECT_FALSE(fs::exists(engine));
+  std::ofstream(engine) << "bad";
+  EXPECT_THROW({ TrtCommon trt(config); }, std::runtime_error);
+  EXPECT_EQ(fs::file_size(engine), 3U);
+}
+
+TEST_F(RuntimeCache, PreparedOnlyRejectsProfileMismatchWithoutRebuilding)
+{
+  {
+    auto trt = make();
+    ASSERT_TRUE(setup(*trt));
+  }
+  const auto changed = fs::last_write_time(engine);
+  TrtCommon trt(TrtCommonConfig(model, "fp32", engine, 1ULL << 26U, -1, false, false));
+  auto profiles = std::make_unique<std::vector<ProfileDims>>();
+  const nvinfer1::Dims larger{2, {2, 4}};
+  for (const char * name : {"required_a", "required_b", "optional_present"}) {
+    profiles->emplace_back(name, shape, larger, larger);
+  }
+  EXPECT_FALSE(trt.setup(std::move(profiles)));
+  EXPECT_EQ(fs::last_write_time(engine), changed);
+  EXPECT_EQ(trt.getBuilderConfig(), nullptr);
+}
+
 }  // namespace

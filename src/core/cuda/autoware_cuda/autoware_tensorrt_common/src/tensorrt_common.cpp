@@ -172,7 +172,14 @@ TrtCommon::TrtCommon(
   }
   initLibNvInferPlugins(&*logger_, "");
 
-  if (!initialize()) {
+  if (!trt_config_->allow_engine_build) {
+    if (!fs::exists(trt_config_->engine_path) || !validateEngine() || !loadEngine()) {
+      throw std::runtime_error(
+        "Prepared TensorRT engine is missing or incompatible: " +
+        trt_config_->engine_path.string() +
+        ". Prepare an engine with the matching SDK and profile before starting inference.");
+    }
+  } else if (!initialize()) {
     throw std::runtime_error("Failed to initialize TensorRT");
   }
 }
@@ -261,6 +268,16 @@ bool TrtCommon::setup(ProfileDimsPtr profile_dims, NetworkIOPtr network_io)
 {
   if (!acceptOfferedIO(std::move(profile_dims), std::move(network_io))) {
     return false;
+  }
+
+  if (!trt_config_->allow_engine_build) {
+    if (!validateNetworkIO() || !validateProfileDims()) {
+      logger_->log(
+        nvinfer1::ILogger::Severity::kERROR,
+        "Prepared engine IO/profile mismatch; engine generation is disabled");
+      return false;
+    }
+    return true;
   }
 
   // Set input profile
@@ -371,12 +388,13 @@ std::string TrtCommon::getPrecision() const
 
 const char * TrtCommon::getIOTensorName(const int32_t index) const
 {
+  if (engine_) {
+    return index >= 0 && index < engine_->getNbIOTensors() ? engine_->getIOTensorName(index)
+                                                           : nullptr;
+  }
   if (!network_) {
     logger_->log(nvinfer1::ILogger::Severity::kERROR, "Network is not initialized");
     return nullptr;
-  }
-  if (engine_) {
-    return engine_->getIOTensorName(index);
   }
   // Before setup() the parsed network is the only source of IO, and reading it is supported:
   // it is how a caller inspects what the model declares before the engine exists.
@@ -396,12 +414,12 @@ const char * TrtCommon::getIOTensorName(const int32_t index) const
 
 int32_t TrtCommon::getNbIOTensors() const
 {
+  if (engine_) {
+    return engine_->getNbIOTensors();
+  }
   if (!network_) {
     logger_->log(nvinfer1::ILogger::Severity::kERROR, "Network is not initialized");
     return 0;
-  }
-  if (engine_) {
-    return engine_->getNbIOTensors();
   }
   return network_->getNbInputs() + network_->getNbOutputs();
 }
@@ -425,12 +443,13 @@ std::unordered_set<std::string> TrtCommon::getIOTensorNames() const
 
 nvinfer1::Dims TrtCommon::getTensorShape(const int32_t index) const
 {
+  if (engine_) {
+    const auto name = getIOTensorName(index);
+    return name ? getTensorShape(name) : nvinfer1::Dims{};
+  }
   if (!network_) {
     logger_->log(nvinfer1::ILogger::Severity::kERROR, "Network is not initialized");
     return nvinfer1::Dims{};
-  }
-  if (engine_) {
-    return getTensorShape(getIOTensorName(index));
   }
   const auto num_inputs = network_->getNbInputs();
   const auto num_outputs = network_->getNbOutputs();
@@ -474,6 +493,16 @@ std::optional<nvinfer1::DataType> TrtCommon::getTensorDataType(const char * tens
 
 nvinfer1::Dims TrtCommon::getInputDims(const int32_t index) const
 {
+  if (engine_) {
+    int32_t current = 0;
+    for (int32_t i = 0; i < engine_->getNbIOTensors(); ++i) {
+      const auto name = engine_->getIOTensorName(i);
+      if (engine_->getTensorIOMode(name) == nvinfer1::TensorIOMode::kINPUT && current++ == index) {
+        return engine_->getTensorShape(name);
+      }
+    }
+    return {};
+  }
   if (!network_) {
     logger_->log(nvinfer1::ILogger::Severity::kERROR, "Network is not initialized");
     return {};
@@ -484,6 +513,16 @@ nvinfer1::Dims TrtCommon::getInputDims(const int32_t index) const
 
 nvinfer1::Dims TrtCommon::getOutputDims(const int32_t index) const
 {
+  if (engine_) {
+    int32_t current = 0;
+    for (int32_t i = 0; i < engine_->getNbIOTensors(); ++i) {
+      const auto name = engine_->getIOTensorName(i);
+      if (engine_->getTensorIOMode(name) == nvinfer1::TensorIOMode::kOUTPUT && current++ == index) {
+        return engine_->getTensorShape(name);
+      }
+    }
+    return {};
+  }
   if (!network_) {
     logger_->log(nvinfer1::ILogger::Severity::kERROR, "Network is not initialized");
     return {};

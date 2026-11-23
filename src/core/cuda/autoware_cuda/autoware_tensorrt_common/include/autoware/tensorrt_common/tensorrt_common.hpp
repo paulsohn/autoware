@@ -65,8 +65,8 @@ public:
   /**
    * @brief Construct TrtCommon.
    *
-   * @param[in] trt_config Base configuration with ONNX model path as minimum required.
-   * parameter.
+   * @param[in] trt_config Base configuration. Build mode requires ONNX; prepared-only
+   * mode requires a valid engine and does not create a builder or parse ONNX.
    * @param[in] profiler Per-layer profiler.
    * @param[in] plugin_paths Paths for TensorRT plugins.
    * @throw std::runtime_error If TensorRT cannot be initialized, which includes failing to parse
@@ -324,7 +324,7 @@ public:
    *
    * Valid immediately after construction. Valid to call before `setup()`.
    *
-   * @return TensorRT builder configuration.
+   * @return TensorRT builder configuration, or nullptr in prepared-only mode.
    */
   [[nodiscard]] std::shared_ptr<nvinfer1::IBuilderConfig> getBuilderConfig();
 
@@ -333,7 +333,7 @@ public:
    *
    * Valid immediately after construction. Valid to call before `setup()`.
    *
-   * @return TensorRT network definition.
+   * @return TensorRT network definition, or nullptr in prepared-only mode.
    */
   [[nodiscard]] std::shared_ptr<nvinfer1::INetworkDefinition> getNetwork();
 
