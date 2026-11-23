@@ -37,6 +37,10 @@ add_executable(component_container_single src/component_container_single.cpp)
 target_link_libraries(component_container_single rclcpp::rclcpp rclcpp_components::component_manager cie_thread_configurator::thread_configurator)
 
 add_library(callback_isolated_executor SHARED src/callback_isolated_executor.cpp src/multi_threaded_executor_internal.cpp)
+option(CIE_EXPERIMENT_EVENT_WORKER "Use the Lyrical single-thread event executor for mutually exclusive CIE workers" OFF)
+if(CIE_EXPERIMENT_EVENT_WORKER)
+  target_compile_definitions(callback_isolated_executor PRIVATE CIE_EXPERIMENT_EVENT_WORKER)
+endif()
 target_link_libraries(callback_isolated_executor rclcpp::rclcpp cie_thread_configurator::thread_configurator ${cie_config_msgs_TARGETS})
 target_include_directories(callback_isolated_executor PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>

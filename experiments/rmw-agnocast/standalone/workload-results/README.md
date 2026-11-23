@@ -754,3 +754,75 @@ python3 experiments/rmw-agnocast/standalone/analyze-crop-tuning.py "$root/crop-t
 ```
 
 [All frames and stage intervals](crop-tuning-54105bea/frames.csv) and [per-launch resources and memory headroom](crop-tuning-54105bea/launches.csv). CycloneDDS and Zenoh controls for the unchanged fixture are in the preceding regression table.
+
+## Trace and tune the two-edge crop reader
+
+Used the O3 crop, native Agnocast executor, standalone AWF CIE crop, and intact source and verifying sink from the preceding tuning run. With ordinary waits, the RMW receives on a native thread, queues a loan and signals the ROS executor. The worker takes the message and enters the crop callback. With a direct wait on the crop input, the CIE worker blocks on the native descriptors and acquires the loan itself. The sink used ordinary waits throughout this comparison. The writer-only probe marks the common publish_core call, and the crop-only library marks the native subscription epoll return and completed loan. For the ordinary ROS take, the interposer records the RMW queue timestamp from message info and timestamps the last rcl_wait return, take entry and take exit on that worker. A full take includes constructing the host view. Its measured duration gives an upper bound on that construction cost.
+
+Two independent trace batches each ran the three arms in forward and reverse order. Per-frame joins check the writer's native entry ID, shared address, wake and loan registration IDs, temporal window, full frame sequence and payload. The first ten of 60 frames per launch are warmup. The following interval medians in µs pool 200 timed frames per arm. Medians of adjacent intervals need not add. The clock measures when userspace observes wakeup. Kernel notification and scheduling delay are both included.
+
+| Traced interval | Native | Retained views | Loan only the source + views |
+|---|---:|---:|---:|
+| Writer publish_core return to crop entry | 37.7 | 70.0 | 75.5 |
+| Writer return to observed subscription epoll return | 20.2 | 11.1 | 11.6 |
+| Epoll return to acquired native loan | 22.3 | 18.2 | 21.7 |
+| Native loan to crop entry | 2.3 | 37.9 | 40.1 |
+| Loan to RMW queue timestamp | — | 1.3 | 1.8 |
+| Queue timestamp to rcl_wait return | — | 19.2 | 17.7 |
+| rcl_wait return to take entry | — | 9.3 | 10.2 |
+| Full rcl_take | — | 5.3 | 6.0 |
+| Take return to callback entry | — | 3.1 | 3.3 |
+
+In a second trace pair the crop-only direct wait reduced queue-to-rcl_wait-return from 25.1 to 9.0 µs. The time from rcl_wait return to crop entry rose from 7.0 to 17.8 µs. Overall writer return to callback entry fell from 65.7 to 60.5 µs. Across six uninstrumented launch orders native measured 377.1 / 1078.6 µs median / p95, ordinary views 478.3 / 630.5 and the direct crop 465.9 / 632.5. Native's p95 varied substantially between rounds.
+
+Also tested one Lyrical EventsCBGExecutor worker per mutually exclusive callback group within standalone CIE. Reentrant groups used the original CIE behavior. With one event-executor thread the CIE-announced thread itself runs the callbacks. The private O3 CIE library was mapped into the crop only. With six uninstrumented launch orders, ordinary CIE measured 477.7 / 652.9 µs, event-worker CIE 477.9 / 653.6 and native 346.0 / 630.8. Each event-worker launch logged an rclcpp shutdown-callback removal error after data delivery and exited successfully. Keep this variant experimental.
+
+The previously recorded CycloneDDS and Zenoh controls for the unchanged 10 Hz crop measured 1.357 / 3.651 and 1.089 / 1.314 ms, respectively. This reader comparison remeasured native in every batch. The initial uninstrumented control script returned a shell error after its sixth launch when the on-disk runner changed during execution. Excluded that set and reran it in a clean shell.
+
+### Combine the crop-only wait with payload ownership
+
+Both publishers limit shared allocation to resizing the CPU payload, borrow the outgoing ROS message at publication and move its payload into the loan. Source and crop each reported 60 loans and zero private payload copies per launch. Both subscribers retain input views. Only the crop process selects /input for exact-route blocking with descriptor reuse and draining. The sink uses its ordinary ROS wait. The source-only borrowing alternative uses 59 source loans after warmup and publishes the crop output normally.
+
+| Independent unrestricted batch | Native median / p95 µs | Combined median / p95 µs | Combined/native median / p95 |
+|---|---:|---:|---:|
+| Both-edge ownership A | 351.9 / 640.0 | 418.4 / 658.7 | 1.19 / 1.03 |
+| Both-edge ownership B | 355.4 / 640.8 | 423.4 / 799.4 | 1.19 / 1.25 |
+| Source-only comparison A | 368.7 / 653.0 | 477.8 / 727.4 | 1.30 / 1.11 |
+| Source-only comparison B | 356.2 / 641.5 | 423.6 / 726.5 | 1.19 / 1.13 |
+| All four, 800 timed frames per arm | 357.3 / 642.2 | 434.6 / 752.3 | 1.22 / 1.17 |
+
+The two single interventions ran alongside the combination in the first two batches. Direct crop wait with ordinary publishers measured 476.4 / 622.8 and 460.0 / 636.1 µs. Scoped loans on both publishers with ordinary waits measured 468.9 / 754.7 and 450.4 / 844.0 µs. The combined configuration improved the pooled median over either single intervention within each of those two batches. Source-only loans plus a direct crop wait measured 466.9 / 616.7 and 450.5 / 593.6 µs in the later A/B. Those tails were lower, but median was 1.27× native in both. The 1.2× milestone is a workload-level engineering comparison. Individual rounds varied.
+
+### Reproduce the crop reader series
+
+Use the preceding O3 Universe crop and CIE setup. The commands below assume relative output directories under the colcon worktree. Keep each output directory fresh. Use the two CPU assignments only after checking allowed CPUs, physical core IDs, and shared L3 lists on the target host.
+
+```bash
+export LYRICAL_ROOT="$(cat build/agnocast-lyrical/universe-root)"
+run=experiments/buffer/run-lyrical.sh
+bench=experiments/rmw-agnocast/standalone/bench-crop.sh
+hooks=experiments/rmw-agnocast/standalone/build-path-hooks.sh
+root=build/standalone
+"$run" bash "$hooks" --with-waits
+bash "$bench" "$root/crop-reader-a" --source-reader-trace
+bash "$bench" "$root/crop-reader-repeat-controls" --source-confirm
+bash "$bench" "$root/crop-reader-b" --source-reader-trace
+CROP_WORKER_WAIT_DETAIL=1 "$run" bash "$hooks" --with-waits
+bash "$bench" "$root/crop-cropdirect-trace" --reader-route-trace
+bash "$bench" "$root/crop-cropdirect-controls" --reader-route-cie
+"$run" bash experiments/rmw-agnocast/standalone/build-event-worker.sh
+bash "$bench" "$root/crop-event-controls" --event-cie
+bash "$bench" "$root/crop-hybrid-a-controls" --hybrid-cie
+bash "$bench" "$root/crop-hybrid-b-controls" --hybrid-cie
+bash "$bench" "$root/crop-input-loan-a-controls" --input-loan-cie
+bash "$bench" "$root/crop-input-loan-b-controls" --input-loan-cie
+CROP_ROLE_CPUS=1+2,3+4,5+6 bash "$bench" "$root/crop-hybrid-pinned-a-controls" --hybrid-cie
+CROP_ROLE_CPUS=9+10,11+12,13+14 bash "$bench" "$root/crop-hybrid-pinned-b-controls" --hybrid-cie
+python3 experiments/rmw-agnocast/standalone/analyze-crop-reader.py "$root/crop-reader-summary" "$root"/crop-{reader-a,reader-repeat-controls,reader-b,cropdirect-trace,cropdirect-controls,event-controls,hybrid-a-controls,hybrid-b-controls,input-loan-a-controls,input-loan-b-controls,hybrid-pinned-a-controls,hybrid-pinned-b-controls}
+```
+
+### Laptop CPU placement and milestone decision
+
+Assigned source, crop and sink two distinct physical cores each within one shared L3 domain of the Ryzen 9 8940HX. Verified the inherited masks for every process, including native in each batch. On cores 1–6, the combined mode measured 453.3 / 728.1 µs against native 387.8 / 711.9 (1.17× / 1.02×). Repeating on cores 9–14 measured 398.8 / 804.3 against 330.4 / 657.1 (1.21× / 1.22×). The relative and absolute tails varied by placement. Use unrestricted scheduling as the reference and keep placement a host-specific option.
+
+The combined profile meets the approximate engineering milestone on aggregate with independent replay evidence. The observed batch range remains relevant to any deployment deadline. Unrestricted median whole-launch child CPU was 0.679 seconds compared with native 0.588. All 9,360 frames in the 156 accepted launches passed the sink's geometry, point content and sequence checks. Lowest sampled host MemAvailable was 13,176 MiB. The next comprehensive Universe workloads are pressured scheduling and graph churn during delivery. [Batch summaries](crop-reader-0823dbd9/summary.csv), [per-frame measurements](crop-reader-0823dbd9/frames.csv) and [per-launch CPU, memory, affinity and shutdown diagnostics](crop-reader-0823dbd9/launches.csv).

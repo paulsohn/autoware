@@ -13,9 +13,10 @@ check() {
 if [[ ${2:-} == --cie-regression ]]; then
   check build/universe-pipeline/obj/universe_sync_benchmark sync_standalone_cie
 fi
+if [[ ${2:-} == --event-* ]]; then check build/standalone/event-cie callback_isolated_executor; fi
 if [[ $1 == crop || ${2:-} == --cie-regression || ${2:-} == --crop-inputs || ${2:-} == --crop-repeat || ${2:-} == --stages || ${2:-} == --count || ${2:-} == --live-count ]]; then
   pkg=build/agnocast-lyrical/clang-obj/universe_crop_benchmark
-  if [[ ${2:-} == --ownership-cie || ${2:-} == --scope-* || ${2:-} == --route-* || ${2:-} == --source-* ]]; then check "$pkg" crop_standalone_cie; fi
+  if [[ ${2:-} == --ownership-cie || ${2:-} == --scope-* || ${2:-} == --route-* || ${2:-} == --source-* || ${2:-} == --reader-route-* || ${2:-} == --event-* || ${2:-} == --hybrid-* || ${2:-} == --input-loan-* ]]; then check "$pkg" crop_standalone_cie; fi
   check "$pkg" universe_crop
   if [[ $1 == crop ]]; then
     for target in crop endpoint universe_endpoint; do check "$pkg" "$target"; done

@@ -6,12 +6,12 @@ mkdir "$out"
 export LYRICAL_ROOT="$(cat build/agnocast-lyrical/universe-root)" BUFFER_RUNTIME_ONLY=1
 batch=${2:-}
 cie=0
-case "$batch" in --ownership-cie|--scope-*|--route-*|--source-*) cie=1;; esac
-unset BENCH_CROP_PROFILE CROP_SOURCE_TIMING AGNOCAST_RMW_POLL_TOPIC AGNOCAST_RMW_READY_ROUTE AGNOCAST_RMW_REUSE_WAIT_FD
+case "$batch" in --ownership-cie|--scope-*|--route-*|--source-*|--reader-route-*|--event-*|--hybrid-*|--input-loan-*) cie=1;; esac
+unset BENCH_CROP_PROFILE CROP_READER_TIMING CROP_SOURCE_TIMING AGNOCAST_RMW_POLL_TOPIC AGNOCAST_RMW_READY_ROUTE AGNOCAST_RMW_REUSE_WAIT_FD
 rounds=(1 2)
 if [[ ${2:-} == --ownership || ${2:-} == --ownership-cie ]]; then rounds=(1 2 3 4); fi
-if [[ ${2:-} == --scope-cie ]]; then rounds=(1 2 3 4); fi
-if [[ ${2:-} == --route-cie || ${2:-} == --source-cie ]]; then rounds=(1 2 3 4 5 6); fi
+if [[ ${2:-} == --scope-cie || $batch == --hybrid-cie || $batch == --input-loan-cie ]]; then rounds=(1 2 3 4); fi
+if [[ ${2:-} == --route-cie || ${2:-} == --source-cie || $batch == --reader-route-cie || $batch == --event-cie ]]; then rounds=(1 2 3 4 5 6); fi
 for round in "${rounds[@]}"; do
   modes=(agnocast standalone cyclone zenoh)
   if [[ $round == 2 ]]; then modes=(zenoh cyclone standalone agnocast); fi
@@ -31,9 +31,11 @@ for round in "${rounds[@]}"; do
       4) modes=(scoped agnocast loan view);;
     esac
   fi
-  if [[ ${2:-} == --route-* || ${2:-} == --source-* ]]; then
+  if [[ ${2:-} == --route-* || ${2:-} == --source-* || $batch == --reader-route-* || $batch == --event-* ]]; then
     tuned=direct
     if [[ ${2:-} == --source-* ]]; then tuned=source; fi
+    if [[ $batch == --reader-route-* ]]; then tuned=cropdirect; fi
+    if [[ $batch == --event-* ]]; then tuned=event; fi
     case $round in
       1) modes=(agnocast view "$tuned");;
       2) modes=("$tuned" view agnocast);;
@@ -43,7 +45,19 @@ for round in "${rounds[@]}"; do
       6) modes=(view "$tuned" agnocast);;
     esac
   fi
-  if [[ ${2:-} == --source-trace ]]; then export CROP_SOURCE_TIMING=1; fi
+  if [[ $batch == --hybrid-* || $batch == --input-loan-* ]]; then
+    single=cropdirect
+    other=scoped
+    if [[ $batch == --input-loan-* ]]; then single=sourcedirect; other=source; fi
+    case $round in
+      1) modes=(agnocast hybrid "$single" "$other");;
+      2) modes=(hybrid "$other" agnocast "$single");;
+      3) modes=("$other" "$single" hybrid agnocast);;
+      4) modes=("$single" agnocast "$other" hybrid);;
+    esac
+  fi
+  if [[ $batch == --source-reader-trace || $batch == --reader-route-trace ]]; then export CROP_READER_TIMING=1; fi
+  if [[ $batch == --source-trace || $batch == --source-reader-trace || $batch == --reader-route-trace ]]; then export CROP_SOURCE_TIMING=1; fi
   for mode in "${modes[@]}"; do
     if [[ $batch == *-trace ]]; then export BENCH_CROP_PROFILE="/ws/$out/$mode-$round.profile"; fi
     isolate=()
@@ -67,10 +81,13 @@ for round in "${rounds[@]}"; do
           source build/standalone/release-cie/install/local_setup.bash
           opts+=(--standalone-cie /ws/build/agnocast-lyrical/clang-obj/universe_crop_benchmark/crop_standalone_cie)
         fi
-        if [[ $1 == source ]]; then opts+=(--source-loan-only); export ROS_DISABLE_LOANED_MESSAGES=0; fi
+        if [[ $1 == source || $1 == sourcedirect ]]; then opts+=(--source-loan-only); export ROS_DISABLE_LOANED_MESSAGES=0; fi
+        if [[ $1 == event ]]; then opts+=(--host-view --cie-worker-library /ws/build/standalone/event-cie/libcallback_isolated_executor.so); fi
+        if [[ $1 == cropdirect ]]; then opts+=(--host-view --direct-crop-wait); fi
         if [[ $1 == direct ]]; then opts+=(--host-view --direct-cloud-waits); fi
         if [[ $1 == view ]]; then opts+=(--host-view); fi
-        if [[ $1 == scoped ]]; then opts+=(--payload-scope); export ROS_DISABLE_LOANED_MESSAGES=0; fi
+        if [[ $1 == hybrid || $1 == sourcedirect ]]; then opts+=(--direct-crop-wait); fi
+        if [[ $1 == scoped || $1 == hybrid ]]; then opts+=(--payload-scope); export ROS_DISABLE_LOANED_MESSAGES=0; fi
         if [[ $1 == loan ]]; then opts+=(--host-loan); export ROS_DISABLE_LOANED_MESSAGES=0; fi
         source build/standalone/poll-install/local_setup.bash
         export RMW_IMPLEMENTATION=rmw_agnocast

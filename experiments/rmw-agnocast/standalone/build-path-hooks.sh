@@ -38,6 +38,12 @@ case ${1:-} in
   *) exit 2;;
 esac
 /usr/bin/clang++-21 --gcc-install-dir=/usr/lib/gcc/x86_64-linux-gnu/15 -O3 -shared -fPIC "${incs[@]}" "${detail[@]}" experiments/rmw-agnocast/standalone/path_timing.cpp -o "$out/path-timing.so"
+crop_detail=()
+if [[ ${CROP_WORKER_WAIT_DETAIL:-0} == 1 ]]; then crop_detail=(-DPATH_WAIT_DETAIL); fi
+/usr/bin/clang++-21 --gcc-install-dir=/usr/lib/gcc/x86_64-linux-gnu/15 -O3 -shared -fPIC "${incs[@]}" -DCROP_READER_TIMING "${crop_detail[@]}" experiments/rmw-agnocast/standalone/path_timing.cpp -o "$out/crop-reader-timing.so"
 /usr/bin/clang++-21 --gcc-install-dir=/usr/lib/gcc/x86_64-linux-gnu/15 -O3 -shared -fPIC \
   -Ibuild/standalone/o3-install/agnocastlib/include \
   experiments/rmw-agnocast/standalone/path_publish_timing.cpp -o "$out/path-publish-timing.so"
+/usr/bin/clang++-21 --gcc-install-dir=/usr/lib/gcc/x86_64-linux-gnu/15 -O3 -shared -fPIC -DCROP_SOURCE_TIMING \
+  -Ibuild/standalone/o3-install/agnocastlib/include \
+  experiments/rmw-agnocast/standalone/path_publish_timing.cpp -o "$out/crop-publish-timing.so"

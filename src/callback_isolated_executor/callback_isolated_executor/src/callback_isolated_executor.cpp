@@ -1,3 +1,7 @@
+#ifdef CIE_EXPERIMENT_EVENT_WORKER
+#include <rclcpp/executors/events_cbg_executor/events_cbg_executor.hpp>
+#endif
+
 #include <memory>
 #include <string>
 #include <sys/syscall.h>
@@ -79,7 +83,11 @@ void CallbackIsolatedExecutor::spin() {
 void CallbackIsolatedExecutor::spin_mutually_exclusive_callback_group(
     rclcpp::CallbackGroup::SharedPtr group,
     rclcpp::node_interfaces::NodeBaseInterface::SharedPtr node) {
+#ifdef CIE_EXPERIMENT_EVENT_WORKER
+  auto executor = std::make_shared<rclcpp::executors::EventsCBGExecutor>(rclcpp::ExecutorOptions(), 1);
+#else
   auto executor = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
+#endif
   executor->add_callback_group(group, node);
   auto callback_group_id =
       cie_thread_configurator::create_callback_group_id(group, node);

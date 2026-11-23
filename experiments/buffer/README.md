@@ -12,6 +12,10 @@ summary script as the archived experiment.
 
 For new colcon performance runs, build the locally measured code with plain CMake Release (currently -O3 -DNDEBUG on the laptop). Record a different optimization level when reproducing a historical binary or investigating a specific build or performance issue.
 
+### Performance tuning and pause condition
+
+A substantial miss in a regression starts focused tuning on that workload. Continue through concrete hypotheses, including ones suggested by a completed experiment, without waiting for another decision between runs. Stop the tuning series when a matched independent replay supports the engineering milestone of roughly 1.2× native median and p95 with correct delivery, or when the measured evidence leaves no actionable hypothesis. Record paired variation, CPU and delivery alongside pooled latency. A single noisy tail or a favorable launch is insufficient to decide. Keep the laptop memory guard and run one benchmark or build at a time.
+
 ## Reproduce on the reference laptop
 
 Use a GPU-capable Lyrical environment with the dependencies in the

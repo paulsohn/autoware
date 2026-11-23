@@ -112,19 +112,31 @@ extern "C" rcl_ret_t rcl_wait(rcl_wait_set_t * set, int64_t timeout)
   wait_done = now(CLOCK_REALTIME);
   return ret;
 }
+#ifdef CROP_READER_TIMING
+constexpr auto traced_topic = "/input";
+constexpr auto loan_clock = CLOCK_REALTIME;
+extern "C" rcl_ret_t rcl_take(
+  const rcl_subscription_t * sub, void * message, rmw_message_info_t * info,
+  rmw_subscription_allocation_t * allocation)
+{
+  static auto real = reinterpret_cast<decltype(&rcl_take)>(dlsym(RTLD_NEXT, "rcl_take"));
+#else
+constexpr auto traced_topic = "/path_latency";
+constexpr auto loan_clock = CLOCK_MONOTONIC;
 extern "C" rcl_ret_t rcl_take_loaned_message(
   const rcl_subscription_t * sub, void ** message, rmw_message_info_t * info,
   rmw_subscription_allocation_t * allocation)
 {
   static auto real = reinterpret_cast<decltype(&rcl_take_loaned_message)>(
     dlsym(RTLD_NEXT, "rcl_take_loaned_message"));
+#endif
   auto begin = now(CLOCK_REALTIME);
   auto ret = real(sub, message, info, allocation);
   auto done = now(CLOCK_REALTIME);
   auto steady = now(CLOCK_MONOTONIC);
   if (
     ret == RCL_RET_OK && info &&
-    std::strcmp(rcl_subscription_get_topic_name(sub), "/path_latency") == 0) {
+    std::strcmp(rcl_subscription_get_topic_name(sub), traced_topic) == 0) {
     if (count >= 60) std::abort();
 #ifdef PATH_WAIT_DETAIL
     waits[count] = current_wait;
@@ -172,12 +184,12 @@ __attribute__((destructor)) void save_loans()
 }  // namespace
 extern "C" void path_timing_wake(uint32_t id)
 {
-  wake_time = now(CLOCK_MONOTONIC);
+  wake_time = now(loan_clock);
   wake_id = id;
 }
 extern "C" void path_timing_loan(uint32_t id, int64_t entry, uintptr_t address)
 {
-  auto acquired = now(CLOCK_MONOTONIC);
+  auto acquired = now(loan_clock);
   auto i = loan_count.fetch_add(1, std::memory_order_relaxed);
   if (i >= sizeof(loans) / sizeof(loans[0])) std::abort();
   loans[i] = {wake_id, id, entry, address, wake_time, acquired};

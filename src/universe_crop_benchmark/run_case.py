@@ -30,12 +30,17 @@ parser.add_argument("--resources", type=Path)
 parser.add_argument("--buffer", choices=["cpu", "shmem", "cuda"], default="cpu")
 parser.add_argument("--source-buffer", choices=["cuda", "shmem"], help="materialize this source backend on the Agnocast host-cloud route")
 parser.add_argument("--source-loan-only", action="store_true", help="loan only the source publication and retain views on both edges")
-parser.add_argument("--direct-cloud-waits", action="store_true", help="use drained exact-route waits on both cloud readers")
+wait_mode = parser.add_mutually_exclusive_group()
+wait_mode.add_argument("--direct-crop-wait", action="store_true", help="use a drained exact-route wait only on the crop input")
+wait_mode.add_argument("--direct-cloud-waits", action="store_true", help="use drained exact-route waits on both cloud readers")
+parser.add_argument("--cie-worker-library", type=Path, help="private CIE worker implementation for the crop")
 parser.add_argument("--standalone-cie", type=Path, help="standalone AWF CIE crop executable")
 parser.add_argument("--ros-cie", action="store_true", help="use the mixed-capable CIE for the ROS crop")
 args = parser.parse_args()
-if args.direct_cloud_waits and (args.transport != "standalone" or args.branched):
-    parser.error("--direct-cloud-waits requires a two-edge standalone crop")
+if (args.direct_crop_wait or args.direct_cloud_waits) and (args.transport != "standalone" or args.branched):
+    parser.error("direct waits require a two-edge standalone crop")
+if args.cie_worker_library and not args.standalone_cie:
+    parser.error("--cie-worker-library requires --standalone-cie")
 if args.standalone_cie and (args.transport != "standalone" or args.ros_cie):
     parser.error("--standalone-cie requires the standalone RMW crop")
 if args.source_buffer and not (args.transport in ("mixed", "fixed") and
@@ -106,6 +111,13 @@ if args.host_cloud:
 if args.transport in ("mixed", "fixed"):
     env["AGNOCAST_RMW_DIRECT_WAIT"] = "1"
     runner = Path(get_package_prefix("agnocast_rmw_loan_probe")) / "lib/agnocast_rmw_loan_probe/crop_wait_runner"
+role_cpus = {}
+if value := os.getenv("CROP_ROLE_CPUS"):
+    selected = [set(map(int, mask.split("+"))) for mask in value.split(",")]
+    cpus = set.union(*selected)
+    if len(selected) != 3 or len(cpus) != sum(map(len, selected)) or not cpus <= os.sched_getaffinity(0):
+        parser.error("CROP_ROLE_CPUS requires three disjoint allowed CPU masks in source,crop,sink order")
+    role_cpus = dict(zip(("pub", "filter", "sub"), selected))
 children = []
 with tempfile.TemporaryDirectory() as tmp:
     samples = Path(tmp) / "samples.csv"
@@ -118,7 +130,16 @@ with tempfile.TemporaryDirectory() as tmp:
             hook = Path("build/standalone/path-hooks/crop-publish-timing.so").resolve(strict=True)
             child_env["LD_PRELOAD"] += ":" + str(hook)
             child_env["PATH_PUBLISH_TIMES"] = str(out.with_suffix(".publish"))
-        if args.direct_cloud_waits and role in ("filter", "sub"):
+        if role == "filter" and args.cie_worker_library:
+            child_env["LD_PRELOAD"] += ":" + str(args.cie_worker_library.resolve(strict=True))
+        if role == "filter" and os.getenv("CROP_READER_TIMING"):
+            hooks = Path("build/standalone/path-hooks").resolve()
+            child_env["LD_LIBRARY_PATH"] = str(hooks) + ":" + child_env["LD_LIBRARY_PATH"]
+            child_env["LD_PRELOAD"] += ":" + str((hooks / "crop-reader-timing.so").resolve(strict=True))
+            child_env.update(PATH_LOAN_TIMES=str(out.with_suffix(".loans")),
+                             PATH_TIMING_FILE=str(out.with_suffix(".takes")),
+                             PATH_WAIT_TIMES=str(out.with_suffix(".waits")))
+        if (args.direct_cloud_waits and role in ("filter", "sub")) or (args.direct_crop_wait and role == "filter"):
             child_env.update(AGNOCAST_RMW_POLL_TOPIC="/input" if role == "filter" else "/output",
                              AGNOCAST_RMW_READY_ROUTE="1", AGNOCAST_RMW_REUSE_WAIT_FD="drain")
         if role == "pub" and args.source_buffer:
@@ -165,8 +186,21 @@ with tempfile.TemporaryDirectory() as tmp:
             child_env["RMW_IMPLEMENTATION"] = "rmw_cyclonedds_cpp"
             child_env["BENCH_CSV"] = str(mirror)
             child_env.pop("LD_PRELOAD", None)
-        proc = subprocess.Popen(argv, env=child_env, stderr=logs.get(label))
-        children.append(proc)
+        if role in role_cpus:
+            # Set the launching thread's mask so every new child thread inherits it from exec.
+            previous = os.sched_getaffinity(0)
+            try:
+                os.sched_setaffinity(0, role_cpus[role])
+                proc = subprocess.Popen(argv, env=child_env, stderr=logs.get(label))
+                children.append(proc)
+            finally:
+                os.sched_setaffinity(0, previous)
+            assert os.sched_getaffinity(proc.pid) == role_cpus[role]
+            mask = "+".join(map(str, sorted(role_cpus[role])))
+            print(f"verified {role} cpu={mask}", flush=True)
+        else:
+            proc = subprocess.Popen(argv, env=child_env, stderr=logs.get(label))
+            children.append(proc)
         if "BENCH_EXPECT_CLAMP" in child_env:
             sched = Path(f"/proc/{proc.pid}/sched").read_text()
             minimum = re.search(r"^effective uclamp.min\s*:\s*(\d+)", sched, re.MULTILINE)
@@ -202,6 +236,11 @@ with tempfile.TemporaryDirectory() as tmp:
             crop.extend(["-r", "output:=/stage1"])
         launch(crop, "filter")
         time.sleep(2)
+        if args.cie_worker_library:
+            mappings = Path(f"/proc/{children[-1].pid}/maps").read_text()
+            if str(args.cie_worker_library.resolve()) not in mappings:
+                raise RuntimeError("crop did not load the selected CIE worker")
+            print("verified crop CIE worker", args.cie_worker_library, flush=True)
         launch([bin_dir / "endpoint", "--ros-args", "-p", f"period_ms:={args.period_ms}"], "pub")
         deadline = time.monotonic() + 30
         while time.monotonic() < deadline:
