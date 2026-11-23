@@ -19,6 +19,7 @@
 #include "autoware_utils/system/stop_watch.hpp"
 
 #include <pcl_ros/transforms.hpp>
+#include <rclcpp/version.h>
 #include <tf2_eigen/tf2_eigen.hpp>
 
 #include <boost/optional.hpp>
@@ -246,9 +247,14 @@ OccupancyGridMapOutlierFilterComponent::OccupancyGridMapOutlierFilterComponent(
   tf2_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf2_);
 
   /* Subscriber and publisher */
+#if RCLCPP_VERSION_MAJOR >= 32
+  pointcloud_sub_.subscribe(this, "~/input/pointcloud", rclcpp::SensorDataQoS());
+  occupancy_grid_map_sub_.subscribe(this, "~/input/occupancy_grid_map", rclcpp::QoS{1});
+#else
   pointcloud_sub_.subscribe(this, "~/input/pointcloud", rmw_qos_profile_sensor_data);
   occupancy_grid_map_sub_.subscribe(
     this, "~/input/occupancy_grid_map", rclcpp::QoS{1}.get_rmw_qos_profile());
+#endif
   sync_ptr_ = std::make_shared<Sync>(SyncPolicy(5), occupancy_grid_map_sub_, pointcloud_sub_);
   sync_ptr_->registerCallback(
     std::bind(
@@ -378,8 +384,8 @@ void OccupancyGridMapOutlierFilterComponent::onOccupancyGridMapAndPointCloud2(
     if (time_keeper_)
       inner_st_ptr = std::make_unique<ScopedTimeTrack>("low_confidence_pc_filter", *time_keeper_);
 
-    std::memcpy(&outlier_pc.data[0], &low_confidence_pc.data[0], low_confidence_pc.data.size());
-    outlier_pc.data.resize(low_confidence_pc.data.size());
+    outlier_pc.data = low_confidence_pc.data;
+    filtered_low_confidence_pc.data.clear();
   }
 
   // Concatenate high confidence pointcloud from occupancy grid map and non-outlier pointcloud
@@ -463,9 +469,7 @@ void OccupancyGridMapOutlierFilterComponent::concatPointCloud2(
   std::unique_ptr<ScopedTimeTrack> st_ptr;
   if (time_keeper_) st_ptr = std::make_unique<ScopedTimeTrack>(__func__, *time_keeper_);
 
-  size_t output_size = output.data.size();
-  output.data.resize(output.data.size() + input.data.size());
-  std::memcpy(&output.data[output_size], &input.data[0], input.data.size());
+  output.data.insert(output.data.end(), input.data.begin(), input.data.end());
 }
 void OccupancyGridMapOutlierFilterComponent::filterByOccupancyGridMap(
   const OccupancyGrid & occupancy_grid_map, const PointCloud2 & pointcloud,

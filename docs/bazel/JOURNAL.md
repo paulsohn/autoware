@@ -20818,3 +20818,64 @@ diff checks pass. Original test assertions, PCD fixture and production input
 layout checks are unchanged. Optional OpenMP is not qualified by this CPU profile;
 no Fast DDS/GPU/expensive product gate is claimed. Source portability corrections
 are separate from Bazel definitions (88ba0fda). Next: occupancy-grid outlier filtering.
+
+## 2026-11-24: Phase 9.5 — occupancy-grid outlier filtering
+
+Purpose: complete the first CPU filter batch with the local occupancy-grid
+outlier component. Inspect CMake, manifest, implementation/private header and
+parameter schema/YAML. There are no original functional test targets. Required
+acceptance is the shared component, original standalone executable and indexed
+configuration, plus an external Cyclone/RCLCPP test in radius-enabled and
+radius-disabled modes. Both selected profiles pass in the complete gate below.
+
+Pattern: preserve the public node/helper library and unique shared owner. Reuse
+the narrow preprocessor base header/runtime providers and existing PCL/TF/message
+SDK owners. Root selects the local source module and composes the added test;
+no component-to-root labels or package-local new tests are introduced. Use the
+original parameter YAML with explicit scenario overrides. The peer sends a
+translated-frame map/cloud pair, checking ExactTime's rejection of mismatched
+stamps and then actual publication. Verify high-confidence retention, dense and
+isolated low-confidence points with both radius modes, out-of-map/rear retention,
+and coordinates, fields/intensity, header/frame and stamp after a TF round trip.
+
+Compatibility: the selected Message Filters package removes the legacy .h
+includes and expects QoS objects on the current RCLCPP subscription path.
+Use .hpp names and the rclcpp-major-32+ QoS overload, preserving the older raw
+profile branch and existing sensor-data/reliable queue settings.
+
+Behavior failure/cause/fix: radius-disabled mode publishes a fabricated point
+with intensity ID zero in a fixture whose input IDs are 1 through 6. The low-
+confidence output buffer is preallocated, but that branch only copies the low
+points to the outlier buffer; the untouched zero-filled retained buffer is later
+concatenated into output. Copy the actual outlier bytes with vector assignment
+and clear the unused retained buffer. Append cloud bytes with vector::insert
+so empty retained clouds do not index element zero of an empty vector. All four
+append callers use distinct input/output clouds. Preserve the existing occupancy-only
+policy of discarding all low-confidence points. Radius-enabled mode passes
+before this correction; both profiles pass afterward without weaker assertions.
+Wait for both input subscriptions to be discovered before checking that mismatched
+stamps produce no output. This avoids confusing discovery with synchronization.
+
+Upstream status checked 2026-11-24: current main retains the old headers/QoS and
+uncleared radius-disabled buffer. Scoped package and Message Filters PR searches
+find no matching correction. Historical intensity, parameter, namespace and time-
+keeper changes are related work, not these fixes. No original tests exist to
+modify; all new scenarios remain outside the source package.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  @autoware_occupancy_grid_map_outlier_filter//... \
+  //bazel/tests:occupancy_outlier_filter_test
+```
+
+Result: all nine non-test module targets and its test target build; both radius
+profiles pass with Cyclone/RCLCPP, zero failures/errors/skips, in 26.6 s (test
+1.0 s). The scenario checks both connected-input ExactTime behavior and a
+translated map/base TF round trip, all retained IDs/coordinates, header/stamp,
+point fields and packed counts. No OpenMP code is present in this snapshot;
+its optional CMake flag is unnecessary for the selected implementation.
+Targeted clang-format and diff checks pass. This direct RCLCPP node does not
+introduce an Agnocast-only transport path; no Fast DDS/GPU/expensive product gate
+is required. Source corrections are separate from the module definitions.

@@ -2137,3 +2137,37 @@ preload, zero failures/errors/skips. Original test bodies and tolerances remain
 unchanged. These are C-library/libc++ portability findings, not new ROS APIs.
 Local source correction: 88ba0fda.
 [Reproduction](JOURNAL.md#2026-11-24-phase-95--ground-segmentation).
+
+## Occupancy-grid outlier subscriptions need current Message Filters APIs
+
+- [ ] Associate with a matching compatibility correction. Checked 2026-11-24:
+  current [header](https://github.com/autowarefoundation/autoware_universe/blob/main/perception/autoware_occupancy_grid_map_outlier_filter/src/occupancy_grid_map_outlier_filter_node.hpp)
+  retains removed .h Message Filters names, and current
+  [implementation](https://github.com/autowarefoundation/autoware_universe/blob/main/perception/autoware_occupancy_grid_map_outlier_filter/src/occupancy_grid_map_outlier_filter_node.cpp)
+  uses raw QoS profiles. Scoped package/Message Filters searches find no matching
+  change; AWF #7404/core #1538 are related distribution trackers.
+
+Package: autoware_occupancy_grid_map_outlier_filter. Use canonical .hpp includes
+and rclcpp-major-32+ QoS objects, preserving the earlier profile API and existing
+best-effort cloud/reliable map policies. The full module builds and both external
+radius/synchronization/frame/payload scenarios pass with Cyclone/RCLCPP, zero
+failures/errors/skips. Older distributions are not locally qualified.
+[Reproduction](JOURNAL.md#2026-11-24-phase-95--occupancy-grid-outlier-filtering).
+
+## Radius-disabled occupancy filtering appends fabricated zero points
+
+- [ ] Associate with a matching upstream correction. Checked 2026-11-24:
+  current [radius-disabled branch](https://github.com/autowarefoundation/autoware_universe/blob/main/perception/autoware_occupancy_grid_map_outlier_filter/src/occupancy_grid_map_outlier_filter_node.cpp)
+  leaves the preallocated filtered_low_confidence_pc buffer untouched before
+  concatenating it. The scoped package PR search finds no matching fix.
+
+Package: autoware_occupancy_grid_map_outlier_filter. A six-point fixture emits a
+point with intensity ID zero, absent from every input, when radius filtering is
+disabled. Low-confidence points are copied to outliers while their preallocated
+retained buffer still contains zeros. Clear that retained buffer and copy the
+actual outlier vector without indexing an empty vector. Use vector::insert for
+concatenation so the now-empty retained cloud is appended safely. Preserve the original
+occupancy-only discard policy. Both radius profiles pass the complete module
+gate afterward; the enabled-radius scenario already passes before the fix.
+This is output-data correctness, not Lyrical compatibility.
+[Reproduction](JOURNAL.md#2026-11-24-phase-95--occupancy-grid-outlier-filtering).
