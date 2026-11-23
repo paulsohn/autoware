@@ -15,7 +15,7 @@ CC=/usr/bin/gcc CXX=/usr/bin/g++ colcon build --base-paths "$ws/src/muSSP" \
 source "$ws/install/local_setup.bash"
 export CC=/usr/bin/clang-21 CXX=/usr/bin/clang++-21
 flags=(-DCMAKE_BUILD_TYPE=Release "-DCMAKE_CXX_FLAGS=--gcc-install-dir=/usr/lib/gcc/x86_64-linux-gnu/15 -Wno-error=unknown-warning-option"
-       "-DCMAKE_CXX_FLAGS_RELEASE=-O1 -DNDEBUG")
+       "-DCMAKE_CXX_FLAGS_RELEASE=-O3 -DNDEBUG")
 colcon build --base-paths src/core/autoware_utils/{autoware_utils_system,autoware_utils_debug,autoware_utils_math,autoware_utils_geometry} \
   src/core/autoware_msgs/{autoware_common_msgs,autoware_vehicle_msgs,autoware_planning_msgs} \
   src/core/autoware_internal_msgs/autoware_internal_planning_msgs \

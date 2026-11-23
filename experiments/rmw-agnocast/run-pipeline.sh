@@ -9,6 +9,16 @@ source build/universe-pipeline/install/local_setup.bash
 mode=${1:?plain, stock, runner, cyclone or zenoh}
 if [[ $mode == plain ]]; then source build/universe-pipeline-plain/install/local_setup.bash; fi
 if [[ $mode == native ]]; then source build/universe-pipeline-native/install/local_setup.bash; fi
+if [[ ${UNIVERSE_RELEASE_CONTROLS:-0} == 1 ]]; then
+  # Preserve the native launcher's package lookup for the installed heap hook.
+  export LD_LIBRARY_PATH="/ws/build/standalone/o3-install/agnocastlib/lib:/ws/build/standalone/release-path/install/rclcpp/lib:$LD_LIBRARY_PATH"
+  fixture="$(ros2 pkg prefix universe_sync_benchmark)/lib/universe_sync_benchmark/sync_fixture"
+  deps=$(ldd "$fixture")
+  grep -Fq 'librclcpp.so => /ws/build/standalone/release-path/install/rclcpp/lib/' <<< "$deps"
+  if [[ $mode == native ]]; then
+    grep -Fq 'libagnocast.so => /ws/build/standalone/o3-install/agnocastlib/lib/' <<< "$deps"
+  fi
+fi
 dir=$(mktemp -d)
 export ENABLE_AGNOCAST=0 ROS_LOG_DIR="$dir/roslog"
 export CYCLONEDDS_URI='<CycloneDDS><Domain><General><Interfaces><NetworkInterface name="lo"/></Interfaces><AllowMulticast>false</AllowMulticast></General><Discovery><ParticipantIndex>auto</ParticipantIndex><Peers><Peer Address="127.0.0.1"/></Peers></Discovery></Domain></CycloneDDS>'

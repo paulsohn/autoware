@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -eu
 out=${1:?fresh output directory}
+bash "$(dirname "$0")/check-universe-o3.sh" crop "${2:-}"
 mkdir "$out"
 export LYRICAL_ROOT="$(cat build/agnocast-lyrical/universe-root)" BUFFER_RUNTIME_ONLY=1
 rounds=(1 2)

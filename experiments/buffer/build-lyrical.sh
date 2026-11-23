@@ -13,7 +13,7 @@ for backend in cuda shmem; do
   for mode in native mixed; do bash src/buffer_pointcloud_probe/run-case.sh "$backend" "$mode"; done
 done
 p=src/crop_pipeline_benchmark
-opts=(-DBUILD_TESTING=ON -DCMAKE_BUILD_TYPE=Release '-DCMAKE_CXX_FLAGS_RELEASE=-O2 -DNDEBUG --param=ggc-min-expand=20 --param=ggc-min-heapsize=32768')
+opts=(-DBUILD_TESTING=ON -DCMAKE_BUILD_TYPE=Release '-DCMAKE_CXX_FLAGS_RELEASE=-O3 -DNDEBUG --param=ggc-min-expand=20 --param=ggc-min-heapsize=32768')
 unset WRAPPER_TWO_EDGE
 build "$p" --cmake-args "${opts[@]}"
 ctest --test-dir build/crop_pipeline_benchmark -j1 --output-on-failure

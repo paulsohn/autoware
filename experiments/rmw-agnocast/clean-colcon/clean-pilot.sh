@@ -6,7 +6,7 @@ inputs=$PWD/$w/inputs
 export XML_CATALOG_FILES="$inputs/catalog.xml"
 source build/rmw-agnocast/install/local_setup.bash
 export CC=/usr/bin/clang-21 CXX=/usr/bin/clang++-21 ENABLE_AGNOCAST=0
-flags=(-DCMAKE_BUILD_TYPE=Release '-DCMAKE_CXX_FLAGS_RELEASE=-O1 -DNDEBUG'
+flags=(-DCMAKE_BUILD_TYPE=Release '-DCMAKE_CXX_FLAGS_RELEASE=-O3 -DNDEBUG'
        '-DCMAKE_CXX_FLAGS=--gcc-install-dir=/usr/lib/gcc/x86_64-linux-gnu/15 -Wno-error=unknown-warning-option'
        -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DBUILD_TESTING=OFF)
 install_base=$w/install

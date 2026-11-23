@@ -12,5 +12,5 @@ experiments/buffer/run-limited.sh "${CUDA_HOME:-/usr/local/cuda}/bin/nvcc" \
 experiments/buffer/run-lyrical.sh colcon --log-base "$base/log" build --executor sequential \
   --base-paths src/core/cuda/negotiated src/universe_gpu_edge_benchmark \
   --packages-up-to universe_gpu_edge_benchmark --build-base "$base/obj" --install-base "$base/install" \
-  --cmake-args -DBUILD_TESTING=OFF -DCMAKE_BUILD_TYPE=Release '-DCMAKE_CXX_FLAGS_RELEASE=-O1 -g0' \
+  --cmake-args -DBUILD_TESTING=OFF -DCMAKE_BUILD_TYPE=Release '-DCMAKE_CXX_FLAGS_RELEASE=-O3 -g0' \
   -DCUDAToolkit_ROOT=/usr/local/cuda -DKERNEL_OBJECT=/ws/build/gpu-edge/transform.o

@@ -5,7 +5,7 @@ export ENABLE_AGNOCAST=1 RMW_IMPLEMENTATION=rmw_cyclonedds_cpp ROS_DOMAIN_ID=194
 export MAKEFLAGS=-j1 CMAKE_BUILD_PARALLEL_LEVEL=1 CC=clang-18 CXX=clang++-18
 w=build/universe-jazzy
 opts=(--build-base "$w/obj" --install-base "$w/install" --executor sequential
-  --cmake-args -DBUILD_TESTING=OFF -DCMAKE_BUILD_TYPE=Release '-DCMAKE_CXX_FLAGS_RELEASE=-O1 -DNDEBUG')
+  --cmake-args -DBUILD_TESTING=OFF -DCMAKE_BUILD_TYPE=Release '-DCMAKE_CXX_FLAGS_RELEASE=-O3 -DNDEBUG')
 colcon --log-base "$w/log" build --base-paths \
   src/core/agnocast/src/{agnocast_cie_config_msgs,agnocast_cie_thread_configurator,agnocastlib} \
   src/core/autoware_internal_msgs/{autoware_internal_debug_msgs,autoware_internal_msgs} \

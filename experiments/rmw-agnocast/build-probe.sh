@@ -6,7 +6,7 @@ source build/agnocast-lyrical/install/local_setup.bash
 export CC=/usr/bin/clang-21 CXX=/usr/bin/clang++-21
 export XML_CATALOG_FILES=/ws/build/agnocast-lyrical/catalog.xml
 args=(--executor sequential --cmake-args -DCMAKE_CXX_FLAGS=--gcc-install-dir=/usr/lib/gcc/x86_64-linux-gnu/15
-  -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DBUILD_TESTING=OFF -DCMAKE_BUILD_TYPE=Release '-DCMAKE_CXX_FLAGS_RELEASE=-O1 -DNDEBUG')
+  -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DBUILD_TESTING=OFF -DCMAKE_BUILD_TYPE=Release '-DCMAKE_CXX_FLAGS_RELEASE=-O3 -DNDEBUG')
 case "$mode" in
   stock)
     colcon --log-base "$w/log" build --base-paths src/core/autoware_msgs/{autoware_common_msgs,autoware_planning_msgs} \

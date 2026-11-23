@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -eu
 out=${1:?fresh output directory}
+bash "$(dirname "$0")/check-universe-o3.sh" lidar "${2:-}"
 mkdir "$out"
 export LYRICAL_ROOT="$(cat build/agnocast-lyrical/universe-root)" BUFFER_RUNTIME_ONLY=1 SYNC_SHORT_WAIT=1
 rounds=(1 2)
@@ -39,7 +40,7 @@ for round in "${rounds[@]}"; do
         --ro-bind /ws/build/standalone/distro /opt/ros/lyrical --chdir /ws timeout -k 8 65
         bash experiments/rmw-agnocast/standalone/run-universe.sh)
     else
-      command=(timeout -k 8 65 bash experiments/rmw-agnocast/run-pipeline.sh "$mode")
+      command=(env UNIVERSE_RELEASE_CONTROLS=1 timeout -k 8 65 bash experiments/rmw-agnocast/run-pipeline.sh "$mode")
     fi
     if ! experiments/buffer/run-lyrical.sh "${command[@]}" >"$log" 2>&1; then tail -30 "$log"; exit 1; fi
     if [[ $mode == view || $mode == loan ]]; then grep -q 'sync_input views=60 copies=0' "$log"; fi
