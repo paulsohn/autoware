@@ -547,3 +547,34 @@ bash experiments/rmw-agnocast/standalone/bench-path.sh build/standalone/fresh-re
 mkdir build/standalone/fresh-ready-export
 python3 experiments/rmw-agnocast/standalone/analyze-ready-route.py build/standalone/fresh-ready-a build/standalone/fresh-ready-b build/standalone/fresh-ready-trace build/standalone/fresh-ready-export
 ```
+
+## Reuse the mixed wait set's notification descriptor
+
+Kept the 10 Hz Path, standalone CIE, ready-route acquisition, kernel module, heap hook and O3 colcon overlays from the preceding experiment. Compared one context notification eventfd per mixed wait with one registered lazily per wait set. The latter is selected with AGNOCAST_RMW_REUSE_WAIT_FD=1 before wait-set creation. A retained descriptor stays registered during idle periods and is removed under the signals mutex at wait-set destruction. All readiness predicates are rechecked. Wait sets that never poll native descriptors allocate no eventfd.
+
+| Two counterbalanced batches | Median / p95 µs | Median child CPU s | Median largest child RSS MiB |
+|---|---:|---:|---:|
+| Native Agnocast | 43.25 / 66.45 | 0.137 | 26.36 |
+| Standalone CIE, ready route, per-wait eventfd | 61.48 / 100.45 | 0.190 | 26.76 |
+| Same standalone reader, retained eventfd | 67.23 / 138.28 | 0.194 | 26.46 |
+
+Each batch ran all six orders. The table pools 600 timed frames per arm after ten warmups per launch. Reuse had a lower median in four of twelve paired rounds. Both batch medians favored per-wait allocation. The p95 direction varied by batch. All frames are included in the exports, including a slow reuse run. In separate paired traces, queue timestamp to rcl_wait return fell from 12.07 to 5.92 µs median. That local saving did not translate into faster uninstrumented delivery. [Frame latencies](reuse-waitfd-frames.csv), [child resources](reuse-waitfd-resources.csv), and [stage timestamps](reuse-waitfd-stages.csv).
+
+The extra poll had a reproducible cause. The direct receiver can notify its own context during acquisition. A retained descriptor carries outstanding notifications across waits. In two further traced comparisons, plain reuse made two ppoll calls per timed frame, one returning solely for the context descriptor. Per-wait allocation made one call and had zero context-only returns. A second intervention, AGNOCAST_RMW_REUSE_WAIT_FD=drain, reads the retained counter under the context mutex on entry, before testing readiness and blocking. This restored one poll per timed frame, with zero context-only returns. The counts cover the interval between consecutive loaned takes. They do not by themselves assign time on the publish-to-callback critical path. [Per-frame poll counts](waitfd-poll-counts.csv).
+
+The stripped suite verified descriptor lifetime for 16 short-lived additional wait sets per test process, including notifications triggered while those sets were idle. It also passed timeout, independent take, simultaneous guard/data, two-route bursts, RPC, deadlines and shutdown in the poll probe, followed by the standalone regression suite. Guarded builds used one job. To repeat on the provisioned laptop, run the preceding build-poll and stripped check-poll commands and prepare the O3 path hooks with --with-waits. Then run these commands serially:
+
+```bash
+bash experiments/rmw-agnocast/standalone/bench-path.sh build/standalone/fresh-fd-a --reuse-wait-fd
+bash experiments/rmw-agnocast/standalone/bench-path.sh build/standalone/fresh-fd-stages --reuse-wait-fd-trace
+bash experiments/rmw-agnocast/standalone/bench-path.sh build/standalone/fresh-fd-b --reuse-wait-fd
+bash experiments/rmw-agnocast/standalone/bench-path.sh build/standalone/fresh-drain-stages --drain-wait-fd-trace
+bash experiments/rmw-agnocast/standalone/bench-path.sh build/standalone/fresh-drain --drain-wait-fd
+mkdir build/standalone/fresh-fd-export
+python3 experiments/rmw-agnocast/standalone/analyze-ready-route.py --reuse-wait-fd build/standalone/fresh-fd-a build/standalone/fresh-fd-b build/standalone/fresh-fd-stages build/standalone/fresh-fd-export
+python3 experiments/rmw-agnocast/standalone/analyze-ready-route.py --drain-wait-fd build/standalone/fresh-drain build/standalone/fresh-drain-stages build/standalone/fresh-fd-export
+```
+
+In the completed six-order follow-up, native measured 44.41/211.17 µs median/p95, plain reuse 67.25/132.25, and reuse with an entry drain 59.97/92.71. The drain won five of six paired medians over plain reuse and reached 1.35× native median. This follow-up compared two retained descriptors; superiority over the original per-wait descriptor would require a direct pair. Native's p95 moved substantially between batches. An earlier drain batch was interrupted; its partial trials are excluded. In the replacement batch one native writer exited on AGNOCAST_RELEASE_SUB_REF_CMD with EINVAL. The same launch passed on retry, the remaining orders completed, and only successfully validated runs contribute latency samples. The native loan-release failure remains unexplained. [Follow-up frames](drain-waitfd-frames.csv), [resources](drain-waitfd-resources.csv), and [stage timestamps](drain-waitfd-stages.csv).
+
+Keep per-wait allocation as the default. Plain reuse saved bookkeeping time and introduced a repeatable extra poll. Entry draining removed the extra poll. Pair per-wait allocation directly against drained reuse before promoting the latter.

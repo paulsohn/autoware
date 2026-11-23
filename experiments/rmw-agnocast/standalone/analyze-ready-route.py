@@ -1,9 +1,21 @@
 """Validate a six-order Path A/B and a reversed pair of ready-route stage traces."""
+import argparse
 import csv
 from pathlib import Path
-import sys
 
-first, repeat, traces, output = map(Path, sys.argv[1:])
+parser = argparse.ArgumentParser(description=__doc__)
+mode = parser.add_mutually_exclusive_group()
+mode.add_argument('--reuse-wait-fd', action='store_true')
+mode.add_argument('--drain-wait-fd', action='store_true')
+parser.add_argument('directories', nargs='+', type=Path, metavar='DIR')
+args = parser.parse_args()
+if len(args.directories) not in (3,4):
+    parser.error('supply one or two timing batches, the trace batch and an output directory')
+*batches, traces, output = args.directories
+control, treatment = ('route-cie', 'reuse-cie') if args.reuse_wait_fd else ('poll-cie', 'route-cie')
+prefix = 'reuse-waitfd' if args.reuse_wait_fd else 'ready-route'
+if args.drain_wait_fd:
+    control, treatment, prefix = 'reuse-cie', 'drain-cie', 'drain-waitfd'
 
 
 def read(path):
@@ -11,14 +23,14 @@ def read(path):
         return [list(map(int, row)) for row in csv.reader(f)]
 
 
-with (output / 'ready-route-frames.csv').open('x') as f, (output / 'ready-route-resources.csv').open('x') as g:
+with (output / f"{prefix}-frames.csv").open('x') as f, (output / f"{prefix}-resources.csv").open('x') as g:
     frames = csv.writer(f, lineterminator='\n')
     resources = csv.writer(g, lineterminator='\n')
     frames.writerow(('batch','round','arm','frame','latency_ns'))
     resources.writerow(('batch','round','arm','verified_frames','child_user_s','child_system_s','largest_child_maxrss_kib'))
-    for batch, folder in enumerate((first, repeat), 1):
+    for batch, folder in enumerate(batches, 1):
         for trial in range(1, 7):
-            for arm in ('native','poll-cie','route-cie'):
+            for arm in ('native',control,treatment):
                 stem = folder / f'{arm}-{trial}'
                 times = read(stem.with_suffix('.csv'))
                 assert [seq for seq, _ in times] == list(range(60))
@@ -30,12 +42,12 @@ with (output / 'ready-route-frames.csv').open('x') as f, (output / 'ready-route-
                 resources.writerow((batch, trial, arm, row['verified_frames'], row['child_user_s'],
                                     row['child_system_s'], row['largest_child_maxrss_kib']))
 
-with (output / 'ready-route-stages.csv').open('x') as f:
+with (output / f"{prefix}-stages.csv").open('x') as f:
     writer = csv.writer(f, lineterminator='\n')
     writer.writerow(('round','arm','frame','tx','ppoll_return','inner_epoll','loan','queued',
                      'rmw_return','rcl_return','take_begin','take_end','callback'))
     for trial in (1, 2):
-        for arm in ('poll-cie','route-cie'):
+        for arm in (control,treatment):
             stem = traces / f'{arm}-instrumented-{trial}'
             clocks, waits, stages, loans, times = [read(stem.with_suffix(ext)) for ext in
                                                    ('.clocks','.waits','.stages','.loans','.csv')]

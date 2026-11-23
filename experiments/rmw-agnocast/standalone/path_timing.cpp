@@ -27,6 +27,12 @@ struct WaitTimes
 thread_local bool in_rmw;
 thread_local WaitTimes current_wait{};
 WaitTimes waits[60];
+struct PollCounts
+{
+  unsigned calls{}, context_only{};
+};
+thread_local PollCounts since_take{};
+PollCounts poll_counts[60];
 #endif
 int64_t now(clockid_t clock)
 {
@@ -47,6 +53,13 @@ __attribute__((destructor)) void save()
   }
   std::fclose(f);
 #ifdef PATH_WAIT_DETAIL
+  if (auto * path = std::getenv("PATH_POLL_COUNTS")) {
+    f = std::fopen(path, "wx");
+    if (!f) std::abort();
+    for (size_t i = 0; i < count; ++i)
+      std::fprintf(f, "%zu,%u,%u\n", i, poll_counts[i].calls, poll_counts[i].context_only);
+    std::fclose(f);
+  }
   if (auto * path = std::getenv("PATH_WAIT_TIMES")) {
     f = std::fopen(path, "wx");
     if (!f) std::abort();
@@ -71,7 +84,12 @@ extern "C" int ppoll(pollfd * fds, nfds_t count, const timespec * timeout, const
 {
   static auto real = reinterpret_cast<decltype(&ppoll)>(dlsym(RTLD_NEXT, "ppoll"));
   auto ret = real(fds, count, timeout, mask);
-  if (in_rmw && ret > 0) current_wait.wake = now(CLOCK_REALTIME);
+  if (in_rmw) {
+    if (ret > 0) current_wait.wake = now(CLOCK_REALTIME);
+    ++since_take.calls;
+    // The standalone mixed wait appends the context eventfd after all native routes.
+    if (count && ret == 1 && (fds[count - 1].revents & POLLIN)) ++since_take.context_only;
+  }
   return ret;
 }
 extern "C" rmw_ret_t rmw_wait(
@@ -110,6 +128,8 @@ extern "C" rcl_ret_t rcl_take_loaned_message(
     if (count >= 60) std::abort();
 #ifdef PATH_WAIT_DETAIL
     waits[count] = current_wait;
+    poll_counts[count] = since_take;
+    since_take = {};
 #endif
     rows[count++] = {
       static_cast<int64_t>(info->publication_sequence_number),

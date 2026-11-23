@@ -3,12 +3,23 @@
 #include <std_msgs/msg/int32.hpp>
 #include <std_srvs/srv/set_bool.hpp>
 
+#include <filesystem>
 #include <iostream>
 #include <thread>
 
 using namespace std::chrono_literals;
 using Msg = std_msgs::msg::Int32;
 using Service = std_srvs::srv::SetBool;
+
+size_t eventfd_count()
+{
+  size_t count = 0;
+  for (const auto & entry : std::filesystem::directory_iterator("/proc/self/fd")) {
+    std::error_code ec;
+    if (std::filesystem::read_symlink(entry.path(), ec) == "anon_inode:[eventfd]") ++count;
+  }
+  return count;
+}
 
 int main(int argc, char ** argv)
 {
@@ -43,6 +54,31 @@ int main(int argc, char ** argv)
   auto start = std::chrono::steady_clock::now();
   if (wait(&short_timeout) != RMW_RET_TIMEOUT || subscription || trigger) return 3;
   if (std::chrono::steady_clock::now() - start < 30ms) return 12;
+  // Retained mixed wait sets each own one descriptor until destruction. Idle
+  // notifications accumulate, so guard-only and mixed waits must recheck readiness.
+  const auto baseline = eventfd_count();
+  const auto option = std::getenv("AGNOCAST_RMW_REUSE_WAIT_FD");
+  const bool reuse = option && (std::string_view(option) == "1" || std::string_view(option) == "drain");
+  for (int i = 0; i < 16; ++i) {
+    auto second = rmw_create_wait_set(ctx, 2);
+    if (!second) return 20;
+    rmw_time_t immediate{};
+    for (int repeat = 0; repeat < 3; ++repeat) {
+      void * reader = raw->data;
+      rmw_subscriptions_t readers{1, &reader};
+      if (
+        rmw_wait(&readers, nullptr, nullptr, nullptr, nullptr, second, &immediate) !=
+          RMW_RET_TIMEOUT ||
+        reader || eventfd_count() != baseline + size_t(reuse))
+        return 21;
+      if (
+        rmw_trigger_guard_condition(guard) != RMW_RET_OK || wait(&immediate) != RMW_RET_OK ||
+        !trigger || subscription)
+        return 22;
+    }
+    if (rmw_destroy_wait_set(second) != RMW_RET_OK || eventfd_count() != baseline) return 23;
+  }
+  std::cout << "wait-set descriptor lifetime and stale wake checks passed, reuse=" << reuse << '\n';
   auto later = [](auto wake) {
     return std::thread([wake] {
       std::this_thread::sleep_for(30ms);

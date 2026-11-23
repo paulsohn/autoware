@@ -16,8 +16,10 @@ test ! -e /opt/ros/lyrical/lib/libddsc.so
 test ! -e /opt/ros/lyrical/lib/librmw_cyclonedds_cpp.so
 export LD_PRELOAD=/ws/build/migration-guide/packaged-hook-check/libagnocast_heaphook.so
 export AGNOCAST_RMW_POLL_TOPIC=/poll_check_topic
-unset AGNOCAST_RMW_READY_ROUTE
+unset AGNOCAST_RMW_READY_ROUTE AGNOCAST_RMW_REUSE_WAIT_FD
 timeout -k 2 12 "$dir/poll_check"
 AGNOCAST_RMW_READY_ROUTE=1 timeout -k 2 12 "$dir/poll_check"
+AGNOCAST_RMW_REUSE_WAIT_FD=1 AGNOCAST_RMW_READY_ROUTE=1 timeout -k 2 12 "$dir/poll_check"
+AGNOCAST_RMW_REUSE_WAIT_FD=drain AGNOCAST_RMW_READY_ROUTE=1 timeout -k 2 12 "$dir/poll_check"
 unset AGNOCAST_RMW_POLL_TOPIC
 bash experiments/rmw-agnocast/standalone/check.sh build/standalone/qualified-probe/topic_check

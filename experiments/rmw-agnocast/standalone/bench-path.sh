@@ -4,6 +4,13 @@ set -eu
 export LYRICAL_ROOT="$(cat build/agnocast-lyrical/universe-root)" BUFFER_RUNTIME_ONLY=1
 out=${1:?fresh directory relative to worktree}
 mkdir "$out"
+reuse=0
+case ${2:-} in
+  --drain-wait-fd) reuse=2; set -- "$out" --ready-route;;
+  --drain-wait-fd-trace) reuse=2; set -- "$out" --ready-route-trace;;
+  --reuse-wait-fd) reuse=1; set -- "$out" --ready-route;;
+  --reuse-wait-fd-trace) reuse=1; set -- "$out" --ready-route-trace;;
+esac
 rounds=4
 case ${2:-} in
   --compare-builds|--compare-release|--compare-events|--compare-poll|--ready-route) rounds=6;;
@@ -90,6 +97,14 @@ for ((round=1;round<=rounds;round++)); do
   if ((release_baseline)); then
     modes=("${modes[@]/o2/o3}")
   fi
+  if ((reuse)); then
+    modes=("${modes[@]/route-cie/reuse-cie}")
+    modes=("${modes[@]/poll-cie/route-cie}")
+    if ((reuse == 2)); then
+      modes=("${modes[@]/reuse-cie/drain-cie}")
+      modes=("${modes[@]/route-cie/reuse-cie}")
+    fi
+  fi
   for mode in "${modes[@]}"; do
     tag=$mode
     unset PATH_TRACE_PREFIX
@@ -135,10 +150,18 @@ for ((round=1;round<=rounds;round++)); do
         grep -F "libagnocast.so => /ws/build/standalone/o3-install/agnocastlib/lib/libagnocast.so" <<< "$libs"
         grep -F "librclcpp.so => /ws/build/standalone/release-path/install/rclcpp/lib/librclcpp.so" <<< "$libs"
       fi
-      unset AGNOCAST_RMW_POLL_TOPIC AGNOCAST_RMW_READY_ROUTE
+      unset AGNOCAST_RMW_POLL_TOPIC AGNOCAST_RMW_READY_ROUTE AGNOCAST_RMW_REUSE_WAIT_FD
       if [[ ( $4 == --compare-poll || $4 == --replay-cie || $4 == --trace-cie || $4 == --ready-route || $4 == --ready-route-trace ) && $1 != native ]]; then
         source build/standalone/poll-install/local_setup.bash
         test "$(ros2 pkg prefix rmw_agnocast)" = /ws/build/standalone/poll-install/rmw_agnocast
+        if [[ $1 == drain-cie ]]; then
+          export AGNOCAST_RMW_REUSE_WAIT_FD=drain
+          set -- route-cie "${@:2}"
+        fi
+        if [[ $1 == reuse-cie ]]; then
+          export AGNOCAST_RMW_REUSE_WAIT_FD=1
+          set -- route-cie "${@:2}"
+        fi
         if [[ $1 == route-cie ]]; then export AGNOCAST_RMW_READY_ROUTE=1; fi
         if [[ $1 == poll || $1 == poll-cie || $1 == route-cie ]]; then export AGNOCAST_RMW_POLL_TOPIC=/path_latency; fi
       fi

@@ -192,15 +192,59 @@ const rmw_guard_condition_t * rmw_node_get_graph_guard_condition(const rmw_node_
            : nullptr;
 }
 
+namespace
+{
+struct WaitSignal
+{
+  Context & context;
+  int fd = -1;
+
+  int attach()
+  {
+    if (fd >= 0) return fd;
+    std::lock_guard lock(context.signals_mutex);
+    // Reserve the list entry first so an allocation failure cannot leak a descriptor.
+    context.signals.push_back(-1);
+    fd = eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
+    if (fd < 0)
+      context.signals.pop_back();
+    else
+      context.signals.back() = fd;
+    return fd;
+  }
+  ~WaitSignal()
+  {
+    if (fd < 0) return;
+    std::lock_guard lock(context.signals_mutex);
+    context.signals.remove(fd);
+    close(fd);
+  }
+};
+
+struct LocalWaitSet : rmw_wait_set_t
+{
+  WaitSignal signal;
+  bool reuse = false;
+  bool drain = false;
+  explicit LocalWaitSet(Context * ctx) : rmw_wait_set_t{id, nullptr, ctx}, signal{*ctx}
+  {
+    if (auto value = std::getenv("AGNOCAST_RMW_REUSE_WAIT_FD")) {
+      drain = std::string_view(value) == "drain";
+      reuse = drain || std::string_view(value) == "1";
+    }
+  }
+};
+}  // namespace
+
 rmw_wait_set_t * rmw_create_wait_set(rmw_context_t * ctx, size_t)
 {
   if (!state(ctx)) return nullptr;
-  return new (std::nothrow) rmw_wait_set_t{id, nullptr, state(ctx)};
+  return new (std::nothrow) LocalWaitSet(state(ctx));
 }
 rmw_ret_t rmw_destroy_wait_set(rmw_wait_set_t * set)
 {
   if (!set || set->implementation_identifier != id) return RMW_RET_INVALID_ARGUMENT;
-  delete set;
+  delete static_cast<LocalWaitSet *>(set);
   return RMW_RET_OK;
 }
 rmw_ret_t rmw_wait(
@@ -245,25 +289,25 @@ rmw_ret_t rmw_wait(
       }
     if (!starts.empty()) {
       descriptors.push_back({-1, POLLIN, 0});
-      const int fd = eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
+      auto & local = *static_cast<LocalWaitSet *>(set);
+      WaitSignal transient{*s};
+      int fd = (local.reuse ? local.signal : transient).attach();
       if (fd < 0) {
         RMW_SET_ERROR_MSG("wait eventfd failed");
         return RMW_RET_ERROR;
       }
-      struct Signal
-      {
-        Context & context;
-        int fd;
-        ~Signal()
-        {
-          std::lock_guard guard(context.signals_mutex);
-          context.signals.remove(fd);
-          close(fd);
+      if (local.drain) {
+        // Notifications are hints. Recheck every readiness predicate under the context lock
+        // before blocking, including state changes represented by a token removed here.
+        eventfd_t previous;
+        int ret;
+        do {
+          ret = eventfd_read(fd, &previous);
+        } while (ret < 0 && errno == EINTR);
+        if (ret < 0 && errno != EAGAIN) {
+          RMW_SET_ERROR_MSG("cannot clear wait eventfd");
+          return RMW_RET_ERROR;
         }
-      } signal{*s, fd};
-      {
-        std::lock_guard guard(s->signals_mutex);
-        s->signals.push_back(fd);
       }
       descriptors.back().fd = fd;
       using Clock = std::chrono::steady_clock;

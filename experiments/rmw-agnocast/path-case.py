@@ -24,6 +24,7 @@ with tempfile.TemporaryDirectory() as directory:
             PATH_TIMING_FILE=prefix_trace + ".stages",
             PATH_LOAN_TIMES=prefix_trace + ".loans",
             PATH_WAIT_TIMES=prefix_trace + ".waits",
+            PATH_POLL_COUNTS=prefix_trace + ".polls",
         )
     native_trace = mode == "native-traced"
     direct_trace = mode == "direct-stages"
