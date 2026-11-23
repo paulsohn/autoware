@@ -2140,3 +2140,18 @@ cc_test(
     ],
     tags = ["no-sandbox", "no-remote"],
 )
+
+cc_test(
+    name = "simple_merger_behavior_test",
+    srcs = ["radar/test_merger.cpp", "radar/ros_fixture.hpp"],
+    dynamic_deps = [
+        "@autoware_simple_object_merger//:autoware_simple_object_merger_component",
+        "@autoware_simple_object_merger//:runtime_dynamic_deps",
+    ],
+    deps = [
+        "@autoware_simple_object_merger//:autoware_simple_object_merger_library",
+        "@rclcpp//:rclcpp_library",
+        "@googletest//:gtest_main",
+    ],
+    tags = ["no-sandbox", "no-remote"],
+)

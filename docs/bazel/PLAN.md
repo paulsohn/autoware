@@ -2185,7 +2185,7 @@ fix and passes afterward. No GPU, Fast DDS or expensive simulator/deployment
 rerun is part of this group. Further Universe groups follow runnable dependency
 closures; Phase 8 and engine-profile infrastructure remain deferred.
 
-### Phase 9.2: Radar object conversion, fusion and tracking (in progress)
+### Phase 9.2: Radar object conversion, fusion and tracking (complete, 2026-11-23)
 
 Integrate one module at a time, preserving original suites and adding root ROS
 behavior coverage for previously untested nodes. Routine gates use Cyclone DDS
@@ -2196,7 +2196,13 @@ and no-agnocast; preserve wrapper support where the component uses it.
 | autoware_radar_tracks_msgs_converter | Complete: component/executable/index and three ROS behavior cases; no original C++ suite. |
 | autoware_radar_fusion_to_detected_object | Complete: component/executable/index, six estimator and two synchronized ROS cases; current Message Filters API. |
 | autoware_radar_object_tracker | Complete: four original cases plus four model/publication ROS cases, utility/component/executable/index builds; portable model includes. |
-| autoware_simple_object_merger | Pending: all four original ROS cases, detected/tracked executables/plugins and indexed resources. |
+| autoware_simple_object_merger | Complete: four original ROS and two added timer/TF cases; both detected/tracked executables/plugins and indexed resources. |
+
+Phase 9.2 closes with 25 native cases passing (eight original plus 17 added),
+zero failures/errors/skips. All four package gates pass independently; unchanged
+results are reused rather than rerunning the group. No Fast DDS, GPU, simulator
+or deployment gate is required by this slice. Next: 9.3 shared time, logging and
+command-mode types. CARLA v2 import remains deferred until near 9.20.
 
 ### Execution order through complete Universe coverage
 

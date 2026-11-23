@@ -20006,3 +20006,50 @@ simulator/deployment check is used. Next module: simple detected/tracked merging
 
 Bazel definitions and root behavior registration reuse the complete passing gate
 above. The separately committed source portability correction is 9df2c12c.
+
+## 2026-11-23: Phase 9.2 — Simple detected/tracked object merging
+
+Purpose: expose both existing merger nodes and their wrapper executables/plugins,
+plus original launch/config resources. Inspect CMake/package, both node classes,
+the shared template and the only original test driver. Its four ROS cases are
+registered only outside ENABLE_AGNOCAST=1 by the original CMake contract. Select
+Cyclone DDS/no-agnocast for this consumer gate; preserve unconditional wrapper
+support and build both plugin/executable variants. This is not a new transport
+or communication-layer milestone.
+
+Pattern: package-local wrapper-aware library/component/node registrations and
+ament index; use existing local perception messages, utils, test_utils and TF
+providers. Expose the complete original test driver unchanged. Root peers add
+two cases for the detected-object three-input timer's stale-input/live-threshold
+behavior and the two-input synchronizer's transformed pose/header output.
+Original tests retain UUID collision, three-input tracked merging and mapping
+cleanup assertions. No source implementation or original test change is needed.
+
+Diagnosed setup failure: linking the original tests through the component DSO
+and autoware_test_utils simultaneously makes Bazel report geometry/math libraries
+linked privately into a shared library but not exported. Link the class-under-
+test statically into that test, with the existing shared SDK/runtime owners;
+keep the component/plugins/executables as independently built/indexed targets.
+Do not add broad exports or change source visibility to satisfy a test. The
+added peer target can use the component DSO because it does not add the separate
+test_utils implementation closure.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_env=ROS_DOMAIN_ID=114 \
+  --test_output=errors @autoware_simple_object_merger//... \
+  //bazel/tests:simple_merger_behavior_test
+```
+
+Result: all module targets build and all four original cases plus both added
+cases pass, zero failures/errors/skips. Original suite: 5.1 s; added peers: 0.5 s;
+complete gate: 72.0 s including compilation/cache work. Targeted clang-format,
+local documentation links/anchors and git diff --check pass. No dependency or
+device skip, Fast DDS, GPU or expensive simulator/export run is involved.
+
+Phase 9.2 is complete: four independently validated modules, 25 native cases
+(eight original and 17 added). Reuse the unchanged converter/fusion/tracker
+results above. Definition inventory is now 111/244; 133 packages remain without
+MODULE/BUILD pairs. That count does not replace the full-contract audit. Next is
+9.3; no CARLA repository is imported before its agreed near-9.20 timing.

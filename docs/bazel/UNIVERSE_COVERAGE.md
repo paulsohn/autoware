@@ -180,7 +180,14 @@ Build on 9.1. Preserve the tracker/merger original suites and add conversion, sy
 - [x] [autoware_radar_fusion_to_detected_object](../../src/universe/autoware_universe/perception/autoware_radar_fusion_to_detected_object/package.xml)
 - [x] [autoware_radar_object_tracker](../../src/universe/autoware_universe/perception/autoware_radar_object_tracker/package.xml)
 - [x] [autoware_radar_tracks_msgs_converter](../../src/universe/autoware_universe/perception/autoware_radar_tracks_msgs_converter/package.xml)
-- [ ] [autoware_simple_object_merger](../../src/universe/autoware_universe/perception/autoware_simple_object_merger/package.xml)
+- [x] [autoware_simple_object_merger](../../src/universe/autoware_universe/perception/autoware_simple_object_merger/package.xml)
+
+Phase 9.2 complete, 2026-11-23: all four modules and 25 native cases pass with
+Cyclone DDS/no-agnocast, zero failures/errors/skips. See PLAN and the four module
+journal entries for exact gates and separate compatibility fixes. The census
+above remains the initial 3f34693a snapshot; these four additions bring definition
+coverage to 111/244, leaving 133 packages without definitions. Full acceptance
+still includes the 9.20 contract/evidence audit.
 
 ### Phase 9.3: Shared time, logging and command-mode types
 
