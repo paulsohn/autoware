@@ -18826,3 +18826,57 @@ it does not establish read-only deployment placement, automatic model/settings
 invalidation, INT8 calibration accuracy or cross-device engine compatibility.
 Next, exercise explicit output paths with read-only model inputs and diagnose
 cache validity/failure behavior before selecting the long-term compilation path.
+
+## 2026-11-23: Phase 6.5.2 — Preserve the TensorRT engine output identity
+
+Purpose: exercise read-only ONNX inputs with an explicit writable engine path
+before wiring that path through YOLOX. The added standalone native regression
+finds that successful setup changes getTrtCommonConfig()->engine_path from the
+requested cache/dummy.engine to cache/dummy.json. Cause: path::replace_extension
+mutates its receiver, and buildEngineFromOnnx calls it on the stored engine path
+while computing the diagnostic layer-JSON filename. Inference still works in
+that instance, masking the corrupted configuration.
+
+Copy engine_path to a local path before replacing its extension. Keep all build,
+serialization, inference and legacy default-path behavior. This is a general
+implementation bug, separate from Bazel package declarations. Upstream
+AutowareFoundation/autoware_cuda main a5929dde0bacecae60c5f32dc34416f784a60cb4
+retains the same expression as inspected 2026-11-23. The AWF Lyrical trackers
+were reviewed; this path-identity issue is unrelated to their ROS/toolchain
+transition scope, and no matching upstream fix is associated.
+
+Add bazel/tests/autoware_tensorrt_common/test_runtime_cache.cpp outside the
+original package. Copy the small original three-input Add/Add ONNX fixture into
+a private directory, make its model file/directory read-only, and use a separate
+cache directory. Require a real CUDA device rather than skipping. Four cases
+cover stored engine-path stability, cold/warm inference with output values
+16/17/18/19 and unchanged engine size/mtime, and clean rejection of missing or
+unwritable cache directories. Confirm an attempted write to the model directory
+fails and no sidecars appear there. The pre-fix suite executes all four cases;
+only the engine-path assertion fails. After the two-line correction all pass.
+
+The root test registration and explicit source-fixture export follow in the
+separate Bazel-support commit. The source-only revision retains the original
+package's thirteen-case gate; the combined working-tree command also validates
+the new regression and all affected consumer suites:
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --nocache_test_results --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp \
+  --test_env=ROS_DOMAIN_ID=113 --test_output=errors \
+  @autoware_tensorrt_common//... @autoware_tensorrt_yolox//... \
+  //bazel/tests:tensorrt_runtime_cache_test //bazel/tests:tensorrt_classifier_test \
+  //bazel/tests:yolox_detector_test //bazel/tests:yolox_node_test
+clang-format --dry-run --Werror bazel/tests/autoware_tensorrt_common/test_runtime_cache.cpp
+git diff --check
+```
+
+Results on the Phase 6.5.1 GPU/SDK profile: the four new cache cases pass in
+21.1 s, all thirteen original common cases pass in 21.1 s, the five classifier
+cases pass in 21.1 s, and all fourteen original YOLOX cases pass (labels 0.2 s,
+detector 37.3 s, node 21.8 s). No skipped cases. Cache-parent provisioning remains
+the caller's responsibility. This proves explicit cache placement at the common
+library API, not automatic content/settings identity, INT8 calibration, full
+YOLOX node path wiring or crash-safe concurrent cache publication. No Fast DDS,
+OCI/simulator, upstream CMake/GCC or pre-commit check is claimed.

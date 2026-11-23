@@ -1656,3 +1656,27 @@ from the source callers validated by Bazel.
   implementation. Its exported SignalDisplay factory now constructs/unloads and
   the original live overlay renders. The fourteen-package factory gate passes.
   Qt5 and upstream CMake were not run; no runtime behavior change is intended.
+
+## TensorRT layer-JSON export mutates the engine configuration path
+
+- [ ] Associate with a matching upstream fix. Reviewed 2026-11-23: upstream
+  autoware_cuda main a5929dde0bacecae60c5f32dc34416f784a60cb4 retains the expression;
+  no matching fix is associated. Lyrical trackers are related build context,
+  not this runtime path bug.
+
+Repository/package: autowarefoundation/autoware_cuda, autoware_tensorrt_common.
+In [buildEngineFromOnnx](https://github.com/autowarefoundation/autoware_cuda/blob/a5929dde0bacecae60c5f32dc34416f784a60cb4/autoware_tensorrt_common/src/tensorrt_common.cpp),
+`trt_config_->engine_path.replace_extension(".json")` mutates the stored path
+while deriving a sidecar name. After successful setup, the public configuration
+reports cache/dummy.json instead of the requested cache/dummy.engine. A caller
+reusing that configuration no longer has the serialized engine's identity.
+Copy the path before replacing its extension; preserve output filenames.
+
+The standalone GPU regression fails that public-path assertion before the fix
+and passes afterward. It also proves read-only model/separate-cache cold/warm
+inference and rejects missing/unwritable cache parents. All thirteen original
+common cases, five classifier cases and fourteen YOLOX cases pass on Ubuntu
+24.04/LLVM 21.1.8, RCR Lyrical/Cyclone DDS, CUDA 13.2.2, TensorRT 10.16.1.11 and
+RTX 5070 Laptop/driver 595.99.02, with zero skips. This is not Lyrical-specific.
+No upstream CMake/GCC or other SDK/hardware result is claimed.
+[Commands and diagnosed behavior](JOURNAL.md#2026-11-23-phase-652--preserve-the-tensorrt-engine-output-identity).

@@ -789,7 +789,8 @@ bool TrtCommon::buildEngineFromOnnx()
     context_->setProfiler(&*model_profiler_);
   }
 
-  fs::path json_path = trt_config_->engine_path.replace_extension(".json");
+  auto json_path = trt_config_->engine_path;
+  json_path.replace_extension(".json");
   auto ret = getLayerInformation(nvinfer1::LayerInformationFormat::kJSON);
   std::ofstream os(json_path, std::ofstream::trunc);
   os << ret << std::flush;
