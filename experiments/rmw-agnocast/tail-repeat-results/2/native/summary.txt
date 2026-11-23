@@ -1,0 +1,7 @@
+mode=native frames=600 steady_tracks=596/596 cpu_driver_stream_s=1.841 cpu_children_s=7.103 scope_peak_bytes=536875008
+bag=600/600 source_stamps_and_sequences_verified missing=[]
+Minimum host MemAvailable: 13256 MiB
+[sync_fixture-4] verified sustained clouds=600
+[concatenate_and_time_sync_node-3] sync_input views=1500 copies=0
+[concatenate_and_time_sync_node-3] sync_view_audit loans=1500 released=1498 bytes=393216000
+[concatenate_and_time_sync_node-3] native_input owners=1500 released=1500

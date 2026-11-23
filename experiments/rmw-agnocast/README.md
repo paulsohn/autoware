@@ -3017,3 +3017,9 @@ Agnocast available for comparison. The sustained profile supports this
 bounded milestone; the complete-group p95 excursion and clean-host
 reproduction remain open for a wider default decision. The Bazel branch
 has no changes from this experiment.
+
+Four further paired one-minute runs on the same host did not reproduce
+the original complete-group tail. The paired p95 ratios ranged from
+0.979× to 1.102×. Only one fresh rmw complete group exceeded 10 ms
+and all eight fresh bags were complete. Keep the original 2.556× result
+in the pilot evidence. [Repeat measurements](tail-repeat-results/summary.txt)

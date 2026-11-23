@@ -1,0 +1,22 @@
+Original
+pair mode median_ms p95_ms over10 peak_over10_of20 window_first_seq cloud_p95_ms post_cloud_p95_ms
+1 native 4.822 5.539 0 0 - 3.544 2.088
+1 stock 5.169 6.074 0 0 - 3.924 2.319
+pair=1 p95_ratio=1.097
+2 native 4.320 5.246 1 1 458 3.328 2.065
+2 stock 4.698 13.409 22 20 216 8.084 4.471
+pair=2 p95_ratio=2.556
+Fresh
+pair mode median_ms p95_ms over10 peak_over10_of20 window_first_seq cloud_p95_ms post_cloud_p95_ms
+1 native 4.757 5.542 1 1 20 3.524 2.080
+1 stock 4.913 5.661 1 1 420 3.851 2.039
+pair=1 p95_ratio=1.022
+2 native 4.715 5.347 0 0 - 3.521 1.956
+2 stock 5.037 5.893 0 0 - 3.787 2.183
+pair=2 p95_ratio=1.102
+3 native 4.821 5.505 0 0 - 3.527 2.174
+3 stock 4.532 5.387 0 0 - 3.487 1.988
+pair=3 p95_ratio=0.979
+4 native 4.746 5.393 1 1 206 3.496 2.063
+4 stock 4.628 5.317 0 0 - 3.472 1.986
+pair=4 p95_ratio=0.986

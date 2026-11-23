@@ -3266,3 +3266,65 @@ native launch modes each passed their 24-cloud and metadata regression
 with sustained mode disabled. Open an opt-in Bazel pilot milestone in the
 experimental roadmap; keep a clean-environment build and the variable tail
 visible as follow-up work. No Bazel files were changed.
+
+## 2026-11-23 — Repeat the sustained complete-group latency tail
+
+Repeat the one-minute workload on the same laptop and installed colcon
+overlays at bf92cdd1. Focus on native Agnocast and the ordinary rclcpp
+rmw_agnocast retained-input profile. Keep SQLite recording, ownership
+audits, both landmarks, 600 groups, and the 512 MiB runtime memory guard
+from the four-transport comparison. Use four additional pairs, one process
+group at a time. Alternate native-first and rmw-first. Use every completed
+run and report validation failures. Read back each bag and check IDs,
+tracking delivery and native loan release with the existing fixture logs.
+
+Before looking at the fresh latency results, select three diagnostics:
+absolute complete-group p95 at least 10 ms; paired rmw/native p95 at least
+2×; and at least 12 complete groups above 10 ms in a sliding window of 20
+complete groups (about four seconds). These thresholds compare the shape
+of the original incident and are not product gates. Exclude the first 20
+acquisitions and keep even sequences, yielding 290 complete samples per
+run. Use nearest-rank p95 and keep pairs separate. Report the count of all
+complete frames above 10 ms and the maximum four-second count for each
+mode. Also compute source-to-cloud and cloud-to-track p95 independently;
+they need not come from the same frame. No extra tracing or tuning was
+enabled. The previous two pairs serve only as historical context.
+
+Run in the colcon worktree using the overlay prerequisites in the previous
+entry. Use a fresh destination. The guard checks available memory before
+starting, samples it during the run and stops if it falls below 2 GiB.
+
+```bash
+set -eu
+export LYRICAL_ROOT=$(cat build/agnocast-lyrical/universe-root)
+dest=build/sustained-tail-repeat
+mkdir "$dest"
+for pair in 1 2 3 4; do
+ mkdir "$dest/$pair"
+ modes="native stock"
+ if ((pair%2==0)); then modes="stock native"; fi
+ for mode in $modes; do
+  dir="$dest/$pair/$mode"
+  rc=0
+  BUFFER_RUNTIME_ONLY=1 experiments/buffer/run-lyrical.sh timeout -k 6 140 bash experiments/rmw-agnocast/run-sustained.sh "$mode" "$dir" >"$dir.txt" 2>&1 || rc=$?
+  echo "$rc" >"$dir.status"
+  if [[ $rc == 75 ]]; then exit "$rc"; fi
+ done
+done
+python3 experiments/rmw-agnocast/summarize-tail-repeats.py "$dest"
+```
+
+All eight fresh runs completed. Each delivered and recorded all 600 groups
+and released all 1,500 audited synchronizer input owners by teardown.
+The fresh complete-group rmw/native p95 ratios were 1.022, 1.102, 0.979
+and 0.986. Fresh rmw p95 ranged from 5.317 to 5.893 ms. Of its 1,160
+post-warmup complete groups one exceeded 10 ms (11.015 ms); native had
+two isolated exceedances. No fresh run met any of the three burst or
+p95 criteria. In the original outlier, 22 complete groups exceeded
+10 ms and one 20-group window contained 20 exceedances. One of the
+six observed rmw runs therefore showed the earlier signature, all on
+one laptop. These minutes do not estimate the incidence of rare
+episodes or identify their cause. Retain the original trace. Proceed
+with pilot reproduction; a longer monitored soak would be more
+informative for rare events than tuning against that single burst.
+[Pair summaries and raw samples](../rmw-agnocast/tail-repeat-results/summary.txt)
