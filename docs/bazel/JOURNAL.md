@@ -20967,3 +20967,48 @@ and both added cases pass with Cyclone/RCLCPP in 76.5 s; both added cases also p
 Agnocast-only with built/preloaded hook in 12.7 s. Zero failures/errors/skips.
 No original implementation/tests changed; targeted clang-format and diff checks
 pass. No Fast DDS/GPU/expensive product gate selected. Next: image localization.
+
+## 2026-11-24: Phase 9.6 — image-object localization
+
+Purpose: expose the local camera-ROI-to-3D component/executable, launch and
+configuration. Inspect manifest/CMake, projection/ROI/covariance implementation,
+header and YAML. There are no original functional tests. Acceptance requires
+all module targets plus two actual Cyclone/RCLCPP message-flow cases covering
+truncated-ROI retention/removal. This plain RCLCPP node has no Agnocast-only
+transport profile.
+
+Pattern: package-owned module/compile/shared targets, component executable and
+ament resource index; root local override and external test composition. Reuse
+OpenCV, perception/sensor messages, TF and object-recognition/utility providers.
+Keep the source's warning flags. Header-only TF utilities have no runtime owner;
+use the actual TF SDK owners, rather than inventing a runtime_dynamic_deps label
+on that utility module.
+
+Failure/cause/fix: compiling the original header fails because Lyrical removes
+Message Filters .h aliases. Change just its three Message Filters includes to
+.hpp. Current upstream retains them; scoped PR search finds no matching fix
+(UPSTREAM_AWF.md, checked 2026-11-24). Source compatibility is committed separately
+from Bazel declarations. No original test or projection implementation changes.
+
+Verification peer: load the original YAML, select camera 0, supply calibrated
+640x480 camera info and a static optical-to-base transform with a 2 m camera
+height and known translation. Publish a batch containing a valid pedestrian,
+low-confidence pedestrian, disabled car, distant pedestrian and border ROI.
+With truncation removal off/on, expect two/one objects. Check projected position
+(7.875,0.375,0.625), cylinder width 0.8 and height 1.25, class/confidence, output
+frame and nonzero timestamp. Verify finite positive covariance diagonals,
+symmetry and positive XY determinant. Input/output topics and QoS follow the
+actual node, including best-effort camera/ROI subscriptions. Missing-camera/TF
+startup outputs are not accepted as the successful geometry result.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  @autoware_image_object_locator//... //bazel/tests:image_object_locator_test
+```
+
+Result after the header fix: all nine non-test targets build and both cases
+pass, zero failures/errors/skips, 36.3 s (test 0.5 s). Targeted clang-format and
+diff checks pass. No Fast DDS/GPU/expensive product gate selected. Next:
+association/fusion and decorative tracking merge.

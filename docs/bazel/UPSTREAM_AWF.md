@@ -2173,3 +2173,21 @@ gate afterward; the enabled-radius scenario already passes before the fix.
 This is output-data correctness, not Lyrical compatibility.
 Local source correction: 398695f2.
 [Reproduction](JOURNAL.md#2026-11-24-phase-95--occupancy-grid-outlier-filtering).
+
+### Image-object locator uses removed Message Filters header aliases
+
+- [ ] Associate with a matching upstream fix. Reviewed 2026-11-24: current
+  [locator header](https://github.com/autowarefoundation/autoware_universe/blob/main/perception/autoware_image_object_locator/src/bbox_object_locator_node.hpp)
+  retains subscriber.h, sync_policies/approximate_time.h and synchronizer.h.
+  Scoped `is:pr image_object_locator message_filters` search finds no matching
+  PR. [autoware#7404](https://github.com/autowarefoundation/autoware/issues/7404)
+  remains the general Lyrical tracker, not a specific association.
+- Scope: local Universe snapshot, image locator, LLVM 21.1.8/libc++, Lyrical
+  RCR/Cyclone DDS. The module command in the Phase 9.6 image-locator journal
+  fails compiling bbox_object_locator_node.cpp: message_filters/subscriber.h
+  is absent. Use canonical .hpp names for all three Message Filters includes.
+  No implementation, synchronization or QoS behavior changes.
+- Verification: complete component/executable/index/resources build and both
+  added ROS projection/truncation cases pass. No original functional tests
+  exist. Older ROS and upstream CMake builds were not run. This is a separate
+  source compatibility commit; no upstream submission is claimed.
