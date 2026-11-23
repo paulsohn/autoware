@@ -18889,3 +18889,85 @@ CUDA utilities and GTest; preserve escaped quotes in the DUMMY_ONNX_PATH compile
 definition as in the original module. The source correction is 59ad8b43; no
 production source changes in this support commit. Reuse the complete passing
 command/results above, since only whitespace changed after that gate.
+
+## 2026-11-23: Phase 6.5.2 — TensorRT calibration and C++ runtime compatibility
+
+Purpose: fix the SDK runtime binding exposed by the selected YOLOX INT8
+experiment, without changing Autoware's checked layer casts. Use the Phase 6.5.1
+GPU/driver/toolchain identities and retain TensorRT 10.16.1.11-1+cuda13.2.
+
+Symptom/cause: TrtConvCalib gets null from dynamic_cast<IConvolutionLayer*>
+despite the checked layer kind, then dereferences it. GDB locates that null
+result. A temporary checked-kind static_cast trial passes the walk but exposes
+an uncaught MyelinCheckException. GDB resolves __cxa_throw to libc++abi while
+the throw originates in GNU-built libnvinfer. Preloading the declared GNU
+libstdc++ fixes the original casts and lets TensorRT catch its own compiler
+exception. Remove the trial casts from Autoware.
+
+Minimum integration: keep SDK/GNU directories in LD_LIBRARY_PATH for bare-name
+builder dlopen, and additionally prepend the selected runfiles libstdc++ to
+LD_PRELOAD before executing the native process. Preserve caller preloads and
+the existing spconv GNU 13 runtime override. Do not search a host GCC install or
+exchange STL containers across runtime boundaries. The generic SDK regression
+creates a vendor convolution and pooling layer, obtains their ILayer views and
+checks both dynamic casts from a libc++ binary. Declare GTest and the CUDA
+runtime/headers explicitly in that standalone module; CUDA comes from the
+rules_cuda toolchain extension, not a registry module named cuda.
+
+After building @tensorrt//:runtime_abi_test, reproduce the missing binding
+independently of Autoware (expected native exit 1, both casts null):
+
+```sh
+test_runtime_root="$PWD/bazel-bin/external/tensorrt+/runtime_abi_test.runfiles"
+env -i HOME="$HOME" PATH=/usr/bin:/bin \
+  LD_LIBRARY_PATH="$test_runtime_root/tensorrt++sdk+tensorrt_artifacts/usr/lib/x86_64-linux-gnu:$test_runtime_root/tensorrt++http_archive+tensorrt_libstdcxx/lib:$test_runtime_root/tensorrt++http_archive+tensorrt_libgcc/lib" \
+  "$PWD/bazel-bin/external/tensorrt+/runtime_abi_test_binary" \
+  --gtest_output=xml:/tmp/autoware-tensorrt-rtti-without-preload.xml
+```
+
+That negative check ran with the 10.15 comparison payload; the original 10.16
+calibration walk also demonstrated the null cast. The fixed launcher passes the
+regression with both payloads. Validate the retained 10.16 selection and every
+affected existing module/consumer suite sequentially:
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --nocache_test_results --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp \
+  --test_env=ROS_DOMAIN_ID=113 --test_output=errors \
+  @tensorrt//:runtime_abi_test @autoware_tensorrt_common//... \
+  @autoware_tensorrt_yolox//... @autoware_tensorrt_plugins//... \
+  //bazel/tests:tensorrt_runtime_cache_test //bazel/tests:tensorrt_classifier_test \
+  //bazel/tests:tensorrt_plugins_test //bazel/tests:yolox_detector_test \
+  //bazel/tests:yolox_node_test //bazel/tests:yolox_fixture_adapter_test \
+  //bazel/tests:yolox_launch_paths_test //bazel/tests:yolox_model_resources_test
+python3 -m flake8 --max-line-length=150 third_party/tensorrt/test_runner.py
+clang-format --dry-run --Werror third_party/tensorrt/test_rtti.cpp
+git diff --check
+```
+
+The new SDK binding regression, thirteen common cases, eight common cache
+cases, five classifier cases and both plugin interop cases pass with no skips.
+All twelve targets pass: the original plugin kernel suite contributes eighteen
+cases, the original YOLOX suites contribute fourteen, and fixture-rejection,
+launcher and model-resource checks pass too. The common cache target takes
+51.2 s; the complete Bazel command takes 337.6 s including restoring SDK
+artifacts. Check native XML for zero failures/errors/skips. The companion common
+cache/source expansion is committed separately; the YOLOX prototype retains its
+separate failed calibration gate and is not counted as complete by this command.
+This establishes the native-test runtime contract. A production GPU launcher
+needs the equivalent declared runtime closure and ABI binding; the test helper
+alone is not a production deployment claim.
+
+Calibration remains a separate incomplete experiment. With correct binding,
+10.16 completes calibration then fails compilation with Myelin utils.cpp:4054
+CHECK(0), matching the error reported for other YOLO models/Blackwell in open
+[NVIDIA TensorRT#4906](https://github.com/NVIDIA/TensorRT/issues/4906), inspected
+2026-11-23. Our ONNX contains no QuantizeLinear/DequantizeLinear nodes. Do not
+infer that all Blackwell INT8 is unsupported. A pinned six-package comparison
+with 10.15.1.29-1+cuda13.1 generates/reuses an engine, but a one-image Entropy
+calibration produces no detections at threshold 0.35, both with the default
+quantization flags and with first/prediction convolutions retained in FP16.
+It is not accepted as an inference profile or SDK downgrade. Restore all six
+10.16 package pins; CUDA 13.2.2 and the driver remain unchanged throughout.
+The comparison changes the SDK's CUDA-tagged payload too, not just its version.

@@ -1,3 +1,5 @@
+load(":defs.bzl", "tensorrt_cc_test")
+
 package(default_visibility = ["//visibility:public"])
 
 exports_files([
@@ -17,5 +19,15 @@ filegroup(
         "@tensorrt_libgcc//:lib/libgcc_s.so.1",
         "@tensorrt_libstdcxx//:lib/libstdc++.so.6",
         "@tensorrt_libstdcxx//:lib/libstdc++.so.6.0.30",
+    ],
+)
+
+tensorrt_cc_test(
+    name = "runtime_abi_test",
+    srcs = ["test_rtti.cpp"],
+    deps = [
+        ":tensorrt",
+        "@cuda//:cuda_runtime",
+        "@googletest//:gtest_main",
     ],
 )

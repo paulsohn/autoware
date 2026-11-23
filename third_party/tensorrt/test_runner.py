@@ -14,6 +14,8 @@ if not all(paths):
 env = os.environ.copy()
 directories = [str(Path(path).parent) for path in paths[1:]]
 env['LD_LIBRARY_PATH'] = ':'.join(directories + [env.get('LD_LIBRARY_PATH', '')])
+# Vendor RTTI and internal exception handling must bind GNU's C++ ABI first.
+env['LD_PRELOAD'] = ':'.join(filter(None, [paths[2], env.get('LD_PRELOAD', '')]))
 env['GTEST_OUTPUT'] = 'xml:' + env['XML_OUTPUT_FILE']
 arguments = sys.argv[5:]
 command = [paths[0], *arguments]

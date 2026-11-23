@@ -1649,8 +1649,10 @@ For native GTest targets that build engines, load `tensorrt_cc_test` and
 dependency/dynamic-dependency, data and local-definition inputs; its native
 binary uses the SDK-owned runtime launcher. Declare model fixtures with data and
 rootpath definitions. The launcher resolves runtime anchors through runfiles,
-adds the SDK/GNU directories for bare-name builder dlopen, and preserves native
-GTest XML/exit status. Never link the builder-resource libraries directly; their
+adds the SDK/GNU directories for bare-name builder dlopen, preloads the selected
+GNU libstdc++ so vendor RTTI and internal exceptions bind the GNU C++ ABI, and
+preserves native GTest XML/exit status. LD_LIBRARY_PATH alone does not establish
+that symbol-binding order when the application also uses libc++abi. Never link the builder-resource libraries directly; their
 SONAMEs intentionally prohibit that use. The helper's runtime data includes
 pinned GNU runtimes and the builder resources, not incidental host SDK installs. A
 caller-owned fixture executable can be supplied through run_under; it receives
