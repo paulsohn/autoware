@@ -19553,3 +19553,81 @@ Validation: review the current BUILD/CLI/YAML declarations, resolve the new loca
 Markdown anchors/links and run git diff --check. This is documentation only;
 no build, GPU, simulator/OCI, middleware or runtime rerun is performed. Reuse the
 unchanged Phase 6.5.5 evidence rather than claiming these policy notes test code.
+
+## 2026-11-23: Phase 9.1 — Radar track crossing-noise filter
+
+Purpose: start broader Universe coverage with the radar sensing chain, grouping
+related builds while keeping each package's gate and commit boundary separate.
+Inspect the original CMake/package declarations, source/header, complete two-file
+GTest target, launch/config resources and published [RCR radar_msgs metadata](https://bazel.ros.org/modules/radar_msgs/metadata.json).
+No radar_msgs implementation exists under src/, so root provisionally selects
+RCR 0.2.2-5.rcr.2; local Autoware messages/utilities remain selected locally.
+
+Pattern: add a local 0.0.0 module and root override, expose its source library,
+shared component, original standalone executable name, component registration
+and indexed config/launch resources. Use the RCR message C++/shared providers
+and rclcpp_components factory rule. The one original isNoise case and its driver
+remain in their original locations. Add a root ROS peer test for partitioning,
+header preservation, the exact threshold boundary and dynamic parameter update.
+Use Cyclone DDS with Agnocast disabled; this package is an ordinary rclcpp node.
+
+The original target first throws 'context is already initialized': its driver
+initializes ROS and its case initializes the same context again. Remove only the
+redundant case initialization, retaining the original driver/shutdown and every
+assertion. This is a pre-existing test defect, not a middleware-version behavior
+change. Current upstream PR searches supplied no matching association.
+
+Gate: @autoware_radar_tracks_noise_filter//... plus
+//bazel/tests:radar_noise_behavior_test with --config=runtime,
+--config=no-agnocast, --local_test_jobs=1, RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+and ROS_DOMAIN_ID=114. Result: the complete original case and root ROS behavior
+case pass, with zero failures/errors/skips. No Fast DDS or expensive system
+matrix is part of this package task.
+
+The group reproduction command below builds all five modules' components,
+standalone executables and resource indexes and runs every original and added
+case. Final acceptance reuses unchanged passing XML; the static module alone is
+rerun after its final source correction, and the converter alone after adding
+nonzero-angle assertions. Those module commands are recorded with their entries.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_env=ROS_DOMAIN_ID=114 \
+  --test_output=errors @autoware_radar_objects_adapter//... \
+  @autoware_radar_tracks_noise_filter//... @autoware_radar_threshold_filter//... \
+  @autoware_radar_scan_to_pointcloud2//... @autoware_radar_static_pointcloud_filter//... \
+  //bazel/tests:radar_noise_behavior_test //bazel/tests:radar_threshold_behavior_test \
+  //bazel/tests:radar_scan_behavior_test //bazel/tests:radar_static_behavior_test
+```
+
+Read test.xml under bazel-testlogs/external/<module>+/<test>/ and the four
+bazel-testlogs/bazel/tests/radar_*_behavior_test directories. They contain 48
+original plus seven added native cases, all with zero failures/errors/skips.
+Targeted changed-C++ clang-format checks, package XML parsing, new MODULE/BUILD
+loading and git diff --check pass. No pre-commit, simulator/OCI, GPU, older-ROS,
+colcon or Fast DDS gate is run. The source test correction and build registration
+remain separate commits.
+
+## 2026-11-23: Phase 9.1 — Radar threshold filter
+
+Purpose: add the radar-return threshold stage with its real node/executable and
+complete original test target. Reuse the radar_msgs and component providers
+introduced by the noise-filter task, with package-local build declarations and
+root selection only. Index the original launch/config files and register the
+original executable name. Preserve the upstream two-file suite and all its
+amplitude/range/azimuth/z threshold assertions.
+
+As with the noise suite, its driver and body both initialize the default ROS
+context. The observed original gate fails with 'context is already initialized';
+remove the body initialization alone and keep its assertions and driver. Add
+//bazel/tests:radar_threshold_behavior_test outside src/ to exercise actual topic
+filtering, strict boundary behavior, output headers and a live amplitude-limit
+change. Component libraries must not depend on this root test.
+
+Gate: @autoware_radar_threshold_filter//... plus the root behavior target in the
+same sequential Cyclone/no-agnocast configuration above. Result: the complete
+original threshold case and root ROS case pass, with zero failures/errors/skips.
+All original amplitude/range/azimuth/z blocks remain. Test-source corrections
+are committed apart from Bazel definitions; no production implementation changes
+are needed.

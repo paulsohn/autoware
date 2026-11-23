@@ -1263,6 +1263,12 @@ runtime data/arguments. The interface-lint suite uses
 `//bazel/tests:interface_spec_lint_tests`; it includes all original cases and
 its committed-spec/manifest checks. Its original config determines active gates.
 
+When CMake supplies a test main, keep that driver and link gtest rather than
+adding another gtest_main. Give the driver or fixture ownership of ROS context
+initialization/shutdown; test bodies reuse an active context. If the original
+suite itself initializes an active context twice, reproduce the failure and
+correct the redundant call without dropping assertions or test files.
+
 For a C++ fixture-path macro, derive its value from a declared $(rootpath file)
 input and the expected parent directories. Keep quoted C++ strings intact
 through copts tokenization; do not embed checkout paths or canonical repository

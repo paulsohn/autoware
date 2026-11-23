@@ -50,7 +50,6 @@ TEST(RadarTracksNoiseFilter, isNoise)
 {
   using autoware::radar_tracks_noise_filter::RadarTrackCrossingNoiseFilterNode;
   using radar_msgs::msg::RadarTrack;
-  rclcpp::init(0, nullptr);
   {
     float velocity_node_threshold = 0.0;
     float y_velocity = 0.0;

@@ -20,7 +20,6 @@
 
 TEST(RadarThresholdFilter, isWithinThreshold)
 {
-  rclcpp::init(0, nullptr);
   using autoware::radar_threshold_filter::RadarThresholdFilterNode;
   using radar_msgs::msg::RadarReturn;
 

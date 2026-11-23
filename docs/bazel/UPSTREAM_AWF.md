@@ -1832,3 +1832,20 @@ identity/publication, production accuracy/performance, other hardware/SDKs and
 CMake/GCC are not qualified here. No upstream issue/PR was submitted.
 [Common contract](JOURNAL.md#2026-11-23-phase-655--prepared-only-common-tensorrt-loading);
 [consumer/tool pattern and reproduction](JOURNAL.md#2026-11-23-phase-655--standalone-yolox-preparation-and-prepared-engine-startup).
+
+## Radar filter tests initialize the default ROS context twice
+
+- [ ] Associate with a matching upstream fix. Checked 2026-11-23: Universe's
+  noise/threshold suites each initialize the context in their original driver
+  and again in their test body. A scoped radar/rclcpp/init PR search finds no
+  matching association. No upstream submission is made.
+
+Packages: autoware_radar_tracks_noise_filter and autoware_radar_threshold_filter.
+Each complete original two-file target throws 'context is already initialized'
+before reaching its assertions. Remove the body initialization only; retain the
+original main, context shutdown, files and all assertions. This is a test-lifetime
+bug, not a Lyrical API change or a reason to replace/drop the original driver.
+Both original cases and both added real-topic/parameter/header cases pass with
+Cyclone DDS, ENABLE_AGNOCAST=0, Ubuntu 24.04 and LLVM/libc++ 21.1.8. Older ROS,
+CMake and GCC gates were not run. See the
+[reproducer and complete module gates](JOURNAL.md#2026-11-23-phase-91--radar-track-crossing-noise-filter).
