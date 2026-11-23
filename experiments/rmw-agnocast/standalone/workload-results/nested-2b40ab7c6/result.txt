@@ -1,0 +1,8 @@
+run=1 full median/p95 ms 4.406/5.266
+mode=standalone frames=600 steady_tracks=596/596 cpu_driver_stream_s=1.806 cpu_children_s=7.889 scope_peak_bytes=536870912
+bag=600/600 source_stamps_and_sequences_verified missing=[]
+Minimum host MemAvailable: 12453 MiB
+run=2 full median/p95 ms 4.625/6.047
+mode=standalone frames=600 steady_tracks=596/596 cpu_driver_stream_s=1.994 cpu_children_s=8.219 scope_peak_bytes=536870912
+bag=600/600 source_stamps_and_sequences_verified missing=[]
+Minimum host MemAvailable: 14097 MiB

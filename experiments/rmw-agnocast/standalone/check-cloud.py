@@ -1,4 +1,5 @@
 """Verify C application typesupport and serialized publish/take on the Universe wire types."""
+import sys
 import time
 
 import rclpy
@@ -34,6 +35,18 @@ try:
     check(node, PointCloud2(height=1, width=4, point_step=1, row_step=4, data=[0, 42, 255, 9]))
     check(node, ConcatenatedPointCloudInfo(concatenation_success=True, matching_strategy_config=[1, 42, 0]))
     print('typed and serialized publish/take passed for both Universe wire types')
+    if '--nested' in sys.argv:
+        from tier4_perception_msgs.msg import DetectedObjectWithFeature, DetectedObjectsWithFeature
+
+        check(node, DetectedObjectsWithFeature())
+        nested = DetectedObjectsWithFeature()
+        for payload in ([], [0, 42, 255, 9], [8, 0, 77]):
+            obj = DetectedObjectWithFeature()
+            obj.feature.cluster = PointCloud2(height=1, width=len(payload), point_step=1,
+                                             row_step=len(payload), data=payload)
+            nested.feature_objects.append(obj)
+        check(node, nested)
+        print('typed and serialized publish/take passed for cloud, metadata, empty and populated nested clusters')
 finally:
     node.destroy_node()
     rclpy.shutdown()

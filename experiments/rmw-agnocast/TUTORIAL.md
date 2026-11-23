@@ -2,7 +2,7 @@
 
 Start with an ordinary ROS 2 Lyrical project that you normally run with Cyclone DDS. Build your application once against the middleware overlay, then select the RMW when you launch it. On this revision, every supported topic in that process uses native shared memory by default. Your node code, topic names, remappings, executor and launch descriptions can stay as they are.
 
-Choose two processes on the same Linux host, running as the same user with the same ROS domain, IPC namespace, accessible /dev/agnocast and shared /dev/shm. Use matching builds on both ends. The worked example exchanges std_msgs/msg/String with ordinary rclcpp and then records it locally. Keep a project on Cyclone for now if it requires network delivery or messages with rosidl::Buffer fields, including Lyrical PointCloud2. The current standalone implementation rejects those layouts at endpoint creation.
+Choose two processes on the same Linux host, running as the same user with the same ROS domain, IPC namespace, accessible /dev/agnocast and shared /dev/shm. Use matching builds on both ends. The worked example exchanges std_msgs/msg/String with ordinary rclcpp and then records it locally. Keep connected cross-host endpoints on Cyclone until the standalone gateway is qualified. A top-level Lyrical PointCloud2 uses the specialized host-cloud representation. For an enclosing message with Buffer fields, the RMW uses the generated CDR serializer to carry its contents through shared memory. This path supports ordinary typed subscribers and serialized readers, including a local recorder. Budget for encoding and decoding nested clouds.
 
 ## 1. Get the middleware sources and build tools
 
@@ -175,7 +175,7 @@ Look for /topic, std_msgs/msg/String, and a positive message count. Local delive
 | A local node uses services or parameters | Native request/reply and graph discovery support ordinary ROS nodes. The stock check exercised get_parameters across processes. |
 | A stock Cyclone process needs the same topic | The transports are isolated even with identical names and ROS_DOMAIN_ID. Migrate both communicating ends together, including local tools that need the data. |
 | A recorder or node lives on another host | Cross-host delivery requires a separate gateway. The standalone Agnocast–Cyclone gateway has no working manual launch command yet. The old route_bridge targeted the mixed prototype. Keep this connected part of the graph on Cyclone until the gateway is available. |
-| An endpoint reports “standalone Buffer layout not implemented” | Check its message and nested fields for rosidl::Buffer. The three-LiDAR synchronizer hit this error creating its cloud publisher. Topic selectors or a DDS configuration change cannot enable the endpoint. |
+| A cluster subscription reports “unsupported Buffer wire type” | The older standalone library rejected enclosing types such as DetectedObjectsWithFeature when creating the endpoint. Check the sourced middleware prefix in both processes. Use the revision with generated CDR support for enclosing Buffer fields. |
 | Two local nodes start but no samples arrive | Check the resolved topic, compatible QoS, domain, effective user, IPC namespace and shared /dev/shm. Verify both can access the device and resolve the same middleware overlay and hook. Start the worked String pair to isolate application-specific problems. |
 
 To return to Cyclone, stop the migrated processes. Open fresh terminals, source the same Lyrical, middleware and application overlays, select your usual Cyclone configuration and restart the same binaries.

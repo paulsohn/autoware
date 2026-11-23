@@ -262,13 +262,9 @@ struct Endpoint
     members = static_cast<const MessageMembers *>(intro->data);
     host_cloud = std::string_view(members->message_namespace_) == "sensor_msgs::msg" &&
                  std::string_view(members->message_name_) == "PointCloud2";
-    cdr_wire = !host_cloud && has_buffer(*members) &&
-               std::string_view(members->message_namespace_) == "autoware_sensing_msgs::msg" &&
-               std::string_view(members->message_name_) == "ConcatenatedPointCloudInfo";
-    if (typed_wire() && has_buffer(*members))
-      throw std::runtime_error(
-        std::string("unsupported Buffer wire type: ") + members->message_namespace_ + "/" +
-        members->message_name_);
+    // Buffer backends belong to the publishing process. Transport nested layouts with
+    // their generated serializer; PointCloud2 retains its specialized host representation.
+    cdr_wire = !host_cloud && has_buffer(*members);
     if (const char * error = resolve_qos(qos)) throw std::runtime_error(error);
     type = std::string(members->message_namespace_) + "/" + members->message_name_;
     for (auto pos = type.find("::"); pos != std::string::npos; pos = type.find("::"))

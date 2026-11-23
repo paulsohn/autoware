@@ -36,6 +36,10 @@ if [[ ${1:-} == --ownership ]]; then
   done
   exit 0
 fi
+if [[ ${1:-} == --check-nested ]]; then
+  source build/perception-replay/install/local_setup.bash
+  exec python3 experiments/rmw-agnocast/standalone/check-cloud.py --nested
+fi
 if [[ ${1:-} == --check ]]; then
   python3 experiments/rmw-agnocast/standalone/check-matches.py
   python3 experiments/rmw-agnocast/standalone/check-cloud.py
