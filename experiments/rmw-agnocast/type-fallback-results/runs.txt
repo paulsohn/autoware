@@ -1,0 +1,201 @@
+no-writer
+bridge a2r type auto: no discoverable publisher type
+Minimum host MemAvailable: 15479 MiB
+no-backend
+route_type=sensor_msgs/msg/Image adapter=serialized
+bridge r2a type sensor_msgs/msg/Image: could not create publisher: native object loans cannot expose a foreign Buffer implementation, at /ws/src/rmw_agnocast/rmw.cpp:171, at ./src/rcl/publisher.c:118
+Minimum host MemAvailable: 16005 MiB
+ambiguous
+bridge a2r type auto: ambiguous publisher types
+Minimum host MemAvailable: 15941 MiB
+a2r-poses-auto-1
+route_type=no_such_interface_pkg/msg/Missing adapter=serialized
+bridge a2r type no_such_interface_pkg/msg/Missing: package 'no_such_interface_pkg' not found
+relay_process_cpu_s=0.1045
+e2e_us median=288.8 p95=390.2
+relay_us median=81.5 p95=114.3
+a2r-poses-auto-1 type=geometry_msgs/msg/PoseArray adapter=serialized exact=48 wrong_leg=0
+Minimum host MemAvailable: 15901 MiB
+stock ros2 topic echo --once --field header.frame_id: lidar_3
+a2r-image-auto-1
+relay_process_cpu_s=0.0861
+e2e_us median=186.1 p95=266.3
+relay_us median=35.3 p95=79.5
+a2r-image-auto-1 type=sensor_msgs/msg/Image adapter=serialized exact=48 wrong_leg=0
+Minimum host MemAvailable: 15957 MiB
+a2r-sensorimage-incompatible-1
+relay_process_cpu_s=0.0973
+a2r-sensorimage-incompatible-1 incompatible=0 wrong_leg=0
+Minimum host MemAvailable: 15669 MiB
+a2r-sensorimage-auto-1
+relay_process_cpu_s=0.0894
+e2e_us median=200.7 p95=229.8
+relay_us median=33.6 p95=42.7
+a2r-sensorimage-auto-1 type=sensor_msgs/msg/Image adapter=serialized exact=48 wrong_leg=0
+Minimum host MemAvailable: 15685 MiB
+a2r-path-typed-1
+relay_process_cpu_s=0.0971
+e2e_us median=1492.7 p95=1771.8
+relay_us median=361.0 p95=421.3
+a2r-path-typed-1 type=nav_msgs/msg/Path adapter=typed exact=48 wrong_leg=0
+Minimum host MemAvailable: 15714 MiB
+a2r-path-auto-1
+relay_process_cpu_s=0.1031
+e2e_us median=1110.1 p95=1370.5
+relay_us median=93.5 p95=143.2
+a2r-path-auto-1 type=nav_msgs/msg/Path adapter=serialized exact=48 wrong_leg=0
+Minimum host MemAvailable: 15669 MiB
+a2r-path-auto-2
+relay_process_cpu_s=0.1028
+e2e_us median=1114.0 p95=1487.1
+relay_us median=108.8 p95=149.1
+a2r-path-auto-2 type=nav_msgs/msg/Path adapter=serialized exact=48 wrong_leg=0
+Minimum host MemAvailable: 15664 MiB
+a2r-path-typed-2
+relay_process_cpu_s=0.0972
+e2e_us median=1396.2 p95=1788.6
+relay_us median=347.8 p95=485.6
+a2r-path-typed-2 type=nav_msgs/msg/Path adapter=typed exact=48 wrong_leg=0
+Minimum host MemAvailable: 15670 MiB
+a2r-cloud-auto-1
+relay_process_cpu_s=0.0857
+e2e_us median=179.3 p95=236.5
+relay_us median=41.9 p95=82.6
+a2r-cloud-auto-1 type=sensor_msgs/msg/PointCloud2 adapter=typed exact=48 wrong_leg=0
+Minimum host MemAvailable: 15576 MiB
+a2r-cloud-forced-1
+relay_process_cpu_s=0.0880
+e2e_us median=176.0 p95=273.0
+relay_us median=39.0 p95=70.3
+a2r-cloud-forced-1 type=sensor_msgs/msg/PointCloud2 adapter=serialized exact=48 wrong_leg=0
+Minimum host MemAvailable: 15566 MiB
+a2r-cloud-forced-2
+relay_process_cpu_s=0.0885
+e2e_us median=212.2 p95=244.6
+relay_us median=45.6 p95=53.7
+a2r-cloud-forced-2 type=sensor_msgs/msg/PointCloud2 adapter=serialized exact=48 wrong_leg=0
+Minimum host MemAvailable: 15582 MiB
+a2r-cloud-auto-2
+relay_process_cpu_s=0.0874
+e2e_us median=182.5 p95=218.6
+relay_us median=49.1 p95=60.8
+a2r-cloud-auto-2 type=sensor_msgs/msg/PointCloud2 adapter=typed exact=48 wrong_leg=0
+Minimum host MemAvailable: 15622 MiB
+a2r-largecloud-auto-1
+relay_process_cpu_s=0.1035
+e2e_us median=633.7 p95=983.2
+relay_us median=476.8 p95=716.0
+a2r-largecloud-auto-1 type=sensor_msgs/msg/PointCloud2 adapter=typed exact=48 wrong_leg=0
+Minimum host MemAvailable: 15680 MiB
+a2r-largecloud-forced-1
+relay_process_cpu_s=0.1069
+e2e_us median=780.1 p95=1170.8
+relay_us median=516.1 p95=762.9
+a2r-largecloud-forced-1 type=sensor_msgs/msg/PointCloud2 adapter=serialized exact=48 wrong_leg=0
+Minimum host MemAvailable: 15678 MiB
+a2r-largecloud-forced-2
+relay_process_cpu_s=0.1116
+e2e_us median=788.2 p95=1540.2
+relay_us median=518.5 p95=821.3
+a2r-largecloud-forced-2 type=sensor_msgs/msg/PointCloud2 adapter=serialized exact=48 wrong_leg=0
+Minimum host MemAvailable: 15656 MiB
+a2r-largecloud-auto-2
+relay_process_cpu_s=0.1038
+e2e_us median=719.7 p95=1301.8
+relay_us median=488.5 p95=780.1
+a2r-largecloud-auto-2 type=sensor_msgs/msg/PointCloud2 adapter=typed exact=48 wrong_leg=0
+Minimum host MemAvailable: 15653 MiB
+r2a-poses-auto-1
+relay_process_cpu_s=0.0936
+e2e_us median=406.5 p95=601.0
+relay_us median=56.4 p95=79.6
+r2a-poses-auto-1 type=geometry_msgs/msg/PoseArray adapter=serialized exact=48 wrong_leg=0
+Minimum host MemAvailable: 15643 MiB
+r2a-image-auto-1
+relay_process_cpu_s=0.0917
+e2e_us median=180.2 p95=357.5
+relay_us median=8.8 p95=24.0
+r2a-image-auto-1 type=sensor_msgs/msg/Image adapter=serialized exact=48 wrong_leg=0
+Minimum host MemAvailable: 15651 MiB
+r2a-sensorimage-incompatible-1
+relay_process_cpu_s=0.0840
+r2a-sensorimage-incompatible-1 incompatible=0 wrong_leg=0
+Minimum host MemAvailable: 15634 MiB
+r2a-sensorimage-auto-1
+relay_process_cpu_s=0.0859
+e2e_us median=319.6 p95=421.9
+relay_us median=17.9 p95=27.3
+r2a-sensorimage-auto-1 type=sensor_msgs/msg/Image adapter=serialized exact=48 wrong_leg=0
+Minimum host MemAvailable: 15624 MiB
+r2a-path-typed-1
+relay_process_cpu_s=0.0923
+e2e_us median=1437.3 p95=2022.5
+relay_us median=398.3 p95=620.4
+r2a-path-typed-1 type=nav_msgs/msg/Path adapter=typed exact=48 wrong_leg=0
+Minimum host MemAvailable: 15573 MiB
+r2a-path-auto-1
+relay_process_cpu_s=0.0997
+e2e_us median=1445.0 p95=1813.7
+relay_us median=177.4 p95=248.5
+r2a-path-auto-1 type=nav_msgs/msg/Path adapter=serialized exact=48 wrong_leg=0
+Minimum host MemAvailable: 15574 MiB
+r2a-path-auto-2
+relay_process_cpu_s=0.1054
+e2e_us median=1402.0 p95=1704.8
+relay_us median=180.3 p95=249.7
+r2a-path-auto-2 type=nav_msgs/msg/Path adapter=serialized exact=48 wrong_leg=0
+Minimum host MemAvailable: 15582 MiB
+r2a-path-typed-2
+relay_process_cpu_s=0.0940
+e2e_us median=1410.6 p95=2042.2
+relay_us median=446.8 p95=619.7
+r2a-path-typed-2 type=nav_msgs/msg/Path adapter=typed exact=48 wrong_leg=0
+Minimum host MemAvailable: 15614 MiB
+r2a-cloud-auto-1
+relay_process_cpu_s=0.0915
+e2e_us median=189.4 p95=438.9
+relay_us median=11.4 p95=35.1
+r2a-cloud-auto-1 type=sensor_msgs/msg/PointCloud2 adapter=typed exact=48 wrong_leg=0
+Minimum host MemAvailable: 15708 MiB
+r2a-cloud-forced-1
+relay_process_cpu_s=0.0975
+e2e_us median=207.8 p95=471.7
+relay_us median=47.8 p95=76.6
+r2a-cloud-forced-1 type=sensor_msgs/msg/PointCloud2 adapter=serialized exact=48 wrong_leg=0
+Minimum host MemAvailable: 15724 MiB
+r2a-cloud-forced-2
+relay_process_cpu_s=0.0978
+e2e_us median=395.4 p95=517.0
+relay_us median=67.7 p95=93.2
+r2a-cloud-forced-2 type=sensor_msgs/msg/PointCloud2 adapter=serialized exact=48 wrong_leg=0
+Minimum host MemAvailable: 15745 MiB
+r2a-cloud-auto-2
+relay_process_cpu_s=0.0903
+e2e_us median=180.7 p95=407.9
+relay_us median=12.0 p95=32.8
+r2a-cloud-auto-2 type=sensor_msgs/msg/PointCloud2 adapter=typed exact=48 wrong_leg=0
+Minimum host MemAvailable: 15750 MiB
+r2a-largecloud-auto-1
+relay_process_cpu_s=0.1009
+e2e_us median=912.6 p95=1414.6
+relay_us median=31.3 p95=375.9
+r2a-largecloud-auto-1 type=sensor_msgs/msg/PointCloud2 adapter=typed exact=48 wrong_leg=0
+Minimum host MemAvailable: 15718 MiB
+r2a-largecloud-forced-1
+relay_process_cpu_s=0.1063
+e2e_us median=982.2 p95=1452.0
+relay_us median=83.9 p95=427.4
+r2a-largecloud-forced-1 type=sensor_msgs/msg/PointCloud2 adapter=serialized exact=48 wrong_leg=0
+Minimum host MemAvailable: 15726 MiB
+r2a-largecloud-forced-2
+relay_process_cpu_s=0.1102
+e2e_us median=922.8 p95=1551.8
+relay_us median=77.0 p95=537.7
+r2a-largecloud-forced-2 type=sensor_msgs/msg/PointCloud2 adapter=serialized exact=48 wrong_leg=0
+Minimum host MemAvailable: 15730 MiB
+r2a-largecloud-auto-2
+relay_process_cpu_s=0.1054
+e2e_us median=889.7 p95=1231.9
+relay_us median=31.5 p95=369.7
+r2a-largecloud-auto-2 type=sensor_msgs/msg/PointCloud2 adapter=typed exact=48 wrong_leg=0
+Minimum host MemAvailable: 15741 MiB

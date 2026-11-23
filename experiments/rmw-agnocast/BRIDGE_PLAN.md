@@ -85,3 +85,31 @@ The next group can qualify generic message fallback in each direction,
 missing type support, and stock CLI behavior on an exported topic together.
 Independent network delivery and middleware-managed startup remain open.
 [Grouped comparison](local-recorder-results/summary.md)
+
+### Runtime type fallback decision
+
+A manually started route can now resolve the input publisher's installed ROS
+type at startup. Both directions support serialized rclcpp endpoints on this
+laptop, including a native output that an independent typed subscriber reads.
+The RMW handles serialized publish according to the selected native layout.
+No per-message-type gateway build is required for the tested PoseArray and
+Image routes. Keep the CPU/host-cloud PointCloud2 specialization available as
+the automatic cloud route. Use serialized forwarding for automatically
+discovered Path; the existing explicitly named path adapter remains available
+for compatibility. These choices are scoped to the measured representations.
+
+For example, with the gateway's normal rmw_agnocast and heap-hook environment:
+
+```bash
+route_bridge a2r auto /local/poses /dds/poses
+AGNOCAST_RMW_BUFFER_CDR=1 route_bridge r2a auto /dds/image /local/image sensor
+```
+
+The first command exports poses; ordinary Cyclone subscribers can consume
+the DDS output. The second imports a sensor-QoS stream into the native CDR
+layout; configure its native consumer for the same layout. Fully qualified
+type names allow configuring a route before discovery. Auto pins one observed
+type name; a later schema change requires restarting the route. Type-hash
+validation, automatic QoS selection, physical inter-host delivery and
+middleware-owned startup are still open.
+[Type fallback comparison](type-fallback-results/summary.md)

@@ -3631,3 +3631,93 @@ CPU was 0.648 s direct and 0.797 s via DDS, including both successive recorder
 lifetimes and, for DDS, the relay. The original loan/death contract, both
 directions of the typed Path bridge and the host-view take checks passed.
 [Matrix, frame audits and validation](../rmw-agnocast/local-recorder-results/summary.md)
+
+### 2026-11-23 — Runtime message-type fallback at the native/DDS boundary
+
+From the provisioned colcon worktree with the patched Lyrical pilot, rebuild
+rmw_agnocast and its probe package. Run the batch on one laptop with the usual
+loopback-only Cyclone profile. Each test gets a fresh directory, a separate
+512 MiB runtime scope, and a 40 s timeout. The build uses the 1,200 MiB scope.
+
+```bash
+set -e
+export LYRICAL_ROOT=$(cat build/agnocast-lyrical/universe-root)
+experiments/buffer/run-lyrical.sh bash experiments/rmw-agnocast/build-loadable.sh
+bash experiments/rmw-agnocast/batch-type-fallback.sh build/type-fallback
+for test in route-bridge cloud-cdr host-cloud; do
+  BUFFER_RUNTIME_ONLY=1 experiments/buffer/run-lyrical.sh timeout -k 5 85 \
+    bash experiments/rmw-agnocast/run-loadable.sh "$test"
+done
+```
+
+Use `route_bridge DIRECTION TYPE INPUT OUTPUT [QOS]` within the existing
+gateway environment. TYPE accepts a fully qualified installed ROS message,
+the existing path/cloud aliases, or auto. For auto, query source publishers
+and require one observed type name stable for 200 ms within five seconds.
+Pin the route for its process lifetime. This selects by graph name, not
+type hash or observed data delivery. QOS can be default, sensor or reliable.
+Defaults retain reliable KeepLast(4) except for PointCloud2's SensorDataQoS.
+A sensor-data route can be selected explicitly for any installed type.
+Egress can still attach its native subscriber when a DDS reader matches.
+Multi-host transport, live type rebinding, services and schema distribution
+are separate questions.
+
+Generic rclcpp subscriptions take serialized samples and generic publishers
+call rmw_publish_serialized_message. The old RMW delegated serialized publish
+to Cyclone even for a selected native publisher. The new native implementation
+deserializes ordinary objects directly into an initialized Agnocast loan,
+cancels it on decode failure, preserves CDR bytes in the configured native
+Buffer/CDR layout, and materializes a CPU PointCloud2 for the host-cloud
+layout. DDS endpoints still use Cyclone. Native layout settings and installed
+C++ type support must agree. The CDR path assumes the supplied serialized
+sample represents a valid message of its registered type. No backend address
+is exported by the tested CPU fixtures.
+
+Each positive run starts independent typed producer and consumer processes.
+Use different input/output names, plus an extra subscription on the output
+name using the opposite transport. A reader checks all 48 messages field by
+field, in order, including empty and populated variable-length data. The
+opposite-transport reader must receive zero. Ingress therefore catches
+accidental publication to the DDS proxy. PoseArray and Image have no compiled
+adapter in the relay. Image uses the explicit Buffer/CDR native route and
+PointCloud2 uses the host-cloud layout. The largest cloud is 512 KiB.
+A live DDS CLI checks list, verbose info and echo for the generic PoseArray
+export while another route fails to load missing type support.
+
+For Path and both cloud sizes, use paired adapter orders and compare callback
+and source-to-reader times after eight warmups. The callback clock starts
+after subscription take and ends after publishing. Source-to-reader includes
+the take and the boundary crossing. Generic callbacks do not decode a header
+for profiling; their service trace is aligned by checked sequence. Process
+CPU includes discovery, startup and teardown. Each run mixes empty, one-item
+and larger messages at nominal 50 Hz. These measurements describe this
+workload; they do not give a constant per-byte overhead.
+
+All 35 final cases passed. Thirty routed cases verified 1,440 source
+messages at their intended destination and zero at the opposite-transport
+witness. The other five cases tested absent writers, ambiguous type names,
+unconfigured Buffer storage and incompatible offered reliability in both
+directions. The missing-package check ran alongside a healthy export.
+Stock Cyclone topic list, info and echo worked on that export. Explicit
+sensor QoS enabled Image in both directions. Keep type and QoS selection
+separate: discovering a type does not establish reliability compatibility.
+
+For automatically discovered Path, select serialized forwarding. Pooled
+end-to-end median/p95 in milliseconds for native-to-DDS was 1.114/1.446
+serialized and 1.417/1.780 typed. In reverse it was 1.407/1.762 and
+1.415/2.042 respectively. Callback median also fell in both directions.
+The explicit typed Path case skips the type-discovery node, so whole-process
+CPU includes different startup work. The typed PointCloud2 adapter retained
+lower end-to-end medians at both sizes and in both directions. For the
+512 KiB maximum export its median was 0.657 ms versus 0.780 ms serialized.
+These are local CPU payloads; the batch supplies no GPU or physical-network
+latency claim. The lowest sampled host MemAvailable across the 35 final
+cases exceeded 15 GiB.
+[Per-message timings and run outcomes](../rmw-agnocast/type-fallback-results/summary.md)
+
+The existing bidirectional Path contract and the CDR and host-cloud
+regressions passed. For the three-LiDAR recorder lifecycle, run the previous
+24-group demand case once with its typed relay and again with
+AGNOCAST_BRIDGE_FORCE_GENERIC=1. Both delivered 24 local groups, published
+16 clouds for the recorder sessions and verified the same 20 bag entries
+across the three bags. [Regression outcomes](../rmw-agnocast/type-fallback-results/regressions.txt)

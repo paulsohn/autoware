@@ -693,6 +693,45 @@ extern "C" rmw_ret_t rmw_return_loaned_message_from_publisher(
   w->borrowed.erase(it);
   return RMW_RET_OK;
 }
+namespace
+{
+void publish_cdr(Writer & writer, const rmw_serialized_message_t & raw)
+{
+  if (raw.buffer_length > SIZE_MAX - sizeof(size_t)) throw std::bad_alloc();
+  auto loan = writer.pub.borrow_loaned_message(
+    writer.type.wire_size(sizeof(size_t) + raw.buffer_length));
+  auto length = new (loan.get()) size_t(raw.buffer_length);
+  std::memcpy(length + 1, raw.buffer, *length);
+  writer.stamp(loan.get());
+  writer.pub.publish(std::move(loan), [](void * p) { ::operator delete(p); });
+}
+}
+extern "C" rmw_ret_t rmw_publish_serialized_message(
+  const rmw_publisher_t * pub, const rmw_serialized_message_t * raw, rmw_publisher_allocation_t * a)
+{
+  if (!pub || !raw || !raw->buffer || !raw->buffer_length || raw->buffer_length > raw->buffer_capacity)
+    return RMW_RET_INVALID_ARGUMENT;
+  auto w = lookup(writers, pub->data);
+  if (!w) return CYCLONE(rmw_publish_serialized_message)(pub, raw, a);
+  try {
+    if (w->type.host_cloud) {
+      Cloud cloud;
+      auto ret = CYCLONE(rmw_deserialize)(raw, w->type.ts, &cloud);
+      return ret == RMW_RET_OK ? rmw_publish(pub, &cloud, a) : ret;
+    }
+    if (w->type.has_buffer) {
+      publish_cdr(*w, *raw);
+      return RMW_RET_OK;
+    }
+    auto loan = w->borrow();
+    auto ret = CYCLONE(rmw_deserialize)(raw, w->type.ts, loan.get());
+    if (ret == RMW_RET_OK) w->publish(std::move(loan));
+    else w->cancel(std::move(loan));
+    return ret;
+  } catch (const std::exception & e) {
+    return error(e.what());
+  }
+}
 extern "C" rmw_ret_t rmw_publish(
   const rmw_publisher_t * pub, const void * msg, rmw_publisher_allocation_t * a)
 {
@@ -729,11 +768,11 @@ extern "C" rmw_ret_t rmw_publish(
     auto ret =
       measure_codec("serialize", [&] { return CYCLONE(rmw_serialize)(msg, w->type.ts, &raw); });
     if (ret != RMW_RET_OK) return ret;
-    auto loan = w->pub.borrow_loaned_message(w->type.wire_size(sizeof(size_t) + raw.buffer_length));
-    auto length = new (loan.get()) size_t(raw.buffer_length);
-    std::memcpy(length + 1, raw.buffer, *length);
-    w->stamp(loan.get());
-    w->pub.publish(std::move(loan), [](void * p) { ::operator delete(p); });
+    try {
+      publish_cdr(*w, raw);
+    } catch (const std::exception & e) {
+      return error(e.what());
+    }
     return RMW_RET_OK;
   }
   auto loan = w->borrow();
