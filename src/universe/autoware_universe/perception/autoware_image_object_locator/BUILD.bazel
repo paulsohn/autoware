@@ -1,0 +1,78 @@
+load("@rclcpp_components//:defs.bzl", "rclcpp_components_register_node")
+load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "autoware_image_object_locator_library",
+    srcs = ["src/bbox_object_locator_node.cpp"],
+    hdrs = ["src/bbox_object_locator_node.hpp"],
+    includes = ["src"],
+    copts = ["-Wall", "-Wextra", "-Wpedantic"],
+    deps = [
+        "@autoware_object_recognition_utils",
+        "@autoware_perception_msgs//:cc",
+        "@autoware_utils_geometry",
+        "@autoware_utils_math",
+        "@autoware_utils_tf",
+        "@message_filters//:message_filters_library",
+        "@rclcpp//:rclcpp_library",
+        "@rclcpp_components//:rclcpp_components_library",
+        "@tf2_eigen//:tf2_eigen_library",
+        "@tf2_geometry_msgs//:tf2_geometry_msgs_library",
+        "@tf2_ros//:tf2_ros_library",
+        "@tf2_sensor_msgs//:tf2_sensor_msgs_library",
+        "@sensor_msgs//:cc",
+        "@tier4_perception_msgs//:cc",
+        "@rosdistro//cc:opencv_library",
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = [
+        "@autoware_object_recognition_utils//:runtime_dynamic_deps",
+        "@autoware_perception_msgs//:cc_shared",
+        "@message_filters//:message_filters",
+        "@rclcpp_components//:rclcpp_components",
+        "@tf2_eigen//:tf2_eigen",
+        "@tf2_geometry_msgs//:tf2_geometry_msgs",
+        "@tf2_ros//:tf2_ros",
+        "@tf2_sensor_msgs//:tf2_sensor_msgs",
+        "@sensor_msgs//:cc_shared",
+        "@tier4_perception_msgs//:cc_shared",
+        "@rosdistro//cc:opencv",
+    ],
+)
+
+cc_shared_library(
+    name = "autoware_image_object_locator",
+    shared_lib_name = "libautoware_image_object_locator.so",
+    dynamic_deps = [":runtime_dynamic_deps"],
+    deps = [":autoware_image_object_locator_library"],
+)
+
+rclcpp_components_register_node(
+    name = "bbox_object_locator_node",
+    node_name = "bbox_object_locator_node",
+    component = ":autoware_image_object_locator",
+    plugin = "autoware::image_object_locator::BboxObjectLocatorNode",
+)
+
+register_ament_files(
+    name = "executables",
+    files = [":bbox_object_locator_node"],
+    prefix = "lib/autoware_image_object_locator",
+    strip_prefix = "*",
+)
+
+ament_index(
+    package_xml = "package.xml",
+    components = [":bbox_object_locator_node_record"],
+    data = glob(["config/**", "launch/**"]) + [":executables"],
+    libraries = [":autoware_image_object_locator"],
+)
+
+exports_files(glob(["config/*.yaml"]))

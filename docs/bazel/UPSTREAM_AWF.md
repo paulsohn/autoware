@@ -2176,6 +2176,8 @@ Local source correction: 398695f2.
 
 ### Image-object locator uses removed Message Filters header aliases
 
+Local source fix: `ad53a176e`.
+
 - [ ] Associate with a matching upstream fix. Reviewed 2026-11-24: current
   [locator header](https://github.com/autowarefoundation/autoware_universe/blob/main/perception/autoware_image_object_locator/src/bbox_object_locator_node.hpp)
   retains subscriber.h, sync_policies/approximate_time.h and synchronizer.h.

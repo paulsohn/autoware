@@ -2307,8 +2307,8 @@ in progress with seven packages pending.
 
 Completed: feature removal and detected/tracked sorting. All six original cases
 and four added cases pass Cyclone/RCLCPP; the added cases also pass Agnocast-only
-with heaphook. Current definition coverage is 122/244; four Phase 9.6 packages
-remain.
+with heaphook. Image localization also passes both projection/truncation cases. Current
+definition coverage is 123/244; three Phase 9.6 packages remain.
 
 ### Execution order through complete Universe coverage
 

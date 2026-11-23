@@ -2332,3 +2332,13 @@ cc_test(
     deps = ["@autoware_object_sorter//:autoware_object_sorter_library", "@googletest//:gtest"],
     tags = ["no-sandbox", "no-remote"],
 )
+
+cc_test(
+    name = "image_object_locator_test",
+    srcs = ["autoware_image_object_locator/test_projection.cpp"],
+    data = ["@autoware_image_object_locator//:config/bbox_object_locator.param.yaml"],
+    env = {"LOCATOR_PARAMS": "$(rootpath @autoware_image_object_locator//:config/bbox_object_locator.param.yaml)"},
+    dynamic_deps = ["@autoware_image_object_locator//:runtime_dynamic_deps"],
+    deps = ["@autoware_image_object_locator//:autoware_image_object_locator_library", "@googletest//:gtest"],
+    tags = ["no-sandbox", "no-remote"],
+)

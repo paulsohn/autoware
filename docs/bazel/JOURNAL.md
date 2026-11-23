@@ -20988,7 +20988,7 @@ Failure/cause/fix: compiling the original header fails because Lyrical removes
 Message Filters .h aliases. Change just its three Message Filters includes to
 .hpp. Current upstream retains them; scoped PR search finds no matching fix
 (UPSTREAM_AWF.md, checked 2026-11-24). Source compatibility is committed separately
-from Bazel declarations. No original test or projection implementation changes.
+from Bazel declarations (ad53a176e). No original test or projection implementation changes.
 
 Verification peer: load the original YAML, select camera 0, supply calibrated
 640x480 camera info and a static optical-to-base transform with a 2 m camera
