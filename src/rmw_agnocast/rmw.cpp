@@ -7,6 +7,7 @@
 
 #include <sys/random.h>
 
+#include <cstdio>
 #include <deque>
 #include <map>
 #include <thread>
@@ -88,6 +89,31 @@ bool has_buffer(const MessageMembers & m)
   }
   return false;
 }
+const char * resolve_qos(rmw_qos_profile_t & qos)
+{
+  if (qos.history == RMW_QOS_POLICY_HISTORY_SYSTEM_DEFAULT) {
+    qos.history = RMW_QOS_POLICY_HISTORY_KEEP_LAST;
+    if (!qos.depth) qos.depth = 10;
+  }
+  if (qos.reliability == RMW_QOS_POLICY_RELIABILITY_SYSTEM_DEFAULT)
+    qos.reliability = RMW_QOS_POLICY_RELIABILITY_RELIABLE;
+  if (qos.durability == RMW_QOS_POLICY_DURABILITY_SYSTEM_DEFAULT)
+    qos.durability = RMW_QOS_POLICY_DURABILITY_VOLATILE;
+  if (
+    (qos.reliability != RMW_QOS_POLICY_RELIABILITY_RELIABLE &&
+     qos.reliability != RMW_QOS_POLICY_RELIABILITY_BEST_EFFORT) ||
+    qos.deadline.sec || qos.deadline.nsec || qos.lifespan.sec || qos.lifespan.nsec ||
+    qos.liveliness_lease_duration.sec || qos.liveliness_lease_duration.nsec ||
+    (qos.liveliness != RMW_QOS_POLICY_LIVELINESS_AUTOMATIC &&
+     qos.liveliness != RMW_QOS_POLICY_LIVELINESS_SYSTEM_DEFAULT) ||
+    qos.avoid_ros_namespace_conventions)
+    return "unsupported native endpoint QoS";
+  if (
+    !qos.depth || qos.history != RMW_QOS_POLICY_HISTORY_KEEP_LAST ||
+    qos.durability != RMW_QOS_POLICY_DURABILITY_VOLATILE)
+    return "standalone endpoint requires volatile KeepLast with positive depth";
+  return nullptr;
+}
 struct Endpoint
 {
   std::string topic, type, route;
@@ -106,25 +132,7 @@ struct Endpoint
     }
     members = static_cast<const MessageMembers *>(intro->data);
     if (has_buffer(*members)) throw std::runtime_error("standalone Buffer layout not implemented");
-    if (qos.history == RMW_QOS_POLICY_HISTORY_SYSTEM_DEFAULT)
-      qos.history = RMW_QOS_POLICY_HISTORY_KEEP_LAST;
-    if (requested.history == RMW_QOS_POLICY_HISTORY_SYSTEM_DEFAULT && !qos.depth) qos.depth = 10;
-    if (qos.reliability == RMW_QOS_POLICY_RELIABILITY_SYSTEM_DEFAULT)
-      qos.reliability = RMW_QOS_POLICY_RELIABILITY_RELIABLE;
-    if (qos.durability == RMW_QOS_POLICY_DURABILITY_SYSTEM_DEFAULT)
-      qos.durability = RMW_QOS_POLICY_DURABILITY_VOLATILE;
-    if (
-      (qos.reliability != RMW_QOS_POLICY_RELIABILITY_RELIABLE &&
-       qos.reliability != RMW_QOS_POLICY_RELIABILITY_BEST_EFFORT) ||
-      qos.deadline.sec || qos.deadline.nsec || qos.lifespan.sec || qos.lifespan.nsec ||
-      qos.liveliness_lease_duration.sec || qos.liveliness_lease_duration.nsec ||
-      qos.liveliness == RMW_QOS_POLICY_LIVELINESS_MANUAL_BY_TOPIC ||
-      qos.avoid_ros_namespace_conventions)
-      throw std::runtime_error("unsupported native endpoint QoS");
-    if (
-      !qos.depth || qos.history != RMW_QOS_POLICY_HISTORY_KEEP_LAST ||
-      qos.durability != RMW_QOS_POLICY_DURABILITY_VOLATILE)
-      throw std::runtime_error("standalone endpoint requires volatile KeepLast");
+    if (const char * error = resolve_qos(qos)) throw std::runtime_error(error);
     type = std::string(members->message_namespace_) + "/" + members->message_name_;
     for (auto pos = type.find("::"); pos != std::string::npos; pos = type.find("::"))
       type.replace(pos, 2, "/");
@@ -297,13 +305,10 @@ rmw_ret_t rmw_publish(const rmw_publisher_t * p, const void * msg, rmw_publisher
     return RMW_RET_ERROR;
   }
 }
-static rmw_ret_t take(
-  const rmw_subscription_t * sub, void * msg, void ** loan, bool * taken, rmw_message_info_t * info)
+// The caller holds the context mutex for the entire take (including a batch).
+static rmw_ret_t take_locked(
+  Reader & r, void * msg, void ** loan, bool * taken, rmw_message_info_t * info)
 {
-  if (!sub || sub->implementation_identifier != standalone::id || (!msg && !loan) || !taken)
-    return RMW_RET_INVALID_ARGUMENT;
-  auto & r = *static_cast<Reader *>(sub->data);
-  std::lock_guard lock(r.context->mutex);
   *taken = false;
   if (r.pending.empty()) return RMW_RET_OK;
   auto & sample = r.pending.front();
@@ -331,6 +336,48 @@ static rmw_ret_t take(
   }
   r.pending.pop_front();
   *taken = true;
+  return RMW_RET_OK;
+}
+static rmw_ret_t take(
+  const rmw_subscription_t * sub, void * msg, void ** loan, bool * taken, rmw_message_info_t * info)
+{
+  if (!sub || sub->implementation_identifier != standalone::id || (!msg && !loan) || !taken)
+    return RMW_RET_INVALID_ARGUMENT;
+  auto & r = *static_cast<Reader *>(sub->data);
+  std::lock_guard lock(r.context->mutex);
+  return take_locked(r, msg, loan, taken, info);
+}
+rmw_ret_t rmw_take_sequence(
+  const rmw_subscription_t * sub, size_t count, rmw_message_sequence_t * messages,
+  rmw_message_info_sequence_t * infos, size_t * taken, rmw_subscription_allocation_t *)
+{
+  if (
+    !sub || !taken || !messages || !infos || !count || messages->capacity < count ||
+    infos->capacity < count || !messages->data || !infos->data) {
+    RMW_SET_ERROR_MSG("invalid batch take arguments or insufficient capacity");
+    return RMW_RET_INVALID_ARGUMENT;
+  }
+  if (sub->implementation_identifier != standalone::id) {
+    RMW_SET_ERROR_MSG("subscription belongs to another middleware");
+    return RMW_RET_INCORRECT_RMW_IMPLEMENTATION;
+  }
+  for (size_t i = 0; i < count; ++i) {
+    if (!messages->data[i]) {
+      RMW_SET_ERROR_MSG("batch take requires initialized destination messages");
+      return RMW_RET_INVALID_ARGUMENT;
+    }
+  }
+  auto & reader = *static_cast<Reader *>(sub->data);
+  std::lock_guard lock(reader.context->mutex);
+  *taken = 0;
+  while (*taken < count && !reader.pending.empty()) {
+    bool received;
+    auto result =
+      take_locked(reader, messages->data[*taken], nullptr, &received, &infos->data[*taken]);
+    if (result != RMW_RET_OK) return result;
+    ++*taken;
+    messages->size = infos->size = *taken;
+  }
   return RMW_RET_OK;
 }
 rmw_ret_t rmw_take_with_info(
@@ -449,5 +496,35 @@ rmw_ret_t rmw_subscription_count_matched_publishers(const rmw_subscription_t * s
   *count = 0;
   for (auto & route : static_cast<Reader *>(s->data)->routes)
     *count += route->get_publisher_count();
+  return RMW_RET_OK;
+}
+
+rmw_ret_t rmw_qos_profile_check_compatible(
+  rmw_qos_profile_t publisher, rmw_qos_profile_t subscription,
+  rmw_qos_compatibility_type_t * compatibility, char * reason, size_t reason_size)
+{
+  if (!compatibility || (!reason && reason_size)) {
+    RMW_SET_ERROR_MSG("invalid QoS compatibility output");
+    return RMW_RET_INVALID_ARGUMENT;
+  }
+  const char * publisher_error = resolve_qos(publisher);
+  const char * subscription_error = resolve_qos(subscription);
+  const bool mismatch = publisher.reliability == RMW_QOS_POLICY_RELIABILITY_BEST_EFFORT &&
+                        subscription.reliability == RMW_QOS_POLICY_RELIABILITY_RELIABLE;
+  *compatibility = RMW_QOS_COMPATIBILITY_OK;
+  if (reason_size) reason[0] = '\0';
+  size_t used = 0;
+  auto report = [&](const char * label, const char * error) {
+    if (!error) return;
+    *compatibility = RMW_QOS_COMPATIBILITY_ERROR;
+    if (used < reason_size) {
+      const auto n =
+        std::snprintf(reason + used, reason_size - used, "%s%s%s", used ? "; " : "", label, error);
+      if (n > 0) used += static_cast<size_t>(n);
+    }
+  };
+  report("publisher: ", publisher_error);
+  report("subscription: ", subscription_error);
+  if (mismatch) report("", "best-effort publisher cannot satisfy reliable subscription");
   return RMW_RET_OK;
 }

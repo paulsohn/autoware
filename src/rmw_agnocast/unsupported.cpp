@@ -155,13 +155,6 @@ rmw_ret_t rmw_get_topic_names_and_types(
   return unsupported(__func__);
 }
 
-rmw_ret_t rmw_qos_profile_check_compatible(
-  const rmw_qos_profile_t publisher_profile, const rmw_qos_profile_t subscription_profile,
-  rmw_qos_compatibility_type_t * compatibility, char * reason, size_t reason_size)
-{
-  return unsupported(__func__);
-}
-
 const char * rmw_get_serialization_format(void)
 {
   RMW_SET_ERROR_MSG("standalone RMW does not implement rmw_get_serialization_format");
@@ -241,14 +234,6 @@ rmw_ret_t rmw_subscription_set_content_filter(
 rmw_ret_t rmw_subscription_get_content_filter(
   const rmw_subscription_t * subscription, rcutils_allocator_t * allocator,
   rmw_subscription_content_filter_options_t * options)
-{
-  return unsupported(__func__);
-}
-
-rmw_ret_t rmw_take_sequence(
-  const rmw_subscription_t * subscription, size_t count, rmw_message_sequence_t * message_sequence,
-  rmw_message_info_sequence_t * message_info_sequence, size_t * taken,
-  rmw_subscription_allocation_t * allocation)
 {
   return unsupported(__func__);
 }

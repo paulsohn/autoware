@@ -52,3 +52,8 @@ This is a transport isolation milestone. The test uses standard rclcpp with roso
 The separate Cyclone control used the same ROS domain and topic name. While native writer and reader completed delivery, the stock DDS echo received no sample and timed out. A stock Cyclone publisher then delivered a control string to a fresh stock echo with the same settings. Previous Autoware pipeline and latency results belong to the mixed implementation at 1a7d9b42. No standalone latency or Autoware compatibility result is claimed.
 
 For the reverse control, run a stock Cyclone publisher at 5 Hz and a stock echo on the same fresh topic and domain. In the standalone environment run `CHECK_DDS_ISOLATION=1 build/standalone/probe/topic_check reader "$topic"`. The stock echo received the control string while the native reader reported zero callbacks and zero matches over three seconds.
+
+The standalone check also runs a batch reader against a three-message burst.
+It checks ordering, publisher metadata, destination capacity and empty takes.
+Each trial exercises the native QoS compatibility query for both reliability
+directions and for an unsupported durability policy.

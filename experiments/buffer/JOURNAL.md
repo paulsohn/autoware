@@ -3921,3 +3921,27 @@ while the native reader observed zero callbacks and zero publisher matches
 over three seconds on the same topic. The local topic test disables rosout,
 parameters and the type-description service. Default node startup, graph and
 serialized operations, bridge delivery and Autoware performance remain open.
+
+## 2026-11-23 — Batch take and QoS compatibility in the standalone RMW
+
+Implemented rmw_take_sequence and rmw_qos_profile_check_compatible locally.
+A batch reuses the ordinary copy and metadata path under one queue lock so a
+concurrent take cannot split it. Validation checks all destination slots before
+consuming any sample. The compatibility query uses the same QoS normalization
+and admission rules as endpoint creation and checks offered/requested
+reliability. The existing native routes implement that directional match.
+
+Reproduce with the build and check.sh commands in the standalone README. In
+the Cyclone-stripped Lyrical prefix the sequential colcon build and three
+two-process trials passed (ordinary, borrowed and batch). The batch reader
+checked three ordered dynamic strings, a two-sample take, publisher metadata,
+insufficient capacity and unchanged sequence sizes on an empty take. The QoS
+probe checked reliable to best effort, the reverse mismatch and a transient
+local profile with a one-byte diagnostic buffer. Both link and process map
+checks passed. Minimum observed host MemAvailable was 14596 MiB.
+
+The next default-node blocker is rosout. The installed Lyrical qos_profiles.h
+sets its profile to reliable transient-local KeepLast(1000) with a ten-second
+lifespan. Include late-reader replay and expiry alongside the C-writer to
+C++-reader layout test. The QoS compatibility query alone does not implement
+these policies or the corresponding QoS event callbacks.

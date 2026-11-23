@@ -10,8 +10,10 @@ unset AGNOCAST_BRIDGE_MODE AGNOCAST_NO_DISCOVERY_AGENT
 library="$(ros2 pkg prefix rmw_agnocast)/lib/librmw_agnocast.so"
 deps=$(ldd "$library")
 if grep -Ei 'librmw_(cyclonedds|fastrtps|zenoh)|libddsc\.so|not found' <<< "$deps"; then exit 1; fi
-for mode in ordinary loan; do
+for mode in ordinary loan batch; do
   topic="/standalone_${BASHPID}_${RANDOM}/${mode}"
+  unset CHECK_BATCH
+  if [[ $mode == batch ]]; then export CHECK_BATCH=1; fi
   if [[ $mode == loan ]]; then
     export CHECK_NATIVE_LOAN=1 ROS_DISABLE_LOANED_MESSAGES=0
   else
