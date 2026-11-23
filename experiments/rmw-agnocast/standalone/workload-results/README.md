@@ -280,3 +280,50 @@ The original 10 Hz Universe crop-box workload isolates source → crop → sink.
 | Zenoh | 1.063 / 1.396 | 1.406–1.563 |
 
 Current standalone/native was 2.64× median and 1.80× p95. Compare to the historical mixed loan/view setup as a separate configuration. The current replay cannot isolate the effect of removing the fallback. Minimum host availability during these launches was 12814 MiB. The additional standalone checks passed typed and serialized publish/take for both new types from rclpy, followed by the existing standalone regression suite. [Crop samples](universe-standalone-crop.csv) and [child resources](universe-standalone-crop-resources.csv).
+
+## Retained cloud views and publisher loans in the standalone RMW
+
+The receiver opt-in requires a C++ PointCloud2 subscription that accepts `agnocast_host_view` or `any`, plus `AGNOCAST_RMW_HOST_VIEW=1`. Metadata is reader-local. The read-only Buffer aliases the point vector in the native loan. Its owner keeps the native registrations and node alive through final release, while the ROS subscription and executor can shut down. A copy of the view yields independent, mutable CPU storage. CPU-only and serialized subscribers keep their previous behavior.
+
+A CPU PointCloud2 publisher may opt into the standard borrow/fill/publish API with `AGNOCAST_RMW_HOST_LOAN=1` and ROS loans enabled. On publication, metadata is rebuilt in the writer pool and an existing payload is moved only when its vector allocation belongs to the writer's shared mapping. Other CPU allocations are copied under the loan. Abandoned loans destroy the original ROS message. These experiments exercised same-thread borrowing and publication, with cross-thread final release on the reader.
+
+The two-process contract covered both ordinary publication and borrowed publication. It compared payload addresses at the two endpoints, retained a cloud beyond depth-four history eviction and subscription teardown, shut down ROS, then released the view on another thread. The same publisher served a CPU-only typed reader and a serialized reader. The borrowed arm abandoned one loan, published eight clouds and detected exactly one intentionally private vector requiring a copy. The standalone cloud codec and regression suites passed.
+
+### Two-edge crop at 10 Hz
+
+Four position-balanced rounds on the laptop. All standalone readers used the ordinary ROS executor and explicit typed subscriptions. The copy arm accepted CPU storage, and the view arms requested the retained view. The loan arm borrowed on both edges after the first frame; each publisher reported 59 loans and zero private payload copies in every round. Pool the final 50 frames of each launch for 200 timed frames per arm. All 960 frames passed. CPU and peak RSS are launch medians. Minimum host MemAvailable was 12927 MiB in the timed runs.
+
+| Transport | Median ms | p95 ms | Child CPU s | Peak child RSS MiB |
+|---|---:|---:|---:|---:|
+| Native Agnocast | 0.357 | 0.595 | 0.557 | 138.6 |
+| Standalone, CPU copies | 0.913 | 1.153 | 0.737 | 134.1 |
+| Standalone, retained views | 0.479 | 0.661 | 0.713 | 134.8 |
+| Standalone, publisher loans and retained views | 0.442 | 0.881 | 0.702 | 138.0 |
+
+Views brought standalone/native to 1.34× median and 1.11× p95. Adding publisher loans changed those to 1.24× and 1.48×. Median improved and p95 increased against views alone in each of the four rounds. The results establish the tradeoff for this fixture; attributing the tail to allocation, scheduling or another publishing stage requires timing that stage. [All crop frames](crop-ownership.csv) and [resource measurements](crop-ownership-resources.csv).
+
+From the provisioned worktree use the same colcon overlays and memory guards as the CPU copy baseline. Rebuild the RMW, verify ownership in the stripped distribution, then run the comparisons sequentially.
+
+```bash
+export LYRICAL_ROOT="$(cat build/agnocast-lyrical/universe-root)"
+experiments/buffer/run-lyrical.sh bash experiments/rmw-agnocast/standalone/build-poll.sh
+export BUFFER_RUNTIME_ONLY=1
+experiments/buffer/run-lyrical.sh bwrap --ro-bind / / --dev-bind /dev /dev --bind /ws /ws --bind /tmp /tmp --ro-bind /ws/build/standalone/distro /opt/ros/lyrical --chdir /ws timeout -k 3 65 bash experiments/rmw-agnocast/standalone/run-universe.sh --ownership
+bash experiments/rmw-agnocast/standalone/bench-crop.sh build/standalone/fresh-ownership-crop --ownership
+bash experiments/rmw-agnocast/standalone/bench-universe.sh build/standalone/fresh-ownership-lidar --ownership
+```
+
+### Three-LiDAR synchronizer ownership
+
+Only the synchronizer opts in. Its three cloud subscriptions request retained input views. The loan arm also reserves its output payload in shared storage and borrows its output message for publication. Source, crops and sink retain the ordinary standalone copy path. Each standalone launch used a stock ROS executor. Each view launch verified 60 views and zero input copies, and each loan launch confirmed 24 published loans and zero private payload copies. Two opposite-order rounds verified all 288 output clouds and associated metadata. Four warmup groups per launch were excluded, leaving 20 timed complete groups and 20 partial groups per transport. The 40 ms synchronization timeout dominates partial output ages.
+
+| Transport | Complete median / p95 ms | Partial median / p95 ms |
+|---|---:|---:|
+| Native Agnocast | 2.437 / 3.461 | 41.737 / 42.429 |
+| Standalone, CPU copies | 6.331 / 7.645 | 41.618 / 42.255 |
+| Standalone, synchronizer views | 5.596 / 6.878 | 41.679 / 42.100 |
+| Standalone, synchronizer views and output loans | 6.254 / 7.883 | 42.073 / 42.397 |
+| Cyclone DDS | 2.905 / 3.351 | 42.032 / 42.388 |
+| Zenoh | 2.921 / 3.160 | 42.044 / 44.806 |
+
+Minimum host MemAvailable across launches was 12573 MiB. [All three-LiDAR samples](lidar-ownership.csv).

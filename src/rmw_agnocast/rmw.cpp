@@ -1,6 +1,7 @@
 #include "filter.hpp"
 #include "graph.hpp"
 #include "host_cloud.hpp"
+#include "host_cloud_view.hpp"
 
 #include <agnocast/agnocast_executor.hpp>
 #include <agnocast/node/agnocast_node.hpp>
@@ -18,6 +19,7 @@
 
 #include <cstdio>
 #include <deque>
+#include <fstream>
 #include <map>
 #include <thread>
 
@@ -345,9 +347,35 @@ struct Writer : Endpoint
   std::mutex mutex;
   std::map<void *, agnocast::ipc_shared_ptr<void>> borrowed;
 
+  bool cloud_loans{};
+  size_t published_loans{}, private_copies{};
+  uintptr_t pool_begin = 0, pool_end = 0;
+  // Linux maps this writer's native loan and its shared vector storage in one VMA.
+  bool owns_payload(const std::vector<uint8_t> & bytes, const void * loan)
+  {
+    if (!pool_end) {
+      std::ifstream maps("/proc/self/maps");
+      for (std::string line; std::getline(maps, line);) {
+        unsigned long begin, end;
+        char mode[5];
+        if (
+          std::sscanf(line.c_str(), "%lx-%lx %4s", &begin, &end, mode) == 3 &&
+          std::string_view(mode) == "rw-s" && begin <= reinterpret_cast<uintptr_t>(loan) &&
+          reinterpret_cast<uintptr_t>(loan) < end) {
+          pool_begin = begin;
+          pool_end = end;
+          break;
+        }
+      }
+    }
+    if (bytes.empty()) return !bytes.capacity();
+    const auto ptr = reinterpret_cast<uintptr_t>(bytes.data());
+    return pool_begin <= ptr && ptr < pool_end && bytes.capacity() <= pool_end - ptr;
+  }
   auto borrow()
   {
-    auto loan = native.borrow_loaned_message(members->size_of_ + sizeof(SampleHeader));
+    auto loan =
+      native.borrow_loaned_message(std::max(members->size_of_, wire_size()) + sizeof(SampleHeader));
     try {
       members->init_function(loan.get(), rosidl_runtime_cpp::MessageInitialization::ALL);
     } catch (...) {
@@ -373,7 +401,9 @@ struct Writer : Endpoint
       throw std::runtime_error("standalone cloud transport currently requires CPU data");
     auto loan = native.borrow_loaned_message(wire_size() + sizeof(SampleHeader));
     try {
-      new (loan.get()) HostCloud(cloud);
+      auto wire = new (loan.get()) HostCloud(cloud);
+      if (const char * path = std::getenv("AGNOCAST_VIEW_ADDRESS_FILE"))
+        std::ofstream(path) << reinterpret_cast<uintptr_t>(wire->bytes.data());
     } catch (...) {
       native.cancel_message(std::move(loan), [](void * p) { ::operator delete(p); });
       throw;
@@ -392,7 +422,10 @@ struct Writer : Endpoint
   }
   void cancel(agnocast::ipc_shared_ptr<void> && loan)
   {
-    native.cancel_message(std::move(loan), [this](void * p) { destroy(p); });
+    native.cancel_message(std::move(loan), [this](void * p) {
+      members->fini_function(p);
+      ::operator delete(p);
+    });
   }
   void send(agnocast::ipc_shared_ptr<void> && loan)
   {
@@ -413,6 +446,10 @@ struct Writer : Endpoint
   }
   ~Writer()
   {
+    if (published_loans)
+      std::fprintf(
+        stderr, "host-cloud publisher loans=%zu private_copies=%zu\n", published_loans,
+        private_copies);
     for (auto & entry : borrowed) cancel(std::move(entry.second));
   }
   Writer(
@@ -430,7 +467,8 @@ struct Writer : Endpoint
       throw std::runtime_error("native publisher ID unavailable");
     gid.implementation_identifier = id;
     if (!rpc) lease.announce(owner, 'P', topic, type, ts->get_type_hash_func(ts), &qos, &gid);
-    handle = {id, this, topic.c_str(), options, !library && typed_wire()};
+    cloud_loans = host_cloud && !library && std::getenv("AGNOCAST_RMW_HOST_LOAN");
+    handle = {id, this, topic.c_str(), options, (!library && typed_wire()) || cloud_loans};
   }
 };
 class PollSubscription : public agnocast::Subscription<void>
@@ -477,6 +515,13 @@ struct Reader : Endpoint
   std::map<const void *, Loan> held;
   PollExecutor executor;
   bool direct{};
+  bool host_view{};
+  struct ViewOwner
+  {
+    std::shared_ptr<agnocast::Node> node;
+    decltype(routes) registrations;
+    Loan sample;  // Release before unregistering the native subscription.
+  };
   std::mutex acquire_mutex;
   std::thread thread;
   Reader(
@@ -485,6 +530,11 @@ struct Reader : Endpoint
   : Endpoint(owner, ts, name, q, rpc), context(state(owner->context))
   {
     configure_deadline(false);
+    const std::string backends =
+      options.acceptable_buffer_backends ? options.acceptable_buffer_backends : "";
+    host_view = host_cloud && !library && std::getenv("AGNOCAST_RMW_HOST_VIEW") &&
+                (backends == "any" ||
+                 ("," + backends + ",").find(",agnocast_host_view,") != std::string::npos);
     if (
       !typed_wire() && options.content_filter_options &&
       options.content_filter_options->filter_expression &&
@@ -715,7 +765,14 @@ static rmw_ret_t take_locked(
       auto & cloud = r.library ? temporary : *static_cast<Cloud *>(msg);
       auto & wire = *static_cast<const HostCloud *>(sample.get());
       wire.restore_metadata(cloud);
-      cloud.data = wire.bytes;
+      if (r.host_view) {
+        auto owner =
+          std::make_shared<Reader::ViewOwner>(Reader::ViewOwner{r.node, r.routes, sample});
+        std::shared_ptr<const std::vector<uint8_t>> bytes(owner, &wire.bytes);
+        cloud.data =
+          rosidl::Buffer<uint8_t>(std::make_unique<rmw_agnocast::HostCloudView>(std::move(bytes)));
+      } else
+        cloud.data = wire.bytes;
       if (r.library) {
         rclcpp::SerializedMessage scratch;
         auto & bytes = scratch.get_rcl_serialized_message();
@@ -860,7 +917,7 @@ rmw_ret_t rmw_borrow_loaned_message(
   if (!p || p->implementation_identifier != standalone::id || !msg || *msg)
     return RMW_RET_INVALID_ARGUMENT;
   auto & w = *static_cast<Writer *>(p->data);
-  if (w.library || !w.typed_wire()) return RMW_RET_UNSUPPORTED;
+  if (!p->can_loan_messages) return RMW_RET_UNSUPPORTED;
   std::lock_guard lock(w.mutex);
   try {
     auto loan = w.borrow();
@@ -885,6 +942,23 @@ static rmw_ret_t finish_loan(const rmw_publisher_t * p, void * msg, bool publish
   std::lock_guard lock(w.mutex);
   auto it = w.borrowed.find(msg);
   if (it == w.borrowed.end()) return RMW_RET_INVALID_ARGUMENT;
+  if (publish && w.cloud_loans) {
+    auto cloud = static_cast<Cloud *>(msg);
+    try {
+      if (cloud->data.get_backend_type() != "cpu")
+        throw std::runtime_error("publisher loan requires CPU cloud");
+      const bool shared = w.owns_payload(cloud->data, msg);
+      HostCloud wire = shared ? HostCloud(std::move(*cloud)) : HostCloud(*cloud);
+      static_assert(std::is_nothrow_move_constructible_v<HostCloud>);
+      std::destroy_at(cloud);
+      new (msg) HostCloud(std::move(wire));
+      if (!shared) ++w.private_copies;
+      ++w.published_loans;
+    } catch (const std::exception & e) {
+      RMW_SET_ERROR_MSG(e.what());
+      return RMW_RET_ERROR;
+    }
+  }
   if (publish)
     w.send(std::move(it->second));
   else

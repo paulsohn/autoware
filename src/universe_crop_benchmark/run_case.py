@@ -49,12 +49,12 @@ if args.bridge and not args.payload_scope:
 if args.payload_scope:
     args.host_loan = True
 if args.host_loan:
-    if args.transport != "fixed":
+    if args.transport not in ("fixed", "standalone"):
         parser.error("--host-loan uses the fixed wait control")
     args.host_view = True
 if args.host_view:
     args.host_cloud = True
-if args.host_cloud and args.transport not in ("mixed", "fixed"):
+if args.host_cloud and args.transport not in ("mixed", "fixed", "standalone"):
     parser.error("--host-cloud requires a mixed or fixed RMW reader")
 if args.ros_cie and args.transport in ("mixed", "fixed"):
     parser.error("mixed and fixed use the standard single-threaded executor")
@@ -90,7 +90,7 @@ config = (Path(__file__).resolve().parents[1] / "universe/autoware_universe/sens
 for key in ("BENCH_PAYLOAD_SCOPE", "AGNOCAST_RMW_HOST_LOAN", "BENCH_TYPED_INPUT", "AGNOCAST_RMW_HOST_VIEW", "AGNOCAST_VIEW_ADDRESS_FILE", "AGNOCAST_RMW_HOST_CLOUD", "AGNOCAST_RMW_DIRECT_WAIT", "AGNOCAST_RMW_PROBE_NATIVE_ONLY", "AGNOCAST_FIXED_PROBE"):
     env.pop(key, None)
 if args.host_cloud:
-    env.pop("AGNOCAST_RMW_BUFFER_CDR")
+    env.pop("AGNOCAST_RMW_BUFFER_CDR", None)
     env["AGNOCAST_RMW_HOST_CLOUD"] = "1"
 if args.transport in ("mixed", "fixed"):
     env["AGNOCAST_RMW_DIRECT_WAIT"] = "1"
@@ -156,6 +156,8 @@ with tempfile.TemporaryDirectory() as tmp:
                 raise RuntimeError(f"{label}: unexpected scheduler utilization minimum")
 
     logs = {role: tempfile.TemporaryFile(mode="w+") for role in ("filter", "sub")} if args.transport == "fixed" else {}
+    if args.host_loan and args.transport == "standalone":
+        logs["filter"] = tempfile.TemporaryFile(mode="w+")
     if args.host_loan or args.source_buffer:
         logs["pub"] = tempfile.TemporaryFile(mode="w+")
     if args.branched and args.transport == "fixed":
@@ -230,7 +232,7 @@ with tempfile.TemporaryDirectory() as tmp:
             if args.source_buffer and role == "pub":
                 if not re.search(r"^host-cloud materializations=60 extra_host_copies=\d+$", output, re.MULTILINE):
                     raise RuntimeError("missing source materializations")
-            if role != "pub":
+            if role != "pub" and args.transport == "fixed":
                 summaries[role] = matches
     for role, counts in loan_counts.items():
         expected = "60" if args.payload_scope else "59"

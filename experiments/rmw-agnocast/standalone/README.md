@@ -78,7 +78,7 @@ always return unsupported. Cyclone 4.1.5 does the same for all five.
 | Subscription allocation | Fixed-size generated C++ types support allocation init/fini. Typed single and batch takes reuse a field-copy plan. Variable-size fields and C-layout conversion are outside this path. |
 | Deferred by reference | Publisher allocation init/fini (two), DynamicData take with/without info (two), and dynamic serialization-support initialization (one). Generated typesupport CDR works independently of DynamicData. The vendor DynamicData provider is outside this experiment. |
 | Remaining differences from Cyclone | Reliable wait-for-all-acked needs per-reader delivery acknowledgement. Kernel publish completion exposes no such receipt. Best-effort wait completes immediately. Publisher liveliness-lost still requires finite-lease tracking. Transport message-lost needs loss accounting. Native queue replacement at KeepLast depth is intentional. |
-| Other open work | Retained cloud views, other Buffer layouts, cross-host gateway, full Lyrical conformance and Autoware load/latency qualification of this revision. |
+| Other open work | Other Buffer layouts, cross-host gateway, full Lyrical conformance and Autoware load/latency qualification of this revision. |
 
 The standalone check exercises concurrent default-option clients, executor events,
 serialized pub/sub, graph inspection and filters alongside the prior topic and

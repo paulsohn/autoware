@@ -37,6 +37,12 @@ def graph(context):
                    LD_PRELOAD=str(Path(get_package_prefix("agnocastlib")) / "lib/libagnocast_heaphook.so"),
                    AGNOCAST_BRIDGE_MODE="OFF", AGNOCAST_NO_DISCOVERY_AGENT="1")
     sync_env = dict(env, SYNC_BYTE_INPUT="1")
+    ownership = os.environ.get("SYNC_STANDALONE_OWNERSHIP")
+    if ownership in ("view", "loan"):
+        sync_env.update(SYNC_VIEW_INPUT="1", AGNOCAST_RMW_HOST_VIEW="1")
+        if ownership == "loan":
+            sync_env.update(SYNC_LOAN_OUTPUT="1", SYNC_SHARED_OUTPUT="1",
+                            AGNOCAST_RMW_HOST_LOAN="1", ROS_DISABLE_LOANED_MESSAGES="0")
     if use_agnocast and mode != "plain":
         sync_env.update(SYNC_VIEW_INPUT="1", AGNOCAST_RMW_HOST_VIEW="1")
 
