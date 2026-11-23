@@ -1,6 +1,6 @@
 # Reproduce the topic-selected rmw_agnocast prototype
 
-**Prototype status.** The intended RMW uses shared memory by default for local ROS topics and runs independently of rmw_cyclonedds_cpp. The implementation exercised below still requires Cyclone and explicit native topic selection. These commands reproduce the earlier experiment. A migration guide for the standalone RMW depends on passing the [standalone milestone](BRIDGE_PLAN.md#standalone-rmw-milestone).
+**Historical walkthrough.** Use commit `1a7d9b42` to reproduce the mixed-RMW experiments below. The current [standalone transport milestone](standalone/README.md) has a different build and no Cyclone delegation.
 
 Start with the source of an **ordinary ROS 2 Lyrical C++ project that uses Cyclone DDS on Linux**. Assume a clean workspace and an application written against rclcpp, with no previous Agnocast or Autoware wrapper integration. Pick one publisher and one subscriber on the same host. You will build the pilot alongside your project, run the same two nodes with one topic selected for shared memory, and check that the subscriber took native samples. Add a bridge only if an ordinary DDS participant also needs that topic.
 
@@ -18,6 +18,7 @@ Open a **fresh build shell** with your Lyrical distribution underlay. Keep the p
 source /opt/ros/lyrical/setup.bash
 git clone --branch experiment/rosidl-buffer-clean --single-branch https://github.com/paulsohn/autoware.git "$HOME/rmw-agnocast-pilot"
 cd "$HOME/rmw-agnocast-pilot"
+git switch --detach 1a7d9b42
 git rev-parse --short HEAD
 cat src/core/agnocast/agnocast_kmod/version.txt
 ```

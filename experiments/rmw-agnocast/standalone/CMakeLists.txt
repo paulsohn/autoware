@@ -1,0 +1,6 @@
+cmake_minimum_required(VERSION 3.16)
+project(standalone_topic_check)
+find_package(rclcpp REQUIRED)
+find_package(std_msgs REQUIRED)
+add_executable(topic_check topic_check.cpp)
+target_link_libraries(topic_check PRIVATE rclcpp::rclcpp std_msgs::std_msgs)

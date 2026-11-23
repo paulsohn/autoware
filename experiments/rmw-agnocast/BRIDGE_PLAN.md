@@ -8,6 +8,8 @@ The measured prototype links the Cyclone RMW, inherits unimplemented entry point
 
 First demonstrate two ordinary rclcpp processes exchanging a standard message on a previously unspecified topic in a Lyrical userspace lacking the Cyclone RMW. Check dependency resolution, endpoint discovery, blocking wakeup, payload receipt, shutdown, and an actionable error when native transport is unavailable. Then qualify other message layouts, QoS, graph tools, service/client support and a gateway with explicitly separate native and DDS endpoints.
 
+The [first standalone implementation and isolated checks](standalone/README.md) now exercise ordinary and loaned C++ topic delivery. The remaining default node facilities and an explicit independent network bridge are open.
+
 ## Prototype deployment contract
 
 Keep the pilot on Lyrical and colcon. On each host that owns native topics, a gateway shares the applications' /dev/agnocast, kernel ABI, heap hook and versioned route layout. Cross the network with ordinary Cyclone DDS samples. A laptop or remote recorder needs DDS connectivity, compatible QoS and the ROS interfaces required by its tools. It should run stock rosbag2 with no Agnocast device, allocator shim or CLI extension. An ordinary DDS publisher can feed an explicitly permitted native input in the reverse direction. Two native islands can use an export on the source host and an import on the destination host. Acknowledge that topology only after verifying delivery across distinct transport domains at the device level on two machines. Services, actions, GPU-native networking and transparent mixed-vendor interoperability remain separate qualifications.

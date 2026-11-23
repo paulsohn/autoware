@@ -570,7 +570,11 @@ struct initialize_agnocast_result initialize_agnocast(
   }
 
   bool should_spawn_bridge = false;
-  auto bridge_mode = get_bridge_mode();
+  // The standalone RMW owns its graph. An ordinary native endpoint must never
+  // start the ROS bridge manager or its discovery agent as a side effect.
+  const char * rmw = std::getenv("RMW_IMPLEMENTATION");
+  const bool standalone_rmw = rmw && std::strcmp(rmw, "rmw_agnocast") == 0;
+  auto bridge_mode = standalone_rmw ? BridgeMode::Off : get_bridge_mode();
 
   // Create a shm_unlink daemon process if it doesn't exist in its ipc namespace.
   // ret_unlink_daemon_exist is only an early-out hint: poll_for_unlink() makes the singleton
@@ -590,7 +594,7 @@ struct initialize_agnocast_result initialize_agnocast(
   // the scope empties. A missing agent is not fatal because the data plane does not depend on
   // the observer; a fork() failure still is, as for the other daemons spawned here.
   // ret_discovery_agent_exist is only an early-out hint.
-  if (!add_process_args.ret_discovery_agent_exist && !discovery_agent_auto_fork_disabled()) {
+  if (!standalone_rmw && !add_process_args.ret_discovery_agent_exist && !discovery_agent_auto_fork_disabled()) {
     const std::string agent_path = resolve_discovery_agent_path();
     if (agent_path.empty()) {
       RCLCPP_WARN(

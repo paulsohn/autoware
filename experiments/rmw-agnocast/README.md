@@ -1,6 +1,8 @@
 # Whole-message loans with Agnocast storage
 
-The [prototype tutorial](TUTORIAL.md) reproduces the Cyclone-dependent experiments. The [standalone RMW milestone](BRIDGE_PLAN.md#standalone-rmw-milestone) defines default shared-memory delivery and the dependency boundary for the intended implementation.
+For current build instructions and verified behavior, see the [standalone same-host RMW](standalone/README.md).
+
+The [prototype tutorial](TUTORIAL.md) reproduces the historical Cyclone-dependent experiments at `1a7d9b42`. The [standalone RMW milestone](BRIDGE_PLAN.md#standalone-rmw-milestone) defines default shared-memory delivery and the dependency boundary for the intended implementation.
 
 The current pilot decision and latency milestone are recorded in
 [Pilot bridge choice and interpretation of performance](#pilot-bridge-choice-and-interpretation-of-performance).

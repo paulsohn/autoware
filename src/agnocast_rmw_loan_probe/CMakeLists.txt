@@ -15,12 +15,8 @@ install(TARGETS loadable_probe DESTINATION lib/${PROJECT_NAME})
 add_executable(type_fallback_peer type_fallback_peer.cpp)
 target_link_libraries(type_fallback_peer PRIVATE ${geometry_msgs_TARGETS} ${sensor_msgs_TARGETS} ${nav_msgs_TARGETS} rclcpp::rclcpp)
 install(TARGETS type_fallback_peer DESTINATION lib/${PROJECT_NAME})
-add_executable(route_bridge route_bridge.cpp)
-target_link_libraries(route_bridge ${sensor_msgs_TARGETS} ${nav_msgs_TARGETS} rclcpp::rclcpp)
-install(TARGETS route_bridge DESTINATION lib/${PROJECT_NAME})
-add_executable(manual_bridge manual_bridge.cpp)
-target_link_libraries(manual_bridge ${agnocastlib_TARGETS} rclcpp::rclcpp)
-install(TARGETS manual_bridge DESTINATION lib/${PROJECT_NAME})
+# The historical manual_bridge and route_bridge used native and DDS endpoints
+# in one mixed RMW. Neither is a standalone network bridge.
 add_executable(path_benchmark path_benchmark.cpp)
 target_link_libraries(path_benchmark ${agnocastlib_TARGETS} ${nav_msgs_TARGETS} rclcpp::rclcpp rmw::rmw)
 target_link_options(path_benchmark PRIVATE

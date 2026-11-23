@@ -3890,3 +3890,34 @@ package availability for a native Resolute host remain unverified.
 ### Correct the RMW architecture target
 
 The intended local RMW uses shared memory by default and has no dependency on rmw_cyclonedds_cpp, including for fallback. Source inspection confirmed that the prototype has an explicit ELF dependency, delegated endpoint creation and waits, and selected native payload routes. Relabeled the walkthrough as prototype evidence and recorded an isolated first acceptance test in the bridge plan. Documentation-only correction; no runtime validation was performed.
+
+## 2026-11-23 — Detach the host-local RMW from Cyclone DDS
+
+The previous pilot delegated unselected topics and RMW operations to Cyclone.
+Keep 1a7d9b42 as the reference for its Autoware, bridge and timing results.
+The replacement owns its context, native topic endpoints, matching and blocking
+waits. It uses Agnocast by default for supported topics. Other operations return
+an explicit failure. The two old gateway targets assumed a mixed local RMW and
+were retired from the build. A separate two-sided bridge remains to be built.
+
+Follow the build and two-process commands in
+[the standalone experiment](../rmw-agnocast/standalone/README.md).
+The scratch Lyrical prefix excluded Cyclone DDS and its RMW package files.
+Generic rcl configuration still selected the distro's Cyclone default on the
+first configure. Set the CMake RMW_IMPLEMENTATION cache to the installed Zenoh
+provider during bootstrap. The runtime selected rmw_agnocast. The ELF dependency
+check found neither provider. Userspace also initially attempted to start the
+legacy bridge manager. Suppressing its automatic helpers in standalone mode
+allowed both native processes to run with the bridge environment unset.
+The installed kernel module and packaged heaphook were reused.
+
+On the laptop the sequential guarded build of agnocastlib, rmw_agnocast and
+the probe completed with at least 14406 MiB host memory available. On separate
+fresh topics both ordinary and borrowed publication delivered the expected
+8192-byte string. Starting without the hook produced an initialization error.
+In domain 84, a stock Cyclone echo timed out during successful native delivery.
+In reverse, a stock Cyclone echo received the stock writer's control string
+while the native reader observed zero callbacks and zero publisher matches
+over three seconds on the same topic. The local topic test disables rosout,
+parameters and the type-description service. Default node startup, graph and
+serialized operations, bridge delivery and Autoware performance remain open.
