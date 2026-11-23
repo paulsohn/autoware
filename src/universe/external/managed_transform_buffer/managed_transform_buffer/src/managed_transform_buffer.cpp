@@ -78,6 +78,7 @@ std::optional<Eigen::Affine3f> ManagedTransformBuffer::getTransform<Eigen::Affin
   Eigen::Quaternionf rotation(
     static_cast<float>(tf->transform.rotation.w), static_cast<float>(tf->transform.rotation.x),
     static_cast<float>(tf->transform.rotation.y), static_cast<float>(tf->transform.rotation.z));
+  rotation.normalize();
   Eigen::Affine3f eigen_transform = Eigen::Translation3f(translation) * rotation;
 
   return std::make_optional<Eigen::Affine3f>(eigen_transform);
@@ -98,6 +99,7 @@ std::optional<Eigen::Affine3d> ManagedTransformBuffer::getTransform<Eigen::Affin
   Eigen::Quaterniond rotation(
     tf->transform.rotation.w, tf->transform.rotation.x, tf->transform.rotation.y,
     tf->transform.rotation.z);
+  rotation.normalize();
   Eigen::Affine3d eigen_transform = Eigen::Translation3d(translation) * rotation;
 
   return std::make_optional<Eigen::Affine3d>(eigen_transform);
@@ -120,6 +122,7 @@ std::optional<Eigen::Matrix4f> ManagedTransformBuffer::getTransform<Eigen::Matri
   Eigen::Quaternionf rotation(
     static_cast<float>(tf->transform.rotation.w), static_cast<float>(tf->transform.rotation.x),
     static_cast<float>(tf->transform.rotation.y), static_cast<float>(tf->transform.rotation.z));
+  rotation.normalize();
   Eigen::Matrix3f rotation_matrix = rotation.toRotationMatrix();
   Eigen::Matrix4f eigen_transform = Eigen::Matrix4f::Identity();
   static_assert(!Eigen::Matrix4f::IsRowMajor, "Matrices should be column major.");
@@ -144,6 +147,7 @@ std::optional<Eigen::Matrix4d> ManagedTransformBuffer::getTransform<Eigen::Matri
   Eigen::Quaterniond rotation(
     tf->transform.rotation.w, tf->transform.rotation.x, tf->transform.rotation.y,
     tf->transform.rotation.z);
+  rotation.normalize();
   Eigen::Matrix3d rotation_matrix = rotation.toRotationMatrix();
   Eigen::Matrix4d eigen_transform = Eigen::Matrix4d::Identity();
   static_assert(!Eigen::Matrix4d::IsRowMajor, "Matrices should be column major.");

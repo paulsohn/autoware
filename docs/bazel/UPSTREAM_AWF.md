@@ -1976,3 +1976,21 @@ vector when clearing leaves. Six compiled-library cases pass on LLVM/libc++
 21.1.8 with the selected PCL SDK; the two regressions fail before the fix. No
 algorithm/type/API change or sensor-accuracy claim is made.
 [Reproduction and gate](JOURNAL.md#2026-11-23-phase-94--pcl-voxel-extensions).
+
+## Managed TF Eigen conversions must normalize accepted quaternions
+
+- [ ] Associate with a matching upstream correction. Checked 2026-11-23:
+  [current implementation](https://github.com/autowarefoundation/managed_transform_buffer/blob/main/managed_transform_buffer/src/managed_transform_buffer.cpp)
+  constructs four Eigen quaternions without normalization; a scoped quaternion
+  PR search finds no match.
+
+Package: managed_transform_buffer. The optimized static cache can return a
+rounded quaternion accepted within tf2's normalization tolerance. Matrix/affine
+conversion then assumes a unit quaternion and produces a non-rigid rotation,
+unlike tf2's conversion. Normalize each float/double Eigen path. A public API
+regression fails on all four forms before the fix (matrix error about 0.022509).
+All 12 original buffer cases and both external cases pass with Cyclone/RCLCPP
+and Agnocast-only behavior; all 25 unchanged preprocessor distortion cases pass,
+including seven that failed before normalization. No tolerance changes or skips.
+This is transform correctness, not a Lyrical-only API change.
+[Reproduction and gates](JOURNAL.md#2026-11-23-phase-94--managed-transform-buffer).

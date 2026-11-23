@@ -20299,8 +20299,8 @@ above. The separately committed source correction is 3869e259.
 Purpose: supply the local transform-cache prerequisite for point-cloud
 preprocessing. Inspect the original CMake, manifest, both headers/sources,
 12-case test suite and optional example. Acceptance: the complete original
-suite, library/index/example and an external static-transform/inverse lookup
-case in both standard RCLCPP and Agnocast-only contexts. The complete shared-owner gate passes.
+suite, library/index/example and two external cases: static-transform/inverse lookup
+and rounded-quaternion rigidity in both standard RCLCPP and Agnocast-only contexts. The complete shared-owner gate passes.
 
 Pattern: expose the original compiled library with Eigen, PCL and TF providers;
 preserve its shared-library owner so the process-wide provider singleton is
@@ -20342,6 +20342,33 @@ suite intentionally keeps its RCLCPP context. Targeted clang-format and diff
 checks pass. This qualifies the local TF provider, not a sensor pipeline or
 cross-host TF deployment. No Fast DDS/GPU/expensive product gate is required.
 Next: the preprocessor's CGAL provider and complete package gate.
+
+Consumer validation: the preprocessor's unchanged distortion suite exposes seven
+failures with a rounded IMU quaternion (x/y/z/w = 0.278/0.717/0.441/0.453). TF
+accepts it within its normalization tolerance, but the optimized static cache
+returns the raw message. All four Eigen conversions assume unit quaternions and
+produce a non-orthonormal rotation; their matrix error is about 0.022509. Normalize
+the quaternion in each float/double matrix/affine conversion, matching the rigid
+rotation semantics of tf2. Do not loosen the original distortion tolerances.
+The added public API regression checks all four return types and translation.
+Current managed_transform_buffer main retains the omission on 2026-11-23;
+a scoped quaternion PR search finds no matching change.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  @managed_transform_buffer//... //bazel/tests:managed_transform_backend_test \
+  @autoware_pointcloud_preprocessor//:test_distortion_corrector_node
+```
+
+After the four-line normalization fix: all 12 original buffer cases, both added
+backend/conversion cases and all 25 unchanged distortion cases pass, zero failures/
+errors/skips; full gate 28.1 s. Enabled buffer validation uses the earlier preload
+command: all 12 original and both external cases pass, zero failures/errors/skips,
+in 16.6 s (original suite 6.7 s, external cases 0.5 s). The consumer command
+requires the preprocessor declarations described in its entry; the standalone
+buffer gate is the earlier command. The complete preprocessor gate is separate.
 
 ## 2026-11-23: Phase 9.4 — CGAL polygon provider
 
