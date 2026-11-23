@@ -225,7 +225,7 @@ census above is retained. Complete package-contract reconciliation remains 9.20.
 
 Reuse 9.4 and existing map/GridMap providers. Order shape estimation before clustering/detection, and validation before raindrop filtering. Inventory shape estimation's conditional CUDA/TensorRT path; CPU tests alone do not qualify a required learned-shape configuration. Check geometry, frames, cluster/shape outputs, maps and all existing datasets.
 
-- [ ] [autoware_cluster_merger](../../src/universe/autoware_universe/perception/autoware_cluster_merger/package.xml)
+- [x] [autoware_cluster_merger](../../src/universe/autoware_universe/perception/autoware_cluster_merger/package.xml)
 - [ ] [autoware_compare_map_segmentation](../../src/universe/autoware_universe/perception/autoware_compare_map_segmentation/package.xml)
 - [ ] [autoware_detected_object_validation](../../src/universe/autoware_universe/perception/autoware_detected_object_validation/package.xml)
 - [ ] [autoware_elevation_map_loader](../../src/universe/autoware_universe/perception/autoware_elevation_map_loader/package.xml)

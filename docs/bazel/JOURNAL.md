@@ -20674,4 +20674,4 @@ errors/skips; final gate 19.0 s, original suite 2.3 s and external cases 0.5 s.
 Targeted clang-format and diff checks pass. This qualifies synchronized cluster
 merging with the selected middleware; no Fast DDS, Agnocast transport, GPU or
 expensive product check is required for this RCLCPP-only module. Source fixes
-are committed separately from build definitions. Next: ground/occupancy filters.
+are committed separately from build definitions (5b7ef54a). Next: ground/occupancy filters.

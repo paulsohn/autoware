@@ -2281,3 +2281,16 @@ cc_test(
     deps = ["@autoware_imu_corrector", "@googletest//:gtest"],
     tags = ["no-sandbox", "no-remote"],
 )
+
+cc_test(
+    name = "cluster_merger_frames_test",
+    srcs = ["autoware_cluster_merger/test_frames.cpp"],
+    dynamic_deps = ["@autoware_cluster_merger//:runtime_dynamic_deps"],
+    deps = [
+        "@autoware_cluster_merger//:autoware_cluster_merger_library",
+        "@sensor_msgs//:cc",
+        "@tf2_ros//:tf2_ros_library",
+        "@googletest//:gtest",
+    ],
+    tags = ["no-sandbox", "no-remote"],
+)

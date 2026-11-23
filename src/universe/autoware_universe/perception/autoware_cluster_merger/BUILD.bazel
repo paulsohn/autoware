@@ -1,0 +1,74 @@
+load("@rclcpp_components//:defs.bzl", "rclcpp_components_register_node")
+load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "autoware_cluster_merger_library",
+    srcs = ["src/cluster_merger_node.cpp"],
+    hdrs = ["src/cluster_merger_node.hpp"],
+    includes = ["src"],
+    deps = [
+        "@autoware_object_recognition_utils",
+        "@autoware_utils",
+        "@geometry_msgs//:cc",
+        "@message_filters//:message_filters_library",
+        "@rclcpp//:rclcpp_library",
+        "@rclcpp_components//:rclcpp_components_library",
+        "@tf2//:tf2_library",
+        "@tf2_ros//:tf2_ros_library",
+        "@tier4_perception_msgs//:cc",
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = [
+        "@autoware_object_recognition_utils//:runtime_dynamic_deps",
+        "@autoware_utils//:runtime_dynamic_deps",
+        "@geometry_msgs//:cc_shared",
+        "@message_filters//:message_filters",
+        "@rclcpp_components//:rclcpp_components",
+        "@tf2_ros//:tf2_ros",
+        "@tier4_perception_msgs//:cc_shared",
+    ],
+)
+
+cc_shared_library(
+    name = "autoware_cluster_merger",
+    shared_lib_name = "libautoware_cluster_merger.so",
+    dynamic_deps = [":runtime_dynamic_deps"],
+    deps = [":autoware_cluster_merger_library"],
+)
+
+rclcpp_components_register_node(
+    name = "cluster_merger_node",
+    node_name = "cluster_merger_node",
+    component = ":autoware_cluster_merger",
+    plugin = "autoware::cluster_merger::ClusterMergerNode",
+)
+
+register_ament_files(
+    name = "executables",
+    files = [":cluster_merger_node"],
+    prefix = "lib/autoware_cluster_merger",
+    strip_prefix = "*",
+)
+
+ament_index(
+    package_xml = "package.xml",
+    components = [":cluster_merger_node_record"],
+    data = glob(["config/**", "launch/**"]) + [":executables"],
+    libraries = [":autoware_cluster_merger"],
+)
+
+cc_test(
+    name = "cluster_merger_tests",
+    srcs = ["test/test_cluster_merger.cpp"],
+    data = [":ament_index"],
+    dynamic_deps = [":runtime_dynamic_deps", "@autoware_test_utils//:runtime_dynamic_deps"],
+    deps = [":autoware_cluster_merger_library", "@autoware_test_utils", "@googletest//:gtest_main"],
+    tags = ["no-sandbox", "no-remote"],
+)

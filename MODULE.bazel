@@ -1935,3 +1935,9 @@ local_path_override(
     module_name = "autoware_imu_corrector",
     path = "src/universe/autoware_universe/sensing/autoware_imu_corrector",
 )
+
+bazel_dep(name = "autoware_cluster_merger", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_cluster_merger",
+    path = "src/universe/autoware_universe/perception/autoware_cluster_merger",
+)

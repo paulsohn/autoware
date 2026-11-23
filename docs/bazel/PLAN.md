@@ -2260,6 +2260,25 @@ upstream-aligned Python row comparison and IMU TF directions. No Fast DDS/GPU
 or expensive product rerun is claimed. Definition coverage is now 117/244;
 127 packages remain without definitions. Next: Phase 9.5.
 
+### Phase 9.5: Clustering, shape estimation and map-aware detection (in progress)
+
+The ten package boundaries remain in the coverage ledger. Inspect every original
+CMake/test/resource contract before implementation. Start with the independent
+cluster merger (three original ROS cases), then ground/occupancy filtering and
+the required GridMap/PCL providers for map comparison/elevation. Build shape
+estimation before Euclidean clustering and detection-by-tracker; validate its
+conditional TensorRT implementation as well as the geometric estimator. Integrate
+object validation before its raindrop-filter consumer. Keep package commits and
+journals separate, with sequential builds and Cyclone DDS for routine gates.
+Select added Agnocast-only behavior checks for the newly introduced wrapper nodes.
+No Fast DDS or expensive product gate is automatically required for this group.
+
+Completed module: autoware_cluster_merger — component/executable/index/resources,
+three original ROS cases and two identity/transformed-frame payload cases pass
+with Cyclone/RCLCPP, zero failures/errors/skips. Lyrical and header-frame fixes
+are separate source corrections. The other nine modules remain pending.
+
+
 ### Execution order through complete Universe coverage
 
 The following groups are the initial route through every remaining package.

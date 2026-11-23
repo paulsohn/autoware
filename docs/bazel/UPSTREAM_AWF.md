@@ -2097,6 +2097,7 @@ API for rclcpp major 32+, retaining the older profile branch and identical
 reliable depth-one semantics. All three original ROS cases and both external
 frame/payload cases pass with Cyclone/RCLCPP, zero failures/errors/skips.
 Older distributions are not locally qualified.
+Local source correction: 5b7ef54a.
 [Reproduction](JOURNAL.md#2026-11-23-phase-95--cluster-merger).
 
 ## Cluster merger labels transformed objects with their original frame
@@ -2112,4 +2113,5 @@ which already carries the target frame and original stamp. The external identity
 case passes before the fix; the transformed-frame assertion fails before and
 passes after. The full module gate passes as described above. This is message
 frame correctness, not a Lyrical API change.
+Local source correction: 5b7ef54a.
 [Reproduction](JOURNAL.md#2026-11-23-phase-95--cluster-merger).
