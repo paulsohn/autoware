@@ -1849,3 +1849,9 @@ local_path_override(
     module_name = "autoware_radar_static_pointcloud_filter",
     path = "src/universe/autoware_universe/sensing/autoware_radar_static_pointcloud_filter",
 )
+
+bazel_dep(name = "autoware_radar_objects_adapter", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_radar_objects_adapter",
+    path = "src/universe/autoware_universe/sensing/autoware_radar_objects_adapter",
+)

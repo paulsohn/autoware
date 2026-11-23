@@ -19727,3 +19727,31 @@ work; other unchanged passing module evidence is reused.
 
 Bazel registration completed with the matching package-local MODULE/BUILD, root
 override and behavior inputs. Reuse the complete passing module evidence above.
+## 2026-11-23: Phase 9.1 — Radar objects adapter
+
+Purpose: expose the local sensing-RadarObjects to Autoware detected/tracked
+objects adapter with all 39 original conversion and seven original ROS node
+cases. Reuse the already integrated local autoware_sensing_msgs,
+autoware_perception_msgs and autoware_utils_geometry dependencies; absence of a
+Bazel dependency definition would be integration work, not a reason to replace
+local implementation with a registry release.
+
+Pattern: compile the existing logic/node sources, preserve package-private source
+headers for original tests, compose shared geometry/message SDK dependencies,
+and register the wrapper's AgnocastOnlyCallbackIsolatedExecutor executable with
+its ordinary single-threaded ROS fallback. Index original config/launch files
+and registration resources. The source module contains no root test labels.
+Use the complete original pure/node suites; the ordinary ROS topic suite is
+scoped to Cyclone with ENABLE_AGNOCAST=0 as its CMake contract specifies. This
+is a new consumer, not a communication-layer acceptance milestone.
+
+Gate: @autoware_radar_objects_adapter//... in the sequential configuration above.
+Result: all 39 conversion and seven ROS node cases pass (0.1 s and 3.2 s),
+with zero failures/errors/skips. Component, wrapper executable/plugin and indexed
+resources build with their complete dependency closure. Preserve source behavior
+and every characterization assertion; no implementation or original test change
+is needed. Enabled Agnocast, Fast DDS, full-system and deployment reruns are not
+part of this ordinary new-consumer gate.
+
+Bazel registration completed with the matching package-local MODULE/BUILD, root
+override and behavior inputs. Reuse the complete passing module evidence above.

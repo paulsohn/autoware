@@ -2132,7 +2132,7 @@ identifiers and package-level validation/commit boundaries. Group related
 packages for implementation and sequential builds; do not reopen the completed
 simulator/packaging gate or run expensive targets automatically.
 
-### Phase 9.1: Radar input conversion and filtering (in progress)
+### Phase 9.1: Radar input conversion and filtering (complete, 2026-11-23)
 
 | Module | Complete acceptance |
 | --- | --- |
@@ -2151,8 +2151,14 @@ no communication-layer change or Fast DDS run is scheduled. Build the selected
 components, standalone executables and indexes, and keep new tests under bazel/.
 Document/fix only demonstrated compatibility or implementation failures.
 
-Validated package gates are recorded separately in JOURNAL.md; the group closes
-after all five package registrations and their acceptance evidence are committed.
+All five component/executable/resource-index builds and 55 native cases pass:
+48 original plus seven ROS behavior checks, with zero failures/errors/skips.
+Two redundant test-body ROS initializations are removed. The static filter uses
+current Message Filters headers/QoS and returns the transformed sensor velocity
+before ego compensation; the rotated-frame regression fails before that return
+fix and passes afterward. No GPU, Fast DDS or expensive simulator/deployment
+rerun is part of this group. Further Universe groups follow runnable dependency
+closures; Phase 8 and engine-profile infrastructure remain deferred.
 
 ## Later phases
 
