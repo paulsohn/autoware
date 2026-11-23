@@ -7,6 +7,30 @@ from rclpy.serialization import deserialize_message
 from sensor_msgs.msg import PointCloud2
 
 case = Path(sys.argv[1])
+if (case/"pipeline").is_dir():
+    # Walk both bags in order, keeping at most two serialized clouds in memory.
+    def messages(directory, topic):
+        db = next(directory.glob("*.db3"))
+        with sqlite3.connect(f"file:{db}?mode=ro", uri=True) as conn:
+            for (raw,) in conn.execute("select data from messages join topics on topic_id=topics.id where topics.name=? order by messages.id",(topic,)):
+                msg = deserialize_message(raw,PointCloud2)
+                yield (msg.header.stamp.sec,msg.header.stamp.nanosec),msg
+
+    remote = messages(case/"bag","/manual/cloud")
+    current = next(remote,None)
+    recorded = []
+    local = 0
+    for index,(stamp,msg) in enumerate(messages(case/"pipeline"/"bag","/perception/cloud")):
+        local += 1
+        if current and current[0]==stamp:
+            assert current[1]==msg
+            recorded.append(index)
+            current = next(remote,None)
+    assert current is None and local==600 and recorded[0]==0 and recorded[-1]==599
+    (case/"peer-sequences").write_text(" ".join(map(str,recorded)))
+    print(f"local={local} peer={len(recorded)} first={recorded[0]} last={recorded[-1]}")
+    sys.exit(0)
+
 stamps = {int(s): i for i, s in enumerate((case/"stamps").read_text().split())}
 log = (case/"graph.log").read_text()
 assert len(stamps) == 60 and "verified route pilot groups=60" in log

@@ -10,6 +10,10 @@ if [[ $op == capture-pid ]]; then
   exec "$@"
 fi
 export ROS_DOMAIN_ID=173
+if [[ $op == sustained ]]; then
+  export UNIVERSE_RELEASE_CONTROLS=1
+  exec bwrap --ro-bind / / --dev-bind /dev /dev --bind /ws /ws --bind /tmp /tmp --ro-bind /ws/build/standalone/distro /opt/ros/lyrical --chdir /ws bash experiments/rmw-agnocast/run-sustained.sh standalone "$1"
+fi
 if [[ $op == graph ]]; then
   export SYNC_ROUTE_PILOT=1 SYNC_RECORDER_LIVE=1 SYNC_SHORT_WAIT=1 SYNC_FIXTURE_DIRECTORY="$1"
   export SYNC_STANDALONE_OWNERSHIP=crop-view SYNC_TYPED_CROP_CONTROL=1
@@ -28,7 +32,7 @@ hook=/ws/build/migration-guide/packaged-hook-check/libagnocast_heaphook.so
 if [[ $op == gateway ]]; then
   pidfile=$1
   shift
-  export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp CYCLONEDDS_URI=file:///ws/build/lyrical-peer-ready/host.xml
+  export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp CYCLONEDDS_URI="${GATEWAY_CYCLONE_PROFILE:-file:///ws/build/lyrical-peer-ready/host.xml}"
   exec ros2 run --prefix "bash $0 capture-pid $pidfile" agnocast_cyclone_gateway topic_gateway "$@" --heaphook "$hook"
 fi
 if [[ $op == ingress-reader ]]; then

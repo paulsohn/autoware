@@ -38,7 +38,8 @@ def run_endpoint(args, role):
     cls = get_message(args.type)
     channel = socket.socket(fileno=0)
     rx = role == "source"
-    if rx:
+    exporting = rx and args.direction == "export"
+    if rx and not exporting:
         channel.settimeout(3)
     topic = args.source if rx else args.destination
     reliability = args.input_reliability if rx else args.output_reliability
@@ -56,24 +57,56 @@ def run_endpoint(args, role):
     errors = []
     stopping = threading.Event()
 
-    def forward(data):
+    pending = None
+    changed = threading.Condition()
+    dropped = taken = 0
+
+    def transmit(data):
         nonlocal count, byte_count
-        if not 0 < len(data) <= MAX_BYTES:
-            raise ValueError("serialized message outside gateway frame limit")
         channel.sendall(HEADER.pack(len(data)))
         channel.sendall(data)
         count += 1
         byte_count += len(data)
 
+    def forward(data):
+        nonlocal pending, dropped, taken
+        if not 0 < len(data) <= MAX_BYTES:
+            raise ValueError("serialized message outside gateway frame limit")
+        taken += 1
+        if not exporting:
+            transmit(data)
+            return
+        # Keep the most recent waiting cloud while a DDS write is blocked.
+        with changed:
+            dropped += int(pending is not None)
+            pending = data
+            changed.notify()
+
+    def send_pending():
+        nonlocal pending
+        try:
+            while True:
+                with changed:
+                    changed.wait_for(lambda: stopping.is_set() or pending is not None)
+                    if stopping.is_set():
+                        return
+                    data, pending = pending, None
+                transmit(data)
+                del data
+        except OSError as exc:
+            if not stopping.is_set():
+                errors.append(exc)
+                guard.trigger()
+
     def activate(active):
         nonlocal sub
         if active and sub is None:
             sub = node.create_subscription(cls, topic, forward, qos, raw=True)
-            print(f"source armed topic={topic} taken={count}", flush=True)
+            print(f"source armed topic={topic} taken={taken}", flush=True)
         elif not active and sub is not None:
             node.destroy_subscription(sub)
             sub = None
-            print(f"source idle topic={topic} taken={count}", flush=True)
+            print(f"source idle topic={topic} taken={taken}", flush=True)
 
     def demand():
         if select.select([channel], [], [], 0)[0]:
@@ -127,6 +160,10 @@ def run_endpoint(args, role):
     try:
         lazy = args.direction == "export" and not args.always_on
         if rx:
+            if exporting:
+                guard = node.create_guard_condition(report_error)
+                thread = threading.Thread(target=send_pending)
+                thread.start()
             if lazy:
                 node.create_timer(.05, demand)
             else:
@@ -143,12 +180,16 @@ def run_endpoint(args, role):
     except (KeyboardInterrupt, ExternalShutdownException):
         pass
     finally:
-        stopping.set()
+        with changed:
+            stopping.set()
+            changed.notify()
         channel.shutdown(socket.SHUT_RDWR)
         if thread:
             thread.join()
         channel.close()
         print(f"stats role={role} samples={count} bytes={byte_count} cpu_s={time.process_time()-cpu_start:.6f}", flush=True)
+        if exporting:
+            print(f"export overwritten={dropped}", flush=True)
         node.destroy_node()
         rclpy.try_shutdown()
 
