@@ -3415,3 +3415,14 @@ laptop. Independent OS provisioning, another host and the full Universe graph
 remain outside the evidence. Archive includes build and route summaries,
 library resolution, raw frame timings and pressure samples.
 [Fresh-checkout evidence](../rmw-agnocast/clean-colcon/results/)
+
+### 2026-11-23 — Inter-host bridge and logger design
+
+Inspected the versioned relay, serialized RMW take and publish paths, upstream
+plugin loader and all ros2agnocast CLI registrations. The pilot relay takes
+idle native samples, and serialized publication into the native ingress needs
+a route-specific check. Start with explicit DDS export and recorder lifecycle
+on the laptop, then qualify generic types, stock CLI, network boundaries and
+middleware-owned startup. Physical inter-host qualification awaits a second
+host. Bazel remains deferred. Documentation-only; prior runs supply the
+baseline and no new runtime behavior is claimed. [Design and acceptance tests](../rmw-agnocast/BRIDGE_PLAN.md)
