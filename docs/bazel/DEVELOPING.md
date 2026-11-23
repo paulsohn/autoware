@@ -1705,6 +1705,24 @@ bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
   @autoware_tensorrt_common//... //bazel/tests:tensorrt_runtime_cache_test
 ```
 
+### Engine compilation policy
+
+Keep Universe components parameterized: they own preparation/inference APIs,
+model-specific preprocessing/calibration mechanics and supported-option checks.
+Product composition under bazel/ or autoware_launch and above owns concrete
+model/precision/calibration/optimization choices, compatibility requirements and
+engine/cache identity. Component CLI/YAML defaults are development conveniences,
+not a qualified product profile. Pass the selected compilation settings explicitly
+in product-owned preparation invocations; local device index and writable cache
+location remain invocation/runtime inputs. SDK/toolchain mechanics stay in
+third_party/, with version selection at the root.
+
+The existing yolox_prepare target is a model-indexed runnable tool, not a pinned
+product profile or an engine-producing build action. Do not infer product
+qualification from its component defaults. Engine preparation may run on the
+target device before activation; it need not be an action in the Bazel build.
+Current generation/prepared-only APIs retain their documented behavior below.
+
 ### YOLOX model inputs and engine caches
 
 Set the YOLOX engine_path node parameter (or the same argument in its three
@@ -1735,7 +1753,8 @@ mkdir -p /tmp/yolox-engine-cache
 bazel run --config=runtime --config=no-agnocast //bazel/runtime:yolox_prepare -- \
   --model-package autoware_tensorrt_yolox_models \
   --model yolox_s_car_ped_tl_detector_960_960_batch_1.onnx \
-  --engine /tmp/yolox-engine-cache/traffic-light-trt10.16-sm120-fp16.engine
+  --engine /tmp/yolox-engine-cache/traffic-light-trt10.16-sm120-fp16.engine \
+  --precision fp16 --builder-optimization-level 3
 ```
 
 Use --help for precision, calibration and builder-level flags. --model accepts

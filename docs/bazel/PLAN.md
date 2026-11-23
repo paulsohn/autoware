@@ -92,7 +92,8 @@ only when your current target demonstrates the need.
   [vendor RTTI and exception binding](JOURNAL.md#2026-11-23-phase-652--tensorrt-calibration-and-c-runtime-compatibility).
   [Writable engine caches and caller-owned identity](DEVELOPING.md#common-library-engine-cache);
   [cache failure/invalidation evidence](JOURNAL.md#2026-11-23-phase-652--preserve-the-tensorrt-engine-output-identity);
-  [immutable supplied tables and separate engine preparation/inference](DEVELOPING.md#yolox-model-inputs-and-engine-caches).
+  [immutable supplied tables and separate engine preparation/inference](DEVELOPING.md#yolox-model-inputs-and-engine-caches);
+  [component mechanisms and product-owned compiler policy](DEVELOPING.md#engine-compilation-policy).
   [Vendor C++ ABI boundaries](DEVELOPING.md#sparse-sdk-and-tensorrt-plugins);
   [evidence: sparse SDK](JOURNAL.md#2026-11-19-phase-641--sparse-convolution-sdk-compatibility).
 - [ ] Declare caller-owned resources for dynamic runtime package selection.
@@ -1768,6 +1769,26 @@ performance threshold. The complete existing common/YOLOX suites also pass with
 no skips. The separate-cache gate and compilation-placement decision are complete
 for the selected profiles above; no new GPU build rule is accepted.
 [Reproducer and results](JOURNAL.md#2026-11-23-phase-651--yolox-runtime-engine-baseline).
+
+### Deferred product-owned engine profiles
+
+Decision 2026-11-23: keep Universe parameterized and concrete engine preparation
+policy in bazel/ or autoware_launch and above. Follow the
+[ownership contract](DEVELOPING.md#engine-compilation-policy); do not treat CLI
+or component YAML defaults as a qualified product profile.
+
+Defer a profile-rule/manifest framework until a real GPU perception product needs
+an engine in its launch/deployment closure. Start with one explicit product-owned
+invocation of the existing CLI and its complete consumer gate. Declare calibration
+inputs actually read, bind preparation and inference to one profile identity, and
+introduce reusable rules only when that consumer establishes their requirements.
+A GPU-backed engine-output Bazel action remains a separate later decision.
+
+The local experiment/yolox-aot-only branch (3fbc62ae) is a parked API-changing
+preview, not an accepted module integration. Its CPU rejection checks do not
+qualify full inference. Keep its test-adapter migration, valid-engine GPU/ROS
+checks, CMake parity and SDK payload work deferred while broader Universe adoption
+continues. Current Phase 6.5.5 behavior on bazel remains qualified as recorded.
 
 ## Phase 7 — Runtime packaging and planning simulation (complete, 2026-11-23)
 

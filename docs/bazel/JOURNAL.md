@@ -19521,3 +19521,35 @@ cases together. Reuse the passing complete gates above; the remaining edits
 are documentation and rule formatting. Component and root --help runs pass
 without XML_OUTPUT_FILE. Phase 6.5.5 is complete and broader Universe adoption
 can resume; inference-only SDK payload reduction remains deferred.
+
+## 2026-11-23: Engine policy ownership and deferred profile rules
+
+Purpose: preserve Universe as the parameterized component layer while deciding
+where concrete model/precision/calibration choices should live. Inspect the
+current root yolox_prepare target, source CLI defaults, node/YAML interfaces and
+the qualified Phase 6.5.5 gates. The root tool supplies the indexed model provider
+but does not declare an engine artifact or a qualified precision profile; invoking
+it without explicit settings currently inherits component CLI defaults.
+
+Record the mechanism/policy boundary in DEVELOPING.md#engine-compilation-policy,
+link it from AGENTS.md and the adoption checklist, and make the existing developer
+FP16 example pass precision/optimization explicitly. Universe implements generic
+preparation/inference operations and validates supported settings. Product
+composition selects models, precision, calibration, optimization, compatibility
+and cache identity; local writable locations/device indices remain invocation
+inputs. Library defaults can remain useful for development without becoming
+implicit production policy. third_party retains reusable SDK mechanisms.
+
+Decision: defer a reusable profile rule/manifest until a real GPU perception
+product needs a prepared artifact in its launch closure. Begin with one explicit
+root-owned CLI invocation, enumerate actual calibration inputs and connect the
+qualified profile to inference. A GPU-producing Bazel action needs its own
+concrete execution/acceptance task. Prioritize broader Universe groups now.
+The local experiment/yolox-aot-only preview at 3fbc62ae remains parked, with API/test
+migration and full GPU/consumer validation incomplete; it is not merged or used
+as acceptance evidence for bazel. The qualified mainline code is unchanged.
+
+Validation: review the current BUILD/CLI/YAML declarations, resolve the new local
+Markdown anchors/links and run git diff --check. This is documentation only;
+no build, GPU, simulator/OCI, middleware or runtime rerun is performed. Reuse the
+unchanged Phase 6.5.5 evidence rather than claiming these policy notes test code.

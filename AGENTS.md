@@ -53,6 +53,8 @@ experiments, and milestones belong in PLAN.md and JOURNAL.md.
   product targets; generic registry/third-party rules may support them.
   The root owns version selection from `third_party/`, registry releases and
   local overrides; architecture/product settings also remain root-owned.
+  Keep model/compiler APIs parameterized and concrete engine preparation policy
+  product-owned; see [engine compilation policy](docs/bazel/DEVELOPING.md#engine-compilation-policy).
   Directory placement alone does not require a new facade Bazel module.
   Keep standalone module checkout roots out of main-repository recursive
   discovery through `.bazelignore`; consume their logical module targets.
