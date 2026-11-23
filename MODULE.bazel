@@ -1941,3 +1941,9 @@ local_path_override(
     module_name = "autoware_cluster_merger",
     path = "src/universe/autoware_universe/perception/autoware_cluster_merger",
 )
+
+bazel_dep(name = "autoware_ground_segmentation", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_ground_segmentation",
+    path = "src/universe/autoware_universe/perception/autoware_ground_segmentation",
+)

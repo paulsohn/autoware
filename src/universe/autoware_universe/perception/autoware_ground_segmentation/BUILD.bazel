@@ -1,0 +1,126 @@
+load("@autoware_agnocast_wrapper//:defs.bzl", "autoware_agnocast_node")
+load("@rclcpp_components//:defs.bzl", "rclcpp_components_register_node")
+load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "autoware_ground_segmentation_library",
+    srcs = [
+        "src/ray_ground_filter/node.cpp",
+        "src/ransac_ground_filter/node.cpp",
+        "src/scan_ground_filter/node.cpp",
+        "src/scan_ground_filter/grid_ground_filter.cpp",
+    ],
+    hdrs = glob(["src/**/*.hpp"]),
+    includes = ["src"],
+    deps = [
+        "@autoware_agnocast_wrapper//:autoware_agnocast_wrapper_library",
+        "@autoware_pointcloud_preprocessor//:pointcloud_preprocessor_filter_base",
+        "@autoware_utils",
+        "@autoware_vehicle_info_utils",
+        "@managed_transform_buffer//:managed_transform_buffer_library",
+        "@pcl_conversions//:pcl_conversions_library",
+        "@pcl_ros//:pcl_ros_tf_library",
+        "@rclcpp_components//:rclcpp_components_library",
+        "@rosdistro//cc:eigen",
+        "@rosdistro//cc:opencv_library",
+        "@rosdistro//cc:pcl_segmentation",
+        "@sensor_msgs//:cc",
+        "@tf2_eigen//:tf2_eigen_library",
+        "@tf2_ros//:tf2_ros_library",
+        "@tf2_sensor_msgs//:tf2_sensor_msgs_library",
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = [
+        "@autoware_pointcloud_preprocessor//:filter_base_runtime_dynamic_deps",
+        "@rosdistro//cc:opencv",
+        "@rosdistro//cc:pcl",
+        "@rosdistro//cc:yaml-cpp",
+    ],
+)
+
+cc_shared_library(
+    name = "autoware_ground_segmentation",
+    shared_lib_name = "libautoware_ground_segmentation.so",
+    dynamic_deps = [":runtime_dynamic_deps"],
+    deps = [":autoware_ground_segmentation_library"],
+)
+
+rclcpp_components_register_node(
+    name = "ray_ground_filter_node",
+    node_name = "ray_ground_filter_node",
+    component = ":autoware_ground_segmentation",
+    plugin = "autoware::ground_segmentation::RayGroundFilterComponent",
+)
+
+rclcpp_components_register_node(
+    name = "ransac_ground_filter_node",
+    node_name = "ransac_ground_filter_node",
+    component = ":autoware_ground_segmentation",
+    plugin = "autoware::ground_segmentation::RANSACGroundFilterComponent",
+)
+
+autoware_agnocast_node(
+    name = "scan_ground_filter_node",
+    component = ":autoware_ground_segmentation",
+    package_name = "autoware_ground_segmentation",
+    plugin = "autoware::ground_segmentation::ScanGroundFilterComponent",
+)
+
+register_ament_files(
+    name = "executables",
+    files = [":ray_ground_filter_node", ":ransac_ground_filter_node", ":scan_ground_filter_node"],
+    prefix = "lib/autoware_ground_segmentation",
+    strip_prefix = "*",
+)
+
+register_ament_files(
+    name = "test_data",
+    files = ["test/data/test.pcd"],
+    prefix = "share/autoware_ground_segmentation/data",
+    strip_prefix = "test/data",
+)
+
+ament_index(
+    package_xml = "package.xml",
+    components = [":ray_ground_filter_node_record", ":ransac_ground_filter_node_record", ":scan_ground_filter_node_components"],
+    data = glob(["config/**", "launch/**"]) + [":executables", ":test_data", ":scan_ground_filter_node_plugin"],
+    deps = ["@autoware_pointcloud_preprocessor//:ament_index"],
+    libraries = [":autoware_ground_segmentation"],
+)
+
+cc_test(
+    name = "test_ray_ground_filter",
+    srcs = ["test/test_ray_ground_filter.cpp"],
+    data = [":ament_index"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+    deps = [":autoware_ground_segmentation_library", "@ament_index_cpp//:ament_index_cpp_library", "@rosdistro//cc:pcl_io", "@rosdistro//cc:yaml-cpp_library", "@googletest//:gtest_main"],
+    tags = ["no-sandbox", "no-remote"],
+)
+
+cc_test(
+    name = "test_scan_ground_filter",
+    srcs = ["test/test_scan_ground_filter.cpp"],
+    data = [":ament_index"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+    deps = [":autoware_ground_segmentation_library", "@ament_index_cpp//:ament_index_cpp_library", "@rosdistro//cc:pcl_io", "@rosdistro//cc:yaml-cpp_library", "@googletest//:gtest_main"],
+    tags = ["no-sandbox", "no-remote"],
+)
+
+cc_test(
+    name = "test_ransac_ground_filter",
+    srcs = ["test/test_ransac_ground_filter.cpp"],
+    data = [":ament_index"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+    deps = [":autoware_ground_segmentation_library", "@ament_index_cpp//:ament_index_cpp_library", "@rosdistro//cc:pcl_io", "@rosdistro//cc:yaml-cpp_library", "@googletest//:gtest_main"],
+    tags = ["no-sandbox", "no-remote"],
+)
+
+
+exports_files(["config/scan_ground_filter.param.yaml"])

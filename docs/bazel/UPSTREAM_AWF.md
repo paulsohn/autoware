@@ -2135,4 +2135,5 @@ unused test include. All three original PCD cases and both added scan modes pass
 with Cyclone/RCLCPP; both added modes also pass Agnocast-only with heap-hook
 preload, zero failures/errors/skips. Original test bodies and tolerances remain
 unchanged. These are C-library/libc++ portability findings, not new ROS APIs.
+Local source correction: 88ba0fda.
 [Reproduction](JOURNAL.md#2026-11-24-phase-95--ground-segmentation).

@@ -2294,3 +2294,13 @@ cc_test(
     ],
     tags = ["no-sandbox", "no-remote"],
 )
+
+cc_test(
+    name = "scan_ground_filter_transport_test",
+    srcs = ["autoware_ground_segmentation/test_transport.cpp"],
+    data = ["@agnocast_heaphook", "@autoware_ground_segmentation//:config/scan_ground_filter.param.yaml"],
+    env = {"SCAN_PARAMS": "$(rootpath @autoware_ground_segmentation//:config/scan_ground_filter.param.yaml)"},
+    dynamic_deps = ["@autoware_ground_segmentation//:runtime_dynamic_deps"],
+    deps = ["@autoware_ground_segmentation//:autoware_ground_segmentation_library", "@googletest//:gtest"],
+    tags = ["no-sandbox", "no-remote"],
+)

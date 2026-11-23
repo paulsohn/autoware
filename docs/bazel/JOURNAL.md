@@ -20808,10 +20808,13 @@ Result: the shared-provider combined gate builds all 20 non-test ground targets
 and its four test targets. All three original ray/scan/RANSAC PCD cases pass,
 zero failures/errors/skips, in 0.6/0.5/0.5 s. Both added grid/non-grid cases pass
 with Cyclone/RCLCPP (0.5 s) and Agnocast-only execution with the built heaphook
-and kernel device (0.6 s). See the provider entry for exact combined-gate totals
-and elapsed times; these results are reused without another unchanged rerun.
-The enabled peer asserts RCLCPP stays uninitialized. Targeted clang-format and
+and kernel device (0.5 s). The final consumer-only commands above take 16.1 s
+and 12.3 s, reusing the unchanged original cases. They explicitly assert the
+requested elevation_grid_mode value and preserve a nonzero timestamp assigned
+after constructing the generated cloud layout. See the provider entry for the
+unchanged preprocessor acceptance scope and combined-gate evidence. The enabled
+peer also asserts RCLCPP stays uninitialized. Targeted clang-format and
 diff checks pass. Original test assertions, PCD fixture and production input
 layout checks are unchanged. Optional OpenMP is not qualified by this CPU profile;
 no Fast DDS/GPU/expensive product gate is claimed. Source portability corrections
-are separate from Bazel definitions. Next: occupancy-grid outlier filtering.
+are separate from Bazel definitions (88ba0fda). Next: occupancy-grid outlier filtering.

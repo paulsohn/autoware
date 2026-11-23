@@ -229,7 +229,7 @@ Reuse 9.4 and existing map/GridMap providers. Order shape estimation before clus
 - [ ] [autoware_compare_map_segmentation](../../src/universe/autoware_universe/perception/autoware_compare_map_segmentation/package.xml)
 - [ ] [autoware_detected_object_validation](../../src/universe/autoware_universe/perception/autoware_detected_object_validation/package.xml)
 - [ ] [autoware_elevation_map_loader](../../src/universe/autoware_universe/perception/autoware_elevation_map_loader/package.xml)
-- [ ] [autoware_ground_segmentation](../../src/universe/autoware_universe/perception/autoware_ground_segmentation/package.xml)
+- [x] [autoware_ground_segmentation](../../src/universe/autoware_universe/perception/autoware_ground_segmentation/package.xml)
 - [ ] [autoware_occupancy_grid_map_outlier_filter](../../src/universe/autoware_universe/perception/autoware_occupancy_grid_map_outlier_filter/package.xml)
 - [ ] [autoware_shape_estimation](../../src/universe/autoware_universe/perception/autoware_shape_estimation/package.xml)
 - [ ] [autoware_euclidean_cluster](../../src/universe/autoware_universe/perception/autoware_euclidean_cluster/package.xml)

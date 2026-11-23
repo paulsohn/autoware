@@ -2277,7 +2277,10 @@ No Fast DDS or expensive product gate is automatically required for this group.
 Completed module: autoware_cluster_merger — component/executable/index/resources,
 three original ROS cases and two identity/transformed-frame payload cases pass
 with Cyclone/RCLCPP, zero failures/errors/skips. Lyrical and header-frame fixes
-are separate source corrections. The other nine modules remain pending.
+are separate source corrections. Ground segmentation also completes all three original PCD cases and both added
+grid/non-grid transport cases with Cyclone/RCLCPP; the added cases pass Agnocast-
+only as well. Its shared filter-base prerequisite preserves the original CMake
+API and passes the full preprocessor suite. Eight modules remain pending.
 
 
 ### Execution order through complete Universe coverage
