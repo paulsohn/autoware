@@ -19631,3 +19631,53 @@ original threshold case and root ROS case pass, with zero failures/errors/skips.
 All original amplitude/range/azimuth/z blocks remain. Test-source corrections
 are committed apart from Bazel definitions; no production implementation changes
 are needed.
+
+## 2026-11-23: Phase 9.1 — Static radar point-cloud filtering
+
+Purpose: adopt synchronized radar/odometry input and TF-based static/dynamic
+partitioning, preserving the existing component implementation except for
+issues demonstrated by this gate. CMake has no original C++ suite; add three
+root ROS cases for ego compensation/header preservation, a rotated sensor frame
+and a live velocity-tolerance update. Use a static TF broadcaster and real
+message-filter subscriptions rather than accessing private methods.
+
+Inspected inputs: original source/header, CMake/package declarations, existing
+local autoware_utils/TF providers, and the selected Message Filters subscriber
+header. The first compile fails because subscriber.h, synchronizer.h and
+sync_policies/approximate_time.h are absent. Replace those includes with .hpp.
+The next compile exposes the removed raw rmw_qos_profile_t subscribe overload;
+pass the existing rclcpp::SensorDataQoS object directly, retaining queue depth
+and reliability. Upstream main retains the old includes/API; Lyrical trackers
+are related compatibility context and no matching PR was found by the targeted
+search. Record final verification before elevating the finding.
+
+Pattern: package-local module/library/component/executable/index, root local
+selection and external ROS peers. Use published tf2_geometry_msgs_library and
+message_filters_library labels; messages retain their cc/cc_shared providers.
+Keep SDK globals in the existing autoware_utils runtime_dynamic_deps owners.
+
+The rotated-frame case then fails: getTransformedVelocity computes the correct
+TF-rotated vector but returns its original input. With a +90-degree sensor yaw,
+a +5 m/s sensor-y vector should become -5 m/s body-x and cancel +5 m/s ego-x.
+The unchanged implementation classifies it as dynamic. Return the transformed
+vector; preserve the existing x-component threshold algorithm and other math.
+Upstream PR #10350 changes lookup timestamp/null handling, not this return;
+current main still returns the untransformed vector. This is a genuine frame
+bug independent of Lyrical, demonstrated through actual synchronized topics/TF.
+
+Gate: @autoware_radar_static_pointcloud_filter//... and
+//bazel/tests:radar_static_behavior_test. Result: all three cases pass after the
+return correction, with zero failures/errors/skips. Header/QoS and return fixes
+remain separate from the Bazel-definition commit. Older-ROS/CMake compatibility
+is not claimed by this Lyrical/LLVM gate.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --nocache_test_results --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp \
+  --test_env=ROS_DOMAIN_ID=114 --test_output=errors \
+  @autoware_radar_static_pointcloud_filter//... //bazel/tests:radar_static_behavior_test
+```
+
+The complete static module rerun passes in 9.7 s, its three-case ROS suite in
+0.5 s. Unchanged passing results from the other four packages are reused.

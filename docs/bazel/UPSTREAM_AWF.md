@@ -1849,3 +1849,43 @@ Both original cases and both added real-topic/parameter/header cases pass with
 Cyclone DDS, ENABLE_AGNOCAST=0, Ubuntu 24.04 and LLVM/libc++ 21.1.8. Older ROS,
 CMake and GCC gates were not run. See the
 [reproducer and complete module gates](JOURNAL.md#2026-11-23-phase-91--radar-track-crossing-noise-filter).
+
+## Static radar filter needs current Message Filters headers and QoS
+
+- [ ] Associate with a matching upstream change. Checked 2026-11-23: current
+  Universe main retains subscriber.h/approximate_time.h/synchronizer.h and
+  passes raw rmw_qos_profile_t to subscribe. The targeted Lyrical/message_filters
+  PR search finds none. The broader autoware#7404 and universe#13590 trackers
+  are related compatibility context, not matching patches.
+
+Package: autoware_radar_static_pointcloud_filter. Message Filters 7.4.2 no longer
+exports these .h forwarding headers or the old raw-QoS subscription overload.
+Use the corresponding .hpp headers and pass the existing SensorDataQoS object
+without extracting its rmw profile. Preserve queue depth/reliability and the
+synchronization algorithm. This is the same API transition documented for the
+[local pointcloud converter](#local-tier-iv-pointcloud-converter-needs-current-ros-filter-apis),
+now required by this concrete consumer. All component/executable/index targets
+build, and all three real radar/odometry/TF cases pass on the Lyrical/Cyclone,
+LLVM/libc++ 21.1.8 profile. Older-ROS/CMake compatibility is not claimed.
+[Compile failure, source pattern and gate](JOURNAL.md#2026-11-23-phase-91--static-radar-point-cloud-filtering).
+
+## Static radar filtering discards the transformed velocity
+
+- [ ] Associate with a matching upstream fix. Checked 2026-11-23:
+  [current helper](https://github.com/autowarefoundation/autoware_universe/blob/main/sensing/autoware_radar_static_pointcloud_filter/src/radar_static_pointcloud_filter_node.cpp)
+  still returns velocity_stamped.vector after filling transformed_velocity_stamped.
+  [Universe#10350](https://github.com/autowarefoundation/autoware_universe/pull/10350)
+  changes lookup timestamp/null handling; its actual patch does not fix this
+  return. No matching fix is associated and no upstream submission is made.
+
+The helper's TF rotation is computed and discarded, so ego-x compensation uses
+sensor coordinates for a rotated radar. Return transformed_velocity_stamped.vector;
+retain the existing x-velocity threshold algorithm. A real synchronized ROS test
+uses sensor yaw +90 degrees, sensor-y velocity +5 m/s and ego body-x +5 m/s:
+the transformed velocity is -5 m/s body-x, and the return should be stationary.
+Before correction it is incorrectly published in the dynamic partition; after
+correction it is stationary. Identity-frame partition/header and live tolerance
+checks also pass. All three native cases execute without failures/errors/skips.
+This is a frame-conversion defect independent of Lyrical. It is not a production
+radar-accuracy qualification or an older-ROS/GCC/CMake result.
+[Numeric setup and complete module gate](JOURNAL.md#2026-11-23-phase-91--static-radar-point-cloud-filtering).

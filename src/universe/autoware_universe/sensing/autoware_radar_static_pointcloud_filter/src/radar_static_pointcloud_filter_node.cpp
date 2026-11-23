@@ -57,7 +57,7 @@ geometry_msgs::msg::Vector3 getTransformedVelocity(
   velocity_stamped.vector = velocity;
   geometry_msgs::msg::Vector3Stamped transformed_velocity_stamped{};
   tf2::doTransform(velocity_stamped, transformed_velocity_stamped, *transform);
-  return velocity_stamped.vector;
+  return transformed_velocity_stamped.vector;
 }
 
 geometry_msgs::msg::Vector3 compensateEgoVehicleTwist(
@@ -101,11 +101,9 @@ RadarStaticPointcloudFilterNode::RadarStaticPointcloudFilterNode(
   transform_listener_ = std::make_shared<autoware_utils::TransformListener>(this);
 
   sub_radar_.subscribe(
-    this, "~/input/radar",
-    rclcpp::SensorDataQoS().keep_last(node_param_.max_queue_size).get_rmw_qos_profile());
+    this, "~/input/radar", rclcpp::SensorDataQoS().keep_last(node_param_.max_queue_size));
   sub_odometry_.subscribe(
-    this, "~/input/odometry",
-    rclcpp::SensorDataQoS().keep_last(node_param_.max_queue_size).get_rmw_qos_profile());
+    this, "~/input/odometry", rclcpp::SensorDataQoS().keep_last(node_param_.max_queue_size));
 
   sync_ptr_ = std::make_shared<Sync>(SyncPolicy(10), sub_radar_, sub_odometry_);
   sync_ptr_->registerCallback(std::bind(&RadarStaticPointcloudFilterNode::onData, this, _1, _2));
