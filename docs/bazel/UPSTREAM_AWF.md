@@ -1681,3 +1681,23 @@ common cases, five classifier cases and fourteen YOLOX cases pass on Ubuntu
 RTX 5070 Laptop/driver 595.99.02, with zero skips. This is not Lyrical-specific.
 No upstream CMake/GCC or other SDK/hardware result is claimed.
 [Commands and diagnosed behavior](JOURNAL.md#2026-11-23-phase-652--preserve-the-tensorrt-engine-output-identity).
+
+## TensorRT cached-plan header reads lack a file-length check
+
+- [ ] Associate with a matching upstream fix. Inspected 2026-11-23:
+  autoware_cuda main a5929dde0bacecae60c5f32dc34416f784a60cb4 still reads
+  version offsets 24/25/26 unconditionally in validateEngine. Not submitted.
+
+Package: autoware_tensorrt_common. A truncated cached plan reaches direct reads
+past the string's size before SDK deserialization. Guard the maximum version
+index first and return false, allowing the existing version-validation failure
+path to rebuild the engine. No API, model or cache filename changes are needed.
+This is independent of Lyrical and separate from the layer-JSON path correction.
+
+The standalone GPU cache suite exercises a three-byte file followed by rebuild
+and correct inference, and a valid-header/truncated-body file followed by clean
+rejection. All eight cache cases and thirteen original common cases pass, along
+with complete existing affected classifier/YOLOX/plugin suites on the retained
+Phase 6.5.1 SDK/GPU profile. This identifies an out-of-range source read; no
+sanitizer run or deterministic pre-fix crash is claimed. See the
+[reproducer, failure contract and full gate](JOURNAL.md#2026-11-23-phase-652--preserve-the-tensorrt-engine-output-identity).

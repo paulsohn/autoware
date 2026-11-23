@@ -10,6 +10,7 @@
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
+#include <iterator>
 #include <memory>
 #include <string>
 #include <vector>
@@ -63,7 +64,7 @@ protected:
     return trt.setup(std::move(profiles));
   }
 
-  static void infer(TrtCommon & trt)
+  static void infer(TrtCommon & trt, float base = 16.0F)
   {
     using autoware::cuda_utils::make_unique;
     auto stream = autoware::cuda_utils::makeCudaStream();
@@ -84,7 +85,7 @@ protected:
     std::array<float, 4> actual{};
     ASSERT_EQ(
       cudaMemcpy(actual.data(), output.get(), sizeof(actual), cudaMemcpyDeviceToHost), cudaSuccess);
-    for (int i = 0; i < 4; ++i) EXPECT_FLOAT_EQ(actual[i], 16.0F + i);
+    for (int i = 0; i < 4; ++i) EXPECT_FLOAT_EQ(actual[i], base + i);
   }
 
   fs::path directory, model, engine;
@@ -134,5 +135,76 @@ TEST_F(RuntimeCache, UnwritableCacheIsRejected)
   auto trt = make();
   EXPECT_FALSE(setup(*trt));
   EXPECT_FALSE(fs::exists(engine));
+}
+
+TEST_F(RuntimeCache, TruncatedCachedPlanIsRebuilt)
+{
+  std::ofstream(engine, std::ios::binary) << "bad";
+  auto trt = make();
+  ASSERT_TRUE(setup(*trt));
+  EXPECT_GT(fs::file_size(engine), 27U);
+  infer(*trt);
+}
+
+TEST_F(RuntimeCache, CorruptCachedBodyIsRejected)
+{
+  {
+    auto trt = make();
+    ASSERT_TRUE(setup(*trt));
+  }
+  fs::resize_file(engine, 27);
+  auto trt = make();
+  EXPECT_FALSE(setup(*trt));
+}
+
+TEST_F(RuntimeCache, ChangedShapeProfileRebuildsTheCache)
+{
+  {
+    auto trt = make();
+    ASSERT_TRUE(setup(*trt));
+  }
+  const auto changed = fs::last_write_time(engine);
+  auto trt = make();
+  auto profiles = std::make_unique<std::vector<ProfileDims>>();
+  const nvinfer1::Dims larger{2, {2, 4}};
+  for (const char * name : {"required_a", "required_b", "optional_present"}) {
+    profiles->emplace_back(name, shape, larger, larger);
+  }
+  ASSERT_TRUE(trt->setup(std::move(profiles)));
+  EXPECT_NE(fs::last_write_time(engine), changed);
+  infer(*trt);
+}
+
+TEST_F(RuntimeCache, ModelRevisionUsesAnExplicitNewCacheKey)
+{
+  {
+    auto trt = make();
+    ASSERT_TRUE(setup(*trt));
+    infer(*trt);
+  }
+  const auto first_engine = engine;
+  const auto changed = fs::last_write_time(first_engine);
+  std::ifstream input(model, std::ios::binary);
+  std::string data((std::istreambuf_iterator<char>(input)), {});
+  const auto add = data.find("Add");
+  ASSERT_NE(add, std::string::npos);
+  data.replace(add, 3, "Sub");
+  fs::permissions(model, fs::perms::owner_read | fs::perms::owner_write);
+  std::ofstream(model, std::ios::binary).write(data.data(), data.size());
+  fs::permissions(model, fs::perms::owner_read);
+  {
+    // Same-shaped model contents are not part of the loader's validation contract.
+    auto trt = make();
+    ASSERT_TRUE(setup(*trt));
+    infer(*trt);
+  }
+  engine = directory / "cache/dummy-revision2.engine";
+  {
+    auto trt = make();
+    ASSERT_TRUE(setup(*trt));
+    infer(*trt, 6.0F);
+  }
+  EXPECT_EQ(fs::last_write_time(first_engine), changed);
+  EXPECT_TRUE(fs::exists(engine));
 }
 }  // namespace

@@ -90,6 +90,8 @@ only when your current target demonstrates the need.
   [Runtime-only dlopen resources and ABI closure](DEVELOPING.md#tensorrt-sdk-and-native-tests);
   [evidence: TensorRT SDK](JOURNAL.md#2026-11-18-phase-62--tensorrt-binary-sdk);
   [vendor RTTI and exception binding](JOURNAL.md#2026-11-23-phase-652--tensorrt-calibration-and-c-runtime-compatibility).
+  [Writable engine caches and caller-owned identity](DEVELOPING.md#common-library-engine-cache);
+  [cache failure/invalidation evidence](JOURNAL.md#2026-11-23-phase-652--preserve-the-tensorrt-engine-output-identity).
   [Vendor C++ ABI boundaries](DEVELOPING.md#sparse-sdk-and-tensorrt-plugins);
   [evidence: sparse SDK](JOURNAL.md#2026-11-19-phase-641--sparse-convolution-sdk-compatibility).
 - [ ] Declare caller-owned resources for dynamic runtime package selection.
@@ -1686,7 +1688,14 @@ boundaries when their integration exposes a need.
   cache invalidation after relevant input/profile changes, and failure behavior
   for unavailable/unwritable or incomplete cache entries. Require the affected
   complete suites with Cyclone DDS and relevant GPU inference checks; reuse
-  unchanged communication/system evidence.
+  unchanged communication/system evidence. The common-library API now passes
+  all thirteen original and eight added cache cases, including truncated-file
+  handling, profile changes and caller-selected model-revision keys. The YOLOX
+  node/cache prototype remains incomplete: FP16 inference/build_only pass, but
+  the real-model INT8 calibration gate fails. TensorRT 10.15 is not adopted
+  merely because compilation succeeds without usable detections; retain 10.16
+  while resolving a usable calibration input/profile and the SDK compiler error.
+  Do not mark this subphase complete or infer a production GPU deployment gate.
 - **6.5.3 — Record the compilation-placement decision.** Compare observed startup,
   cache reuse, deployment size/permissions and compatibility costs. Decide whether
   to retain runtime generation, use explicit on-device preparation, or conduct a

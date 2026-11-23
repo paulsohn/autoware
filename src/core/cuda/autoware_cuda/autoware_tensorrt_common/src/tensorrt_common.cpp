@@ -806,6 +806,12 @@ bool TrtCommon::validateEngine()
   engine_buffer << engine_file.rdbuf();
   std::string engine_str = engine_buffer.str();
 
+  if (engine_str.size() <= TRT_PATCH_IDX) {
+    logger_->log(
+      nvinfer1::ILogger::Severity::kWARNING, "Cached engine has an incomplete version header");
+    return false;
+  }
+
   auto const blob = reinterpret_cast<uint8_t *>(engine_str.data());
   auto const plan_major = static_cast<int32_t>(blob[TRT_MAJOR_IDX]);
   auto const plan_minor = static_cast<int32_t>(blob[TRT_MINOR_IDX]);

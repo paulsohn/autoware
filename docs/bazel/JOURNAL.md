@@ -18890,6 +18890,34 @@ definition as in the original module. The source correction is 59ad8b43; no
 production source changes in this support commit. Reuse the complete passing
 command/results above, since only whitespace changed after that gate.
 
+Common-cache completion follow-up: validateEngine reads bytes 24/25/26 from
+std::string::data without checking the file length. An empty or three-byte plan
+therefore causes out-of-range reads before TensorRT can reject it. Check that
+byte 26 exists before accessing the version fields, log the incomplete header
+and use the existing rebuild path. The current upstream autoware_cuda revision
+above retains those unchecked reads; this is a general correctness fix, not a
+ROS-release workaround. No sanitizer-detected crash is claimed.
+
+Extend the same standalone fixture from four to eight cases. A three-byte plan
+must rebuild and infer correctly; a 27-byte truncation retaining the valid
+version header must return false on deserialization. Changing min/opt/max shapes
+from static batch 1 to an allowed batch-2 profile must rebuild. Finally, replace
+the fixture's first Add operator with Sub while retaining its IO signature:
+reusing the old cache path still produces 16/17/18/19; selecting a new revision
+path produces 6/7/8/9 and leaves the old engine untouched. This demonstrates the
+need for caller-owned cache identity; it does not implement automatic content
+hashing or validate concurrent publication/disk-full recovery.
+
+Run the exact complete SDK/common/consumer command in the
+[SDK runtime entry](#2026-11-23-phase-652--tensorrt-calibration-and-c-runtime-compatibility),
+with the retained 10.16 SDK and primary Cyclone/no-Agnocast configuration. All
+eight cache cases pass in 51.2 s, all thirteen original common cases pass, and
+the complete affected existing classifier, YOLOX and plugin suites pass. No
+skipped native cases. Targeted clang-format, Python and whitespace checks pass.
+Keep cache parents provisioned by the caller; use a new qualified cache path
+for changed model/SDK/GPU/precision/plugin/calibration inputs. The separate YOLOX
+calibration experiment remains incomplete and is not this module's success claim.
+
 ## 2026-11-23: Phase 6.5.2 — TensorRT calibration and C++ runtime compatibility
 
 Purpose: fix the SDK runtime binding exposed by the selected YOLOX INT8

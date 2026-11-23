@@ -1668,6 +1668,32 @@ prerequisites follow the preceding CUDA convention. Ordinary applications need
 the equivalent declared runtime/resource loading contract; a successful link
 alone does not prove engine-building runtime closure.
 
+### Common-library engine cache
+
+Pass an explicit engine_path to TrtCommonConfig when ONNX resources are indexed
+or read-only. Provision a separate writable parent directory first. The common
+library writes the engine and layer JSON there; it does not create that parent.
+Keep model inputs and derived cache files in separate locations.
+
+Select different cache paths for different ONNX/weights revisions, TensorRT/GPU
+profiles, precision, optimization shapes, plugins and calibration settings/inputs.
+The current loader checks its SDK header and declared IO/shape profiles; it does
+not compare model contents or every builder option. Reusing a path for a changed,
+same-shaped model can silently reuse the old engine. Product configuration owns
+that identity; automatic content-addressed cache selection is not implemented.
+
+A short version header triggers rebuilding. A matching header with an invalid
+serialized body is rejected; remove that entry before retrying. Use one writer
+per cache key: these checks do not make publication atomic or coordinate parallel
+builders. Validate changes with the full original common suite plus the added
+runtime-cache gate on a real GPU:
+
+```sh
+bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --nocache_test_results --test_output=errors \
+  @autoware_tensorrt_common//... //bazel/tests:tensorrt_runtime_cache_test
+```
+
 ## Sparse SDK and TensorRT plugins
 
 The pinned spconv 2.3.8/cumm 0.5.3 SDK exposes GNU C++ containers. Use
