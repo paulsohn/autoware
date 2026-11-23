@@ -1,4 +1,4 @@
-load("@rosdistro//ament:defs.bzl", "ament_index")
+load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
 load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
 load("@rosidl_default_generators//:defs.bzl", "default_generators", "ros_message", "ros_service")
 load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library", "cc_shared_library", "cc_test")
@@ -297,3 +297,87 @@ cc_test(
     env = {"LD_LIBRARY_PATH": "lib", "ROS_DOMAIN_ID": "99"},
     deps = [":grid_map_costmap_2d", "@googletest//:gtest"],
 )
+
+cc_library(
+    name = "grid_map_pcl",
+    srcs = [
+        "grid_map_pcl/src/GridMapPclLoader.cpp",
+        "grid_map_pcl/src/PclLoaderParameters.cpp",
+        "grid_map_pcl/src/PointcloudProcessor.cpp",
+        "grid_map_pcl/src/helpers.cpp",
+        "grid_map_pcl/src/GridMapPclConverter.cpp",
+    ],
+    hdrs = glob(["grid_map_pcl/include/**/*.hpp"]),
+    strip_include_prefix = "grid_map_pcl/include",
+    deps = [
+        ":grid_map_core", ":grid_map_ros", ":cc",
+        "@ament_index_cpp//:ament_index_cpp_library",
+        "@rclcpp//:rclcpp_library", "@rcutils//:rcutils_library",
+        "@rosdistro//cc:pcl_common", "@rosdistro//cc:pcl_filters",
+        "@rosdistro//cc:pcl_io", "@rosdistro//cc:pcl_kdtree",
+        "@rosdistro//cc:pcl_search", "@rosdistro//cc:pcl_segmentation",
+        "@rosdistro//cc:pcl_surface", "@rosdistro//cc:pcl_features",
+        "@rosdistro//cc:yaml-cpp_library",
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "grid_map_pcl_sdk_dynamic_deps",
+    dynamic_deps = [
+        ":grid_map_ros_runtime_dynamic_deps",
+        "@ament_index_cpp//:ament_index_cpp",
+        "@rosdistro//cc:pcl", "@rosdistro//cc:yaml-cpp",
+    ],
+)
+
+cc_shared_library(
+    name = "grid_map_pcl_shared",
+    shared_lib_name = "libgrid_map_pcl.so",
+    dynamic_deps = [":grid_map_pcl_sdk_dynamic_deps"],
+    deps = [":grid_map_pcl"],
+)
+
+collect_transitive_dynamic_deps(
+    name = "grid_map_pcl_runtime_dynamic_deps",
+    dynamic_deps = [":grid_map_pcl_shared", ":grid_map_pcl_sdk_dynamic_deps"],
+)
+
+cc_binary(
+    name = "grid_map_pcl_loader_node",
+    srcs = ["grid_map_pcl/src/grid_map_pcl_loader_node.cpp"],
+    dynamic_deps = [":grid_map_pcl_runtime_dynamic_deps"],
+    deps = [":grid_map_pcl"],
+)
+
+register_ament_files(
+    name = "grid_map_pcl_executables",
+    files = [":grid_map_pcl_loader_node"],
+    prefix = "lib/grid_map_pcl",
+    strip_prefix = "*",
+)
+
+register_ament_files(
+    name = "grid_map_pcl_resources",
+    files = glob(["grid_map_pcl/config/**", "grid_map_pcl/launch/**"]),
+    strip_prefix = "grid_map_pcl",
+)
+
+ament_index(
+    name = "grid_map_pcl_index",
+    export_name = "grid_map_pcl",
+    package_xml = "grid_map_pcl/package.xml",
+    libraries = [":grid_map_pcl_shared"],
+    data = [":grid_map_pcl_executables", ":grid_map_pcl_resources"],
+    deps = [":grid_map_ros_index"],
+)
+
+cc_binary(
+    name = "grid_map_pcl_test_binary",
+    testonly = True,
+    srcs = glob(["grid_map_pcl/test/*.cpp", "grid_map_pcl/test/*.hpp"]),
+    deps = [":grid_map_pcl", "@googletest//:gtest"],
+    dynamic_deps = [":grid_map_pcl_runtime_dynamic_deps"],
+)
+
+filegroup(name = "pcl_fixtures", srcs = glob(["grid_map_pcl/test/test_data/**"]))
+exports_files(["grid_map_pcl/test/test_data/parameters.yaml"])

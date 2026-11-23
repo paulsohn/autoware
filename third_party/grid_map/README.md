@@ -1,7 +1,7 @@
 # Grid-map source provider
 
 This module supplies the upstream core, CV, ROS, message packages and costmap adapter needed by
-native grid-map consumers. It contains build support; the implementation is
+native grid-map consumers, plus the PCL extraction/mesh library and loader. It contains build support; the implementation is
 fetched from [ANYbotics/grid_map](https://github.com/ANYbotics/grid_map/tree/0ece1b53ca03199527d0d42913cf2567d0d6a913),
 tag 2.5.0, commit `0ece1b53ca03199527d0d42913cf2567d0d6a913`.
 The tar.gz SHA-256 is
@@ -59,3 +59,17 @@ package index also carries build/test/runtime dependencies such as map-server
 and transport codecs. These are the SDK suite's declared prerequisites; do not
 infer the application's deployment contents from a test's broader resource
 closure. Native consumers link the core C++ provider rather than a Nav2 launch.
+
+The PCL extension exposes `:grid_map_pcl`, `:grid_map_pcl_shared`,
+`:grid_map_pcl_runtime_dynamic_deps` and `:grid_map_pcl_index`. Its index owns
+`grid_map_pcl` launch/configuration and the original loader executable. Use the
+compile provider in component dependencies and its runtime aggregate in native
+links. It retains all five upstream library sources, including conversion/mesh
+support, with explicit PCL feature/surface and YAML dependencies. The optional
+OpenMP path is not selected by this serial CPU profile.
+
+The same `:tests` gate now includes all six original PCL test sources (ten cases).
+The adapter creates a temporary package index and copies declared test_data
+because the original suite writes generated PCDs alongside its input fixtures.
+No upstream source/test edits or fixture omissions are required. The complete
+provider gate passes 137 cases, including the previous 127 unchanged checks.

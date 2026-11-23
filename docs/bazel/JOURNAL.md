@@ -21206,3 +21206,46 @@ fix separated from its Bazel definitions. Current source inventory has 126 of
 without definitions. Phase 9.5 stays open with seven pending packages. Broader
 composition and deployment closure remain the later product gate; this group
 does not claim that all new components were loaded together in a simulator.
+
+## 2026-11-24: Phase 9.5 — GridMap PCL extraction provider
+
+Purpose: supply the actual GridMap PCL library needed by local map comparison
+and elevation loading. Inspect the pinned GridMap 2.5.0 source's CMake, exported
+headers, five library sources, loader main, six original test translation units
+and fixtures. Extend the existing third_party/grid_map module at the same pinned
+commit/hash; no second implementation or Autoware-specific SDK facade is needed.
+Acceptance includes the original PCL suite and loader/index plus all existing
+provider suites with Cyclone/RCLCPP. No Fast DDS/GPU/product gate is selected.
+
+Pattern: add compile/shared/runtime-aggregate/index providers for grid_map_pcl,
+including its original executable and launch/config resources. Retain GridMap's
+Eigen extension definitions and existing core/CV/ROS/message shared owners.
+Declare PCL common/filter/IO/search/segmentation plus feature/surface headers
+(the public loader exposes surface/gp3.h) and YAML/ament-index dependencies.
+All original local test headers must be declared with their six source files.
+Use the original test main, not an additional gtest_main. The optional OpenMP
+path remains off for this serial CPU profile; no parallel-profile claim is made.
+
+Fixture issue/cause/fix: original tests locate test_data through the package
+index and write generated PCDs there. Immutable source/runfiles are not suitable
+as that output directory. A third-party-owned Python adapter copies the complete
+declared fixture directory to a temporary writable prefix, creates a minimal grid_map_pcl package
+marker/share tree and prepends that prefix while preserving existing SDK indexes.
+Normalize library paths before changing directory and preserve GTest XML output.
+No original sources/tests or assertions change; all real/noisy terrain fixtures
+run, including plane_noisy.pcd. Bind the parameter YAML directly as test data as
+well as in the fixture filegroup so rootpath expansion has a direct prerequisite.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  @grid_map//:tests @grid_map//:grid_map_pcl_index
+```
+
+Results: the full provider gate passes all seven test targets, including all ten
+new original PCL cases (64.8 s; complete gate 98.6 s). The existing 127 checks retain passing results;
+none are skipped. The PCL loader, shared library and indexed resources build.
+The new fixture adapter parses with Python AST and diff checks pass. No source
+patch, dependency installation or unrelated product rebuild is required. Next:
+local map-comparison and elevation-loader consumers. Phase 9.5 remains open.

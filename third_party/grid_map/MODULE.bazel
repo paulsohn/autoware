@@ -1,5 +1,6 @@
 module(name = "grid_map", version = "0.0.0")
 
+bazel_dep(name = "ament_index_cpp", version = "0.0.0")
 bazel_dep(name = "builtin_interfaces", version = "0.0.0")
 bazel_dep(name = "cv_bridge", version = "0.0.0")
 bazel_dep(name = "filters", version = "0.0.0")
