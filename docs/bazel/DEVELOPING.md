@@ -1661,6 +1661,11 @@ under bazel/tests/, and set timeout="long" for genuine multi-minute model builds
 The wrapper must preserve native exit/XML results and keep engine-cache outputs
 in writable temporary storage.
 
+Use tensorrt_cc_binary from the same defs.bzl for a standalone native preparation
+tool needing that SDK/ABI runtime environment. It forwards command-line arguments
+and exit status without assuming GTest XML is present. Declare model/provider
+resources in the product's data; dependency helpers must not select Autoware models.
+
 Run `bazel test --config=no-agnocast --nocache_test_results --test_output=errors @autoware_tensorrt_common//...` on a provisioned GPU host.
 Check XML for all 13 cases with no skips. The separate CUDA-utils regression
 remains all 17 cases. Root SDK selection, GPU code generation and driver

@@ -19322,3 +19322,29 @@ application tests. Reuse the complete passing gate and diagnostic-only metadata
 rerun above; subsequent changes are parameter-schema validation, formatting and
 documentation only. The source schemas accept the existing configurations and
 optional valid levels without making the new parameter mandatory.
+
+## 2026-11-23: Phase 6.5.5 — SDK runtime launchers for ordinary native programs
+
+Purpose: give a standalone preparation executable the same pinned TensorRT
+builder-resource discovery and GNU ABI binding as the existing native tests,
+without test-only environment or Autoware-specific dependency selection.
+
+Extend the SDK-owned defs.bzl with tensorrt_cc_binary, reusing the native target
+and runtime-data setup. Generate its Python launcher with canonical runfiles
+paths for the native executable and three SDK/GNU anchors. Keep those paths
+relative to runfiles; never embed checkout/cache absolute paths. py_binary args
+are only applied by bazel run, so depending on them breaks a direct subprocess
+or installed executable call. Preserve the existing test arguments/run_under
+contract. Set GTEST_OUTPUT only when XML_OUTPUT_FILE exists, and keep user argv
+and native exit status intact. Product targets supply their own resource data;
+third_party/tensorrt does not refer to any Autoware label.
+
+Verification: `env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" bazel test
+--config=runtime --config=no-agnocast --local_test_jobs=1 --nocache_test_results
+--test_output=errors @tensorrt//:runtime_abi_test` passes its one native case in
+0.8 s with no skips. Both component and root preparers build and run --help with
+no XML environment. Actual subprocess preparation, argument/exit failures and
+FP16/INT8 inference pass in the complete YOLOX gate below; all existing affected
+native wrappers pass the common/classifier/plugin gate. The public binary
+helper is validated by those real consumers, not just by an analysis-only check.
+Runfiles are required; relocatable inference-only SDK packaging is not claimed.
