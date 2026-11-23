@@ -121,7 +121,8 @@ only when your current target demonstrates the need.
   [ROS-time boundary evidence](JOURNAL.md#2026-11-22-phase-732--perception-metric-windows-at-ros-time-zero);
   [Backend executor convention](DEVELOPING.md#switchable-standalone-nodes);
   [evidence: complete Agnocast test inventory](JOURNAL.md#2026-11-15-phase-41--adopt-the-complete-agnocast-library-test-inventory);
-  [native driver/backend validation](DEVELOPING.md#validation-and-commits);
+  [native driver/backend and sensor-frame validation](DEVELOPING.md#validation-and-commits);
+  [independent TF direction evidence](JOURNAL.md#2026-11-23-phase-94--imu-correction-and-gyro-estimation);
   [evidence: glog features and drivers](JOURNAL.md#2026-11-23-phase-93--local-glog-prerequisite).
 - [ ] Declare solver generation and its tool/runtime inputs in the build graph.
   [Developer convention](DEVELOPING.md#mpc-solver-generation);
@@ -2234,7 +2235,7 @@ Upstream Universe#13540 has removed command-mode packages in favor of
 driving_mode_manager. This plan covers the retained snapshot; source-refresh
 work must revisit that architecture and the inventory explicitly.
 
-### Phase 9.4: CPU point-cloud and IMU preprocessing (in progress)
+### Phase 9.4: CPU point-cloud and IMU preprocessing (complete, 2026-11-23)
 
 Integrate PCL extensions first, then the preprocessor's required local transform
 buffer/dependency closure, followed by IMU correction. Build sequentially and
@@ -2244,13 +2245,20 @@ no-agnocast; explicitly check newly introduced enabled-only transport behavior.
 | Module | Complete acceptance scope/status |
 | --- | --- |
 | autoware_pcl_extensions | Complete: all original point-type instantiations/index and six compiled API cases; field-limited and repeat-search regressions fixed separately. |
-| managed_transform_buffer (prerequisite) | Complete: 12 original cases plus external lookup/inverse behavior with RCLCPP and Agnocast-only contexts; library/index/example build. |
+| managed_transform_buffer (prerequisite) | Complete: 12 original cases plus two external lookup/conversion cases with RCLCPP and Agnocast-only contexts; library/index/example build. |
+| CGAL (prerequisite) | Complete: pinned 6.1.3 archive, explicit Boost/GMP/MPFR providers and six numerical checks; polygon consumers pass in the preprocessor. |
 | autoware_pointcloud_preprocessor | Complete: 23 nodes/core/helper/index build, 185 original C++ cases, eight Python scenarios, nine added checks and node-free example; crop-box transport also passes Agnocast-only. |
-| autoware_imu_corrector | Pending: both original test groups, correction/estimator node behavior and indexed executables/configuration. |
+| autoware_imu_corrector | Complete: both libraries/nodes/index/configuration, all nine original cases and two added correction/estimator frame cases; both added cases also pass Agnocast-only. |
 
-Inventory optional/source contracts before adding providers; CGAL/Sophus and
-other SDK choices remain hypotheses until their actual consumers validate them.
-Do not claim this group complete on a smaller passing slice of the preprocessor.
+Accepted CGAL 6.1.3 and Sophus 1.22.9102-4.rcr.2 satisfy the complete CPU
+consumer gate. CGAL keeps GMP 6.3.0.bcr.2 and MPFR 4.2.2.bcr.1 to preserve
+the existing shared build-rule baseline; see the CGAL journal for the experiment.
+All original module suites and selected backend behavior gates pass, zero
+failures/errors/skips. Source fixes are separate commits: PCL representative
+state, managed-TF quaternion normalization, CPU voxel geometry/Lyrical APIs,
+upstream-aligned Python row comparison and IMU TF directions. No Fast DDS/GPU
+or expensive product rerun is claimed. Definition coverage is now 117/244;
+127 packages remain without definitions. Next: Phase 9.5.
 
 ### Execution order through complete Universe coverage
 

@@ -1,0 +1,121 @@
+load("@autoware_agnocast_wrapper//:defs.bzl", "autoware_agnocast_node")
+load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "headers",
+    hdrs = glob(["include/**/*.hpp"]),
+    strip_include_prefix = "include",
+    deps = [
+        "@autoware_agnocast_wrapper//:autoware_agnocast_wrapper_library",
+        "@autoware_utils",
+        "@diagnostic_updater//:diagnostic_updater_library",
+        "@geometry_msgs//:cc",
+        "@nav_msgs//:cc",
+        "@rclcpp//:rclcpp_library",
+        "@rclcpp_components//:rclcpp_components_library",
+        "@rosdistro//cc:eigen",
+        "@sensor_msgs//:cc",
+        "@tf2//:tf2_library",
+        "@tf2_geometry_msgs//:tf2_geometry_msgs_library",
+        "@tf2_ros//:tf2_ros_library",
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = [
+        "@autoware_agnocast_wrapper",
+        "@autoware_utils//:runtime_dynamic_deps",
+        "@diagnostic_updater//:diagnostic_updater",
+        "@geometry_msgs//:cc_shared",
+        "@nav_msgs//:cc_shared",
+        "@rclcpp_components//:rclcpp_components",
+        "@sensor_msgs//:cc_shared",
+        "@tf2_geometry_msgs//:tf2_geometry_msgs",
+        "@tf2_ros//:tf2_ros",
+    ],
+)
+
+cc_library(
+    name = "imu_corrector_library",
+    srcs = ["src/imu_corrector_core.cpp"],
+    deps = [":headers"],
+)
+
+cc_shared_library(
+    name = "imu_corrector",
+    shared_lib_name = "libautoware_imu_corrector_imu_corrector.so",
+    dynamic_deps = [":runtime_dynamic_deps"],
+    deps = [":imu_corrector_library"],
+)
+
+autoware_agnocast_node(
+    name = "imu_corrector_node",
+    component = ":imu_corrector",
+    package_name = "autoware_imu_corrector",
+    plugin = "autoware::imu_corrector::ImuCorrector",
+)
+
+cc_library(
+    name = "gyro_bias_estimator_library",
+    srcs = ["src/gyro_bias_estimator.cpp", "src/gyro_bias_estimation_module.cpp"],
+    deps = [":headers"],
+)
+
+cc_shared_library(
+    name = "gyro_bias_estimator",
+    shared_lib_name = "libautoware_imu_corrector_gyro_bias_estimator.so",
+    dynamic_deps = [":runtime_dynamic_deps"],
+    deps = [":gyro_bias_estimator_library"],
+)
+
+autoware_agnocast_node(
+    name = "gyro_bias_estimator_node",
+    component = ":gyro_bias_estimator",
+    package_name = "autoware_imu_corrector",
+    plugin = "autoware::imu_corrector::GyroBiasEstimator",
+)
+
+cc_library(
+    name = "autoware_imu_corrector",
+    deps = [":imu_corrector_library", ":gyro_bias_estimator_library"],
+)
+
+register_ament_files(
+    name = "executables",
+    files = [":imu_corrector_node", ":gyro_bias_estimator_node"],
+    prefix = "lib/autoware_imu_corrector",
+    strip_prefix = "*",
+)
+
+ament_index(
+    package_xml = "package.xml",
+    components = [":imu_corrector_node_components", ":gyro_bias_estimator_node_components"],
+    data = glob(["config/**", "launch/**"]) + [
+        ":executables",
+        ":imu_corrector_node_plugin",
+        ":gyro_bias_estimator_node_plugin",
+    ],
+    libraries = [":imu_corrector", ":gyro_bias_estimator"],
+)
+
+cc_test(
+    name = "test_gyro_bias_estimation_module",
+    srcs = ["test/test_gyro_bias_estimation_module.cpp"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+    deps = [":gyro_bias_estimator_library", "@googletest//:gtest_main"],
+)
+
+cc_test(
+    name = "test_gyro_bias_scale_estimation_module",
+    srcs = ["test/test_main.cpp", "test/test_gyro_bias_scale_estimation_module.cpp"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+    deps = [":gyro_bias_estimator_library", "@googletest//:gtest"],
+    tags = ["no-sandbox", "no-remote"],
+)
+
+exports_files(glob(["config/*.yaml"]))

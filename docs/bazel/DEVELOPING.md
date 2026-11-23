@@ -842,6 +842,11 @@ as its executable. Check that required backends actually ran: an exit-zero
 argv[0], working directory, repetitions and fixture paths when adapting them to
 runfiles. Keep generic adapters with the dependency owner.
 
+For sensor-frame behavior, use a non-identity mounting transform. Check each
+conversion direction against a known vector independently; two inverse mistakes
+can cancel in a round trip. Preserve tf2's target/source lookup order even when
+an older wrapper names its arguments from/to.
+
 For ROS time-window behavior, cover the epoch and exact horizon/retention
 boundaries. Preserve zero-based fixtures. Compare ages as signed Durations;
 avoid creating negative absolute Time cutoffs while history is warming up.

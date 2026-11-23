@@ -1929,3 +1929,9 @@ local_path_override(
     module_name = "autoware_pointcloud_preprocessor",
     path = "src/universe/autoware_universe/sensing/autoware_pointcloud_preprocessor",
 )
+
+bazel_dep(name = "autoware_imu_corrector", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_imu_corrector",
+    path = "src/universe/autoware_universe/sensing/autoware_imu_corrector",
+)

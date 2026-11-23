@@ -20623,5 +20623,6 @@ preprocessor edge. Its original point-cloud launches name the new provider but
 require the still-unadopted point-cloud/CUDA implementation too; adding the index
 alone would not qualify those launches. No compiled existing occupancy-grid
 consumer changes here. Revisit that complete surface in its GPU/contract gate.
-Next: Phase 9.5 clustering, shape estimation and map-aware detection; no work on
+Local IMU source correction: 8ab8007f; its build definitions and added checks
+are committed separately. Next: Phase 9.5 clustering, shape estimation and map-aware detection; no work on
 that group is included in this module task.

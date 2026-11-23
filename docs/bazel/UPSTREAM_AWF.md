@@ -2079,4 +2079,5 @@ from cancelling in a round trip. These are measurement defects, not Lyrical API
 changes. All nine original cases and two added cases pass with Cyclone/RCLCPP;
 the two added cases also pass with Agnocast-only execution and heap-hook preload,
 zero failures/errors/skips. Original tests/tolerances remain unchanged.
+Local source correction: 8ab8007f.
 [Reproduction and commands](JOURNAL.md#2026-11-23-phase-94--imu-correction-and-gyro-estimation).

@@ -2262,3 +2262,22 @@ py_pytest(
         requirement("numpy"),
     ],
 )
+
+cc_test(
+    name = "imu_corrector_behavior_test",
+    srcs = ["autoware_imu_corrector/test_correction.cpp"],
+    data = [
+        "@agnocast_heaphook",
+        "@autoware_imu_corrector//:config/imu_corrector.param.yaml",
+        "@autoware_imu_corrector//:config/gyro_bias_estimator.param.yaml",
+        "@autoware_imu_corrector//:config/gyro_scale_estimator.param.yaml",
+    ],
+    env = {
+        "IMU_CORRECTOR_PARAMS": "$(rootpath @autoware_imu_corrector//:config/imu_corrector.param.yaml)",
+        "GYRO_BIAS_PARAMS": "$(rootpath @autoware_imu_corrector//:config/gyro_bias_estimator.param.yaml)",
+        "GYRO_SCALE_PARAMS": "$(rootpath @autoware_imu_corrector//:config/gyro_scale_estimator.param.yaml)",
+    },
+    dynamic_deps = ["@autoware_imu_corrector//:runtime_dynamic_deps"],
+    deps = ["@autoware_imu_corrector", "@googletest//:gtest"],
+    tags = ["no-sandbox", "no-remote"],
+)

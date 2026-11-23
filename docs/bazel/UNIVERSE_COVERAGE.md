@@ -208,9 +208,18 @@ snapshot until a source refresh explicitly changes the census.
 
 Integrate PCL extensions before their consumers. Inventory every preprocessor filter/plugin/executable and original fixture, including parameter, TF, timestamp and point-field contracts. Recheck affected existing occupancy-grid consumers when the local provider enters their actual build graph.
 
-- [ ] [autoware_imu_corrector](../../src/universe/autoware_universe/sensing/autoware_imu_corrector/package.xml)
+- [x] [autoware_imu_corrector](../../src/universe/autoware_universe/sensing/autoware_imu_corrector/package.xml)
 - [x] [autoware_pcl_extensions](../../src/universe/autoware_universe/sensing/autoware_pcl_extensions/package.xml)
 - [x] [autoware_pointcloud_preprocessor](../../src/universe/autoware_universe/sensing/autoware_pointcloud_preprocessor/package.xml)
+
+Phase 9.4 complete, 2026-11-23: three Universe modules plus the local managed-TF
+and generic CGAL prerequisites pass their complete selected gates. The preprocessor
+includes all 185 original C++ cases and eight Python scenarios; IMU includes all
+nine original cases. Added checks cover voxel geometry, frame/covariance/header
+contracts and selected Agnocast-only transport. See the module journals for
+exact profiles, independent source corrections and limitations. Definition
+coverage is now 117/244, leaving 127 packages without definitions; the initial
+census above is retained. Complete package-contract reconciliation remains 9.20.
 
 ### Phase 9.5: Clustering, shape estimation and map-aware detection
 
