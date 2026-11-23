@@ -1,14 +1,15 @@
-#include "standalone.hpp"
+#include "filter.hpp"
+#include "graph.hpp"
 
 #include <agnocast/node/agnocast_node.hpp>
 #include <agnocast/node/agnocast_only_single_threaded_executor.hpp>
-#include <rcl_interfaces/msg/detail/log__rosidl_typesupport_introspection_cpp.hpp>
-#include <rcl_interfaces/msg/log.hpp>
+#include <rclcpp/typesupport_helpers.hpp>
 #include <rosidl_typesupport_introspection_cpp/field_types.hpp>
 #include <rosidl_typesupport_introspection_cpp/message_introspection.hpp>
 
-#include <rcl_interfaces/msg/detail/log__rosidl_typesupport_introspection_c.h>
-#include <rcl_interfaces/msg/detail/log__struct.h>
+#include <std_msgs/msg/string.hpp>
+
+#include <rosidl_runtime_c/type_description/type_description__struct.h>
 #include <sys/random.h>
 
 #include <cstdio>
@@ -122,27 +123,35 @@ const char * resolve_qos(rmw_qos_profile_t & qos)
 struct Endpoint
 {
   std::string topic, type, route;
-  bool c_log = false;
+  const rosidl_message_type_support_t * application_ts;
+  const rmw_node_t * owner_node;
+  std::map<rmw_event_type_t, std::shared_ptr<Event>> events;
+  std::mutex events_mutex;
+  Lease lease;
+  std::shared_ptr<rcpputils::SharedLibrary> library;
+  const rosidl_message_type_support_t * native_ts;
   const MessageMembers * members;
   rmw_qos_profile_t qos;
   std::shared_ptr<agnocast::Node> node;
   Endpoint(
     const rmw_node_t * owner, const rosidl_message_type_support_t * ts, const char * name,
-    const rmw_qos_profile_t & requested)
-  : topic(name), qos(requested)
+    const rmw_qos_profile_t & requested, bool rpc)
+  : topic(name), application_ts(ts), owner_node(owner), native_ts(ts), qos(requested)
   {
     auto intro = get_message_typesupport_handle(ts, "rosidl_typesupport_introspection_cpp");
     if (!intro) {
       rmw_reset_error();
       auto c = get_message_typesupport_handle(ts, "rosidl_typesupport_introspection_c");
-      if (
-        !c || c != ROSIDL_TYPESUPPORT_INTERFACE__MESSAGE_SYMBOL_NAME(
-                     rosidl_typesupport_introspection_c, rcl_interfaces, msg, Log)()) {
-        throw std::runtime_error("native endpoint requires C++ introspection or a C Log publisher");
-      }
-      c_log = true;
-      intro = ROSIDL_TYPESUPPORT_INTERFACE__MESSAGE_SYMBOL_NAME(
-        rosidl_typesupport_introspection_cpp, rcl_interfaces, msg, Log)();
+      if (!c || !ts->get_type_description_func)
+        throw std::runtime_error("missing generated type support");
+      const auto * desc = ts->get_type_description_func(ts);
+      if (!desc) throw std::runtime_error("no message description");
+      const auto type_name = desc->type_description.type_name.data;
+      library = rclcpp::get_typesupport_library(type_name, "rosidl_typesupport_cpp");
+      native_ts =
+        rclcpp::get_message_typesupport_handle(type_name, "rosidl_typesupport_cpp", *library);
+      intro = get_message_typesupport_handle(native_ts, "rosidl_typesupport_introspection_cpp");
+      if (!intro) throw std::runtime_error("canonical C++ introspection unavailable");
     }
     members = static_cast<const MessageMembers *>(intro->data);
     if (has_buffer(*members)) throw std::runtime_error("standalone Buffer layout not implemented");
@@ -150,13 +159,21 @@ struct Endpoint
     type = std::string(members->message_namespace_) + "/" + members->message_name_;
     for (auto pos = type.find("::"); pos != std::string::npos; pos = type.find("::"))
       type.replace(pos, 2, "/");
-    route =
-      "/_rmw_agnocast/v2/d" + std::to_string(owner->context->actual_domain_id) + topic + "/" + type;
+    route = std::string(rpc ? "/_rmw_agnocast/rpc2/d" : "/_rmw_agnocast/v3/d") +
+            std::to_string(owner->context->actual_domain_id) + topic + "/" + type;
     static std::once_flag once;
     std::call_once(once, [] { agnocast::init(0, nullptr); });
     rclcpp::NodeOptions options;
     options.use_global_arguments(false).start_parameter_services(false).use_clock_thread(false);
     node = std::make_shared<agnocast::Node>(owner->name, owner->namespace_, options);
+  }
+  ~Endpoint()
+  {
+    for (auto & entry : events) {
+      auto & event = *entry.second;
+      std::lock_guard lock(event.callback_mutex);
+      event.callback = nullptr;
+    }
   }
   auto ros_qos() const
   {
@@ -171,18 +188,50 @@ int64_t monotonic_ns()
            std::chrono::steady_clock::now().time_since_epoch())
     .count();
 }
+int64_t system_ns()
+{
+  return std::chrono::duration_cast<std::chrono::nanoseconds>(
+           std::chrono::system_clock::now().time_since_epoch())
+    .count();
+}
+struct SampleHeader
+{
+  uint8_t gid[RMW_GID_STORAGE_SIZE];
+  int64_t expiry;
+  int64_t stamp;
+  uint64_t sequence;
+};
+struct QueuedSample
+{
+  Loan loan;
+  SampleHeader header;
+  int64_t received;
+  uint64_t sequence;
+  rmw_message_info_t info() const
+  {
+    rmw_message_info_t out{};
+    out.source_timestamp = header.stamp;
+    out.received_timestamp = received;
+    out.publication_sequence_number = header.sequence;
+    out.reception_sequence_number = sequence;
+    out.publisher_gid.implementation_identifier = id;
+    std::memcpy(out.publisher_gid.data, header.gid, sizeof(header.gid));
+    return out;
+  }
+};
 struct Writer : Endpoint
 {
   agnocast::TypeErasedPublisher native;
   rmw_gid_t gid{};
+  std::mutex send_mutex;
+  uint64_t sequence{};
   rmw_publisher_t handle{};
   std::mutex mutex;
   std::map<void *, agnocast::ipc_shared_ptr<void>> borrowed;
 
   auto borrow()
   {
-    auto loan =
-      native.borrow_loaned_message(members->size_of_ + sizeof(gid.data) + sizeof(int64_t));
+    auto loan = native.borrow_loaned_message(members->size_of_ + sizeof(SampleHeader));
     try {
       members->init_function(loan.get(), rosidl_runtime_cpp::MessageInitialization::ALL);
     } catch (...) {
@@ -202,16 +251,17 @@ struct Writer : Endpoint
   }
   void send(agnocast::ipc_shared_ptr<void> && loan)
   {
-    std::memcpy(static_cast<char *>(loan.get()) + members->size_of_, gid.data, sizeof(gid.data));
-    const auto duration = rmw_time_total_nsec(qos.lifespan);
-    int64_t expires = 0;
+    std::lock_guard lock(send_mutex);
+    SampleHeader header{};
+    std::memcpy(header.gid, gid.data, sizeof(header.gid));
+    header.sequence = ++sequence;
+    header.stamp = system_ns();
+    auto duration = rmw_time_total_nsec(qos.lifespan);
     if (duration) {
-      const auto now = monotonic_ns();
-      if (duration < INT64_MAX - now) expires = now + duration;
+      auto now = monotonic_ns();
+      if (duration < INT64_MAX - now) header.expiry = now + duration;
     }
-    std::memcpy(
-      static_cast<char *>(loan.get()) + members->size_of_ + sizeof(gid.data), &expires,
-      sizeof(expires));
+    std::memcpy(static_cast<char *>(loan.get()) + members->size_of_, &header, sizeof(header));
     native.publish(std::move(loan), [this](void * p) { destroy(p); });
   }
   ~Writer()
@@ -220,8 +270,8 @@ struct Writer : Endpoint
   }
   Writer(
     const rmw_node_t * owner, const rosidl_message_type_support_t * ts, const char * name,
-    const rmw_qos_profile_t & q, const rmw_publisher_options_t & options)
-  : Endpoint(owner, ts, name, q),
+    const rmw_qos_profile_t & q, const rmw_publisher_options_t & options, bool rpc = false)
+  : Endpoint(owner, ts, name, q, rpc),
     native(
       node.get(),
       route + (qos.reliability == RMW_QOS_POLICY_RELIABILITY_RELIABLE ? "/r" : "/b") +
@@ -231,24 +281,33 @@ struct Writer : Endpoint
     if (getrandom(gid.data, sizeof(gid.data), 0) != sizeof(gid.data))
       throw std::runtime_error("native publisher ID unavailable");
     gid.implementation_identifier = id;
-    handle = {id, this, topic.c_str(), options, !c_log};
+    if (!rpc) lease.announce(owner, 'P', topic, type, ts->get_type_hash_func(ts), &qos, &gid);
+    handle = {id, this, topic.c_str(), options, !library};
   }
 };
 struct Reader : Endpoint
 {
   Context * context;
   rmw_subscription_t handle{};
-  std::deque<Loan> pending;
-  std::map<const void *, Loan> held;
+  uint64_t sequence{};
+  // Native subscriptions must still exist when queued and held loans release their references.
   std::vector<std::shared_ptr<agnocast::Subscription<void>>> routes;
+  std::deque<QueuedSample> pending;
+  Filter filter;
+  std::recursive_mutex callback_mutex;
+  rmw_event_callback_t callback{};
+  const void * callback_data{};
+  size_t unreported{};
+
+  std::map<const void *, Loan> held;
   agnocast::AgnocastOnlySingleThreadedExecutor executor;
   std::thread thread;
   Reader(
     const rmw_node_t * owner, const rosidl_message_type_support_t * ts, const char * name,
-    const rmw_qos_profile_t & q, const rmw_subscription_options_t & options)
-  : Endpoint(owner, ts, name, q), context(state(owner->context))
+    const rmw_qos_profile_t & q, const rmw_subscription_options_t & options, bool rpc = false)
+  : Endpoint(owner, ts, name, q, rpc), context(state(owner->context))
   {
-    if (c_log) throw std::runtime_error("C Log subscriptions require a C destination adapter");
+    if (options.content_filter_options) filter = Filter(*members, *options.content_filter_options);
     auto attach = [&](const std::string & suffix) {
       agnocast::SubscriptionOptions opt;
       opt.ignore_local_publications = options.ignore_local_publications;
@@ -258,11 +317,21 @@ struct Reader : Endpoint
           [this](Loan sample) {
             {
               std::lock_guard lock(context->mutex);
-              if (expired(sample)) return;
+              SampleHeader header;
+              std::memcpy(
+                &header, static_cast<const char *>(sample.get()) + members->size_of_,
+                sizeof(header));
+              if (header.expiry && monotonic_ns() >= header.expiry) return;
+              if (filter.matches && !filter.matches(sample.get())) return;
               if (pending.size() == qos.depth) pending.pop_front();
-              pending.push_back(std::move(sample));
+              pending.push_back({std::move(sample), header, system_ns(), ++sequence});
             }
             context->changed.notify_all();
+            std::lock_guard callback_lock(callback_mutex);
+            if (callback)
+              callback(callback_data, 1);
+            else
+              ++unreported;
           },
           opt, agnocast::SubscriptionRole::AgnocastOnly));
     };
@@ -276,22 +345,18 @@ struct Reader : Endpoint
     handle.data = this;
     handle.topic_name = topic.c_str();
     handle.options = options;
-    handle.can_loan_messages = true;
+    handle.can_loan_messages = !library;
+    handle.is_cft_enabled = bool(filter.matches);
+    handle.is_cft_supported = true;
+    if (!rpc) lease.announce(owner, 'S', topic, type, ts->get_type_hash_func(ts), &qos);
     executor.add_node(node);
     thread = std::thread([this] { executor.spin(); });
   }
-  bool expired(const Loan & sample) const
-  {
-    int64_t expiry;
-    std::memcpy(
-      &expiry,
-      static_cast<const char *>(sample.get()) + members->size_of_ + sizeof(rmw_gid_t::data),
-      sizeof(expiry));
-    return expiry && monotonic_ns() >= expiry;
-  }
   bool ready()
   {
-    while (!pending.empty() && expired(pending.front())) pending.pop_front();
+    while (!pending.empty() && pending.front().header.expiry &&
+           monotonic_ns() >= pending.front().header.expiry)
+      pending.pop_front();
     return !pending.empty();
   }
   ~Reader()
@@ -311,6 +376,12 @@ rmw_publisher_t * rmw_create_publisher(
 {
   if (!n || n->implementation_identifier != standalone::id || !t || !name || !q || !o)
     return nullptr;
+  if (
+    o->require_unique_network_flow_endpoints ==
+    RMW_UNIQUE_NETWORK_FLOW_ENDPOINTS_STRICTLY_REQUIRED) {
+    RMW_SET_ERROR_MSG("native transport has no network flow");
+    return nullptr;
+  }
   try {
     return &(new Writer(n, t, name, *q, *o))->handle;
   } catch (const std::exception & e) {
@@ -324,6 +395,12 @@ rmw_subscription_t * rmw_create_subscription(
 {
   if (!n || n->implementation_identifier != standalone::id || !t || !name || !q || !o)
     return nullptr;
+  if (
+    o->require_unique_network_flow_endpoints ==
+    RMW_UNIQUE_NETWORK_FLOW_ENDPOINTS_STRICTLY_REQUIRED) {
+    RMW_SET_ERROR_MSG("native transport has no network flow");
+    return nullptr;
+  }
   try {
     return &(new Reader(n, t, name, *q, *o))->handle;
   } catch (const std::exception & e) {
@@ -350,17 +427,15 @@ rmw_ret_t rmw_publish(const rmw_publisher_t * p, const void * msg, rmw_publisher
   try {
     auto loan = w.borrow();
     try {
-      if (w.c_log) {
-        const auto & src = *static_cast<const rcl_interfaces__msg__Log *>(msg);
-        auto & dst = *static_cast<rcl_interfaces::msg::Log *>(loan.get());
-        dst.stamp.sec = src.stamp.sec;
-        dst.stamp.nanosec = src.stamp.nanosec;
-        dst.level = src.level;
-        dst.line = src.line;
-        dst.name.assign(src.name.data, src.name.size);
-        dst.msg.assign(src.msg.data, src.msg.size);
-        dst.file.assign(src.file.data, src.file.size);
-        dst.function.assign(src.function.data, src.function.size);
+      if (w.library) {
+        rclcpp::SerializedMessage scratch;
+        auto & bytes = scratch.get_rcl_serialized_message();
+        auto ret = rmw_serialize(msg, w.application_ts, &bytes);
+        if (ret == RMW_RET_OK) ret = rmw_deserialize(&bytes, w.native_ts, loan.get());
+        if (ret != RMW_RET_OK) {
+          w.cancel(std::move(loan));
+          return ret;
+        }
       } else {
         copy_message(*w.members, msg, loan.get());
       }
@@ -381,20 +456,22 @@ static rmw_ret_t take_locked(
 {
   *taken = false;
   if (!r.ready()) return RMW_RET_OK;
-  auto & sample = r.pending.front();
+  auto & sample = r.pending.front().loan;
   try {
-    if (msg) copy_message(*r.members, sample.get(), msg);
+    if (r.library) {
+      if (loan) return RMW_RET_UNSUPPORTED;
+      rclcpp::SerializedMessage scratch;
+      auto & bytes = scratch.get_rcl_serialized_message();
+      auto ret = rmw_serialize(sample.get(), r.native_ts, &bytes);
+      if (ret == RMW_RET_OK) ret = rmw_deserialize(&bytes, r.application_ts, msg);
+      if (ret != RMW_RET_OK) return ret;
+    } else if (msg)
+      copy_message(*r.members, sample.get(), msg);
   } catch (const std::exception & e) {
     RMW_SET_ERROR_MSG(e.what());
     return RMW_RET_ERROR;
   }
-  if (info) {
-    *info = {};
-    info->publisher_gid.implementation_identifier = standalone::id;
-    std::memcpy(
-      info->publisher_gid.data, static_cast<const char *>(sample.get()) + r.members->size_of_,
-      sizeof(info->publisher_gid.data));
-  }
+  if (info) *info = r.pending.front().info();
   if (loan) {
     const void * ptr = sample.get();
     try {
@@ -481,7 +558,7 @@ rmw_ret_t rmw_borrow_loaned_message(
   if (!p || p->implementation_identifier != standalone::id || !msg || *msg)
     return RMW_RET_INVALID_ARGUMENT;
   auto & w = *static_cast<Writer *>(p->data);
-  if (w.c_log) return RMW_RET_UNSUPPORTED;
+  if (w.library) return RMW_RET_UNSUPPORTED;
   std::lock_guard lock(w.mutex);
   try {
     auto loan = w.borrow();
@@ -603,4 +680,169 @@ rmw_ret_t rmw_qos_profile_check_compatible(
     subscription.durability == RMW_QOS_POLICY_DURABILITY_TRANSIENT_LOCAL)
     report("", "volatile publisher cannot satisfy transient-local subscription");
   return RMW_RET_OK;
+}
+
+rmw_ret_t rmw_publish_serialized_message(
+  const rmw_publisher_t * pub, const rmw_serialized_message_t * msg, rmw_publisher_allocation_t *)
+{
+  if (!pub || pub->implementation_identifier != standalone::id || !msg)
+    return RMW_RET_INVALID_ARGUMENT;
+  auto & writer = *static_cast<Writer *>(pub->data);
+  try {
+    auto loan = writer.borrow();
+    auto ts = writer.native_ts;
+    auto ret = rmw_deserialize(msg, ts, loan.get());
+    if (ret != RMW_RET_OK) {
+      writer.cancel(std::move(loan));
+      return ret;
+    }
+    writer.send(std::move(loan));
+    return RMW_RET_OK;
+  } catch (const std::exception & e) {
+    RMW_SET_ERROR_MSG(e.what());
+    return RMW_RET_ERROR;
+  }
+}
+rmw_ret_t rmw_take_serialized_message_with_info(
+  const rmw_subscription_t * sub, rmw_serialized_message_t * msg, bool * taken,
+  rmw_message_info_t * info, rmw_subscription_allocation_t *)
+{
+  if (!sub || sub->implementation_identifier != standalone::id || !msg || !taken || !info)
+    return RMW_RET_INVALID_ARGUMENT;
+  auto & reader = *static_cast<Reader *>(sub->data);
+  std::lock_guard lock(reader.context->mutex);
+  *taken = false;
+  if (!reader.ready()) return RMW_RET_OK;
+  auto & sample = reader.pending.front();
+  auto ret = rmw_serialize(sample.loan.get(), reader.native_ts, msg);
+  if (ret != RMW_RET_OK) return ret;
+  *info = sample.info();
+  reader.pending.pop_front();
+  *taken = true;
+  return RMW_RET_OK;
+}
+rmw_ret_t rmw_take_serialized_message(
+  const rmw_subscription_t * sub, rmw_serialized_message_t * msg, bool * taken,
+  rmw_subscription_allocation_t * allocation)
+{
+  rmw_message_info_t info{};
+  return rmw_take_serialized_message_with_info(sub, msg, taken, &info, allocation);
+}
+
+rmw_publisher_t * standalone::rpc_writer(
+  const rmw_node_t * node, const char * name, const rmw_qos_profile_t & qos)
+{
+  return &(new Writer(
+             node, rosidl_typesupport_cpp::get_message_type_support_handle<std_msgs::msg::String>(),
+             name, qos, rmw_get_default_publisher_options(), true))
+            ->handle;
+}
+rmw_subscription_t * standalone::rpc_reader(
+  const rmw_node_t * node, const char * name, const rmw_qos_profile_t & qos)
+{
+  return &(new Reader(
+             node, rosidl_typesupport_cpp::get_message_type_support_handle<std_msgs::msg::String>(),
+             name, qos, rmw_get_default_subscription_options(), true))
+            ->handle;
+}
+
+rmw_ret_t rmw_subscription_set_on_new_message_callback(
+  rmw_subscription_t * sub, rmw_event_callback_t callback, const void * data)
+{
+  if (!sub || sub->implementation_identifier != standalone::id) return RMW_RET_INVALID_ARGUMENT;
+  auto & r = *static_cast<Reader *>(sub->data);
+  std::lock_guard lock(r.callback_mutex);
+  r.callback = callback;
+  r.callback_data = data;
+  if (callback && r.unreported) {
+    auto n = std::exchange(r.unreported, size_t{});
+    callback(data, n);
+  }
+  return RMW_RET_OK;
+}
+
+rmw_ret_t rmw_subscription_set_content_filter(
+  rmw_subscription_t * sub, const rmw_subscription_content_filter_options_t * options)
+{
+  if (!sub || sub->implementation_identifier != standalone::id || !options)
+    return RMW_RET_INVALID_ARGUMENT;
+  auto & r = *static_cast<Reader *>(sub->data);
+  try {
+    Filter next(*r.members, *options);
+    std::lock_guard lock(r.context->mutex);
+    r.filter = std::move(next);
+    sub->is_cft_enabled = bool(r.filter.matches);
+    return RMW_RET_OK;
+  } catch (const std::bad_alloc &) {
+    return RMW_RET_BAD_ALLOC;
+  } catch (const std::exception & e) {
+    RMW_SET_ERROR_MSG(e.what());
+    return RMW_RET_INVALID_ARGUMENT;
+  }
+}
+rmw_ret_t rmw_subscription_get_content_filter(
+  const rmw_subscription_t * sub, rcutils_allocator_t * a,
+  rmw_subscription_content_filter_options_t * options)
+{
+  if (!sub || sub->implementation_identifier != standalone::id || !a || !options)
+    return RMW_RET_INVALID_ARGUMENT;
+  auto & r = *static_cast<Reader *>(sub->data);
+  try {
+    std::lock_guard lock(r.context->mutex);
+    return r.filter.get(a, options);
+  } catch (const std::bad_alloc &) {
+    return RMW_RET_BAD_ALLOC;
+  }
+}
+
+namespace
+{
+rmw_ret_t init_event(rmw_event_t * handle, Endpoint & ep, bool publisher, rmw_event_type_t kind)
+{
+  if (!rmw_event_type_is_supported(kind) || publisher != (kind >= RMW_EVENT_LIVELINESS_LOST))
+    return RMW_RET_UNSUPPORTED;
+  try {
+    std::lock_guard lock(ep.events_mutex);
+    auto it = ep.events.find(kind);
+    if (it == ep.events.end()) {
+      auto event = std::shared_ptr<Event>(
+        new Event{state(ep.owner_node->context), ep.topic, ep.type, publisher, ep.qos, kind});
+      observe_event(ep.owner_node, event);
+      it = ep.events.emplace(kind, event).first;
+    }
+    *handle = {standalone::id, it->second.get(), kind};
+    return RMW_RET_OK;
+  } catch (const std::exception & e) {
+    RMW_SET_ERROR_MSG(e.what());
+    return RMW_RET_ERROR;
+  }
+}
+}  // namespace
+rmw_ret_t rmw_publisher_event_init(rmw_event_t * h, const rmw_publisher_t * p, rmw_event_type_t e)
+{
+  if (!h || !p || p->implementation_identifier != standalone::id) return RMW_RET_INVALID_ARGUMENT;
+  return init_event(h, *static_cast<Writer *>(p->data), true, e);
+}
+rmw_ret_t rmw_subscription_event_init(
+  rmw_event_t * h, const rmw_subscription_t * s, rmw_event_type_t e)
+{
+  if (!h || !s || s->implementation_identifier != standalone::id) return RMW_RET_INVALID_ARGUMENT;
+  return init_event(h, *static_cast<Reader *>(s->data), false, e);
+}
+
+rmw_ret_t rmw_publisher_assert_liveliness(const rmw_publisher_t * p)
+{
+  if (!p) return RMW_RET_INVALID_ARGUMENT;
+  if (p->implementation_identifier != standalone::id) return RMW_RET_INCORRECT_RMW_IMPLEMENTATION;
+  // Accepted native publishers use automatic liveliness with no finite lease.
+  return RMW_RET_OK;
+}
+rmw_ret_t rmw_publisher_wait_for_all_acked(const rmw_publisher_t * p, rmw_time_t)
+{
+  if (!p) return RMW_RET_INVALID_ARGUMENT;
+  if (p->implementation_identifier != standalone::id) return RMW_RET_INCORRECT_RMW_IMPLEMENTATION;
+  if (static_cast<Writer *>(p->data)->qos.reliability == RMW_QOS_POLICY_RELIABILITY_BEST_EFFORT)
+    return RMW_RET_OK;
+  RMW_SET_ERROR_MSG("native publish completion has no per-reader acknowledgement");
+  return RMW_RET_UNSUPPORTED;
 }

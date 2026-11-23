@@ -1,6 +1,6 @@
 # Standalone same-host RMW milestone
 
-The rmw_agnocast library in this revision owns its context, node and endpoint handles, guard conditions and blocking wait. The publisher lends native objects through Agnocast. The subscriber queues kernel loans and wakes its local RMW context. Two matching processes on one host need the compatible device and heap hook. Ordinary supported topic names go directly to native transport without topic lists. Native route identity includes the ROS domain, resolved name, canonical C++ message type, reliability and durability. This revision versions the native route because the shared sample now carries a publisher expiry time. Upgrade communicating processes together.
+The rmw_agnocast library in this revision owns its context, node and endpoint handles, guard conditions and blocking wait. The publisher lends native objects through Agnocast. The subscriber queues kernel loans and wakes its local RMW context. Two matching processes on one host need the compatible device and heap hook. Ordinary supported topic names go directly to native transport without topic lists. Native route identity includes the ROS domain, resolved name, canonical C++ message type, reliability and durability. This revision versions the native route because the shared sample now carries an expiry time, source timestamp and publication sequence. Upgrade communicating processes together.
 
 The release package of the heap hook and the running kernel module are unchanged. The Agnocast **userspace library** built from this revision suppresses its legacy automatic bridge and discovery processes when rmw_agnocast is selected. Build that library alongside the RMW. Use a fresh install prefix to avoid stale bridge executables from earlier builds.
 
@@ -47,7 +47,7 @@ Use the actual location of the Agnocast 2.4.1 hook visible in the userspace. The
 
 ## Scope
 
-This is a transport isolation milestone. The topic tests disable auxiliary node endpoints. A separate test enables the standard rcl logging publisher on /rosout with its default QoS. The RMW converts the C Log into the same native C++ Log used by ordinary typed subscribers. C publisher loans and generic C message support remain open. The stock minimal publisher now reaches service creation during default node startup. Graph listings, service/client operations, event callbacks, serialized operations and Buffer representations are incomplete. Unsupported RMW calls report failure. The old per-topic gateway used Cyclone-delegated endpoints in the same process and is not built as a standalone bridge.
+Default rclcpp nodes run their parameter, logging and type-description endpoints. C++ typed topics use native message objects and support loans. C-layout applications convert through generated CDR callbacks into the canonical C++ object. Services use CDR request/reply frames on private native routes and a reply route per client GID. A local recorder reads CDR from a native subscription. The external bridge still needs its own implementation.
 
 The separate Cyclone control used the same ROS domain and topic name. While native writer and reader completed delivery, the stock DDS echo received no sample and timed out. A stock Cyclone publisher then delivered a control string to a fresh stock echo with the same settings. Previous Autoware pipeline and latency results belong to the mixed implementation at 1a7d9b42. No standalone latency or Autoware compatibility result is claimed.
 
@@ -59,3 +59,40 @@ Each trial exercises the native QoS compatibility query for both reliability
 directions and for an incompatible durability pairing.
 
 The rosout check keeps its writer alive and attaches a C++ subscriber after both log messages were emitted. Expect `late rosout fresh=1 expired=0` and `queued rosout after expiry=0`. Allow about half a minute for the default ten-second lifespan checks.
+
+
+## Lyrical API coverage
+
+The installed reference is rmw_cyclonedds_cpp 4.1.5 at 74e8047e. The two ELF
+libraries export the same 97 rmw_ symbols. Seven rmw_agnocast entry points
+always return unsupported. Cyclone 4.1.5 does the same for all seven.
+[Reference implementation](https://github.com/ros2/rmw_cyclonedds/blob/74e8047eb717953b31155323bfe137e81caa423e/rmw_cyclonedds_cpp/src/rmw_node.cpp)
+
+| Area | Native behavior and scope |
+|---|---|
+| Services | Standard discovery, QoS queries, request IDs, blocking executor waits, response routing, and arrival callbacks. CDR encoding adds work to request/reply. |
+| Graph | Nodes and enclaves, names/types by node, logical endpoint counts, topic and service endpoint details, and graph guard wakeups. Per-entity file locks and inotify track lifecycle. Peers must share effective UID, IPC namespace, domain and the graph directory in /dev/shm. Each logical service or client has one graph identity. |
+| Topics and tools | Ordinary, loaned, batched and CDR operations, generated C and C++ message layouts, timestamps, sequence numbers and sample arrival callbacks. Fast CDR and generated serialization callbacks encode bytes. The test checks the absence of Cyclone, Fast DDS, and their RMW libraries. |
+| Events | Publication/subscription matching, incompatible type and QoS on both sides, and subscriber automatic liveliness changes. Events reflect discovered graph snapshots. Very short-lived intermediate states can be coalesced. |
+| QoS and filters | Volatile or transient-local KeepLast with expiry. Scalar comparisons on supported numeric, Boolean and string fields, nested paths and parameter substitution. Unsupported compound expressions fail at configuration. Local network-flow queries return an empty array. |
+| Deferred by reference | Publisher and subscription allocation init/fini (four), DynamicData take with/without info (two), and dynamic serialization-support initialization (one). Generated typesupport CDR works independently of DynamicData. The vendor DynamicData provider is outside this experiment. |
+| Remaining differences from Cyclone | Reliable wait-for-all-acked needs per-reader delivery acknowledgement. Kernel publish completion exposes no such receipt. Best-effort wait completes immediately. Deadline-missed events on either side and publisher liveliness-lost require deadline and finite-lease tracking. Transport message-lost needs loss accounting. Native queue replacement at KeepLast depth is intentional. |
+| Other open work | Buffer layouts, cross-host gateway, full Lyrical conformance and Autoware load/latency qualification of this revision. |
+
+The standalone check exercises concurrent default-option clients, executor events,
+serialized pub/sub, graph inspection and filters alongside the prior topic and
+rosout checks. To run the stock ROS tool check in the same sourced, stripped
+environment, install or build examples_rclcpp_minimal_publisher and make its
+executable available. Python needs rclpy, std_msgs, rcl_interfaces and the
+rosbag2 SQLite storage plugin.
+
+```bash
+talker_prefix=$(ros2 pkg prefix examples_rclcpp_minimal_publisher)
+talker="$talker_prefix/lib/examples_rclcpp_minimal_publisher/publisher_member_function"
+python3 experiments/rmw-agnocast/standalone/check-stock.py "$talker"
+```
+
+The check receives a stock talker message, calls its parameter service, records
+the same topic, decodes the stored messages, and checks graph cleanup after
+terminating the test's child talker. Rebuild the RMW once and restart both ends
+when upgrading from the previous native sample layout.

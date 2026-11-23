@@ -3975,3 +3975,65 @@ examples_rclcpp_minimal_publisher/lib/examples_rclcpp_minimal_publisher/publishe
 with default options reached rmw_create_service and failed with its explicit
 unsupported error. Service request/reply and executor readiness are the next
 default-node milestone.
+
+## 2026-11-23 — Grouped standalone RMW APIs and migration checks
+
+Qualify the ordinary application and tools path in the Cyclone-stripped
+Lyrical prefix. Use the matching Cyclone release only as a source reference
+for optional operations. The installed manifest says rmw_cyclonedds_cpp 4.1.5.
+The upstream 4.1.5 tag resolves to 74e8047eb717953b31155323bfe137e81caa423e.
+Its rmw_node.cpp explicitly returns unsupported for publisher/subscription
+allocation init/fini, both DynamicData takes and initialization of a dynamic
+serialization provider. These seven functions are deferred here. The installed
+Fast DDS DynamicData provider was excluded. nm -D --defined-only on the two
+RMW libraries yielded identical sets of 97 exported rmw_ names. Symbol equality
+is an ABI inventory. Functional coverage is recorded below and in the
+[standalone API table](../rmw-agnocast/standalone/README.md).
+
+The service path uses generated CDR callbacks in C and C++ with Fast CDR.
+Private native request routes contain the service type hash and responses go
+to the requesting client's GID. The RMW wait set tests client and service
+queues under the same lock as subscriptions. Each public graph entity owns a
+file lock in its effective UID, IPC namespace and domain. One record describes
+a logical endpoint across its native QoS routes. inotify wakes node graph guards
+and updates matched, incompatible-type, incompatible-QoS and automatic
+subscriber liveliness events. The graph registry holds metadata only. Native
+topic objects carry publication identity, sequence, source timestamp and
+expiry. Readers assign reception sequence and time on enqueue. C-layout
+applications use generated CDR to convert to/from the canonical C++ object.
+Existing loans on C++ typed topics continue to use Agnocast.
+
+Follow the standalone README from the repository root to build agnocastlib,
+rmw_agnocast and the C++ probes sequentially, then run its check.sh inside
+the stripped prefix. The ordinary, borrowed, batched and late/expired /rosout
+checks passed. Two concurrent default-option clients completed requests with
+opposite Boolean inputs to one server. Each received its own string response.
+Graph checks found a single server and its logical type despite private reply
+routes. The endpoint probe observed each requested match, incompatible QoS
+and incompatible type event, then verified filter admission, callback count,
+serialized payload, both sequence numbers and empty network-flow results.
+
+For the stock application check, run check-stock.py from the same README.
+The prebuilt unmodified C++ minimal publisher ran with default node options.
+An rclpy node received its string and obtained use_sim_time through a standard
+parameter service. Stock ros2 bag record wrote the topic using SQLite3.
+The check decoded each stored CDR record against the original text. It also
+killed the child talker and looked up graph counts and node names again.
+Combining recording and abrupt writer exit exposed an invalid kernel reference
+release on reader teardown with unread samples. The original member order
+destroyed native subscriptions before the RMW queue. Keep native subscriptions
+alive through destruction of both queued and outstanding reader loans.
+
+Agnocast exposes no per-reader publish acknowledgement. Reliable acknowledgement
+wait, finite deadlines/leases and transport loss counters remain gaps relative
+to Cyclone. Seven of its eleven event kinds have native implementations. The
+current filter accepts scalar comparisons, and serialized size is bounded-type
+only. The graph watcher reports discovered snapshots. Short-lived intermediate
+states can coalesce. The v3 native topic layout requires mutually updated
+processes. Cross-host gateway and whole-pipeline load results remain separate.
+
+After the teardown fix, the full grouped C++ suite passed. Two consecutive
+stock application/recording/crash runs each decoded 12 samples and exited
+successfully. The minimum available host memory across these three final
+runs was 12523 MiB. No kernel module, heaphook, Bazel or Universe changes
+were required.

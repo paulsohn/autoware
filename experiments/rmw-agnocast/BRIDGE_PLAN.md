@@ -8,7 +8,7 @@ The measured prototype links the Cyclone RMW, inherits unimplemented entry point
 
 First demonstrate two ordinary rclcpp processes exchanging a standard message on a previously unspecified topic in a Lyrical userspace lacking the Cyclone RMW. Check dependency resolution, endpoint discovery, blocking wakeup, payload receipt, shutdown, and an actionable error when native transport is unavailable. Then qualify other message layouts, QoS, graph tools, service/client support and a gateway with explicitly separate native and DDS endpoints.
 
-The [first standalone implementation and isolated checks](standalone/README.md) now exercise ordinary and loaned C++ topic delivery. The remaining default node facilities and an explicit independent network bridge are open.
+The [standalone implementation and isolated checks](standalone/README.md) cover default rclcpp nodes, generated C and C++ types, concurrent service clients, graph discovery and a stock local recorder. The independent network bridge remains open. Use the standalone API coverage table when selecting its endpoints and QoS.
 
 ## Prototype deployment contract
 

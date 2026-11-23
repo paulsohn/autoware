@@ -9,7 +9,7 @@ unset AGNOCAST_RMW_PUBLISH_TOPICS AGNOCAST_RMW_SUBSCRIBE_TOPICS AGNOCAST_RMW_TOP
 unset AGNOCAST_BRIDGE_MODE AGNOCAST_NO_DISCOVERY_AGENT
 library="$(ros2 pkg prefix rmw_agnocast)/lib/librmw_agnocast.so"
 deps=$(ldd "$library")
-if grep -Ei 'librmw_(cyclonedds|fastrtps|zenoh)|libddsc\.so|not found' <<< "$deps"; then exit 1; fi
+if grep -Ei 'librmw_(cyclonedds|fastrtps|zenoh)|libddsc\.so|libfastdds\.so|librosidl_dynamic_typesupport_fastrtps\.so|not found' <<< "$deps"; then exit 1; fi
 for mode in ordinary loan batch; do
   topic="/standalone_${BASHPID}_${RANDOM}/${mode}"
   unset CHECK_BATCH
@@ -42,3 +42,5 @@ done
 test -f "$dir/published"
 timeout -k 2 18 "$rosout" reader "$dir"
 wait "$writer"
+bash "$(dirname "$0")/check-services.sh" "$(dirname "$probe")/service_check"
+timeout -k 2 12 "$(dirname "$probe")/api_check" "/api_graph_${BASHPID}_${RANDOM}"

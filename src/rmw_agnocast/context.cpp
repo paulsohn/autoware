@@ -1,9 +1,10 @@
-#include "standalone.hpp"
+#include "graph.hpp"
 
 #include <agnocast/agnocast_utils.hpp>
 
 #include <rcutils/strdup.h>
 #include <rmw/domain_id.h>
+#include <sys/eventfd.h>
 
 #include <chrono>
 #include <cstring>
@@ -134,6 +135,8 @@ struct LocalNode
 {
   std::string name, ns;
   std::unique_ptr<rmw_guard_condition_t, decltype(&rmw_destroy_guard_condition)> graph;
+  Lease lease;
+  GraphWatch watch;
 };
 rmw_node_t * rmw_create_node(rmw_context_t * ctx, const char * name, const char * ns)
 {
@@ -142,10 +145,14 @@ rmw_node_t * rmw_create_node(rmw_context_t * ctx, const char * name, const char 
     auto node = std::unique_ptr<LocalNode>(
       new LocalNode{name, ns, {rmw_create_guard_condition(ctx), rmw_destroy_guard_condition}});
     if (!node->graph) return nullptr;
-    auto handle = new rmw_node_t{id, node.get(), node->name.c_str(), node->ns.c_str(), ctx};
+    auto handle = std::unique_ptr<rmw_node_t>(
+      new rmw_node_t{id, node.get(), node->name.c_str(), node->ns.c_str(), ctx});
+    node->lease.announce(handle.get(), 'N');
+    node->watch.start(handle.get(), node->graph.get());
     node.release();
-    return handle;
-  } catch (const std::bad_alloc &) {
+    return handle.release();
+  } catch (const std::exception & e) {
+    RMW_SET_ERROR_MSG(e.what());
     return nullptr;
   }
 }
@@ -179,10 +186,7 @@ rmw_ret_t rmw_wait(
   rmw_clients_t * clients, rmw_events_t * events, rmw_wait_set_t * set, const rmw_time_t * timeout)
 {
   if (!set || set->implementation_identifier != id) return RMW_RET_INVALID_ARGUMENT;
-  if (
-    (services && services->service_count) || (clients && clients->client_count) ||
-    (events && events->event_count))
-    return RMW_RET_UNSUPPORTED;
+
   auto s = static_cast<Context *>(set->data);
   std::unique_lock lock(s->mutex);
   auto active = [&] {
@@ -191,6 +195,15 @@ rmw_ret_t rmw_wait(
       for (size_t i = 0; i < guards->guard_condition_count; ++i)
         if (auto g = static_cast<Guard *>(guards->guard_conditions[i]); g && g->triggered)
           return true;
+    if (events)
+      for (size_t i = 0; i < events->event_count; ++i)
+        if (event_ready(events->events[i])) return true;
+    if (services)
+      for (size_t i = 0; i < services->service_count; ++i)
+        if (services->services[i] && rpc_ready(services->services[i])) return true;
+    if (clients)
+      for (size_t i = 0; i < clients->client_count; ++i)
+        if (clients->clients[i] && rpc_ready(clients->clients[i])) return true;
     if (subs)
       for (size_t i = 0; i < subs->subscriber_count; ++i)
         if (subs->subscribers[i] && ready(subs->subscribers[i])) return true;
@@ -213,5 +226,25 @@ rmw_ret_t rmw_wait(
   if (subs)
     for (size_t i = 0; i < subs->subscriber_count; ++i)
       if (subs->subscribers[i] && !ready(subs->subscribers[i])) subs->subscribers[i] = nullptr;
+  if (services)
+    for (size_t i = 0; i < services->service_count; ++i)
+      if (services->services[i] && !rpc_ready(services->services[i]))
+        services->services[i] = nullptr;
+  if (clients)
+    for (size_t i = 0; i < clients->client_count; ++i)
+      if (clients->clients[i] && !rpc_ready(clients->clients[i])) clients->clients[i] = nullptr;
+  if (events)
+    for (size_t i = 0; i < events->event_count; ++i)
+      if (!event_ready(events->events[i])) events->events[i] = nullptr;
   return awake ? RMW_RET_OK : RMW_RET_TIMEOUT;
+}
+
+void standalone::observe_event(const rmw_node_t * node, const std::shared_ptr<Event> & event)
+{
+  auto & watch = static_cast<LocalNode *>(node->data)->watch;
+  {
+    std::lock_guard lock(watch.mutex);
+    watch.listeners.push_back(event);
+  }
+  eventfd_write(watch.stop, 1);
 }

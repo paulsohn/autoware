@@ -29,4 +29,8 @@ inline Context * state(const rmw_context_t * ctx)
                                                      : nullptr;
 }
 bool ready(void * subscription);
+bool rpc_ready(void * endpoint);
+rmw_publisher_t * rpc_writer(const rmw_node_t *, const char *, const rmw_qos_profile_t &);
+rmw_subscription_t * rpc_reader(const rmw_node_t *, const char *, const rmw_qos_profile_t &);
+
 }  // namespace standalone
