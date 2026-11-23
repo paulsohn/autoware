@@ -14,7 +14,7 @@ import time
 from ament_index_python.packages import get_package_prefix
 
 parser = argparse.ArgumentParser()
-parser.add_argument("transport", choices=["cyclone", "agnocast", "zenoh", "rmw-agnocast", "rmw-delegated", "mixed", "fixed"])
+parser.add_argument("transport", choices=["standalone", "cyclone", "agnocast", "zenoh", "rmw-agnocast", "rmw-delegated", "mixed", "fixed"])
 parser.add_argument("csv", type=Path)
 parser.add_argument("--typed-input", action="store_true")
 parser.add_argument("--payload-scope", action="store_true", help="allocate shared point bytes before borrowing at publication")
@@ -63,7 +63,7 @@ if out.exists():
     raise FileExistsError(out)
 bin_dir = Path(get_package_prefix("universe_crop_benchmark")) / "lib/universe_crop_benchmark"
 rmw = "rmw_zenoh_cpp" if args.transport == "zenoh" else "rmw_cyclonedds_cpp"
-if args.transport in ("rmw-agnocast", "rmw-delegated", "mixed", "fixed"):
+if args.transport in ("standalone", "rmw-agnocast", "rmw-delegated", "mixed", "fixed"):
     rmw = "rmw_agnocast"
 env = dict(os.environ, RMW_IMPLEMENTATION=rmw, BENCH_BUFFER=args.buffer,
            ENABLE_AGNOCAST=str(int(args.transport == "agnocast")), AGNOCAST_BRIDGE_MODE="OFF",
@@ -72,14 +72,19 @@ if args.transport in ("rmw-agnocast", "mixed", "fixed"):
     env.update(AGNOCAST_RMW_TOPIC="/input:/output:/stage1" if args.branched else "/input:/output", AGNOCAST_RMW_BUFFER_CDR="1")
 if args.transport == "rmw-delegated":
     env.update(AGNOCAST_RMW_TOPIC="", AGNOCAST_RMW_BUFFER_CDR="1")
-if args.transport in ("agnocast", "rmw-agnocast", "rmw-delegated", "mixed", "fixed"):
-    for prefix in (get_package_prefix("agnocastlib"), get_package_prefix("rclcpp")):
-        hook = Path(prefix) / "lib/libagnocast_heaphook.so"
-        if hook.is_file():
-            env["LD_PRELOAD"] = str(hook)
-            break
+if args.transport in ("agnocast", "standalone", "rmw-agnocast", "rmw-delegated", "mixed", "fixed"):
+    if "BENCH_HEAPHOOK" in env:
+        hook = Path(env["BENCH_HEAPHOOK"])
+        if not hook.is_file():
+            raise FileNotFoundError(hook)
     else:
-        raise FileNotFoundError("libagnocast_heaphook.so in Agnocast or ROS install prefix")
+        for prefix in (get_package_prefix("agnocastlib"), get_package_prefix("rclcpp")):
+            hook = Path(prefix) / "lib/libagnocast_heaphook.so"
+            if hook.is_file():
+                break
+        else:
+            raise FileNotFoundError("libagnocast_heaphook.so in Agnocast or ROS install prefix")
+    env["LD_PRELOAD"] = str(hook)
 config = (Path(__file__).resolve().parents[1] / "universe/autoware_universe/sensing/"
           "autoware_pointcloud_preprocessor/config/crop_box_filter_node.param.yaml")
 for key in ("BENCH_PAYLOAD_SCOPE", "AGNOCAST_RMW_HOST_LOAN", "BENCH_TYPED_INPUT", "AGNOCAST_RMW_HOST_VIEW", "AGNOCAST_VIEW_ADDRESS_FILE", "AGNOCAST_RMW_HOST_CLOUD", "AGNOCAST_RMW_DIRECT_WAIT", "AGNOCAST_RMW_PROBE_NATIVE_ONLY", "AGNOCAST_FIXED_PROBE"):

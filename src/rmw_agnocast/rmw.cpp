@@ -1,5 +1,6 @@
 #include "filter.hpp"
 #include "graph.hpp"
+#include "host_cloud.hpp"
 
 #include <agnocast/agnocast_executor.hpp>
 #include <agnocast/node/agnocast_node.hpp>
@@ -199,6 +200,15 @@ struct Endpoint
   Lease lease;
   std::shared_ptr<Deadline> deadline;
   bool internal;
+  bool host_cloud{};
+  bool cdr_wire{};
+  bool typed_wire() const { return !host_cloud && !cdr_wire; }
+  size_t wire_size() const
+  {
+    return host_cloud ? sizeof(HostCloud)
+           : cdr_wire ? sizeof(std::vector<uint8_t>)
+                      : members->size_of_;
+  }
   void configure_deadline(bool publisher)
   {
     if (deadline_period == INT64_MAX) return;
@@ -247,13 +257,23 @@ struct Endpoint
       if (!intro) throw std::runtime_error("canonical C++ introspection unavailable");
     }
     members = static_cast<const MessageMembers *>(intro->data);
-    if (has_buffer(*members)) throw std::runtime_error("standalone Buffer layout not implemented");
+    host_cloud = std::string_view(members->message_namespace_) == "sensor_msgs::msg" &&
+                 std::string_view(members->message_name_) == "PointCloud2";
+    cdr_wire = !host_cloud && has_buffer(*members) &&
+               std::string_view(members->message_namespace_) == "autoware_sensing_msgs::msg" &&
+               std::string_view(members->message_name_) == "ConcatenatedPointCloudInfo";
+    if (typed_wire() && has_buffer(*members))
+      throw std::runtime_error(
+        std::string("unsupported Buffer wire type: ") + members->message_namespace_ + "/" +
+        members->message_name_);
     if (const char * error = resolve_qos(qos)) throw std::runtime_error(error);
     type = std::string(members->message_namespace_) + "/" + members->message_name_;
     for (auto pos = type.find("::"); pos != std::string::npos; pos = type.find("::"))
       type.replace(pos, 2, "/");
     route = std::string(rpc ? "/_rmw_agnocast/rpc3/d" : "/_rmw_agnocast/v4/d") +
             std::to_string(owner->context->actual_domain_id) + topic + "/" + type;
+    if (cdr_wire) route += "/cdr_v1";
+    if (host_cloud) route += "/cpu_cloud_v1";
     static std::once_flag once;
     std::call_once(once, [] { agnocast::init(0, nullptr); });
     rclcpp::NodeOptions options;
@@ -336,9 +356,38 @@ struct Writer : Endpoint
     }
     return loan;
   }
+  void publish_bytes(const rmw_serialized_message_t & bytes)
+  {
+    auto loan = native.borrow_loaned_message(wire_size() + sizeof(SampleHeader));
+    try {
+      new (loan.get()) std::vector<uint8_t>(bytes.buffer, bytes.buffer + bytes.buffer_length);
+    } catch (...) {
+      native.cancel_message(std::move(loan), [](void * p) { ::operator delete(p); });
+      throw;
+    }
+    send(std::move(loan));
+  }
+  void publish_cloud(const Cloud & cloud)
+  {
+    if (cloud.data.get_backend_type() != "cpu")
+      throw std::runtime_error("standalone cloud transport currently requires CPU data");
+    auto loan = native.borrow_loaned_message(wire_size() + sizeof(SampleHeader));
+    try {
+      new (loan.get()) HostCloud(cloud);
+    } catch (...) {
+      native.cancel_message(std::move(loan), [](void * p) { ::operator delete(p); });
+      throw;
+    }
+    send(std::move(loan));
+  }
   void destroy(void * p)
   {
-    members->fini_function(p);
+    if (cdr_wire)
+      std::destroy_at(static_cast<std::vector<uint8_t> *>(p));
+    else if (host_cloud)
+      static_cast<HostCloud *>(p)->~HostCloud();
+    else
+      members->fini_function(p);
     ::operator delete(p);
   }
   void cancel(agnocast::ipc_shared_ptr<void> && loan)
@@ -358,7 +407,7 @@ struct Writer : Endpoint
       auto now = monotonic_ns();
       if (duration < INT64_MAX - now) header.expiry = now + duration;
     }
-    std::memcpy(static_cast<char *>(loan.get()) + members->size_of_, &header, sizeof(header));
+    std::memcpy(static_cast<char *>(loan.get()) + wire_size(), &header, sizeof(header));
     native.publish(std::move(loan), [this](void * p) { destroy(p); });
     if (deadline) deadline->sample();
   }
@@ -381,7 +430,7 @@ struct Writer : Endpoint
       throw std::runtime_error("native publisher ID unavailable");
     gid.implementation_identifier = id;
     if (!rpc) lease.announce(owner, 'P', topic, type, ts->get_type_hash_func(ts), &qos, &gid);
-    handle = {id, this, topic.c_str(), options, !library};
+    handle = {id, this, topic.c_str(), options, !library && typed_wire()};
   }
 };
 class PollSubscription : public agnocast::Subscription<void>
@@ -436,6 +485,11 @@ struct Reader : Endpoint
   : Endpoint(owner, ts, name, q, rpc), context(state(owner->context))
   {
     configure_deadline(false);
+    if (
+      !typed_wire() && options.content_filter_options &&
+      options.content_filter_options->filter_expression &&
+      *options.content_filter_options->filter_expression)
+      throw std::runtime_error("cloud filters unsupported");
     if (options.content_filter_options) filter = Filter(*members, *options.content_filter_options);
     auto attach = [&](const std::string & suffix) {
       agnocast::SubscriptionOptions opt;
@@ -448,8 +502,7 @@ struct Reader : Endpoint
               std::lock_guard lock(context->mutex);
               SampleHeader header;
               std::memcpy(
-                &header, static_cast<const char *>(sample.get()) + members->size_of_,
-                sizeof(header));
+                &header, static_cast<const char *>(sample.get()) + wire_size(), sizeof(header));
               if (header.offered_deadline > deadline_period) return;
               if (header.expiry && monotonic_ns() >= header.expiry) return;
               if (filter.matches && !filter.matches(sample.get())) return;
@@ -476,9 +529,9 @@ struct Reader : Endpoint
     handle.data = this;
     handle.topic_name = topic.c_str();
     handle.options = options;
-    handle.can_loan_messages = !library;
+    handle.can_loan_messages = !library && typed_wire();
     handle.is_cft_enabled = bool(filter.matches);
-    handle.is_cft_supported = true;
+    handle.is_cft_supported = typed_wire();
     if (!rpc) lease.announce(owner, 'S', topic, type, ts->get_type_hash_func(ts), &qos);
     executor.add_node(node);
     const char * selected = std::getenv("AGNOCAST_RMW_POLL_TOPIC");
@@ -585,6 +638,28 @@ rmw_ret_t rmw_publish(const rmw_publisher_t * p, const void * msg, rmw_publisher
   if (!p || p->implementation_identifier != standalone::id || !msg) return RMW_RET_INVALID_ARGUMENT;
   auto & w = *static_cast<Writer *>(p->data);
   try {
+    if (w.cdr_wire) {
+      rclcpp::SerializedMessage scratch;
+      auto & bytes = scratch.get_rcl_serialized_message();
+      auto ret = rmw_serialize(msg, w.application_ts, &bytes);
+      if (ret != RMW_RET_OK) return ret;
+      w.publish_bytes(bytes);
+      return RMW_RET_OK;
+    }
+    if (w.host_cloud) {
+      if (!w.library)
+        w.publish_cloud(*static_cast<const Cloud *>(msg));
+      else {
+        rclcpp::SerializedMessage scratch;
+        auto & bytes = scratch.get_rcl_serialized_message();
+        Cloud cloud;
+        auto ret = rmw_serialize(msg, w.application_ts, &bytes);
+        if (ret == RMW_RET_OK) ret = rmw_deserialize(&bytes, w.native_ts, &cloud);
+        if (ret != RMW_RET_OK) return ret;
+        w.publish_cloud(cloud);
+      }
+      return RMW_RET_OK;
+    }
     auto loan = w.borrow();
     try {
       if (w.library) {
@@ -626,7 +701,29 @@ static rmw_ret_t take_locked(
   if (!r.ready()) return RMW_RET_OK;
   auto & sample = r.pending.front().loan;
   try {
-    if (r.library) {
+    if (r.cdr_wire) {
+      if (loan) return RMW_RET_UNSUPPORTED;
+      const auto & bytes = *static_cast<const std::vector<uint8_t> *>(sample.get());
+      rmw_serialized_message_t serialized{};
+      serialized.buffer = const_cast<uint8_t *>(bytes.data());
+      serialized.buffer_length = serialized.buffer_capacity = bytes.size();
+      auto ret = rmw_deserialize(&serialized, r.application_ts, msg);
+      if (ret != RMW_RET_OK) return ret;
+    } else if (r.host_cloud) {
+      if (loan) return RMW_RET_UNSUPPORTED;
+      Cloud temporary;
+      auto & cloud = r.library ? temporary : *static_cast<Cloud *>(msg);
+      auto & wire = *static_cast<const HostCloud *>(sample.get());
+      wire.restore_metadata(cloud);
+      cloud.data = wire.bytes;
+      if (r.library) {
+        rclcpp::SerializedMessage scratch;
+        auto & bytes = scratch.get_rcl_serialized_message();
+        auto ret = rmw_serialize(&cloud, r.native_ts, &bytes);
+        if (ret == RMW_RET_OK) ret = rmw_deserialize(&bytes, r.application_ts, msg);
+        if (ret != RMW_RET_OK) return ret;
+      }
+    } else if (r.library) {
       if (loan) return RMW_RET_UNSUPPORTED;
       rclcpp::SerializedMessage scratch;
       auto & bytes = scratch.get_rcl_serialized_message();
@@ -763,7 +860,7 @@ rmw_ret_t rmw_borrow_loaned_message(
   if (!p || p->implementation_identifier != standalone::id || !msg || *msg)
     return RMW_RET_INVALID_ARGUMENT;
   auto & w = *static_cast<Writer *>(p->data);
-  if (w.library) return RMW_RET_UNSUPPORTED;
+  if (w.library || !w.typed_wire()) return RMW_RET_UNSUPPORTED;
   std::lock_guard lock(w.mutex);
   try {
     auto loan = w.borrow();
@@ -899,6 +996,19 @@ rmw_ret_t rmw_publish_serialized_message(
     return RMW_RET_INVALID_ARGUMENT;
   auto & writer = *static_cast<Writer *>(pub->data);
   try {
+    if (writer.cdr_wire) {
+      if (!msg->buffer || !msg->buffer_length || msg->buffer_length > msg->buffer_capacity)
+        return RMW_RET_INVALID_ARGUMENT;
+      writer.publish_bytes(*msg);
+      return RMW_RET_OK;
+    }
+    if (writer.host_cloud) {
+      Cloud cloud;
+      auto ret = rmw_deserialize(msg, writer.native_ts, &cloud);
+      if (ret != RMW_RET_OK) return ret;
+      writer.publish_cloud(cloud);
+      return RMW_RET_OK;
+    }
     auto loan = writer.borrow();
     auto ts = writer.native_ts;
     auto ret = rmw_deserialize(msg, ts, loan.get());
@@ -925,7 +1035,29 @@ rmw_ret_t rmw_take_serialized_message_with_info(
   *taken = false;
   if (!reader.ready()) return RMW_RET_OK;
   auto & sample = reader.pending.front();
-  auto ret = rmw_serialize(sample.loan.get(), reader.native_ts, msg);
+  rmw_ret_t ret;
+  try {
+    if (reader.cdr_wire) {
+      const auto & bytes = *static_cast<const std::vector<uint8_t> *>(sample.loan.get());
+      if (msg->buffer_capacity < bytes.size()) {
+        ret = rmw_serialized_message_resize(msg, bytes.size());
+        if (ret != RMW_RET_OK) return ret;
+      }
+      std::memcpy(msg->buffer, bytes.data(), bytes.size());
+      msg->buffer_length = bytes.size();
+      ret = RMW_RET_OK;
+    } else if (reader.host_cloud) {
+      Cloud cloud;
+      auto & wire = *static_cast<const HostCloud *>(sample.loan.get());
+      wire.restore_metadata(cloud);
+      cloud.data = wire.bytes;
+      ret = rmw_serialize(&cloud, reader.native_ts, msg);
+    } else
+      ret = rmw_serialize(sample.loan.get(), reader.native_ts, msg);
+  } catch (const std::exception & e) {
+    RMW_SET_ERROR_MSG(e.what());
+    return RMW_RET_ERROR;
+  }
   if (ret != RMW_RET_OK) return ret;
   *info = sample.info();
   reader.pending.pop_front();
@@ -983,6 +1115,7 @@ rmw_ret_t rmw_subscription_set_content_filter(
     return RMW_RET_INVALID_ARGUMENT;
   auto & r = *static_cast<Reader *>(sub->data);
   try {
+    if (!r.typed_wire()) return RMW_RET_UNSUPPORTED;
     Filter next(*r.members, *options);
     std::lock_guard lock(r.context->mutex);
     r.filter = std::move(next);

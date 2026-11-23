@@ -240,3 +240,43 @@ experiments/buffer/run-lyrical.sh bwrap --ro-bind / / --dev-bind /dev /dev --bin
 ```
 
 [All frame latencies](path-poll.csv) and [child resources by launch](path-poll-resources.csv).
+
+## Cyclone-free Universe cloud transport
+
+At faefefe5 the standalone RMW rejected Buffer-bearing types at endpoint creation. Reused the existing HostCloud representation for CPU PointCloud2. The writer copies metadata and point bytes into an Agnocast allocation. A typed reader restores a process-local message with its own CPU Buffer. The synchronizer also needs ConcatenatedPointCloudInfo, whose matching_strategy_config is a byte sequence. Its endpoint uses serialized CDR bytes in an Agnocast allocation. Each representation has a distinct route suffix. The two types use ordinary ROS publish/take and serialized publish/take. Neither advertises application loans or content filtering. Other Buffer-bearing types retain their existing restrictions. No Universe node source changes were required.
+
+Two laptop rounds in forward and reverse order used the nominal Universe three-crop graph, including the static transform, synchronizer, and a sink checking point contents, frame, shape, timestamps, source metadata and timeout status. Each launch emitted 24 groups from 1,966,080 input points. The sink verified all 240 outputs across the ten launches. Drop the first four groups per launch, then pool 20 complete and 20 partial groups per arm. Latency runs from the source timestamp to sink callback. Report median and nearest-rank p95. Native kept the historical 1 ms wait. Standalone used the ordinary ROS executor with shared-memory transport throughout, including the component loader. The poll arm selected only the sink topic /output. The other graph edges kept the receiver-thread implementation.
+
+| Three-LiDAR transport | Complete median / p95 ms | Partial median / p95 ms |
+|---|---:|---:|
+| Native Agnocast | 2.745 / 3.644 | 42.078 / 42.551 |
+| Standalone RMW | 5.772 / 7.613 | 41.601 / 41.990 |
+| Standalone RMW, direct wait on /output | 5.524 / 6.309 | 41.543 / 41.801 |
+| Cyclone DDS | 3.182 / 3.638 | 42.120 / 42.383 |
+| Zenoh | 2.637 / 2.932 | 41.967 / 42.136 |
+
+The full-input standalone/native median ratios were 2.10× and 2.01×. The configured 40 ms timeout dominates partial ages. Native synchronizer instrumentation reported 60 input views per launch and zero copies. Both standalone arms reported 60 copies and zero views. These counters describe the synchronizer conversion path only. They motivate restoring retained views; the timing does not isolate their cost. Minimum sampled host MemAvailable across this matrix was 12504 MiB. [All three-LiDAR samples](universe-standalone-lidar.csv)
+
+On the provisioned laptop, reuse the Universe and Release Path colcon overlays documented above. The new RMW builds in the poll overlay with plain Release. Both launchers run one graph at a time in a 512 MiB runtime scope. The standalone Lyrical distro excludes Cyclone DDS and its RMW. The standalone three-LiDAR runner selects the existing launch file's ordinary ROS graph (its mode argument is named cyclone) and explicitly selects rmw_agnocast for the launcher and child processes.
+
+```bash
+export LYRICAL_ROOT="$(cat build/agnocast-lyrical/universe-root)"
+experiments/buffer/run-lyrical.sh bash experiments/rmw-agnocast/standalone/build-poll.sh
+bash experiments/rmw-agnocast/standalone/bench-universe.sh build/standalone/fresh-universe-cloud
+bash experiments/rmw-agnocast/standalone/bench-crop.sh build/standalone/fresh-crop-cloud
+export BUFFER_RUNTIME_ONLY=1
+experiments/buffer/run-lyrical.sh bwrap --ro-bind / / --dev-bind /dev /dev --bind /ws /ws --bind /tmp /tmp --ro-bind /ws/build/standalone/distro /opt/ros/lyrical --chdir /ws timeout -k 8 65 bash experiments/rmw-agnocast/standalone/run-universe.sh --check
+```
+
+### Replay the original two-edge crop fixture
+
+The original 10 Hz Universe crop-box workload isolates source → crop → sink. Reused the historical crop executable and input geometry. The new standalone arm uses its ordinary ROS subscriptions and CPU cloud copies on both edges. The historical 1.22× arm borrowed both publisher outputs and retained host views at both readers. Those ownership optimizations still need qualification in the standalone RMW. The native and standalone arms here used the same Release Agnocast userspace and released heap hook. Two rounds ran in opposite orders. All 480 frames passed. Pool the last 50 frames per launch for 100 per transport. Combined CPU covers all children from start to exit.
+
+| Two-edge crop transport | Median / p95 ms | Child CPU s per launch |
+|---|---:|---:|
+| Native Agnocast | 0.345 / 0.632 | 0.559–0.560 |
+| Standalone RMW | 0.912 / 1.137 | 0.725–0.747 |
+| Cyclone DDS | 1.375 / 1.611 | 0.725–0.725 |
+| Zenoh | 1.063 / 1.396 | 1.406–1.563 |
+
+Current standalone/native was 2.64× median and 1.80× p95. Compare to the historical mixed loan/view setup as a separate configuration. The current replay cannot isolate the effect of removing the fallback. Minimum host availability during these launches was 12814 MiB. The additional standalone checks passed typed and serialized publish/take for both new types from rclpy, followed by the existing standalone regression suite. [Crop samples](universe-standalone-crop.csv) and [child resources](universe-standalone-crop-resources.csv).
