@@ -2,6 +2,7 @@
 
 #include <agnocast/agnocast_utils.hpp>
 
+#include <rcutils/logging.h>
 #include <rcutils/strdup.h>
 #include <rmw/domain_id.h>
 #include <sys/eventfd.h>
@@ -15,6 +16,22 @@ using namespace standalone;
 const char * rmw_get_implementation_identifier()
 {
   return id;
+}
+
+rmw_ret_t rmw_set_log_severity(rmw_log_severity_t severity)
+{
+  switch (severity) {
+    case RMW_LOG_SEVERITY_DEBUG:
+    case RMW_LOG_SEVERITY_INFO:
+    case RMW_LOG_SEVERITY_WARN:
+    case RMW_LOG_SEVERITY_ERROR:
+    case RMW_LOG_SEVERITY_FATAL:
+      return rcutils_logging_set_logger_level("Agnocast", severity) == RCUTILS_RET_OK
+               ? RMW_RET_OK
+               : RMW_RET_ERROR;
+    default:
+      return RMW_RET_INVALID_ARGUMENT;
+  }
 }
 
 rmw_ret_t rmw_init_options_init(rmw_init_options_t * o, rcutils_allocator_t allocator)

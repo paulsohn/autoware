@@ -4037,3 +4037,10 @@ stock application/recording/crash runs each decoded 12 samples and exited
 successfully. The minimum available host memory across these three final
 runs was 12523 MiB. No kernel module, heaphook, Bazel or Universe changes
 were required.
+
+Moved the working feature and network-flow queries beside the native topic
+implementation, and the logger severity setting beside the other middleware-wide
+operations. unsupported.cpp now contains seven unconditional stubs. Rebuilt
+with the sequential stripped-prefix recipe in the standalone README and reran
+check.sh successfully. Comparing sorted rmw_ exports from nm -D --defined-only
+before and after gave the same 97 names.

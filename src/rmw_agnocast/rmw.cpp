@@ -9,6 +9,8 @@
 
 #include <std_msgs/msg/string.hpp>
 
+#include <rmw/features.h>
+#include <rmw/get_network_flow_endpoints.h>
 #include <rosidl_runtime_c/type_description/type_description__struct.h>
 #include <sys/random.h>
 
@@ -845,4 +847,38 @@ rmw_ret_t rmw_publisher_wait_for_all_acked(const rmw_publisher_t * p, rmw_time_t
     return RMW_RET_OK;
   RMW_SET_ERROR_MSG("native publish completion has no per-reader acknowledgement");
   return RMW_RET_UNSUPPORTED;
+}
+
+bool rmw_feature_supported(rmw_feature_t feature)
+{
+  return feature == RMW_FEATURE_MESSAGE_INFO_PUBLICATION_SEQUENCE_NUMBER ||
+         feature == RMW_FEATURE_MESSAGE_INFO_RECEPTION_SEQUENCE_NUMBER;
+}
+
+rmw_ret_t rmw_publisher_get_network_flow_endpoints(
+  const rmw_publisher_t * publisher, rcutils_allocator_t * allocator,
+  rmw_network_flow_endpoint_array_t * network_flow_endpoint_array)
+{
+  if (
+    !publisher || publisher->implementation_identifier != standalone::id || !allocator ||
+    !rcutils_allocator_is_valid(allocator) || !network_flow_endpoint_array)
+    return RMW_RET_INVALID_ARGUMENT;
+  auto ret = rmw_network_flow_endpoint_array_check_zero(network_flow_endpoint_array);
+  return ret == RMW_RET_OK
+           ? rmw_network_flow_endpoint_array_init(network_flow_endpoint_array, 0, allocator)
+           : ret;
+}
+
+rmw_ret_t rmw_subscription_get_network_flow_endpoints(
+  const rmw_subscription_t * subscription, rcutils_allocator_t * allocator,
+  rmw_network_flow_endpoint_array_t * network_flow_endpoint_array)
+{
+  if (
+    !subscription || subscription->implementation_identifier != standalone::id || !allocator ||
+    !rcutils_allocator_is_valid(allocator) || !network_flow_endpoint_array)
+    return RMW_RET_INVALID_ARGUMENT;
+  auto ret = rmw_network_flow_endpoint_array_check_zero(network_flow_endpoint_array);
+  return ret == RMW_RET_OK
+           ? rmw_network_flow_endpoint_array_init(network_flow_endpoint_array, 0, allocator)
+           : ret;
 }
