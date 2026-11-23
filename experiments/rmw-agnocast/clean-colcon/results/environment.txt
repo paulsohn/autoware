@@ -1,0 +1,22 @@
+9623ee4de74bf878f4d88bbd812f38ba98712dfd
+Linux 7.0.0-43-generic x86_64 GNU/Linux
+2.4.1
+bb7c8e9acff1ba7a2b6cc12dcc23b410e35a7f3dc9897e869c90c95d8b7ceaf6  /var/lib/dpkg/status
+PRETTY_NAME="Ubuntu 26.04.1 LTS"
+NAME="Ubuntu"
+VERSION_ID="26.04"
+VERSION="26.04.1 LTS (Resolute Raccoon)"
+VERSION_CODENAME=resolute
+40d14c3ad14a481fd1735c9da3047a711b2e98e78b876e097a077732dfd7a6ea  build/reproduction/inputs/catalog.xml
+941ea8645344f3c4b7b9d7e68799898309d65a18225fa9cbef4169d95d1a3211  build/reproduction/inputs/package_common.xsd
+f096a197ed6d7878984bb2501a55f7f1bd4895d254399fb7857e154bfb644f41  build/reproduction/inputs/package_format3.xsd
+7c3b7e8a8099891f3bff22c11b572978bf7fdf27660df45c3d0fd6da6bcf4373  build/reproduction/inputs/point_cloud_msg_wrapper.tar.gz
+e951141cc55a6cd7b9876d187bd30a3720e6086b99413af95e3b8de1cdd72f14  build/reproduction/inputs/rust-toolchain/bin/cargo
+f3834d26669b03f6855fa54bd2381443123e860167bc0c7a8dd137e5cf6e5e4f  build/reproduction/inputs/rust-toolchain/bin/rustc
+630170f1d7d9e6f3302f5f6dd80f19c50af02227cd63ecc7fc6b2710d308aafe  src/core/agnocast/agnocast_heaphook/Cargo.lock
+python3-colcon-core 0.21.3+upstream-1
+ros-lyrical-pcl-ros 2.10.0-1resolute.20260919.192625
+ros-lyrical-rclcpp 32.0.3-1resolute.20260915.061505
+ros-lyrical-rclcpp-components 32.0.3-1resolute.20260915.065011
+ros-lyrical-rmw-cyclonedds-cpp 4.1.5-1resolute.20260915.051853
+412bbe8c60571a1eb06f48fde89635033621caeb01a9b4ee76d46711bae8e932

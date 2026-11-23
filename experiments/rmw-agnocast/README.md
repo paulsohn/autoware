@@ -3023,3 +3023,10 @@ the original complete-group tail. The paired p95 ratios ranged from
 0.979× to 1.102×. Only one fresh rmw complete group exceeded 10 ms
 and all eight fresh bags were complete. Keep the original 2.556× result
 in the pilot evidence. [Repeat measurements](tail-repeat-results/summary.txt)
+
+A detached checkout at `9623ee4d` rebuilt the pilot from source on the same
+provisioned laptop. Local routing, both bridge restart cases and all 600
+sustained groups passed. Complete-group p95 was 6.014 ms. The two groups
+above 10 ms coincided with the largest sampled CPU-pressure interval.
+The original burst's cause and independent host provisioning remain open.
+[Reproduction journal](../buffer/JOURNAL.md) · [Results](clean-colcon/results/)

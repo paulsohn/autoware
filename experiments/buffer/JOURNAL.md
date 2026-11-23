@@ -3328,3 +3328,90 @@ episodes or identify their cause. Retain the original trace. Proceed
 with pilot reproduction; a longer monitored soak would be more
 informative for rare events than tuning against that single burst.
 [Pair summaries and raw samples](../rmw-agnocast/tail-repeat-results/summary.txt)
+
+## 2026-11-23 — Reproduce the configured colcon pilot from fresh build outputs
+
+Check whether the pilot can be assembled without the earlier experiment's
+worktree or its accumulated colcon install trees. This is a fresh build
+on the same laptop. The host scheduler, filesystem cache, loaded Agnocast
+kernel module (2.4.1), GPU device mounts and exported Ubuntu 26.04.1 /
+ROS Lyrical userspace remain shared. This isolation can expose missing
+build or deployment inputs; it cannot assign a cause to the previous
+latency burst. No Fast DDS runs are part of this profile.
+
+Create a detached worktree at 9623ee4de74bf878f4d88bbd812f38ba98712dfd.
+Confirm that install/ is absent. Inside the existing bwrap runner the fresh
+checkout is mounted at /ws and is the only workspace mount. Use only the
+read-only OS/ROS underlay, an offline Rust compiler distribution and Cargo
+vendor sources, the point_cloud_msg_wrapper 1.0.7-6 release archive, and
+the two ROS package-schema files with their XML catalog. Copy those inputs
+into build/reproduction/inputs. Do not copy compiled workspace libraries,
+kernel userspace clients, Cargo targets, previous install/build trees or ROS
+bags. The heap hook is rebuilt from the tracked Cargo manifest and lockfile.
+The optional native build and GPU buffer backends are outside this ordinary
+ROS graph pilot. The scope's build limit is 1,200 MiB; runtime is 512 MiB.
+Set LYRICAL_ROOT to the existing exported filesystem. From a fresh checkout:
+
+```bash
+mkdir -p build/reproduction
+experiments/buffer/run-lyrical.sh bash experiments/rmw-agnocast/build-rclcpp.sh
+```
+
+Copy the three scripts from the [pilot recipe](../rmw-agnocast/clean-colcon/)
+into the detached checkout's build/reproduction directory. Stage the
+six named inputs there under inputs/ (catalog.xml, both XSDs,
+point_cloud_msg_wrapper.tar.gz, rust-toolchain/ and vendor/). Cargo's
+vendor directory contains the crates from the heap hook's Cargo.lock.
+Check the input fingerprints against results/environment.txt. Each call
+below starts a separate guarded scope and sources just its required overlays.
+Run once per fresh output directory, from the detached checkout.
+
+```bash
+set -e
+w=build/reproduction
+for phase in transport pipeline; do
+  experiments/buffer/run-lyrical.sh bash "$w/clean-pilot.sh" "$phase"
+done
+for phase in provenance local healthy ingress egress; do
+  BUFFER_RUNTIME_ONLY=1 experiments/buffer/run-lyrical.sh timeout -k 5 150 \
+    bash "$w/verify.sh" "$phase" "$w/run-$phase"
+done
+for phase in perception tracker; do
+  experiments/buffer/run-lyrical.sh bash "$w/clean-pilot.sh" "$phase"
+done
+BUFFER_RUNTIME_ONLY=1 experiments/buffer/run-lyrical.sh timeout -k 5 150 \
+  bash "$w/verify.sh" sustained "$w/run-sustained"
+```
+
+All build stages and runtime checks passed. The lowest observed host
+MemAvailable was 10,565 MiB during the tracker build. Package lookup and
+dynamic linkage resolved the patched rclcpp, Agnocast userspace and graph
+components from the new outputs. The Cyclone delegate resolved from the
+Lyrical underlay. All four short runs delivered 24 local outputs. The healthy
+mirror bag had all 24. Restarting ingress removed the top contribution at
+group 8 and recovered full membership at 10. Restarting egress left 7 and
+8 out of the mirror bag and resumed at 9.
+
+The sustained graph delivered and recorded all 600 clouds, verified all
+596 steady track updates, and released 1,500 of 1,500 synchronizer loans.
+Using the preceding repeat experiment's definition (even sequences from
+20 onward, nearest-rank p95), complete-group source-to-tracked latency had
+median 4.989 ms and p95 6.014 ms. Two of 290 groups exceeded 10 ms, with
+at most two in any window of 20. The prior outlier had 20 in one window.
+This fresh-build trial has no paired native denominator.
+
+Both exceedances (group 378 at 10.691 ms and 382 at 15.126 ms) completed
+in the same one-second sample interval. It also had the largest CPU PSI
+increase of the 64 intervals at both levels. The host accumulated 101.386 ms
+of CPU some-stall time and the benchmark scope accumulated 4.739 ms. The
+next-largest increases were 11.200 ms and 1.863 ms respectively. These
+are elapsed intervals when at least one runnable task was waiting for CPU.
+They do not identify the task or the scheduler delay on a frame's critical
+path. The old burst has no contemporaneous PSI record. Host interference
+remains plausible and its contribution to the original 2.556× p95 is unknown.
+
+This reproduces the opt-in application pilot from source on the provisioned
+laptop. Independent OS provisioning, another host and the full Universe graph
+remain outside the evidence. Archive includes build and route summaries,
+library resolution, raw frame timings and pressure samples.
+[Fresh-checkout evidence](../rmw-agnocast/clean-colcon/results/)

@@ -1,0 +1,48 @@
+rclcpp
+Finished <<< rclcpp [2min 14s]
+Summary: 1 package finished [2min 14s]
+Minimum host MemAvailable: 12877 MiB
+transport
+Finished <<< agnocast_cie_config_msgs [11.4s]
+Finished <<< agnocast_cie_thread_configurator [29.8s]
+Finished <<< agnocastlib [2min 26s]
+Finished <<< rmw_agnocast [5.50s]
+Summary: 4 packages finished [3min 12s]
+rustc 1.99.0 (b940084d7 2026-09-28)
+    Finished `release` profile [optimized] target(s) in 1.35s
+Minimum host MemAvailable: 13056 MiB
+pipeline
+Finished <<< autoware_common_msgs [7.02s]
+Finished <<< autoware_internal_debug_msgs [36.0s]
+Finished <<< autoware_lint_common [0.38s]
+Finished <<< autoware_sensing_msgs [27.3s]
+Finished <<< managed_transform_buffer [19.3s]
+Finished <<< point_cloud_msg_wrapper [0.92s]
+Finished <<< autoware_cmake [0.41s]
+Finished <<< autoware_internal_msgs [11.5s]
+Finished <<< autoware_planning_msgs [37.5s]
+Finished <<< agnocast_rmw_loan_probe [52.4s]
+Finished <<< autoware_utils_rclcpp [1.11s]
+Finished <<< autoware_agnocast_wrapper [7.03s]
+Finished <<< universe_crop_benchmark [57.4s]
+Finished <<< universe_sync_benchmark [58.4s]
+Summary: 14 packages finished [5min 17s]
+Minimum host MemAvailable: 12706 MiB
+perception
+Finished <<< autoware_perception_msgs [53.1s]
+Finished <<< tier4_perception_msgs [39.5s]
+Finished <<< universe_detection_replay [31.8s]
+Summary: 3 packages finished [2min 4s]
+Minimum host MemAvailable: 12855 MiB
+tracker
+Finished <<< mussp [2.85s]
+Summary: 1 package finished [2.94s]
+Finished <<< autoware_utils_math [1.43s]
+Finished <<< autoware_utils_system [4.52s]
+Finished <<< autoware_vehicle_msgs [43.4s]
+Finished <<< autoware_internal_planning_msgs [1min 15s]
+Finished <<< autoware_utils_debug [4.84s]
+Finished <<< autoware_utils_geometry [38.7s]
+Finished <<< autoware_multi_object_tracker [3min 20s]
+Summary: 7 packages finished [6min 8s]
+Minimum host MemAvailable: 10565 MiB
