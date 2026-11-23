@@ -704,3 +704,53 @@ bash "$bench" build/standalone/fresh-crop-stock --ownership
 ```
 
 During collection the first shell encountered an end-of-script parse error after the eighth matrix launch because the running script had been edited. The archived matrix includes all eight verified resource records, complete sequences and memory-guard exits. The two four-round ownership batches ran from a fresh shell and exited successfully.
+
+## Tune the two-edge crop with matched writer and reader timing
+
+Reused the O3 Universe fixture, native upstream executor and standalone AWF CIE crop from the preceding replay. The source fills 32,768 points, timestamps immediately before publication and sends at 10 Hz. The sink timestamps on callback entry and checks every output point and sequence. The two standalone readers retained host views in every arm. Tested three changes separately. Scope the shared allocation to payload resizing and borrow at publication on both edges, select blocking exact-route waits with drain-on-entry descriptor reuse for /input and /output, or borrow only at the source with an ordinary crop publication. No application or middleware defaults changed.
+
+Uninstrumented data below give pooled median / nearest-rank p95 in µs after ten warmup frames per launch. Within a row all arms use the same workload and launch machine. The allocation batch had four rounds. The direct-wait and source-only batches each used all six permutations of native, control and treatment.
+
+| Experiment | Native | Ordinary publications with views | Treatment |
+|---|---:|---:|---:|
+| Payload allocation on both edges | 370.7 / 594.0 | 422.7 / 595.3 | 417.8 / 669.0 scoped, 420.8 / 661.5 conventional loans |
+| Direct waits on both cloud readers | 348.3 / 549.9 | 440.5 / 580.1 | 452.5 / 588.3 |
+| Loan only the source output | 360.0 / 617.5 | 444.2 / 608.1 | 444.8 / 663.2 |
+| Source-only independent confirmation, two rounds | 368.5 / 639.6 | 504.7 / 754.7 | 514.2 / 678.8 |
+
+All 4,680 frames across 78 sequential launches passed payload and sequence validation. The lowest sampled host MemAvailable during a launch was 12,416 MiB. The source-only confirmation again gave a slightly higher pooled median. Its p95 favored the source loan, the opposite direction from the primary run. Retain ordinary publication with views for this graph.
+
+Scoped allocation won median against conventional borrowing in three of four rounds, but its pooled advantage was 3 µs and p95 increased. Both publishers verified 60 scoped loans or 59 conventional loans apiece with zero private payload copies. Direct waits improved the paired median in two of six rounds. Source-only loans improved three of six, with 59 loans and zero private copies at the source per launch. Overall median child CPU seconds were 0.670 for ordinary views, 0.667 for the source-only loan and 0.548 for native in the six-order source comparison.
+
+### Where the source loan saved time
+
+Instrumented two additional reversed-order launches per arm. The source-only trace uses the Agnocast publish_core interposer on /input in the writer and realtime timestamps on the crop thread. Join by publication order within a single writer and validate the 60 entry IDs, stamps, callback order and frame sequence. The source header timestamp excludes initial allocation and filling. The last interval can be negative if the sink starts before the crop returns. The individual medians need not sum to total median.
+
+| Traced median µs | Stamp to publish_core | Inside publish_core | Core return to crop entry | Inside crop callback | Crop return to sink entry |
+|---|---:|---:|---:|---:|---:|
+| Native | 1.5 | 5.6 | 34.9 | 285.7 | 31.9 |
+| Ordinary views | 35.1 | 9.5 | 67.5 | 280.2 | 55.1 |
+| Source-only loan | 5.8 | 9.2 | 72.7 | 291.0 | 56.0 |
+
+Borrowing at the source reduced measured pre-core work. This did not yield a consistent end-to-end benefit in the uninstrumented six-order comparison. Core return to crop entry includes reader wakeup, take, host-view construction and executor dispatch. The trace does not separate those costs. This is a more specific target for a future reader-side probe than another uninstrumented wait-policy sweep. The differences in native median across batches also matter when interpreting ratios against the 1.2× milestone.
+
+### Reproduce on the provisioned laptop
+
+Use the installed standalone CIE crop fixture and Lyrical root from the preceding section. Build the writer-only diagnostic for the source trace. All controls run without the diagnostic.
+
+```bash
+export LYRICAL_ROOT="$(cat build/agnocast-lyrical/universe-root)"
+experiments/buffer/run-lyrical.sh /usr/bin/clang++-21 --gcc-install-dir=/usr/lib/gcc/x86_64-linux-gnu/15 -O3 -shared -fPIC -DCROP_SOURCE_TIMING -Ibuild/standalone/o3-install/agnocastlib/include experiments/rmw-agnocast/standalone/path_publish_timing.cpp -o build/standalone/path-hooks/crop-publish-timing.so
+bench=experiments/rmw-agnocast/standalone/bench-crop.sh
+root=build/standalone
+bash "$bench" "$root/crop-scope-trace" --scope-trace
+bash "$bench" "$root/crop-scope-controls" --scope-cie
+bash "$bench" "$root/crop-route-trace" --route-trace
+bash "$bench" "$root/crop-route-controls" --route-cie
+bash "$bench" "$root/crop-source-trace" --source-trace
+bash "$bench" "$root/crop-source-controls" --source-cie
+bash "$bench" "$root/crop-source-confirm" --source-confirm
+python3 experiments/rmw-agnocast/standalone/analyze-crop-tuning.py "$root/crop-tuning-summary" "$root"/crop-{scope-trace,scope-controls,route-trace,route-controls,source-trace,source-controls,source-confirm}
+```
+
+[All frames and stage intervals](crop-tuning-54105bea/frames.csv) and [per-launch resources and memory headroom](crop-tuning-54105bea/launches.csv). CycloneDDS and Zenoh controls for the unchanged fixture are in the preceding regression table.

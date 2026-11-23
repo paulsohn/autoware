@@ -29,9 +29,13 @@ parser.add_argument("--gap-profile", action="store_true")
 parser.add_argument("--resources", type=Path)
 parser.add_argument("--buffer", choices=["cpu", "shmem", "cuda"], default="cpu")
 parser.add_argument("--source-buffer", choices=["cuda", "shmem"], help="materialize this source backend on the Agnocast host-cloud route")
+parser.add_argument("--source-loan-only", action="store_true", help="loan only the source publication and retain views on both edges")
+parser.add_argument("--direct-cloud-waits", action="store_true", help="use drained exact-route waits on both cloud readers")
 parser.add_argument("--standalone-cie", type=Path, help="standalone AWF CIE crop executable")
 parser.add_argument("--ros-cie", action="store_true", help="use the mixed-capable CIE for the ROS crop")
 args = parser.parse_args()
+if args.direct_cloud_waits and (args.transport != "standalone" or args.branched):
+    parser.error("--direct-cloud-waits requires a two-edge standalone crop")
 if args.standalone_cie and (args.transport != "standalone" or args.ros_cie):
     parser.error("--standalone-cie requires the standalone RMW crop")
 if args.source_buffer and not (args.transport in ("mixed", "fixed") and
@@ -49,6 +53,10 @@ if args.branched and args.bridge:
     parser.error("the branched experiment measures local paths only")
 if args.bridge and not args.payload_scope:
     parser.error("--bridge requires --payload-scope")
+if args.source_loan_only:
+    if args.transport != "standalone" or args.branched or args.payload_scope or args.host_loan:
+        parser.error("--source-loan-only requires a standalone two-edge graph without other loan modes")
+    args.host_view = True
 if args.payload_scope:
     args.host_loan = True
 if args.host_loan:
@@ -106,6 +114,13 @@ with tempfile.TemporaryDirectory() as tmp:
     def launch(argv, role, label=None):
         label = label or role
         child_env = dict(env, BENCH_ROLE=role, BENCH_CSV=str(samples))
+        if role == "pub" and os.getenv("CROP_SOURCE_TIMING"):
+            hook = Path("build/standalone/path-hooks/crop-publish-timing.so").resolve(strict=True)
+            child_env["LD_PRELOAD"] += ":" + str(hook)
+            child_env["PATH_PUBLISH_TIMES"] = str(out.with_suffix(".publish"))
+        if args.direct_cloud_waits and role in ("filter", "sub"):
+            child_env.update(AGNOCAST_RMW_POLL_TOPIC="/input" if role == "filter" else "/output",
+                             AGNOCAST_RMW_READY_ROUTE="1", AGNOCAST_RMW_REUSE_WAIT_FD="drain")
         if role == "pub" and args.source_buffer:
             child_env["BENCH_BUFFER"] = args.source_buffer
         if args.gaps and role == "pub":
@@ -135,7 +150,7 @@ with tempfile.TemporaryDirectory() as tmp:
             child_env["BENCH_CSV"] = str(tap)
         if (args.typed_input or args.host_view) and role in ("sub", "filter"):
             child_env["BENCH_TYPED_INPUT"] = "1"
-        if args.host_loan and role in ("pub", "filter"):
+        if (args.host_loan and role in ("pub", "filter")) or (args.source_loan_only and role == "pub"):
             child_env["AGNOCAST_RMW_HOST_LOAN"] = "1"
             if args.payload_scope:
                 child_env["BENCH_PAYLOAD_SCOPE"] = "1"
@@ -161,7 +176,7 @@ with tempfile.TemporaryDirectory() as tmp:
     logs = {role: tempfile.TemporaryFile(mode="w+") for role in ("filter", "sub")} if args.transport == "fixed" else {}
     if args.host_loan and args.transport == "standalone":
         logs["filter"] = tempfile.TemporaryFile(mode="w+")
-    if args.host_loan or args.source_buffer:
+    if args.host_loan or args.source_loan_only or args.source_buffer:
         logs["pub"] = tempfile.TemporaryFile(mode="w+")
     if args.branched and args.transport == "fixed":
         for label in ("tap", "filter2"):
@@ -230,7 +245,7 @@ with tempfile.TemporaryDirectory() as tmp:
                 continue
             matches = re.findall(r"fixed_wait arms=\d+ completions=\d+ native=(\d+) both=\d+ native_interrupts=(\d+) stop_interrupts=(\d+)", output)
             log.close()
-            if args.host_loan and role in ("pub", "filter", "filter2"):
+            if (args.host_loan and role in ("pub", "filter", "filter2")) or (args.source_loan_only and role == "pub"):
                 loan_counts[role] = re.findall(r"host-cloud publisher loans=(\d+) private_copies=(\d+)", output)
             if args.source_buffer and role == "pub":
                 if not re.search(r"^host-cloud materializations=60 extra_host_copies=\d+$", output, re.MULTILINE):

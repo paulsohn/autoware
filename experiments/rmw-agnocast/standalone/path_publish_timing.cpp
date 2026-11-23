@@ -1,4 +1,4 @@
-// Writer-side diagnostic for the single-publisher, 60-frame Path fixture.
+// Writer-side diagnostic for the single-publisher, 60-frame fixtures.
 #include <agnocast/agnocast_ioctl.hpp>
 #include <dlfcn.h>
 #include <time.h>
@@ -18,11 +18,20 @@ struct PublishTime
 };
 std::array<PublishTime, 60> samples;
 size_t count;
+#ifdef CROP_SOURCE_TIMING
+constexpr clockid_t trace_clock = CLOCK_REALTIME;  // Matches the cloud header and crop callback clock.
+constexpr auto trace_topic = "/input";
+constexpr auto trace_segment = "/input/";
+#else
+constexpr clockid_t trace_clock = CLOCK_MONOTONIC;
+constexpr auto trace_topic = "/path_latency";
+constexpr auto trace_segment = "/path_latency/";
+#endif
 
 int64_t now()
 {
   timespec stamp{};
-  clock_gettime(CLOCK_MONOTONIC, &stamp);
+  clock_gettime(trace_clock, &stamp);
   return stamp.tv_sec * 1000000000LL + stamp.tv_nsec;
 }
 
@@ -51,7 +60,7 @@ ioctl_publish_msg_args publish_core(
     if (!fn) std::abort();
     return fn;
   }();
-  if (topic != "/path_latency" && topic.find("/path_latency/") == std::string::npos)
+  if (topic != trace_topic && topic.find(trace_segment) == std::string::npos)
     return real(handle, topic, publisher_id, address);
   auto begin = now();
   auto result = real(handle, topic, publisher_id, address);

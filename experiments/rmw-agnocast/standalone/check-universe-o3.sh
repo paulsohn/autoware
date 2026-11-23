@@ -15,7 +15,7 @@ if [[ ${2:-} == --cie-regression ]]; then
 fi
 if [[ $1 == crop || ${2:-} == --cie-regression || ${2:-} == --crop-inputs || ${2:-} == --crop-repeat || ${2:-} == --stages || ${2:-} == --count || ${2:-} == --live-count ]]; then
   pkg=build/agnocast-lyrical/clang-obj/universe_crop_benchmark
-  if [[ ${2:-} == --ownership-cie ]]; then check "$pkg" crop_standalone_cie; fi
+  if [[ ${2:-} == --ownership-cie || ${2:-} == --scope-* || ${2:-} == --route-* || ${2:-} == --source-* ]]; then check "$pkg" crop_standalone_cie; fi
   check "$pkg" universe_crop
   if [[ $1 == crop ]]; then
     for target in crop endpoint universe_endpoint; do check "$pkg" "$target"; done
