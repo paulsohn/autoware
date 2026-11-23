@@ -158,3 +158,35 @@ bash experiments/rmw-agnocast/standalone/bench-path.sh build/standalone/fresh-ev
 ```
 
 [All 2,040 frames from the two final comparisons](path-handoff.csv)
+
+## Replay the receiver handoff with plain Release
+
+Plain CMake Release is the default for new colcon performance runs. Clang 21 chose -O3 -DNDEBUG for agnocastlib, rmw_agnocast, patched rclcpp and the Path benchmark. Reused the verified o3-install transport libraries and built rclcpp and the fixture in a fresh prefix. Each launch checked the Agnocast and rclcpp paths reported by ldd. The native arm used the direct Agnocast API with its customary ROS support environment. The standalone arms ran in the Cyclone-stripped distribution. All arms used the released 2.4.1 heap hook and the same kernel device. System packages retained their distribution builds.
+
+| Fixed-subscription comparison | Median µs | p95 µs | Child CPU s |
+|---|---:|---:|---:|
+| Native Agnocast | 45.82 | 69.80 | 0.129 |
+| SingleThreadedExecutor | 76.76 | 171.63 | 0.168 |
+| Fixed subscription waking the application thread | 73.17 | 124.56 | 0.164 |
+| Fixed subscription executing inline | 50.58 | 90.00 | 0.166 |
+
+The fixed handoff to inline change saved 22.59 µs in pooled median and improved the median in each paired round. Inline/native reached 1.10× median and 1.29× p95. The previous inline diagnostic measured 55.93/88.57 µs against 46.33/84.54 µs native. Its absolute p95 was similar; the native p95 moved. These are separate laptop series with different builds and runtime conditions.
+
+| General-purpose executor comparison | Median µs | p95 µs | Child CPU s |
+|---|---:|---:|---:|
+| Native Agnocast | 42.10 | 70.21 | 0.125 |
+| SingleThreadedExecutor | 76.44 | 142.29 | 0.171 |
+| EventsCBGExecutor, one worker | 75.58 | 157.44 | 0.170 |
+
+Used the same 10 Hz workload, the same six balanced rounds for the general executors and four rounds for the fixed-reader study. All 2040 frames passed the retained-sample, nested-address and payload checks. Pool the final 50 frames per round and report median and nearest-rank p95. Child CPU includes startup and teardown. The memory guard recorded at least 13769 MiB available during the new build and 14134 MiB during the launches. The inline case remains a single-subscription diagnostic. Ordinary callback-group scheduling and non-subscription wakeups are still needed for a general executor-side receive path.
+
+On the provisioned laptop prepare build/standalone/o3-install as in the default Release experiment above. Then run:
+
+```bash
+export LYRICAL_ROOT="$(cat build/agnocast-lyrical/universe-root)"
+experiments/buffer/run-lyrical.sh bash experiments/rmw-agnocast/standalone/build-release-path.sh
+bash experiments/rmw-agnocast/standalone/bench-path.sh build/standalone/fresh-release-events --compare-events
+bash experiments/rmw-agnocast/standalone/bench-path.sh build/standalone/fresh-release-handoff --compare-handoff
+```
+
+To reproduce the historical O2 handoff experiment use the runner at 4bc5899c. [All plain-Release frame measurements](path-handoff-release.csv)

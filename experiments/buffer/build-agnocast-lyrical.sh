@@ -8,7 +8,8 @@ packages=(src/core/agnocast/src/{agnocast_cie_config_msgs,agnocast_cie_thread_co
 args=(--base-paths "${packages[@]}" --build-base "$w/obj" --install-base "$w/install"
       --executor sequential)
 colcon --log-base "$w/log" build "${args[@]}" --cmake-args -DBUILD_TESTING=ON \
-  -DCMAKE_BUILD_TYPE=Release '-DCMAKE_CXX_FLAGS_RELEASE=-O2 -DNDEBUG --param=ggc-min-expand=20 --param=ggc-min-heapsize=32768'
+  -DCMAKE_BUILD_TYPE=Release -UCMAKE_CXX_FLAGS_RELEASE \
+  '-DCMAKE_CXX_FLAGS=--param=ggc-min-expand=20 --param=ggc-min-heapsize=32768'
 source "$w/install/local_setup.bash"
 hook=src/core/agnocast/agnocast_heaphook/Cargo.toml
 export CARGO_TARGET_DIR="$PWD/$w/cargo-target"

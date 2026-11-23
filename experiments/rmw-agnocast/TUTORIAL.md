@@ -58,7 +58,6 @@ colcon --log-base build/migration-guide/log build \
           src/core/agnocast/src/agnocastlib \
           src/rmw_agnocast \
   --cmake-args -DRMW_IMPLEMENTATION=rmw_zenoh_cpp -DBUILD_TESTING=OFF -DCMAKE_BUILD_TYPE=Release \
-               '-DCMAKE_CXX_FLAGS_RELEASE=-O1 -DNDEBUG' \
                -DCMAKE_CXX_FLAGS=--gcc-install-dir=/usr/lib/gcc/x86_64-linux-gnu/15 \
                -DCMAKE_POLICY_VERSION_MINIMUM=3.5
 source build/migration-guide/install/local_setup.bash

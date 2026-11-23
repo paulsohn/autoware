@@ -10,6 +10,8 @@ branch come from fresh runs. The [ordinary-output samples](../../src/crop_pipeli
 and [Universe samples](../../src/universe_crop_benchmark/results/) use the same
 summary script as the archived experiment.
 
+For new colcon performance runs, build the locally measured code with plain CMake Release (currently -O3 -DNDEBUG on the laptop). Record a different optimization level when reproducing a historical binary or investigating a specific build or performance issue.
+
 ## Reproduce on the reference laptop
 
 Use a GPU-capable Lyrical environment with the dependencies in the
