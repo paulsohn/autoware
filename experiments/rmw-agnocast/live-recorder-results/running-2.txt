@@ -1,0 +1,15 @@
+event_wall_ns {'A_start': 1795411340510230404, 'pause_begin': 1795411341301643104, 'pause_end': 1795411342909327285, 'A_stop': 1795411343707806645, 'C_start': 1795411344507663326}
+A verified sequences [6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35]
+C verified sequences [47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59]
+sync_live_at_take_peak=3 released=150/150
+pause_window full n=8 p95_ms=2.690
+pause_window partial n=8 p95_ms=42.085
+A launch_to_match_ms=190.3 match_to_first_source_ms=58.1 match_to_first_bag_ms=62.1
+C launch_to_match_ms=257.6 match_to_first_source_ms=93.4 match_to_first_bag_ms=135.7
+forwarded=[6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59] missing_from_bags=[] relay_cpu_s=0.140
+local=60/60
+matches=1 received=0 forwarded=0
+matches=0 received=30 forwarded=30
+matches=1 received=30 forwarded=30
+matches=0 received=43 forwarded=43
+Minimum host MemAvailable: 14504 MiB

@@ -1,0 +1,12 @@
+demand relay_cpu_s=0.120 received=16 forwarded=16
+A verified sequences [4, 5, 6, 7, 8, 9, 10, 11]
+B verified sequences [8, 9, 10, 11, 12, 13, 14, 15]
+C verified sequences [20, 21, 22, 23]
+local=24/24
+matches=1 received=0 forwarded=0
+matches=2 received=4 forwarded=4
+matches=1 received=8 forwarded=8
+matches=0 received=12 forwarded=12
+matches=1 received=12 forwarded=12
+matches=0 received=16 forwarded=16
+Minimum host MemAvailable: 14496 MiB

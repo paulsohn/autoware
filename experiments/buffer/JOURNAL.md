@@ -3483,3 +3483,63 @@ After the final rebuild, the Path route contract passed its four ingress/egress
 and bridge on/off controls. A final cloud lifecycle run reproduced all bag
 sequences and counters. Builds and runtime cases ran sequentially under the
 existing 1,200 MiB and 512 MiB limits respectively.
+
+### 2026-11-23 — Continuous three-LiDAR publication across recorder stall and restart
+
+The source publishes 60 synchronized groups at nominal 10 Hz after one initial
+start signal. Files written by the local verifier at each fourth delivery let
+the driver time its actions without gating the source. Generate the 2–3 raw
+clouds for each group on demand to fit the existing 512 MiB runtime scope.
+Use the explicit demand-driven PointCloud2 export on loopback. Start a stock
+Cyclone SQLite recorder after four local deliveries. After 12, suspend its
+entire process group with SIGSTOP, confirm its stopped state, and resume with
+SIGCONT after 28. The running control observes the same markers. Stop the
+recorder normally after 36 deliveries and start a fresh recorder after 44.
+Use SensorDataQoS and disable the bag write cache. The fault freezes the DDS
+reader and writer-to-disk process together; it does not isolate disk speed.
+
+Compare the relay's publish-return trace to both deserialized bags by source
+stamp and exact equality to the local cloud. Distinguish unexported samples
+during discovery or recorder absence from forwarded samples missing in the
+bag. Match time comes from the relay's matched callback after creating the
+native subscription. SQLite bag timestamps describe the recorder timestamp,
+not durable commit time. A partial group's source stamp may precede the match
+while its synchronized output completes afterwards. At each native view take,
+count live weak owners on the synchronizer callback thread; report its maximum
+and the release count at teardown. This observes concurrent retained inputs
+at those points, not the precise release time of each loan.
+
+From the provisioned experimental checkout with the previous pilot installed:
+
+```bash
+set -e
+export LYRICAL_ROOT=$(cat build/agnocast-lyrical/universe-root)
+experiments/buffer/run-lyrical.sh bash experiments/rmw-agnocast/build-pipeline.sh
+mkdir -p build/recorder-live
+for trial in running-1 stalled-1 stalled-2 running-2 running-3 stalled-3; do
+  BUFFER_RUNTIME_ONLY=1 experiments/buffer/run-lyrical.sh timeout -k 5 80 \
+    bash experiments/rmw-agnocast/run-live-recorder.sh "${trial%-*}" \
+    "build/recorder-live/$trial" >"build/recorder-live/$trial.txt" 2>&1
+done
+```
+
+The first four audited trials used the same overlays and harness with the
+pressure sampler omitted. The last pair includes one-second host and scope
+pressure counters. The earlier 24-cloud paced demand test also serves as
+a regression check. [Continuous recorder evidence](../rmw-agnocast/live-recorder-results/)
+
+All six audited runs delivered and validated 60/60 locally. Every synchronizer
+observed a peak of three live audited input owners at take and released all
+150 by teardown. The running recorders captured every forwarded cloud.
+In each of the three suspended runs, the relay forwarded sequences 14–27,
+the bag omitted all fourteen, and recording resumed at 28. Local delivery
+continued during the entire 1.6 s pause. All six restarted recorders captured
+a contiguous suffix through 59. Across twelve attachments, process launch
+to matched callback took 190–260 ms and match to first bag timestamp took
+2–140 ms. Match time includes local reader creation. During the 16-group
+comparison window, per-run complete-group p95 was 2.53–3.29 ms for running
+controls and 2.60–3.90 ms with suspension (eight complete samples per run).
+This small sample does not establish latency equivalence. Two earlier
+control/fault pairs without the live-owner counter gave the same loss pattern.
+Use this route for best-effort observation. A lossless logger needs an explicit
+delivery, buffering and recovery policy, with overload tested separately.

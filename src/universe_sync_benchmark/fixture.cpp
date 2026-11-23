@@ -30,6 +30,7 @@ using Clock = std::chrono::steady_clock;
 using namespace std::chrono_literals;
 const bool extended = std::getenv("PIPELINE_DIR") && std::getenv("SYNC_EXTENDED");
 const bool route_pilot = std::getenv("SYNC_ROUTE_PILOT") != nullptr;
+const bool recorder_live = route_pilot && std::getenv("SYNC_RECORDER_LIVE");
 const bool recorder_steps = route_pilot && std::getenv("SYNC_RECORDER_STEPS");
 const bool regions = std::getenv("PIPELINE_DIR") && std::getenv("SYNC_REGIONS");
 const std::array<std::string, 2> region_topics{"/region/near", "/region/far"};
@@ -37,7 +38,7 @@ const bool isolation = regions && std::getenv("SYNC_ISOLATION");
 const bool stall_near = isolation && std::getenv("SYNC_STALL_NEAR");
 const bool omit_top = route_pilot && std::getenv("SYNC_OMIT_TOP");
 const bool sustained = std::getenv("SYNC_SUSTAINED") != nullptr;
-const int sets = sustained ? 600 : extended ? 104 : (isolation ? 32 : 24);
+const int sets = sustained ? 600 : extended ? 104 : recorder_live ? 60 : (isolation ? 32 : 24);
 const int points = std::getenv("SYNC_LARGE") ? 32768 : 1024;
 const std::array<std::string, 3> topics{"/sync/left", "/sync/right", "/sync/top"};
 struct Point
@@ -110,7 +111,7 @@ int pipeline_source(rclcpp::Node::SharedPtr node, const std::filesystem::path & 
 #else
     pubs.push_back(node->create_publisher<Cloud>("/raw" + topic, qos));
 #endif
-  for (int seq = 0; !sustained && !extended && seq < sets; ++seq) {
+  for (int seq = 0; !sustained && !extended && !recorder_live && seq < sets; ++seq) {
     for (int sensor = 0; sensor < (seq % 2 ? 2 : 3); ++sensor)
       inputs[seq].push_back(cloud(seq, sensor));
   }
@@ -159,7 +160,7 @@ int pipeline_source(rclcpp::Node::SharedPtr node, const std::filesystem::path & 
   std::vector<int64_t> top_release_ns(sets);
   std::vector<int64_t> stamps(sets);
   for (int seq = 0; seq < sets; ++seq) {
-    if (extended || sustained) {
+    if (extended || sustained || recorder_live) {
       for (int sensor = 0; sensor < (seq % 2 ? 2 : 3); ++sensor)
         inputs[seq].push_back(cloud(seq, sensor));
     }
@@ -187,7 +188,7 @@ int pipeline_source(rclcpp::Node::SharedPtr node, const std::filesystem::path & 
       pubs[sensor]->publish(inputs[seq][sensor]);
 #endif
     }
-    if (extended || sustained) inputs[seq].clear();
+    if (extended || sustained || recorder_live) inputs[seq].clear();
   }
   for (int seq = 0; seq < sets; seq += 2)
     std::cout << "top_release_ns," << seq << "," << top_release_ns[seq] << std::endl;
@@ -286,7 +287,7 @@ int main(int argc, char ** argv)
     }
     check(clouds.emplace(rclcpp::Time(c->header.stamp).nanoseconds(), c).second, "duplicate cloud");
     ++cloud_count;
-    if (recorder_steps && cloud_count % 4 == 0)
+    if ((recorder_steps || recorder_live) && cloud_count % 4 == 0)
       std::ofstream(std::filesystem::path(directory) / ("seen-" + std::to_string(cloud_count.load()))) << stamp;
     if (route_pilot && cloud_count == 7) std::ofstream(std::filesystem::path(directory) / "fault-window") << stamp;
   };

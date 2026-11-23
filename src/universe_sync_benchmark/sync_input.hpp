@@ -21,12 +21,14 @@ using Bytes = std::vector<uint8_t>;
 struct LoanAudit
 {
   std::vector<std::weak_ptr<const Bytes>> loans;
+  size_t peak_live_at_take = 0;
   size_t bytes = 0, views = 0, copies = 0;
   ~LoanAudit()
   {
     auto released =
       std::count_if(loans.begin(), loans.end(), [](const auto & p) { return p.expired(); });
     std::fprintf(stderr, "sync_input views=%zu copies=%zu\n", views, copies);
+    if (peak_live_at_take) std::fprintf(stderr, "sync_live_at_take peak=%zu\n", peak_live_at_take);
     if (loans.empty()) return;
     std::fprintf(
       stderr, "sync_view_audit loans=%zu released=%zu bytes=%zu\n", loans.size(),
@@ -47,6 +49,11 @@ inline void convert_xyzirc(const Cloud & src, Cloud & dst)
       if (view->owner().lock().get() != bytes) throw std::runtime_error("unexpected loan storage");
       audit.loans.push_back(view->owner());
       audit.bytes += bytes->size();
+      if (std::getenv("SYNC_RECORDER_LIVE")) {
+        const size_t live = std::count_if(audit.loans.begin(), audit.loans.end(),
+          [](const auto & owner) { return !owner.expired(); });
+        audit.peak_live_at_take = std::max(audit.peak_live_at_take, live);
+      }
     }
   } else {
     ++audit.copies;

@@ -55,3 +55,16 @@ for the paced attach/detach test. Next run the ungated producer during
 discovery and throttle the recorder to measure loss, backpressure and local
 loan lifetime. Direct local recording and the network boundary remain open.
 [Lifecycle results](recorder-lifecycle-results/)
+
+### Continuous recorder evidence
+
+Three running controls and three recorder stalls exercised attach, recovery
+and restart under uninterrupted 10 Hz source traffic. Each local run delivered
+60/60 with the same peak of three observed live synchronizer input owners.
+Suspending the recorder for 1.6 s consistently lost 14 forwarded clouds from
+the best-effort bag. The restarted recorder always captured a contiguous
+suffix. Qualify direct local recording next using this workload; compare
+loss, native owner retention and CPU before choosing the same-host logger
+path. Preserve the DDS export for network-bound recording. Lossless export
+would need its own bounded backlog/replay policy and overload tests.
+[Sequence audits and timings](live-recorder-results/)
