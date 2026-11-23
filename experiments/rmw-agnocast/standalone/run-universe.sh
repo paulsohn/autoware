@@ -12,6 +12,12 @@ source build/standalone/poll-install/local_setup.bash
 export RMW_IMPLEMENTATION=rmw_agnocast ROS_DOMAIN_ID=173 ENABLE_AGNOCAST=0
 test ! -e /opt/ros/lyrical/lib/libddsc.so
 test "$(ros2 pkg prefix rmw_agnocast)" = /ws/build/standalone/poll-install/rmw_agnocast
+if [[ -n ${SYNC_TYPED_CROP_CONTROL:-} ]]; then
+  deps=$(ldd "$SYNC_CROP_COMPONENT_PREFIX/lib/libuniverse_crop.so")
+  grep -Fq 'librclcpp.so => /ws/build/standalone/release-path/install/rclcpp/lib/' <<< "$deps"
+  grep -Fq 'libagnocast.so => /ws/build/standalone/o3-install/agnocastlib/lib/' <<< "$deps"
+  grep -q 'not found' <<< "$deps" && exit 1
+fi
 export LD_PRELOAD=/ws/build/migration-guide/packaged-hook-check/libagnocast_heaphook.so
 ulimit -c 0
 if [[ ${1:-} == --ownership ]]; then

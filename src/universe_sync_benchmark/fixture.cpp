@@ -1,3 +1,4 @@
+#include "stage_trace.hpp"
 #include <rclcpp/serialization.hpp>
 #include <rclcpp/rclcpp.hpp>
 #ifdef SYNC_NATIVE
@@ -187,6 +188,7 @@ int pipeline_source(rclcpp::Node::SharedPtr node, const std::filesystem::path & 
 #else
       pubs[sensor]->publish(inputs[seq][sensor]);
 #endif
+      if (lidar_trace::enabled() && sensor == 2) lidar_trace::mark("top_return", stamps[seq]);
     }
     if (extended || sustained || recorder_live) inputs[seq].clear();
   }
@@ -277,6 +279,7 @@ int main(int argc, char ** argv)
   int delayed = 0;
   auto receive = [&](Cloud::ConstSharedPtr c) {
     const auto stamp = rclcpp::Time(c->header.stamp).nanoseconds();
+    if (lidar_trace::enabled()) lidar_trace::mark("sink", stamp);
     arrival[stamp] = node->now().nanoseconds() - stamp;
     if (slow && (!extended || delayed < 68)) {
       std::this_thread::sleep_for(125ms);

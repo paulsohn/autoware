@@ -354,3 +354,68 @@ Two additional diagnostic launches used the crop-view configuration with SYNC_OU
 The matrix verified all 576 clouds and matching metadata. Minimum sampled host availability was 11476 MiB. For each standalone arm the pooled table uses 80 complete and 80 partial groups and nearest-rank p95. Changing the crop inputs left pooled complete median within 0.013 ms of the CPU case. One retained-input launch had a 10.845 ms median; all other retained-input launch medians were between 4.755 and 6.383 ms. The repeat batch measured copy/view median 5.565/5.662 ms and p95 7.081/6.972 ms. The original tail remains part of the pooled result, with no identified cause.
 
 The remaining full-group median difference to native is about 3 ms. Most of it occurs after the source reaches the third publish. The separate output timers leave that interval largely unaccounted for. A follow-up should timestamp third-cloud publish return, crop callback entry/exit, last synchronizer input callback entry, and sink entry in both native and standalone processes, paired by original stamp. Use separate uninstrumented controls. [All timed groups and source timing boundaries](lidar-crop-input.csv).
+
+## O3 three-LiDAR stage comparison and matched-count intervention
+
+Rebuilt the managed transform dependency, view-capable crop component, ordinary and native pipeline fixtures in the exported Lyrical environment. All measured local crop, synchronizer and source/sink targets used Clang 21 Release with effective -O3, alongside the existing -O3 standalone RMW, Agnocast library and patched rclcpp. Distribution-provided middleware and system packages kept their installed builds. The memory-capped sequential build groups recorded minimum host availability of 10937, 10983 and 10453 MiB respectively. Verified the installed crop component path, Release library selection and absence of Cyclone in the standalone runtime. The two primary arms used the same typed crop library and ordinary ROS component container. Standalone accepted retained views on crop and synchronizer inputs; Cyclone used CPU data. Publication was ordinary on both. No direct-poll or publisher-loan options.
+
+Four primary rounds plus two Zenoh launches in the untraced matrix, and four paired trace rounds, verified 528 output groups and their metadata. Discard the first four groups per launch, report pooled median and nearest-rank p95. Minimum host availability across these launches was 10601 MiB. The 40 ms timeout dominates partial ages.
+
+| Untraced transport | Complete median / p95 ms | Partial median / p95 ms |
+|---|---:|---:|
+| Native Agnocast | 2.538 / 3.650 | 41.799 / 42.671 |
+| Standalone rmw_agnocast | 5.779 / 7.380 | 41.724 / 42.103 |
+| Cyclone DDS | 3.101 / 3.718 | 42.152 / 42.441 |
+| Zenoh | 2.847 / 3.223 | 42.035 / 42.440 |
+
+Separate traces pair CLOCK_REALTIME-compatible system timestamps across processes by original sensor stamp. Each launch verified 60 crop entries, exits and synchronizer input callbacks, 12 third-source publish returns, and 24 output publish entries, returns and sink callbacks. Top was the last synchronizer input for all 40 timed complete groups per traced arm. Traced complete median/p95 were 5.931/7.347 ms standalone and 3.324/3.664 ms Cyclone. Stage medians below describe concurrent processes and should not be added.
+
+| Traced complete-group interval | Standalone ms | Cyclone ms |
+|---|---:|---:|
+| Group stamp to top publish start | 0.837 | 0.760 |
+| Top source publish call | 0.393 | 0.364 |
+| Top publish return to top crop callback entry | 3.451 | 0.461 |
+| Portion of that interval occupied by left/right crop callbacks | 3.411 | 0.406 |
+| Top crop callback entry to exit | 1.877 | 0.380 |
+| Top crop exit to last synchronizer input entry (signed) | −1.584 | 0.050 |
+| Last synchronizer input entry to concatenated publish start | 0.257 | 0.198 |
+| Concatenated publish call | 0.285 | 0.514 |
+| Concatenated publish return to sink callback entry | 0.509 | 0.509 |
+
+The negative interval means the synchronizer was already executing while the top crop callback was still running. The left/right occupancy was calculated by intersecting both earlier callbacks with the interval from top publish return to top crop entry on each frame. The residual median was 0.043 ms for both transports. [Ages](lidar-o3-ages.csv) and [absolute per-group stage timestamps, including all three sensors](lidar-o3-stages.csv).
+
+### What kept the crop executor occupied
+
+Immediately after publishing the cropped cloud, FilterBase calls BasicPublishedTimePublisher::publish_if_subscribed. The helper asks whether anyone subscribes to the corresponding debug/published_time topic. On standalone, rmw_publisher_count_matched_subscriptions calls count_compatible, whose graph snapshot opens and inspects filesystem lease records before filtering for topic, type and compatible QoS. This query runs even when the debug topic has zero subscribers. Three crops share one executor thread. Work performed after the first two crops publish still delays entry into the third crop.
+
+A separate RCL interposer targeted exactly those three debug publishers, with only the crop container loading it. A control calls through on every invocation. The fixed-graph treatment calls through for the first two invocations and the final one per sensor, reusing zero for the intervening invocations. Every real call required a successful zero result. Both arms keep the publishers, ordinary crop processing and output transport. Only use this diagnostic on this fixed fixture with no debug subscribers. A general middleware implementation must track graph changes and abrupt exits.
+
+| Two reverse-order rounds | Complete median / p95 ms |
+|---|---:|
+| Standalone, live query | 5.817 / 6.748 |
+| Standalone, reuse zero | 2.505 / 3.428 |
+| Cyclone, live query | 3.216 / 3.808 |
+| Cyclone, reuse zero | 3.310 / 3.638 |
+
+The live-query medians excluding the first two calls per sensor were 1.642 ms standalone and 0.000331 ms Cyclone. Standalone full-group medians fell in both orders (5.760 to 2.759 ms and 6.176 to 2.479 ms). The eight diagnostic launches verified 192 additional clouds and 480 count invocations; minimum host availability was 11100 MiB. This isolates the repeated matched-count operation as the dominant avoidable cost on this laptop graph. [Per-call measurements](lidar-o3-count-calls.csv) and [diagnostic ages](lidar-o3-count-ages.csv).
+
+### Reproduce on the provisioned laptop
+
+Start in the colcon worktree with the existing Release transport overlays. The launch scripts check target flags and run one graph at a time. Use a fresh output directory for analysis.
+
+```bash
+export LYRICAL_ROOT="$(cat build/agnocast-lyrical/universe-root)"
+experiments/buffer/run-lyrical.sh bash experiments/buffer/build-universe-lyrical.sh
+experiments/buffer/run-lyrical.sh bash experiments/rmw-agnocast/build-pipeline.sh
+experiments/buffer/run-lyrical.sh bash experiments/rmw-agnocast/build-pipeline.sh native
+bash experiments/rmw-agnocast/standalone/bench-universe.sh build/standalone/fresh-o3-stages --stages
+mkdir build/standalone/fresh-stage-export
+python3 experiments/rmw-agnocast/standalone/analyze-lidar-stages.py build/standalone/fresh-o3-stages build/standalone/fresh-stage-export
+experiments/buffer/run-lyrical.sh bash -ec '
+  incs=()
+  for dir in /opt/ros/lyrical/include/*; do
+    if [[ -d $dir ]]; then incs+=("-I$dir"); fi
+  done
+  /usr/bin/clang++-21 --gcc-install-dir=/usr/lib/gcc/x86_64-linux-gnu/15 -O3 -shared -fPIC "${incs[@]}" experiments/rmw-agnocast/standalone/crop-count.cpp -o build/standalone/crop-count.so'
+bash experiments/rmw-agnocast/standalone/bench-universe.sh build/standalone/fresh-o3-count --count
+```

@@ -31,4 +31,6 @@ if [[ $mode == zenoh ]]; then
   sleep 1
   kill -0 "$router"
 fi
-ros2 launch universe_sync_benchmark three_lidar.launch.py mode:="$mode" fixture_directory:="$dir"
+launch_file=(universe_sync_benchmark three_lidar.launch.py)
+if [[ -n ${SYNC_COUNT_PROBE:-} ]]; then launch_file=(/ws/src/universe_sync_benchmark/launch/three_lidar.launch.py); fi
+ros2 launch "${launch_file[@]}" mode:="$mode" fixture_directory:="$dir"

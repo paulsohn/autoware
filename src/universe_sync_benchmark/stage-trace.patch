@@ -1,0 +1,46 @@
+--- a/concatenate_and_time_sync_node.cpp
++++ b/concatenate_and_time_sync_node.cpp
+@@ -16,6 +16,8 @@
+
+ #include "autoware/pointcloud_preprocessor/concatenate_data/cloud_collector.hpp"
+ #include "autoware/pointcloud_preprocessor/utility/memory.hpp"
++
++#include "stage_trace.hpp"
+
+ #include <iomanip>
+ #include <list>
+@@ -54,6 +56,7 @@
+   // Subscribers
+   for (const std::string & topic : params_.input_topics) {
+     auto callback = [&](const sensor_msgs::msg::PointCloud2::ConstSharedPtr msg) {
++      if (lidar_trace::enabled()) lidar_trace::mark("sync_in", rclcpp::Time(msg->header.stamp).nanoseconds());
+       this->cloud_callback(msg, topic);
+     };
+
+--- a/autoware/pointcloud_preprocessor/concatenate_data/concatenate_and_time_sync_node.ipp
++++ b/autoware/pointcloud_preprocessor/concatenate_data/concatenate_and_time_sync_node.ipp
+@@ -17,6 +17,7 @@
+ #include "autoware/pointcloud_preprocessor/utility/memory.hpp"
+
+ #include "sync_output_profile.hpp"
++#include "stage_trace.hpp"
+
+ #include <limits>
+ #include <list>
+@@ -355,6 +356,8 @@
+
+   if (publish_pointcloud) {
+     latest_concatenate_cloud_timestamp_ = current_concatenate_cloud_timestamp_;
++    const auto trace_stamp = lidar_trace::enabled() ? rclcpp::Time(concatenated_cloud_result.concatenate_cloud_ptr->header.stamp).nanoseconds() : 0;
++    if (trace_stamp) lidar_trace::mark("out_start", trace_stamp);
+     const auto start = sync_output_profile::now();
+     const auto payload_size = concatenated_cloud_result.concatenate_cloud_ptr->row_step;
+     if (std::getenv("SYNC_LOAN_OUTPUT")) {
+@@ -368,6 +371,7 @@
+       concatenated_cloud_publisher_->publish(
+         std::move(concatenated_cloud_result.concatenate_cloud_ptr));
+     }
++    if (trace_stamp) lidar_trace::mark("out_return", trace_stamp);
+     if (start) sync_output_profile::report(payload_size, start);
+     // publish transformed raw pointclouds
+     if (

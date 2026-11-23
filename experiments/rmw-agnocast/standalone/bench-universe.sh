@@ -5,7 +5,7 @@ bash "$(dirname "$0")/check-universe-o3.sh" lidar "${2:-}"
 mkdir "$out"
 export LYRICAL_ROOT="$(cat build/agnocast-lyrical/universe-root)" BUFFER_RUNTIME_ONLY=1 SYNC_SHORT_WAIT=1
 rounds=(1 2)
-if [[ ${2:-} == --crop-inputs ]]; then rounds=(1 2 3 4); fi
+if [[ ${2:-} == --crop-inputs || ${2:-} == --stages ]]; then rounds=(1 2 3 4); fi
 if [[ ${2:-} == --crop-repeat ]]; then rounds=(5 6 7 8); fi
 for round in "${rounds[@]}"; do
   modes=(native standalone poll cyclone zenoh)
@@ -26,9 +26,32 @@ for round in "${rounds[@]}"; do
     modes=(crop-copy crop-view)
     if [[ $round == 6 || $round == 7 ]]; then modes=(crop-view crop-copy); fi
   fi
+  if [[ ${2:-} == --stages ]]; then
+    case $round in
+      1) modes=(native crop-view cyclone zenoh crop-view-trace cyclone-trace);;
+      2) modes=(cyclone-trace crop-view-trace zenoh cyclone crop-view native);;
+      3) modes=(cyclone crop-view native cyclone-trace crop-view-trace);;
+      4) modes=(crop-view-trace cyclone-trace native crop-view cyclone);;
+    esac
+  fi
+  if [[ ${2:-} == --count ]]; then
+    modes=(crop-view-count crop-view-reuse cyclone-count cyclone-reuse)
+    if [[ $round == 2 ]]; then modes=(cyclone-reuse cyclone-count crop-view-reuse crop-view-count); fi
+  fi
   for mode in "${modes[@]}"; do
     log="$out/$mode-$round.log"
-    unset AGNOCAST_RMW_POLL_TOPIC SYNC_STANDALONE_OWNERSHIP
+    unset AGNOCAST_RMW_POLL_TOPIC SYNC_STANDALONE_OWNERSHIP SYNC_STAGE_TRACE SYNC_TYPED_CROP_CONTROL
+    unset SYNC_COUNT_PROBE SYNC_COUNT_REUSE
+    if [[ ${2:-} == --count ]]; then
+      export SYNC_COUNT_PROBE=/ws/build/standalone/crop-count.so
+      if [[ $mode == *-reuse ]]; then export SYNC_COUNT_REUSE=1; fi
+      mode=${mode%-*}
+    fi
+    if [[ $mode == *-trace ]]; then export SYNC_STAGE_TRACE=1; mode=${mode%-trace}; fi
+    if [[ ( ${2:-} == --stages || ${2:-} == --count ) && $mode != native ]]; then
+      export SYNC_TYPED_CROP_CONTROL=1
+      export SYNC_CROP_COMPONENT_PREFIX=/ws/build/agnocast-lyrical/install/universe_crop_benchmark
+    fi
     if [[ $mode == crop-* ]]; then
       export SYNC_STANDALONE_OWNERSHIP=$mode
       export SYNC_CROP_COMPONENT_PREFIX=/ws/build/agnocast-lyrical/install/universe_crop_benchmark
@@ -50,6 +73,11 @@ for round in "${rounds[@]}"; do
       grep -q 'verified 24 synchronized clouds and metadata' "$log"
     fi
     if [[ $mode == loan ]]; then grep -q 'host-cloud publisher loans=24 private_copies=0' "$log"; fi
+    if [[ ( ${2:-} == --stages || ${2:-} == --count ) && $mode != native ]]; then
+      grep -Fq "$SYNC_CROP_COMPONENT_PREFIX/lib/libuniverse_crop.so" "$log"
+      grep -q 'verified 24 synchronized clouds and metadata' "$log"
+    fi
+    if [[ ${2:-} == --count ]]; then test "$(grep -c 'crop_count,' "$log")" = 60; fi
     test "$(grep -c 'sample,[0-9]' "$log")" = 24
   done
 done

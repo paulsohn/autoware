@@ -67,13 +67,16 @@ def graph(context):
         for key, value in bounds.items():
             native_args.extend(["-p", f"{key}:={value}"])
     container_env = env.copy()
-    if ownership in ("crop-copy", "crop-view"):
+    if ownership in ("crop-copy", "crop-view") or os.getenv("SYNC_TYPED_CROP_CONTROL"):
         # Use the same view-capable component for both arms of this comparison.
         prefix = os.environ["SYNC_CROP_COMPONENT_PREFIX"]
         container_env.update(AMENT_PREFIX_PATH=prefix + ":" + os.environ["AMENT_PREFIX_PATH"],
                              BENCH_TYPED_INPUT="1", BENCH_BUFFER="cpu")
         if ownership == "crop-view":
             container_env["AGNOCAST_RMW_HOST_VIEW"] = "1"
+    if os.getenv("SYNC_COUNT_PROBE"):
+        preload = env.get("LD_PRELOAD", os.getenv("LD_PRELOAD", ""))
+        container_env["LD_PRELOAD"] = ":".join(filter(None, (preload, os.environ["SYNC_COUNT_PROBE"])))
     container = ComposableNodeContainer(
         name="lidar_crops", namespace="", package="rclcpp_components",
         executable="component_container", composable_node_descriptions=crop_nodes,

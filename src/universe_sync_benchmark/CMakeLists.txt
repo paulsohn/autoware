@@ -35,6 +35,11 @@ if(AUTOWARE_ENABLE_AGNOCAST_HOST_VIEW)
   endif()
   execute_process(COMMAND patch -p1 -i "${CMAKE_CURRENT_SOURCE_DIR}/${output_patch}"
     WORKING_DIRECTORY "${input_sources}" COMMAND_ERROR_IS_FATAL ANY)
+  if(NOT SYNC_NATIVE)
+    set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS stage-trace.patch)
+    execute_process(COMMAND patch -p1 -i "${CMAKE_CURRENT_SOURCE_DIR}/stage-trace.patch"
+      WORKING_DIRECTORY "${input_sources}" COMMAND_ERROR_IS_FATAL ANY)
+  endif()
 endif()
 add_library(universe_sync SHARED
   "${input_sources}/concatenate_and_time_sync_node.cpp" "${sync}/cloud_collector.cpp"

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../rmw_agnocast/host_cloud_view.hpp"
+#include "../universe_sync_benchmark/stage_trace.hpp"
 
 #include <agnocast/agnocast_publisher.hpp>
 #include <cuda_buffer/cuda_buffer_api.hpp>

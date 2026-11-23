@@ -19,10 +19,18 @@
 
  #include "autoware/pointcloud_preprocessor/utility/memory.hpp"
 
-@@ -184,6 +186,21 @@
+@@ -184,6 +186,29 @@
      // CAN'T use auto-type here.
      std::function<void(const PointCloud2ConstPtr)> cb =
        std::bind(callback, this, std::placeholders::_1, PointIndicesConstPtr());
++    if (lidar_trace::enabled()) {
++      cb = [inner = cb](const PointCloud2ConstPtr msg) {
++        const auto stamp = rclcpp::Time(msg->header.stamp).nanoseconds();
++        lidar_trace::mark("crop_in", stamp);
++        inner(msg);
++        lidar_trace::mark("crop_out", stamp);
++      };
++    }
 +    if (const char * path = std::getenv("BENCH_CROP_PROFILE")) {
 +      auto profile = std::make_shared<benchmark::GapProfile>(path);
 +      cb = [profile, inner = cb](const PointCloud2ConstPtr msg) {
