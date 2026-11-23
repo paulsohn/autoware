@@ -1917,6 +1917,7 @@ synchronized ROS cases pass on Lyrical/Cyclone with LLVM/libc++ 21.1.8, zero ski
   [constant-turn-rate source](https://github.com/autowarefoundation/autoware_universe/blob/main/perception/autoware_radar_object_tracker/src/tracker/model/constant_turn_rate_motion_tracker.cpp)
   retains bits/stdc++.h; the scoped tracker/stdc++.h PR search finds no match.
 
+Local source correction: 9df2c12c.
 Package: autoware_radar_object_tracker. Both model translation units use GNU's
 bits/stdc++.h and fail to compile with LLVM/libc++. Replace it with cmath and
 numeric, retaining the model equations and APIs. This is standard C++ portability,

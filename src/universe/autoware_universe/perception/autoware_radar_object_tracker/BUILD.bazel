@@ -1,0 +1,95 @@
+load("@rclcpp_components//:defs.bzl", "rclcpp_components_register_node")
+load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "utils",
+    srcs = glob(["src/utils/*.cpp"]),
+    hdrs = glob(["include/**/utils/*.hpp"]),
+    includes = ["include"],
+    deps = ["@autoware_lanelet2_utils", "@autoware_utils_geometry", "@autoware_perception_msgs//:cc", "@rosdistro//cc:eigen"],
+)
+
+cc_library(
+    name = "autoware_radar_object_tracker_library",
+    srcs = glob(["src/*.cpp", "src/tracker/model/*.cpp", "src/association/*.cpp", "src/association/mu_ssp/*.cpp"]),
+    hdrs = glob(["include/**/*.hpp", "src/*.hpp"]),
+    includes = ["include", "src"],
+    deps = [
+        ":utils",
+        "@ament_index_cpp//:ament_index_cpp_library",
+        "@autoware_kalman_filter",
+        "@autoware_lanelet2_utils",
+        "@autoware_object_recognition_utils",
+        "@autoware_perception_msgs//:cc",
+        "@autoware_utils_geometry",
+        "@diagnostic_updater//:diagnostic_updater_library",
+        "@geometry_msgs//:cc",
+        "@mussp",
+        "@rclcpp//:rclcpp_library",
+        "@rclcpp_components//:rclcpp_components_library",
+        "@rosdistro//cc:eigen",
+        "@rosdistro//cc:nlohmann_json",
+        "@rosdistro//cc:yaml-cpp_library",
+        "@tf2//:tf2_library",
+        "@tf2_geometry_msgs//:tf2_geometry_msgs_library",
+        "@tf2_ros//:tf2_ros_library",
+        "@unique_identifier_msgs//:cc",
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = [
+        "@ament_index_cpp//:ament_index_cpp",
+        "@autoware_lanelet2_utils//:runtime_dynamic_deps",
+        "@autoware_object_recognition_utils//:runtime_dynamic_deps",
+        "@autoware_perception_msgs//:cc_shared",
+        "@autoware_utils_geometry//:test_dynamic_deps",
+        "@diagnostic_updater//:diagnostic_updater",
+        "@geometry_msgs//:cc_shared",
+        "@mussp//:runtime_dynamic_deps",
+        "@rclcpp_components//:rclcpp_components",
+        "@rosdistro//cc:yaml-cpp",
+        "@tf2//:tf2",
+        "@tf2_geometry_msgs//:tf2_geometry_msgs",
+        "@tf2_ros//:tf2_ros",
+        "@unique_identifier_msgs//:cc_shared",
+    ],
+)
+
+cc_shared_library(
+    name = "autoware_radar_object_tracker_component",
+    dynamic_deps = [":runtime_dynamic_deps"],
+    deps = [":autoware_radar_object_tracker_library"],
+)
+
+rclcpp_components_register_node(
+    name = "radar_object_tracker_node",
+    component = ":autoware_radar_object_tracker_component",
+    node_name = "radar_object_tracker_node",
+    plugin = "autoware::radar_object_tracker::RadarObjectTrackerNode",
+)
+
+register_ament_files(
+    name = "executables",
+    files = [":radar_object_tracker_node"],
+    prefix = "lib/autoware_radar_object_tracker",
+    strip_prefix = "*",
+)
+
+ament_index(
+    package_xml = "package.xml",
+    components = [":radar_object_tracker_node_record"],
+    data = glob(["config/**", "launch/**"]) + [":executables"],
+)
+
+cc_test(
+    name = "test_utils",
+    srcs = ["test/test_radar_object_tracker_utils.cpp"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+    deps = [":utils", "@googletest//:gtest_main"],
+)

@@ -20003,3 +20003,6 @@ and four ROS cases pass, zero failures/errors/skips. Original and ROS targets
 complete in 0.6 s and 2.0 s; the full gate takes 51.7 s including compilation.
 No dependency-related omission, extra middleware matrix, GPU or expensive
 simulator/deployment check is used. Next module: simple detected/tracked merging.
+
+Bazel definitions and root behavior registration reuse the complete passing gate
+above. The separately committed source portability correction is 9df2c12c.

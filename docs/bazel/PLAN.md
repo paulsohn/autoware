@@ -2195,7 +2195,7 @@ and no-agnocast; preserve wrapper support where the component uses it.
 | --- | --- |
 | autoware_radar_tracks_msgs_converter | Complete: component/executable/index and three ROS behavior cases; no original C++ suite. |
 | autoware_radar_fusion_to_detected_object | Complete: component/executable/index, six estimator and two synchronized ROS cases; current Message Filters API. |
-| autoware_radar_object_tracker | Pending: all four original utility cases plus tracking/association/lifecycle behavior. |
+| autoware_radar_object_tracker | Complete: four original cases plus four model/publication ROS cases, utility/component/executable/index builds; portable model includes. |
 | autoware_simple_object_merger | Pending: all four original ROS cases, detected/tracked executables/plugins and indexed resources. |
 
 ### Execution order through complete Universe coverage

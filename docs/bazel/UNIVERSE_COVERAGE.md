@@ -178,7 +178,7 @@ into the current closure without renumbering existing phase identifiers.
 Build on 9.1. Preserve the tracker/merger original suites and add conversion, synchronization, frame/covariance, identity/lifecycle and merge-output ROS checks. The current CMake inventory has eight original C++ test declarations in the tracker/merger and none in the converter/fusion packages; confirm the complete inventory when starting.
 
 - [x] [autoware_radar_fusion_to_detected_object](../../src/universe/autoware_universe/perception/autoware_radar_fusion_to_detected_object/package.xml)
-- [ ] [autoware_radar_object_tracker](../../src/universe/autoware_universe/perception/autoware_radar_object_tracker/package.xml)
+- [x] [autoware_radar_object_tracker](../../src/universe/autoware_universe/perception/autoware_radar_object_tracker/package.xml)
 - [x] [autoware_radar_tracks_msgs_converter](../../src/universe/autoware_universe/perception/autoware_radar_tracks_msgs_converter/package.xml)
 - [ ] [autoware_simple_object_merger](../../src/universe/autoware_universe/perception/autoware_simple_object_merger/package.xml)
 
