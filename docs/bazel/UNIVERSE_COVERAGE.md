@@ -250,7 +250,7 @@ Validate transforms, projection/association, covariance/identity preservation, o
 
 - [x] [autoware_detected_object_feature_remover](../../src/universe/autoware_universe/perception/autoware_detected_object_feature_remover/package.xml)
 - [x] [autoware_image_object_locator](../../src/universe/autoware_universe/perception/autoware_image_object_locator/package.xml)
-- [ ] [autoware_object_merger](../../src/universe/autoware_universe/perception/autoware_object_merger/package.xml)
+- [x] [autoware_object_merger](../../src/universe/autoware_universe/perception/autoware_object_merger/package.xml)
 - [x] [autoware_object_sorter](../../src/universe/autoware_universe/perception/autoware_object_sorter/package.xml)
 - [ ] [autoware_predicted_path_postprocessor](../../src/universe/autoware_universe/perception/autoware_predicted_path_postprocessor/package.xml)
 - [ ] [autoware_tracking_object_merger](../../src/universe/autoware_universe/perception/autoware_tracking_object_merger/package.xml)

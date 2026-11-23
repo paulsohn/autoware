@@ -21012,3 +21012,57 @@ Result after the header fix: all nine non-test targets build and both cases
 pass, zero failures/errors/skips, 36.3 s (test 0.5 s). Targeted clang-format and
 diff checks pass. No Fast DDS/GPU/expensive product gate selected. Next:
 association/fusion and decorative tracking merge.
+
+## 2026-11-24: Phase 9.6 — object association and fusion merge
+
+Purpose: integrate both association and fusion components/executables from the
+local package. Inspect all four CMake sources, public headers, manifest,
+association matrices/overlap/priority YAML and the complete original fusion
+suite: eleven ROS cases in one target. Acceptance is the whole module and suite
+with Cyclone/RCLCPP, plus five added association/fusion transport cases in both
+RCLCPP and Agnocast-only/heaphook profiles.
+
+Pattern: package-owned module, common compile library listing exactly the four
+CMake-selected sources (not the unused alternative solver), unique shared owner and
+both wrapper executables; index plugin/component records and launch/config/docs
+resources. Reuse the existing mussp, wrapper, object-recognition, utility and
+ROS/TF providers. Diagnostic helpers are header-only: use their actual SDK
+owners rather than assuming every utility has a runtime_dynamic_deps target.
+Preserve the original Clang mussp include-path exception. Root owns the local
+override and added tests; the component has no root labels.
+
+Fixture failure/cause/fix: all original tests initially fail opening
+external/<module>/config/object_fusion_merger.param.yaml. Their __FILE__ value
+has a compile-tree external/ prefix, while Bazel external runfiles live beside
+the main runfiles repository. Declare all YAML data and use the test-only
+-fmacro-prefix-map=external/=../ option. This preserves the original source-
+relative lookup and all eleven test bodies; no source change or checkout access
+is needed. The added fixture uses a 4 m main box and 2 m sub box to establish
+the independently calculated union center 0.25 and length 4.5; equal 4 m boxes
+instead produce center 0.75/length 5.5 and must not use that expected value.
+
+Added behavior: exercise all four association priorities (Object0, Object1,
+Confidence, ClassBased) on matched and unmatched objects. Compare complete
+selected payloads including covariance, classification and velocity; verify
+output order/header/stamp. Fusion also verifies union geometry, preserved main
+confidence/class and unchanged unmatched main/sub payloads on separate output
+topics. The enabled peer asserts RCLCPP stays uninitialized.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  @autoware_object_merger//... //bazel/tests:object_merger_transport_test
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --local_test_jobs=1 --strategy=TestRunner=local \
+  --run_under=//bazel/agnocast:with_heaphook \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  //bazel/tests:object_merger_transport_test
+```
+
+Results: all 17 non-test targets build; original eleven cases and added five
+pass with Cyclone/RCLCPP in 34.1 s (original suite 7.3 s). All five added cases
+also pass Agnocast-only with the built/preloaded hook. Zero failures/errors/skips.
+No original implementation or tests changed. Targeted clang-format and diff
+checks pass; no Fast DDS/GPU/expensive product gate selected. Next: decorative
+tracking merger and predicted paths.

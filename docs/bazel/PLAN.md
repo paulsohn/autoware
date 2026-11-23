@@ -113,7 +113,8 @@ only when your current target demonstrates the need.
   [evidence: complete preprocessing suite](JOURNAL.md#2026-11-23-phase-94--cpu-point-cloud-preprocessor);
   [radar driver/body context evidence](JOURNAL.md#2026-11-23-phase-91--radar-track-crossing-noise-filter);
   [C++ bag-fixture evidence](JOURNAL.md#2026-11-22-phase-732--multi-object-tracking);
-  [evidence: interface lint](JOURNAL.md#2026-11-18-phase-534--interface-spec-lint).
+  [evidence: interface lint](JOURNAL.md#2026-11-18-phase-534--interface-spec-lint);
+  [source-relative C++ resource evidence](JOURNAL.md#2026-11-24-phase-96--object-association-and-fusion-merge).
   [Evidence: textually included C++ implementation](JOURNAL.md#2026-11-22-phase-732--static-obstacle-avoidance-scene-plugin).
 - [ ] Inventory complete module suites, runtime prerequisites and required
   middleware configurations before implementing each task.
@@ -2308,7 +2309,9 @@ in progress with seven packages pending.
 Completed: feature removal and detected/tracked sorting. All six original cases
 and four added cases pass Cyclone/RCLCPP; the added cases also pass Agnocast-only
 with heaphook. Image localization also passes both projection/truncation cases. Current
-definition coverage is 123/244; three Phase 9.6 packages remain.
+association/fusion also passes its eleven original and five added cases, with
+the added cases passing both transports. Definition coverage is 124/244; two
+Phase 9.6 packages remain.
 
 ### Execution order through complete Universe coverage
 

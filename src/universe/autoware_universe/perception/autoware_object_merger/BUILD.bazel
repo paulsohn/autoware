@@ -1,0 +1,100 @@
+load("@autoware_agnocast_wrapper//:defs.bzl", "autoware_agnocast_node")
+load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "autoware_object_merger_library",
+    srcs = [
+        "src/association/data_association.cpp",
+        "src/association/solver/mu_successive_shortest_path_wrapper.cpp",
+        "src/object_fusion_merger_node.cpp",
+        "src/object_association_merger_node.cpp",
+    ],
+    hdrs = glob(["include/**/*.hpp"]),
+    includes = ["include"],
+    copts = ["-Wno-nonportable-include-path"],
+    deps = [
+        "@autoware_agnocast_wrapper//:autoware_agnocast_wrapper_library",
+        "@autoware_object_recognition_utils",
+        "@autoware_perception_msgs//:cc",
+        "@autoware_utils",
+        "@autoware_utils_geometry",
+        "@autoware_utils_debug",
+        "@autoware_utils_diagnostics",
+        "@geometry_msgs//:cc",
+        "@mussp",
+        "@rosdistro//cc:eigen",
+        "@tf2//:tf2_library",
+        "@tf2_geometry_msgs//:tf2_geometry_msgs_library",
+        "@rclcpp//:rclcpp_library",
+        "@rclcpp_components//:rclcpp_components_library",
+        "@tf2_ros//:tf2_ros_library",
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = [
+        "@autoware_agnocast_wrapper",
+        "@autoware_object_recognition_utils//:runtime_dynamic_deps",
+        "@autoware_perception_msgs//:cc_shared",
+        "@autoware_utils//:runtime_dynamic_deps",
+        "@rclcpp_components//:rclcpp_components",
+        "@tf2_ros//:tf2_ros",
+        "@autoware_utils_debug//:runtime_dynamic_deps",
+        "@geometry_msgs//:cc_shared",
+        "@mussp//:runtime_dynamic_deps",
+        "@tf2_geometry_msgs//:tf2_geometry_msgs",
+    ],
+)
+
+cc_shared_library(
+    name = "autoware_object_merger",
+    shared_lib_name = "libautoware_object_merger.so",
+    dynamic_deps = [":runtime_dynamic_deps"],
+    deps = [":autoware_object_merger_library"],
+)
+
+autoware_agnocast_node(
+    name = "object_association_merger_node",
+    component = ":autoware_object_merger",
+    package_name = "autoware_object_merger",
+    plugin = "autoware::object_merger::ObjectAssociationMergerNode",
+)
+
+autoware_agnocast_node(
+    name = "object_fusion_merger_node",
+    component = ":autoware_object_merger",
+    package_name = "autoware_object_merger",
+    plugin = "autoware::object_merger::ObjectFusionMergerNode",
+)
+
+register_ament_files(
+    name = "executables",
+    files = [":object_association_merger_node", ":object_fusion_merger_node"],
+    prefix = "lib/autoware_object_merger",
+    strip_prefix = "*",
+)
+
+ament_index(
+    package_xml = "package.xml",
+    components = [":object_association_merger_node_components", ":object_fusion_merger_node_components"],
+    data = glob(["config/**", "launch/**", "docs/**"]) + [":executables", ":object_association_merger_node_plugin", ":object_fusion_merger_node_plugin"],
+    libraries = [":autoware_object_merger"],
+)
+
+cc_test(
+    name = "object_fusion_merger_node_tests",
+    # Preserve the original __FILE__-relative YAML lookup in external runfiles.
+    copts = ["-fmacro-prefix-map=external/=../"],
+    srcs = ["test/test_object_fusion_merger_node.cpp"],
+    data = glob(["config/*.yaml"]),
+    dynamic_deps = [":runtime_dynamic_deps", "@autoware_test_utils//:runtime_dynamic_deps"],
+    deps = [":autoware_object_merger_library", "@autoware_test_utils", "@googletest//:gtest_main"],
+    tags = ["no-sandbox", "no-remote"],
+)
+
+exports_files(glob(["config/*.yaml"]))

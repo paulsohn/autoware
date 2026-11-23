@@ -2342,3 +2342,24 @@ cc_test(
     deps = ["@autoware_image_object_locator//:autoware_image_object_locator_library", "@googletest//:gtest"],
     tags = ["no-sandbox", "no-remote"],
 )
+
+cc_test(
+    name = "object_merger_transport_test",
+    srcs = ["autoware_object_merger/test_transport.cpp"],
+    data = [
+        "@agnocast_heaphook",
+        "@autoware_object_merger//:config/object_fusion_merger.param.yaml",
+        "@autoware_object_merger//:config/object_association_merger.param.yaml",
+        "@autoware_object_merger//:config/data_association_matrix.param.yaml",
+        "@autoware_object_merger//:config/overlapped_judge.param.yaml",
+    ],
+    env = {
+        "FUSION_PARAMS": "$(rootpath @autoware_object_merger//:config/object_fusion_merger.param.yaml)",
+        "ASSOCIATION_PARAMS": "$(rootpath @autoware_object_merger//:config/object_association_merger.param.yaml)",
+        "MATRIX_PARAMS": "$(rootpath @autoware_object_merger//:config/data_association_matrix.param.yaml)",
+        "OVERLAP_PARAMS": "$(rootpath @autoware_object_merger//:config/overlapped_judge.param.yaml)",
+    },
+    dynamic_deps = ["@autoware_object_merger//:runtime_dynamic_deps"],
+    deps = ["@autoware_object_merger//:autoware_object_merger_library", "@googletest//:gtest"],
+    tags = ["no-sandbox", "no-remote"],
+)

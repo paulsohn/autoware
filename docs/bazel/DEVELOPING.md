@@ -1289,6 +1289,14 @@ runtime data/arguments. The interface-lint suite uses
 `//bazel/tests:interface_spec_lint_tests`; it includes all original cases and
 its committed-spec/manifest checks. Its original config determines active gates.
 
+For an unchanged C++ test that loads sibling resources through `__FILE__`, declare
+those files as test data. External-module compile paths start with `external/`,
+whereas their runfiles repository is a sibling of the main runfiles repository.
+A test-only `copts = ["-fmacro-prefix-map=external/=../"]` preserves that lookup
+without editing the original test or using an undeclared checkout path. Restrict
+the mapping to tests that require it; indexed-resource lookups remain preferable
+for new tests.
+
 When CMake supplies a test main, keep that driver and link gtest rather than
 adding another gtest_main. Give the driver or fixture ownership of ROS context
 initialization/shutdown; test bodies reuse an active context. If the original

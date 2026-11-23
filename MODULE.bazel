@@ -1971,3 +1971,9 @@ local_path_override(
     module_name = "autoware_image_object_locator",
     path = "src/universe/autoware_universe/perception/autoware_image_object_locator",
 )
+
+bazel_dep(name = "autoware_object_merger", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_object_merger",
+    path = "src/universe/autoware_universe/perception/autoware_object_merger",
+)
