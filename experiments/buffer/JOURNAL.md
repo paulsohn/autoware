@@ -4083,3 +4083,29 @@ last compatible writer exited. Lowest observed host MemAvailable across these
 three runs was 18437 MiB. Deadline matching is enforced at receiver admission;
 behavior under heavy incompatible traffic in the underlying native queue and
 the cost of graph-backed matched-count queries need load qualification.
+
+## Standalone migration walkthrough and three-LiDAR startup check
+
+At 761e6029, use the five source packages in the [migration walkthrough](../rmw-agnocast/TUTORIAL.md), the released 2.4.1 hook and kernel module, and the same RMW on both ends. Earlier tutorial steps selected individual topics in a Cyclone-backed process. They describe different middleware. The current local graph also serves stock recorders directly. The independent network gateway remains open.
+
+Reused the laptop's patched rclcpp, qualified standalone installation, stock examples and Cyclone-stripped Lyrical userspace. In separate processes with the tutorial environment the C++ minimal subscriber received Hello, world! 0 and 1. Ran the following check in the standalone runtime shell with the hook set:
+
+```bash
+python3 experiments/rmw-agnocast/standalone/check-stock.py /ws/build/migration-guide/project-install/examples_rclcpp_minimal_publisher/lib/examples_rclcpp_minimal_publisher/publisher_member_function
+```
+
+Python received a C++ sample and completed the parameter request. The stock SQLite recorder wrote 12 decodable CDR messages and killing the talker removed its graph entries. Lowest host MemAvailable during this check was 18673 MiB. These runtime checks reused installed artifacts. The consolidated five-package source build and host package installation were not repeated for the tutorial edit.
+
+For the three-LiDAR replay, launch the actual synchronizer first. In the Cyclone-stripped Lyrical shell from the standalone README, with the prebuilt Universe sync workload available, run:
+
+```bash
+source build/agnocast-lyrical/install/local_setup.bash
+source build/universe-sync/install/local_setup.bash
+source build/migration-guide/install/local_setup.bash
+source build/standalone/qualified-install/local_setup.bash
+export RMW_IMPLEMENTATION=rmw_agnocast
+ulimit -c 0
+timeout 12 env LD_PRELOAD=/ws/build/migration-guide/packaged-hook-check/libagnocast_heaphook.so build/universe-sync/install/universe_sync_benchmark/lib/universe_sync_benchmark/concatenate_and_time_sync_node --ros-args --params-file src/universe/autoware_universe/sensing/autoware_pointcloud_preprocessor/config/concatenate_and_time_sync_node.param.yaml -p 'input_topics:=[/sync/left,/sync/right,/sync/top]' -p is_motion_compensated:=false -p publish_synchronized_pointcloud:=false -p timeout_sec:=0.04
+```
+
+Source the managed-transform-buffer overlay before the workload. Apply the hook directly to the component after the timeout launcher. The node selected its naive matching strategy, then aborted creating its publisher with “standalone Buffer layout not implemented” (exit 134, minimum host MemAvailable 18808 MiB). The RMW rejects Buffer-bearing layouts before constructing a native endpoint. No traffic was injected and output completeness, median/p95, CPU under load and publisher allocations are unmeasured. The [historical synchronizer baselines](../rmw-agnocast/sync-native-results/summary.txt) include native Agnocast, Cyclone and Zenoh. The byte-view row used the previous mixed RMW. Qualify a cross-process Buffer representation with a two-process PointCloud2 payload/lifetime check before timing this pipeline.
