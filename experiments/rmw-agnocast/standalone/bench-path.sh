@@ -5,9 +5,22 @@ export LYRICAL_ROOT="$(cat build/agnocast-lyrical/universe-root)" BUFFER_RUNTIME
 out=${1:?fresh directory relative to worktree}
 mkdir "$out"
 rounds=4
-if [[ ${2:-} == --compare-builds ]]; then rounds=6; fi
+case ${2:-} in
+  --compare-builds|--compare-release) rounds=6;;
+  "") ;;
+  *) echo "Unknown comparison: $2" >&2; exit 2;;
+esac
 for ((round=1;round<=rounds;round++)); do
-  if [[ $rounds == 4 ]]; then
+  if [[ ${2:-} == --compare-release ]]; then
+    case $round in
+      1) modes=(native o2 o3);;
+      2) modes=(o2 o3 native);;
+      3) modes=(o3 native o2);;
+      4) modes=(o3 o2 native);;
+      5) modes=(native o3 o2);;
+      6) modes=(o2 native o3);;
+    esac
+  elif [[ $rounds == 4 ]]; then
     modes=(rmw native)
     if ((round % 2 == 0)); then modes=(native rmw); fi
   else
