@@ -2292,26 +2292,37 @@ remain pending; next is the required GridMap/PCL provider and map comparison/
 elevation, followed by shape/clustering/detection and validation/raindrop filtering.
 The conditional learned-shape configuration remains part of this group's gate.
 
-### Phase 9.6: Object association, geometry and postprocessing (in progress)
+### Phase 9.6: Object association, geometry and postprocessing (complete)
 
-Integrate the six ledger packages in provider-first batches: feature removal and
-object sorting, image localization, association/fusion and tracking merge, then
-predicted-path processing. Preserve all four original functional test targets
-(six source files), both sorter executables and both object-merger executables.
-Add external message-flow checks for adapters, including payload/header and
-covariance/identity preservation, TF/projection, filtering and path behavior.
-Validate wrapper-node behavior with Cyclone/RCLCPP and Agnocast-only plus heaphook;
-plain RCLCPP nodes need only their applicable transport profile. Build sequentially
-and commit validated package boundaries separately. No Fast DDS or expensive
-product gate is selected for this CPU group. Phase 9.5 remains independently
-in progress with seven packages pending.
+Completed 2026-11-24. All six package modules expose their original components,
+executables and indexed resources. Package boundaries are committed separately;
+the image locator's demonstrated Lyrical header correction is a separate source
+fix. Root selects geometric_shapes 2.3.4-1.rcr.0 from RCR for OBB collision checks
+because that implementation is absent locally; its compile/shared providers pass
+the complete predicted-path consumer gate without a duplicate SDK definition.
 
-Completed: feature removal and detected/tracked sorting. All six original cases
-and four added cases pass Cyclone/RCLCPP; the added cases also pass Agnocast-only
-with heaphook. Image localization also passes both projection/truncation cases.
-Association/fusion also passes its eleven original and five added cases, with
-the added cases passing both transports. Decorative tracking passes state and staged LiDAR/radar cases in both profiles.
-Definition coverage is 125/244; predicted-path postprocessing remains.
+| Module | Original cases | Added cases (Cyclone/RCLCPP) | Added Agnocast-only cases |
+| --- | ---: | ---: | ---: |
+| autoware_detected_object_feature_remover | 2 | 2 | 2 |
+| autoware_image_object_locator | 0 | 2 | — |
+| autoware_object_merger | 11 | 5 | 5 |
+| autoware_object_sorter | 4 | 2 | 2 |
+| autoware_predicted_path_postprocessor | 39 | 6 | — |
+| autoware_tracking_object_merger | 0 | 2 | 2 |
+
+The complete group gate builds 74 non-test targets and ten test targets: all
+56 original and 19 added cases pass. All eleven selected enabled state/transport
+cases also pass with the built/preloaded heaphook. Check payload/header and
+covariance/identity preservation, TF/projection, stable filtering order,
+association priorities, shape union and all three path interpolation modes with
+normal/debug publication. Reuse unchanged passing results. No Fast DDS, GPU or
+expensive product gate is required for this CPU group. Exact commands, SDK
+warning boundaries and transferable fixture lessons are in the package journals,
+ending with [group acceptance](JOURNAL.md#2026-11-24-phase-96--predicted-path-processing-and-group-acceptance).
+
+Definition coverage is 126/244, all with root overrides; 118 packages remain
+without definitions. Phase 9.5 remains independently in progress with seven
+packages pending. Subsequent groups keep their existing phase identifiers.
 
 ### Execution order through complete Universe coverage
 

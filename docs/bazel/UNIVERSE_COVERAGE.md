@@ -21,6 +21,12 @@ may contain multiple package commits and smaller execution batches. Update the
 ledger when a package closes or the source snapshot changes; this is a planning
 record, not a new build-time completeness validator.
 
+Current adoption progress, 2026-11-24 after Phase 9.6: **126/244** packages have
+both definitions and root local overrides; **118** remain without definitions.
+The census table below preserves the initial 2026-11-23 baseline. Checked ledger
+items record completed module gates; Phase 9.5 still has seven pending packages.
+See PLAN.md and the package journals for configuration and behavior evidence.
+
 ## Census by source category
 
 | Category | Packages | Existing MODULE/BUILD pair | Pending definitions |
@@ -252,7 +258,7 @@ Validate transforms, projection/association, covariance/identity preservation, o
 - [x] [autoware_image_object_locator](../../src/universe/autoware_universe/perception/autoware_image_object_locator/package.xml)
 - [x] [autoware_object_merger](../../src/universe/autoware_universe/perception/autoware_object_merger/package.xml)
 - [x] [autoware_object_sorter](../../src/universe/autoware_universe/perception/autoware_object_sorter/package.xml)
-- [ ] [autoware_predicted_path_postprocessor](../../src/universe/autoware_universe/perception/autoware_predicted_path_postprocessor/package.xml)
+- [x] [autoware_predicted_path_postprocessor](../../src/universe/autoware_universe/perception/autoware_predicted_path_postprocessor/package.xml)
 - [x] [autoware_tracking_object_merger](../../src/universe/autoware_universe/perception/autoware_tracking_object_merger/package.xml)
 
 ### Phase 9.7: Traffic-light geometry, fusion and postprocessing

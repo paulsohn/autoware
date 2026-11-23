@@ -580,6 +580,8 @@
     "https://bazel.ros.org/modules/eigen/5.0.1/MODULE.bazel": "not found",
     "https://bazel.ros.org/modules/eigen3_cmake_module/0.5.1-3.rcr.2/MODULE.bazel": "d0292bc9008218c596552218f160da3463c863984b74ab73118e72bd20270a0d",
     "https://bazel.ros.org/modules/eigen3_cmake_module/0.5.1-3.rcr.2/source.json": "bb448fd6346b598a51403016598c3a2df38e28c5974f97759506a6361f8409dc",
+    "https://bazel.ros.org/modules/eigen_stl_containers/1.1.0-3.rcr.2/MODULE.bazel": "0acda252cacd351f7db97d4f5ffd4f2443865d677eb2effce97934cc42df66ea",
+    "https://bazel.ros.org/modules/eigen_stl_containers/1.1.0-3.rcr.2/source.json": "61ebe4eb3d2d77d2c38851d96a4371dd7777a030035e00218948136a68ad27c2",
     "https://bazel.ros.org/modules/envoy_api/0.0.0-20250128-4de3c74/MODULE.bazel": "not found",
     "https://bazel.ros.org/modules/envoy_api/0.0.0-20251105-4a2b9a3/MODULE.bazel": "not found",
     "https://bazel.ros.org/modules/example_interfaces/0.14.1-3.rcr.2/MODULE.bazel": "45facaa4f9a908806d0009046ddae9c3a1735e54c86ef6ad86b3fa0aa3eba30c",
@@ -642,6 +644,9 @@
     "https://bazel.ros.org/modules/geographic_msgs/1.0.6-3.rcr.2/MODULE.bazel": "9ca685581de6c4620d12829a6bbdbdaeadd0b65ea18c442a28f068411664e999",
     "https://bazel.ros.org/modules/geographic_msgs/1.0.6-3.rcr.2/source.json": "60ed1ed7984926ea32dbfd9674de6220849704757495da166f449e535ca8fa4e",
     "https://bazel.ros.org/modules/geographiclib/2.4.0.bcr.2/MODULE.bazel": "not found",
+    "https://bazel.ros.org/modules/geometric_shapes/0.0.0/MODULE.bazel": "757102b212d34e5a73d3b7743b0d7e09663b02ccd79985fac24cdbdba71c9a29",
+    "https://bazel.ros.org/modules/geometric_shapes/2.3.4-1.rcr.0/MODULE.bazel": "2c8ac371b0a1e36fe6061a5e68f04939aead2f9a787f5672a737d402a0e11932",
+    "https://bazel.ros.org/modules/geometric_shapes/2.3.4-1.rcr.0/source.json": "60a72fd03334e9764596b98cf929bdce26f8e291fa78f55f9565494d414e72c8",
     "https://bazel.ros.org/modules/geometry_msgs/0.0.0/MODULE.bazel": "7e192ecb352be729e9fa823cc6cfa73fb171a24a4ebb702c78f350d4250cb6d5",
     "https://bazel.ros.org/modules/geometry_msgs/5.9.3-1.rcr.0/MODULE.bazel": "9363b8895d8094020affe9c454f3292456cdaf5aaeb622154eca39741a11668c",
     "https://bazel.ros.org/modules/geometry_msgs/5.9.3-1.rcr.0/source.json": "d083ea76e04aea872014da1cb911b11067cdc2319d7521220fe8412195fb5cc5",
@@ -1262,6 +1267,8 @@
     "https://bazel.ros.org/modules/radar_msgs/0.0.0/MODULE.bazel": "1ddd6b368ec0cd375763222217b2cf9eb1faa0a4bc68665ac5c6fc99cdf0b6ca",
     "https://bazel.ros.org/modules/radar_msgs/0.2.2-5.rcr.2/MODULE.bazel": "e38781e7691c12bcc4ebdf43acfcc22932956292084514a440bf76796add83d9",
     "https://bazel.ros.org/modules/radar_msgs/0.2.2-5.rcr.2/source.json": "cdb39dfd840afdaa612f03ad71d442611b786272fe3429a8aeb6da82c946982b",
+    "https://bazel.ros.org/modules/random_numbers/2.0.5-1.rcr.0/MODULE.bazel": "4bdb33a3ca2de7592e43ad7ad5f2b85f531160dbf9edcdb43eca7e0bf1aa8717",
+    "https://bazel.ros.org/modules/random_numbers/2.0.5-1.rcr.0/source.json": "2066b1b84d18a240c0966dabab7768e871434aed4cac9ea324c024e59c3dc21b",
     "https://bazel.ros.org/modules/range-v3/0.12.1-20260505-108f93c/MODULE.bazel": "not found",
     "https://bazel.ros.org/modules/rapidjson/1.1.0.bcr.20241007/MODULE.bazel": "not found",
     "https://bazel.ros.org/modules/rapidjson/1.1.0.bcr.20250205/MODULE.bazel": "not found",
@@ -3569,7 +3576,7 @@
     "@@rosdistro+//python:defs.bzl%pip_ros": {
       "general": {
         "bzlTransitiveDigest": "9KPSmaWfGTp6RN0By0DcuUgpR00WASpGuGN+q6IHLUY=",
-        "usagesDigest": "feMoma6XJNy7nj7c9RIEFYp4DbrLfSPpseml/nVwAac=",
+        "usagesDigest": "YlBdXVQetsSC+1Kgm4JPbmkTE+9XkAyBIqjCD+lMe1Y=",
         "recordedInputs": [
           "REPO_MAPPING:bazel_features+,bazel_features_globals bazel_features++version_extension+bazel_features_globals",
           "REPO_MAPPING:bazel_features+,bazel_features_version bazel_features++version_extension+bazel_features_version",

@@ -21126,3 +21126,83 @@ Zero failures/errors/skips in each accepted module gate. Targeted clang-format
 and diff checks pass. Fast DDS/GPU/expensive product gates are not selected.
 The current overwrite policy retains LiDAR covariance; evaluating a different
 sensor-fusion policy is outside this build integration. Next: predicted paths.
+
+## 2026-11-24: Phase 9.6 — predicted-path processing and group acceptance
+
+Purpose: integrate the local predicted-path component/executable and close the
+six-package object-processing group. Inspect manifest/CMake, all six processor/
+node sources and public headers, YAML/launch files and the complete original
+suite: 39 cases across collision, speed refinement and static-object penetration
+refinement, linked into one original test target. Required acceptance is all
+module targets, that full suite and external composed-node message flow with
+Cyclone/RCLCPP. The node uses plain RCLCPP, so it has no Agnocast-only profile.
+
+Prerequisite: geometric_shapes is absent from local source snapshots. Inspect
+its published RCR metadata, MODULE, source manifest and BUILD overlay; select
+2.3.4-1.rcr.0 explicitly in the root registry-dependency section. Its compiled
+provider is geometric_shapes_library and its shared owner is geometric_shapes.
+The root pins the version; the component uses a 0.0.0 dependency declaration.
+The published module already supplies OBB operations and dependency/ABI ownership;
+do not add a duplicate third_party implementation. Its OctoMap/FCL and other
+SDK inputs are built/fetched by the graph, without apt/rosdep dependencies.
+This is consumer qualification of that published SDK, not a claim to execute
+its entire upstream test suite.
+
+Pattern: package MODULE/BUILD, common compile library, unique component DSO,
+original standalone executable, component record and indexed launch/config
+resources. Reuse local interpolation/lanelet/utility providers and explicit
+ROS/TF/shared geometry owners. Original fixtures resolve the original YAML
+through the declared ament index. Keep all three original test sources and
+assertions unchanged. No source compatibility patch is needed in this module.
+
+External test: load the original processor list/YAML and publish two nonempty
+predicted objects. A slow object with 2 m path spacing is resampled at 0.5 m per
+1 s step; a distant fast object remains unchanged. Check UUIDs, class/confidence,
+shape, initial pose/covariance, header/frame/nonzero timestamp, path length,
+time-step/confidence, coordinates and normalized yaw. Exercise linear, spline
+and spline_by_akima interpolation with debug reports both disabled and enabled
+(six cases), covering both composed-node publication paths. No map is needed by
+the selected processors; the map subscription/resource contract still builds.
+
+Initial module gate (same flags as below, only the postprocessor module and its
+root test selected) passes all 39 originals and the first three interpolation
+cases in 227.2 s, including first construction of the geometry SDK. Expand the
+new test to both debug modes, then validate the final root dependency graph with
+the complete group gate:
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  @autoware_detected_object_feature_remover//... \
+  @autoware_image_object_locator//... \
+  @autoware_object_merger//... @autoware_object_sorter//... \
+  @autoware_tracking_object_merger//... @autoware_predicted_path_postprocessor//... \
+  //bazel/tests:feature_remover_transport_test \
+  //bazel/tests:image_object_locator_test //bazel/tests:object_merger_transport_test \
+  //bazel/tests:object_sorter_transport_test //bazel/tests:tracking_object_merger_test \
+  //bazel/tests:predicted_path_postprocessor_test
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --local_test_jobs=1 --strategy=TestRunner=local \
+  --run_under=//bazel/agnocast:with_heaphook \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  //bazel/tests:feature_remover_transport_test //bazel/tests:object_sorter_transport_test \
+  //bazel/tests:object_merger_transport_test //bazel/tests:tracking_object_merger_test
+```
+
+Final results: all 74 non-test targets and ten test targets build; 56 original
+and 19 added cases pass with Cyclone/RCLCPP in 36.6 s. Five unchanged test-target
+results are reused from passing evidence; five execute, including all six final
+postprocessing cases. The four selected enabled targets execute all eleven
+state/transport cases with Agnocast-only and the built/preloaded heap hook in
+22.1 s. XML counts confirm zero failures/errors/disabled/skipped cases. Original
+wrapper-node suites run in their CMake-selected RCLCPP profile; the added peers
+supply enabled transport coverage. No Fast DDS/GPU/expensive product gate is
+selected. Targeted clang-format and diff checks pass.
+
+Phase 9.6 is complete across six module boundaries, with the image-locator header
+fix separated from its Bazel definitions. Current source inventory has 126 of
+244 package-local MODULE/BUILD pairs, all with root local overrides; 118 remain
+without definitions. Phase 9.5 stays open with seven pending packages. Broader
+composition and deployment closure remain the later product gate; this group
+does not claim that all new components were loaded together in a simulator.

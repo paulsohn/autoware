@@ -2380,3 +2380,13 @@ cc_test(
     deps = ["@autoware_tracking_object_merger//:autoware_tracking_object_merger_library", "@googletest//:gtest"],
     tags = ["no-sandbox", "no-remote"],
 )
+
+cc_test(
+    name = "predicted_path_postprocessor_test",
+    srcs = ["autoware_predicted_path_postprocessor/test_transport.cpp"],
+    data = ["@autoware_predicted_path_postprocessor//:config/predicted_path_postprocessor.param.yaml"],
+    env = {"POSTPROCESSOR_PARAMS": "$(rootpath @autoware_predicted_path_postprocessor//:config/predicted_path_postprocessor.param.yaml)"},
+    dynamic_deps = ["@autoware_predicted_path_postprocessor//:runtime_dynamic_deps"],
+    deps = ["@autoware_predicted_path_postprocessor//:autoware_predicted_path_postprocessor_library", "@googletest//:gtest"],
+    tags = ["no-sandbox", "no-remote"],
+)
