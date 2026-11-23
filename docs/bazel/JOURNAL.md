@@ -21736,7 +21736,7 @@ to the previous best. Estimate into a separate DetectedObject, then copy it and
 its cluster together only when IoU improves. Keep all thresholds, reference
 correction, search iterations and confidence calculation. Both target-position
 checks pass after the fix. UPSTREAM_AWF.md records current main and inspected
-related PRs; this source correction is a separate commit from build definitions.
+related PRs; source correction 8af19de1b is separate from build definitions.
 
 Primary verification is the exact combined command in the preceding narrow-PCL
 prerequisite entry. It builds all eleven non-test targets of this module, all
@@ -21760,3 +21760,10 @@ asserts it is off. Zero failures/errors/skips. Targeted formatting and diff chec
 pass. Synthetic geometry establishes integration/candidate selection, not replay
 accuracy or performance on vehicle sensor data. All Phase 9.5 module gates are
 now satisfied; unchanged earlier module evidence is reused.
+
+Closure: all ten Phase 9.5 packages are now checked in the ledger. Reconcile the
+244-manifest census with package-local MODULE/BUILD pairs and root overrides:
+133 pairs, all selected locally, leaving 111 without definitions. Summed primary
+module gates pass 91 original plus 33 added cases; twelve selected enabled cases
+also pass. Earlier unchanged evidence remains valid; no full simulator, OCI or
+Fast DDS rerun is needed. Phase 9.6 was already complete; next is Phase 9.7.

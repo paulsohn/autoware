@@ -2318,6 +2318,8 @@ is claimed.
 
 ### Tracker-based division overwrites the best object's pose
 
+Local source fix: `8af19de1b`.
+
 - [ ] Associate with a matching upstream fix. Checked 2026-11-24: the
   [current optimizer](https://github.com/autowarefoundation/autoware_universe/blob/main/perception/autoware_detection_by_tracker/src/detection_by_tracker_node.cpp)
   still writes each candidate's shape/pose directly into the saved best object.

@@ -2262,49 +2262,51 @@ upstream-aligned Python row comparison and IMU TF directions. No Fast DDS/GPU
 or expensive product rerun is claimed. Definition coverage is now 117/244;
 127 packages remain without definitions. Next: Phase 9.5.
 
-### Phase 9.5: Clustering, shape estimation and map-aware detection (in progress)
+### Phase 9.5: Clustering, shape estimation and map-aware detection (complete)
 
-The ten package boundaries remain in the coverage ledger. Inspect every original
-CMake/test/resource contract before implementation. Start with the independent
-cluster merger (three original ROS cases), then ground/occupancy filtering and
-the required GridMap/PCL providers for map comparison/elevation. Build shape
-estimation before Euclidean clustering and detection-by-tracker; validate its
-conditional TensorRT implementation as well as the geometric estimator. Integrate
-object validation before its raindrop-filter consumer. Keep package commits and
-journals separate, with sequential builds and Cyclone DDS for routine gates.
-Select added Agnocast-only behavior checks for the newly introduced wrapper nodes.
-No Fast DDS or expensive product gate is automatically required for this group.
+Completed 2026-11-24. All ten package boundaries in the coverage ledger expose
+libraries/components, executables and indexed resources, with their complete
+original suites and selected added behavior gates. Package/provider boundaries
+and demonstrated source fixes are separate signed-off commits. Builds ran
+sequentially with Cyclone DDS; unchanged passing evidence is reused.
 
-Completed first CPU batch, 2026-11-24:
+| Module | Primary cases (original + added) | Selected behavior/configurations |
+| --- | ---: | --- |
+| autoware_cluster_merger | 3 + 2 | Identity/transformed-frame payload and header preservation. |
+| autoware_ground_segmentation | 3 + 2 | Original PCD fixtures, grid/non-grid scan modes; both added cases also pass Agnocast-only. |
+| autoware_occupancy_grid_map_outlier_filter | 0 + 2 | Both radius modes, connected ExactTime inputs, TF and confidence partition. |
+| autoware_compare_map_segmentation | 4 + 10 | All four static/dynamic variants, real map RPC/odometry, sparse cells/boundaries, elevation/lanelet filtering. |
+| autoware_elevation_map_loader | 0 + 2 | Fresh map generation and saved-cache reload, inpainting off/on. |
+| autoware_detected_object_validation | 12 + 5 | Occupancy, 2D/3D obstacle support, detected/tracked lanelet flow; both lanelet cases also pass Agnocast-only. |
+| autoware_raindrop_cluster_filter | 5 + 1 | Nonempty intensity/confidence/label/range policy; added case also passes mixed ROS/Agnocast. |
+| autoware_shape_estimation | 37 + 2 | Full original suite with CUDA off/on; geometric transport also passes Agnocast-only. Actual GPU batch-one/two, full/partial batches and cloud repetition/downsampling use a synthetic ONNX protocol fixture. |
+| autoware_euclidean_cluster | 27 + 3 | Plain, voxel and semantic nonempty clustering; mixed voxel and Agnocast-only semantic profiles also pass. |
+| autoware_detection_by_tracker | 0 + 4 | Nearest-track extrapolation, missing-track output, split-cloud merge and wide-cloud division for either target; full added suite also passes mixed ROS/Agnocast. |
 
-| Module | Complete acceptance |
-| --- | --- |
-| autoware_cluster_merger | Component/executable/index/resources, all three original ROS cases and two identity/transformed-frame payload cases pass with Cyclone/RCLCPP. |
-| autoware_ground_segmentation | All three original PCD cases, components/executables/resources and both explicitly selected grid/non-grid transport cases pass; added cases also pass Agnocast-only with heaphook preload. |
-| autoware_occupancy_grid_map_outlier_filter | Component/executable/configuration build; no original functional suite; both added radius-mode cases pass with connected-input ExactTime, TF, confidence partition and payload checks. |
+Across the module gates, all 91 original and 33 added primary cases pass, plus
+all twelve selected enabled cases with built/preloaded heaphook. The CPU-only
+shape gate separately repeats its 37 original cases and geometric transport.
+No required test group is skipped. Synthetic GPU/geometry checks establish
+protocol and behavior integration, not trained-model accuracy or vehicle replay
+performance. Fast DDS and expensive simulator/deployment gates were not selected.
 
-The shared filter-base prerequisite preserves the original CMake API and passes
-the complete preprocessor suite and selected enabled checks. Source compatibility
-and output-data fixes are separate commits from Bazel declarations. No Fast DDS,
-GPU or expensive product gate is claimed by this CPU batch. Definition coverage
-is 120/244, leaving 124 packages without definitions. Seven Phase 9.5 packages
-remain pending; next is the required GridMap/PCL provider and map comparison/
-elevation, followed by shape/clustering/detection and validation/raindrop filtering.
-The conditional learned-shape configuration remains part of this group's gate.
+Prerequisites include the complete 137-case GridMap/PCL provider gate, the
+previous full preprocessor/filter-base gate and the 33-case object-recognition
+utility suite. Geometry-only shape and clustering providers keep TensorRT/node
+policy out of CPU consumers. Their shared owners explicitly export compiled
+utility/object/interpolation dependencies. The actual tracker consumer exposed
+and validated contraction of object recognition's PCL dependency to transforms.
 
-Resumed after Phase 9.6, 2026-11-24: the GridMap PCL provider passes its complete
-137-case provider gate. Map comparison now exposes all six components and passes
-four original plus ten static/dynamic/elevation/lanelet cases. Reproduced ROS
-context teardown, dynamic-grid/index/distance and lanelet sampling corrections
-are separate source commits. Elevation generation and saved-cache reload also pass both selected inpainting
-profiles. Detected-object validation also passes all twelve original and five added cases;
-the two added lanelet cases pass Agnocast-only. Raindrop filtering passes its five original cases and a nonempty policy/transport
-case in both RCLCPP and ROS-aware Agnocast execution. Shape estimation passes its 37 original cases in CPU-only and CUDA-enabled
-builds, geometric transport in both backends and real GPU full/partial batches.
-Clustering passes all 27 original and three added cases, including mixed voxel
-and Agnocast-only semantic transport. PCL padding and standard-random fixture
-corrections are separate source fixes. One Phase 9.5 package remains; definition
-coverage is 132/244, leaving 112 without definitions. Next: detection-by-tracker.
+Source fixes cover current ROS/TF/Message Filters/libc++ compatibility, dynamic
+map-grid/index/distance and lanelet sampling, padded semantic-cloud output, and
+preservation of the best divided detection candidate. JOURNAL.md records exact
+commands, diagnosed failures and repeatable patterns. UPSTREAM_AWF.md associates
+local fixes with inspected current sources and related PRs without treating
+unrelated upstream work as a matching fix.
+
+Definition coverage is now 133/244, leaving 111 packages without definitions.
+Phase 9.6 is already complete; next is Phase 9.7 traffic-light geometry/fusion/
+postprocessing. The full package-contract audit remains Phase 9.20.
 
 ### Phase 9.6: Object association, geometry and postprocessing (complete)
 
@@ -2334,21 +2336,21 @@ expensive product gate is required for this CPU group. Exact commands, SDK
 warning boundaries and transferable fixture lessons are in the package journals,
 ending with [group acceptance](JOURNAL.md#2026-11-24-phase-96--predicted-path-processing-and-group-acceptance).
 
-Definition coverage is 126/244, all with root overrides; 118 packages remain
-without definitions. Phase 9.5 remains independently in progress with seven
-packages pending. Subsequent groups keep their existing phase identifiers.
+Phase 9.5 is also complete, as recorded above. Subsequent groups keep their
+existing phase identifiers; next is Phase 9.7.
 
 ### Execution order through complete Universe coverage
 
 The following groups are the initial route through every remaining package.
-Their exact package lists live once in the ledger. Implement related packages
-together and build sequentially; preserve module-sized commits/journals. Refine
+Their exact package lists live once in the ledger. Counts below are stable
+group assignments, not current remaining counts; use the ledger checkboxes for
+completion. Implement related packages together and build sequentially; preserve module-sized commits/journals. Refine
 within-group execution batches at task start. A prerequisite exposed by a real
 consumer can be integrated earlier without changing these stable identifiers.
 Dependency versions and source patches remain hypotheses until a current
 consumer exposes and validates their need.
 
-| Phase | Package group | Pending packages | Principal gate |
+| Phase | Package group | Assigned packages | Principal gate |
 | --- | --- | ---: | --- |
 | 9.2 | [Radar object conversion, fusion and tracking](UNIVERSE_COVERAGE.md#phase-92-radar-object-conversion-fusion-and-tracking) | 4 | Conversion/fusion/tracking/merge outputs and complete original/ROS suites |
 | 9.3 | [Shared time, logging and command-mode types](UNIVERSE_COVERAGE.md#phase-93-shared-time-logging-and-command-mode-types) | 3 | Time/logging/type consumers and resource/entrypoint contracts |

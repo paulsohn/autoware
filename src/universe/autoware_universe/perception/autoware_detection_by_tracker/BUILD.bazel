@@ -1,0 +1,74 @@
+load("@autoware_agnocast_wrapper//:defs.bzl", "autoware_agnocast_node")
+load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "autoware_detection_by_tracker_library",
+    srcs = ["src/detection_by_tracker_node.cpp", "src/tracker/tracker_handler.cpp"],
+    hdrs = glob(["src/**/*.hpp"]),
+    includes = ["src"],
+    deps = [
+        "@autoware_agnocast_wrapper//:autoware_agnocast_wrapper_library",
+        "@autoware_euclidean_cluster//:euclidean_cluster_library",
+        "@autoware_object_recognition_utils",
+        "@autoware_perception_msgs//:cc",
+        "@autoware_shape_estimation//:shape_estimator_library",
+        "@autoware_utils",
+        "@geometry_msgs//:cc",
+        "@pcl_conversions//:pcl_conversions_library",
+        "@rclcpp//:rclcpp_library",
+        "@rclcpp_components//:rclcpp_components_library",
+        "@sensor_msgs//:cc",
+        "@tf2//:tf2_library",
+        "@tf2_geometry_msgs//:tf2_geometry_msgs_library",
+        "@tf2_ros//:tf2_ros_library",
+        "@tier4_perception_msgs//:cc",
+        "@rosdistro//cc:eigen",
+        "@rosdistro//cc:pcl_common",
+    ],
+)
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = [
+        "@autoware_agnocast_wrapper",
+        "@autoware_euclidean_cluster//:runtime_dynamic_deps",
+        "@autoware_object_recognition_utils//:runtime_dynamic_deps",
+        "@autoware_perception_msgs//:cc_shared",
+        "@autoware_shape_estimation//:shape_estimator_runtime_dynamic_deps",
+        "@autoware_utils//:runtime_dynamic_deps",
+        "@geometry_msgs//:cc_shared",
+        "@pcl_conversions//:pcl_conversions",
+        "@rclcpp_components//:rclcpp_components",
+        "@sensor_msgs//:cc_shared",
+        "@tf2_ros//:tf2_ros",
+        "@tier4_perception_msgs//:cc_shared",
+    ],
+)
+cc_shared_library(
+    name = "autoware_detection_by_tracker",
+    shared_lib_name = "libautoware_detection_by_tracker.so",
+    deps = [":autoware_detection_by_tracker_library"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+)
+autoware_agnocast_node(
+    name = "detection_by_tracker_node",
+    component = ":autoware_detection_by_tracker",
+    package_name = "autoware_detection_by_tracker",
+    plugin = "autoware::detection_by_tracker::DetectionByTracker",
+    agnocast_only = False,
+)
+register_ament_files(
+    name = "executables",
+    files = [":detection_by_tracker_node"],
+    prefix = "lib/autoware_detection_by_tracker",
+    strip_prefix = "*",
+)
+ament_index(
+    package_xml = "package.xml",
+    components = [":detection_by_tracker_node_components"],
+    libraries = [":autoware_detection_by_tracker"],
+    data = glob(["config/**", "launch/**"]) + [":executables", ":detection_by_tracker_node_plugin"],
+)

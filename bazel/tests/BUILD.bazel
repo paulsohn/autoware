@@ -2507,3 +2507,12 @@ cc_test(
     local_defines = ["CLUSTER_KIND=2", "CLUSTER_CLASS=LabelBasedEuclideanClusterNode", 'CLUSTER_PARAMS=\\"label_based_euclidean_cluster.param.yaml\\"'],
     tags = ["no-sandbox", "no-remote"],
 )
+
+cc_test(
+    name = "detection_by_tracker_transport_test",
+    srcs = ["autoware_detection_by_tracker/test_transport.cpp"],
+    data = ["@autoware_detection_by_tracker//:ament_index", "@agnocast_heaphook"],
+    dynamic_deps = ["@autoware_detection_by_tracker//:runtime_dynamic_deps"],
+    deps = ["@autoware_detection_by_tracker//:autoware_detection_by_tracker_library", "@ament_index_cpp//:ament_index_cpp_library", "@googletest//:gtest"],
+    tags = ["no-sandbox", "no-remote"],
+)

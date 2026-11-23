@@ -21,10 +21,10 @@ may contain multiple package commits and smaller execution batches. Update the
 ledger when a package closes or the source snapshot changes; this is a planning
 record, not a new build-time completeness validator.
 
-Current adoption progress, 2026-11-24: **132/244** packages have both definitions
-and root local overrides; **112** remain without definitions. The census table
+Current adoption progress, 2026-11-24: **133/244** packages have both definitions
+and root local overrides; **111** remain without definitions. The census table
 below preserves the initial 2026-11-23 baseline. Checked ledger items record
-completed module gates; Phase 9.5 has one pending package. See PLAN.md and the
+completed module gates; Phase 9.5 is complete. See PLAN.md and the
 package journals for configuration and behavior evidence.
 
 ## Census by source category
@@ -240,15 +240,14 @@ Reuse 9.4 and existing map/GridMap providers. Order shape estimation before clus
 - [x] [autoware_shape_estimation](../../src/universe/autoware_universe/perception/autoware_shape_estimation/package.xml)
 - [x] [autoware_euclidean_cluster](../../src/universe/autoware_universe/perception/autoware_euclidean_cluster/package.xml)
 - [x] [autoware_raindrop_cluster_filter](../../src/universe/autoware_universe/perception/autoware_raindrop_cluster_filter/package.xml)
-- [ ] [autoware_detection_by_tracker](../../src/universe/autoware_universe/perception/autoware_detection_by_tracker/package.xml)
+- [x] [autoware_detection_by_tracker](../../src/universe/autoware_universe/perception/autoware_detection_by_tracker/package.xml)
 
-Phase 9.5 progress, 2026-11-24: cluster merger, ground segmentation and occupancy-
-grid outlier filtering close their complete selected module gates. The shared
-filter-base prerequisite also passes the full preprocessor gate. Definition
-coverage reaches 120/244, leaving 124 packages without definitions; seven
-packages remain in this group. The map and conditional learned-shape boundaries
-remain pending, so this phase is not complete. See the module journals for exact
-profiles and separate source fixes; the final contract audit remains 9.20.
+Phase 9.5 completed 2026-11-24: all ten checked package boundaries pass their
+complete selected module gates, including conditional CPU/GPU shape estimation
+and the required enabled transports. Provider and source fixes have separate
+commits/evidence. Current coverage is 133/244 with 111 definitions pending.
+PLAN.md records the gate summary; module journals contain exact commands,
+prerequisites and limitations. The final contract audit remains Phase 9.20.
 
 ### Phase 9.6: Object association, geometry and postprocessing
 
