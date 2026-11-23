@@ -7,12 +7,12 @@ mkdir "$out"
 rounds=4
 case ${2:-} in
   --compare-builds|--compare-release|--compare-events|--compare-poll) rounds=6;;
-  ""|--compare-handoff|--compare-cie) ;;
+  ""|--compare-handoff|--compare-cie|--replay-cie) ;;
   *) echo "Unknown comparison: $2" >&2; exit 2;;
 esac
 release_baseline=0
 case ${2:-} in
-  ""|--compare-handoff|--compare-events|--compare-cie|--compare-poll)
+  ""|--compare-handoff|--compare-events|--compare-cie|--compare-poll|--replay-cie)
     release_baseline=1
     for flags in \
       build/standalone/o3-obj/agnocastlib/CMakeFiles/agnocast.dir/flags.make \
@@ -22,8 +22,19 @@ case ${2:-} in
       grep -Eq '^CXX_FLAGS = .* -O3( |$)' "$flags"
     done;;
 esac
+if [[ ${2:-} == --replay-cie ]]; then
+  for flags in \
+    build/standalone/poll-obj/rmw_agnocast/CMakeFiles/rmw_agnocast.dir/flags.make \
+    build/standalone/release-cie/obj/callback_isolated_executor/CMakeFiles/callback_isolated_executor.dir/flags.make \
+    build/standalone/release-cie/probe/CMakeFiles/path_benchmark.dir/flags.make; do
+    awk '/^CXX_FLAGS =/ { for (i=3; i<=NF; ++i) if ($i ~ /^-O/) opt=$i } END { exit opt != "-O3" }' "$flags"
+  done
+fi
 for ((round=1;round<=rounds;round++)); do
-  if [[ ${2:-} == --compare-cie ]]; then
+  if [[ ${2:-} == --replay-cie ]]; then
+    modes=(native standalone-cie)
+    if ((round % 2 == 0)); then modes=(standalone-cie native); fi
+  elif [[ ${2:-} == --compare-cie ]]; then
     case $round in
       1) modes=(native o3 standalone-cie bundled-cie);;
       2) modes=(o3 bundled-cie native standalone-cie);;
@@ -91,7 +102,7 @@ for ((round=1;round<=rounds;round++)); do
         source build/standalone/o3-install/local_setup.bash
         source build/standalone/release-path/install/local_setup.bash
         probe=/ws/build/standalone/release-path/probe/path_benchmark
-        if [[ $4 == --compare-cie ]]; then
+        if [[ $4 == --compare-cie || $4 == --replay-cie ]]; then
           source build/standalone/release-cie/install/local_setup.bash
           probe=/ws/build/standalone/release-cie/probe/path_benchmark
         fi
@@ -100,7 +111,7 @@ for ((round=1;round<=rounds;round++)); do
         grep -F "librclcpp.so => /ws/build/standalone/release-path/install/rclcpp/lib/librclcpp.so" <<< "$libs"
       fi
       unset AGNOCAST_RMW_POLL_TOPIC
-      if [[ $4 == --compare-poll && $1 != native ]]; then
+      if [[ ( $4 == --compare-poll || $4 == --replay-cie ) && $1 != native ]]; then
         source build/standalone/poll-install/local_setup.bash
         test "$(ros2 pkg prefix rmw_agnocast)" = /ws/build/standalone/poll-install/rmw_agnocast
         if [[ $1 == poll ]]; then export AGNOCAST_RMW_POLL_TOPIC=/path_latency; fi

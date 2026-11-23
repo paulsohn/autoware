@@ -446,3 +446,32 @@ python3 experiments/rmw-agnocast/standalone/analyze-lidar-stages.py build/standa
 ```
 
 A graph change still incurs a lease scan on the next query per querying node. Sustained graph churn and larger endpoint populations require separate timing. This single-host workload has 40 timed complete groups for each Agnocast arm.
+
+## Regression replay of standalone revision 01deed91
+
+Replayed on the laptop with serial memory-guarded launches. The stripped Lyrical runtime passed ordinary, batch and loaned transport, retained cloud ownership, both cloud wire types, service/client, graph and matched-count lifecycle, deadline, and transient-local rosout checks. The stock C++ talker reached the Python observer, answered the parameter call and disappeared from the graph after process death. The stock SQLite bag recorder recorded and decoded 12 samples. Minimum sampled host availability across functional and timed runs was 9603 MiB.
+
+| Nominal three-LiDAR transport | Complete median / p95 ms | Partial median / p95 ms |
+|---|---:|---:|
+| Native Agnocast | 2.242 / 3.153 | 41.527 / 42.257 |
+| Standalone rmw_agnocast | 2.337 / 3.147 | 41.496 / 42.022 |
+| Cyclone DDS | 2.875 / 3.179 | 42.101 / 42.246 |
+| Zenoh | 2.584 / 2.791 | 41.890 / 42.075 |
+
+Reused the preceding all-O3 nominal fixture with its original crop executor for comparability. All 22 launches verified all 528 groups and metadata. Table uses uninstrumented launches, drops four warmups and pools 40 complete groups per arm (20 for Zenoh). Standalone/native median and p95 ratios were 1.04× and 1.00×. [Ages](regression-01deed91/lidar-o3-ages.csv) and [separate stage traces](regression-01deed91/lidar-o3-stages.csv).
+
+| 10 Hz single-hop loaned Path | Median µs | p95 µs | Median child CPU s/launch | Median largest child RSS MiB |
+|---|---:|---:|---:|---:|
+| Native Agnocast executor | 43.26 | 60.18 | 0.140 | 26.7 |
+| Standalone rmw_agnocast with standalone AWF CIE | 75.94 | 93.89 | 0.191 | 26.3 |
+
+Four paired rounds alternated launch order, using the same Release CIE-capable probe, native library and rclcpp. The standalone process selected the fixed poll-install overlay in a Cyclone-stripped distro, with the default receiver thread. Each CIE run logged the existing fixture-only KeepLast(16) override on its announcement topic. Both arms verified payload, retained ownership and all three loan addresses on all 60 frames per launch. The first ten frames per launch are warmup; median and nearest-rank p95 pool 200 observations per arm. Per-round standalone/native median ratios were 1.88, 1.76, 1.57 and 1.71. Corresponding p95 ratios were 1.72, 1.74, 1.41 and 1.36. This meets the requested stop condition. The matched-count query in this Path fixture runs during setup; it is outside the timed publish-to-callback interval. Both native and CIE absolute latencies were lower than in the earlier CIE experiment. This replay does not isolate the cause of the residual handoff cost. [Frame latencies](regression-01deed91/path-frames.csv) and [launch resources](regression-01deed91/path-launches.csv).
+
+Use the functional and Universe commands in the preceding section. Repeat run-universe.sh with --ownership, then run the stock check from the standalone README in the same stripped environment with poll-install sourced last and the packaged hook loaded. Use the stock talker from build/migration-guide/project-install/examples_rclcpp_minimal_publisher. For timing, use fresh output directories:
+
+```bash
+bash experiments/rmw-agnocast/standalone/bench-universe.sh build/standalone/fresh-regression-lidar --stages
+bash experiments/rmw-agnocast/standalone/bench-path.sh build/standalone/fresh-regression-path --replay-cie
+```
+
+Resume coverage with 50 Hz single-hop, the two-edge crop, pressured scheduling and graph churn during payload delivery. The documented manual gateway targets the older mixed RMW. Standalone gateway export/import, remote recording, type fallback and restart remain unqualified until a gateway for the current native endpoints is available.
