@@ -1925,3 +1925,19 @@ not a Lyrical-specific behavior change. Complete component/executable/index
 builds, four original lanelet cases and four ROS cases covering both motion
 models/publication modes pass with LLVM/libc++ 21.1.8 and Lyrical/Cyclone DDS,
 zero skips. [Reproduction and verification](JOURNAL.md#2026-11-23-phase-92--radar-object-tracking).
+
+## Imported glog signal test formats its thread ID incorrectly
+
+- [x] Associated upstream behavior: checked 2026-11-23,
+  [glog v0.7.1](https://github.com/google/glog/blob/v0.7.1/src/signalhandler_unittest.cc)
+  formats std::this_thread::get_id through a stream. This supersedes the older
+  formatting path; it is related corrected behavior, not an identical patch or
+  an AWF PR association.
+
+The local external glog 0.6.0 signal test prints pthread_self using 0x%px. On
+userspace printf, %p already includes the prefix and the trailing x is literal,
+so the original shell driver compares TID 0x0x...x with the actual 0x... and
+fails. Replace the test format with %p. No library implementation changes.
+All 15 native targets, including the complete original signal shell driver,
+pass with LLVM/libc++ 21.1.8 after the required native build features/drivers
+are prepared. [Reproduction and setup](JOURNAL.md#2026-11-23-phase-93--local-glog-prerequisite).

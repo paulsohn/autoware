@@ -20084,3 +20084,58 @@ Result: all module targets build and four consumer cases pass, zero failures,
 errors or skips; full gate 6.7 s. Targeted clang-format and git diff --check pass.
 No source fix, new third-party provider, GPU, middleware matrix or expensive
 system/deployment rerun is required. Next: glog prerequisite/component contract.
+
+## 2026-11-23: Phase 9.3 — Local glog prerequisite
+
+Purpose: satisfy autoware_glog_component from the available glog 0.6.0 snapshot
+under src/universe/external/glog, not a different registry source. This selects
+the same local provider for rosdistro's shared logging SDK and existing Agnocast
+containers, so acceptance includes those consumers. Inspect the existing native
+Bazel macro, complete CMake Linux test declarations and scripts, public headers,
+logging/signal sources, rosdistro cc:glog ownership and container logging calls.
+
+Pattern: add a glog module with pinned gflags/rules_cc/GoogleTest/Python inputs,
+select it with a root local override before container consumers, and retain the
+snapshot's own source/header-template generation. Update legacy native C++ rules
+(including its example) to rules_cc loads for Bazel 9. Preserve gflags support,
+custom prefixes, native logging, mock logging, symbolization, stack traces,
+utilities and all three cleanup executables. The 13 original native/example
+executables and two driver targets are required. CMake installation/configuration
+self-tests describe CMake's own artifact contract, not the Bazel SDK output;
+validate the actual Bazel shared provider and its consumers separately.
+
+Diagnosed setup issues and resolutions:
+- The native macro omits Linux glob support and read/write locks. Logging tests
+  cannot compile without HAVE_GLOB_H; nested mock logging deadlocks with the
+  fallback exclusive mutex. Enable these actual Linux features in the build.
+- HAVE_UNWIND_H alone supplies no x86_64 trace backend. Enable the ABI unwinder
+  using HAVE__UNWIND_BACKTRACE and retain logging frames with -fno-inline: the
+  legacy unwinder skips a fixed number of frames. Reject unsupported-driver
+  zero exits instead of treating them as stacktrace/signal coverage.
+- Allocation-hook death tests require their new-expressions to execute. Compile
+  the native test translation units at -O0; keep all assertions and cases.
+- Cleaner tests need their surrounding repetition/count checks, original argv[0]
+  names (logging uses them for file prefixes) and trailing-slash directory
+  contract. A generic package-owned Python adapter runs the same three repetitions,
+  delays and file-count assertions as cmake/RunCleanerTest1–3.cmake. Another
+  adapter supplies the temporary .libs layout for the unchanged signal shell
+  driver and rejects its unsupported/skip output.
+- The original signal test prints pthread_self with 0x%px, creating 0x0x...x
+  instead of the real signal-handler TID. Use %p; the shell driver's original
+  equality check then passes. This is a test formatting bug, not a library
+  implementation change. Upstream glog v0.7.1 uses a stream-formatted thread ID;
+  its corrected approach is related, not an identical local patch.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_timeout=60 --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp \
+  --test_output=errors @glog//...
+```
+
+Native result: all 15 targets pass, including full logging/custom-prefix/mock
+suites with real stack traces, all cleanup drivers and all signal-driver cases;
+no functional assertion or test group is disabled. Reuse unchanged passing
+results between setup corrections. The signal test correction is committed
+separately from build support. The required existing-container consumer gate is
+still in progress; the dependency task is not yet declared complete.

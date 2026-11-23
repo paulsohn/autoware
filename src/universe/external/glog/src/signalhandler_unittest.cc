@@ -56,7 +56,7 @@ static void* DieInThread(void*) {
   // returns an uint64 but in some other environments pthread_self()
   // returns a pointer.
   fprintf(
-      stderr, "0x%px is dying\n",
+      stderr, "%p is dying\n",
       static_cast<const void*>(reinterpret_cast<const char*>(pthread_self())));
   // Use volatile to prevent from these to be optimized away.
   volatile int a = 0;
