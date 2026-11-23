@@ -21310,7 +21310,8 @@ neighbor predicate, missing KD-tree offsets, unsquared distance and integer
 sampling. The representative original test still lacks shutdown. Scoped PR
 searches find no matching corrections. PR #11289 actually introduces the lanelet
 sampling implementation; it is feature history, not a fix. See UPSTREAM_AWF.md.
-Source fixes are separate commits from the Bazel declarations.
+Local source fixes are b470cfbcf (test lifecycle) and e4ec802d2 (map algorithms),
+separate from the Bazel declarations.
 
 ```sh
 env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \

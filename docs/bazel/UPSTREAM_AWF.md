@@ -2216,6 +2216,8 @@ Local source test fix: `b470cfbcf`.
 
 ### Dynamic map indexing and lanelet sampling lose valid map coverage
 
+Local source fix: `e4ec802d2`.
+
 - [ ] Associate with matching fixes. Reviewed 2026-11-24: current main retains
   the erroneous array dimensions/empty placeholders in
   [voxel_grid_map_loader.hpp](https://github.com/autowarefoundation/autoware_universe/blob/main/perception/autoware_compare_map_segmentation/include/autoware/compare_map_segmentation/voxel_grid_map_loader.hpp),

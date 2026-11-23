@@ -21,11 +21,11 @@ may contain multiple package commits and smaller execution batches. Update the
 ledger when a package closes or the source snapshot changes; this is a planning
 record, not a new build-time completeness validator.
 
-Current adoption progress, 2026-11-24 after Phase 9.6: **126/244** packages have
-both definitions and root local overrides; **118** remain without definitions.
-The census table below preserves the initial 2026-11-23 baseline. Checked ledger
-items record completed module gates; Phase 9.5 still has seven pending packages.
-See PLAN.md and the package journals for configuration and behavior evidence.
+Current adoption progress, 2026-11-24: **127/244** packages have both definitions
+and root local overrides; **117** remain without definitions. The census table
+below preserves the initial 2026-11-23 baseline. Checked ledger items record
+completed module gates; Phase 9.5 has six pending packages. See PLAN.md and the
+package journals for configuration and behavior evidence.
 
 ## Census by source category
 
@@ -232,7 +232,7 @@ census above is retained. Complete package-contract reconciliation remains 9.20.
 Reuse 9.4 and existing map/GridMap providers. Order shape estimation before clustering/detection, and validation before raindrop filtering. Inventory shape estimation's conditional CUDA/TensorRT path; CPU tests alone do not qualify a required learned-shape configuration. Check geometry, frames, cluster/shape outputs, maps and all existing datasets.
 
 - [x] [autoware_cluster_merger](../../src/universe/autoware_universe/perception/autoware_cluster_merger/package.xml)
-- [ ] [autoware_compare_map_segmentation](../../src/universe/autoware_universe/perception/autoware_compare_map_segmentation/package.xml)
+- [x] [autoware_compare_map_segmentation](../../src/universe/autoware_universe/perception/autoware_compare_map_segmentation/package.xml)
 - [ ] [autoware_detected_object_validation](../../src/universe/autoware_universe/perception/autoware_detected_object_validation/package.xml)
 - [ ] [autoware_elevation_map_loader](../../src/universe/autoware_universe/perception/autoware_elevation_map_loader/package.xml)
 - [x] [autoware_ground_segmentation](../../src/universe/autoware_universe/perception/autoware_ground_segmentation/package.xml)

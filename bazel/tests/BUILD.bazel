@@ -2390,3 +2390,23 @@ cc_test(
     deps = ["@autoware_predicted_path_postprocessor//:autoware_predicted_path_postprocessor_library", "@googletest//:gtest"],
     tags = ["no-sandbox", "no-remote"],
 )
+
+cc_test(
+    name = "compare_map_segmentation_test",
+    srcs = ["autoware_compare_map_segmentation/test_maps.cpp"],
+    data = [
+        "@autoware_compare_map_segmentation//:config/distance_based_compare_map_filter.param.yaml",
+        "@autoware_compare_map_segmentation//:config/voxel_based_approximate_compare_map_filter.param.yaml",
+        "@autoware_compare_map_segmentation//:config/voxel_based_compare_map_filter.param.yaml",
+        "@autoware_compare_map_segmentation//:config/voxel_distance_based_compare_map_filter.param.yaml",
+    ],
+    env = {
+        "DISTANCE_PARAMS": "$(rootpath @autoware_compare_map_segmentation//:config/distance_based_compare_map_filter.param.yaml)",
+        "APPROX_PARAMS": "$(rootpath @autoware_compare_map_segmentation//:config/voxel_based_approximate_compare_map_filter.param.yaml)",
+        "VOXEL_PARAMS": "$(rootpath @autoware_compare_map_segmentation//:config/voxel_based_compare_map_filter.param.yaml)",
+        "VOXEL_DISTANCE_PARAMS": "$(rootpath @autoware_compare_map_segmentation//:config/voxel_distance_based_compare_map_filter.param.yaml)",
+    },
+    dynamic_deps = ["@autoware_compare_map_segmentation//:runtime_dynamic_deps"],
+    deps = ["@autoware_compare_map_segmentation//:autoware_compare_map_segmentation_library", "@point_cloud_msg_wrapper", "@googletest//:gtest"],
+    tags = ["no-sandbox", "no-remote"],
+)

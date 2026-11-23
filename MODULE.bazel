@@ -1990,3 +1990,9 @@ local_path_override(
     module_name = "autoware_predicted_path_postprocessor",
     path = "src/universe/autoware_universe/perception/autoware_predicted_path_postprocessor",
 )
+
+bazel_dep(name = "autoware_compare_map_segmentation", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_compare_map_segmentation",
+    path = "src/universe/autoware_universe/perception/autoware_compare_map_segmentation",
+)

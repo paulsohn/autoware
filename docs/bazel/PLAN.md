@@ -2292,6 +2292,15 @@ remain pending; next is the required GridMap/PCL provider and map comparison/
 elevation, followed by shape/clustering/detection and validation/raindrop filtering.
 The conditional learned-shape configuration remains part of this group's gate.
 
+Resumed after Phase 9.6, 2026-11-24: the GridMap PCL provider passes its complete
+137-case provider gate. Map comparison now exposes all six components and passes
+four original plus ten static/dynamic/elevation/lanelet cases. Reproduced ROS
+context teardown, dynamic-grid/index/distance and lanelet sampling corrections
+are separate source commits. Six Phase 9.5 packages remain; current definition
+coverage is 127/244, leaving 117 without definitions. Next: elevation generation
+and cache reload, validation/raindrop filtering, then geometric/learned shape,
+clustering and detection-by-tracker.
+
 ### Phase 9.6: Object association, geometry and postprocessing (complete)
 
 Completed 2026-11-24. All six package modules expose their original components,
