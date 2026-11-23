@@ -19000,6 +19000,17 @@ It is not accepted as an inference profile or SDK downgrade. Restore all six
 10.16 package pins; CUDA 13.2.2 and the driver remain unchanged throughout.
 The comparison changes the SDK's CUDA-tagged payload too, not just its version.
 
+SDK test-registration follow-up for the compiler investigation: allow callers
+of tensorrt_cc_test to append tags, propagating them to both the native binary
+and its test wrapper. Defaults remain unchanged. The new compiler diagnostic
+uses manual so wildcard builds/tests do not run this GPU compiler matrix;
+explicit invocation still executes the complete diagnostic. A targeted Bazel
+XML query over the diagnostic wrapper/binary and @tensorrt//:runtime_abi_test
+confirms manual on the first two only, with no-remote/no-sandbox/requires-gpu
+retained on test wrappers. The complete affected gate below also reruns the
+SDK's existing one-case runtime ABI suite successfully (1.3 s, zero skips).
+No native runtime logic, SDK input or source-provider choice changes here.
+
 ## 2026-11-23: Phase 6.5.2 — YOLOX engine paths and calibration input/output separation
 
 Purpose: run the selected YOLOX consumer/model group against indexed read-only
