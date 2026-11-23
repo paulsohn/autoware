@@ -2315,3 +2315,32 @@ change. Both fixes pass all 27 original cases and three added nonempty node
 transport cases with Cyclone/RCLCPP; enabled mixed/Agnocast-only profiles are
 recorded in the journal. No older ROS/CMake verification or upstream submission
 is claimed.
+
+### Tracker-based division overwrites the best object's pose
+
+- [ ] Associate with a matching upstream fix. Checked 2026-11-24: the
+  [current optimizer](https://github.com/autowarefoundation/autoware_universe/blob/main/perception/autoware_detection_by_tracker/src/detection_by_tracker_node.cpp)
+  still writes each candidate's shape/pose directly into the saved best object.
+  Scoped highest/IoU PR searches find related work, not a correction:
+  [#12965](https://github.com/autowarefoundation/autoware_universe/pull/12965)
+  isolates callbacks, [#9148](https://github.com/autowarefoundation/autoware_universe/pull/9148)
+  adds reference poses, and [#475](https://github.com/autowarefoundation/autoware_universe/pull/475)
+  assigns IoU-based confidence. Their actual diffs do not preserve the best
+  candidate against later lower-scoring clusters.
+
+Reproduce with detection_by_tracker_transport_test in the Phase 9.5 journal.
+Two dense CAR-sized clouds centred at x=10 and x=20 are carried in one wide
+initial detection. Track either CAR independently. Before the correction, the
+second selection reports x=10 instead of x=20 and existence_probability=0,
+although a high-IoU candidate was found. Each estimate overwrites the best
+object's shape/pose; only its feature cloud and score are protected by the
+higher-IoU condition. Estimate into a fresh candidate and copy its object into
+the saved best only when its score improves. Thresholds, reference correction,
+iteration policy and confidence calculation remain unchanged.
+
+All four added nearest-sample/no-tracker/merge/divide cases pass with Cyclone/
+RCLCPP and ROS-aware Agnocast plus heaphook. Division checks both target
+positions; original package has no functional suite. Required utility and
+clustering suites pass too. This is geometry/candidate-state correctness,
+independent of ROS distribution; no upstream submission or full-system replay
+is claimed.

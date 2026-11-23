@@ -313,22 +313,22 @@ float DetectionByTracker::optimizeUnderSegmentedObject(
     // find highest iou object in divided clusters
     float highest_iou_in_current_iter = 0.0f;
     tier4_perception_msgs::msg::DetectedObjectWithFeature highest_iou_object_in_current_iter;
-    highest_iou_object_in_current_iter.object.classification = target_object.classification;
     for (const auto & divided_cluster : divided_clusters) {
+      autoware_perception_msgs::msg::DetectedObject candidate;
+      candidate.classification = target_object.classification;
       bool is_shape_estimated = shape_estimator_->estimateShapeAndPose(
         label, divided_cluster,
         getReferenceYawInfo(
           label, tf2::getYaw(target_object.kinematics.pose_with_covariance.pose.orientation)),
-        getReferenceShapeSizeInfo(label, target_object.shape), ref_pose,
-        highest_iou_object_in_current_iter.object.shape,
-        highest_iou_object_in_current_iter.object.kinematics.pose_with_covariance.pose);
+        getReferenceShapeSizeInfo(label, target_object.shape), ref_pose, candidate.shape,
+        candidate.kinematics.pose_with_covariance.pose);
       if (!is_shape_estimated) {
         continue;
       }
-      const float iou = autoware::object_recognition_utils::get2dIoU(
-        highest_iou_object_in_current_iter.object, target_object);
+      const float iou = autoware::object_recognition_utils::get2dIoU(candidate, target_object);
       if (highest_iou_in_current_iter < iou) {
         highest_iou_in_current_iter = iou;
+        highest_iou_object_in_current_iter.object = candidate;
         setClusterInObjectWithFeature(
           under_segmented_cluster.header, divided_cluster, highest_iou_object_in_current_iter);
       }

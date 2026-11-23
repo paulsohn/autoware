@@ -21670,7 +21670,7 @@ compiled libraries hidden inside the first consumer DSO; a second shared consume
 then fails Bazel's linked-but-not-exported check. Depend explicitly on
 :pcl_ros_tf_library and :pcl_ros_tf instead. No SDK patch, source change, new
 version or package shim is required. Existing transform tests cover the actual
-API, including indexed/buffered transformations and empty clouds.
+API, including buffered transformations and empty clouds.
 
 The shared clustering provider separately exports its compiled object-recognition
 and interpolation dependencies as direct roots, allowing detection to reuse
@@ -21694,3 +21694,69 @@ four tracker detection), zero failures/errors/skips, 15.7 s using unchanged cach
 results where valid. The downstream detection correction is documented in its
 own entry. Selected enabled clustering checks also pass with the detection gate
 below. No Fast DDS/product replay is required for this provider contraction.
+
+## 2026-11-24: Phase 9.5 — tracker-based detection
+
+Purpose: close the last package in the clustering/map-aware group with its two
+original implementation sources, all private headers, component, executable and
+indexed launch/config. Inspect CMake/manifest/source and ignore-label YAML; there
+is no original functional suite. Prerequisites are the local clustering/geometry/
+object-recognition providers, wrapper and ROS/PCL/TF SDKs. Acceptance adds four
+cases: nearest-track extrapolation, missing-track output, merging oversegmented
+clouds and dividing an undersegmented cloud for either tracked target position.
+Run the full added suite in RCLCPP and ROS-aware Agnocast, plus affected original
+utility/clustering suites. No Fast DDS, GPU or product replay is selected.
+
+Pattern: a package-owned module/compile/shared library plus root override.
+Consume the narrow Euclidean library and CUDA-free shape API, not their node or
+TensorRT implementations. Export required object-recognition/interpolation
+symbols from the existing clustering owner (be5efaf6a). The separate utility
+provider contraction (15f5f8ba2) removes unrelated PCL ROS tools. Preserve the
+actual transport architecture: tracked input/output are plain ROS; featured
+input uses the older wrapper macro surface on rclcpp::Node. Register with
+agnocast_only=False and initialize both runtimes for the enabled test. No source
+changes to migrate this class to a different node architecture are needed.
+
+The external test loads original YAML via the module index. Handler checks use
+ROS_TIME explicitly, matching message-stamp construction (mixing system and ROS
+clocks throws by design). Verify nearest-sample selection, extrapolated pose/yaw,
+identity/classification/shape and output stamp. Node peers check stamped empty
+output when no tracker exists; merge two dense split clouds into a CAR-sized box;
+and divide one wide detection containing CAR-sized clouds at x=10 and x=20,
+tracking either one. Check classification, IoU confidence, box geometry and
+header. Both streams use the same map frame; the utility suite separately covers
+buffered transforms. Wait for a nonempty output only in the targeted-object
+cases, so an early no-tracker response cannot satisfy their assertions.
+
+Reproduced correctness blocker: tracking x=20 reports x=10 and zero confidence
+although a good candidate was found. optimizeUnderSegmentedObject estimates
+every candidate into the saved best object's shape/pose. A later lower-score
+candidate overwrites that state, while the feature cloud and score still refer
+to the previous best. Estimate into a separate DetectedObject, then copy it and
+its cluster together only when IoU improves. Keep all thresholds, reference
+correction, search iterations and confidence calculation. Both target-position
+checks pass after the fix. UPSTREAM_AWF.md records current main and inspected
+related PRs; this source correction is a separate commit from build definitions.
+
+Primary verification is the exact combined command in the preceding narrow-PCL
+prerequisite entry. It builds all eleven non-test targets of this module, all
+clustering targets and the utility provider; all eight test targets / 67 cases
+pass (33 utility, 27 original clustering, three clustering transport, four new
+tracker cases), 15.7 s using unchanged passing cached results. Enabled gate:
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --local_test_jobs=1 --strategy=TestRunner=local \
+  --run_under=//bazel/agnocast:with_heaphook \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  //bazel/tests:detection_by_tracker_transport_test \
+  //bazel/tests:voxel_grid_based_euclidean_cluster_transport_test \
+  //bazel/tests:label_based_euclidean_cluster_transport_test
+```
+
+All six enabled cases pass with built/preloaded heaphook in 35.1 s; detection's
+four cases take 1.7 s. The mixed peers assert RCLCPP is active; semantic clustering
+asserts it is off. Zero failures/errors/skips. Targeted formatting and diff checks
+pass. Synthetic geometry establishes integration/candidate selection, not replay
+accuracy or performance on vehicle sensor data. All Phase 9.5 module gates are
+now satisfied; unchanged earlier module evidence is reused.
