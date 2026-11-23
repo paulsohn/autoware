@@ -32,6 +32,13 @@
           "minimum": 0.0,
           "maximum": 1.0
         },
+        "builder_optimization_level": {
+          "type": "integer",
+          "default": 3,
+          "minimum": 0,
+          "maximum": 5,
+          "description": "TensorRT tactic-search level. Lower values can reduce engine performance; level 0 disables dynamic kernel generation."
+        },
         "precision": {
           "type": "string",
           "description": "Operation precision for inference. Valid options: [fp32, fp16, int8].",

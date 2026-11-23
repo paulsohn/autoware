@@ -70,7 +70,8 @@ TrtYoloXDetector::TrtYoloXDetector(const TrtYoloXDetectorConfig & config) : conf
 
   trt_yolox_ = std::make_unique<tensorrt_yolox::TrtYoloX>(
     trt_config, config_.roi_labels.size(), config_.score_threshold, config_.nms_threshold,
-    config_.gpu_id, config_.calibration_image_list_path, norm_factor, calib_config);
+    config_.gpu_id, config_.calibration_image_list_path, norm_factor, calib_config,
+    config_.builder_optimization_level);
 
   if (!trt_yolox_->isGPUInitialized()) {
     std::stringstream error_msg;

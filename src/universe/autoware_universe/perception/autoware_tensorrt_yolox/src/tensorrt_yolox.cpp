@@ -36,9 +36,13 @@ namespace autoware::tensorrt_yolox
 TrtYoloX::TrtYoloX(
   TrtCommonConfig & trt_config, const int num_class, const float score_threshold,
   const float nms_threshold, const uint8_t gpu_id, std::string calibration_image_list_path,
-  const double norm_factor, const CalibrationConfig & calib_config)
+  const double norm_factor, const CalibrationConfig & calib_config,
+  const int64_t builder_optimization_level)
 : gpu_id_(gpu_id), is_gpu_initialized_(false)
 {
+  if (builder_optimization_level < 0 || builder_optimization_level > 5) {
+    throw std::invalid_argument("builder_optimization_level must be between 0 and 5");
+  }
   if (!setCudaDeviceId(gpu_id_)) {
     return;
   }
@@ -51,6 +55,8 @@ TrtYoloX::TrtYoloX(
   stream_ = makeCudaStream();
 
   trt_common_ = std::make_unique<TrtConvCalib>(trt_config);
+  trt_common_->getBuilderConfig()->setBuilderOptimizationLevel(
+    static_cast<int32_t>(builder_optimization_level));
 
   const auto network_input_dims = trt_common_->getTensorShape(0);
   batch_size_ = network_input_dims.d[0];

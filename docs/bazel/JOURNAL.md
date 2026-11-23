@@ -19195,3 +19195,123 @@ names, then run git diff --check. No build/runtime rerun is needed for this
 policy-only commit. Phase 6.5 is complete for the documented profiles and cache
 contract; it does not claim support for every model/precision combination,
 production GPU deployment, Fast DDS, other GPUs/SDKs or JetPack behavior.
+
+## 2026-11-23: Phase 6.5.4 — Isolate the traffic-light compiler failure and expose level zero
+
+Purpose and bound: isolate the fresh traffic-light INT8 failure outside Autoware,
+try the reduced SDK flags and one documented compiler setting, then either qualify
+a small workaround or leave the profile unsupported and resume Universe adoption.
+No vendor compiler patch, model retraining, dataset acquisition, driver/SDK change
+or general GPU build framework is part of this task.
+
+Environment/inputs: retained TensorRT 10.16.1.11-1+cuda13.2, CUDA 13.2.2,
+LLVM/libc++ 21.1.8 with the declared GNU ABI preload, RTX 5070 Laptop (SM 12.0),
+driver 595.99.02. ONNX SHA-256:
+0b8478553f2f0374a1236e65f669f11335b1fea7756ca7bcdfcf9646657ed594.
+Original test JPEG SHA-256:
+9c78df674e812900e60efa22e5b273c32c7c85aa4ff3ea569781e9c1474d74c3.
+Use the same model and image through declared runfiles, cubic resize with preserved
+aspect ratio, bottom/right padding 114, BGR-to-NCHW FP32 without channel swap and
+normalization 1.0. One image is a functional compiler/inference probe, not a
+production calibration dataset.
+
+The new SDK diagnostic includes TensorRT, CUDA, OpenCV and GTest only. It creates
+the builder, parser, static 1x3x960x960 optimization profile and a minimal fresh
+MinMax calibrator directly, with a 1 GiB workspace. No TrtCommon, TrtYoloX, ROS,
+ament lookup, interface types or application cache code is linked. ELF NEEDED
+entries confirm only the SDK/OpenCV/CUDA/C++/OS closure. The host binary still
+uses the documented libc++/GNU-runtime boundary; this is not a separate GNU-only
+caller or different-driver comparison.
+
+| SDK-only configuration | Observed result |
+| --- | --- |
+| FP16, optimization level 3 | Builds and runs; peak usable traffic-light confidence 0.921950. |
+| INT8 + FP16 + MinMax, level 3, preference flag and input range 0..255 matching Autoware | Calibration completes, then MyelinCheckException utils.cpp:4054; no plan. |
+| INT8 + FP16 + MinMax, level 3, with both preference/input-range overrides removed | Same Myelin compiler failure; those Autoware settings are not required to trigger it. |
+| Matching INT8 configuration, optimization level 0 | Builds, serializes, restores and runs; finite output and peak usable traffic-light confidence 0.917599, above 0.35. |
+
+This localizes the problem to the SDK compiler/optimization path for this profile,
+independent of Autoware's wrapper and cache implementation. It does not identify
+the defective proprietary compiler transformation. The pinned NvInfer.h documents
+that level 0 disables dynamic kernel generation and selects the first successful
+tactic; this supplies a supported workaround without changing SDK versions.
+Detailed level-0 engine inspection contains 168 Int8 and 176 Half tensor-format
+records, so successful inference is not merely a pure-FP16 engine. These are tensor
+format occurrences, not layer counts. The error signature is related to the open
+[NVIDIA TensorRT#4906](https://github.com/NVIDIA/TensorRT/issues/4906), checked
+2026-11-23; that issue concerns other models and does not prove the identical
+internal defect. No upstream message or issue was submitted.
+
+Minimum source workaround: append builder_optimization_level=3 to the detector
+configuration and TrtYoloX constructor, declare it as an int64 node parameter,
+and forward it from all three single-node launchers. Add an optional integer
+property with default 3 and bounds 0..5 to their existing JSON schemas, keeping
+the generated parameter reference consistent. Validate the pinned SDK's
+0..5 range before device/builder initialization, including avoiding narrowing of
+an oversized ROS integer. Set the level through TrtCommon's existing public
+builder-config API before setup; do not add a common-library option or modify its
+implementation. Preserve default 3 and all original model/precision defaults.
+Opt into 0 only for the required profile. Different levels require different
+qualified engine cache paths because the loader does not check every build flag.
+
+The complete application gate adds cold/warm traffic-light MinMax INT8 inference
+at level 0, reuse after image-list removal, and a build_only node run asserting
+parameter propagation, context shutdown and unchanged engine mtime. Invalid -1,
+6 and INT64_MAX values are rejected. The existing level-3 error regression and
+all previous positive profiles remain. Expose only the original JPEG as package
+build support for the independent diagnostic; do not duplicate model/image data
+or change upstream tests. The diagnostic target and its native binary are manual,
+so wildcard development gates do not launch this compiler matrix.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --nocache_test_results --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp \
+  --test_env=ROS_DOMAIN_ID=113 --test_output=errors \
+  @tensorrt//:runtime_abi_test //bazel/tests:yolox_sdk_compiler_test \
+  //bazel/tests:yolox_runtime_cache_test @autoware_tensorrt_yolox//... \
+  //bazel/tests:yolox_detector_test //bazel/tests:yolox_node_test \
+  //bazel/tests:yolox_fixture_adapter_test //bazel/tests:yolox_launch_paths_test \
+  //bazel/tests:yolox_model_resources_test
+# After adding detailed diagnostic-only engine metadata, rerun its whole matrix:
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --nocache_test_results --test_output=errors //bazel/tests:yolox_sdk_compiler_test
+readelf -d bazel-bin/bazel/tests/yolox_sdk_compiler_test_binary
+clang-format --dry-run --Werror \
+  bazel/tests/autoware_tensorrt_yolox/test_sdk_compiler.cpp \
+  bazel/tests/autoware_tensorrt_yolox/test_runtime_cache.cpp
+git diff --check
+```
+
+Results: nine targets pass in 326.0 s, with fourteen original YOLOX native cases,
+eleven cache/workaround cases, four diagnostic cases, one SDK ABI case and six
+Python support cases. All native XML has zero failures/errors/skips. The new
+application level-0 inference/build_only case takes 15.810 s. The diagnostic-only
+metadata rerun passes all four cases in 54.2 s; other unchanged passing evidence
+is reused. Inspect engines, calibration tables, level-0 layers.json and XML
+properties under bazel-testlogs/bazel/tests/yolox_sdk_compiler_test/test.outputs/
+and test.xml. The level-3 negative cases require the actual Myelin log signature;
+they do not count as successful INT8 compilation. XML parsing, targeted C++
+formatting and whitespace checks pass. Each JSON schema validates its unchanged
+published YAML, accepts optional levels 0/3/5, and rejects -1, 6, INT64_MAX, a
+fraction and a string in a targeted Draft7Validator/PyYAML check. No Fast DDS, expensive simulator/OCI
+checks, production GPU deployment, accuracy benchmark or inference-performance
+qualification was performed.
+
+Decision/remaining limits: adopt the optional level-0 workaround for this tested
+profile and retain default 3 elsewhere. Lower build optimization can worsen
+inference performance and must be benchmarked before production use. The one-image
+confidence/detection smoke result is not calibration-accuracy qualification.
+Keep the default-level regression until the selected SDK/model/GPU changes, then
+review both cases. Deeper vendor compiler debugging is outside this bounded task;
+resume broader Universe adoption. Source compatibility changes and Bazel test
+registration are committed separately.
+
+Targeted schema reproduction for the optional setting (developer-side Python
+jsonschema/PyYAML tools): load each schema with json.load, call
+Draft7Validator.check_schema, and validate yaml.safe_load of the matching
+config/<name>.param.yaml. Deep-copy that mapping and assign
+config['/**']['ros__parameters']['builder_optimization_level'] to each of
+0, 3 and 5, requiring acceptance; assign -1, 6, 2**63-1, 0.5 and '0', requiring
+ValidationError. This changes no published parameter defaults or runtime inputs.

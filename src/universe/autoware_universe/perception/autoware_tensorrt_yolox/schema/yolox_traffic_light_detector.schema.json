@@ -20,6 +20,13 @@
           "maximum": 1.0,
           "description": "A threshold value of NMS."
         },
+        "builder_optimization_level": {
+          "type": "integer",
+          "default": 3,
+          "minimum": 0,
+          "maximum": 5,
+          "description": "TensorRT tactic-search level. Lower values can reduce engine performance; level 0 disables dynamic kernel generation."
+        },
         "precision": {
           "type": "string",
           "default": "fp16",

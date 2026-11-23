@@ -77,12 +77,14 @@ public:
    * quantization)
    * @param[in] norm_factor scaling factor for preprocess
    * @param[in] calib_config calibration configuration
+   * @param[in] builder_optimization_level TensorRT tactic-search level (0 to 5)
    */
   TrtYoloX(
     TrtCommonConfig & trt_config, const int num_class = 8, const float score_threshold = 0.3,
     const float nms_threshold = 0.7, const uint8_t gpu_id = 0,
     std::string calibration_image_list_path = std::string(), const double norm_factor = 1.0,
-    const CalibrationConfig & calib_config = CalibrationConfig());
+    const CalibrationConfig & calib_config = CalibrationConfig(),
+    const int64_t builder_optimization_level = 3);
   /**
    * @brief Deconstruct TrtYoloX
    */

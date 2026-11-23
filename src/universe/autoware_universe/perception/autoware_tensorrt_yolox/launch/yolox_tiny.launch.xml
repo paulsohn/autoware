@@ -18,6 +18,7 @@
 
   <arg name="use_decompress" default="true" description="use image decompress"/>
   <arg name="engine_path" default="" description="serialized engine cache path; empty uses the ONNX directory"/>
+  <arg name="builder_optimization_level" default="3" description="TensorRT tactic-search level (0 to 5)"/>
   <arg name="build_only" default="false" description="exit after trt engine is built"/>
 
   <arg name="decompressor_param_path" default="$(find-pkg-share autoware_image_transport_decompressor)/config/image_transport_decompressor.param.yaml"/>
@@ -37,6 +38,7 @@
     <param name="roi_remap_path" value="$(var roi_remap_path)"/>
     <param name="roi_to_semantic_segmentation_remap_path" value="$(var roi_to_semantic_segmentation_remap_path)"/>
     <param name="engine_path" value="$(var engine_path)" type="str"/>
+    <param name="builder_optimization_level" value="$(var builder_optimization_level)" type="int"/>
     <param name="build_only" value="$(var build_only)"/>
   </node>
 </launch>

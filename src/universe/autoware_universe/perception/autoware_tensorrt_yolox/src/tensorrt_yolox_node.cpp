@@ -36,6 +36,8 @@ TrtYoloXNode::TrtYoloXNode(const rclcpp::NodeOptions & node_options)
   TrtYoloXDetectorConfig config;
   config.model_path = this->declare_parameter<std::string>("model_path");
   config.engine_path = this->declare_parameter<std::string>("engine_path", "");
+  config.builder_optimization_level =
+    this->declare_parameter<int64_t>("builder_optimization_level", 3);
   config.precision = this->declare_parameter<std::string>("precision");
   config.score_threshold = static_cast<float>(this->declare_parameter<double>("score_threshold"));
   config.nms_threshold = static_cast<float>(this->declare_parameter<double>("nms_threshold"));
