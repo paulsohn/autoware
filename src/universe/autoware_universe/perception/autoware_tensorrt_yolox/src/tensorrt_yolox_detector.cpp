@@ -60,7 +60,7 @@ TrtYoloXDetector::TrtYoloXDetector(const TrtYoloXDetectorConfig & config) : conf
 
   TrtCommonConfig trt_config(
     config_.model_path, config_.precision, config_.engine_path, (1ULL << 30U), config_.dla_core_id,
-    config_.profile_per_layer);
+    config_.profile_per_layer, config_.allow_engine_build);
 
   CalibrationConfig calib_config(
     config_.calibration_algorithm, config_.quantize_first_layer, config_.quantize_last_layer,

@@ -173,6 +173,33 @@ This file represents the correspondence between class index (integer outputted f
 class label (strings making understanding easier). This package maps class IDs (incremented from 0)
 with labels according to the order in this file.
 
+## Engine preparation
+
+Prepare a model-specific engine on the target GPU before starting `TrtYoloXNode`:
+
+```shell
+ros2 run autoware_tensorrt_yolox prepare_engine \
+  --model /path/to/model.onnx --engine /writable/cache/model.engine --precision fp16
+```
+
+The output directory must exist. `--model-package PACKAGE` resolves a relative
+`--model` filename through that package's share directory. Use `--help` for INT8
+calibration and builder optimization options. Choose a different engine path when
+model, SDK, GPU, plugins or build settings change; cache identity is caller-owned.
+
+Set the node's `engine_path` to the prepared file and use matching labels/remaps.
+The default `allow_engine_build=false` restores the engine without parsing ONNX or
+creating a builder. An explicit engine path permits an empty `model_path`; missing
+or incompatible engines fail startup. `allow_engine_build=true` restores development
+build-on-miss behavior. Legacy `build_only=true` also permits generation and shuts
+down the ROS context, so run it separately from live composed applications.
+Direct C++ detector callers retain generation by default and can set
+`TrtYoloXDetectorConfig::allow_engine_build=false` explicitly.
+
+This separates preparation from inference startup; the shared libraries still
+link compiler/parser code. It does not establish an inference-only SDK package
+or engine portability across GPU/SDK profiles.
+
 ## Reference repositories
 
 - <https://github.com/Megvii-BaseDetection/YOLOX>

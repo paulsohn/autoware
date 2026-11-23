@@ -19405,3 +19405,105 @@ Result: all seven targets pass in 143.1 s, including the original prepared-engin
 YOLOX pub/sub case and both fixture rejection checks. This completes the shared
 module gate with the YOLOX acceptance below. No Fast DDS, simulator/OCI, other
 GPU/SDK, or colcon gate is included.
+
+## 2026-11-23: Phase 6.5.5 — Standalone YOLOX preparation and prepared-engine startup
+
+Purpose: replace the operational need to start a ROS node merely to generate an
+engine, then make inference require that artifact by default. Keep legacy
+build_only and an explicit development build-on-miss option available.
+
+Inputs: the three original YOLOX suites (ten label, three detector and one
+end-to-end node cases), eleven existing cache/calibration/workaround cases,
+six Python fixture/launch/model cases, the indexed model provider, and the
+prepared-only common-library API above. Retain all Phase 6.5.4 pins and tested
+profiles; no new model/compiler/hardware selection is introduced.
+
+Integration pattern: extract the detector's existing profile/calibration setup
+into engine_preparation.cpp with a shared factory. In prepared-only mode it uses
+engine metadata and avoids builder flags and calibration-file access. Validate
+a static positive NCHW input with three channels before indexing dimensions;
+check raw output class count against configured labels before allocating/decoding
+inference buffers. The CLI calls the same setup without constructing a ROS node,
+executor, image subscriptions or inference buffers. Accept explicit --model and
+--engine paths, or resolve a relative model filename through --model-package.
+Expose precision, calibration images/algorithm/clip and builder level; reject
+unknown/missing arguments and invalid numeric values. The output directory must
+already exist, and an existing compatible engine is reused, so key changes remain
+the caller's responsibility.
+
+The component owns the CLI/library and CMake registration. Bazel splits its label
+and preparation libraries from inference and exports prepare_engine_main plus
+prepare_engine. The root //bazel/runtime:yolox_prepare product supplies the model
+repository's ament index, keeping resource selection outside the component.
+TrtYoloXNode defaults allow_engine_build to false; its three launchers and schemas
+expose that optional boolean. model_path can be empty with an explicit prepared
+engine_path. allow_engine_build=true enables development generation; legacy
+build_only=true also permits it and retains ROS-context shutdown behavior. Direct
+C++ detector callers retain the old generation default for compatibility.
+
+Reuse the SDK-owned GNU ABI preload/builder-resource discovery launcher for the
+CLI via tensorrt_cc_binary. Preserve tensorrt_cc_test behavior; only set GTest XML
+when XML_OUTPUT_FILE exists. Root tests invoke the actual wrapped CLI using
+posix_spawn, avoiding an unsafe fork-after-CUDA initialization. The unchanged
+original node test now receives a prepared segmentation FP16 engine through its
+root fixture adapter; the detector cold/warm experiment keeps its existing generation path.
+Do not edit or skip upstream tests to accommodate the new node default.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel run --config=runtime --config=no-agnocast \
+  //bazel/runtime:yolox_prepare -- --help
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --nocache_test_results --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp \
+  --test_env=ROS_DOMAIN_ID=113 --test_output=errors \
+  @tensorrt//:runtime_abi_test @autoware_tensorrt_yolox//... \
+  //bazel/tests:yolox_runtime_cache_test //bazel/tests:yolox_detector_test \
+  //bazel/tests:yolox_node_test //bazel/tests:yolox_fixture_adapter_test \
+  //bazel/tests:yolox_launch_paths_test //bazel/tests:yolox_model_resources_test
+```
+
+Diagnosed setup failures: py_binary args are supplied by bazel run, but are not
+part of its executable when a subprocess calls it. An initial run passed CLI help
+through Bazel yet failed native CLI subprocess cases and consumed the fixture's
+native argv as if it contained SDK paths. Bake SDK/native runfiles paths into a
+generated launcher for ordinary binaries; keep test arguments unchanged and
+resolve the root fixture's tool through runfiles. The original node case uses the
+segmentation FP16 model, so prepare that model rather than the traffic-light
+fixture. The adapter rejects empty/skipped suites, turning the missing prepared
+segmentation plan into a failed gate instead of accepting the upstream GPU skip.
+
+Result: CLI help builds and exits successfully without GTest XML. The complete
+module gate passes fourteen original native YOLOX cases, fifteen cache/calibration/
+preparation cases and six Python support cases. Added acceptance covers standalone indexed
+FP16 and explicit-path fresh MinMax INT8 level-0 preparation, actual inference
+after removing ONNX/calibration inputs, read-only cache reuse, label-count
+mismatch rejection, missing-cache startup failure, explicit development fallback
+and argument errors. Published segmentation INT8 also uses prepared-only warm
+inference. All previous cases remain required, including legacy build_only and
+the default-level SDK error regression. All native XML has zero failures/errors/
+skips; the shared consumer gate above also passes. The cache suite takes 195.7 s;
+original detector cases take 37.4 s. The corrected original node/fixture gates
+pass in the combined seven-target command above (22.6 s and 1.1 s respectively).
+Reuse the unchanged passing label, launch, model and cache evidence rather than
+rerunning the entire compiler matrix for a fixture-only correction. The SDK ABI
+case passes again after the launcher change; the four-case compiler diagnostic
+from 6.5.4 is unchanged and its evidence is reused.
+
+Limits: shared libraries still contain linked build/parser code and their data
+closure still includes builder resources. These tests do not prove an
+inference-only SDK distribution. No engine-producing Bazel action, GPU-worker
+framework, automatic cache key/publication, production calibration/accuracy,
+latency, deployed GPU image, Fast DDS or colcon validation is claimed.
+
+Targeted static checks: run clang-format --dry-run --Werror on the changed common
+and YOLOX C++ files, parse the changed Python files with ast.parse, parse package
+and launch XML with ElementTree, and run git diff --check. With developer-side
+jsonschema/PyYAML, load each of the three YOLOX schemas with json.load, call
+Draft7Validator.check_schema and validate the matching published param.yaml.
+Set ['/**']['ros__parameters']['allow_engine_build'] to false/true and require
+acceptance, then to 0, 1, 'false' and null and require ValidationError. In each
+matching launch XML require the argument default false and the forwarded param
+type bool. These checks pass; published YAML defaults remain unchanged. Bazel
+loads the new rules and builds both component and root preparer targets. Source
+corrections and Bazel declarations are kept in separate commits.

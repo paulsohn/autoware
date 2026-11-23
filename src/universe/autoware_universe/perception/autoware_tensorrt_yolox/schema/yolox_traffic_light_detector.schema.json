@@ -20,6 +20,11 @@
           "maximum": 1.0,
           "description": "A threshold value of NMS."
         },
+        "allow_engine_build": {
+          "type": "boolean",
+          "default": false,
+          "description": "Allow development-time engine generation in the inference node. Otherwise require a prepared engine."
+        },
         "builder_optimization_level": {
           "type": "integer",
           "default": 3,

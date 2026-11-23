@@ -67,6 +67,7 @@ endif()
 # tensorrt_yolox
 ament_auto_add_library(${PROJECT_NAME} SHARED
   src/tensorrt_yolox.cpp
+  src/engine_preparation.cpp
   src/label.cpp
   src/tensorrt_yolox_detector.cpp
 )
@@ -124,6 +125,12 @@ else()
 endif()
 
 target_compile_definitions(${PROJECT_NAME} PRIVATE
+  TENSORRT_VERSION_MAJOR=${TENSORRT_VERSION_MAJOR}
+)
+
+ament_auto_add_executable(prepare_engine src/prepare_engine_main.cpp)
+target_link_libraries(prepare_engine ${PROJECT_NAME})
+target_compile_definitions(prepare_engine PRIVATE
   TENSORRT_VERSION_MAJOR=${TENSORRT_VERSION_MAJOR}
 )
 

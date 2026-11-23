@@ -15,7 +15,7 @@
 #include "autoware/cuda_utils/cuda_check_error.hpp"
 #include "autoware/cuda_utils/cuda_unique_ptr.hpp"
 
-#include <autoware/tensorrt_yolox/calibrator.hpp>
+#include <autoware/tensorrt_yolox/engine_preparation.hpp>
 #include <autoware/tensorrt_yolox/label.hpp>
 #include <autoware/tensorrt_yolox/preprocess.hpp>
 #include <autoware/tensorrt_yolox/tensorrt_yolox.hpp>
@@ -54,91 +54,10 @@ TrtYoloX::TrtYoloX(
   multitask_ = 0;
   stream_ = makeCudaStream();
 
-  trt_common_ = std::make_unique<TrtConvCalib>(trt_config);
-  trt_common_->getBuilderConfig()->setBuilderOptimizationLevel(
-    static_cast<int32_t>(builder_optimization_level));
-
-  const auto network_input_dims = trt_common_->getTensorShape(0);
-  batch_size_ = network_input_dims.d[0];
-  const auto input_channel = network_input_dims.d[1];
-  const auto input_height = network_input_dims.d[2];
-  const auto input_width = network_input_dims.d[3];
-
-  auto profile_dims_ptr = std::make_unique<std::vector<autoware::tensorrt_common::ProfileDims>>();
-
-  std::vector<autoware::tensorrt_common::ProfileDims> profile_dims{
-    autoware::tensorrt_common::ProfileDims(
-      0, {4, {batch_size_, input_channel, input_height, input_width}},
-      {4, {batch_size_, input_channel, input_height, input_width}},
-      {4, {batch_size_, input_channel, input_height, input_width}})};
-  *profile_dims_ptr = profile_dims;
-
-  if (trt_config.precision == "int8") {
-    // Supplied tables stay with the model; generated tables follow the engine cache.
-    fs::path calibration_table{trt_config.engine_path};
-    std::string ext = "";
-    if (calib_config.calib_type_str == "Entropy") {
-      ext = "EntropyV2-";
-    } else if (
-      calib_config.calib_type_str == "Legacy" || calib_config.calib_type_str == "Percentile") {
-      ext = "Legacy-";
-    } else {
-      ext = "MinMax-";
-    }
-
-    ext += "calibration.table";
-    calibration_table.replace_extension(ext);
-    fs::path calibration_input{trt_config.onnx_path};
-    calibration_input.replace_extension(ext);
-    fs::path histogram_table{trt_config.engine_path};
-    ext = "histogram.table";
-    histogram_table.replace_extension(ext);
-    fs::path histogram_input{trt_config.onnx_path};
-    histogram_input.replace_extension(ext);
-
-    if (calib_config.clip_value <= 0.0) {
-      if (
-        calibration_image_list_path.empty() && !fs::exists(calibration_table) &&
-        !fs::exists(calibration_input) && !fs::exists(trt_config.engine_path)) {
-        throw std::runtime_error(
-          "INT8 requires calibration images, a supplied/cached calibration table, "
-          "an existing engine, or a positive clip_value.");
-      }
-    } else {
-      // if clip value is larger than zero, calibration file is not needed
-      calibration_image_list_path = "";
-    }
-
-    std::vector<std::string> calibration_images;
-    if (calibration_image_list_path != "") {
-      calibration_images = load_image_list(calibration_image_list_path);
-    }
-    tensorrt_yolox::ImageStream stream(batch_size_, network_input_dims, calibration_images);
-    std::unique_ptr<nvinfer1::IInt8Calibrator> calibrator;
-    if (calib_config.calib_type_str == "Entropy") {
-      calibrator.reset(new tensorrt_yolox::Int8EntropyCalibrator(
-        stream, calibration_table, norm_factor_, true, calibration_input));
-
-    } else if (
-      calib_config.calib_type_str == "Legacy" || calib_config.calib_type_str == "Percentile") {
-      const double quantile = 0.999999;
-      const double cutoff = 0.999999;
-      calibrator.reset(new tensorrt_yolox::Int8LegacyCalibrator(
-        stream, calibration_table, histogram_table, norm_factor_, true, quantile, cutoff,
-        calibration_input, histogram_input));
-    } else {
-      calibrator.reset(new tensorrt_yolox::Int8MinMaxCalibrator(
-        stream, calibration_table, norm_factor_, true, calibration_input));
-    }
-    if (!trt_common_->setupWithCalibrator(
-          std::move(calibrator), calib_config, std::move((profile_dims_ptr)))) {
-      throw std::runtime_error("Failed to setup TensorRT engine with calibrator");
-    }
-  } else {
-    if (!trt_common_->setup(std::move(profile_dims_ptr))) {
-      throw std::runtime_error("Failed to setup TensorRT engine");
-    }
-  }
+  trt_common_ = createYoloXEngine(
+    trt_config, calib_config, calibration_image_list_path, norm_factor_,
+    builder_optimization_level);
+  batch_size_ = trt_common_->getTensorShape(0).d[0];
 
   // Judge whether decoding output is required
   // Plain models require decoding, while models with EfficientNMS_TRT module don't.
@@ -173,6 +92,9 @@ TrtYoloX::TrtYoloX(
     std::accumulate(input_dims.d + 1, input_dims.d + input_dims.nbDims, 1, std::multiplies<int>());
   if (needs_output_decode_) {
     const auto output_dims = trt_common_->getTensorShape(1);
+    if (output_dims.nbDims != 3 || output_dims.d[2] != num_class_ + 5) {
+      throw std::invalid_argument("YOLOX detection output does not match the configured labels");
+    }
     input_d_ = autoware::cuda_utils::make_unique<float[]>(batch_size_ * input_size);
     out_elem_num_ = std::accumulate(
       output_dims.d + 1, output_dims.d + output_dims.nbDims, 1, std::multiplies<int>());

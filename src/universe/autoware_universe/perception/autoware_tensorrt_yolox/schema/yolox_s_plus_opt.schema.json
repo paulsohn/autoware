@@ -32,6 +32,11 @@
           "description": "Threshold value for Non-Maximum Suppression (NMS).",
           "default": 0.7
         },
+        "allow_engine_build": {
+          "type": "boolean",
+          "default": false,
+          "description": "Allow development-time engine generation in the inference node. Otherwise require a prepared engine."
+        },
         "builder_optimization_level": {
           "type": "integer",
           "default": 3,

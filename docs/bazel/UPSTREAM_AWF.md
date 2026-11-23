@@ -1794,3 +1794,41 @@ The standalone preparer compiles after the correction with LLVM 21.1.8/TensorRT
 YOLOX cases and the complete affected classifier/plugin suites pass with zero
 native skips. CMake/GCC and other SDK versions were not validated.
 [Observed failure and complete gate](JOURNAL.md#2026-11-23-phase-655--prepared-only-common-tensorrt-loading).
+
+## Prepared TensorRT inference still initializes the compiler and reads ONNX
+
+- [ ] Associate with matching upstream work. Checked 2026-11-23:
+  autoware_cuda main a5929dde0bacecae60c5f32dc34416f784a60cb4 initializes the
+  builder/parser unconditionally; Universe main
+  8361f0ef2dd4558864f0d00d8bfb9e036c7102af still prepares engines through the
+  YOLOX node's build_only path. No matching fix is associated.
+
+A valid cached plan does not by itself make the original inference startup
+independent of ONNX or compiler initialization: the common constructor parses
+ONNX before setup() selects the plan. This blocks an explicit prepared-engine
+contract and starting inference with model input resources omitted.
+
+The experiment adds allow_engine_build=false to common configuration, restores
+engine/context directly and reads metadata from the engine. Missing/incompatible
+plans or IO/profile mismatch fail without regeneration. Existing common callers
+retain generation by default. Local common correction: 8dfaaeb8. The YOLOX setup
+is shared with a standalone prepare_engine CLI that does not construct a ROS
+node/executor; normal inference can then avoid compiler/calibration setup.
+This branch chooses prepared-only node startup by default, with an explicit
+allow_engine_build=true development fallback and compatible build_only behavior.
+That default is a deployment policy decision, not a necessary upstream API break.
+
+The complete gates pass thirteen original common and eleven cache cases,
+fourteen original YOLOX and fifteen cache/calibration/preparation cases, five
+classifier and twenty plugin cases, the ABI case and six Python support cases.
+They include actual FP16 and fresh MinMax INT8 level-0 standalone preparation,
+ONNX-free inference, prepared segmentation INT8, read-only caches, missing-plan
+failure, label mismatch rejection, and original end-to-end ROS publications.
+No native failures/errors/skips occur on the retained Phase 6.5.4 profile.
+
+The libraries still link compiler/parser code and retain SDK builder resources;
+this is functional startup separation, not an inference-only package. Cache
+identity/publication, production accuracy/performance, other hardware/SDKs and
+CMake/GCC are not qualified here. No upstream issue/PR was submitted.
+[Common contract](JOURNAL.md#2026-11-23-phase-655--prepared-only-common-tensorrt-loading);
+[consumer/tool pattern and reproduction](JOURNAL.md#2026-11-23-phase-655--standalone-yolox-preparation-and-prepared-engine-startup).

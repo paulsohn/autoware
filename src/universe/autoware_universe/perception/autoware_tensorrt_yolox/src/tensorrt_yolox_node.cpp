@@ -33,8 +33,10 @@ TrtYoloXNode::TrtYoloXNode(const rclcpp::NodeOptions & node_options)
   using std::placeholders::_1;
   using std::chrono_literals::operator""ms;
 
+  const bool build_only = declare_parameter("build_only", false);
   TrtYoloXDetectorConfig config;
-  config.model_path = this->declare_parameter<std::string>("model_path");
+  config.allow_engine_build = declare_parameter("allow_engine_build", false) || build_only;
+  config.model_path = this->declare_parameter<std::string>("model_path", "");
   config.engine_path = this->declare_parameter<std::string>("engine_path", "");
   config.builder_optimization_level =
     this->declare_parameter<int64_t>("builder_optimization_level", 3);
@@ -91,7 +93,7 @@ TrtYoloXNode::TrtYoloXNode(const rclcpp::NodeOptions & node_options)
   color_mask_pub_ = image_transport::create_publisher(this, "~/out/color_mask");
   image_pub_ = image_transport::create_publisher(this, "~/out/image");
 
-  if (declare_parameter("build_only", false)) {
+  if (build_only) {
     RCLCPP_INFO(this->get_logger(), "TensorRT engine file is built and exit.");
     rclcpp::shutdown();
   }

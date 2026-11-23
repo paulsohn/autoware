@@ -68,6 +68,7 @@ struct TrtYoloXDetectorConfig
   // Empty preserves the model-adjacent cache; explicit paths allow read-only model resources.
   std::string engine_path;
   std::int64_t builder_optimization_level{3};
+  bool allow_engine_build{true};
 };
 
 /**
