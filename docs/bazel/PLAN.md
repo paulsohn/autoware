@@ -1350,7 +1350,7 @@ resources explicitly. No full driving behavior or GUI rendering is claimed.
 Prior unchanged Agnocast/module evidence remains applicable; no new middleware
 matrix is required to close this phase. Phase 6 is next.
 
-## Phase 6: CUDA and TensorRT on x86 (6.1–6.4 complete; 6.5 in progress)
+## Phase 6: CUDA and TensorRT on x86 (complete, 2026-11-23)
 
 Bring the required GPU SDK and local CUDA consumers into the Bazel graph,
 without host toolkit discovery or apt/pip installation. GPU drivers/devices
@@ -1661,7 +1661,7 @@ Phase 8. No new Fast DDS acceptance run was performed; it still requires
 explicit approval. The x86 TensorRT 10.16.1 versus JetPack 7.2.1's 10.16.2 gap
 remains explicit for Phase 8.
 
-### Phase 6.5: TensorRT runtime engine/cache experiments (in progress)
+### Phase 6.5: TensorRT runtime engine/cache experiments (complete, 2026-11-23)
 
 Decision recorded 2026-11-23: retain on-device engine generation and the current
 build_only behavior as the starting point. Make the runtime/cache path compatible
@@ -1699,11 +1699,19 @@ boundaries when their integration exposes a need.
   successful calibration/inference claim. The single-image calibration probe does
   not qualify production accuracy. No test/dependency skip is accepted.
   [Source pattern, profile decisions and exact gates](JOURNAL.md#2026-11-23-phase-652--yolox-engine-paths-and-calibration-inputoutput-separation).
-- **6.5.3 — Record the compilation-placement decision.** Compare observed startup,
-  cache reuse, deployment size/permissions and compatibility costs. Decide whether
-  to retain runtime generation, use explicit on-device preparation, or conduct a
-  narrowly scoped Bazel engine-output experiment for a validated hardware profile.
-  Implementing a general engine rule or removing build_only is not predetermined.
+- **6.5.3 — Record the compilation-placement decision (complete, 2026-11-23).**
+  Retain runtime generation. For deployment/startup preparation, run an isolated
+  on-device build_only process with the final model/SDK/GPU/settings profile,
+  then use the same cache for inference. Normal generation remains available for
+  development. Keep model inputs immutable and caches replaceable; do not add a
+  general GPU engine-output Bazel rule now. Warm loading still initializes the
+  builder/parser and reads ONNX, so these results do not justify an inference-only
+  SDK payload or a production GPU distribution claim. Automatic cache identity,
+  atomic/concurrent publication and production calibration accuracy are not
+  implemented by this experiment. Revisit a narrow Bazel action only when a real
+  product needs a hardware-qualified prebuilt engine and has a provisioned GPU
+  execution profile. Preserve separate compilation and inference acceptance.
+  [Decision, evidence and limits](JOURNAL.md#2026-11-23-phase-653--retain-on-device-engine-preparation).
 
 A later Bazel experiment would declare ONNX/weights, compiler/plugins, build
 settings and calibration inputs, with engine/sidecar outputs. Pin SDK inputs;
@@ -1716,12 +1724,13 @@ GPU/SDK profiles. No GPU executor framework or cross-platform engine production
 is introduced by this plan.
 
 Record reproducible commands, measurements, diagnosed failures and the final
-choice in the same module-task journal as the experiments progress. The initial YOLOX baseline takes 38.04 s cold and 1.59 s warm, with all three
-existing detector cases passing on each pass and unchanged engine hashes/mtimes.
+choice in the same module-task journal as the experiments progress. The initial
+YOLOX baseline takes 38.04 s cold and 1.59 s warm, with all three existing detector
+cases passing on each pass and unchanged engine hashes/mtimes.
 This is one full-test-process observation on the selected GPU, not a portable
 performance threshold. The complete existing common/YOLOX suites also pass with
-no skips. The separate-cache gate is complete for the selected profiles above;
-the final compilation-placement choice remains pending for 6.5.3; no new GPU build rule is accepted.
+no skips. The separate-cache gate and compilation-placement decision are complete
+for the selected profiles above; no new GPU build rule is accepted.
 [Reproducer and results](JOURNAL.md#2026-11-23-phase-651--yolox-runtime-engine-baseline).
 
 ## Phase 7 — Runtime packaging and planning simulation (complete, 2026-11-23)

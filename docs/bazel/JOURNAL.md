@@ -18734,7 +18734,7 @@ Purpose: investigate TensorRT engine preparation without assuming that engine
 compilation must become a Bazel build action. Keep runtime generation/build_only
 as the baseline, establish a writable-cache contract for immutable model
 resources, then decide from measured behavior. The task sequence and acceptance
-scope are authoritative in [Phase 6.5](PLAN.md#phase-65-tensorrt-runtime-enginecache-experiments-in-progress).
+scope are authoritative in [Phase 6.5](PLAN.md#phase-65-tensorrt-runtime-enginecache-experiments-complete-2026-11-23).
 Completed GPU and runtime-distribution gates retain their original scope.
 
 Inspected inputs: TrtCommonConfig defaults an empty engine_path to the ONNX path
@@ -19127,3 +19127,60 @@ package/model ament indexes, component/shared runtime providers and GTest. The
 source correction is b695d51b. Reuse the two complete passing commands above;
 only whitespace and documentation changed afterward. No runtime matrix, SDK
 version or product/deployment closure changes in this support commit.
+
+## 2026-11-23: Phase 6.5.3 — Retain on-device engine preparation
+
+Purpose: choose compilation placement using the completed common/YOLOX cache
+experiments rather than introducing a GPU Bazel action before its execution and
+compatibility contracts are demonstrated. This is a documentation-only decision;
+no runtime, SDK, model, cache implementation or deployment artifact changes.
+
+Decision: retain on-device generation and the current build_only API. Use an
+isolated preparation process when startup latency matters, with the final indexed
+model inputs, TensorRT/plugins, physical GPU and compilation settings. Provision
+a cache path qualified for that profile. The node shuts down its ROS context at
+the end of build_only, so preparation must precede the live composed application.
+Inference selects the same cache; normal cold generation remains available for
+development. Keep cache state replaceable and independent of immutable software
+and model inputs. Supplied calibration tables remain model-owned inputs; generated
+tables remain derived cache output. The deployer/product configuration selects
+and provisions the cache, while Bazel pins and composes the software/model inputs.
+No new deployment backend, GPU worker framework or generic engine rule is added.
+
+Evidence reused: Phase 6.5.1's complete three-case FP16 detector process takes
+38.0397 s cold and 1.5931 s warm, with unchanged within-run engine SHA-256/mtime.
+The two FP16 engine files total 52,832,408 bytes; these are cache sizes, not a
+measured deployment-payload reduction or INT8 benchmark. The completed 6.5.2 gate
+passes fourteen original and nine added native cases plus six Python support
+cases, including actual segmentation INT8 inference, fresh/supplied calibration
+paths, image-free reuse and a read-only prepared cache. A failed traffic-light
+calibration profile remains an explicit error regression; moving that compiler
+invocation into Bazel would not resolve its SDK error. Single-image inference
+success is a smoke result, not model-accuracy qualification or cross-device
+engine portability.
+
+Inspected warm-path boundary: TrtCommon's constructor calls initialize, which
+creates the builder/network/parser and parses ONNX before setup selects the
+serialized engine. Therefore a warm cache currently still requires ONNX and
+the declared builder/parser SDK resources. The native-test runner establishes
+its pinned GNU ABI/runtime binding, not a production GPU launcher's complete
+closure. Do not remove those resources from packaging based on these tests or
+claim that build_only already produces an inference-only deployment.
+
+Revisit a narrowly scoped Bazel engine-output action only for a concrete product
+with a pinned hardware/SDK/plugin profile and an actually provisioned GPU execution
+worker. Such an action would declare ONNX/weights, calibration inputs/settings and
+compiler resources and emit engine/sidecars. Test compatibility and inference
+independently; neither a descriptive GPU tag nor CUDA compilation provisions a
+physical device. Do not assume independent engine builds are byte-identical.
+Automatic content-based keys, atomic multi-writer cache publication, standalone
+inference-only SDK packaging and production calibration datasets need their own
+concrete acceptance tasks if required later. Broader Universe adoption retains
+priority over a general engine compiler/executor framework.
+
+Verification: reuse the exact passing 6.5.1/6.5.2 commands and native XML recorded
+above. Review PLAN.md/DEVELOPING.md against the source paths and current target
+names, then run git diff --check. No build/runtime rerun is needed for this
+policy-only commit. Phase 6.5 is complete for the documented profiles and cache
+contract; it does not claim support for every model/precision combination,
+production GPU deployment, Fast DDS, other GPUs/SDKs or JetPack behavior.
