@@ -1950,6 +1950,7 @@ are prepared. [Reproduction and setup](JOURNAL.md#2026-11-23-phase-93--local-glo
   removed the command-mode packages in favor of driving_mode_manager. This is
   removal, not a matching include fix; no forward patch proposal is needed.
 
+Local source correction: 1c0b1748.
 Package: autoware_command_mode_types in the retained snapshot. Compiling
 sources.hpp before any other header fails because uint16_t is undeclared.
 Include cstdint directly, as modes.hpp already does. Preserve the numeric and

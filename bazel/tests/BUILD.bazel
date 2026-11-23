@@ -2170,3 +2170,13 @@ cc_test(
     deps = ["@autoware_glog_component//:autoware_glog_component_library", "@ament_index_cpp//:ament_index_cpp_library", "@googletest//:gtest_main"],
     tags = ["no-sandbox", "no-remote"],
 )
+
+cc_test(
+    name = "command_mode_types_contract_test",
+    srcs = [
+        "autoware_command_mode_types/modes_header.cpp",
+        "autoware_command_mode_types/sources_header.cpp",
+        "autoware_command_mode_types/test_contract.cpp",
+    ],
+    deps = ["@autoware_command_mode_types", "@googletest//:gtest_main"],
+)

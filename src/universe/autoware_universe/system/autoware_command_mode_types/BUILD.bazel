@@ -1,0 +1,12 @@
+load("@rosdistro//ament:defs.bzl", "ament_index")
+load("@rules_cc//cc:defs.bzl", "cc_library")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "autoware_command_mode_types",
+    hdrs = glob(["include/**/*.hpp"]),
+    strip_include_prefix = "include",
+)
+
+ament_index(package_xml = "package.xml")

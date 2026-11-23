@@ -1,0 +1,4 @@
+module(name = "autoware_command_mode_types", version = "0.0.0")
+
+bazel_dep(name = "rosdistro", version = "0.0.0")
+bazel_dep(name = "rules_cc", version = "0.2.26.rcr.0")

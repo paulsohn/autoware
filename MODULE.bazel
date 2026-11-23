@@ -1897,3 +1897,9 @@ local_path_override(
     module_name = "autoware_glog_component",
     path = "src/universe/autoware_universe/common/autoware_glog_component",
 )
+
+bazel_dep(name = "autoware_command_mode_types", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_command_mode_types",
+    path = "src/universe/autoware_universe/system/autoware_command_mode_types",
+)

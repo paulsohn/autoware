@@ -20094,8 +20094,10 @@ containers, so acceptance includes those consumers. Inspect the existing native
 Bazel macro, complete CMake Linux test declarations and scripts, public headers,
 logging/signal sources, rosdistro cc:glog ownership and container logging calls.
 
-Pattern: add a glog module with pinned gflags/rules_cc/GoogleTest/Python inputs,
-select it with a root local override before container consumers, and retain the
+Pattern: add a glog module with gflags 2.3.1 (the selected SDK version),
+rules_cc 0.2.26.rcr.0, GoogleTest 1.18.0.bcr.1 and rules_python 2.4.5. Keep the
+old com_github_gflags_gflags spelling as gflags's module repo_name so the existing
+macro resolves the same provider. Select it with a root local override before container consumers, and retain the
 snapshot's own source/header-template generation. Update legacy native C++ rules
 (including its example) to rules_cc loads for Bazel 9. Preserve gflags support,
 custom prefixes, native logging, mock logging, symbolization, stack traces,
@@ -20237,3 +20239,12 @@ public header/constant use on the LLVM/Lyrical profile, not system mode behavior
 No runtime DDS communication, Fast DDS, GPU or expensive system/deployment check
 is required by this header-only module. Phase status will close with its build
 registration; no source-selection change is implied.
+
+Bazel definitions and root contract registration reuse the complete passing gate
+above. Source header correction: 1c0b1748. Phase 9.3 closes with three Universe
+packages and eight added consumer cases, plus the separately validated local
+glog prerequisite (15 native/driver targets and five original enabled CIE launch
+cases). All required selected gates pass without failures/errors/skips. Existing
+unaffected passing evidence is reused; no GPU, Fast DDS or costly simulator/
+export gate is claimed. Definition inventory is now 114/244, with 130 pending;
+full-contract evidence audit remains 9.20. Next: 9.4 CPU point-cloud/IMU providers.

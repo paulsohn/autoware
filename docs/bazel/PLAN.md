@@ -2206,7 +2206,7 @@ results are reused rather than rerunning the group. No Fast DDS, GPU, simulator
 or deployment gate is required by this slice. Next: 9.3 shared time, logging and
 command-mode types. CARLA v2 import remains deferred until near 9.20.
 
-### Phase 9.3: Shared time, logging and command-mode types (in progress)
+### Phase 9.3: Shared time, logging and command-mode types (complete, 2026-11-23)
 
 Inventory each public header/library and component contract before implementation.
 These packages register no original functional suites. Add standalone consumer
@@ -2218,7 +2218,18 @@ no new communication-layer or costly product/deployment gate is implied.
 | --- | --- |
 | autoware_time_utils | Complete: library/index and four public interpolation/stopwatch cases. |
 | autoware_glog_component | Complete: local dependency gate, indexed component/executable and two logger lifecycle/configuration cases. |
-| autoware_command_mode_types | Pending: independently compilable public headers and a representative command-mode consumer. |
+| autoware_command_mode_types | Complete: independently compiled headers, indexed package and two ID-domain consumer cases; direct cstdint dependency. |
+
+Phase 9.3 closes with eight added consumer cases across these three packages,
+15 local glog native/driver targets and all five existing CIE container launch
+cases passing, zero failures/errors/skips. Root selects the local glog 0.6.0
+snapshot through the existing shared SDK; native build features and full direct
+consumer evidence are recorded in JOURNAL. No Fast DDS, GPU, simulator or export
+rerun is claimed. Next: 9.4 CPU point-cloud and IMU preprocessing.
+
+Upstream Universe#13540 has removed command-mode packages in favor of
+driving_mode_manager. This plan covers the retained snapshot; source-refresh
+work must revisit that architecture and the inventory explicitly.
 
 ### Execution order through complete Universe coverage
 
