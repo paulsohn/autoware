@@ -2363,3 +2363,20 @@ cc_test(
     deps = ["@autoware_object_merger//:autoware_object_merger_library", "@googletest//:gtest"],
     tags = ["no-sandbox", "no-remote"],
 )
+
+cc_test(
+    name = "tracking_object_merger_test",
+    srcs = ["autoware_tracking_object_merger/test_merger.cpp"],
+    data = [
+        "@agnocast_heaphook",
+        "@autoware_tracking_object_merger//:config/decorative_tracker_merger.param.yaml",
+        "@autoware_tracking_object_merger//:config/data_association_matrix.param.yaml",
+    ],
+    env = {
+        "TRACKING_PARAMS": "$(rootpath @autoware_tracking_object_merger//:config/decorative_tracker_merger.param.yaml)",
+        "TRACKING_MATRIX": "$(rootpath @autoware_tracking_object_merger//:config/data_association_matrix.param.yaml)",
+    },
+    dynamic_deps = ["@autoware_tracking_object_merger//:runtime_dynamic_deps"],
+    deps = ["@autoware_tracking_object_merger//:autoware_tracking_object_merger_library", "@googletest//:gtest"],
+    tags = ["no-sandbox", "no-remote"],
+)

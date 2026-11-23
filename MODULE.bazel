@@ -1977,3 +1977,9 @@ local_path_override(
     module_name = "autoware_object_merger",
     path = "src/universe/autoware_universe/perception/autoware_object_merger",
 )
+
+bazel_dep(name = "autoware_tracking_object_merger", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_tracking_object_merger",
+    path = "src/universe/autoware_universe/perception/autoware_tracking_object_merger",
+)

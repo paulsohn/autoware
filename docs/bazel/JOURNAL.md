@@ -21066,3 +21066,63 @@ also pass Agnocast-only with the built/preloaded hook. Zero failures/errors/skip
 No original implementation or tests changed. Targeted clang-format and diff
 checks pass; no Fast DDS/GPU/expensive product gate selected. Next: decorative
 tracking merger and predicted paths.
+
+## 2026-11-24: Phase 9.6 — decorative tracking-object merge
+
+Purpose: integrate the local decorative tracking merger. Inspect manifest,
+CMake's exact five-source list, association implementation/matrices, tracker
+state/prediction and sensor-field merge utilities, node and configuration. There
+are no original functional tests. Required acceptance is all component/node/
+index/resource targets plus external state and staged LiDAR/radar transport
+cases with Cyclone/RCLCPP and Agnocast-only/heaphook.
+
+Pattern: package-owned MODULE/BUILD, unique shared library, wrapper executable,
+indexed plugin/component/config/launch resources and root local override. Reuse
+mussp, wrapper, message/TF and split utility providers. List the actual CMake
+sources: an unused alternative solver elsewhere under src is not part of this
+component. Keep new tests outside the package and avoid product labels inside it.
+
+Build failure/cause/fix: original -Wall/-Wextra/-Wpedantic/-Werror/-Wconversion
+flags expose conversion and extension warnings in dependency headers (Eigen,
+Boost, PCL, TF/ROSIDL, wrapper, point types and diagnostic helper). CMake already
+marks Eigen SYSTEM. With the selected Clang toolchain, system-header-prefix flags
+for the demonstrated dependency include namespaces isolate those SDK warnings;
+keep all five flags for the component's own sources. Preserve mussp's existing
+case-alias include behavior with the same nonportable-include-path exception used
+by other mussp consumers. Ignore unknown GCC warning names on Clang so the
+geometry helper's GCC diagnostic pragma does not itself fail. No blanket
+conversion or deprecation suppression, no source/test edits, and no claimed
+validation with a different compiler.
+
+Behavior: seed a LiDAR track before supplying buffered radar objects. Then
+require matched radar velocity on the stable LiDAR UUID, preserved LiDAR pose,
+classification, shape and covariance, plus an unmatched radar track and exact
+output frame/stamp. The node's overwrite policy transfers longitudinal velocity,
+not radar twist covariance; compare the retained covariance explicitly. A
+separate state case checks sensor UUID lookup, prediction, rejection of a past
+update, staleness and probability decay/removal. It also checks the utility's
+weighted fusion: velocities 3/9 and variances 2/5 yield velocity 33/7 and variance
+10/7. Do not infer a covariance-transfer policy from the generic word "merge".
+The enabled peer asserts RCLCPP remains uninitialized.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  @autoware_tracking_object_merger//... //bazel/tests:tracking_object_merger_test
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --local_test_jobs=1 --strategy=TestRunner=local \
+  --run_under=//bazel/agnocast:with_heaphook \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  //bazel/tests:tracking_object_merger_test //bazel/tests:object_merger_transport_test
+```
+
+Results: all eleven non-test module targets build and both new cases pass with
+Cyclone/RCLCPP (final gate 10.0 s; test 0.4 s). Both cases also pass Agnocast-only
+with built/preloaded hook; the combined enabled tracking/object-merger gate
+passes all seven cases in 10.4 s. The exact-source object-merger definition also
+passes its complete eleven-case original suite and five added RCLCPP cases.
+Zero failures/errors/skips in each accepted module gate. Targeted clang-format
+and diff checks pass. Fast DDS/GPU/expensive product gates are not selected.
+The current overwrite policy retains LiDAR covariance; evaluating a different
+sensor-fusion policy is outside this build integration. Next: predicted paths.

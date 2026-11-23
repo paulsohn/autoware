@@ -2308,10 +2308,10 @@ in progress with seven packages pending.
 
 Completed: feature removal and detected/tracked sorting. All six original cases
 and four added cases pass Cyclone/RCLCPP; the added cases also pass Agnocast-only
-with heaphook. Image localization also passes both projection/truncation cases. Current
-association/fusion also passes its eleven original and five added cases, with
-the added cases passing both transports. Definition coverage is 124/244; two
-Phase 9.6 packages remain.
+with heaphook. Image localization also passes both projection/truncation cases.
+Association/fusion also passes its eleven original and five added cases, with
+the added cases passing both transports. Decorative tracking passes state and staged LiDAR/radar cases in both profiles.
+Definition coverage is 125/244; predicted-path postprocessing remains.
 
 ### Execution order through complete Universe coverage
 
