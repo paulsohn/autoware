@@ -1,0 +1,3 @@
+case,arm,run,reason
+sustained,standalone,1,"rclpy._rclpy_pybind11.RCLError: Failed to create subscription: unsupported Buffer wire type: tier4_perception_msgs::msg/DetectedObjectsWithFeature, at /ws/src/rmw_agnocast/rmw.cpp:710, at ./src/rcl/subscription.c:117"
+sustained,standalone,2,"rclpy._rclpy_pybind11.RCLError: Failed to create subscription: unsupported Buffer wire type: tier4_perception_msgs::msg/DetectedObjectsWithFeature, at /ws/src/rmw_agnocast/rmw.cpp:710, at ./src/rcl/subscription.c:117"

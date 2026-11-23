@@ -1,0 +1,34 @@
+--ownership
+view addresses, independent mutation, retention and final release passed
+empty and padded clouds verified through typed and serialized take
+view addresses, independent mutation, retention and final release passed
+empty and padded clouds verified through typed and serialized take
+Minimum host MemAvailable: 14827 MiB
+
+--check
+both matched counts verified across QoS, types, join, removal, kill and restart
+typed and serialized publish/take passed for both Universe wire types
+graph, callbacks, content filter, serialized transport, sequence numbers and empty network flow passed
+offered=3 requested=3 pause/resume passed
+Minimum host MemAvailable: 14834 MiB
+
+functional
+Pressure passed: fast 1..11, slow 1/8/9, restarted 11; retained 1 through teardown
+rmw_agnocast geometry_msgs/msg/Point loan: verified four samples, retained A, throwing C and copied publish D
+rmw_agnocast geometry_msgs/msg/Point copy: verified four samples, retained A, throwing C and copied publish D
+rmw_agnocast nav_msgs/msg/Path loan: verified four samples, retained A, throwing C and copied publish D
+rmw_agnocast nav_msgs/msg/Path copy: verified four samples, retained A, throwing C and copied publish D
+rmw_agnocast autoware_planning_msgs/msg/Trajectory loan: verified four samples, retained A, throwing C and copied publish D
+rmw_agnocast autoware_planning_msgs/msg/Trajectory copy: verified four samples, retained A, throwing C and copied publish D
+stock C++ talker to Python and Python parameter request passed
+decoded stock bag samples: 12
+abrupt process exit removed graph endpoints
+wait-set descriptor lifetime and stale wake checks passed, reuse=0
+timeout, guard, simultaneous data and guard, independent take, two-route burst, RPC, deadline and shutdown passed
+wait-set descriptor lifetime and stale wake checks passed, reuse=0
+timeout, guard, simultaneous data and guard, independent take, two-route burst, RPC, deadline and shutdown passed
+wait-set descriptor lifetime and stale wake checks passed, reuse=1
+timeout, guard, simultaneous data and guard, independent take, two-route burst, RPC, deadline and shutdown passed
+wait-set descriptor lifetime and stale wake checks passed, reuse=1
+timeout, guard, simultaneous data and guard, independent take, two-route burst, RPC, deadline and shutdown passed
+Minimum host MemAvailable: 14549 MiB

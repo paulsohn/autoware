@@ -1,6 +1,12 @@
 #!/usr/bin/env bash
 set -eu
 out=${1:?fresh output directory}
+if [[ ${2:-} == --cie-nominal ]]; then
+  nominal=1
+  set -- "$out" --cie-regression
+else
+  nominal=0
+fi
 bash "$(dirname "$0")/check-universe-o3.sh" lidar "${2:-}"
 mkdir "$out"
 export LYRICAL_ROOT="$(cat build/agnocast-lyrical/universe-root)" BUFFER_RUNTIME_ONLY=1 SYNC_SHORT_WAIT=1
@@ -9,7 +15,7 @@ if [[ ${2:-} == --crop-inputs || ${2:-} == --stages ]]; then rounds=(1 2 3 4); f
 if [[ ${2:-} == --crop-repeat ]]; then rounds=(5 6 7 8); fi
 if [[ ${2:-} == --cie-regression ]]; then
   rounds=(1 2 3 4)
-  export SYNC_DOUBLE_RATE=1
+  if ((nominal)); then unset SYNC_DOUBLE_RATE; else export SYNC_DOUBLE_RATE=1; fi
 fi
 for round in "${rounds[@]}"; do
   modes=(native standalone poll cyclone zenoh)

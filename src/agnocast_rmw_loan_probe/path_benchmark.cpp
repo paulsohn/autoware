@@ -1,6 +1,7 @@
 #include "fixed_scope.hpp"
 #include <agnocast/node/agnocast_node.hpp>
 #include <agnocast/node/agnocast_only_single_threaded_executor.hpp>
+#include <agnocast/node/agnocast_only_callback_isolated_executor.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp/executors/events_cbg_executor/events_cbg_executor.hpp>
 
@@ -178,23 +179,32 @@ struct Receiver
     std::ofstream("released").close();
   }
 };
-void native(bool writer, bool trace)
+template<class Exec>
+void native_reader(Exec & exec, const std::shared_ptr<agnocast::Node> & node, bool trace)
+{
+  using Ptr = agnocast::ipc_shared_ptr<const Path>;
+  Receiver<Ptr, Exec> receiver{exec};
+  receiver.trace = trace;
+  auto sub = std::make_shared<agnocast::Subscription<Path>>(
+    node.get(), topic, rclcpp::QoS(4), [&](Ptr msg) { receiver.receive(std::move(msg)); },
+    agnocast::SubscriptionOptions{}, agnocast::SubscriptionRole::AgnocastOnly);
+  exec.add_node(node);
+  receiver.run();
+}
+
+void native(bool writer, bool trace, bool bundled)
 {
   auto node = std::make_shared<agnocast::Node>(writer ? "path_writer" : "path_reader");
   if (writer) {
     agnocast::Publisher<Path> pub(
       node.get(), topic, rclcpp::QoS(4), {}, agnocast::PublisherRole::AgnocastOnly);
     send(pub);
+  } else if (bundled) {
+    agnocast::AgnocastOnlyCallbackIsolatedExecutor exec;
+    native_reader(exec, node, false);
   } else {
     agnocast::AgnocastOnlySingleThreadedExecutor exec;
-    using Ptr = agnocast::ipc_shared_ptr<const Path>;
-    Receiver<Ptr, decltype(exec)> receiver{exec};
-    receiver.trace = trace;
-    auto sub = std::make_shared<agnocast::Subscription<Path>>(
-      node.get(), topic, rclcpp::QoS(4), [&](Ptr msg) { receiver.receive(std::move(msg)); },
-      agnocast::SubscriptionOptions{}, agnocast::SubscriptionRole::AgnocastOnly);
-    exec.add_node(node);
-    receiver.run();
+    native_reader(exec, node, trace);
   }
 }
 // Diagnostic for one fixed subscription on one executor thread.
@@ -281,11 +291,14 @@ void cie_reader(const rclcpp::Node::SharedPtr & node)
 
 void middleware(bool writer, bool trace, bool single, const std::string & mode)
 {
-  check(std::string(rmw_get_implementation_identifier()) == "rmw_agnocast", "wrong RMW");
+  const bool serialized = mode == "cyclone" || mode == "zenoh";
+  const char * expected = mode == "cyclone" ? "rmw_cyclonedds_cpp" :
+    mode == "zenoh" ? "rmw_zenoh_cpp" : "rmw_agnocast";
+  check(std::string(rmw_get_implementation_identifier()) == expected, "wrong RMW");
   auto node = std::make_shared<rclcpp::Node>(writer ? "path_writer" : "path_reader");
   if (writer) {
     auto pub = node->create_publisher<Path>(topic, 4);
-    check(pub->can_loan_messages(), "writer cannot loan");
+    check(serialized || pub->can_loan_messages(), "writer cannot loan");
     send(*pub);
 #ifdef PATH_BENCH_CIE
   } else if (mode == "standalone-cie") {
@@ -313,7 +326,7 @@ void middleware(bool writer, bool trace, bool single, const std::string & mode)
         throw std::runtime_error("unexpected idle DDS payload");
       });
     if (single) exec.only = sub;
-    check(sub->can_loan_messages(), "reader cannot loan");
+    if (!serialized) check(sub->can_loan_messages(), "reader cannot loan");
     exec.add_node(node);
     FixedScope fixed;
     if (mode == "handoff" || mode == "inline")
@@ -328,9 +341,10 @@ int main(int argc, char ** argv)
     check(argc == 3, "expected transport and role");
     const bool writer = std::string(argv[2]) == "writer";
     const bool trace = std::string(argv[1]) == "native-traced";
-    if (trace || std::string(argv[1]) == "native") {
+    const bool bundled = std::string(argv[1]) == "native-cie";
+    if (trace || bundled || std::string(argv[1]) == "native") {
       agnocast::init(argc, argv);
-      native(writer, trace);
+      native(writer, trace, bundled);
       agnocast::shutdown();
     } else {
       rclcpp::init(argc, argv);

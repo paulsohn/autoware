@@ -59,8 +59,12 @@ def run():
     start("tracker",coverage["helpers"]["tracker_command"]("tracker"))
     start("bag",["ros2","bag","record","--topics","/perception/cloud","-s","sqlite3",
                  "--max-cache-size","0","--disable-keyboard-controls","-o",str(out/"bag")])
-    start("graph",["ros2","launch","universe_sync_benchmark","three_lidar.launch.py",
-                   "mode:="+mode,"fixture_directory:="+str(out)])
+    launch = ["universe_sync_benchmark", "three_lidar.launch.py"]
+    if os.getenv("UNIVERSE_RELEASE_CONTROLS"):
+        launch = ["/ws/src/universe_sync_benchmark/launch/three_lidar.launch.py"]
+    graph_mode = "cyclone" if mode == "standalone" else mode
+    start("graph",["ros2","launch",*launch,
+                   "mode:="+graph_mode,"fixture_directory:="+str(out)])
     wait(node,lambda: raw.get_publisher_count() and pub.get_subscription_count() and sub.get_publisher_count()
          and detection.get_subscription_count() and tracked.get_publisher_count())
     (out/"perception-ready").touch()

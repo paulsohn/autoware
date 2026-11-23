@@ -32,6 +32,8 @@ with tempfile.TemporaryDirectory() as directory:
     native_trace = mode == "native-traced"
     direct_trace = mode == "direct-stages"
     writer_mode = "native" if mode in ("native", "native-traced") else "rmw"
+    if mode in ("native-cie", "cyclone", "zenoh"):
+        writer_mode = mode
     if native_trace or direct_trace:
         library = Path("build/rmw-agnocast/path-trace-lib").resolve()
         if not (library / "libagnocast.so").is_file():
@@ -86,7 +88,9 @@ with tempfile.TemporaryDirectory() as directory:
     with open(prefix + ".csv", "x") as f:
         out = csv.writer(f, lineterminator="\n")
         for seq, (a, b) in enumerate(zip(tx, rx)):
-            if len(a) != 4 or len(b) != 4 or a[1:] != b[1:] or not all(a[1:]) or b[0] <= a[0]:
+            shared = mode not in ("cyclone", "zenoh")
+            if (len(a) != 4 or len(b) != 4 or not all(a[1:] + b[1:])
+                    or (shared and a[1:] != b[1:]) or b[0] <= a[0]):
                 raise ValueError(f"bad loan addresses or timestamps at frame {seq}")
             out.writerow((seq, b[0] - a[0]))
 

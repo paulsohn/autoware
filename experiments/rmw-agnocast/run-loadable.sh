@@ -11,6 +11,17 @@ export AGNOCAST_BRIDGE_MODE=OFF AGNOCAST_NO_DISCOVERY_AGENT=1
 export CYCLONEDDS_URI='<CycloneDDS><Domain><General><Interfaces><NetworkInterface name="lo"/></Interfaces><AllowMulticast>false</AllowMulticast></General><Discovery><ParticipantIndex>auto</ParticipantIndex><Peers><Peer Address="127.0.0.1"/></Peers></Discovery></Domain></CycloneDDS>'
 hook=/ws/build/agnocast-lyrical/install/agnocastlib/lib/libagnocast_heaphook.so
 
+if [[ ${1:-} == --standalone ]]; then
+  shift
+  source build/standalone/o3-install/local_setup.bash
+  source build/standalone/release-path/install/local_setup.bash
+  source build/standalone/poll-install/local_setup.bash
+  test ! -e /opt/ros/lyrical/lib/libddsc.so
+  test "$(ros2 pkg prefix rmw_agnocast)" = /ws/build/standalone/poll-install/rmw_agnocast
+  unset AGNOCAST_RMW_TOPIC AGNOCAST_BRIDGE_MODE AGNOCAST_NO_DISCOVERY_AGENT
+  hook=/ws/build/migration-guide/packaged-hook-check/libagnocast_heaphook.so
+fi
+
 if [[ ${1:-} == matching ]]; then
   cd "$(mktemp -d)"
   if [[ ${2:-native} == cyclone ]]; then

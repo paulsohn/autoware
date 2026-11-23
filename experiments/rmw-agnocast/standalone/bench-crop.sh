@@ -6,12 +6,13 @@ mkdir "$out"
 export LYRICAL_ROOT="$(cat build/agnocast-lyrical/universe-root)" BUFFER_RUNTIME_ONLY=1
 batch=${2:-}
 cie=0
-case "$batch" in --ownership-cie|--scope-*|--route-*|--source-*|--reader-route-*|--event-*|--hybrid-*|--input-loan-*) cie=1;; esac
+case "$batch" in --branched-cie|--final-cie|--ownership-cie|--scope-*|--route-*|--source-*|--reader-route-*|--event-*|--hybrid-*|--input-loan-*) cie=1;; esac
 unset BENCH_CROP_PROFILE CROP_READER_TIMING CROP_SOURCE_TIMING AGNOCAST_RMW_POLL_TOPIC AGNOCAST_RMW_READY_ROUTE AGNOCAST_RMW_REUSE_WAIT_FD
 rounds=(1 2)
 if [[ ${2:-} == --ownership || ${2:-} == --ownership-cie ]]; then rounds=(1 2 3 4); fi
 if [[ ${2:-} == --scope-cie || $batch == --hybrid-cie || $batch == --input-loan-cie ]]; then rounds=(1 2 3 4); fi
 if [[ ${2:-} == --route-cie || ${2:-} == --source-cie || $batch == --reader-route-cie || $batch == --event-cie ]]; then rounds=(1 2 3 4 5 6); fi
+if [[ $batch == --final-cie ]]; then rounds=(1 2 3 4); fi
 for round in "${rounds[@]}"; do
   modes=(agnocast standalone cyclone zenoh)
   if [[ $round == 2 ]]; then modes=(zenoh cyclone standalone agnocast); fi
@@ -58,6 +59,18 @@ for round in "${rounds[@]}"; do
   fi
   if [[ $batch == --source-reader-trace || $batch == --reader-route-trace ]]; then export CROP_READER_TIMING=1; fi
   if [[ $batch == --source-trace || $batch == --source-reader-trace || $batch == --reader-route-trace ]]; then export CROP_SOURCE_TIMING=1; fi
+  if [[ $batch == --final-cie ]]; then
+    case $round in
+      1) modes=(agnocast hybrid cyclone zenoh);;
+      2) modes=(hybrid zenoh agnocast cyclone);;
+      3) modes=(zenoh cyclone hybrid agnocast);;
+      4) modes=(cyclone agnocast zenoh hybrid);;
+    esac
+  fi
+  if [[ $batch == --branched-cie ]]; then
+    modes=(agnocast scoped cyclone zenoh)
+    if [[ $round == 2 ]]; then modes=(zenoh cyclone scoped agnocast); fi
+  fi
   for mode in "${modes[@]}"; do
     if [[ $batch == *-trace ]]; then export BENCH_CROP_PROFILE="/ws/$out/$mode-$round.profile"; fi
     isolate=()
@@ -74,7 +87,8 @@ for round in "${rounds[@]}"; do
       export ROS_DOMAIN_ID=173
       export BENCH_HEAPHOOK=/ws/build/migration-guide/packaged-hook-check/libagnocast_heaphook.so
       arm=$4
-      opts=()
+      opts=(--period-ms "${CROP_PERIOD_MS:-100}")
+      if [[ $3 == --branched-cie ]]; then opts+=(--branched); fi
       if [[ $arm == standalone ]]; then
         if [[ $3 == --ownership || $3 == --ownership-cie ]]; then opts+=(--typed-input); fi
         if (( $5 )); then
