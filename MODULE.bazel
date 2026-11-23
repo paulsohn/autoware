@@ -1909,3 +1909,9 @@ local_path_override(
     module_name = "autoware_pcl_extensions",
     path = "src/universe/autoware_universe/sensing/autoware_pcl_extensions",
 )
+
+bazel_dep(name = "managed_transform_buffer", version = "0.0.0")
+local_path_override(
+    module_name = "managed_transform_buffer",
+    path = "src/universe/external/managed_transform_buffer/managed_transform_buffer",
+)

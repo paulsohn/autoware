@@ -2241,7 +2241,7 @@ no-agnocast; explicitly check newly introduced enabled-only transport behavior.
 | Module | Complete acceptance scope/status |
 | --- | --- |
 | autoware_pcl_extensions | Complete: all original point-type instantiations/index and six compiled API cases; field-limited and repeat-search regressions fixed separately. |
-| managed_transform_buffer (prerequisite) | Pending: full original TF/buffer suite, public library/index/example and required backend behavior. |
+| managed_transform_buffer (prerequisite) | Complete: 12 original cases plus external lookup/inverse behavior with RCLCPP and Agnocast-only contexts; library/index/example build. |
 | autoware_pointcloud_preprocessor | Pending: all 23 registered nodes, exported helper/core libraries, 16 original C++ suites, Python component suite and relevant filter/resource behavior. |
 | autoware_imu_corrector | Pending: both original test groups, correction/estimator node behavior and indexed executables/configuration. |
 

@@ -20293,3 +20293,52 @@ deployment run is needed. Next prerequisite: local managed_transform_buffer.
 
 Bazel definitions and root consumer registration reuse the complete passing gate
 above. The separately committed source correction is 3869e259.
+
+## 2026-11-23: Phase 9.4 — Managed transform buffer
+
+Purpose: supply the local transform-cache prerequisite for point-cloud
+preprocessing. Inspect the original CMake, manifest, both headers/sources,
+12-case test suite and optional example. Acceptance: the complete original
+suite, library/index/example and an external static-transform/inverse lookup
+case in both standard RCLCPP and Agnocast-only contexts. The complete shared-owner gate passes.
+
+Pattern: expose the original compiled library with Eigen, PCL and TF providers;
+preserve its shared-library owner so the process-wide provider singleton is
+shared by component consumers. Compile consumers against the _library target
+and select its shared owner through runtime_dynamic_deps; index that library.
+Compile Agnocast support unconditionally through the wrapper's public define.
+Keep the runtime backend choice: a process with an initialized RCLCPP context
+uses ROS TF even when ENABLE_AGNOCAST=1; only an Agnocast-only process uses the
+Agnocast listener. The original test owns its RCLCPP main, so a separate test
+under bazel/tests/managed_transform_buffer is required to exercise the latter.
+Root selects the local repository; the optional example is an indexed binary.
+
+Verification prerequisites: built heaphook and a loaded compatible Agnocast kernel
+module exposing /dev/agnocast. The original test also declares the heaphook in
+its runtime data: otherwise the preload runner exits before starting the test.
+No implementation or original-test changes are needed; the selected Eigen
+provider already supports the original eigen3 include spelling.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  @managed_transform_buffer//... //bazel/tests:managed_transform_backend_test
+
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --local_test_jobs=1 --strategy=TestRunner=local \
+  --run_under=//bazel/agnocast:with_heaphook \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  @managed_transform_buffer//... //bazel/tests:managed_transform_backend_test
+```
+
+Result: all 12 original TF/point-cloud cases and the external lookup/inverse case
+pass in each configuration, zero failures/errors/skips. Standard gate 147.6 s including SDK preparation, original suite
+6.5 s and external case 0.4 s; enabled gate 17.5 s including graph work, original
+suite 6.7 s and external case 0.5 s. Both runs build the optional example and
+indexed executable. The external enabled case asserts RCLCPP remains uninitialized
+and receives TF through the actual Agnocast-only listener; the enabled original
+suite intentionally keeps its RCLCPP context. Targeted clang-format and diff
+checks pass. This qualifies the local TF provider, not a sensor pipeline or
+cross-host TF deployment. No Fast DDS/GPU/expensive product gate is required.
+Next: the preprocessor's CGAL provider and complete package gate.

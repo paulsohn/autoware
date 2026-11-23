@@ -1,0 +1,83 @@
+load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library", "cc_shared_library", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "managed_transform_buffer_library",
+    srcs = glob(["src/*.cpp"]),
+    hdrs = glob(["include/**/*.hpp"]),
+    strip_include_prefix = "include",
+    deps = [
+        "@autoware_agnocast_wrapper//:autoware_agnocast_wrapper_library",
+        "@geometry_msgs//:cc",
+        "@pcl_conversions//:pcl_conversions_library",
+        "@pcl_ros//:pcl_ros_tf_library",
+        "@rclcpp//:rclcpp_library",
+        "@rosdistro//cc:eigen",
+        "@rosdistro//cc:pcl_common",
+        "@sensor_msgs//:cc",
+        "@tf2//:tf2_library",
+        "@tf2_eigen//:tf2_eigen_library",
+        "@tf2_geometry_msgs//:tf2_geometry_msgs_library",
+        "@tf2_msgs//:cc",
+        "@tf2_ros//:tf2_ros_library",
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "sdk_dynamic_deps",
+    dynamic_deps = [
+        "@autoware_agnocast_wrapper",
+        "@geometry_msgs//:cc_shared",
+        "@pcl_ros//:pcl_ros_tf",
+        "@rclcpp//:rclcpp",
+        "@sensor_msgs//:cc_shared",
+        "@tf2//:tf2",
+        "@tf2_msgs//:cc_shared",
+        "@tf2_ros//:tf2_ros",
+    ],
+)
+
+# One process-wide provider singleton shared by every component consumer.
+cc_shared_library(
+    name = "managed_transform_buffer",
+    shared_lib_name = "libmanaged_transform_buffer.so",
+    dynamic_deps = [":sdk_dynamic_deps"],
+    deps = [":managed_transform_buffer_library"],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = [":managed_transform_buffer"],
+)
+
+cc_binary(
+    name = "example_managed_transform_buffer",
+    srcs = ["examples/example_managed_transform_buffer.cpp"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+    deps = [":managed_transform_buffer_library"],
+)
+
+cc_test(
+    name = "unit_tests",
+    srcs = ["test/test_managed_transform_buffer.cpp"],
+    data = ["@agnocast_heaphook"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+    deps = [":managed_transform_buffer_library", "@googletest//:gtest"],
+    tags = ["no-sandbox", "no-remote"],
+)
+
+register_ament_files(
+    name = "executables",
+    files = [":example_managed_transform_buffer"],
+    prefix = "lib/managed_transform_buffer",
+    strip_prefix = "*",
+)
+
+ament_index(
+    package_xml = "package.xml",
+    data = [":executables"],
+    libraries = [":managed_transform_buffer"],
+)

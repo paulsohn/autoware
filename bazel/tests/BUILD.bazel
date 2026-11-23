@@ -2186,3 +2186,12 @@ cc_test(
     srcs = ["autoware_pcl_extensions/test_voxel_grid.cpp"],
     deps = ["@autoware_pcl_extensions", "@googletest//:gtest_main"],
 )
+
+cc_test(
+    name = "managed_transform_backend_test",
+    srcs = ["managed_transform_buffer/test_backend.cpp"],
+    data = ["@agnocast_heaphook"],
+    dynamic_deps = ["@managed_transform_buffer//:runtime_dynamic_deps"],
+    deps = ["@managed_transform_buffer//:managed_transform_buffer_library", "@googletest//:gtest"],
+    tags = ["no-sandbox", "no-remote"],
+)
