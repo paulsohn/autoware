@@ -7,12 +7,12 @@ mkdir "$out"
 rounds=4
 case ${2:-} in
   --compare-builds|--compare-release|--compare-events|--compare-poll) rounds=6;;
-  ""|--compare-handoff|--compare-cie|--replay-cie) ;;
+  ""|--compare-handoff|--compare-cie|--replay-cie|--trace-cie) ;;
   *) echo "Unknown comparison: $2" >&2; exit 2;;
 esac
 release_baseline=0
 case ${2:-} in
-  ""|--compare-handoff|--compare-events|--compare-cie|--compare-poll|--replay-cie)
+  ""|--compare-handoff|--compare-events|--compare-cie|--compare-poll|--replay-cie|--trace-cie)
     release_baseline=1
     for flags in \
       build/standalone/o3-obj/agnocastlib/CMakeFiles/agnocast.dir/flags.make \
@@ -22,7 +22,7 @@ case ${2:-} in
       grep -Eq '^CXX_FLAGS = .* -O3( |$)' "$flags"
     done;;
 esac
-if [[ ${2:-} == --replay-cie ]]; then
+if [[ ${2:-} == --replay-cie || ${2:-} == --trace-cie ]]; then
   for flags in \
     build/standalone/poll-obj/rmw_agnocast/CMakeFiles/rmw_agnocast.dir/flags.make \
     build/standalone/release-cie/obj/callback_isolated_executor/CMakeFiles/callback_isolated_executor.dir/flags.make \
@@ -31,7 +31,13 @@ if [[ ${2:-} == --replay-cie ]]; then
   done
 fi
 for ((round=1;round<=rounds;round++)); do
-  if [[ ${2:-} == --replay-cie ]]; then
+  if [[ ${2:-} == --trace-cie ]]; then
+    modes=(native standalone-cie poll-cie)
+    if ((round % 2 == 0)); then modes=(poll-cie standalone-cie native); fi
+    if ((round == 2 || round == 3)); then
+      modes=("${modes[@]/%/-instrumented}")
+    fi
+  elif [[ ${2:-} == --replay-cie ]]; then
     modes=(native standalone-cie)
     if ((round % 2 == 0)); then modes=(standalone-cie native); fi
   elif [[ ${2:-} == --compare-cie ]]; then
@@ -72,6 +78,12 @@ for ((round=1;round<=rounds;round++)); do
     modes=("${modes[@]/o2/o3}")
   fi
   for mode in "${modes[@]}"; do
+    tag=$mode
+    unset PATH_TRACE_PREFIX
+    if [[ $mode == *-instrumented ]]; then
+      export PATH_TRACE_PREFIX="/ws/$out/$tag-$round"
+      mode=${mode%-instrumented}
+    fi
     isolate=()
     if [[ $mode != native ]]; then
       isolate=(bwrap --ro-bind / / --dev-bind /dev /dev --bind /ws /ws --bind /tmp /tmp --ro-bind /ws/build/standalone/distro /opt/ros/lyrical --chdir /ws)
@@ -102,7 +114,7 @@ for ((round=1;round<=rounds;round++)); do
         source build/standalone/o3-install/local_setup.bash
         source build/standalone/release-path/install/local_setup.bash
         probe=/ws/build/standalone/release-path/probe/path_benchmark
-        if [[ $4 == --compare-cie || $4 == --replay-cie ]]; then
+        if [[ $4 == --compare-cie || $4 == --replay-cie || $4 == --trace-cie ]]; then
           source build/standalone/release-cie/install/local_setup.bash
           probe=/ws/build/standalone/release-cie/probe/path_benchmark
         fi
@@ -111,20 +123,21 @@ for ((round=1;round<=rounds;round++)); do
         grep -F "librclcpp.so => /ws/build/standalone/release-path/install/rclcpp/lib/librclcpp.so" <<< "$libs"
       fi
       unset AGNOCAST_RMW_POLL_TOPIC
-      if [[ ( $4 == --compare-poll || $4 == --replay-cie ) && $1 != native ]]; then
+      if [[ ( $4 == --compare-poll || $4 == --replay-cie || $4 == --trace-cie ) && $1 != native ]]; then
         source build/standalone/poll-install/local_setup.bash
         test "$(ros2 pkg prefix rmw_agnocast)" = /ws/build/standalone/poll-install/rmw_agnocast
-        if [[ $1 == poll ]]; then export AGNOCAST_RMW_POLL_TOPIC=/path_latency; fi
+        if [[ $1 == poll || $1 == poll-cie ]]; then export AGNOCAST_RMW_POLL_TOPIC=/path_latency; fi
       fi
       arm=rmw
       if [[ $1 == inline || $1 == handoff || $1 == events ]]; then arm=$1; fi
       if [[ $1 == *-cie ]]; then arm=$1; fi
+      if [[ $1 == poll-cie ]]; then arm=standalone-cie; fi
       if [[ $1 == native ]]; then arm=native; fi
       if [[ $1 == *-trace ]]; then
         export PATH_TIMING_FILE="/ws/$2/$1-$3.stages"
         hook="$hook:/ws/build/standalone/path-timing.so"
       fi
-      python3 experiments/rmw-agnocast/path-case.py "$probe" "$hook" "$arm" "$2/$1-$3"
-    ' bash "$mode" "$out" "$round" "${2:-}" "$release_baseline" >"$out/$mode-$round.log" 2>&1 || { tail -15 "$out/$mode-$round.log"; exit 1; }
+      python3 experiments/rmw-agnocast/path-case.py "$probe" "$hook" "$arm" "$2/$6-$3"
+    ' bash "$mode" "$out" "$round" "${2:-}" "$release_baseline" "$tag" >"$out/$tag-$round.log" 2>&1 || { tail -15 "$out/$tag-$round.log"; exit 1; }
   done
 done

@@ -16,6 +16,15 @@ env.pop("AGNOCAST_RMW_HANDOFF_FILE", None)
 env.pop("AGNOCAST_RMW_DIRECT_TRACE", None)
 with tempfile.TemporaryDirectory() as directory:
     reader_env = env.copy()
+    if prefix_trace := os.environ.get("PATH_TRACE_PREFIX"):
+        hooks = Path("build/standalone/path-hooks").resolve()
+        reader_env.update(
+            LD_PRELOAD=hook + ":" + str(hooks/"path-timing.so"),
+            LD_LIBRARY_PATH=str(hooks) + ":" + env["LD_LIBRARY_PATH"],
+            PATH_TIMING_FILE=prefix_trace + ".stages",
+            PATH_LOAN_TIMES=prefix_trace + ".loans",
+            PATH_WAIT_TIMES=prefix_trace + ".waits",
+        )
     native_trace = mode == "native-traced"
     direct_trace = mode == "direct-stages"
     writer_mode = "native" if mode in ("native", "native-traced") else "rmw"
@@ -56,6 +65,9 @@ with tempfile.TemporaryDirectory() as directory:
         return [list(map(int, line.split())) for line in lines]
 
     tx, rx = records("writer"), records("reader")
+    if prefix_trace:
+        with open(prefix + ".clocks", "x") as f:
+            csv.writer(f, lineterminator="\n").writerows((a[0], b[0], a[1]) for a,b in zip(tx,rx))
     if os.environ.get("PATH_TIMING_FILE"):
         with open(prefix + ".endpoints", "x") as f:
             csv.writer(f, lineterminator="\n").writerows((a[0], b[0]) for a, b in zip(tx, rx))

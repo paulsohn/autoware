@@ -475,3 +475,46 @@ bash experiments/rmw-agnocast/standalone/bench-path.sh build/standalone/fresh-re
 ```
 
 Resume coverage with 50 Hz single-hop, the two-edge crop, pressured scheduling and graph churn during payload delivery. The documented manual gateway targets the older mixed RMW. Standalone gateway export/import, remote recording, type fallback and restart remain unqualified until a gateway for the current native endpoints is available.
+
+## Where the 10 Hz standalone CIE Path spends its time
+
+Kept the same O3 loaned Path writer, retained shared-pointer callback, matched-count fix and CIE reader as the regression replay. Timed native, default standalone CIE, and standalone CIE with the existing blocking direct-wait option on /path_latency. Direct wait lets the CIE worker acquire the native loan itself. Both CIE arms use the same callback group, executor, bounded announcement QoS, stripped Lyrical distro and poll-install RMW. Native uses its existing Agnocast-only executor. Writers always used ordinary Release libraries. All 1,440 frames across 24 serial launches passed the payload, three-address and retention checks. Minimum sampled available host memory during the launches was 9394 MiB.
+
+| Uninstrumented reader | Median µs | p95 µs | Median / native |
+|---|---:|---:|---:|
+| Native | 42.85 | 71.22 | 1.00× |
+| Standalone CIE, receiver thread | 78.88 | 104.05 | 1.84× |
+| Standalone CIE, blocking direct wait | 63.43 | 101.14 | 1.48× |
+
+Two batches each ran four rounds. First and fourth rounds were uninstrumented with reversed arm orders. Second and third rounds were traced in reversed order. Each launch delivered 60 frames; discard the first ten for summaries. Each uninstrumented row pools 200 frames across four launches and uses nearest-rank p95. Default/direct medians by matched round were 79.11/52.43, 83.03/64.96, 89.63/60.86 and 68.41/83.57 µs. The intervention reduced pooled median by 15.45 µs; one round reversed, and pooled p95 changed by only 2.91 µs.
+
+| Traced interval, median µs | Native | Standalone CIE | CIE direct wait |
+|---|---:|---:|---:|
+| Before publish to native epoll event observed | 22.19 | 27.28 | 31.96 |
+| Native epoll event to acquired loan | 22.69 | 19.64 | 20.19 |
+| Acquired loan to application callback entry | 1.02 | 34.18 | 31.95 |
+| Acquired loan to RMW queue timestamp | — | 1.75 | 1.92 |
+| RMW queue timestamp to rcl_wait return | — | 23.84 | 13.22 |
+| rcl_wait return to loaned take entry | — | 10.22 | 10.73 |
+| Loaned take entry to return | — | 2.97 | 2.68 |
+| Loaned take return to callback entry | — | 2.75 | 2.96 |
+
+The second batch recorded the return from the actual blocking primitive and from rmw_wait for every timed CIE frame. With the receiver thread, the median queue timestamp to pthread_cond_wait return was **21.73 µs**. This includes finishing queue insertion, notifying the worker, scheduling and reacquiring the context mutex. The interval from that return to rmw_wait return was 3.42 µs, then 0.52 µs to rcl_wait return. With direct wait the worker instead returned from ppoll before acquiring the loan. Queue timestamp to rmw_wait return was still 12.34 µs. The existing direct path drains the native executor and completes wait-set handling before rclcpp selects the callback. Timing this interval does not assign a cost to any one of those operations.
+
+The largest reproducible difference in these traces is between having a native loan and invoking application code. Acquisition itself has similar median duration across the three paths. Direct wait removes the inter-thread wake, while the ordinary ROS take and dispatch path remains measurable. A focused next A/B would give the existing blocking worker the already-ready native route and compare that with its current drain, preserving CIE callback-group selection and running the simultaneous guard/data, service and shutdown checks.
+
+**Measurement limits.** Stage medians are marginal and cannot be added to reconstruct the median frame. Traced native end-to-end p95 reached 527.41 µs, with a 491.06 µs p95 before observing the epoll event. The cause of that tail is unknown. Traced default/direct medians were 81.50/82.61 µs, versus 78.88/63.43 µs without instrumentation. Use uninstrumented arms for the end-to-end comparison and traces to locate intervals. These runs cannot isolate scheduler delay from mutex contention or assign the entire dispatch interval specifically to CIE.
+
+The reader-only diagnostic relinks two O3 Agnocast translation units with their existing wake and loan hooks. It joins each acquisition by address and publish/callback time window, checks subscription and entry IDs, and aligns ROS realtime stamps to monotonic at loaned take return. The analyzer checks per-frame ordering and reconstructs the end-to-end latency exactly. The worker-wait timestamp is the condition-variable return for the default receiver and ppoll return for direct wait. [First batch, per-frame nanoseconds](cie-path-stages.csv) and [second batch with worker and RMW waits](cie-path-waits.csv).
+
+Run these lines in the provisioned colcon worktree with the Release CIE fixture built. Both build and runtime commands use the memory guard. Output paths must be fresh.
+
+```bash
+export LYRICAL_ROOT="$(cat build/agnocast-lyrical/universe-root)"
+experiments/buffer/run-lyrical.sh bash experiments/rmw-agnocast/standalone/build-path-hooks.sh
+bash experiments/rmw-agnocast/standalone/bench-path.sh build/standalone/fresh-path-stages --trace-cie
+python3 experiments/rmw-agnocast/standalone/analyze-cie-path.py build/standalone/fresh-path-stages build/standalone/fresh-path-stages.csv
+experiments/buffer/run-lyrical.sh bash experiments/rmw-agnocast/standalone/build-path-hooks.sh --with-waits
+bash experiments/rmw-agnocast/standalone/bench-path.sh build/standalone/fresh-path-waits --trace-cie
+python3 experiments/rmw-agnocast/standalone/analyze-cie-path.py build/standalone/fresh-path-waits build/standalone/fresh-path-waits.csv
+```
