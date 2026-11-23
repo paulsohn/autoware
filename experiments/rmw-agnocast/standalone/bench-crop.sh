@@ -67,6 +67,10 @@ for round in "${rounds[@]}"; do
       4) modes=(cyclone agnocast zenoh hybrid);;
     esac
   fi
+  if [[ $batch == --final-cie && ${3:-} == --paired ]]; then
+    modes=(agnocast hybrid)
+    if ((round % 2 == 0)); then modes=(hybrid agnocast); fi
+  fi
   if [[ $batch == --branched-cie ]]; then
     modes=(agnocast scoped cyclone zenoh)
     if [[ $round == 2 ]]; then modes=(zenoh cyclone scoped agnocast); fi

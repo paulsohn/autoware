@@ -1,0 +1,92 @@
+diff --git a/src/rmw_agnocast/context.cpp b/src/rmw_agnocast/context.cpp
+index cff7c9966..85312286f 100644
+--- a/src/rmw_agnocast/context.cpp
++++ b/src/rmw_agnocast/context.cpp
+@@ -224,6 +224,8 @@ struct WaitSignal
+ struct LocalWaitSet : rmw_wait_set_t
+ {
+   WaitSignal signal;
++  std::vector<pollfd> descriptors;
++  std::vector<std::pair<size_t, void *>> starts;
+   bool reuse = false;
+   bool drain = false;
+   explicit LocalWaitSet(Context * ctx) : rmw_wait_set_t{id, nullptr, ctx}, signal{*ctx}
+@@ -276,8 +278,12 @@ rmw_ret_t rmw_wait(
+     return false;
+   };
+   bool awake = true;
+-  std::vector<pollfd> descriptors;
+-  std::vector<std::pair<size_t, void *>> starts;
++  auto & local = *static_cast<LocalWaitSet *>(set);
++  // Refill on every wait so graph changes appear immediately; retain only storage.
++  auto & descriptors = local.descriptors;
++  auto & starts = local.starts;
++  descriptors.clear();
++  starts.clear();
+   try {
+     if (subs)
+       for (size_t i = 0; i < subs->subscriber_count; ++i) {
+@@ -289,7 +295,6 @@ rmw_ret_t rmw_wait(
+       }
+     if (!starts.empty()) {
+       descriptors.push_back({-1, POLLIN, 0});
+-      auto & local = *static_cast<LocalWaitSet *>(set);
+       WaitSignal transient{*s};
+       int fd = (local.reuse ? local.signal : transient).attach();
+       if (fd < 0) {
+diff --git a/src/rmw_agnocast/rmw.cpp b/src/rmw_agnocast/rmw.cpp
+index c3e134a04..37831634f 100644
+--- a/src/rmw_agnocast/rmw.cpp
++++ b/src/rmw_agnocast/rmw.cpp
+@@ -623,14 +623,15 @@ struct Reader : Endpoint
+     std::lock_guard lock(acquire_mutex);
+     executor.acquire();
+   }
+-  void before_take()
++  std::unique_lock<std::mutex> lock_for_take()
+   {
+-    if (!direct) return;
+-    {
+-      std::lock_guard lock(context->mutex);
+-      if (ready()) return;
++    std::unique_lock lock(context->mutex);
++    if (direct && !ready()) {
++      lock.unlock();
++      acquire();
++      lock.lock();
+     }
+-    acquire();
++    return lock;
+   }
+   bool ready()
+   {
+@@ -852,8 +853,7 @@ static rmw_ret_t take(
+   if (!sub || sub->implementation_identifier != standalone::id || (!msg && !loan) || !taken)
+     return RMW_RET_INVALID_ARGUMENT;
+   auto & r = *static_cast<Reader *>(sub->data);
+-  r.before_take();
+-  std::lock_guard lock(r.context->mutex);
++  auto lock = r.lock_for_take();
+   return take_locked(r, msg, loan, taken, info, allocation);
+ }
+ rmw_ret_t rmw_init_subscription_allocation(
+@@ -909,8 +909,7 @@ rmw_ret_t rmw_take_sequence(
+     }
+   }
+   auto & reader = *static_cast<Reader *>(sub->data);
+-  reader.before_take();
+-  std::lock_guard lock(reader.context->mutex);
++  auto lock = reader.lock_for_take();
+   *taken = 0;
+   while (*taken < count) {
+     bool received;
+@@ -1140,8 +1139,7 @@ rmw_ret_t rmw_take_serialized_message_with_info(
+   if (!sub || sub->implementation_identifier != standalone::id || !msg || !taken || !info)
+     return RMW_RET_INVALID_ARGUMENT;
+   auto & reader = *static_cast<Reader *>(sub->data);
+-  reader.before_take();
+-  std::lock_guard lock(reader.context->mutex);
++  auto lock = reader.lock_for_take();
+   *taken = false;
+   if (!reader.ready()) return RMW_RET_OK;
+   auto & sample = reader.pending.front();

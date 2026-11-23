@@ -12,6 +12,10 @@ for round in 1 2 3 4; do
     4) modes=(cyclone native-cie zenoh standalone-cie);;
   esac
   if ((round % 2)); then modes+=(default-cie); else modes=(default-cie "${modes[@]}"); fi
+  if [[ ${2:-} == --paired ]]; then
+    modes=(native-cie standalone-cie)
+    if ((round % 2 == 0)); then modes=(standalone-cie native-cie); fi
+  fi
   rates=(10 50)
   if ((round % 2 == 0)); then rates=(50 10); fi
   for hz in "${rates[@]}"; do

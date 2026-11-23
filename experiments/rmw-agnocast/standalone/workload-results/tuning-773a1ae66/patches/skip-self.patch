@@ -1,0 +1,137 @@
+diff --git a/src/rmw_agnocast/context.cpp b/src/rmw_agnocast/context.cpp
+index cff7c9966..afb402e90 100644
+--- a/src/rmw_agnocast/context.cpp
++++ b/src/rmw_agnocast/context.cpp
+@@ -194,6 +194,13 @@ const rmw_guard_condition_t * rmw_node_get_graph_guard_condition(const rmw_node_
+
+ namespace
+ {
++struct DispatchingWait
++{
++  int previous = dispatching_wait_fd;
++  explicit DispatchingWait(int fd) { dispatching_wait_fd = fd; }
++  ~DispatchingWait() { dispatching_wait_fd = previous; }
++};
++
+ struct WaitSignal
+ {
+   Context & context;
+@@ -224,6 +231,8 @@ struct WaitSignal
+ struct LocalWaitSet : rmw_wait_set_t
+ {
+   WaitSignal signal;
++  std::vector<pollfd> descriptors;
++  std::vector<std::pair<size_t, void *>> starts;
+   bool reuse = false;
+   bool drain = false;
+   explicit LocalWaitSet(Context * ctx) : rmw_wait_set_t{id, nullptr, ctx}, signal{*ctx}
+@@ -276,8 +285,12 @@ rmw_ret_t rmw_wait(
+     return false;
+   };
+   bool awake = true;
+-  std::vector<pollfd> descriptors;
+-  std::vector<std::pair<size_t, void *>> starts;
++  auto & local = *static_cast<LocalWaitSet *>(set);
++  // Refill on every wait so graph changes appear immediately; retain only storage.
++  auto & descriptors = local.descriptors;
++  auto & starts = local.starts;
++  descriptors.clear();
++  starts.clear();
+   try {
+     if (subs)
+       for (size_t i = 0; i < subs->subscriber_count; ++i) {
+@@ -289,7 +302,6 @@ rmw_ret_t rmw_wait(
+       }
+     if (!starts.empty()) {
+       descriptors.push_back({-1, POLLIN, 0});
+-      auto & local = *static_cast<LocalWaitSet *>(set);
+       WaitSignal transient{*s};
+       int fd = (local.reuse ? local.signal : transient).attach();
+       if (fd < 0) {
+@@ -345,6 +357,9 @@ rmw_ret_t rmw_wait(
+             while (eventfd_read(fd, &count) < 0 && errno == EINTR) {
+             }
+           }
++          // Wake every other registered waiter. Sending ourselves a token here would
++          // only interrupt the following wait after this one has consumed the sample.
++          DispatchingWait dispatching(fd);
+           for (size_t i = 0; i < starts.size(); ++i) {
+             size_t stop = i + 1 < starts.size() ? starts[i + 1].first : descriptors.size() - 1;
+             auto first = starts[i].first;
+diff --git a/src/rmw_agnocast/rmw.cpp b/src/rmw_agnocast/rmw.cpp
+index c3e134a04..37831634f 100644
+--- a/src/rmw_agnocast/rmw.cpp
++++ b/src/rmw_agnocast/rmw.cpp
+@@ -623,14 +623,15 @@ struct Reader : Endpoint
+     std::lock_guard lock(acquire_mutex);
+     executor.acquire();
+   }
+-  void before_take()
++  std::unique_lock<std::mutex> lock_for_take()
+   {
+-    if (!direct) return;
+-    {
+-      std::lock_guard lock(context->mutex);
+-      if (ready()) return;
++    std::unique_lock lock(context->mutex);
++    if (direct && !ready()) {
++      lock.unlock();
++      acquire();
++      lock.lock();
+     }
+-    acquire();
++    return lock;
+   }
+   bool ready()
+   {
+@@ -852,8 +853,7 @@ static rmw_ret_t take(
+   if (!sub || sub->implementation_identifier != standalone::id || (!msg && !loan) || !taken)
+     return RMW_RET_INVALID_ARGUMENT;
+   auto & r = *static_cast<Reader *>(sub->data);
+-  r.before_take();
+-  std::lock_guard lock(r.context->mutex);
++  auto lock = r.lock_for_take();
+   return take_locked(r, msg, loan, taken, info, allocation);
+ }
+ rmw_ret_t rmw_init_subscription_allocation(
+@@ -909,8 +909,7 @@ rmw_ret_t rmw_take_sequence(
+     }
+   }
+   auto & reader = *static_cast<Reader *>(sub->data);
+-  reader.before_take();
+-  std::lock_guard lock(reader.context->mutex);
++  auto lock = reader.lock_for_take();
+   *taken = 0;
+   while (*taken < count) {
+     bool received;
+@@ -1140,8 +1139,7 @@ rmw_ret_t rmw_take_serialized_message_with_info(
+   if (!sub || sub->implementation_identifier != standalone::id || !msg || !taken || !info)
+     return RMW_RET_INVALID_ARGUMENT;
+   auto & reader = *static_cast<Reader *>(sub->data);
+-  reader.before_take();
+-  std::lock_guard lock(reader.context->mutex);
++  auto lock = reader.lock_for_take();
+   *taken = false;
+   if (!reader.ready()) return RMW_RET_OK;
+   auto & sample = reader.pending.front();
+diff --git a/src/rmw_agnocast/standalone.hpp b/src/rmw_agnocast/standalone.hpp
+index 6613ea31e..d9c5f047d 100644
+--- a/src/rmw_agnocast/standalone.hpp
++++ b/src/rmw_agnocast/standalone.hpp
+@@ -16,6 +16,8 @@
+ namespace standalone
+ {
+ inline constexpr char id[] = "rmw_agnocast";
++// A direct reader rescans all readiness predicates after it acquires a native loan.
++inline thread_local int dispatching_wait_fd = -1;
+ struct Context
+ {
+   std::mutex mutex;
+@@ -27,6 +29,7 @@ struct Context
+     changed.notify_all();
+     std::lock_guard lock(signals_mutex);
+     for (int fd : signals) {
++      if (fd == dispatching_wait_fd) continue;
+       while (eventfd_write(fd, 1) == -1 && errno == EINTR) {
+       }
+     }

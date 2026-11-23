@@ -1,0 +1,9 @@
+case,arm,stage,timed_count,median_ms,p95_ms
+crop10,agnocast,payload,200,0.352829,0.637601
+crop10,hybrid,payload,200,0.445362,0.991683
+crop50,agnocast,payload,200,0.308907,0.507147
+crop50,hybrid,payload,200,0.351913,0.681083
+path10hz,native-cie,payload,200,0.043747,0.054772
+path10hz,standalone-cie,payload,200,0.063875,0.083827
+path50hz,native-cie,payload,200,0.038236,0.051025
+path50hz,standalone-cie,payload,200,0.045435,0.056776
