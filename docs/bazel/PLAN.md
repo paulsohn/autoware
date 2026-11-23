@@ -108,7 +108,8 @@ only when your current target demonstrates the need.
   [Indexed tutorial resources](DEVELOPING.md#tutorial-vehicle-and-map-resources);
   [evidence: official map](JOURNAL.md#2026-11-21-phase-733--official-tutorial-map-and-scenario-resources).
 - [ ] Preserve original suites' source-layout and tool prerequisites in declared fixtures.
-  [Test adapter and ROS-context convention](DEVELOPING.md#original-test-source-layout);
+  [Test adapter, ROS-context and unordered-output convention](DEVELOPING.md#original-test-source-layout);
+  [evidence: complete preprocessing suite](JOURNAL.md#2026-11-23-phase-94--cpu-point-cloud-preprocessor);
   [radar driver/body context evidence](JOURNAL.md#2026-11-23-phase-91--radar-track-crossing-noise-filter);
   [C++ bag-fixture evidence](JOURNAL.md#2026-11-22-phase-732--multi-object-tracking);
   [evidence: interface lint](JOURNAL.md#2026-11-18-phase-534--interface-spec-lint).
@@ -2244,7 +2245,7 @@ no-agnocast; explicitly check newly introduced enabled-only transport behavior.
 | --- | --- |
 | autoware_pcl_extensions | Complete: all original point-type instantiations/index and six compiled API cases; field-limited and repeat-search regressions fixed separately. |
 | managed_transform_buffer (prerequisite) | Complete: 12 original cases plus external lookup/inverse behavior with RCLCPP and Agnocast-only contexts; library/index/example build. |
-| autoware_pointcloud_preprocessor | Pending: all 23 registered nodes, exported helper/core libraries, 16 original C++ suites, Python component suite and relevant filter/resource behavior. |
+| autoware_pointcloud_preprocessor | Complete: 23 nodes/core/helper/index build, 185 original C++ cases, eight Python scenarios, nine added checks and node-free example; crop-box transport also passes Agnocast-only. |
 | autoware_imu_corrector | Pending: both original test groups, correction/estimator node behavior and indexed executables/configuration. |
 
 Inventory optional/source contracts before adding providers; CGAL/Sophus and

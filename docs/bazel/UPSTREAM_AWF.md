@@ -2014,6 +2014,7 @@ than 10.5 for a 10-unit translation at intensity 20. Require all xyz coordinates
 to be finite before indexing; apply homogeneous TF with w=1 and retain intensity.
 The transform regression also checks rotation. These are algorithm defects,
 not Lyrical API changes. Both regressions and the complete selected RCLCPP module gate pass.
+Local source correction: e7221ecc.
 [Reproduction](JOURNAL.md#2026-11-23-phase-94--cpu-point-cloud-preprocessor).
 
 ## Point-cloud filters need current message-filter and PCL headers/APIs
@@ -2038,6 +2039,7 @@ one-argument RCLCPP subscriber and QoS-object API for rclcpp major 32+, while
 retaining older template/profile branches and the wrapper's profile API.
 The selected full RCLCPP module gate passes;
 older distributions are not locally qualified.
+Local source correction: e7221ecc.
 [Reproduction](JOURNAL.md#2026-11-23-phase-94--cpu-point-cloud-preprocessor).
 
 ## Concatenation tests assume an unspecified sensor-cloud row order
@@ -2054,4 +2056,5 @@ retain all counts, scenarios and numerical tolerances. This is test portability,
 not a Lyrical API change or a production ordering requirement. All eight original
 scenarios and three external assertion checks pass in the local Cyclone/RCLCPP
 gate. The merged PR's reported checks are not substituted for this local result.
+Local source correction: e7221ecc.
 [Reproduction](JOURNAL.md#2026-11-23-phase-94--cpu-point-cloud-preprocessor).

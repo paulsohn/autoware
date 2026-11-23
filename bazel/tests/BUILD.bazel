@@ -2195,3 +2195,70 @@ cc_test(
     deps = ["@managed_transform_buffer//:managed_transform_buffer_library", "@googletest//:gtest"],
     tags = ["no-sandbox", "no-remote"],
 )
+
+cc_test(
+    name = "pointcloud_preprocessor_behavior_test",
+    srcs = ["autoware_pointcloud_preprocessor/test_filters.cpp"],
+    data = ["@agnocast_heaphook"],
+    dynamic_deps = ["@autoware_pointcloud_preprocessor//:runtime_dynamic_deps"],
+    deps = ["@autoware_pointcloud_preprocessor", "@googletest//:gtest"],
+    tags = ["no-sandbox", "no-remote"],
+)
+
+sh_test(
+    name = "pointcloud_concatenate_core_example_test",
+    srcs = ["autoware_pointcloud_preprocessor/run_core_example.sh"],
+    args = ["$(rootpath @autoware_pointcloud_preprocessor//:concatenate_without_ros_node)"],
+    data = ["@autoware_pointcloud_preprocessor//:concatenate_without_ros_node"],
+)
+
+launch_test(
+    name = "pointcloud_concatenate_component_test",
+    src = "@autoware_pointcloud_preprocessor//:test/test_concatenate_node_component.py",
+    data = [
+        "@autoware_pointcloud_preprocessor//:ament_index",
+        "@rclcpp_components//:ament_package",
+    ],
+    env = {
+        "ENABLE_AGNOCAST": "0",
+        "LD_LIBRARY_PATH": "lib",
+        "ROS_DOMAIN_ID": "101",
+    },
+    precompile = "disabled",
+    tags = ["no-sandbox", "no-remote"],
+    deps = [
+        "@geometry_msgs//:py",
+        "@launch_ros",
+        "@rclpy",
+        "@sensor_msgs//:py",
+        "@sensor_msgs_py",
+        "@std_msgs//:py",
+        "@tf2_ros_py",
+        requirement("numpy"),
+    ],
+)
+
+cc_test(
+    name = "pointcloud_fast_voxel_test",
+    srcs = ["autoware_pointcloud_preprocessor/test_fast_voxel.cpp"],
+    dynamic_deps = ["@autoware_pointcloud_preprocessor//:faster_voxel_dynamic_deps"],
+    deps = ["@autoware_pointcloud_preprocessor//:faster_voxel_grid_downsample_filter", "@autoware_point_types", "@googletest//:gtest_main"],
+)
+
+py_pytest(
+    name = "pointcloud_comparison_test",
+    srcs = ["autoware_pointcloud_preprocessor/test_point_comparison.py"],
+    data = ["@autoware_pointcloud_preprocessor//:test/test_concatenate_node_component.py"],
+    env = {"AUTOWARE_TEST_SOURCE": "$(rootpath @autoware_pointcloud_preprocessor//:test/test_concatenate_node_component.py)"},
+    deps = [
+        "@geometry_msgs//:py",
+        "@launch_ros",
+        "@launch_testing",
+        "@rclpy",
+        "@sensor_msgs//:py",
+        "@sensor_msgs_py",
+        "@std_msgs//:py",
+        "@tf2_ros_py",
+        requirement("numpy"),
+    ],
+)

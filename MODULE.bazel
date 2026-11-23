@@ -42,6 +42,7 @@ bazel_dep(name = "logging_demo", version = "0.37.9-1.rcr.0")
 bazel_dep(name = "nav_msgs", version = "5.9.3-1.rcr.0")
 bazel_dep(name = "lifecycle_msgs", version = "0.0.0")
 bazel_dep(name = "sensor_msgs", version = "5.9.3-1.rcr.0")
+bazel_dep(name = "sensor_msgs_py", version = "5.9.3-1.rcr.0")
 bazel_dep(name = "radar_msgs", version = "0.2.2-5.rcr.2")
 bazel_dep(name = "cv_bridge", version = "4.1.0-3.rcr.2")
 bazel_dep(name = "image_transport", version = "6.4.10-1.rcr.0")
@@ -49,6 +50,7 @@ bazel_dep(name = "pcl_conversions", version = "2.10.0-1.rcr.0")
 bazel_dep(name = "tf2", version = "0.45.10-1.rcr.0")
 bazel_dep(name = "tf2_msgs", version = "0.0.0")
 bazel_dep(name = "tf2_ros", version = "0.45.10-1.rcr.0")
+bazel_dep(name = "tf2_ros_py", version = "0.45.10-1.rcr.0")
 bazel_dep(name = "tf2_eigen", version = "0.45.10-1.rcr.0")
 bazel_dep(name = "tf2_geometry_msgs", version = "0.45.10-1.rcr.0")
 bazel_dep(name = "visualization_msgs", version = "5.9.3-1.rcr.0")
@@ -1920,4 +1922,10 @@ bazel_dep(name = "managed_transform_buffer", version = "0.0.0")
 local_path_override(
     module_name = "managed_transform_buffer",
     path = "src/universe/external/managed_transform_buffer/managed_transform_buffer",
+)
+
+bazel_dep(name = "autoware_pointcloud_preprocessor", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_pointcloud_preprocessor",
+    path = "src/universe/autoware_universe/sensing/autoware_pointcloud_preprocessor",
 )

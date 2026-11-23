@@ -20541,4 +20541,5 @@ with the built heap hook and kernel device, zero failures/errors/skips, in
 exact and approximate index synchronization. Targeted formatting, Python AST,
 shell syntax and diff checks pass. This completes the CPU preprocessor module;
 it does not qualify GPU filters, Fast DDS or a complete sensor pipeline.
-Next: both IMU nodes and their complete original suite.
+Local source correction: e7221ecc; Bazel definitions and added checks are
+committed separately. Next: both IMU nodes and their complete original suite.

@@ -1,0 +1,616 @@
+load("@autoware_agnocast_wrapper//:defs.bzl", "autoware_agnocast_node")
+load("@rclcpp_components//:defs.bzl", "rclcpp_components_register_node")
+load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library", "cc_shared_library", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+_CORE_HEADERS = [
+    "include/autoware/pointcloud_preprocessor/concatenate_data/cloud_collector_core.hpp",
+    "include/autoware/pointcloud_preprocessor/concatenate_data/collector_info.hpp",
+    "include/autoware/pointcloud_preprocessor/concatenate_data/combine_cloud_handler.hpp",
+    "include/autoware/pointcloud_preprocessor/concatenate_data/combine_cloud_handler_base.hpp",
+    "include/autoware/pointcloud_preprocessor/concatenate_data/concatenation_info_manager.hpp",
+    "include/autoware/pointcloud_preprocessor/concatenate_data/concatenation_diagnostics.hpp",
+    "include/autoware/pointcloud_preprocessor/concatenate_data/matching_policy.hpp",
+    "include/autoware/pointcloud_preprocessor/concatenate_data/matching_strategy_type.hpp",
+    "include/autoware/pointcloud_preprocessor/diagnostics/format_utils.hpp",
+]
+
+# Keep the upstream node-free API independent of executors and ROS TF.
+cc_library(
+    name = "concatenate_core",
+    srcs = [
+        "src/concatenate_data/combine_cloud_handler.cpp",
+        "src/concatenate_data/combine_cloud_handler_base.cpp",
+        "src/concatenate_data/concatenation_diagnostics.cpp",
+        "src/concatenate_data/matching_policy.cpp",
+        "src/concatenate_data/conversion.hpp",
+        "src/concatenate_data/time_utils.hpp",
+    ],
+    hdrs = _CORE_HEADERS,
+    includes = ["include"],
+    deps = [
+        "@autoware_point_types",
+        "@autoware_sensing_msgs//:cc",
+        "@builtin_interfaces//:cc",
+        "@diagnostic_msgs//:cc",
+        "@geometry_msgs//:cc",
+        "@nav_msgs//:cc",
+        "@rosdistro//cc:eigen",
+        "@sensor_msgs//:cc",
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "core_dynamic_deps",
+    dynamic_deps = [
+        "@rosdistro//cc:pcl",
+        "@autoware_sensing_msgs//:cc_shared",
+        "@diagnostic_msgs//:cc_shared",
+        "@geometry_msgs//:cc_shared",
+        "@nav_msgs//:cc_shared",
+        "@sensor_msgs//:cc_shared",
+    ],
+)
+
+cc_shared_library(
+    name = "concatenate_core_shared",
+    dynamic_deps = [":core_dynamic_deps"],
+    shared_lib_name = "libautoware_pointcloud_preprocessor_concatenate_core.so",
+    deps = [":concatenate_core"],
+)
+
+cc_binary(
+    name = "concatenate_without_ros_node",
+    srcs = ["examples/concatenate_without_ros_node.cpp"],
+    deps = [":concatenate_core"],
+)
+
+_COMMON_HEADERS = ["include/autoware/pointcloud_preprocessor/transform_info.hpp"]
+_FAST_HEADERS = ["include/autoware/pointcloud_preprocessor/downsample_filter/faster_voxel_grid_downsample_filter.hpp"]
+
+cc_library(
+    name = "filter_common_headers",
+    hdrs = _COMMON_HEADERS,
+    includes = ["include"],
+    deps = ["@rosdistro//cc:eigen"],
+)
+
+cc_library(
+    name = "headers",
+    hdrs = glob(["include/**"], exclude = _CORE_HEADERS + _COMMON_HEADERS + _FAST_HEADERS),
+    data = ["@image_transport//:ament_index"],
+    includes = ["include"],
+    deps = [":concatenate_core", ":filter_common_headers"] + [
+        "@autoware_agnocast_wrapper//:autoware_agnocast_wrapper_library",
+        "@autoware_internal_debug_msgs//:cc",
+        "@autoware_lanelet2_extension//:autoware_lanelet2_extension_lib_library",
+        "@autoware_lanelet2_utils",
+        "@autoware_pcl_extensions",
+        "@autoware_point_types",
+        "@autoware_sensing_msgs//:cc",
+        "@autoware_utils",
+        "@autoware_vehicle_msgs//:cc",
+        "@cgal",
+        "@cv_bridge//:cv_bridge_library",
+        "@diagnostic_updater//:diagnostic_updater_library",
+        "@image_transport//:image_transport_library",
+        "@managed_transform_buffer//:managed_transform_buffer_library",
+        "@message_filters//:message_filters_library",
+        "@nav_msgs//:cc",
+        "@pcl_conversions//:pcl_conversions_library",
+        "@pcl_msgs//:cc",
+        "@pcl_ros//:pcl_ros_tf_library",
+        "@point_cloud_msg_wrapper",
+        "@rclcpp//:rclcpp_library",
+        "@rclcpp_components//:rclcpp_components_library",
+        "@rosdistro//cc:eigen",
+        "@rosdistro//cc:opencv_library",
+        "@rosdistro//cc:pcl_common",
+        "@rosdistro//cc:pcl_filters",
+        "@rosdistro//cc:pcl_kdtree",
+        "@rosdistro//cc:pcl_search",
+        "@sensor_msgs//:cc",
+        "@sophus//:sophus",
+        "@std_msgs//:cc",
+        "@tf2//:tf2_library",
+        "@tf2_eigen//:tf2_eigen_library",
+        "@tf2_geometry_msgs//:tf2_geometry_msgs_library",
+        "@tf2_ros//:tf2_ros_library",
+        "@tf2_sensor_msgs//:tf2_sensor_msgs_library",
+    ],
+)
+
+cc_library(
+    name = "pointcloud_preprocessor_filter_base",
+    srcs = [
+        "src/filter.cpp",
+        "src/utility/memory.cpp",
+    ],
+    deps = [
+        ":headers",
+    ],
+)
+
+cc_library(
+    name = "faster_voxel_grid_downsample_filter",
+    srcs = ["src/downsample_filter/faster_voxel_grid_downsample_filter.cpp"],
+    hdrs = _FAST_HEADERS,
+    includes = ["include"],
+    deps = [
+        ":filter_common_headers",
+        "@pcl_conversions//:pcl_conversions_library",
+        "@rclcpp//:rclcpp_library",
+        "@rosdistro//cc:pcl_filters",
+        "@sensor_msgs//:cc",
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "faster_voxel_dynamic_deps",
+    dynamic_deps = [
+        "@pcl_conversions//:pcl_conversions",
+        "@rclcpp//:rclcpp",
+        "@rosdistro//cc:pcl",
+        "@sensor_msgs//:cc_shared",
+    ],
+)
+
+cc_library(
+    name = "concatenate_data",
+    srcs = [
+        "src/concatenate_data/cloud_collector.cpp",
+        "src/concatenate_data/collector_matcher.cpp",
+        "src/concatenate_data/concatenate_pointclouds.cpp",
+    ],
+    deps = [
+        ":headers",
+        ":pointcloud_preprocessor_filter_base",
+        ":concatenate_core",
+    ],
+)
+
+cc_library(
+    name = "pointcloud_preprocessor_filter",
+    srcs = [
+        "src/concatenate_data/concatenate_and_time_sync_node.cpp",
+        "src/crop_box_filter/crop_box_filter_node.cpp",
+        "src/time_synchronizer/time_synchronizer_node.cpp",
+        "src/downsample_filter/voxel_grid_downsample_filter_node.cpp",
+        "src/downsample_filter/random_downsample_filter_node.cpp",
+        "src/downsample_filter/approximate_downsample_filter_node.cpp",
+        "src/downsample_filter/pickup_based_voxel_grid_downsample_filter_node.cpp",
+        "src/downsample_filter/robin_hood.h",
+        "src/outlier_filter/ring_outlier_filter_node.cpp",
+        "src/outlier_filter/radius_search_2d_outlier_filter_node.cpp",
+        "src/outlier_filter/voxel_grid_outlier_filter_node.cpp",
+        "src/outlier_filter/polar_voxel_outlier_filter_node.cpp",
+        "src/outlier_filter/dual_return_outlier_filter_node.cpp",
+        "src/outlier_filter/polar_voxel_noise_filter_node.cpp",
+        "src/passthrough_filter/passthrough_filter_node.cpp",
+        "src/passthrough_filter/passthrough_filter_uint16_node.cpp",
+        "src/passthrough_filter/passthrough_uint16.cpp",
+        "src/pointcloud_accumulator/pointcloud_accumulator_node.cpp",
+        "src/vector_map_filter/lanelet2_map_filter_node.cpp",
+        "src/distortion_corrector/distortion_corrector.cpp",
+        "src/distortion_corrector/distortion_corrector_node.cpp",
+        "src/blockage_diag/blockage_detection.cpp",
+        "src/blockage_diag/blockage_diag.cpp",
+        "src/blockage_diag/blockage_diag_node.cpp",
+        "src/blockage_diag/dust_detection.cpp",
+        "src/blockage_diag/multi_frame_detection_aggregator.cpp",
+        "src/blockage_diag/pointcloud2_to_depth_image.cpp",
+        "src/polygon_remover/polygon_remover.cpp",
+        "src/vector_map_filter/vector_map_inside_area_filter_node.cpp",
+        "src/utility/geometry.cpp",
+        "src/pointcloud_densifier/pointcloud_densifier_node.cpp",
+        "src/pointcloud_densifier/occupancy_grid.cpp",
+    ],
+    deps = [
+        ":headers",
+        ":pointcloud_preprocessor_filter_base",
+        ":faster_voxel_grid_downsample_filter",
+        ":concatenate_data",
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = [
+        ":concatenate_core_shared",
+        "@autoware_agnocast_wrapper",
+        "@autoware_internal_debug_msgs//:cc_shared",
+        "@autoware_lanelet2_extension//:autoware_lanelet2_extension_lib",
+        "@autoware_lanelet2_utils//:runtime_dynamic_deps",
+        "@autoware_sensing_msgs//:cc_shared",
+        "@autoware_utils//:runtime_dynamic_deps",
+        "@autoware_vehicle_msgs//:cc_shared",
+        "@cv_bridge//:cv_bridge",
+        "@diagnostic_updater//:diagnostic_updater",
+        "@image_transport//:image_transport",
+        "@managed_transform_buffer//:runtime_dynamic_deps",
+        "@message_filters//:message_filters",
+        "@nav_msgs//:cc_shared",
+        "@pcl_conversions//:pcl_conversions",
+        "@pcl_msgs//:cc_shared",
+        "@pcl_ros//:pcl_ros_tf",
+        "@rclcpp_components//:rclcpp_components",
+        "@sensor_msgs//:cc_shared",
+        "@std_msgs//:cc_shared",
+        "@tf2_eigen//:tf2_eigen",
+        "@tf2_geometry_msgs//:tf2_geometry_msgs",
+        "@tf2_sensor_msgs//:tf2_sensor_msgs",
+    ],
+)
+
+cc_shared_library(
+    name = "pointcloud_preprocessor_filter_component",
+    shared_lib_name = "libautoware_pointcloud_preprocessor_filter.so",
+    dynamic_deps = [":runtime_dynamic_deps"],
+    deps = [":pointcloud_preprocessor_filter"],
+)
+
+alias(name = "autoware_pointcloud_preprocessor", actual = ":pointcloud_preprocessor_filter")
+
+rclcpp_components_register_node(
+    name = "time_synchronizer_node",
+    node_name = "time_synchronizer_node",
+    component = ":pointcloud_preprocessor_filter_component",
+    plugin = "autoware::pointcloud_preprocessor::PointCloudDataSynchronizerComponent",
+)
+
+rclcpp_components_register_node(
+    name = "concatenate_pointclouds_node",
+    node_name = "concatenate_pointclouds_node",
+    component = ":pointcloud_preprocessor_filter_component",
+    plugin = "autoware::pointcloud_preprocessor::PointCloudConcatenationComponent",
+)
+
+rclcpp_components_register_node(
+    name = "concatenate_and_time_sync_node",
+    node_name = "concatenate_and_time_sync_node",
+    component = ":pointcloud_preprocessor_filter_component",
+    plugin = "autoware::pointcloud_preprocessor::PointCloudConcatenateDataSynchronizerComponent",
+)
+
+autoware_agnocast_node(
+    name = "crop_box_filter_node",
+    component = ":pointcloud_preprocessor_filter_component",
+    package_name = "autoware_pointcloud_preprocessor",
+    plugin = "autoware::pointcloud_preprocessor::CropBoxFilterComponent",
+)
+
+autoware_agnocast_node(
+    name = "voxel_grid_downsample_filter_node",
+    component = ":pointcloud_preprocessor_filter_component",
+    package_name = "autoware_pointcloud_preprocessor",
+    plugin = "autoware::pointcloud_preprocessor::VoxelGridDownsampleFilterComponent",
+)
+
+rclcpp_components_register_node(
+    name = "pickup_based_voxel_grid_downsample_filter_node",
+    node_name = "pickup_based_voxel_grid_downsample_filter_node",
+    component = ":pointcloud_preprocessor_filter_component",
+    plugin = "autoware::pointcloud_preprocessor::PickupBasedVoxelGridDownsampleFilterComponent",
+)
+
+autoware_agnocast_node(
+    name = "random_downsample_filter_node",
+    component = ":pointcloud_preprocessor_filter_component",
+    package_name = "autoware_pointcloud_preprocessor",
+    plugin = "autoware::pointcloud_preprocessor::RandomDownsampleFilterComponent",
+)
+
+rclcpp_components_register_node(
+    name = "approximate_downsample_filter_node",
+    node_name = "approximate_downsample_filter_node",
+    component = ":pointcloud_preprocessor_filter_component",
+    plugin = "autoware::pointcloud_preprocessor::ApproximateDownsampleFilterComponent",
+)
+
+rclcpp_components_register_node(
+    name = "ring_outlier_filter_node",
+    node_name = "ring_outlier_filter_node",
+    component = ":pointcloud_preprocessor_filter_component",
+    plugin = "autoware::pointcloud_preprocessor::RingOutlierFilterComponent",
+)
+
+rclcpp_components_register_node(
+    name = "voxel_grid_outlier_filter_node",
+    node_name = "voxel_grid_outlier_filter_node",
+    component = ":pointcloud_preprocessor_filter_component",
+    plugin = "autoware::pointcloud_preprocessor::VoxelGridOutlierFilterComponent",
+)
+
+autoware_agnocast_node(
+    name = "polar_voxel_outlier_filter_node",
+    component = ":pointcloud_preprocessor_filter_component",
+    package_name = "autoware_pointcloud_preprocessor",
+    plugin = "autoware::pointcloud_preprocessor::PolarVoxelOutlierFilterComponent",
+)
+
+rclcpp_components_register_node(
+    name = "polar_voxel_noise_filter_node",
+    node_name = "polar_voxel_noise_filter_node",
+    component = ":pointcloud_preprocessor_filter_component",
+    plugin = "autoware::pointcloud_preprocessor::PolarVoxelNoiseFilterComponent",
+)
+
+rclcpp_components_register_node(
+    name = "radius_search_2d_outlier_filter_node",
+    node_name = "radius_search_2d_outlier_filter_node",
+    component = ":pointcloud_preprocessor_filter_component",
+    plugin = "autoware::pointcloud_preprocessor::RadiusSearch2DOutlierFilterComponent",
+)
+
+rclcpp_components_register_node(
+    name = "dual_return_outlier_filter_node",
+    node_name = "dual_return_outlier_filter_node",
+    component = ":pointcloud_preprocessor_filter_component",
+    plugin = "autoware::pointcloud_preprocessor::DualReturnOutlierFilterComponent",
+)
+
+rclcpp_components_register_node(
+    name = "passthrough_filter_node",
+    node_name = "passthrough_filter_node",
+    component = ":pointcloud_preprocessor_filter_component",
+    plugin = "autoware::pointcloud_preprocessor::PassThroughFilterComponent",
+)
+
+rclcpp_components_register_node(
+    name = "passthrough_filter_uint16_node",
+    node_name = "passthrough_filter_uint16_node",
+    component = ":pointcloud_preprocessor_filter_component",
+    plugin = "autoware::pointcloud_preprocessor::PassThroughFilterUInt16Component",
+)
+
+rclcpp_components_register_node(
+    name = "pointcloud_accumulator_node",
+    node_name = "pointcloud_accumulator_node",
+    component = ":pointcloud_preprocessor_filter_component",
+    plugin = "autoware::pointcloud_preprocessor::PointcloudAccumulatorComponent",
+)
+
+rclcpp_components_register_node(
+    name = "vector_map_filter_node",
+    node_name = "vector_map_filter_node",
+    component = ":pointcloud_preprocessor_filter_component",
+    plugin = "autoware::pointcloud_preprocessor::Lanelet2MapFilterComponent",
+)
+
+rclcpp_components_register_node(
+    name = "distortion_corrector_node",
+    node_name = "distortion_corrector_node",
+    component = ":pointcloud_preprocessor_filter_component",
+    plugin = "autoware::pointcloud_preprocessor::DistortionCorrectorComponent",
+)
+
+autoware_agnocast_node(
+    name = "blockage_diag_node",
+    component = ":pointcloud_preprocessor_filter_component",
+    package_name = "autoware_pointcloud_preprocessor",
+    plugin = "autoware::pointcloud_preprocessor::BlockageDiagComponent",
+)
+
+rclcpp_components_register_node(
+    name = "polygon_remover_node",
+    node_name = "polygon_remover_node",
+    component = ":pointcloud_preprocessor_filter_component",
+    plugin = "autoware::pointcloud_preprocessor::PolygonRemoverComponent",
+)
+
+rclcpp_components_register_node(
+    name = "vector_map_inside_area_filter_node",
+    node_name = "vector_map_inside_area_filter_node",
+    component = ":pointcloud_preprocessor_filter_component",
+    plugin = "autoware::pointcloud_preprocessor::VectorMapInsideAreaFilterComponent",
+)
+
+rclcpp_components_register_node(
+    name = "pointcloud_densifier_node",
+    node_name = "pointcloud_densifier_node",
+    component = ":pointcloud_preprocessor_filter_component",
+    plugin = "autoware::pointcloud_preprocessor::PointCloudDensifierNode",
+)
+
+register_ament_files(
+    name = "executables",
+    files = [
+        ":time_synchronizer_node",
+        ":concatenate_pointclouds_node",
+        ":concatenate_and_time_sync_node",
+        ":crop_box_filter_node",
+        ":voxel_grid_downsample_filter_node",
+        ":pickup_based_voxel_grid_downsample_filter_node",
+        ":random_downsample_filter_node",
+        ":approximate_downsample_filter_node",
+        ":ring_outlier_filter_node",
+        ":voxel_grid_outlier_filter_node",
+        ":polar_voxel_outlier_filter_node",
+        ":polar_voxel_noise_filter_node",
+        ":radius_search_2d_outlier_filter_node",
+        ":dual_return_outlier_filter_node",
+        ":passthrough_filter_node",
+        ":passthrough_filter_uint16_node",
+        ":pointcloud_accumulator_node",
+        ":vector_map_filter_node",
+        ":distortion_corrector_node",
+        ":blockage_diag_node",
+        ":polygon_remover_node",
+        ":vector_map_inside_area_filter_node",
+        ":pointcloud_densifier_node",
+    ],
+    prefix = "lib/autoware_pointcloud_preprocessor",
+    strip_prefix = "*",
+)
+
+ament_index(
+    package_xml = "package.xml",
+    components = [
+        ":time_synchronizer_node_record",
+        ":concatenate_pointclouds_node_record",
+        ":concatenate_and_time_sync_node_record",
+        ":crop_box_filter_node_components",
+        ":voxel_grid_downsample_filter_node_components",
+        ":pickup_based_voxel_grid_downsample_filter_node_record",
+        ":random_downsample_filter_node_components",
+        ":approximate_downsample_filter_node_record",
+        ":ring_outlier_filter_node_record",
+        ":voxel_grid_outlier_filter_node_record",
+        ":polar_voxel_outlier_filter_node_components",
+        ":polar_voxel_noise_filter_node_record",
+        ":radius_search_2d_outlier_filter_node_record",
+        ":dual_return_outlier_filter_node_record",
+        ":passthrough_filter_node_record",
+        ":passthrough_filter_uint16_node_record",
+        ":pointcloud_accumulator_node_record",
+        ":vector_map_filter_node_record",
+        ":distortion_corrector_node_record",
+        ":blockage_diag_node_components",
+        ":polygon_remover_node_record",
+        ":vector_map_inside_area_filter_node_record",
+        ":pointcloud_densifier_node_record",
+    ],
+    data = glob(["config/**", "launch/**"]) + [
+        "@image_transport//:ament_index",
+        ":executables",
+        ":crop_box_filter_node_plugin",
+        ":voxel_grid_downsample_filter_node_plugin",
+        ":random_downsample_filter_node_plugin",
+        ":polar_voxel_outlier_filter_node_plugin",
+        ":blockage_diag_node_plugin",
+    ],
+    libraries = [":pointcloud_preprocessor_filter_component", ":concatenate_core_shared"],
+)
+
+cc_test(
+    name = "test_utilities",
+    srcs = ["test/test_utilities.cpp"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+    deps = [":pointcloud_preprocessor_filter", "@googletest//:gtest"],
+    tags = ["no-sandbox", "no-remote"],
+)
+
+cc_test(
+    name = "test_distortion_corrector_node",
+    srcs = ["test/test_distortion_corrector_node.cpp"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+    deps = [":pointcloud_preprocessor_filter", "@googletest//:gtest"],
+    tags = ["no-sandbox", "no-remote"],
+)
+
+cc_test(
+    name = "test_concatenate_node_unit",
+    srcs = ["test/test_concatenate_node_unit.cpp"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+    deps = [":pointcloud_preprocessor_filter", "@googletest//:gtest"],
+    tags = ["no-sandbox", "no-remote"],
+)
+
+cc_test(
+    name = "test_pickup_based_voxel_grid_downsample_filter_node",
+    srcs = ["test/test_pickup_based_voxel_grid_downsample_filter_node.cpp"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+    deps = [":pointcloud_preprocessor_filter", "@googletest//:gtest_main"],
+    tags = ["no-sandbox", "no-remote"],
+)
+
+cc_test(
+    name = "test_concatenation_info",
+    srcs = ["test/test_concatenation_info.cpp"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+    deps = [":pointcloud_preprocessor_filter", "@googletest//:gtest_main"],
+    tags = ["no-sandbox", "no-remote"],
+)
+
+cc_test(
+    name = "test_matching_policy",
+    srcs = ["test/test_matching_policy.cpp"],
+    deps = [":concatenate_core", "@googletest//:gtest"],
+    tags = ["no-sandbox", "no-remote"],
+)
+
+cc_test(
+    name = "test_concatenation_diagnostics",
+    srcs = ["test/test_concatenation_diagnostics.cpp"],
+    deps = [":concatenate_core", "@googletest//:gtest"],
+    tags = ["no-sandbox", "no-remote"],
+)
+
+cc_test(
+    name = "test_polar_voxel_noise_filter_node",
+    srcs = ["test/test_polar_voxel_noise_filter_node.cpp"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+    deps = [":pointcloud_preprocessor_filter", "@googletest//:gtest"],
+    tags = ["no-sandbox", "no-remote"],
+)
+
+cc_test(
+    name = "test_blockage_diag",
+    srcs = ["test/blockage_diag/test_blockage_diag.cpp"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+    deps = [":pointcloud_preprocessor_filter", "@googletest//:gtest_main"],
+    tags = ["no-sandbox", "no-remote"],
+)
+
+cc_test(
+    name = "test_polar_voxel_outlier_filter_node",
+    srcs = ["test/test_polar_voxel_outlier_filter_node.cpp"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+    deps = [":pointcloud_preprocessor_filter", "@googletest//:gtest"],
+    tags = ["no-sandbox", "no-remote"],
+)
+
+cc_test(
+    name = "test_blockage_diag_node",
+    srcs = ["test/blockage_diag/test_blockage_diag_node.cpp"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+    deps = [":pointcloud_preprocessor_filter", "@googletest//:gtest"],
+    tags = ["no-sandbox", "no-remote"],
+)
+
+cc_test(
+    name = "test_pointcloud2_to_depth_image",
+    srcs = ["test/blockage_diag/test_pointcloud2_to_depth_image.cpp"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+    deps = [":pointcloud_preprocessor_filter", "@googletest//:gtest"],
+    tags = ["no-sandbox", "no-remote"],
+)
+
+cc_test(
+    name = "test_blockage_detection",
+    srcs = ["test/blockage_diag/test_blockage_detection.cpp"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+    deps = [":pointcloud_preprocessor_filter", "@googletest//:gtest"],
+    tags = ["no-sandbox", "no-remote"],
+)
+
+cc_test(
+    name = "test_dust_detection",
+    srcs = ["test/blockage_diag/test_dust_detection.cpp"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+    deps = [":pointcloud_preprocessor_filter", "@googletest//:gtest"],
+    tags = ["no-sandbox", "no-remote"],
+)
+
+cc_test(
+    name = "test_multi_frame_detection_aggregator",
+    srcs = ["test/blockage_diag/test_multi_frame_detection_aggregator.cpp"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+    deps = [":pointcloud_preprocessor_filter", "@googletest//:gtest"],
+    tags = ["no-sandbox", "no-remote"],
+)
+
+cc_test(
+    name = "test_concatenate_node_characterization",
+    srcs = ["test/test_concatenate_node_characterization.cpp"],
+    timeout = "long",
+    data = [":ament_index"],
+    dynamic_deps = [":runtime_dynamic_deps", "@rclcpp_components//:component_manager"],
+    deps = [":pointcloud_preprocessor_filter", "@rclcpp_components//:component_manager_library", "@googletest//:gtest"],
+    tags = ["no-sandbox", "no-remote"],
+)
+
+exports_files(["test/test_concatenate_node_component.py"])

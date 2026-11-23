@@ -210,7 +210,7 @@ Integrate PCL extensions before their consumers. Inventory every preprocessor fi
 
 - [ ] [autoware_imu_corrector](../../src/universe/autoware_universe/sensing/autoware_imu_corrector/package.xml)
 - [x] [autoware_pcl_extensions](../../src/universe/autoware_universe/sensing/autoware_pcl_extensions/package.xml)
-- [ ] [autoware_pointcloud_preprocessor](../../src/universe/autoware_universe/sensing/autoware_pointcloud_preprocessor/package.xml)
+- [x] [autoware_pointcloud_preprocessor](../../src/universe/autoware_universe/sensing/autoware_pointcloud_preprocessor/package.xml)
 
 ### Phase 9.5: Clustering, shape estimation and map-aware detection
 

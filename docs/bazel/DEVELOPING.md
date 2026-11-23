@@ -1286,6 +1286,14 @@ For a C++ fixture-path macro, derive its value from a declared $(rootpath file)
 input and the expected parent directories. Keep quoted C++ strings intact
 through copts tokenization; do not embed checkout paths or canonical repository
 names. Declare runtime class-loader resource indexes as well as fixture bytes.
+For components loaded into a separate container process, carry dependency indexes
+in the component's own ament_index; a direct C++ test's data edges do not reach
+that process. Use ament_package when a launch needs a dependency's installed
+executable, rather than only its resource index.
+
+For outputs with no ordering contract, compare contents using stable fixture
+keys while retaining multiplicity, shape and numerical tolerances. Do not change
+production ordering or relax tolerances to accommodate container iteration order.
 
 When an original C++ test textually includes a .cpp implementation, expose that
 file through textual_hdrs on a test-only cc_library and add that library to the
