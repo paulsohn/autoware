@@ -8,6 +8,7 @@ source build/universe-pipeline/install/local_setup.bash
 source build/migration-guide/install/local_setup.bash
 source build/standalone/o3-install/local_setup.bash
 source build/standalone/release-path/install/local_setup.bash
+if [[ -n ${SYNC_CIE_EXECUTABLE:-} ]]; then source build/standalone/release-cie/install/local_setup.bash; fi
 source build/standalone/poll-install/local_setup.bash
 export RMW_IMPLEMENTATION=rmw_agnocast ROS_DOMAIN_ID=173 ENABLE_AGNOCAST=0
 test ! -e /opt/ros/lyrical/lib/libddsc.so

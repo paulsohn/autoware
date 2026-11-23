@@ -629,3 +629,35 @@ done
 ```
 
 The original first 10 Hz trace captured only the two standalone arms. The cadence series captured all three. All 6,000 frames across 100 launches passed. The lowest reported host MemAvailable during launches was 19,042 MiB. Measured rates for the crossover and its trace runs were 9.99997–10.00043 and 49.99894–50.00486 Hz. The top-level per-wait-vs-drain CSVs contain the primary series. The path-cadence directories contain crossover frames, per-launch resources, reader stages and writer-inclusive stages.
+
+## Standalone CIE on the three-LiDAR synchronizer at double rate
+
+One laptop, O3, three Universe crop components and the Universe concatenation synchronizer. The two fast sensors sent 32,768-point inputs at 20 Hz, and the third ran at 10 Hz. The synchronizer's partial-group timeout was 40 ms. The two standalone arms ran the same crop-view setup, Cyclone-free runtime, patched rclcpp, and standalone AWF CIE synchronizer executable. The default used ordinary standalone waits. The treatment selected exact-route blocking on /sync/top and drain-on-entry descriptor reuse in the synchronizer. It changes both wait settings together. Native used its native executor. Cyclone and Zenoh kept the ROS executor. Each standalone launch confirmed the CIE announcement-only KeepLast(16) override and 60 retained synchronizer inputs with zero copies.
+
+| Fresh arm | Complete median / p95 ms | Partial median / p95 ms | Median launch CPU s |
+|---|---:|---:|---:|
+| Native | 2.592 / 3.375 | 41.803 / 42.369 | 1.840 |
+| Standalone default + CIE | 2.349 / 3.275 | 41.572 / 42.191 | 2.522 |
+| Standalone drained + CIE | 2.404 / 3.387 | 41.534 / 42.284 | 2.482 |
+| Cyclone DDS | 3.199 / 3.666 | 42.160 / 42.489 | 1.800 |
+| Zenoh | 2.642 / 3.197 | 42.080 / 42.413 | 2.856 |
+
+All 384/384 clouds and their metadata passed, including all 192 intentional partial groups. Four launches per Agnocast arm and two per DDS/Zenoh control. Discard four warmup groups per launch, pool by group kind and take nearest-rank p95, giving 40 complete observations per Agnocast arm and 20 per external control. CPU is user plus system over the whole launch, including startup and shutdown. All 16 launches ran sequentially and minimum host availability was 17,457 MiB. The p95 estimate has limited resolution. These data support keeping the default on this graph. A longer steady-state CPU comparison would separate setup cost from sustained processing. [Per-group ages](universe-cie-regression/lidar-o3-ages.csv) and [launch rates, CPU, and memory](universe-cie-regression/launches.csv).
+
+To repeat with the previously built O3 Universe and standalone CIE overlays, build the optional fixture executable in the existing colcon build tree:
+
+```bash
+export LYRICAL_ROOT="$(cat build/agnocast-lyrical/universe-root)"
+experiments/buffer/run-lyrical.sh bash -ec '
+source build/agnocast-lyrical/install/local_setup.bash
+source build/universe-sync/install/local_setup.bash
+source build/rmw-agnocast/load-install/local_setup.bash
+source build/universe-pipeline/install/local_setup.bash
+source build/standalone/release-path/install/local_setup.bash
+source build/standalone/release-cie/install/local_setup.bash
+cmake -S src/universe_sync_benchmark -B build/universe-pipeline/obj/universe_sync_benchmark -DSYNC_STANDALONE_CIE=ON
+cmake --build build/universe-pipeline/obj/universe_sync_benchmark --target sync_standalone_cie/fast -j1'
+logs=build/standalone/universe-cie-repeat
+bash experiments/rmw-agnocast/standalone/bench-universe.sh "$logs" --cie-regression
+python3 experiments/rmw-agnocast/standalone/analyze-lidar-stages.py "$logs" "$logs"
+```

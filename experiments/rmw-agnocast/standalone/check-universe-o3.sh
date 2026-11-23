@@ -10,7 +10,10 @@ check() {
     exit 1
   fi
 }
-if [[ $1 == crop || ${2:-} == --crop-inputs || ${2:-} == --crop-repeat || ${2:-} == --stages || ${2:-} == --count || ${2:-} == --live-count ]]; then
+if [[ ${2:-} == --cie-regression ]]; then
+  check build/universe-pipeline/obj/universe_sync_benchmark sync_standalone_cie
+fi
+if [[ $1 == crop || ${2:-} == --cie-regression || ${2:-} == --crop-inputs || ${2:-} == --crop-repeat || ${2:-} == --stages || ${2:-} == --count || ${2:-} == --live-count ]]; then
   pkg=build/agnocast-lyrical/clang-obj/universe_crop_benchmark
   check "$pkg" universe_crop
   if [[ $1 == crop ]]; then

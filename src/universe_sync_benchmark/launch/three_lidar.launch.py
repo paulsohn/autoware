@@ -87,6 +87,11 @@ def graph(context):
                          arguments=native_args, additional_env=env, output="screen")
     sync = {"package": "universe_sync_benchmark", "executable": "concatenate_and_time_sync_node"}
     ready = os.path.join(directory, "first-output")
+    if os.getenv("SYNC_CIE_EXECUTABLE"):
+        sync["executable"] = os.environ["SYNC_CIE_EXECUTABLE"]
+        if os.getenv("SYNC_DRAIN_TOP"):
+            sync_env.update(AGNOCAST_RMW_POLL_TOPIC=cropped[2], AGNOCAST_RMW_READY_ROUTE="1",
+                            AGNOCAST_RMW_REUSE_WAIT_FD="drain")
     if mode == "runner":
         sync.update(package="agnocast_rmw_loan_probe", executable="crop_wait_runner",
                     arguments=["libuniverse_sync.so",

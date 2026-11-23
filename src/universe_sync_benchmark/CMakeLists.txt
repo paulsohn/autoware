@@ -74,6 +74,17 @@ endif()
 rclcpp_components_register_node(universe_sync ${executor}
   PLUGIN "autoware::pointcloud_preprocessor::PointCloudConcatenateDataSynchronizerComponent"
   EXECUTABLE concatenate_and_time_sync_node)
+option(SYNC_STANDALONE_CIE "Build standalone CIE synchronizer for the wait regression" OFF)
+if(SYNC_STANDALONE_CIE)
+  find_package(callback_isolated_executor REQUIRED)
+  rclcpp_components_register_node(universe_sync
+    PLUGIN "autoware::pointcloud_preprocessor::PointCloudConcatenateDataSynchronizerComponent"
+    EXECUTOR CallbackIsolatedExecutor EXECUTABLE sync_standalone_cie
+    RESOURCE_INDEX universe_sync_benchmark_cie)
+  target_compile_options(sync_standalone_cie PRIVATE -include callback_isolated_executor/callback_isolated_executor.hpp)
+  target_sources(sync_standalone_cie PRIVATE ../agnocast_rmw_loan_probe/cie_benchmark_qos.cpp)
+  target_link_libraries(sync_standalone_cie callback_isolated_executor::callback_isolated_executor)
+endif()
 install(TARGETS universe_sync DESTINATION lib)
 add_executable(sync_fixture fixture.cpp)
 target_link_libraries(sync_fixture ${rclcpp_TARGETS} ${sensor_msgs_TARGETS} ${autoware_sensing_msgs_TARGETS})
