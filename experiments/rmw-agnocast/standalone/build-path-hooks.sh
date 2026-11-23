@@ -38,3 +38,6 @@ case ${1:-} in
   *) exit 2;;
 esac
 /usr/bin/clang++-21 --gcc-install-dir=/usr/lib/gcc/x86_64-linux-gnu/15 -O3 -shared -fPIC "${incs[@]}" "${detail[@]}" experiments/rmw-agnocast/standalone/path_timing.cpp -o "$out/path-timing.so"
+/usr/bin/clang++-21 --gcc-install-dir=/usr/lib/gcc/x86_64-linux-gnu/15 -O3 -shared -fPIC \
+  -Ibuild/standalone/o3-install/agnocastlib/include \
+  experiments/rmw-agnocast/standalone/path_publish_timing.cpp -o "$out/path-publish-timing.so"

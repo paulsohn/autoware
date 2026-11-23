@@ -4,12 +4,21 @@ set -eu
 export LYRICAL_ROOT="$(cat build/agnocast-lyrical/universe-root)" BUFFER_RUNTIME_ONLY=1
 out=${1:?fresh directory relative to worktree}
 mkdir "$out"
-reuse=0
+rate_matrix=0
+control=poll-cie
+treatment=route-cie
 case ${2:-} in
-  --drain-wait-fd) reuse=2; set -- "$out" --ready-route;;
-  --drain-wait-fd-trace) reuse=2; set -- "$out" --ready-route-trace;;
-  --reuse-wait-fd) reuse=1; set -- "$out" --ready-route;;
-  --reuse-wait-fd-trace) reuse=1; set -- "$out" --ready-route-trace;;
+  --per-wait-vs-drain*) control=route-cie; treatment=drain-cie;;
+  --drain-wait-fd*) control=reuse-cie; treatment=drain-cie;;
+  --reuse-wait-fd*) control=route-cie; treatment=reuse-cie;;
+esac
+case ${2:-} in
+  --per-wait-vs-drain-rates|--per-wait-vs-drain-rates-trace)
+    rate_matrix=1
+    mkdir "$out/10hz" "$out/50hz"
+    if [[ $2 == *-trace ]]; then set -- "$out" --ready-route-trace; else set -- "$out" --ready-route; fi;;
+  --per-wait-vs-drain|--drain-wait-fd|--reuse-wait-fd) set -- "$out" --ready-route;;
+  --per-wait-vs-drain-trace|--drain-wait-fd-trace|--reuse-wait-fd-trace) set -- "$out" --ready-route-trace;;
 esac
 rounds=4
 case ${2:-} in
@@ -41,7 +50,11 @@ fi
 for ((round=1;round<=rounds;round++)); do
   if [[ ${2:-} == --ready-route-trace ]]; then
     modes=(poll-cie-instrumented route-cie-instrumented)
-    if [[ $round == 2 ]]; then modes=(route-cie-instrumented poll-cie-instrumented); fi
+    if [[ $control == route-cie && $treatment == drain-cie ]]; then modes=(native-instrumented "${modes[@]}"); fi
+    if [[ $round == 2 ]]; then
+      modes=(route-cie-instrumented poll-cie-instrumented)
+      if [[ $control == route-cie && $treatment == drain-cie ]]; then modes+=(native-instrumented); fi
+    fi
   elif [[ ${2:-} == --ready-route ]]; then
     case $round in
       1) modes=(native poll-cie route-cie);;
@@ -97,16 +110,24 @@ for ((round=1;round<=rounds;round++)); do
   if ((release_baseline)); then
     modes=("${modes[@]/o2/o3}")
   fi
-  if ((reuse)); then
-    modes=("${modes[@]/route-cie/reuse-cie}")
-    modes=("${modes[@]/poll-cie/route-cie}")
-    if ((reuse == 2)); then
-      modes=("${modes[@]/reuse-cie/drain-cie}")
-      modes=("${modes[@]/route-cie/reuse-cie}")
-    fi
+  if [[ ${2:-} == --ready-route || ${2:-} == --ready-route-trace ]]; then
+    modes=("${modes[@]/route-cie/$treatment}")
+    modes=("${modes[@]/poll-cie/$control}")
+  fi
+  if ((rate_matrix)); then
+    hz=(10 50)
+    if ((round % 2 == 0)); then hz=(50 10); fi
+    transports=("${modes[@]}")
+    modes=()
+    for rate in "${hz[@]}"; do modes+=("${transports[@]/#/${rate}hz/}"); done
   fi
   for mode in "${modes[@]}"; do
     tag=$mode
+    unset PATH_BENCH_HZ
+    if ((rate_matrix)); then
+      export PATH_BENCH_HZ=${mode%%hz/*}
+      mode=${mode#*/}
+    fi
     unset PATH_TRACE_PREFIX
     if [[ $mode == *-instrumented ]]; then
       export PATH_TRACE_PREFIX="/ws/$out/$tag-$round"

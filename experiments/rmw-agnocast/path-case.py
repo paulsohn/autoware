@@ -26,6 +26,9 @@ with tempfile.TemporaryDirectory() as directory:
             PATH_WAIT_TIMES=prefix_trace + ".waits",
             PATH_POLL_COUNTS=prefix_trace + ".polls",
         )
+        if os.environ.get("PATH_PUBLISH_TIMING") == "1":
+            env.update(LD_PRELOAD=hook + ":" + str(hooks/"path-publish-timing.so"),
+                       PATH_PUBLISH_TIMES=prefix_trace + ".publish")
     native_trace = mode == "native-traced"
     direct_trace = mode == "direct-stages"
     writer_mode = "native" if mode in ("native", "native-traced") else "rmw"
@@ -74,6 +77,12 @@ with tempfile.TemporaryDirectory() as directory:
             csv.writer(f, lineterminator="\n").writerows((a[0], b[0]) for a, b in zip(tx, rx))
     if len(tx) != 60 or len(rx) != 60:
         raise ValueError("expected 60 delivered frames")
+    if hz := env.get("PATH_BENCH_HZ"):
+        actual = (len(tx) - 1) * 1e9 / (tx[-1][0] - tx[0][0])
+        if abs(actual / int(hz) - 1) > 0.05:
+            raise ValueError(f"observed {actual:.2f} Hz for requested {hz} Hz")
+        with open(prefix + ".rate", "x") as f:
+            print(actual, file=f)
     with open(prefix + ".csv", "x") as f:
         out = csv.writer(f, lineterminator="\n")
         for seq, (a, b) in enumerate(zip(tx, rx)):

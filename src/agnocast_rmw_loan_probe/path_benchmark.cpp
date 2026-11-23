@@ -103,9 +103,14 @@ void send(Pub & pub)
     std::this_thread::sleep_for(10ms);
   }
   Records rows;
+  auto period = 100ms;
+  if (const char * hz = std::getenv("PATH_BENCH_HZ")) {
+    check(std::string(hz) == "10" || std::string(hz) == "50", "expected 10 or 50 Hz");
+    if (std::string(hz) == "50") period = 20ms;
+  }
   auto start = Clock::now() + 100ms;
   for (size_t i = 0; i < frames; ++i) {
-    std::this_thread::sleep_until(start + i * 100ms);
+    std::this_thread::sleep_until(start + i * period);
     auto loan = pub.borrow_loaned_message();
     Path & msg = *loan_ptr(loan);
     msg.header.stamp.sec = i;

@@ -578,3 +578,54 @@ python3 experiments/rmw-agnocast/standalone/analyze-ready-route.py --drain-wait-
 In the completed six-order follow-up, native measured 44.41/211.17 µs median/p95, plain reuse 67.25/132.25, and reuse with an entry drain 59.97/92.71. The drain won five of six paired medians over plain reuse and reached 1.35× native median. This follow-up compared two retained descriptors; superiority over the original per-wait descriptor would require a direct pair. Native's p95 moved substantially between batches. An earlier drain batch was interrupted; its partial trials are excluded. In the replacement batch one native writer exited on AGNOCAST_RELEASE_SUB_REF_CMD with EINVAL. The same launch passed on retry, the remaining orders completed, and only successfully validated runs contribute latency samples. The native loan-release failure remains unexplained. [Follow-up frames](drain-waitfd-frames.csv), [resources](drain-waitfd-resources.csv), and [stage timestamps](drain-waitfd-stages.csv).
 
 Keep per-wait allocation as the default. Plain reuse saved bookkeeping time and introduced a repeatable extra poll. Entry draining removed the extra poll. Pair per-wait allocation directly against drained reuse before promoting the latter.
+
+## Drained waits at 10 and 50 Hz on loaned Path
+
+Compared native Agnocast with two exact-route blocking waits in the Cyclone-free RMW using standalone CIE. The per-wait arm creates a notification descriptor for each wait. The drained arm retains it and consumes pending notifications on entry. Both use the same middleware binary. Each launch delivered 60 Paths with 64 poses and checked loan addresses and contents. Exclude the first ten frames per launch for latency. Times below are pooled median / nearest-rank p95 in µs, measured without timing hooks.
+
+| Laptop workload | Native | Per-wait | Drained | Drained/native |
+|---|---:|---:|---:|---:|
+| 10 Hz, two six-order batches | 44.49 / 73.34 | 64.07 / 125.81 | 58.02 / 98.78 | 1.30 / 1.35 |
+| 10 Hz, cadence crossover | 44.16 / 66.61 | 65.84 / 116.60 | 53.77 / 103.97 | 1.22 / 1.56 |
+| 50 Hz, cadence crossover | 34.63 / 46.47 | 49.47 / 88.61 | 44.79 / 93.94 | 1.29 / 2.02 |
+
+Drained reuse beat per-wait in 8/12 paired medians and 10/12 paired p95s in the first experiment. The median CPU seconds per launch were 0.133 native, 0.188 per-wait and 0.190 drained. At 50 Hz the drained arm won 3/6 paired comparisons on each latency metric. Both native and standalone got faster at 50 Hz. Their median separation was 9.61 µs at 10 Hz and 10.16 µs at 50 Hz in the crossover. A universal tail improvement has yet to reproduce.
+
+A separate pair of traces per arm and cadence joined writer and reader by Agnocast entry ID and address. The common publish call runs on the writer. Reader wake is the observed native epoll or standalone ppoll return. Median intervals in µs across 100 post-warmup frames per row follow. Marginal medians need not add to end-to-end median.
+
+| Rate and arm | Send stamp to publish entry | Inside publish_core | Publish return to observed wake | Wake to loan | Loan to callback |
+|---|---:|---:|---:|---:|---:|
+| 10 Hz native | 1.02 | 8.30 | 11.48 | 20.12 | 0.95 |
+| 10 Hz drained | 3.16 | 7.52 | 20.37 | 11.46 | 8.71 |
+| 50 Hz native | 0.28 | 5.35 | 7.37 | 10.89 | 0.26 |
+| 50 Hz drained | 1.35 | 5.52 | 20.37 | 11.30 | 8.64 |
+
+All 720 writer-traced frames had matching writer stamps. At both rates the largest positive interval difference was between publish return and observed wake. This interval includes scheduling and the reader returning from its wait. These userspace probes cannot distinguish them. The separate reader-only traces also show overhead after loan acquisition. Prioritize an otherwise identical blocking-reader A/B or timestamp scheduler wakeup and switch-in before changing the publication code. Keep drained reuse opt-in pending mixed-graph and tail evidence.
+
+### Reproduce
+
+Use the existing Lyrical Universe root, Agnocast device, and standalone colcon install described above. Run each command sequentially. The runner uses the memory guard.
+
+```bash
+export LYRICAL_ROOT="$(cat build/agnocast-lyrical/universe-root)"
+bench=experiments/rmw-agnocast/standalone/bench-path.sh
+analyzer=experiments/rmw-agnocast/standalone/analyze-ready-route.py
+out=build/standalone
+experiments/buffer/run-lyrical.sh bash experiments/rmw-agnocast/standalone/build-cie-path.sh
+experiments/buffer/run-lyrical.sh bash experiments/rmw-agnocast/standalone/build-path-hooks.sh --with-waits
+bash "$bench" "$out/per-wait-vs-drain-a" --per-wait-vs-drain
+bash "$bench" "$out/per-wait-vs-drain-trace" --per-wait-vs-drain-trace
+bash "$bench" "$out/per-wait-vs-drain-b" --per-wait-vs-drain
+mkdir -p "$out/summary-primary"
+python3 "$analyzer" --per-wait-vs-drain "$out/per-wait-vs-drain-a" "$out/per-wait-vs-drain-b" "$out/per-wait-vs-drain-trace" "$out/summary-primary"
+bash "$bench" "$out/path-cadence-traces" --per-wait-vs-drain-rates-trace
+bash "$bench" "$out/path-cadence-controls" --per-wait-vs-drain-rates
+PATH_PUBLISH_TIMING=1 bash "$bench" "$out/path-cadence-publish" --per-wait-vs-drain-rates-trace
+for rate in 10hz 50hz; do
+  mkdir -p "$out/summary-reader/$rate" "$out/summary-publish/$rate"
+  python3 "$analyzer" --per-wait-vs-drain "$out/path-cadence-controls/$rate" "$out/path-cadence-traces/$rate" "$out/summary-reader/$rate"
+  python3 "$analyzer" --per-wait-vs-drain "$out/path-cadence-controls/$rate" "$out/path-cadence-publish/$rate" "$out/summary-publish/$rate"
+done
+```
+
+The original first 10 Hz trace captured only the two standalone arms. The cadence series captured all three. All 6,000 frames across 100 launches passed. The lowest reported host MemAvailable during launches was 19,042 MiB. Measured rates for the crossover and its trace runs were 9.99997–10.00043 and 49.99894–50.00486 Hz. The top-level per-wait-vs-drain CSVs contain the primary series. The path-cadence directories contain crossover frames, per-launch resources, reader stages and writer-inclusive stages.
