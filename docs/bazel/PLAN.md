@@ -2289,6 +2289,41 @@ physical-vehicle qualification require their own evidence. Publish the exact
 platform/backend/model profile matrix and unresolved scope before claiming full
 Universe support. Phase 8 retains its separate JetPack compatibility definition.
 
+### Phase 9.21: Full modular runtime acceptance (planned)
+
+Goal: a Bazel-built modular Autoware product consumes sensor inputs and drives a
+simulated vehicle through sensing, localization, perception, planning, control
+and system diagnostics. Keep the product/profile contract independent of the
+simulator backend; a single drive does not cover every alternative Universe
+package or establish vehicle qualification.
+
+Defer the squashed subtree import of
+[autoware_carla_interface_v2](https://github.com/autowarefoundation/autoware_carla_interface_v2)
+until near 9.20. Qualify its then-selected immutable revision, CARLA server,
+client, Cyclone DDS/message/QoS compatibility and Lyrical closure before choosing
+it for product acceptance. Do not import or patch it during unrelated package
+adoption. The existing Universe interface remains in the package census.
+
+| Step | Acceptance scope |
+| --- | --- |
+| 9.21.1 | Pinned raw-sensor replay through the complete modular pipeline, with meaningful outputs at intermediate boundaries; additional camera/traffic-light and radar profiles where needed. |
+| 9.21.2 | CARLA closed loop: initialize/localize, route, engage, detect obstacles, drive, stop and arrive. Disable ground-truth object and continuous localization substitution; evaluator truth stays separate. |
+| 9.21.3 | Selected stale/missing sensor and process failures: diagnostics, expected state and command response, cleanup and recovery. Separate simulator-unimplemented vehicle functions into explicit interface checks. |
+| 9.21.4 | Declared-rate runtime load: throughput, drops/backlog, latency distributions, CPU/RAM and GPU utilization/memory on stated hardware with budgets selected before acceptance. |
+
+Replay separates Autoware load from simulator rendering competition; synchronous
+simulation can slow its clock and hide a real-time throughput shortfall. Record
+wall-time versus simulation-time progress. Use rendered offscreen cameras for
+camera coverage; renderer-less runs do not qualify it. External simulator traffic
+signals cannot qualify camera recognition. Pin maps, sensor calibration, model
+profiles and scenarios with each result. Evaluate the existing
+[CARLA scenario runner](https://github.com/autowarefoundation/autoware_carla_scenario)
+and its command launcher before writing a new framework; use controlled inputs
+and our built runtime rather than automatic dependency installation or nightlies.
+All required original adapter tests and real-server checks remain part of its
+module gate. These are opt-in costly gates under --config=expensive; defer exact
+scenario counts, thresholds and compatibility fixes until implementation.
+
 ## Later phases
 
 ### Incoming phase identifiers

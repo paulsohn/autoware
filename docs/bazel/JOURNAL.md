@@ -19853,3 +19853,30 @@ build-time interface/source completeness validator. No Bazel build, runtime,
 GPU, DDS, simulator or export checks were run: source, build definitions and
 accepted configurations are unchanged. The next implementation task is 9.2;
 refine its complete original/ROS gate before starting. Phase 8 remains deferred.
+
+## 2026-11-23: Full modular runtime acceptance scope
+
+Purpose: extend final product acceptance beyond planning/control while preserving
+package adoption priority. Inspect the local CARLA and e2e/logging simulator
+launches and the v2 package README, sensor YAML, manifest and server tests at
+upstream f5fc3e6b02dbab0cb9e253e4b3ca3e8ed04724c8. The v2 repository identifies
+itself as the successor, targeting CARLA 1.0/Ubuntu 24.04/Jazzy; Lyrical operation
+is not established here. Its default sensor kit and simulator traffic-light/
+vehicle-interface limitations make a single successful drive insufficient.
+
+Decision: defer importing v2 until near 9.20. PLAN's 9.21.1–9.21.4 own the planned
+sensor replay, closed-loop, fault/recovery and runtime-load gates. Evaluate the
+existing scenario runner and command launcher, keeping simulator truth outside
+required perception/localization outputs and recording any external signal input.
+Replay also provides a load baseline without simulator rendering; synchronous
+simulation alone can conceal wall-time overruns. Pin server/client/maps/models,
+inspect native message/QoS compatibility and prepare every required real-server
+test before qualifying the adapter. Inspect current upstream compatibility issues
+then, without applying anticipated patches now.
+
+Reproduce the inspection from the linked repositories in PLAN, package README,
+config/sensor_kit.yaml, launch/autoware_carla_scenario.launch.xml and
+test/test_carla_server.py. The latter is conditionally skipped without CARLA_HOST;
+that skip cannot satisfy our required real-server gate. Verification for this
+documentation task: local link/anchor and git diff --check review only. No code,
+subtree, server, build or runtime configuration changed; no runtime tests ran.

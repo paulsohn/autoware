@@ -408,7 +408,8 @@ Reuse the qualified Qt/RViz/native-runtime providers. Validate factories, plugin
   branches and required backend/platform/model profiles. Reuse unchanged passing
   evidence; open concrete package tasks for gaps and run affected gates. The
   107 baseline declarations do not exempt their remaining contracts from this audit.
-- [ ] **9.21 — Product and distribution acceptance.** Compose affected sensing,
+- [ ] **9.21 — Product and distribution acceptance.** Follow the
+  [full modular runtime steps](PLAN.md#phase-921-full-modular-runtime-acceptance-planned). Compose affected sensing,
   localization, perception, planning/control and system/diagnostic products under
   bazel/. Validate representative end-to-end flows, model/map/config selection,
   plugin coexistence and startup/shutdown. Run affected native/OCI/simulator gates
