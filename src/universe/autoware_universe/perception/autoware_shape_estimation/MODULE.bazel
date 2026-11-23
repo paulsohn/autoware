@@ -29,3 +29,11 @@ use_repo(cuda, "cuda")
 
 bazel_dep(name = "autoware_utils_geometry", version = "0.0.0")
 bazel_dep(name = "autoware_utils_math", version = "0.0.0")
+
+bazel_dep(name = "autoware_utils_debug", version = "0.0.0")
+
+bazel_dep(name = "autoware_utils_diagnostics", version = "0.0.0")
+
+bazel_dep(name = "autoware_utils_system", version = "0.0.0")
+
+bazel_dep(name = "autoware_utils_visualization", version = "0.0.0")

@@ -21515,9 +21515,12 @@ TensorRT module; cuda is an extension repository, not a registry module. No
 empty autoware_cuda_dependency_meta shim is needed: direct CUDA runtime and
 common-library providers preserve its actual exported effects.
 
-The first link analysis diagnosed compiled autoware_utils math/geometry hidden
-inside the geometry DSO. Declare those providers as direct shared-library roots
-so consumers of their symbols reuse the exported owner. Public USE_CUDA defines
+Link analysis first diagnosed compiled autoware_utils math/geometry hidden
+inside the geometry DSO. The first clustering consumer then exposed the other
+compiled facade dependencies. Declare all six (debug, diagnostics, geometry,
+math, system, visualization) as direct shared-library roots so downstream
+consumers reuse the exported owner. This is build-provider ownership, not a
+change to utility implementations. Public USE_CUDA defines
 keep node-header layout consistent with the selected node implementation.
 Original test main replaces gtest_main to avoid duplicate entrypoints.
 
@@ -21559,3 +21562,29 @@ Geometry passes Agnocast-only with built/preloaded heaphook in 23.2 s and assert
 RCLCPP remains off. Zero failures/errors/skips. GPU inference was selected with
 RCLCPP, not Agnocast; geometry covers enabled node transport. Targeted C++ format,
 Python syntax and diff checks pass. Next: CPU clustering and detection-by-tracker.
+
+Provider follow-up: the clustering consumer exposed the full compiled facade
+export requirement described above. Revalidate the corrected provider with both
+modules together (all nine test targets pass, 64 original plus five added cases,
+22.6 s); rerun the explicit CPU-only command above (37 original plus geometry,
+59.9 s). The enabled shape/voxel/semantic transport gate passes all three cases
+in 14.4 s. These results qualify the exported provider without introducing a
+CUDA dependency into clustering. Exact combined commands:
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  @autoware_euclidean_cluster//... @autoware_shape_estimation//... \
+  //bazel/tests:euclidean_cluster_transport_test \
+  //bazel/tests:voxel_grid_based_euclidean_cluster_transport_test \
+  //bazel/tests:label_based_euclidean_cluster_transport_test \
+  //bazel/tests:shape_estimation_transport_test //bazel/tests:shape_estimation_gpu_test
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --local_test_jobs=1 --strategy=TestRunner=local \
+  --run_under=//bazel/agnocast:with_heaphook \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  //bazel/tests:shape_estimation_transport_test \
+  //bazel/tests:voxel_grid_based_euclidean_cluster_transport_test \
+  //bazel/tests:label_based_euclidean_cluster_transport_test
+```

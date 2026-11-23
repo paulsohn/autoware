@@ -66,7 +66,16 @@ collect_transitive_dynamic_deps(
 cc_shared_library(
     name = "shape_estimator",
     shared_lib_name = "libautoware_shape_estimation_geometry.so",
-    deps = [":shape_estimator_library", "@autoware_utils_geometry", "@autoware_utils_math"],
+    # Re-export compiled facade dependencies for downstream shared consumers.
+    deps = [
+        ":shape_estimator_library",
+        "@autoware_utils_debug",
+        "@autoware_utils_diagnostics",
+        "@autoware_utils_geometry",
+        "@autoware_utils_math",
+        "@autoware_utils_system",
+        "@autoware_utils_visualization",
+    ],
     dynamic_deps = [":sdk_dynamic_deps"],
 )
 
