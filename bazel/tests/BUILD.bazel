@@ -2420,3 +2420,29 @@ cc_test(
     deps = ["@autoware_elevation_map_loader//:autoware_elevation_map_loader_library", "@googletest//:gtest"],
     tags = ["no-sandbox", "no-remote"],
 )
+
+cc_test(
+    name = "detected_object_validators_test",
+    srcs = ["autoware_detected_object_validation/test_validators.cpp"],
+    data = ["@autoware_detected_object_validation//:config/occupancy_grid_based_validator.param.yaml", "@autoware_detected_object_validation//:config/obstacle_pointcloud_based_validator.param.yaml"],
+    env = {
+        "OCCUPANCY_PARAMS": "$(rootpath @autoware_detected_object_validation//:config/occupancy_grid_based_validator.param.yaml)",
+        "OBSTACLE_PARAMS": "$(rootpath @autoware_detected_object_validation//:config/obstacle_pointcloud_based_validator.param.yaml)",
+    },
+    dynamic_deps = ["@autoware_detected_object_validation//:runtime_dynamic_deps"],
+    deps = ["@autoware_detected_object_validation//:occupancy_grid_based_validator_library", "@autoware_detected_object_validation//:obstacle_pointcloud_based_validator_library", "@googletest//:gtest"],
+    tags = ["no-sandbox", "no-remote"],
+)
+
+cc_test(
+    name = "object_lanelet_validation_transport_test",
+    srcs = ["autoware_detected_object_validation/test_lanelet_transport.cpp"],
+    data = ["@agnocast_heaphook", "@autoware_detected_object_validation//:config/object_lanelet_filter.param.yaml", "@autoware_detected_object_validation//:config/tracked_object_lanelet_filter.param.yaml"],
+    env = {
+        "DETECTED_LANELET_PARAMS": "$(rootpath @autoware_detected_object_validation//:config/object_lanelet_filter.param.yaml)",
+        "TRACKED_LANELET_PARAMS": "$(rootpath @autoware_detected_object_validation//:config/tracked_object_lanelet_filter.param.yaml)",
+    },
+    dynamic_deps = ["@autoware_detected_object_validation//:runtime_dynamic_deps"],
+    deps = ["@autoware_detected_object_validation//:object_lanelet_filter_library", "@autoware_detected_object_validation//:test_fixtures", "@googletest//:gtest"],
+    tags = ["no-sandbox", "no-remote"],
+)

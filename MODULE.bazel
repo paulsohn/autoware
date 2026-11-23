@@ -2002,3 +2002,9 @@ local_path_override(
     module_name = "autoware_elevation_map_loader",
     path = "src/universe/autoware_universe/perception/autoware_elevation_map_loader",
 )
+
+bazel_dep(name = "autoware_detected_object_validation", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_detected_object_validation",
+    path = "src/universe/autoware_universe/perception/autoware_detected_object_validation",
+)

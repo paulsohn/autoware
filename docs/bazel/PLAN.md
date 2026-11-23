@@ -2297,9 +2297,10 @@ Resumed after Phase 9.6, 2026-11-24: the GridMap PCL provider passes its complet
 four original plus ten static/dynamic/elevation/lanelet cases. Reproduced ROS
 context teardown, dynamic-grid/index/distance and lanelet sampling corrections
 are separate source commits. Elevation generation and saved-cache reload also pass both selected inpainting
-profiles. Five Phase 9.5 packages remain; current definition coverage is 128/244,
-leaving 116 without definitions. Next: validation/raindrop filtering, then
-geometric/learned shape, clustering and detection-by-tracker.
+profiles. Detected-object validation also passes all twelve original and five added cases;
+the two added lanelet cases pass Agnocast-only. Four Phase 9.5 packages remain;
+current definition coverage is 129/244, leaving 115 without definitions. Next:
+raindrop filtering, geometric/learned shape, clustering and detection-by-tracker.
 
 ### Phase 9.6: Object association, geometry and postprocessing (complete)
 

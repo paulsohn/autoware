@@ -2249,6 +2249,8 @@ Local source fix: `e4ec802d2`.
 
 ### Object validators need Lyrical Message Filters headers and QoS objects
 
+Local source fix: `f066695ec`.
+
 - [ ] Associate with a matching upstream fix. Reviewed 2026-11-24: current
   [occupancy validator](https://github.com/autowarefoundation/autoware_universe/blob/main/perception/autoware_detected_object_validation/src/occupancy_grid_map/occupancy_grid_map_validator.cpp)
   and obstacle-cloud source still use raw QoS profiles; both headers retain

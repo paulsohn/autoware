@@ -21396,7 +21396,7 @@ and the current Subscriber constructor takes rclcpp::QoS. Change the three inclu
 in both plain-validator headers to .hpp and select the QoS-object constructor
 for rclcpp-major-32+, retaining the original raw-profile branch on older ROS.
 Keep reliable depth-one detected-object/grid queues and best-effort depth-one
-cloud queues. This is a separate source compatibility fix; no assertions or
+cloud queues. This is a separate source compatibility fix (f066695ec); no assertions or
 synchronization policy change. Current upstream retains both paths, with no
 matching scoped PR found on 2026-11-24 (UPSTREAM_AWF.md).
 
