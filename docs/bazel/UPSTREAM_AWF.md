@@ -1934,6 +1934,7 @@ zero skips. [Reproduction and verification](JOURNAL.md#2026-11-23-phase-92--rada
   formatting path; it is related corrected behavior, not an identical patch or
   an AWF PR association.
 
+Local source correction: 4108604f.
 The local external glog 0.6.0 signal test prints pthread_self using 0x%px. On
 userspace printf, %p already includes the prefix and the trailing x is literal,
 so the original shell driver compares TID 0x0x...x with the actual 0x... and

@@ -1,3 +1,5 @@
+load("@rules_cc//cc:defs.bzl", "cc_library")
+
 # Implement a macro glog_library() that the BUILD.bazel file can load.
 
 # By default, glog is built with gflags support.  You can change this behavior
@@ -53,6 +55,8 @@ def glog_library(namespace = "google", with_gflags = 1, **kwargs):
     )
 
     common_copts = [
+        # The legacy unwinder assumes these logging frames remain in the stack.
+        "-fno-inline",
         "-DGLOG_BAZEL_BUILD",
         # Inject a C++ namespace.
         "-DGOOGLE_NAMESPACE='%s'" % namespace,
@@ -76,6 +80,7 @@ def glog_library(namespace = "google", with_gflags = 1, **kwargs):
         # For src/utilities.cc.
         "-DHAVE_SYS_TIME_H",
         "-DHAVE_UNWIND_H",
+        "-DHAVE__UNWIND_BACKTRACE",
         # Enable dumping stacktrace upon sigaction.
         "-DHAVE_SIGACTION",
         # For logging.cc.
@@ -84,6 +89,7 @@ def glog_library(namespace = "google", with_gflags = 1, **kwargs):
     ]
 
     linux_or_darwin_copts = wasm_copts + [
+        "-DHAVE_GLOB_H",
         "-DGLOG_EXPORT=__attribute__((visibility(\\\"default\\\")))",
         # For src/utilities.cc.
         "-DHAVE_SYS_SYSCALL_H",
@@ -127,7 +133,7 @@ def glog_library(namespace = "google", with_gflags = 1, **kwargs):
 
     gflags_deps = ["@com_github_gflags_gflags//:gflags"] if with_gflags else []
 
-    native.cc_library(
+    cc_library(
         name = "glog",
         visibility = ["//visibility:public"],
         srcs = [
@@ -184,7 +190,7 @@ def glog_library(namespace = "google", with_gflags = 1, **kwargs):
                 "@bazel_tools//src/conditions:darwin": common_copts + linux_or_darwin_copts + darwin_only_copts,
                 "@bazel_tools//src/conditions:freebsd": common_copts + linux_or_darwin_copts + freebsd_only_copts,
                 ":wasm": common_copts + wasm_copts,
-                "//conditions:default": common_copts + linux_or_darwin_copts,
+                "//conditions:default": common_copts + linux_or_darwin_copts + ["-DHAVE_RWLOCK"],
             }) +
             select({
                 ":clang-cl": clang_cl_only_copts,
@@ -199,7 +205,7 @@ def glog_library(namespace = "google", with_gflags = 1, **kwargs):
 
     # Workaround https://github.com/bazelbuild/bazel/issues/6337 by declaring
     # the dependencies without strip_include_prefix.
-    native.cc_library(
+    cc_library(
         name = "strip_include_prefix_hack",
         hdrs = [
             "src/glog/log_severity.h",
@@ -274,3 +280,8 @@ def glog_library(namespace = "google", with_gflags = 1, **kwargs):
             "logging",
         ]
     ]
+
+
+def test_source_root():
+    repo = native.repository_name()
+    return "." if repo == "@" else "../" + repo.lstrip("@")

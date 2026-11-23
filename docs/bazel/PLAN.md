@@ -119,7 +119,9 @@ only when your current target demonstrates the need.
   [evidence: opt-in selection](JOURNAL.md#2026-11-23-phase-75--opt-in-expensive-system-and-deployment-targets);
   [ROS-time boundary evidence](JOURNAL.md#2026-11-22-phase-732--perception-metric-windows-at-ros-time-zero);
   [Backend executor convention](DEVELOPING.md#switchable-standalone-nodes);
-  [evidence: complete Agnocast test inventory](JOURNAL.md#2026-11-15-phase-41--adopt-the-complete-agnocast-library-test-inventory).
+  [evidence: complete Agnocast test inventory](JOURNAL.md#2026-11-15-phase-41--adopt-the-complete-agnocast-library-test-inventory);
+  [native driver/backend validation](DEVELOPING.md#validation-and-commits);
+  [evidence: glog features and drivers](JOURNAL.md#2026-11-23-phase-93--local-glog-prerequisite).
 - [ ] Declare solver generation and its tool/runtime inputs in the build graph.
   [Developer convention](DEVELOPING.md#mpc-solver-generation);
   [evidence](JOURNAL.md#2026-11-22-phase-732--acados-native-and-code-generation-provider).
@@ -2215,7 +2217,7 @@ no new communication-layer or costly product/deployment gate is implied.
 | Module | Acceptance status |
 | --- | --- |
 | autoware_time_utils | Complete: library/index and four public interpolation/stopwatch cases. |
-| autoware_glog_component | Pending: local glog prerequisite, logger initialization/reuse and indexed component/executable. |
+| autoware_glog_component | Local glog prerequisite complete; component initialization/reuse and indexed executable remain pending. |
 | autoware_command_mode_types | Pending: independently compilable public headers and a representative command-mode consumer. |
 
 ### Execution order through complete Universe coverage

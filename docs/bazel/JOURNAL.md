@@ -20137,5 +20137,26 @@ Native result: all 15 targets pass, including full logging/custom-prefix/mock
 suites with real stack traces, all cleanup drivers and all signal-driver cases;
 no functional assertion or test group is disabled. Reuse unchanged passing
 results between setup corrections. The signal test correction is committed
-separately from build support. The required existing-container consumer gate is
-still in progress; the dependency task is not yet declared complete.
+separately from build support as 4108604f. Fixture roots use the canonical
+repository mapping, not a workspace path. The final native gate reuses all 15
+unchanged passing test results.
+
+The existing CIE launch suite requires its runtime/heap-hook wrapper; without it,
+launch setup reports missing AGNOCAST_TEST_HEAPHOOK. Run the original five-case
+suite with the same indexed runtime and real /dev/agnocast prerequisite used by
+its established gate:
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --local_test_jobs=1 --strategy=TestRunner=local \
+  --run_under=//bazel/agnocast:with_runtime \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  @agnocast_components//... //bazel/agnocast:launch_agnocast_component_container_cie
+```
+
+Result: all three existing container variants/indexes build and all five original
+CIE launch cases pass, zero failures/errors/skips, in 8.3 s (30.1 s gate including
+graph/cache work). The local dependency task is complete on this Linux LLVM/
+Lyrical/Cyclone profile, including enabled Agnocast behavior. No GPU, Fast DDS,
+simulator, export or full-system matrix was run. Broader platform/CMake package
+installation parity is not claimed. Next: qualify the glog ROS component itself.

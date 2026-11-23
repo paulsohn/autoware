@@ -829,6 +829,12 @@ or explicitly scoped milestones, and run Fast DDS only with approval. Reuse
 passing results when code and configuration are unchanged. Document the actual
 scope; an interrupted sweep is not a passing sweep.
 
+For feature-gated native dependency tests, preserve the original driver as well
+as its executable. Check that required backends actually ran: an exit-zero
+"unsupported" path does not satisfy the gate. Preserve driver contracts such as
+argv[0], working directory, repetitions and fixture paths when adapting them to
+runfiles. Keep generic adapters with the dependency owner.
+
 For ROS time-window behavior, cover the epoch and exact horizon/retention
 boundaries. Preserve zero-based fixtures. Compare ages as signed Durations;
 avoid creating negative absolute Time cutoffs while history is warming up.
