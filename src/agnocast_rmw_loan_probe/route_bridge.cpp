@@ -84,6 +84,10 @@ int main(int argc, char ** argv)
   if (demand && (direction != "a2r" || std::string_view(argv[3]) == argv[4])) return 2;
   rclcpp::init(argc, argv);
   if (type == "path") relay<nav_msgs::msg::Path>(argv[3], argv[4], rclcpp::QoS(4), demand);
-  else relay<sensor_msgs::msg::PointCloud2>(argv[3], argv[4], rclcpp::SensorDataQoS(), demand);
+  else {
+    auto qos = rclcpp::SensorDataQoS();
+    if (std::getenv("SYNC_RECORDER_DEEP_HISTORY")) qos.keep_last(32);
+    relay<sensor_msgs::msg::PointCloud2>(argv[3], argv[4], qos, demand);
+  }
   rclcpp::shutdown();
 }

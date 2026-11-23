@@ -1,0 +1,350 @@
+0-unrouted
+event_wall_ns {'A_start': 1795412058058073850, 'pause_begin': 1795412058857233539, 'pause_end': 1795412060451817074, 'A_stop': 1795412061259401002, 'C_start': 1795412062058092007}
+A verified sequences []
+C verified sequences []
+sync_live_at_take_peak=3 released=150/150
+pause_window full n=8 p95_ms=2.922
+pause_window partial n=8 p95_ms=41.727
+interior_or_forwarded_gaps=[] process_cpu_s={'A': 0.315715, 'C': 0.344874}
+local=60/60
+Minimum host MemAvailable: 14720 MiB
+
+retry-1-direct-running
+event_wall_ns {'A_start': 1795412265201298133, 'pause_begin': 1795412266000216051, 'pause_end': 1795412267595955494, 'A_stop': 1795412268393189238, 'C_start': 1795412269192742703}
+A verified sequences [6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35]
+C verified sequences [46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59]
+sync_live_at_take_peak=3 released=150/150
+pause_window full n=8 p95_ms=2.448
+pause_window partial n=8 p95_ms=41.791
+interior_or_forwarded_gaps=[] process_cpu_s={'A': 0.3308829999999999, 'C': 0.33266700000000016}
+A launch_to_first_bag_ms=251.9
+A native_admits=30 serialized_takes=30 max_admit_to_release_ms=0.820
+C launch_to_first_bag_ms=259.4
+C native_admits=14 serialized_takes=14 max_admit_to_release_ms=1.076
+local=60/60
+Minimum host MemAvailable: 12106 MiB
+
+retry-2-running
+event_wall_ns {'A_start': 1795412276511738518, 'pause_begin': 1795412277320348873, 'pause_end': 1795412278918245243, 'A_stop': 1795412279714616547, 'C_start': 1795412280513146050}
+A verified sequences [6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35]
+C verified sequences [46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59]
+sync_live_at_take_peak=3 released=150/150
+pause_window full n=8 p95_ms=2.545
+pause_window partial n=8 p95_ms=41.807
+A launch_to_match_ms=207.7 match_to_first_source_ms=49.3 match_to_first_bag_ms=53.5
+C launch_to_match_ms=206.3 match_to_first_source_ms=49.3 match_to_first_bag_ms=52.3
+forwarded=[6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59] missing_from_bags=[] relay_cpu_s=0.140
+interior_or_forwarded_gaps=[] process_cpu_s={'A': 0.32275600000000004, 'C': 0.3015589999999999, 'relay': 0.15902799999999995}
+forward_returns_during_recorder_shutdown=[]
+local=60/60
+matches=1 received=0 forwarded=0
+matches=0 received=30 forwarded=30
+matches=1 received=30 forwarded=30
+matches=0 received=44 forwarded=44
+Minimum host MemAvailable: 12007 MiB
+
+retry-3-direct-stalled
+event_wall_ns {'A_start': 1795412287854927887, 'pause_begin': 1795412288654357942, 'pause_end': 1795412290250179618, 'A_stop': 1795412291047926019, 'C_start': 1795412291856125186}
+A verified sequences [6, 7, 8, 9, 10, 11, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35]
+C verified sequences [46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59]
+sync_live_at_take_peak=3 released=150/150
+pause_window full n=8 p95_ms=4.838
+pause_window partial n=8 p95_ms=41.742
+interior_or_forwarded_gaps=[12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22] process_cpu_s={'A': 0.32143, 'C': 0.32122399999999995}
+A launch_to_first_bag_ms=253.3
+A native_admits=19 serialized_takes=19 max_admit_to_release_ms=7.851
+C launch_to_first_bag_ms=250.8
+C native_admits=14 serialized_takes=14 max_admit_to_release_ms=0.830
+local=60/60
+Minimum host MemAvailable: 11941 MiB
+
+retry-4-stalled
+event_wall_ns {'A_start': 1795412299092555701, 'pause_begin': 1795412299901031514, 'pause_end': 1795412301498007987, 'A_stop': 1795412302296907020, 'C_start': 1795412303096189269}
+A verified sequences [6, 7, 8, 9, 10, 11, 12, 13, 28, 29, 30, 31, 32, 33, 34, 35]
+C verified sequences [46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59]
+sync_live_at_take_peak=3 released=150/150
+pause_window full n=8 p95_ms=2.582
+pause_window partial n=8 p95_ms=41.912
+A launch_to_match_ms=205.0 match_to_first_source_ms=51.8 match_to_first_bag_ms=56.4
+C launch_to_match_ms=215.1 match_to_first_source_ms=38.1 match_to_first_bag_ms=41.1
+forwarded=[6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59] missing_from_bags=[14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27] relay_cpu_s=0.140
+interior_or_forwarded_gaps=[14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27] process_cpu_s={'A': 0.29402199999999995, 'C': 0.310646, 'relay': 0.15905600000000053}
+forward_returns_during_recorder_shutdown=[]
+local=60/60
+matches=1 received=0 forwarded=0
+matches=0 received=30 forwarded=30
+matches=1 received=30 forwarded=30
+matches=0 received=44 forwarded=44
+Minimum host MemAvailable: 12045 MiB
+
+5-stalled
+event_wall_ns {'A_start': 1795412115607955127, 'pause_begin': 1795412116408924245, 'pause_end': 1795412118012839512, 'A_stop': 1795412118810376292, 'C_start': 1795412119610311840}
+A verified sequences [6, 7, 8, 9, 10, 11, 12, 13, 28, 29, 30, 31, 32, 33, 34, 35]
+C verified sequences [46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59]
+sync_live_at_take_peak=3 released=150/150
+pause_window full n=8 p95_ms=2.335
+pause_window partial n=8 p95_ms=42.160
+A launch_to_match_ms=223.4 match_to_first_source_ms=33.5 match_to_first_bag_ms=37.8
+C launch_to_match_ms=202.6 match_to_first_source_ms=51.9 match_to_first_bag_ms=54.8
+forwarded=[6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59] missing_from_bags=[14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27] relay_cpu_s=0.140
+interior_or_forwarded_gaps=[14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27] process_cpu_s={'A': 0.3002119999999999, 'C': 0.3020090000000001, 'relay': 0.1549419999999999}
+forward_returns_during_recorder_shutdown=[]
+local=60/60
+matches=1 received=0 forwarded=0
+matches=0 received=30 forwarded=30
+matches=1 received=30 forwarded=30
+matches=0 received=44 forwarded=44
+Minimum host MemAvailable: 13862 MiB
+
+6-direct-stalled
+event_wall_ns {'A_start': 1795412127320699108, 'pause_begin': 1795412128119793496, 'pause_end': 1795412129724693642, 'A_stop': 1795412130523519448, 'C_start': 1795412131321695492}
+A verified sequences [6, 7, 8, 9, 10, 11, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35]
+C verified sequences [46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59]
+sync_live_at_take_peak=3 released=150/150
+pause_window full n=8 p95_ms=2.353
+pause_window partial n=8 p95_ms=41.867
+interior_or_forwarded_gaps=[12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22] process_cpu_s={'A': 0.3017759999999999, 'C': 0.3134359999999998}
+A launch_to_first_bag_ms=256.0
+A native_admits=19 serialized_takes=19 max_admit_to_release_ms=8.251
+C launch_to_first_bag_ms=254.4
+C native_admits=14 serialized_takes=14 max_admit_to_release_ms=0.827
+local=60/60
+Minimum host MemAvailable: 13755 MiB
+
+7-running
+event_wall_ns {'A_start': 1795412138754294675, 'pause_begin': 1795412139552854305, 'pause_end': 1795412141157573193, 'A_stop': 1795412141954806356, 'C_start': 1795412142753891126}
+A verified sequences [6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35]
+C verified sequences [46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59]
+sync_live_at_take_peak=3 released=150/150
+pause_window full n=8 p95_ms=2.771
+pause_window partial n=8 p95_ms=41.917
+A launch_to_match_ms=220.0 match_to_first_source_ms=33.7 match_to_first_bag_ms=39.2
+C launch_to_match_ms=224.9 match_to_first_source_ms=29.3 match_to_first_bag_ms=32.2
+forwarded=[6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59] missing_from_bags=[] relay_cpu_s=0.140
+interior_or_forwarded_gaps=[] process_cpu_s={'A': 0.326862, 'C': 0.3198740000000002, 'relay': 0.16192000000000006}
+forward_returns_during_recorder_shutdown=[]
+local=60/60
+matches=1 received=0 forwarded=0
+matches=0 received=30 forwarded=30
+matches=1 received=30 forwarded=30
+matches=0 received=44 forwarded=44
+Minimum host MemAvailable: 13854 MiB
+
+8-direct-running
+event_wall_ns {'A_start': 1795412150531069212, 'pause_begin': 1795412151328799343, 'pause_end': 1795412152932823985, 'A_stop': 1795412153729765353, 'C_start': 1795412154527917862}
+A verified sequences [6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35]
+C verified sequences [46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59]
+sync_live_at_take_peak=3 released=150/150
+pause_window full n=8 p95_ms=2.465
+pause_window partial n=8 p95_ms=41.668
+interior_or_forwarded_gaps=[] process_cpu_s={'A': 0.31633100000000003, 'C': 0.30712099999999987}
+A launch_to_first_bag_ms=255.1
+A native_admits=30 serialized_takes=30 max_admit_to_release_ms=0.785
+C launch_to_first_bag_ms=257.3
+C native_admits=14 serialized_takes=14 max_admit_to_release_ms=0.814
+local=60/60
+Minimum host MemAvailable: 12504 MiB
+
+9-running
+event_wall_ns {'A_start': 1795412161996733753, 'pause_begin': 1795412162795623890, 'pause_end': 1795412164391995052, 'A_stop': 1795412165191803433, 'C_start': 1795412165992291483}
+A verified sequences [6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35]
+C verified sequences [46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59]
+sync_live_at_take_peak=3 released=150/150
+pause_window full n=8 p95_ms=2.324
+pause_window partial n=8 p95_ms=41.648
+A launch_to_match_ms=216.1 match_to_first_source_ms=32.0 match_to_first_bag_ms=36.5
+C launch_to_match_ms=225.7 match_to_first_source_ms=26.8 match_to_first_bag_ms=29.8
+forwarded=[6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59] missing_from_bags=[] relay_cpu_s=0.150
+interior_or_forwarded_gaps=[] process_cpu_s={'A': 0.33197, 'C': 0.30577500000000024, 'relay': 0.15905800000000003}
+forward_returns_during_recorder_shutdown=[]
+local=60/60
+matches=1 received=0 forwarded=0
+matches=0 received=30 forwarded=30
+matches=1 received=30 forwarded=30
+matches=0 received=44 forwarded=44
+Minimum host MemAvailable: 12356 MiB
+
+10-direct-running
+event_wall_ns {'A_start': 1795412173737541319, 'pause_begin': 1795412174536455421, 'pause_end': 1795412176131095471, 'A_stop': 1795412176929729720, 'C_start': 1795412177728704895}
+A verified sequences [6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35]
+C verified sequences [46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59]
+sync_live_at_take_peak=3 released=150/150
+pause_window full n=8 p95_ms=2.514
+pause_window partial n=8 p95_ms=41.866
+interior_or_forwarded_gaps=[] process_cpu_s={'A': 0.33496400000000004, 'C': 0.3129479999999998}
+A launch_to_first_bag_ms=252.0
+A native_admits=30 serialized_takes=30 max_admit_to_release_ms=0.928
+C launch_to_first_bag_ms=259.8
+C native_admits=14 serialized_takes=14 max_admit_to_release_ms=0.741
+local=60/60
+Minimum host MemAvailable: 12255 MiB
+
+11-stalled
+event_wall_ns {'A_start': 1795412185085040915, 'pause_begin': 1795412185883581369, 'pause_end': 1795412187477455489, 'A_stop': 1795412188285262995, 'C_start': 1795412189083717388}
+A verified sequences [6, 7, 8, 9, 10, 11, 12, 13, 28, 29, 30, 31, 32, 33, 34, 35]
+C verified sequences [46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59]
+sync_live_at_take_peak=3 released=150/150
+pause_window full n=8 p95_ms=2.284
+pause_window partial n=8 p95_ms=41.839
+A launch_to_match_ms=202.4 match_to_first_source_ms=47.7 match_to_first_bag_ms=51.9
+C launch_to_match_ms=206.7 match_to_first_source_ms=44.7 match_to_first_bag_ms=47.7
+forwarded=[6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59] missing_from_bags=[14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27] relay_cpu_s=0.140
+interior_or_forwarded_gaps=[14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27] process_cpu_s={'A': 0.28340699999999996, 'C': 0.30000400000000005, 'relay': 0.1580779999999996}
+forward_returns_during_recorder_shutdown=[]
+local=60/60
+matches=1 received=0 forwarded=0
+matches=0 received=30 forwarded=30
+matches=1 received=30 forwarded=30
+matches=0 received=44 forwarded=44
+Minimum host MemAvailable: 12187 MiB
+
+12-direct-stalled
+event_wall_ns {'A_start': 1795412197478884837, 'pause_begin': 1795412198277361672, 'pause_end': 1795412199871160492, 'A_stop': 1795412200678333863, 'C_start': 1795412201476429326}
+A verified sequences [6, 7, 8, 9, 10, 11, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35]
+C verified sequences [46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59]
+sync_live_at_take_peak=3 released=150/150
+pause_window full n=8 p95_ms=2.352
+pause_window partial n=8 p95_ms=41.787
+interior_or_forwarded_gaps=[12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22] process_cpu_s={'A': 0.309604, 'C': 0.3204410000000003}
+A launch_to_first_bag_ms=250.4
+A native_admits=19 serialized_takes=19 max_admit_to_release_ms=7.604
+C launch_to_first_bag_ms=252.3
+C native_admits=14 serialized_takes=14 max_admit_to_release_ms=1.131
+local=60/60
+Minimum host MemAvailable: 12066 MiB
+
+13-direct-stalled-depth32
+event_wall_ns {'A_start': 1795412208799556976, 'pause_begin': 1795412209598601991, 'pause_end': 1795412211202570949, 'A_stop': 1795412212000608344, 'C_start': 1795412212798569235}
+A verified sequences [6, 7, 8, 9, 10, 11, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35]
+C verified sequences [46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59]
+sync_live_at_take_peak=3 released=150/150
+pause_window full n=8 p95_ms=2.424
+pause_window partial n=8 p95_ms=41.631
+interior_or_forwarded_gaps=[12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22] process_cpu_s={'A': 0.309747, 'C': 0.31066599999999966}
+A launch_to_first_bag_ms=254.1
+A native_admits=19 serialized_takes=19 max_admit_to_release_ms=6.192
+C launch_to_first_bag_ms=254.3
+C native_admits=14 serialized_takes=14 max_admit_to_release_ms=0.814
+local=60/60
+Minimum host MemAvailable: 12202 MiB
+
+14-stalled-depth32
+event_wall_ns {'A_start': 1795412220091720118, 'pause_begin': 1795412220889865925, 'pause_end': 1795412222492232831, 'A_stop': 1795412223289194908, 'C_start': 1795412224089847796}
+A verified sequences [6, 7, 8, 9, 10, 11, 12, 13, 28, 29, 30, 31, 32, 33, 34, 35]
+C verified sequences [46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59]
+sync_live_at_take_peak=3 released=150/150
+pause_window full n=8 p95_ms=2.510
+pause_window partial n=8 p95_ms=41.681
+A launch_to_match_ms=210.2 match_to_first_source_ms=40.9 match_to_first_bag_ms=45.4
+C launch_to_match_ms=225.4 match_to_first_source_ms=27.6 match_to_first_bag_ms=30.5
+forwarded=[6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59] missing_from_bags=[14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27] relay_cpu_s=0.140
+interior_or_forwarded_gaps=[14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27] process_cpu_s={'A': 0.29107900000000003, 'C': 0.3211219999999999, 'relay': 0.15859100000000026}
+forward_returns_during_recorder_shutdown=[]
+local=60/60
+matches=1 received=0 forwarded=0
+matches=0 received=30 forwarded=30
+matches=1 received=30 forwarded=30
+matches=0 received=44 forwarded=44
+Minimum host MemAvailable: 12044 MiB
+
+15-stalled-depth32
+event_wall_ns {'A_start': 1795412231524875614, 'pause_begin': 1795412232325630171, 'pause_end': 1795412233920187517, 'A_stop': 1795412234716720523, 'C_start': 1795412235524826426}
+A verified sequences [7, 8, 9, 10, 11, 12, 13, 28, 29, 30, 31, 32, 33, 34, 35]
+C verified sequences [46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59]
+sync_live_at_take_peak=3 released=150/150
+pause_window full n=8 p95_ms=3.196
+pause_window partial n=8 p95_ms=43.044
+A launch_to_match_ms=253.2 match_to_first_source_ms=96.4 match_to_first_bag_ms=139.1
+C launch_to_match_ms=210.2 match_to_first_source_ms=39.5 match_to_first_bag_ms=42.3
+forwarded=[7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59] missing_from_bags=[14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27] relay_cpu_s=0.140
+interior_or_forwarded_gaps=[14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27] process_cpu_s={'A': 0.337213, 'C': 0.30208400000000035, 'relay': 0.15652500000000003}
+forward_returns_during_recorder_shutdown=[]
+local=60/60
+matches=1 received=0 forwarded=0
+matches=0 received=29 forwarded=29
+matches=1 received=29 forwarded=29
+matches=0 received=43 forwarded=43
+Minimum host MemAvailable: 11955 MiB
+
+16-direct-stalled-depth32
+event_wall_ns {'A_start': 1795412243183116036, 'pause_begin': 1795412243981703347, 'pause_end': 1795412245577609351, 'A_stop': 1795412246385309767, 'C_start': 1795412247183666838}
+A verified sequences [6, 7, 8, 9, 10, 11, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35]
+C verified sequences [46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59]
+sync_live_at_take_peak=3 released=150/150
+pause_window full n=8 p95_ms=2.730
+pause_window partial n=8 p95_ms=42.133
+interior_or_forwarded_gaps=[12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22] process_cpu_s={'A': 0.317541, 'C': 0.3178709999999999}
+A launch_to_first_bag_ms=255.6
+A native_admits=19 serialized_takes=19 max_admit_to_release_ms=6.527
+C launch_to_first_bag_ms=254.2
+C native_admits=14 serialized_takes=14 max_admit_to_release_ms=0.823
+local=60/60
+Minimum host MemAvailable: 11893 MiB
+
+17-direct-stalled-both32
+event_wall_ns {'A_start': 1795412326427598695, 'pause_begin': 1795412327218465863, 'pause_end': 1795412328824754862, 'A_stop': 1795412329621735954, 'C_start': 1795412330420062769}
+A verified sequences [7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35]
+C verified sequences [47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59]
+sync_live_at_take_peak=3 released=150/150
+pause_window full n=8 p95_ms=3.553
+pause_window partial n=8 p95_ms=43.025
+interior_or_forwarded_gaps=[] process_cpu_s={'A': 0.388933, 'C': 0.36737699999999984}
+A launch_to_first_bag_ms=389.3
+A native_admits=29 serialized_takes=29 max_admit_to_release_ms=14.932
+C launch_to_first_bag_ms=396.2
+C native_admits=13 serialized_takes=13 max_admit_to_release_ms=0.619
+local=60/60
+Minimum host MemAvailable: 14477 MiB
+
+18-stalled-both32
+event_wall_ns {'A_start': 1795412337897402865, 'pause_begin': 1795412338696186813, 'pause_end': 1795412340292896137, 'A_stop': 1795412341090782960, 'C_start': 1795412341889650114}
+A verified sequences [6, 7, 8, 9, 10, 11, 12, 13, 28, 29, 30, 31, 32, 33, 34, 35]
+C verified sequences [46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59]
+sync_live_at_take_peak=3 released=150/150
+pause_window full n=8 p95_ms=3.209
+pause_window partial n=8 p95_ms=42.333
+A launch_to_match_ms=198.7 match_to_first_source_ms=49.9 match_to_first_bag_ms=54.3
+C launch_to_match_ms=257.8 match_to_first_source_ms=-1.4 match_to_first_bag_ms=1.9
+forwarded=[6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59] missing_from_bags=[14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27] relay_cpu_s=0.140
+interior_or_forwarded_gaps=[14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27] process_cpu_s={'A': 0.289858, 'C': 0.3755580000000003, 'relay': 0.16613299999999998}
+forward_returns_during_recorder_shutdown=[]
+local=60/60
+matches=1 received=0 forwarded=0
+matches=0 received=30 forwarded=30
+matches=1 received=30 forwarded=30
+matches=0 received=44 forwarded=44
+Minimum host MemAvailable: 14456 MiB
+
+19-stalled-both32
+event_wall_ns {'A_start': 1795412349522817060, 'pause_begin': 1795412350322088248, 'pause_end': 1795412351920702158, 'A_stop': 1795412352720725209, 'C_start': 1795412353518792520}
+A verified sequences [7, 8, 9, 10, 11, 12, 13, 28, 29, 30, 31, 32, 33, 34, 35]
+C verified sequences [46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59]
+sync_live_at_take_peak=3 released=150/150
+pause_window full n=8 p95_ms=3.436
+pause_window partial n=8 p95_ms=42.244
+A launch_to_match_ms=265.5 match_to_first_source_ms=85.5 match_to_first_bag_ms=129.4
+C launch_to_match_ms=231.3 match_to_first_source_ms=23.8 match_to_first_bag_ms=26.7
+forwarded=[7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59] missing_from_bags=[14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27] relay_cpu_s=0.140
+interior_or_forwarded_gaps=[14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27] process_cpu_s={'A': 0.35105499999999995, 'C': 0.34141400000000033, 'relay': 0.16626400000000008}
+forward_returns_during_recorder_shutdown=[]
+local=60/60
+matches=1 received=0 forwarded=0
+matches=0 received=29 forwarded=29
+matches=1 received=29 forwarded=29
+matches=0 received=43 forwarded=43
+Minimum host MemAvailable: 14460 MiB
+
+20-direct-stalled-both32
+event_wall_ns {'A_start': 1795412360964327675, 'pause_begin': 1795412361764429434, 'pause_end': 1795412363369283144, 'A_stop': 1795412364167525501, 'C_start': 1795412364965659295}
+A verified sequences [7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35]
+C verified sequences [47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59]
+sync_live_at_take_peak=3 released=150/150
+pause_window full n=8 p95_ms=3.448
+pause_window partial n=8 p95_ms=42.582
+interior_or_forwarded_gaps=[] process_cpu_s={'A': 0.383845, 'C': 0.3759060000000001}
+A launch_to_first_bag_ms=397.7
+A native_admits=29 serialized_takes=29 max_admit_to_release_ms=20.597
+C launch_to_first_bag_ms=395.6
+C native_admits=13 serialized_takes=13 max_admit_to_release_ms=0.935
+local=60/60
+Minimum host MemAvailable: 14583 MiB

@@ -80,6 +80,7 @@ def graph(context):
         str(share / "config/concatenate_and_time_sync_node.param.yaml"),
         {"input_topics": cropped, "is_motion_compensated": False,
          "publish_synchronized_pointcloud": False, "timeout_sec": 0.04},
+        *([{"maximum_queue_size": 32}] if os.getenv("SYNC_RECORDER_DEEP_HISTORY") else []),
     ], additional_env=sync_env, output="screen")
     sink_env = dict(env, SYNC_READY_FILE=ready)
     if mode == "stock" and os.getenv("SYNC_SINK_TRACE"):

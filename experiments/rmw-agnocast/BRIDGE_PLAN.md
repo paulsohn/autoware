@@ -68,3 +68,20 @@ loss, native owner retention and CPU before choosing the same-host logger
 path. Preserve the DDS export for network-bound recording. Lossless export
 would need its own bounded backlog/replay policy and overload tests.
 [Sequence audits and timings](live-recorder-results/)
+
+### Local recorder decision
+
+Prefer the stock rosbag2 recorder with rmw_agnocast and the heap hook for
+selected same-host PointCloud2 topics when the recorder can join the local
+Agnocast installation. Use a directed DDS export for an ordinary DDS
+recorder or a network peer. In the grouped colcon trials, direct recording
+at writer and reader depth 32 recovered all 16 clouds produced during a
+1.6 s recorder suspension. The best-effort DDS export recovered two at the
+same configured depth. Direct recording requires native new-message
+notifications for event executors and a valid RMW reception timestamp;
+both are now implemented on the default threaded native path.
+
+The next group can qualify generic message fallback in each direction,
+missing type support, and stock CLI behavior on an exported topic together.
+Independent network delivery and middleware-managed startup remain open.
+[Grouped comparison](local-recorder-results/summary.md)

@@ -375,7 +375,15 @@ struct Reader : std::enable_shared_from_this<Reader>
   Guard guard;
   std::mutex mutex;
   std::unique_ptr<HandoffTrace> trace;
-  std::deque<Loan> pending;
+  struct Received {
+    Loan loan;
+    rmw_time_point_value_t timestamp;
+  };
+  std::deque<Received> pending;
+  std::recursive_mutex callback_mutex;
+  rmw_event_callback_t message_callback = nullptr;
+  const void * callback_data = nullptr;
+  size_t unreported = 0;
   std::map<void *, Loan> held;
   std::vector<std::shared_ptr<NativeSubscription>> routes;
   std::mutex receive_mutex;
@@ -409,20 +417,21 @@ struct Reader : std::enable_shared_from_this<Reader>
           if (hop_reader().path && type.host_cloud)
             hop_reader().mark("admit", cloud_stamp(static_cast<const HostCloud *>(sample.get())->header));
           auto entry = trace ? HandoffTrace::now() : 0;
-          std::lock_guard lock(mutex);
+          std::unique_lock lock(mutex);
           if (pending.size() == depth) {
             if (trace && type.host_cloud) {
-              const auto & oldest = pending.front();
+              const auto & oldest = pending.front().loan;
               std::fprintf(stderr, "queue_evict id=%ld stamp=%ld depth=%zu\n",
                 static_cast<long>(oldest.get_entry_id()),
                 static_cast<long>(cloud_stamp(static_cast<const HostCloud *>(oldest.get())->header)), pending.size());
             }
             pending.pop_front();
           }
-          pending.emplace_back(std::move(sample));
+          const auto received = std::chrono::system_clock::now().time_since_epoch();
+          pending.push_back({std::move(sample), std::chrono::duration_cast<std::chrono::nanoseconds>(received).count()});
           HandoffTrace::Row * row = nullptr;
           if (trace && trace->rows.size() < trace->rows.capacity()) {
-            const auto & loan = pending.back();
+            const auto & loan = pending.back().loan;
             row = &trace->rows.emplace_back(
               HandoffTrace::Row{loan.get_entry_id(), reinterpret_cast<uintptr_t>(loan.get()), entry});
           }
@@ -430,6 +439,10 @@ struct Reader : std::enable_shared_from_this<Reader>
           if (row) row->signal = HandoffTrace::now();
           if (CYCLONE(rmw_trigger_guard_condition)(guard.get()) != RMW_RET_OK) std::terminate();
           if (row) row->signalled = HandoffTrace::now();
+          lock.unlock();
+          std::lock_guard callback_lock(callback_mutex);
+          if (message_callback) message_callback(callback_data, 1);
+          else if (unreported < depth) ++unreported;
         },
         agnocast::SubscriptionOptions{}, agnocast::SubscriptionRole::AgnocastOnly));
     };
@@ -480,7 +493,7 @@ struct Reader : std::enable_shared_from_this<Reader>
   {
     std::lock_guard lock(mutex);
     if ((start || direct) && !pending.empty()) {
-      if (auto row = trace->find(pending.front())) {
+      if (auto row = trace->find(pending.front().loan)) {
         if (direct) row->direct = *direct;
         row->wait_start = start;
         row->dds_return = returned;
@@ -743,8 +756,12 @@ rmw_ret_t take(
   std::lock_guard lock(r.mutex);
   *taken = !r.pending.empty();
   if (!*taken) return RMW_RET_OK;
-  if (info) *info = {};
-  auto & sample = r.pending.front();
+  auto & received = r.pending.front();
+  if (info) {
+    *info = {};
+    info->received_timestamp = received.timestamp;
+  }
+  auto & sample = received.loan;
   if (info && !r.type.legacy) {
     static const char * const implementation = CYCLONE(rmw_get_implementation_identifier)();
     info->publisher_gid.implementation_identifier = implementation;
@@ -839,6 +856,24 @@ rmw_ret_t take(
   return RMW_RET_OK;
 }
 }  // namespace
+extern "C" rmw_ret_t rmw_subscription_set_on_new_message_callback(
+  rmw_subscription_t * sub, rmw_event_callback_t callback, const void * data)
+{
+  if (!sub) return RMW_RET_INVALID_ARGUMENT;
+  auto reader = lookup(readers, sub->data);
+  if (!reader) return CYCLONE(rmw_subscription_set_on_new_message_callback)(sub, callback, data);
+  // The opt-in direct wait receiver dispatches only when its wait set is driven.
+  if (direct_wait_enabled() && callback) return RMW_RET_UNSUPPORTED;
+  std::lock_guard lock(reader->callback_mutex);
+  reader->message_callback = callback;
+  reader->callback_data = data;
+  if (callback && reader->unreported) {
+    auto count = reader->unreported;
+    reader->unreported = 0;
+    callback(data, count);
+  }
+  return RMW_RET_OK;
+}
 extern "C" rmw_ret_t rmw_take_serialized_message_with_info(
   const rmw_subscription_t * sub, rmw_serialized_message_t * msg, bool * taken,
   rmw_message_info_t * info, rmw_subscription_allocation_t * a)

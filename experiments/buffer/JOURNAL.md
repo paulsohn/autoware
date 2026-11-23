@@ -3543,3 +3543,91 @@ This small sample does not establish latency equivalence. Two earlier
 control/fault pairs without the live-owner counter gave the same loss pattern.
 Use this route for best-effort observation. A lossless logger needs an explicit
 delivery, buffering and recovery policy, with overload tested separately.
+
+### 2026-11-23 — Compare direct rosbag2 with DDS export in a single recorder batch
+
+Use the previous live 60-group 10 Hz workload, serializer, stock ros2 bag
+record process, SQLite and stop/restart schedule on the same Lyrical laptop.
+For direct recording omit the gateway, select native /output only in the
+recorder, and give it the heap hook and host-cloud configuration. For the DDS
+case keep the explicit demand-driven export and use ordinary Cyclone recorders.
+As a negative control run ordinary Cyclone against the graph-visible /output
+with the export absent. Compare healthy and 1.6 s process-group suspension
+in alternating orders. Repeat the suspended comparison with an explicit
+best-effort volatile KeepLast(32) recorder override to test sensitivity to
+reader depth. All runs are serial, pressure monitored, 512 MiB runtime
+scopes with no swap, and stop on the host memory guard.
+
+Source and build prerequisites are the rebuilt colcon pilot above. To reproduce
+the complete batch from the experimental worktree:
+
+```bash
+set -e
+export LYRICAL_ROOT=$(cat build/agnocast-lyrical/universe-root)
+experiments/buffer/run-lyrical.sh bash experiments/rmw-agnocast/build-loadable.sh
+experiments/buffer/run-lyrical.sh bash experiments/rmw-agnocast/build-pipeline.sh
+bash experiments/rmw-agnocast/batch-local-recorder.sh build/local-recorder-comparison
+```
+
+The original RMW admitted native samples and evicted queued clouds at depth
+five while both direct bags stayed empty. Native handoff traces had no take
+timestamps. The installed rosbag2 Python transport links the Lyrical event
+executor. That executor registers a new-message callback; previously the RMW
+delegated registration to the Cyclone proxy, which receives no native payload.
+The normal native receive thread now notifies the registered callback after
+enqueuing a loan and releasing the queue mutex. Registration, replacement
+and clear are serialized; arrivals before registration are counted up to
+history depth. Ordinary DDS registrations still use Cyclone. The opt-in
+direct-wait microbenchmark path has no background receive thread and reports
+unsupported for native event callback registration.
+
+For direct recording verify serialized takes against bag rows, compare each
+decoded cloud with the local output by source stamp and look for gaps inside
+each recording interval. The DDS relay also traces returned publications.
+Keep shutdown-boundary losses visible. One pre-fix healthy DDS run missed
+group 35; its publish returned 0.097 ms after the harness began stopping
+the first recorder. The original stricter check counted this as a failure.
+The current healthy check allows a missing forwarded sample only when the
+publish return fell between the stop request and the next recorder launch.
+The local synchronizer weak-owner audit covers input loans. The direct
+handoff trace measures application-side admission to serialized take/release;
+Agnocast can retain samples before admission, including while the process
+is stopped. Report post-resume recovery separately.
+
+After the callback correction, stock rosbag2 wrote the direct clouds but all
+SQLite reception timestamps were zero. The native take path initialized
+rmw_message_info_t and filled only the writer GID. Store a system-clock
+receive time beside the loan at native queue admission and return it on each
+take-with-info. No native wire-layout change is needed. The publisher source
+timestamp remains unavailable from this envelope. Read back and check the
+SQLite timestamp of every captured cloud against its source header and the
+current wall clock. Four initial final-build runs reached readback but the
+new Python check referenced an unnamed intermediate. Name the stamp before
+looking it up and rerun the affected conditions; retain those original status
+codes separately. Whole-process CPU is child user+system reaped by the driver
+and includes startup and shutdown of both successive recorders, plus the
+relay for DDS. This is a short deployment comparison, not a steady-state CPU
+or serialization microbenchmark.
+
+The configured native writer normally uses the synchronizer's
+maximum_queue_size of five. A reader-only depth increase left five direct
+clouds recoverable. For the final two pairs we also set the synchronizer
+queue size to 32 and the typed relay's SensorDataQoS depth to 32. This changes
+the synchronizer's input and output QoS together. The source phase and local
+verifier were identical. In the first all-depth-32 direct run, source-to-bag
+time for the oldest recovered cloud reached 1.55 s. The recovered cloud data
+therefore persisted across the recorder suspension. These times include
+pre-admission history and differ from the short RMW handoff-to-release trace.
+Keep the larger history opt-in; its buffering cost grows with cloud size.
+
+All 21 accepted runs verified 60 local clouds each, peaked at three observed
+synchronizer input owners and released all 150. Healthy recording captured
+16/16 groups in the comparison window on each path. Under suspension the
+default direct path retained the last five, while DDS captured the first
+two. Reader depth 32 alone repeated those results. With depth 32 configured
+at both ends direct recorded 16/16 in both trials and best-effort DDS kept
+2/16 in both. The negative control recorded zero. Median healthy logger-path
+CPU was 0.648 s direct and 0.797 s via DDS, including both successive recorder
+lifetimes and, for DDS, the relay. The original loan/death contract, both
+directions of the typed Path bridge and the host-view take checks passed.
+[Matrix, frame audits and validation](../rmw-agnocast/local-recorder-results/summary.md)

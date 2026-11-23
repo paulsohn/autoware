@@ -1,0 +1,40 @@
+Initial callbacks delegated to Cyclone. Six direct recordings produced empty bags although native queue admission and depth-five evictions were observed.
+After dispatching native callbacks, direct recording produced clouds, but SQLite timestamps were zero.
+Final build checked receipt timestamps and content. The first four non-control readbacks hit a Python NameError, then passed on rerun with the stamp bound before the comparison.
+0 unrouted 0
+1 direct-running 1
+2 running 1
+3 direct-stalled 1
+4 stalled 1
+5 stalled 0
+6 direct-stalled 0
+7 running 0
+8 direct-running 0
+9 running 0
+10 direct-running 0
+11 stalled 0
+12 direct-stalled 0
+13 direct-stalled-depth32 0
+14 stalled-depth32 0
+15 stalled-depth32 0
+16 direct-stalled-depth32 0
+17 direct-stalled-both32 0
+18 stalled-both32 0
+19 stalled-both32 0
+20 direct-stalled-both32 0
+retry-1 direct-running 0
+retry-2 running 0
+retry-3 direct-stalled 0
+retry-4 stalled 0
+build/local-recorder-final/host-view.log:view addresses, independent mutation, retention and final release passed
+build/local-recorder-final/host-view.log:empty and padded clouds verified through typed and serialized take
+build/local-recorder-final/host-view.log:Minimum host MemAvailable: 12199 MiB
+build/local-recorder-final/contract.log:typed x=1 source_ns=0 receive_ns=1795412250739392457 gid_identifier=rmw_cyclonedds_cpp
+build/local-recorder-final/contract.log:serialized callback verified; incompatible reliable callback=0
+build/local-recorder-final/contract.log:writer reused held sample address after SIGKILL
+build/local-recorder-final/contract.log:Minimum host MemAvailable: 12076 MiB
+build/local-recorder-final/route-bridge.log:a2r off passed
+build/local-recorder-final/route-bridge.log:a2r on passed
+build/local-recorder-final/route-bridge.log:r2a off passed
+build/local-recorder-final/route-bridge.log:r2a on passed
+build/local-recorder-final/route-bridge.log:Minimum host MemAvailable: 12113 MiB
