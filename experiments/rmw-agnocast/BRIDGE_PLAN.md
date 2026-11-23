@@ -136,3 +136,13 @@ segment if necessary. Preserve the healthy gateway and local graph.
 Before choosing middleware-owned recovery, compare this interface replacement
 with a plain Cyclone publisher under the same profile and a link outage that
 preserves both interfaces. [Recovery evidence](network-peer/results/recovery.md)
+
+### Demand-driven gateway owns its match status through the matched callback
+
+The Lyrical stock Cyclone endpoint reproduced the missed zero-match notification
+when a subscription-count query ran before event dispatch. The demand-driven
+gateway now attaches and detaches through the callback and skips the competing
+per-cloud count query. Keep the existing count check for always-attached
+routes. An interface-preserving outage and a Docker network replacement
+have distinct recovery behavior. The latter can still require a new recorder
+segment. [Stock control and integrated regression](network-peer/results/match-status.md)

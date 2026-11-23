@@ -54,7 +54,9 @@ void relay(const char * input, const char * output, const rclcpp::QoS & qos, boo
         (*row)[1] = node->now().nanoseconds();
       }
       ++received;
-      if (pub->get_subscription_count() == 0) return;
+      // Cyclone's count getter resets the same status used by matched_callback.
+      // In demand mode the callback already owns attachment and detachment.
+      if (!demand && pub->get_subscription_count() == 0) return;
       if (!forwarded) RCLCPP_INFO(node->get_logger(), "ingress_gid=%s egress_gid=%s",
         gid(info.get_rmw_message_info().publisher_gid).c_str(), gid(pub->get_gid()).c_str());
       pub->publish(msg);

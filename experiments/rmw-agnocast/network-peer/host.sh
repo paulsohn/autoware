@@ -16,6 +16,12 @@ if [[ $mode == verify ]]; then exec python3 experiments/rmw-agnocast/network-pee
 bin=$(ros2 pkg prefix agnocast_rmw_loan_probe)/lib/agnocast_rmw_loan_probe
 hook=$(ros2 pkg prefix agnocastlib)/lib/libagnocast_heaphook.so
 native=(env LD_PRELOAD="$hook" RMW_IMPLEMENTATION=rmw_agnocast AGNOCAST_RMW_HOST_CLOUD=1 AGNOCAST_BRIDGE_MODE=OFF AGNOCAST_NO_DISCOVERY_AGENT=1)
+if [[ $mode == match-probe ]]; then
+  if [[ $1 == stock ]]; then
+    exec python3 experiments/rmw-agnocast/network-peer/match-probe.py "$out" "$2"
+  fi
+  exec "${native[@]}" AGNOCAST_RMW_PUBLISH_TOPICS= AGNOCAST_RMW_SUBSCRIBE_TOPICS= python3 experiments/rmw-agnocast/network-peer/match-probe.py "$out" "$2"
+fi
 relay=
 finish() {
   if [[ -n $relay ]]; then

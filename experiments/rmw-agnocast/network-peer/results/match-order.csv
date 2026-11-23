@@ -1,0 +1,9 @@
+case,after_dispatch,restored,delivered
+link-shim-event,"0 events [1, 0]","1 events [1, 0, 1]","1,2"
+link-shim-query,0 events [1],"1 events [1, 1]","1,2"
+link-stock-event,"0 events [1, 0]","1 events [1, 0, 1]","1,2"
+link-stock-query,0 events [1],"1 events [1, 1]","1,2"
+replace-shim-event,"0 events [1, 0]","0 events [1, 0]",1
+replace-shim-query,0 events [1],0 events [1],1
+replace-stock-event,"0 events [1, 0]","0 events [1, 0]",1
+replace-stock-query,0 events [1],0 events [1],1

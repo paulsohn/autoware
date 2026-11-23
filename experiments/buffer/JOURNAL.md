@@ -3802,3 +3802,24 @@ and continued taking unused local clouds. Keep endpoint discovery, data
 delivery and idle gateway cost as separate acceptance checks. The first
 exploratory harness ended observation when the source exited; the final
 lease case also monitors the endpoints for 12 seconds after reconnection.
+
+### 2026-11-23 — Diagnose and fix the missed gateway detach
+
+Reused the stock peer, its private Docker network, and the guarded Lyrical
+colcon overlay from the recovery experiment. Disassembly of the installed
+Cyclone RMW and its DDS header identified a reset-on-read matched status.
+The stock publisher control paused executor dispatch during expiry and read
+the count before or after dispatch. Both middleware selections lost the
+zero-match callback only in the query-first arm. The real gateway had the
+same competing read in the native cloud callback. Letting the demand-mode
+matched callback own the status removes that race.
+
+Run the [reproduction commands](../rmw-agnocast/network-peer/README.md#diagnose-a-missed-matched-callback)
+with the prepared peer idle. The colcon build completed both packages.
+Run recovery.py again with link and lease in a fresh output directory to
+repeat the native cloud checks. Each bag row is compared to the local
+PointCloud2 by source stamp and content. Compare the native take counts at
+zero and subsequent rematch or process exit to verify detachment. A peer
+with the original interface restored resumed recording. Docker interface
+replacement still required fresh discovery in a new recorder process in the
+tested setup. [Control matrix and graph evidence](../rmw-agnocast/network-peer/results/match-status.md)

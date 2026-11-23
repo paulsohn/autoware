@@ -116,3 +116,26 @@ graph, and keeps the large artifacts under build/. The first resumed sequence
 uses the source stamp. The restore interval uses the bag reception timestamp
 and includes process startup when applicable. See the
 [observations and operator recovery procedure](results/recovery.md).
+
+## Diagnose a missed matched callback
+
+With awpilot0-stock idle on its prepared network, run the status-order control
+and the three-LiDAR regression separately and sequentially. The host uses its
+Lyrical runtime guard. A transient 96 MiB helper enters only the stock peer's
+network namespace with NET_ADMIN to lower and raise eth0. The link case
+checks that eth0 retained its interface index. The replace case removes the
+Docker attachment and reconnects it at the same IP.
+
+```bash
+export LYRICAL_ROOT=$(cat build/agnocast-lyrical/universe-root)
+experiments/buffer/run-lyrical.sh bash experiments/rmw-agnocast/build-loadable.sh
+sg docker -c 'python3 experiments/rmw-agnocast/network-peer/match-matrix.py build/match-control'
+sg docker -c 'python3 experiments/rmw-agnocast/network-peer/recovery.py build/match-graph link lease recorder gateway lease-restart suspend'
+```
+
+The probe observes the first match, pauses application dispatch across lease
+expiry and varies whether the application reads get_subscription_count()
+before resuming dispatch. It then records the callback sequence, count and
+test message reception after link restoration. The load test checks actual
+subscription detachment and rosbag payloads on the native-to-DDS export.
+[Findings and measured results](results/match-status.md)

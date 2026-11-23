@@ -8,6 +8,7 @@ import subprocess as sp
 import sys
 import time
 from pathlib import Path
+from peer_link import link
 
 recipe = Path("experiments/rmw-agnocast/network-peer")
 out = Path(sys.argv[1])
@@ -36,6 +37,7 @@ def run_case(mode):
     events = {}
     disconnected = False
     suspended = False
+    down_index = None
     pidfile = "/tmp/recovery-" + str(os.getpid()) + ".pid"
     def mark(label):
         events[label] = time.time_ns()
@@ -91,6 +93,9 @@ def run_case(mode):
             docker("network", "disconnect", net, peer)
             disconnected = True
             matched("relay1", 0)
+        elif mode == "link":
+            down_index = link(peer, "down")
+            matched("relay1", 0)
         elif mode == "suspend":
             docker("exec", peer, "bash", "-ec", 'kill -STOP "$(cat "$1")"', "bash", pidfile)
             suspended = True
@@ -111,6 +116,11 @@ def run_case(mode):
                 name = "rec2"
                 bag = recorder(name)
                 matched("relay1", 1, 2)
+        elif mode == "link":
+            restored_index = link(peer, "up")
+            assert restored_index == down_index
+            down_index = None
+            matched("relay1", 1, 2)
         elif mode == "suspend":
             docker("exec", peer, "bash", "-ec", 'kill -CONT "$(cat "$1")"', "bash", pidfile)
             suspended = False
@@ -151,6 +161,9 @@ def run_case(mode):
             assert [t[1] for t in transitions] == (["1", "0", "1"] if rematched else ["1", "0"])
             if rematched:
                 assert transitions[1][2:] == transitions[2][2:]
+            else:
+                final_counts = re.search(r"\]: received=(\d+) forwarded=(\d+)", (case / "relay1.log").read_text())
+                assert final_counts and final_counts.groups() == transitions[1][2:]
         lost_forward = [int(r["sequence"]) for r in rows if r["forwarded"] == "1" and not r["bag_ns"]]
         result = dict(events=events, transitions=transitions, local=len(rows), recorded=len(received),
                       last_before=last, first_after=first, forwarded_without_bag=lost_forward,
@@ -158,6 +171,8 @@ def run_case(mode):
         (case / "result.json").write_text(json.dumps(result, indent=2) + "\n")
         print(mode, result, flush=True)
     finally:
+        if down_index is not None:
+            link(peer, "up")
         if suspended:
             docker("exec", peer, "bash", "-ec", 'kill -CONT "$(cat "$1")"', "bash", pidfile)
         if disconnected:
@@ -168,7 +183,7 @@ def run_case(mode):
             proc.wait(timeout=42)
         docker("exec", peer, "rm", "-f", pidfile)
 
-trials = ("lease", "recorder", "gateway", "suspend", "lease-restart")
+trials = ("lease", "recorder", "gateway", "suspend", "lease-restart", "link")
 for trial in sys.argv[2:] or trials:
     if trial not in trials:
         raise ValueError(trial)
