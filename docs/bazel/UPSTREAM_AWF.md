@@ -2283,3 +2283,33 @@ Local source fix: `487efbeb1`.
   Use the .hpp headers for both TF2 includes. No assertions or implementation
   behavior change. All original shape cases and the added geometry transport
   check pass after the fix. Older ROS/CMake execution is not claimed.
+
+### Euclidean clustering portability and semantic-cloud layout
+
+- [ ] Associate the standard-random fixture fix with upstream. Checked 2026-11-24:
+  [current voxel test](https://github.com/autowarefoundation/autoware_universe/blob/main/perception/autoware_euclidean_cluster/test/test_voxel_grid_based_euclidean_cluster.cpp)
+  retains experimental/random; scoped module/header PR search finds no fix.
+  LLVM 21.1.8/libc++ fails compilation because that experimental header is absent.
+  Use std::mt19937 and std::uniform_int_distribution<int>(0,30), preserving the
+  inclusive range and every assertion; seed the test fixture for repeatability.
+- [ ] Associate padded semantic output with upstream. Checked 2026-11-24:
+  [current semantic implementation](https://github.com/autowarefoundation/autoware_universe/blob/main/perception/autoware_euclidean_cluster/lib/label_based_euclidean_cluster.cpp)
+  still calls pcl::toROSMsg for segments; scoped module/padding PR search finds
+  no matching fix. The Lyrical/libexpected PR
+  [#13622](https://github.com/autowarefoundation/autoware_universe/pull/13622)
+  concerns expected headers/dependency selection, not either correction here.
+  [AWF #7404](https://github.com/autowarefoundation/autoware/issues/7404) is the
+  general distribution tracker, not a matching fix association.
+
+Reproduce with the complete Phase 9.5 clustering gate in JOURNAL.md. The existing
+SemanticNonObjectLabelsAreOutputAsSegments case fails fields/stride/raw-data
+comparisons: PointXYZCPE input is 24 bytes, but current pcl_conversions explicitly
+requests padding removal on PCL >=1.14.1, producing 21 bytes and moving probability/
+entropy fields. The same package's input checker requires the padded layout, so
+its own output cannot be consumed again. Use pcl::toPCLPointCloud2's default padded
+conversion and pcl_conversions::moveFromPCL. This keeps the original assertions
+and standard older-PCL conversion overload; no weakened test or message schema
+change. Both fixes pass all 27 original cases and three added nonempty node
+transport cases with Cyclone/RCLCPP; enabled mixed/Agnocast-only profiles are
+recorded in the journal. No older ROS/CMake verification or upstream submission
+is claimed.

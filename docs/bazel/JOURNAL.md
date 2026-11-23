@@ -21588,3 +21588,65 @@ env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
   //bazel/tests:voxel_grid_based_euclidean_cluster_transport_test \
   //bazel/tests:label_based_euclidean_cluster_transport_test
 ```
+
+## 2026-11-24: Phase 9.5 — Euclidean and semantic clustering
+
+Purpose: integrate all five original library sources, three node implementations,
+indexed launch/config/test resources and every original functional target. Inspect
+CMake, manifest, all source/header/test files and parameter profiles. Prerequisites
+are the existing PCL/point-type/object-recognition providers and the CUDA-free
+shape API. Acceptance comprises six voxel cases, thirteen semantic-core cases,
+eight semantic-node cases and three added nonempty transport checks. Select the
+mixed voxel and Agnocast-only semantic node for enabled checks; plain Euclidean
+clustering remains ROS. No Fast DDS, GPU-clustering or product gate is selected.
+
+Pattern: package module, adjacent root override and a narrow five-source compile/
+shared provider. Separate each node's component DSO and indexed executable. Depend
+on shape :shape_estimator_library and :shape_estimator_runtime_dynamic_deps,
+never its TensorRT/node aggregate. Use @rosdistro//cc:tl_expected directly for the
+absent-local expected header library. Original voxel tests supply their own main;
+other suites use gtest_main. Declare all original cases without source omissions.
+The RCR plain component macro needs node_name to generate an executable and emits
+_record; wrapper registration emits _components/_plugin. Use those actual target
+contracts rather than assuming both registration APIs are identical.
+
+Build-provider blocker: the first downstream shared consumer exposed four more
+compiled utility dependencies hidden by the shape DSO. The preceding provider
+entry records explicit exports of all six utility owners and full revalidation.
+
+Source blockers/cause/fix: libc++ lacks experimental/random, used by the original
+voxel fixture. Replace it with standard mt19937/uniform_int_distribution with
+inclusive 0..30 values and a fixed seed, preserving every assertion. Next, the
+original semantic non-object test fails field offsets, stride and data: current
+pcl::toROSMsg requests padding removal, producing 21-byte points from required
+24-byte PointXYZCPE input. This violates the downstream input-layout contract.
+Use the padded default pcl::toPCLPointCloud2 overload, then moveFromPCL. All
+original byte/layout assertions now pass. UPSTREAM_AWF.md records current-source
+checks and PR association status; both source changes are committed separately
+from Bazel declarations. Neither change weakens tests or changes label policy.
+
+Added tests under bazel/tests publish two separated 16-point nondegenerate
+clusters using original YAML. Plain and voxel nodes must retain all 32 points,
+two clusters and their centres/header. Semantic input uses PointXYZCPE CAR/TRUCK
+classes, with minimum geometric-size filtering disabled for this small fixture;
+check both labels, probabilities, polygon output and header. Enabled voxel uses
+a ROS input plus Agnocast output and the ROS-aware mixed executor; semantic uses
+wrapper peers and Agnocast-only execution, asserting RCLCPP stays off.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  @autoware_euclidean_cluster//... //bazel/tests:euclidean_cluster_transport_test \
+  //bazel/tests:voxel_grid_based_euclidean_cluster_transport_test \
+  //bazel/tests:label_based_euclidean_cluster_transport_test
+```
+
+Results: all 28 non-test targets and six test targets build; all 27 original plus
+three added cases pass in 24.2 s. The combined shape/clustering gate above also
+passes all nine targets after the final source/include changes. Both enabled
+clustering cases pass with built/preloaded heaphook (three-target gate including
+shape, 14.4 s). Zero failures/errors/skips. Targeted format checks cover changed
+source ranges without formatting unrelated upstream code. No production point-
+cloud replay/performance or older ROS/CMake execution is claimed. Next and last
+in this phase: detection-by-tracker.

@@ -15,7 +15,6 @@
 #include "autoware/euclidean_cluster/voxel_grid_based_euclidean_cluster.hpp"
 
 #include <autoware/point_types/types.hpp>
-#include <experimental/random>
 
 #include <sensor_msgs/msg/point_cloud2.hpp>
 #include <sensor_msgs/point_cloud2_iterator.hpp>
@@ -27,6 +26,7 @@
 #include <iostream>
 #include <limits>
 #include <memory>
+#include <random>
 
 using autoware::point_types::PointXYZI;
 void setPointCloud2Fields(sensor_msgs::msg::PointCloud2 & pointcloud)
@@ -63,12 +63,14 @@ sensor_msgs::msg::PointCloud2 generateClusterWithinVoxel(const int nb_points)
   setPointCloud2Fields(pointcloud);
   pointcloud.data.resize(nb_points * pointcloud.point_step);
 
+  std::mt19937 generator(0);
+  std::uniform_int_distribution<int> coordinate(0, 30);
   // generate one cluster with specified number of points within 1 voxel
   for (int i = 0; i < nb_points; ++i) {
     PointXYZI point;
-    point.x = std::experimental::randint(0, 30) / 100.0;  // point.x within 0.0 to 0.3
-    point.y = std::experimental::randint(0, 30) / 100.0;  // point.y within 0.0 to 0.3
-    point.z = std::experimental::randint(0, 30) / 1.0;
+    point.x = coordinate(generator) / 100.0;  // point.x within 0.0 to 0.3
+    point.y = coordinate(generator) / 100.0;  // point.y within 0.0 to 0.3
+    point.z = coordinate(generator) / 1.0;
     point.intensity = 0.0;
     memcpy(&pointcloud.data[i * pointcloud.point_step], &point, pointcloud.point_step);
   }

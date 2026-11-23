@@ -247,7 +247,11 @@ LabelBasedEuclideanCluster::result_t LabelBasedEuclideanCluster::process(
 
   // 2. Split points by label and filter by probability
   auto split_points = split_pointcloud(*points, min_probability_);
-  pcl::toROSMsg(split_points.segment_points, output.segments);
+  // The semantic cloud contract requires the padded PointXYZCPE layout.
+  // pcl::toROSMsg strips that padding with recent PCL versions.
+  pcl::PCLPointCloud2 segments;
+  pcl::toPCLPointCloud2(split_points.segment_points, segments);
+  pcl_conversions::moveFromPCL(segments, output.segments);
 
   // 3. Run per-label clustering and collect all cluster entries
   std::vector<ClusterEntry> all_entries;
