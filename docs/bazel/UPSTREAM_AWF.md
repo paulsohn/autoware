@@ -1841,6 +1841,7 @@ CMake/GCC are not qualified here. No upstream issue/PR was submitted.
   matching association. No upstream submission is made.
 
 Packages: autoware_radar_tracks_noise_filter and autoware_radar_threshold_filter.
+Local source correction: 9a8c69df.
 Each complete original two-file target throws 'context is already initialized'
 before reaching its assertions. Remove the body initialization only; retain the
 original main, context shutdown, files and all assertions. This is a test-lifetime
@@ -1858,6 +1859,7 @@ CMake and GCC gates were not run. See the
   PR search finds none. The broader autoware#7404 and universe#13590 trackers
   are related compatibility context, not matching patches.
 
+Local source correction: af93a61e.
 Package: autoware_radar_static_pointcloud_filter. Message Filters 7.4.2 no longer
 exports these .h forwarding headers or the old raw-QoS subscription overload.
 Use the corresponding .hpp headers and pass the existing SensorDataQoS object
@@ -1878,6 +1880,7 @@ LLVM/libc++ 21.1.8 profile. Older-ROS/CMake compatibility is not claimed.
   changes lookup timestamp/null handling; its actual patch does not fix this
   return. No matching fix is associated and no upstream submission is made.
 
+Local source correction: af93a61e.
 The helper's TF rotation is computed and discarded, so ego-x compensation uses
 sensor coordinates for a rotated radar. Return transformed_velocity_stamped.vector;
 retain the existing x-velocity threshold algorithm. A real synchronized ROS test

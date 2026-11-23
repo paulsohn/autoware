@@ -1260,6 +1260,9 @@
     "https://bazel.ros.org/modules/qtwebsockets/6.10.2.rcr.0/source.json": "9d2db9529e12f0f4ed11f66f46a06393b3b80670112a24f582d4e30d63b01357",
     "https://bazel.ros.org/modules/qtwebview/6.10.2.rcr.0/MODULE.bazel": "25fde16e54bf8103056d7fc73917ba6a84a297401a34f0c4f3bf41e7b5323f50",
     "https://bazel.ros.org/modules/qtwebview/6.10.2.rcr.0/source.json": "6c478df4ebb42d97a6aa32a053012673c988b200dd37ecec125341527f82d89f",
+    "https://bazel.ros.org/modules/radar_msgs/0.0.0/MODULE.bazel": "1ddd6b368ec0cd375763222217b2cf9eb1faa0a4bc68665ac5c6fc99cdf0b6ca",
+    "https://bazel.ros.org/modules/radar_msgs/0.2.2-5.rcr.2/MODULE.bazel": "e38781e7691c12bcc4ebdf43acfcc22932956292084514a440bf76796add83d9",
+    "https://bazel.ros.org/modules/radar_msgs/0.2.2-5.rcr.2/source.json": "cdb39dfd840afdaa612f03ad71d442611b786272fe3429a8aeb6da82c946982b",
     "https://bazel.ros.org/modules/range-v3/0.12.1-20260505-108f93c/MODULE.bazel": "not found",
     "https://bazel.ros.org/modules/rapidjson/1.1.0.bcr.20241007/MODULE.bazel": "not found",
     "https://bazel.ros.org/modules/rapidjson/1.1.0.bcr.20250205/MODULE.bazel": "not found",
@@ -3568,7 +3571,7 @@
     "@@rosdistro+//python:defs.bzl%pip_ros": {
       "general": {
         "bzlTransitiveDigest": "9KPSmaWfGTp6RN0By0DcuUgpR00WASpGuGN+q6IHLUY=",
-        "usagesDigest": "wghM34RlI4o9JC8esHHy9LLK7rM6DfGrRWErgmqLbsw=",
+        "usagesDigest": "FwukhwBXVRJgxBimkK/VnqzEfOBg3ARIlrvY1u/Lbs0=",
         "recordedInputs": [
           "REPO_MAPPING:bazel_features+,bazel_features_globals bazel_features++version_extension+bazel_features_globals",
           "REPO_MAPPING:bazel_features+,bazel_features_version bazel_features++version_extension+bazel_features_version",

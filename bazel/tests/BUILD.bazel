@@ -2034,3 +2034,18 @@ tensorrt_cc_test(
         "@tensorrt",
     ],
 )
+
+cc_test(
+    name = "radar_noise_behavior_test",
+    srcs = ["radar/test_noise.cpp", "radar/ros_fixture.hpp"],
+    dynamic_deps = [
+        "@autoware_radar_tracks_noise_filter//:autoware_radar_tracks_noise_filter_component",
+        "@autoware_radar_tracks_noise_filter//:runtime_dynamic_deps",
+    ],
+    deps = [
+        "@autoware_radar_tracks_noise_filter//:autoware_radar_tracks_noise_filter_library",
+        "@rclcpp//:rclcpp_library",
+        "@googletest//:gtest_main",
+    ],
+    tags = ["no-sandbox", "no-remote"],
+)

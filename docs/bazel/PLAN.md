@@ -2124,6 +2124,36 @@ launch stack; preserving that exact workflow requires its actual dependency
 closure. Review that boundary before implementing 7.3, rather than substituting
 a core-only launch and declaring the documented simulator milestone complete.
 
+## Phase 9: Broader Universe coverage (in progress)
+
+Phase 8 retains its reserved JetPack software-compatibility scope. Execute
+Universe coverage first under the agreed priority, preserving existing phase
+identifiers and package-level validation/commit boundaries. Group related
+packages for implementation and sequential builds; do not reopen the completed
+simulator/packaging gate or run expensive targets automatically.
+
+### Phase 9.1: Radar input conversion and filtering (in progress)
+
+| Module | Complete acceptance |
+| --- | --- |
+| autoware_radar_objects_adapter | All 39 original conversion cases and seven original ROS node cases; switchable component/executable and indexed launch/config resources. |
+| autoware_radar_tracks_noise_filter | Original noise-classification case and driver; ROS partition/header behavior check. |
+| autoware_radar_threshold_filter | Original threshold case and driver; ROS filtering/header and parameter behavior check. |
+| autoware_radar_scan_to_pointcloud2 | No original C++ suite; added ROS geometry/intensity/header and publication-configuration checks. |
+| autoware_radar_static_pointcloud_filter | No original C++ suite; added synchronized radar/odometry/TF partition checks, including rotated sensor frames. |
+
+Use local sensing/perception messages, geometry/utilities and PCL/TF providers.
+radar_msgs is absent locally; the official RCR 0.2.2-5.rcr.2 release is accepted
+by the complete affected builds/tests and recorded registry hashes.
+All existing cases and root-added behavior checks are required. Routine gates
+use Cyclone DDS with Agnocast disabled, matching original ROS integration tests;
+no communication-layer change or Fast DDS run is scheduled. Build the selected
+components, standalone executables and indexes, and keep new tests under bazel/.
+Document/fix only demonstrated compatibility or implementation failures.
+
+Validated package gates are recorded separately in JOURNAL.md; the group closes
+after all five package registrations and their acceptance evidence are committed.
+
 ## Later phases
 
 ### Incoming phase identifiers
