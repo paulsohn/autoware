@@ -2268,3 +2268,16 @@ Local source fix: `f066695ec`.
   No implementation/threshold/test-assertion change or older ROS/CMake run is
   claimed. The plain occupancy/cloud nodes remain ROS subscriptions; only the
   lanelet classes support Agnocast-only execution. No upstream submission made.
+
+### Shape-estimation original tests use removed TF2 headers
+
+- [ ] Associate with a matching upstream fix. Checked 2026-11-24: the
+  [current corrector test](https://github.com/autowarefoundation/autoware_universe/blob/main/perception/autoware_shape_estimation/test/test_corrector_utils.cpp)
+  retains Quaternion.h and utils.h; a scoped shape/Lyrical PR search finds no
+  matching fix. [autoware#7404](https://github.com/autowarefoundation/autoware/issues/7404)
+  remains the general tracker.
+- Reproduce with the Phase 9.5 shape CPU gate in JOURNAL.md, Lyrical and the
+  pinned LLVM/libc++ toolchain: compilation fails on tf2/LinearMath/Quaternion.h.
+  Use the .hpp headers for both TF2 includes. No assertions or implementation
+  behavior change. All original shape cases and the added geometry transport
+  check pass after the fix. Older ROS/CMake execution is not claimed.

@@ -21475,3 +21475,29 @@ and one added case pass in 42.0 s. The enabled case passes in 9.7 s with built/
 preloaded heaphook. Zero failures/errors/skips; targeted formatting/diff checks
 pass. No Fast DDS or product-level deployment check is selected. Next is shape
 estimation, including its conditional learned-shape configuration.
+
+## 2026-11-24: Phase 9.5 — geometric and learned shape estimation
+
+Purpose: integrate the local shape-estimation module before clustering consumers.
+Inspect CMake's fifteen geometry sources, conditional TensorRT source, wrapper
+node, all four original test translation units, private/public headers and YAML.
+Acceptance covers all 37 original cases with CUDA disabled and enabled, geometric
+transport in RCLCPP and Agnocast-only, and actual GPU inference/decoding through
+the node. The learned test is a synthetic protocol check, not trained-model
+accuracy. No Fast DDS or full-product gate is selected.
+
+The CPU build exposed removed TF2 test includes. Replace Quaternion.h/utils.h
+with .hpp, preserving all assertions. Current upstream retains these aliases;
+UPSTREAM_AWF.md records the 2026-11-24 check and tracker association status.
+CPU verification below passes all 37 original cases and the geometric transport
+case (38.1 s); CUDA-enabled and Agnocast gates are still in progress.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast \
+  --@autoware_shape_estimation//:enable_cuda=false --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  @autoware_shape_estimation//:ament_index @autoware_shape_estimation//:shape_estimation_node \
+  @autoware_shape_estimation//:test_autoware_shape_estimation \
+  //bazel/tests:shape_estimation_transport_test
+```
