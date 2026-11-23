@@ -142,13 +142,13 @@ export LD_PRELOAD=/opt/ros/jazzy/lib/libagnocast_heaphook.so
 In terminal A, start the listener.
 
 ```bash
-"$(ros2 pkg prefix examples_rclcpp_minimal_subscriber)/lib/examples_rclcpp_minimal_subscriber/subscriber_member_function"
+ros2 run examples_rclcpp_minimal_subscriber subscriber_member_function
 ```
 
 In terminal B, start the talker.
 
 ```bash
-"$(ros2 pkg prefix examples_rclcpp_minimal_publisher)/lib/examples_rclcpp_minimal_publisher/publisher_member_function"
+ros2 run examples_rclcpp_minimal_publisher publisher_member_function
 ```
 
 Expect successive `I heard: 'Hello, world! …'` lines in terminal A. For your own project, launch the nodes from the configured environment. Every participating process inherits the middleware choice. Topic selection lists, a handoff file, native ROS CLI shims and bridge-mode flags are unnecessary. The old handoff file was benchmark instrumentation. CYCLONEDDS_URI applies only to processes you launch with Cyclone.
