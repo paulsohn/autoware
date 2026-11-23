@@ -2446,3 +2446,13 @@ cc_test(
     deps = ["@autoware_detected_object_validation//:object_lanelet_filter_library", "@autoware_detected_object_validation//:test_fixtures", "@googletest//:gtest"],
     tags = ["no-sandbox", "no-remote"],
 )
+
+cc_test(
+    name = "raindrop_cluster_transport_test",
+    srcs = ["autoware_raindrop_cluster_filter/test_transport.cpp"],
+    data = ["@agnocast_heaphook", "@autoware_raindrop_cluster_filter//:config/low_intensity_cluster_filter.param.yaml"],
+    env = {"RAINDROP_PARAMS": "$(rootpath @autoware_raindrop_cluster_filter//:config/low_intensity_cluster_filter.param.yaml)"},
+    dynamic_deps = ["@autoware_raindrop_cluster_filter//:runtime_dynamic_deps"],
+    deps = ["@autoware_raindrop_cluster_filter//:autoware_raindrop_cluster_filter_library", "@autoware_point_types", "@point_cloud_msg_wrapper", "@googletest//:gtest"],
+    tags = ["no-sandbox", "no-remote"],
+)

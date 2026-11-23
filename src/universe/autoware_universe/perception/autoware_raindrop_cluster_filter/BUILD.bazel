@@ -1,0 +1,86 @@
+load("@autoware_agnocast_wrapper//:defs.bzl", "autoware_agnocast_node")
+load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "autoware_raindrop_cluster_filter_library",
+    srcs = ["src/low_intensity_cluster_filter_node.cpp"],
+    hdrs = ["src/low_intensity_cluster_filter_node.hpp"],
+    includes = ["src"],
+    copts = ["-Wall", "-Wextra", "-Wpedantic"],
+    deps = [
+        "@autoware_agnocast_wrapper//:autoware_agnocast_wrapper_library",
+        "@autoware_detected_object_validation//:utils",
+        "@autoware_perception_msgs//:cc",
+        "@autoware_utils",
+        "@pcl_conversions//:pcl_conversions_library",
+        "@pcl_ros//:pcl_ros_tf_library",
+        "@rclcpp//:rclcpp_library",
+        "@rclcpp_components//:rclcpp_components_library",
+        "@sensor_msgs//:cc",
+        "@tf2//:tf2_library",
+        "@tf2_ros//:tf2_ros_library",
+        "@tier4_perception_msgs//:cc",
+        "@rosdistro//cc:eigen",
+        "@rosdistro//cc:pcl_common",
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = [
+        "@autoware_agnocast_wrapper",
+        "@autoware_detected_object_validation//:utils_shared",
+        "@autoware_perception_msgs//:cc_shared",
+        "@autoware_utils//:runtime_dynamic_deps",
+        "@pcl_conversions//:pcl_conversions",
+        "@pcl_ros//:pcl_ros_tf",
+        "@rclcpp_components//:rclcpp_components",
+        "@sensor_msgs//:cc_shared",
+        "@tf2_ros//:tf2_ros",
+        "@tier4_perception_msgs//:cc_shared",
+    ],
+)
+
+cc_shared_library(
+    name = "autoware_raindrop_cluster_filter",
+    shared_lib_name = "libautoware_raindrop_cluster_filter.so",
+    dynamic_deps = [":runtime_dynamic_deps"],
+    deps = [":autoware_raindrop_cluster_filter_library"],
+)
+
+autoware_agnocast_node(
+    name = "low_intensity_cluster_filter_node",
+    component = ":autoware_raindrop_cluster_filter",
+    package_name = "autoware_raindrop_cluster_filter",
+    plugin = "autoware::low_intensity_cluster_filter::LowIntensityClusterFilter",
+    agnocast_only = False,
+)
+
+register_ament_files(
+    name = "executables",
+    files = [":low_intensity_cluster_filter_node"],
+    prefix = "lib/autoware_raindrop_cluster_filter",
+    strip_prefix = "*",
+)
+
+ament_index(
+    package_xml = "package.xml",
+    components = [":low_intensity_cluster_filter_node_components"],
+    data = glob(["config/**", "launch/**"]) + [":executables", ":low_intensity_cluster_filter_node_plugin"],
+    libraries = [":autoware_raindrop_cluster_filter"],
+)
+
+cc_test(
+    name = "low_intensity_cluster_filter_tests",
+    srcs = ["test/test_low_intensity_cluster_filter.cpp"],
+    data = [":ament_index"],
+    dynamic_deps = [":runtime_dynamic_deps", "@autoware_test_utils//:runtime_dynamic_deps"],
+    deps = [":autoware_raindrop_cluster_filter_library", "@autoware_test_utils", "@autoware_point_types", "@point_cloud_msg_wrapper", "@googletest//:gtest_main"],
+    tags = ["no-sandbox", "no-remote"],
+)
+
+exports_files(glob(["config/*.yaml"]))

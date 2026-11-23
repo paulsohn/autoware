@@ -21434,3 +21434,44 @@ and five added cases pass with Cyclone/RCLCPP in 74.2 s. Both lanelet cases pass
 Agnocast-only in 12.2 s. Zero failures/errors/skips. Targeted clang-format and
 diff checks pass. Older-ROS compatibility branches are preserved but not executed
 here. No existing test changes; next is the narrow helper's raindrop consumer.
+
+## 2026-11-24: Phase 9.5 — raindrop cluster filtering
+
+Purpose: expose the low-intensity filter's complete module and five original
+cases, then check a nonempty featured-object flow in both selected transports.
+Inspect CMake, manifest, source, original tests and parameter YAML. Prerequisites
+are the detected-object validation utility provider and existing PCL/TF/wrapper
+providers; no source implementation changes are needed.
+
+Pattern: package-owned MODULE/BUILD plus root override. Link the narrow
+validation :utils provider and :utils_shared owner, rather than its node
+libraries. Explicitly declare pcl_ros_tf for the transforms header. Index the
+component, executable, launch and config resources. The node is rclcpp::Node
+with wrapper free functions: use the ROS-aware mixed executor
+(agnocast_only=False), preserving RCLCPP initialization when enabled. Do not
+infer Agnocast-only capability from component-registration syntax.
+
+The added bazel/tests peer publishes five clustered objects. Low-intensity,
+low-confidence UNKNOWN in range is removed; high intensity, high confidence,
+non-target CAR and out-of-range UNKNOWN remain. Check retained feature data,
+ROI, covariance, order and stamped header. Load the original YAML. The enabled
+peer uses wrapper-selected publishers/subscribers and the callback-isolated
+mixed executor, asserting RCLCPP is initialized.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  @autoware_raindrop_cluster_filter//... //bazel/tests:raindrop_cluster_transport_test
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --local_test_jobs=1 --strategy=TestRunner=local \
+  --run_under=//bazel/agnocast:with_heaphook \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  //bazel/tests:raindrop_cluster_transport_test
+```
+
+Results: all eleven non-test targets and both test targets build; five original
+and one added case pass in 42.0 s. The enabled case passes in 9.7 s with built/
+preloaded heaphook. Zero failures/errors/skips; targeted formatting/diff checks
+pass. No Fast DDS or product-level deployment check is selected. Next is shape
+estimation, including its conditional learned-shape configuration.

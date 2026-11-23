@@ -2008,3 +2008,9 @@ local_path_override(
     module_name = "autoware_detected_object_validation",
     path = "src/universe/autoware_universe/perception/autoware_detected_object_validation",
 )
+
+bazel_dep(name = "autoware_raindrop_cluster_filter", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_raindrop_cluster_filter",
+    path = "src/universe/autoware_universe/perception/autoware_raindrop_cluster_filter",
+)
