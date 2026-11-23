@@ -20675,3 +20675,75 @@ Targeted clang-format and diff checks pass. This qualifies synchronized cluster
 merging with the selected middleware; no Fast DDS, Agnocast transport, GPU or
 expensive product check is required for this RCLCPP-only module. Source fixes
 are committed separately from build definitions (5b7ef54a). Next: ground/occupancy filters.
+
+
+## 2026-11-24: Phase 9.5 — shared CPU filter-base provider
+
+Purpose: preserve the original preprocessor's SHARED filter-base contract when
+an independent ground-filter package starts consuming it. Inspect the original
+CMake filter-base source/dependency list, existing Bazel aggregate headers and
+the consumer's linked-but-not-exported diagnostics. Acceptance: complete original
+preprocessor suite, existing external checks, enabled crop-box transport, and the
+actual ground-filter consumer gate. The complete gates below pass.
+
+Failure/cause: using the complete preprocessor plugin DSO as the base owner also
+captures CGAL/GMP/MPFR, map/PCL and compiled utility archives through the broad
+header provider. Bazel rejects consumer links because those transitive libraries
+are already embedded but not exported. The original CMake contract requires a shared base owner.
+
+Pattern: separate filter.hpp and utility/memory.hpp into filter_base_headers,
+keeping the physical include tree for sibling includes. Its dependencies match
+the helper API, without map/CGAL/filter-plugin dependencies. Compile filter.cpp
+and memory.cpp once; publish pointcloud_preprocessor_filter_base_shared with a
+unique library basename. The six contained compiled utility providers are
+explicit roots, so native consumers can resolve their direct references from
+one owner. Keep ROS/PCL and managed-TF globals in existing shared SDK providers.
+Expose filter_base_runtime_dynamic_deps for downstream compiled consumers; the
+main preprocessor runtime delegates to the same owner. Include the base library
+in the package index alongside the original plugin/core libraries. Components
+use logical module labels, with no dependency on product/runtime labels.
+
+Both provider and consumer tests remain unchanged except the separately
+qualified ground portability fixes. Reuse the previously passing tiny fast-voxel
+and node-free core results when their action inputs remain unchanged. The shared
+base boundary affects the original plugin/component suites, so rerun that full
+module gate rather than assuming a successful link proves runtime correctness.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  @autoware_pointcloud_preprocessor//... \
+  //bazel/tests:pointcloud_preprocessor_behavior_test \
+  //bazel/tests:pointcloud_fast_voxel_test \
+  //bazel/tests:pointcloud_concatenate_core_example_test \
+  //bazel/tests:pointcloud_concatenate_component_test \
+  //bazel/tests:pointcloud_comparison_test \
+  @autoware_ground_segmentation//... //bazel/tests:scan_ground_filter_transport_test
+
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --local_test_jobs=1 --strategy=TestRunner=local \
+  --run_under=//bazel/agnocast:with_heaphook \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  //bazel/tests:pointcloud_preprocessor_behavior_test \
+  //bazel/tests:scan_ground_filter_transport_test
+
+readelf -d bazel-bin/external/autoware_ground_segmentation+/libautoware_ground_segmentation.so
+```
+
+Result, 2026-11-24: all 25 combined test targets pass, zero failures/errors/skips.
+The provider retains all 185 original C++ cases, eight original Python scenarios,
+nine added checks and the node-free example; the consumer adds three original
+PCD cases and two transport cases. Final standard gate 13.2 s reuses unchanged
+passing results after the one-time provider recompilation; component
+characterization remains 43.1 s and Python launch 14.0 s in that evidence.
+The enabled gate passes all four preprocessor and two ground transport cases in
+18.1 s (1.3/0.6 s), with heaphook preload and a compatible loaded kernel module.
+ELF inspection shows the ground DSO needs the shared base and not the complete
+preprocessor plugin DSO. Targeted formatting/diff checks pass. No Fast DDS,
+GPU or expensive product rerun is claimed.
+
+The combined commands require the adjacent ground-module declarations and its
+separately documented portability fixes; the provider can also be checked alone
+by omitting those consumer labels from each command. Provider declarations are
+committed separately from the consumer's implementation fixes and module rules.

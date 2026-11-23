@@ -895,6 +895,14 @@ PCL/conversions/VTK globals must remain in their existing shared owners.
 Check actual ELF exports/dependencies and unload multiple components together;
 a standalone process exiting once does not exercise cross-DSO ownership.
 
+CPU filter consumers compile against
+@autoware_pointcloud_preprocessor//:pointcloud_preprocessor_filter_base and link
+through its :filter_base_runtime_dynamic_deps provider. Header-only consumers
+can use :filter_base_headers. This preserves the original helper shared-library
+boundary without depending on the complete filter-plugin DSO. The package owns
+the helper, compiled utility roots and shared SDK delegation; products select
+versions and compose consumers.
+
 Keep existing test helper sources in testonly libraries rather than linking
 planning test managers into production components.
 

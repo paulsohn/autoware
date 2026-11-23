@@ -69,6 +69,10 @@ cc_binary(
 )
 
 _COMMON_HEADERS = ["include/autoware/pointcloud_preprocessor/transform_info.hpp"]
+_FILTER_BASE_HEADERS = [
+    "include/autoware/pointcloud_preprocessor/filter.hpp",
+    "include/autoware/pointcloud_preprocessor/utility/memory.hpp",
+]
 _FAST_HEADERS = ["include/autoware/pointcloud_preprocessor/downsample_filter/faster_voxel_grid_downsample_filter.hpp"]
 
 cc_library(
@@ -80,10 +84,10 @@ cc_library(
 
 cc_library(
     name = "headers",
-    hdrs = glob(["include/**"], exclude = _CORE_HEADERS + _COMMON_HEADERS + _FAST_HEADERS),
+    hdrs = glob(["include/**"], exclude = _CORE_HEADERS + _COMMON_HEADERS + _FAST_HEADERS + _FILTER_BASE_HEADERS),
     data = ["@image_transport//:ament_index"],
     includes = ["include"],
-    deps = [":concatenate_core", ":filter_common_headers"] + [
+    deps = [":concatenate_core", ":filter_common_headers", ":filter_base_headers"] + [
         "@autoware_agnocast_wrapper//:autoware_agnocast_wrapper_library",
         "@autoware_internal_debug_msgs//:cc",
         "@autoware_lanelet2_extension//:autoware_lanelet2_extension_lib_library",
@@ -124,13 +128,68 @@ cc_library(
 )
 
 cc_library(
+    name = "filter_base_headers",
+    hdrs = _FILTER_BASE_HEADERS,
+    includes = ["include"],
+    deps = [
+        ":filter_common_headers",
+        "@autoware_agnocast_wrapper//:autoware_agnocast_wrapper_library",
+        "@autoware_point_types",
+        "@autoware_utils",
+        "@managed_transform_buffer//:managed_transform_buffer_library",
+        "@message_filters//:message_filters_library",
+        "@pcl_conversions//:pcl_conversions_library",
+        "@pcl_msgs//:cc",
+        "@pcl_ros//:pcl_ros_tf_library",
+        "@rclcpp//:rclcpp_library",
+        "@rosdistro//cc:pcl_filters",
+        "@sensor_msgs//:cc",
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "filter_base_sdk_dynamic_deps",
+    dynamic_deps = [
+        "@autoware_agnocast_wrapper",
+        "@autoware_utils//:runtime_dynamic_deps",
+        "@managed_transform_buffer//:runtime_dynamic_deps",
+        "@message_filters//:message_filters",
+        "@pcl_conversions//:pcl_conversions",
+        "@pcl_msgs//:cc_shared",
+        "@pcl_ros//:pcl_ros_tf",
+        "@rclcpp_components//:rclcpp_components",
+        "@sensor_msgs//:cc_shared",
+    ],
+)
+
+cc_shared_library(
+    name = "pointcloud_preprocessor_filter_base_shared",
+    shared_lib_name = "libautoware_pointcloud_preprocessor_filter_base.so",
+    dynamic_deps = [":filter_base_sdk_dynamic_deps"],
+    deps = [
+        ":pointcloud_preprocessor_filter_base",
+        "@autoware_utils_debug",
+        "@autoware_utils_diagnostics",
+        "@autoware_utils_geometry",
+        "@autoware_utils_math",
+        "@autoware_utils_system",
+        "@autoware_utils_visualization",
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "filter_base_runtime_dynamic_deps",
+    dynamic_deps = [":pointcloud_preprocessor_filter_base_shared", ":filter_base_sdk_dynamic_deps"],
+)
+
+cc_library(
     name = "pointcloud_preprocessor_filter_base",
     srcs = [
         "src/filter.cpp",
         "src/utility/memory.cpp",
     ],
     deps = [
-        ":headers",
+        ":filter_base_headers",
     ],
 )
 
@@ -219,6 +278,7 @@ cc_library(
 collect_transitive_dynamic_deps(
     name = "runtime_dynamic_deps",
     dynamic_deps = [
+        ":filter_base_runtime_dynamic_deps",
         ":concatenate_core_shared",
         "@autoware_agnocast_wrapper",
         "@autoware_internal_debug_msgs//:cc_shared",
@@ -482,7 +542,7 @@ ament_index(
         ":polar_voxel_outlier_filter_node_plugin",
         ":blockage_diag_node_plugin",
     ],
-    libraries = [":pointcloud_preprocessor_filter_component", ":concatenate_core_shared"],
+    libraries = [":pointcloud_preprocessor_filter_component", ":pointcloud_preprocessor_filter_base_shared", ":concatenate_core_shared"],
 )
 
 cc_test(
