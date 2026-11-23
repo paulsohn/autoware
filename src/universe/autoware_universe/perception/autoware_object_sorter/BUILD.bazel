@@ -1,0 +1,78 @@
+load("@autoware_agnocast_wrapper//:defs.bzl", "autoware_agnocast_node")
+load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "autoware_object_sorter_library",
+    srcs = glob(["src/*.cpp"]),
+    hdrs = glob(["src/*.hpp"]),
+    includes = ["src"],
+    deps = [
+        "@autoware_agnocast_wrapper//:autoware_agnocast_wrapper_library",
+        "@autoware_object_recognition_utils",
+        "@autoware_perception_msgs//:cc",
+        "@autoware_utils",
+        "@autoware_utils_geometry",
+        "@rclcpp//:rclcpp_library",
+        "@rclcpp_components//:rclcpp_components_library",
+        "@tf2_ros//:tf2_ros_library",
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = [
+        "@autoware_agnocast_wrapper",
+        "@autoware_object_recognition_utils//:runtime_dynamic_deps",
+        "@autoware_perception_msgs//:cc_shared",
+        "@autoware_utils//:runtime_dynamic_deps",
+        "@rclcpp_components//:rclcpp_components",
+        "@tf2_ros//:tf2_ros",
+    ],
+)
+
+cc_shared_library(
+    name = "autoware_object_sorter",
+    shared_lib_name = "libautoware_object_sorter.so",
+    dynamic_deps = [":runtime_dynamic_deps"],
+    deps = [":autoware_object_sorter_library"],
+)
+
+autoware_agnocast_node(
+    name = "detected_object_sorter_node",
+    component = ":autoware_object_sorter",
+    package_name = "autoware_object_sorter",
+    plugin = "autoware::object_sorter::DetectedObjectSorterNode",
+)
+
+autoware_agnocast_node(
+    name = "tracked_object_sorter_node",
+    component = ":autoware_object_sorter",
+    package_name = "autoware_object_sorter",
+    plugin = "autoware::object_sorter::TrackedObjectSorterNode",
+)
+
+register_ament_files(
+    name = "executables",
+    files = [":detected_object_sorter_node", ":tracked_object_sorter_node"],
+    prefix = "lib/autoware_object_sorter",
+    strip_prefix = "*",
+)
+
+ament_index(
+    package_xml = "package.xml",
+    components = [":detected_object_sorter_node_components", ":tracked_object_sorter_node_components"],
+    data = glob(["config/**", "launch/**"]) + [":executables", ":detected_object_sorter_node_plugin", ":tracked_object_sorter_node_plugin"],
+    libraries = [":autoware_object_sorter"],
+)
+
+cc_test(
+    name = "test_object_sorter",
+    srcs = ["test/test_object_sorter.cpp"],
+    dynamic_deps = [":runtime_dynamic_deps", "@autoware_test_utils//:runtime_dynamic_deps"],
+    deps = [":autoware_object_sorter_library", "@autoware_test_utils", "@googletest//:gtest_main"],
+    tags = ["no-sandbox", "no-remote"],
+)

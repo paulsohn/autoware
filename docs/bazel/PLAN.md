@@ -2305,9 +2305,10 @@ and commit validated package boundaries separately. No Fast DDS or expensive
 product gate is selected for this CPU group. Phase 9.5 remains independently
 in progress with seven packages pending.
 
-Completed: feature removal, including both original cases and both added
-conversion profiles with Cyclone/RCLCPP and Agnocast-only transport. Current
-definition coverage is 121/244; five Phase 9.6 packages remain.
+Completed: feature removal and detected/tracked sorting. All six original cases
+and four added cases pass Cyclone/RCLCPP; the added cases also pass Agnocast-only
+with heaphook. Current definition coverage is 122/244; four Phase 9.6 packages
+remain.
 
 ### Execution order through complete Universe coverage
 

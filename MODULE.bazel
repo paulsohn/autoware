@@ -1959,3 +1959,9 @@ local_path_override(
     module_name = "autoware_detected_object_feature_remover",
     path = "src/universe/autoware_universe/perception/autoware_detected_object_feature_remover",
 )
+
+bazel_dep(name = "autoware_object_sorter", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_object_sorter",
+    path = "src/universe/autoware_universe/perception/autoware_object_sorter",
+)

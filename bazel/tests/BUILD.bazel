@@ -2323,3 +2323,12 @@ cc_test(
     deps = ["@autoware_detected_object_feature_remover//:autoware_detected_object_feature_remover_library", "@googletest//:gtest"],
     tags = ["no-sandbox", "no-remote"],
 )
+
+cc_test(
+    name = "object_sorter_transport_test",
+    srcs = ["autoware_object_sorter/test_transport.cpp"],
+    data = ["@agnocast_heaphook"],
+    dynamic_deps = ["@autoware_object_sorter//:runtime_dynamic_deps"],
+    deps = ["@autoware_object_sorter//:autoware_object_sorter_library", "@googletest//:gtest"],
+    tags = ["no-sandbox", "no-remote"],
+)

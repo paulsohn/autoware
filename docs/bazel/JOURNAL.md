@@ -20926,3 +20926,44 @@ Agnocast-only with the built/preloaded hook in 14.2 s. Zero failures/errors/skip
 No existing implementation or tests changed. Targeted clang-format and diff
 checks pass. Fast DDS, GPU and expensive product gates are not selected. Next:
 object sorting; Phase 9.5 remains open independently.
+
+## 2026-11-24: Phase 9.6 — detected/tracked object sorting
+
+Purpose: expose both local sorter components/executables and their configuration
+and launch resources. Inspect CMake, manifest, base/template implementation,
+node headers and complete original suite: four detected-object ROS cases in
+one target. Acceptance includes those cases, both nodes/index and added detected
+and tracked message-flow cases with Cyclone/RCLCPP and Agnocast-only/heaphook.
+
+Pattern: one package module, compile library and unique shared owner contain
+both original explicit template instantiations. Reuse wrapper, object-recognition,
+geometry/utility and TF/message SDK providers; root selects the source override
+and owns added tests. Index both executables and plugin/component records.
+Original tests remain unchanged, including their per-case RCLCPP lifecycle.
+
+The external peer uses distance mode for detected objects and rectangular mode
+for tracked objects. A static translation maps sensor x=-1 to base x=4, inside
+the configured band after the x=1 calculation offset. Without this transform
+that object would be rejected. Verify disabled-class, slow-object and out-of-
+range rejection, UNKNOWN fallback for an unconfigured label, stable input order,
+nonzero header stamp and complete retained payload equality (including tracked
+UUIDs and covariance). The node filters rather than sorting numerically; preserve
+its actual stable-order contract. The enabled peer asserts RCLCPP stays off.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  @autoware_object_sorter//... //bazel/tests:object_sorter_transport_test
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --local_test_jobs=1 --strategy=TestRunner=local \
+  --run_under=//bazel/agnocast:with_heaphook \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  //bazel/tests:object_sorter_transport_test
+```
+
+Results: all 17 non-test targets and both test targets build. Original four cases
+and both added cases pass with Cyclone/RCLCPP in 76.5 s; both added cases also pass
+Agnocast-only with built/preloaded hook in 12.7 s. Zero failures/errors/skips.
+No original implementation/tests changed; targeted clang-format and diff checks
+pass. No Fast DDS/GPU/expensive product gate selected. Next: image localization.
