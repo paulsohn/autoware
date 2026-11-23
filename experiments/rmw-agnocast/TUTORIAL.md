@@ -1,4 +1,6 @@
-# Migrate one topic in an existing Cyclone DDS project to rmw_agnocast
+# Reproduce the topic-selected rmw_agnocast prototype
+
+**Prototype status.** The intended RMW uses shared memory by default for local ROS topics and runs independently of rmw_cyclonedds_cpp. The implementation exercised below still requires Cyclone and explicit native topic selection. These commands reproduce the earlier experiment. A migration guide for the standalone RMW depends on passing the [standalone milestone](BRIDGE_PLAN.md#standalone-rmw-milestone).
 
 Start with the source of an **ordinary ROS 2 Lyrical C++ project that uses Cyclone DDS on Linux**. Assume a clean workspace and an application written against rclcpp, with no previous Agnocast or Autoware wrapper integration. Pick one publisher and one subscriber on the same host. You will build the pilot alongside your project, run the same two nodes with one topic selected for shared memory, and check that the subscriber took native samples. Add a bridge only if an ordinary DDS participant also needs that topic.
 

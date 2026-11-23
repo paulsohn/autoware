@@ -1,6 +1,6 @@
 # Whole-message loans with Agnocast storage
 
-Start with [Migrate one topic in an existing Cyclone DDS project](TUTORIAL.md) to build the Lyrical overlay from source, switch your publisher and subscriber, verify native delivery, and keep a remote DDS consumer working.
+The [prototype tutorial](TUTORIAL.md) reproduces the Cyclone-dependent experiments. The [standalone RMW milestone](BRIDGE_PLAN.md#standalone-rmw-milestone) defines default shared-memory delivery and the dependency boundary for the intended implementation.
 
 The current pilot decision and latency milestone are recorded in
 [Pilot bridge choice and interpretation of performance](#pilot-bridge-choice-and-interpretation-of-performance).

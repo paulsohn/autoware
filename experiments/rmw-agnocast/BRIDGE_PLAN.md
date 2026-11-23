@@ -1,6 +1,14 @@
 # Inter-host topics and recording with rmw_agnocast
 
-## Deployment contract
+## Standalone RMW milestone
+
+Selecting rmw_agnocast with the required device and heap hook must carry supported same-host topics in shared memory by default. Ordinary ROS applications need no lists of publisher or subscriber topics. Unsupported operations must report their status explicitly. There is no DDS fallback. Cyclone belongs in the optional, manually launched network gateway. A local-only deployment must build, load and operate without rmw_cyclonedds_cpp installed.
+
+The measured prototype links the Cyclone RMW, inherits unimplemented entry points through that library, creates Cyclone endpoint handles, and uses delegated waits and serialization. The current single-process gateway also relies on that mixed implementation. Prior measurements qualify the selected native data path and gateway use cases; standalone graph, wait and bridge behavior require independent validation.
+
+First demonstrate two ordinary rclcpp processes exchanging a standard message on a previously unspecified topic in a Lyrical userspace lacking the Cyclone RMW. Check dependency resolution, endpoint discovery, blocking wakeup, payload receipt, shutdown, and an actionable error when native transport is unavailable. Then qualify other message layouts, QoS, graph tools, service/client support and a gateway with explicitly separate native and DDS endpoints.
+
+## Prototype deployment contract
 
 Keep the pilot on Lyrical and colcon. On each host that owns native topics, a gateway shares the applications' /dev/agnocast, kernel ABI, heap hook and versioned route layout. Cross the network with ordinary Cyclone DDS samples. A laptop or remote recorder needs DDS connectivity, compatible QoS and the ROS interfaces required by its tools. It should run stock rosbag2 with no Agnocast device, allocator shim or CLI extension. An ordinary DDS publisher can feed an explicitly permitted native input in the reverse direction. Two native islands can use an export on the source host and an import on the destination host. Acknowledge that topology only after verifying delivery across distinct transport domains at the device level on two machines. Services, actions, GPU-native networking and transparent mixed-vendor interoperability remain separate qualifications.
 

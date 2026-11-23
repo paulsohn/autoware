@@ -3886,3 +3886,7 @@ completed native handoffs. Neither runtime component nor the application
 was rebuilt for this check. The tutorial now assumes a clean first application
 build and reuses the packaged native runtime. Fresh DKMS installation and
 package availability for a native Resolute host remain unverified.
+
+### Correct the RMW architecture target
+
+The intended local RMW uses shared memory by default and has no dependency on rmw_cyclonedds_cpp, including for fallback. Source inspection confirmed that the prototype has an explicit ELF dependency, delegated endpoint creation and waits, and selected native payload routes. Relabeled the walkthrough as prototype evidence and recorded an isolated first acceptance test in the bridge plan. Documentation-only correction; no runtime validation was performed.
