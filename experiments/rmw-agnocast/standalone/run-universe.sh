@@ -45,6 +45,6 @@ if [[ ${1:-} == --check ]]; then
   python3 experiments/rmw-agnocast/standalone/check-cloud.py
   exec bash experiments/rmw-agnocast/standalone/check.sh build/standalone/qualified-probe/topic_check
 fi
-dir=$(mktemp -d)
+dir=${SYNC_FIXTURE_DIRECTORY:-$(mktemp -d)}
 export ROS_LOG_DIR="$dir/log"
 exec ros2 launch /ws/src/universe_sync_benchmark/launch/three_lidar.launch.py mode:=cyclone fixture_directory:="$dir"

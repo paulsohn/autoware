@@ -1,0 +1,12 @@
+batch,case,local,peer,full_local_median_ms,full_local_p95_ms,graph_cpu_s,endpoint_cpu_s,min_host_available_mib
+matrix2,2-absent,60,0,2.141,3.617,2.806,,13484
+matrix2,3-idle,60,0,2.072,2.714,3.211,0.242,13778
+matrix2,4-active,60,60,2.159,2.901,2.732,0.435,13203
+matrix2,5-late,60,25,2.371,3.88,2.731,0.297,13253
+matrix2,6-restart,60,43,2.252,4.527,2.845,0.365,13289
+matrix2,7-crash,60,42,2.329,4.637,2.799,,13177
+matrix2,8-active,60,60,2.204,3.236,2.68,0.439,13236
+matrix2,9-idle,60,0,2.273,3.405,2.649,0.186,13333
+matrix2,10-absent,60,0,2.338,3.453,2.684,,13444
+cli-check,1-active,60,60,2.364,3.371,2.682,0.451,13172
+cli-check,2-crash,60,43,2.318,4.463,2.758,,13220

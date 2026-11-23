@@ -4,11 +4,11 @@
 
 Selecting rmw_agnocast with the required device and heap hook must carry supported same-host topics in shared memory by default. Ordinary ROS applications need no lists of publisher or subscriber topics. Unsupported operations must report their status explicitly. There is no DDS fallback. Cyclone belongs in the optional, manually launched network gateway. A local-only deployment must build, load and operate without rmw_cyclonedds_cpp installed.
 
-The measured prototype links the Cyclone RMW, inherits unimplemented entry points through that library, creates Cyclone endpoint handles, and uses delegated waits and serialization. The current single-process gateway also relies on that mixed implementation. Prior measurements qualify the selected native data path and gateway use cases; standalone graph, wait and bridge behavior require independent validation.
+The historical mixed prototype links the Cyclone RMW, inherits unimplemented entry points through that library, creates Cyclone endpoint handles, and uses delegated waits and serialization. Its single-process gateway also relies on that mixed implementation. Prior measurements qualify the selected native data path and gateway use cases; standalone graph, wait and bridge behavior require independent validation.
 
 First demonstrate two ordinary rclcpp processes exchanging a standard message on a previously unspecified topic in a Lyrical userspace lacking the Cyclone RMW. Check dependency resolution, endpoint discovery, blocking wakeup, payload receipt, shutdown, and an actionable error when native transport is unavailable. Then qualify other message layouts, QoS, graph tools, service/client support and a gateway with explicitly separate native and DDS endpoints.
 
-The [standalone implementation and isolated checks](standalone/README.md) cover default rclcpp nodes, generated C and C++ types, concurrent service clients, graph discovery and a stock local recorder. The independent network bridge remains open. Use the standalone API coverage table when selecting its endpoints and QoS.
+The [standalone implementation and isolated checks](standalone/README.md) cover default rclcpp nodes, generated C and C++ types, concurrent service clients, graph discovery and a stock local recorder. The [manual standalone gateway experiment](manual-gateway/README.md) validates independent native and Cyclone endpoints on a laptop and stock container peer. Automatic startup and physical two-host qualification remain open. Use the standalone API coverage table when selecting its endpoints and QoS.
 
 ## Prototype deployment contract
 

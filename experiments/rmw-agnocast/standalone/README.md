@@ -47,7 +47,7 @@ Use the actual location of the Agnocast 2.4.1 hook visible in the userspace. The
 
 ## Scope
 
-Default rclcpp nodes run their parameter, logging and type-description endpoints. C++ typed topics use native message objects and support loans. C-layout applications convert through generated CDR callbacks into the canonical C++ object. Services use CDR request/reply frames on private native routes and a reply route per client GID. A local recorder reads CDR from a native subscription. The external bridge still needs its own implementation.
+Default rclcpp nodes run their parameter, logging and type-description endpoints. C++ typed topics use native message objects and support loans. C-layout applications convert through generated CDR callbacks into the canonical C++ object. Services use CDR request/reply frames on private native routes and a reply route per client GID. A local recorder reads CDR from a native subscription. The optional [manual topic gateway](../manual-gateway/README.md) runs separately.
 
 The separate Cyclone control used the same ROS domain and topic name. While native writer and reader completed delivery, the stock DDS echo received no sample and timed out. A stock Cyclone publisher then delivered a control string to a fresh stock echo with the same settings. The historical Autoware pipeline timings belong to the mixed implementation at 1a7d9b42. The [standalone workload rerun](workload-results/README.md) measures Path latency, checks Trajectory ownership, and records the initial three-LiDAR startup failure. The [Universe follow-up](workload-results/README.md#cyclone-free-universe-cloud-transport) runs both the crop and three-LiDAR graphs with CPU PointCloud2 transport.
 
@@ -79,7 +79,7 @@ always return unsupported. Cyclone 4.1.5 does the same for all five.
 | Deferred by reference | Publisher allocation init/fini (two), DynamicData take with/without info (two), and dynamic serialization-support initialization (one). Generated typesupport CDR works independently of DynamicData. The vendor DynamicData provider is outside this experiment. |
 | Remaining differences from Cyclone | Reliable wait-for-all-acked needs per-reader delivery acknowledgement. Kernel publish completion exposes no such receipt. Best-effort wait completes immediately. Publisher liveliness-lost still requires finite-lease tracking. Transport message-lost needs loss accounting. Native queue replacement at KeepLast depth is intentional. |
 | Buffer fields | Top-level PointCloud2 has a specialized host representation. Enclosing layouts with Buffer fields use generated CDR in local Agnocast shared memory and report no typed loan. |
-| Other open work | Device-backend interoperability, cross-host gateway, full Lyrical conformance and Autoware load/latency qualification of this revision. |
+| Other open work | Device-backend interoperability, physical two-host gateway qualification, full Lyrical conformance and Autoware load/latency qualification of this revision. |
 
 The standalone check exercises concurrent default-option clients, executor events,
 serialized pub/sub, graph inspection and filters alongside the prior topic and

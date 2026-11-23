@@ -1,0 +1,5 @@
+cmake_minimum_required(VERSION 3.16)
+project(agnocast_cyclone_gateway)
+find_package(ament_cmake REQUIRED)
+install(PROGRAMS gateway.py DESTINATION lib/${PROJECT_NAME} RENAME topic_gateway)
+ament_package()

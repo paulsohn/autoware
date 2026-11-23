@@ -2,7 +2,7 @@
 
 Start with an ordinary ROS 2 Lyrical project that you normally run with Cyclone DDS. Build your application once against the middleware overlay, then select the RMW when you launch it. On this revision, every supported topic in that process uses native shared memory by default. Your node code, topic names, remappings, executor and launch descriptions can stay as they are.
 
-Choose two processes on the same Linux host, running as the same user with the same ROS domain, IPC namespace, accessible /dev/agnocast and shared /dev/shm. Use matching builds on both ends. The worked example exchanges std_msgs/msg/String with ordinary rclcpp and then records it locally. Keep connected cross-host endpoints on Cyclone until the standalone gateway is qualified. A top-level Lyrical PointCloud2 uses the specialized host-cloud representation. For an enclosing message with Buffer fields, the RMW uses the generated CDR serializer to carry its contents through shared memory. This path supports ordinary typed subscribers and serialized readers, including a local recorder. Budget for encoding and decoding nested clouds.
+Choose two processes on the same Linux host, running as the same user with the same ROS domain, IPC namespace, accessible /dev/agnocast and shared /dev/shm. Use matching builds on both ends. The worked example exchanges std_msgs/msg/String with ordinary rclcpp and then records it locally. Step 7 exports the same topic to a stock Cyclone recorder. A top-level Lyrical PointCloud2 uses the specialized host-cloud representation. For an enclosing message with Buffer fields, the RMW uses the generated CDR serializer to carry its contents through shared memory. This path supports ordinary typed subscribers and serialized readers, including a local recorder. Budget for encoding and decoding nested clouds.
 
 ## 1. Get the middleware sources and build tools
 
@@ -168,13 +168,54 @@ ros2 bag info migration-topic-bag
 
 Look for /topic, std_msgs/msg/String, and a positive message count. Local delivery and disk recording have different costs. A C++ subscription can take a native loan. C-layout consumers convert the message and recording requires serialization.
 
-## 7. Decide which processes to migrate together
+## 7. Record the native talker from a Cyclone peer
+
+Keep the talker from step 5 running. On the host with the Agnocast device, open a fresh gateway terminal. Use the same ROS domain as the talker and your usual working Cyclone network configuration for the peer. Install the message package on both sides. The gateway loads the installed type by name.
+
+```bash
+source /opt/ros/lyrical/setup.bash
+source "$HOME/rmw-agnocast-pilot/build/migration-guide/install/local_setup.bash"
+cd "$HOME/rmw-agnocast-pilot"
+unset LD_PRELOAD
+colcon build --paths src/agnocast_cyclone_gateway --executor sequential --build-base build/manual-gateway/obj --install-base build/manual-gateway/install
+source build/manual-gateway/install/local_setup.bash
+ros2 run agnocast_cyclone_gateway topic_gateway export std_msgs/msg/String /topic /from_robot/topic --heaphook /opt/ros/jazzy/lib/libagnocast_heaphook.so
+```
+
+Use the absolute hook path from step 3. The command starts a native reader and a Cyclone writer in separate processes. The gateway advertises the DDS topic immediately. Watch for both endpoint readiness lines. The native subscription arms when a compatible DDS reader appears.
+
+On the peer, open a stock Lyrical terminal with your working Cyclone discovery configuration and matching domain. The peer needs only Cyclone, rosbag2 and the message package.
+
+```bash
+source /opt/ros/lyrical/setup.bash
+unset LD_PRELOAD
+export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+ros2 bag record --topics /from_robot/topic -o robot-topic-bag
+```
+
+Wait for `source armed` in the gateway terminal. After several messages, press Ctrl+C in the recorder terminal, then inspect the bag.
+
+```bash
+ros2 bag info robot-topic-bag
+```
+
+Expect a positive count on /from_robot/topic. The gateway releases its native subscription after the last match disappears. Recording begins after discovery and activation. Stopping the gateway creates a gap in a volatile stream. Local subscribers continue receiving.
+
+For the reverse direction, open another gateway terminal with both overlays sourced. This example imports a distinct peer topic into the local graph.
+
+```bash
+ros2 run agnocast_cyclone_gateway topic_gateway import std_msgs/msg/String /from_peer/topic /local/peer_topic --heaphook /opt/ros/jazzy/lib/libagnocast_heaphook.so
+```
+
+Run a listener on /local/peer_topic with the native setup from step 5. Publish on /from_peer/topic from the Cyclone peer. An import subscribes immediately. Each command owns one direction until Ctrl+C. Both routes use volatile history, depth 10, best-effort input and reliable output. Use `--input-reliability reliable` for a reliable source when the bridge must request retransmission, or set `--output-reliability best_effort` for compatible readers. Use `--depth` for queue depth. Each serialized sample must fit within 64 MiB. This release has laptop-to-isolated-container evidence in both directions. Two physical hosts still need qualification.
+
+## 8. Decide which processes to migrate together
 
 | Project requirement | Behavior in this revision |
 |---|---|
 | A local node uses services or parameters | Native request/reply and graph discovery support ordinary ROS nodes. The stock check exercised get_parameters across processes. |
-| A stock Cyclone process needs the same topic | The transports are isolated even with identical names and ROS_DOMAIN_ID. Migrate both communicating ends together, including local tools that need the data. |
-| A recorder or node lives on another host | Cross-host delivery requires a separate gateway. The standalone Agnocast–Cyclone gateway has no working manual launch command yet. The old route_bridge targeted the mixed prototype. Keep this connected part of the graph on Cyclone until the gateway is available. |
+| A stock Cyclone process needs the same topic | The transports are isolated even with identical names and ROS_DOMAIN_ID. Use the explicit topic route in step 7 or migrate the communicating ends together. |
+| A recorder or node lives on another host | Cross-host delivery requires a separate gateway. Use the gateway in step 7 with a reachable peer and compatible QoS. |
 | A cluster subscription reports “unsupported Buffer wire type” | The older standalone library rejected enclosing types such as DetectedObjectsWithFeature when creating the endpoint. Check the sourced middleware prefix in both processes. Use the revision with generated CDR support for enclosing Buffer fields. |
 | Two local nodes start but no samples arrive | Check the resolved topic, compatible QoS, domain, effective user, IPC namespace and shared /dev/shm. Verify both can access the device and resolve the same middleware overlay and hook. Start the worked String pair to isolate application-specific problems. |
 
