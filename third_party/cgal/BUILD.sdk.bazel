@@ -1,0 +1,20 @@
+load("@rules_cc//cc:defs.bzl", "cc_library")
+
+cc_library(
+    name = "cgal",
+    hdrs = glob(["include/**"]),
+    includes = ["include"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "@boost.algorithm",
+        "@boost.any",
+        "@boost.container",
+        "@boost.iterator",
+        "@boost.math",
+        "@boost.multiprecision",
+        "@boost.tuple",
+        "@boost.variant",
+        "@gmp//:gmpxx",
+        "@mpfr//:libmpfr",
+    ],
+)

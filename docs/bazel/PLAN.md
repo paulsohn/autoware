@@ -159,7 +159,9 @@ only when your current target demonstrates the need.
 - [ ] Inspect build-system-only shims before creating empty Bazel modules.
   [Working rule](../../AGENTS.md#working-rules);
   [evidence: CUDA foundation](JOURNAL.md#2026-11-18-phase-61--cuda-utils-and-pinned-toolkit).
-- [ ] Check dependency API and header-layout compatibility before changing source.
+- [ ] Check dependency API, header layout and transitive build-rule selection before changing source.
+  [Provider conventions](DEVELOPING.md#dependency-declarations);
+  [evidence: CGAL templates and rule baseline](JOURNAL.md#2026-11-23-phase-94--cgal-polygon-provider).
   [Evidence: solver input selection](JOURNAL.md#2026-11-17-phase-525--osqp-interface).
   For interface changes, check generated wire types and compiled consumers.
   [Developer convention](DEVELOPING.md#editing-interface-packages);

@@ -332,6 +332,13 @@ comparison and a compatible registry version. It is not part of the normal
 developer loop. Add missing Bazel definitions when adopting a required local
 package; absence of those definitions is not a reason to use registry sources.
 
+When changing a registry/provider version, inspect its transitive build-rule
+requirements as well as its source version. Avoid incidental upgrades of shared
+rule/toolchain baselines; validate the accepted dependency and affected consumers.
+Header-only providers must declare transitively included template files such as
+.tcc/.ipp, alongside .h/.hpp files; export the complete upstream include tree
+where appropriate.
+
 For a C++ consumer using generated ROS libraries, pair compile and runtime
 dependencies:
 

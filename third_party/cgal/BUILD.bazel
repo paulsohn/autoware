@@ -1,0 +1,12 @@
+load("@rules_cc//cc:defs.bzl", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+exports_files(["BUILD.sdk.bazel"])
+
+alias(name = "cgal", actual = "@cgal_source//:cgal")
+
+cc_test(
+    name = "polygon_test",
+    srcs = ["polygon_test.cpp"],
+    deps = [":cgal"],
+)

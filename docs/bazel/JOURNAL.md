@@ -20342,3 +20342,50 @@ suite intentionally keeps its RCLCPP context. Targeted clang-format and diff
 checks pass. This qualifies the local TF provider, not a sensor pipeline or
 cross-host TF deployment. No Fast DDS/GPU/expensive product gate is required.
 Next: the preprocessor's CGAL provider and complete package gate.
+
+## 2026-11-23: Phase 9.4 — CGAL polygon provider
+
+Purpose: provide the preprocessor's exact-predicate polygon dependency without
+host development packages. The tracked source has no CGAL snapshot, and neither
+the selected RCR SDK's cc aliases nor BCR has a CGAL module. Inspect the upstream
+6.1.3 release library archive, public kernel/polygon headers and
+Installation/cmake/modules/CGAL_SetupCGALDependencies.cmake. This provider qualifies the required kernel/polygon surface, not every
+optional CGAL package or upstream test program.
+
+Pattern: a reusable logical cgal module under third_party owns the pinned archive
+and flattened include tree; root selects its local override and excludes that
+independent module from root recursive discovery. Export CGAL headers with
+explicit modular Boost and BCR GMP/MPFR providers. Retain exact arithmetic rather
+than using host detection or disabling GMP. The upstream archive's SHA-256 is
+84c45a292103d5684568a6d889d09cf0f1d68659108049a26709e8176b0d2783,
+matching the official 6.1.3 library release asset. The generic consumer checks
+polygon interior/boundary/exterior, near-collinear orientation, exact rational
+arithmetic and an MPFR square root.
+
+Setup lessons: declare Boost any/algorithm as well as the kernel's other Boost
+inputs; missing boost/any.hpp and boost/algorithm/clamp.hpp expose those edges.
+Declare the complete include tree, including CORE/poly/Poly.tcc: an h/hpp-only
+glob omits transitive template implementation files. No upstream source patch
+is needed. CGAL's Clang configuration needs no extra public rounding flag.
+
+Choose GMP 6.3.0.bcr.2, already selected by the existing graph, and MPFR
+4.2.2.bcr.1. The newer .5 integration revisions pass kernel/rational checks but
+raise the shared rules_cc_autoconf selection from RCR's 0.27.0.rcr.0 to 0.37.0,
+invalidating unrelated SDK actions. Keep the existing rule baseline and validate
+the compatible numerical providers instead. These are Bazel packaging revision
+choices; upstream GMP/MPFR remain 6.3.0/4.2.2. Check transitive build-rule selection
+when accepting a new dependency, not just its immediate source version.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_output=errors @cgal//...
+```
+
+Result: the complete provider target set builds and all six numerical checks
+pass, zero failures/skips. The compatible first-use gate takes 831 s including
+native configuration/tool/library preparation; the final current-source gate
+takes 7.6 s and reuses its passing numerical result. The resolved shared rule
+baseline remains 0.27.0.rcr.0. No ROS transport, GPU or deployment gate is needed
+for this generic dependency. The actual preprocessor consumer suite remains the
+next acceptance gate; optional CGAL packages/backends are not qualified here.

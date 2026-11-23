@@ -201,6 +201,12 @@ local_path_override(
     path = "third_party/acados",
 )
 
+bazel_dep(name = "cgal", version = "0.0.0")
+local_path_override(
+    module_name = "cgal",
+    path = "third_party/cgal",
+)
+
 bazel_dep(name = "grid_map", version = "0.0.0")
 local_path_override(module_name = "grid_map", path = "third_party/grid_map")
 
