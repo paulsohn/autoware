@@ -21649,3 +21649,42 @@ shape, 14.4 s). Zero failures/errors/skips. Targeted format checks cover changed
 source ranges without formatting unrelated upstream code. No production point-
 cloud replay/performance or older ROS/CMake execution is claimed. Next and last
 in this phase: detection-by-tracker.
+
+## 2026-11-24: Phase 9.5 prerequisite — narrow object-recognition PCL support
+
+Purpose: let the actual tracker-detection consumer share the clustering API
+without absorbing unrelated ROS PCL tools. Inspect all object-recognition headers/
+sources and the selected RCR pcl_ros declarations. The only pcl_ros API used is
+transforms.hpp/transformPointCloud. Acceptance keeps the complete existing 33-case
+utility suite and all downstream clustering/detection behavior checks.
+
+The broad :pcl_ros_library compile provider includes filters and bag/PCD tools,
+while :pcl_ros is only an alias of :pcl_ros_tf. Pairing them leaves unrelated
+compiled libraries hidden inside the first consumer DSO; a second shared consumer
+then fails Bazel's linked-but-not-exported check. Depend explicitly on
+:pcl_ros_tf_library and :pcl_ros_tf instead. No SDK patch, source change, new
+version or package shim is required. Existing transform tests cover the actual
+API, including indexed/buffered transformations and empty clouds.
+
+The shared clustering provider separately exports its compiled object-recognition
+and interpolation dependencies as direct roots, allowing detection to reuse
+those symbols. This is provider ownership; implementation behavior is unchanged.
+The same build graph now excludes the irrelevant filter/bag tool libraries.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  @autoware_object_recognition_utils//... @autoware_euclidean_cluster//... \
+  @autoware_detection_by_tracker//... //bazel/tests:euclidean_cluster_transport_test \
+  //bazel/tests:voxel_grid_based_euclidean_cluster_transport_test \
+  //bazel/tests:label_based_euclidean_cluster_transport_test \
+  //bazel/tests:detection_by_tracker_transport_test
+```
+
+Results: final combined gate builds all 41 non-test targets and passes eight test
+targets / 67 cases (33 utility, 27 original clustering, three clustering transport,
+four tracker detection), zero failures/errors/skips, 15.7 s using unchanged cached
+results where valid. The downstream detection correction is documented in its
+own entry. Selected enabled clustering checks also pass with the detection gate
+below. No Fast DDS/product replay is required for this provider contraction.
