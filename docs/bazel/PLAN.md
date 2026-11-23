@@ -1346,7 +1346,7 @@ resources explicitly. No full driving behavior or GUI rendering is claimed.
 Prior unchanged Agnocast/module evidence remains applicable; no new middleware
 matrix is required to close this phase. Phase 6 is next.
 
-## Phase 6: CUDA and TensorRT on x86 (complete)
+## Phase 6: CUDA and TensorRT on x86 (6.1–6.4 complete; 6.5 planned)
 
 Bring the required GPU SDK and local CUDA consumers into the Bazel graph,
 without host toolkit discovery or apt/pip installation. GPU drivers/devices
@@ -1649,13 +1649,62 @@ checks. YOLOX consumers have no HOME-model fallback. Other model repositories
 and removal of the remaining shared data_path plumbing are future consumer
 migrations, not a completed whole-launcher conversion.
 
-Phase 6's selected boundaries are complete. Individual sparse-plugin numerical
-accuracy, INT8 calibration, performance, full perception/GUI launches and bit-
+The accepted Phase 6.1–6.4 boundaries are complete. Individual sparse-plugin
+numerical accuracy, INT8 calibration, performance, full perception/GUI launches and bit-
 identical application binaries are not established by these gates. Runtime
 bundles/full driving remain Phase 7; Thor-compatible software builds remain
 Phase 8. No new Fast DDS acceptance run was performed; it still requires
 explicit approval. The x86 TensorRT 10.16.1 versus JetPack 7.2.1's 10.16.2 gap
 remains explicit for Phase 8.
+
+### Phase 6.5: TensorRT runtime engine/cache experiments (planned)
+
+Decision recorded 2026-11-23: retain on-device engine generation and the current
+build_only behavior as the starting point. Make the runtime/cache path compatible
+with indexed, read-only model resources and measure the resulting behavior before
+choosing whether engine compilation belongs in Bazel actions. This follow-up
+adds no engine-generation acceptance requirement to completed Phases 6.1–6.4 or
+Phase 7. Phase 8 retains its JetPack software-compatibility scope.
+
+Start with autoware_tensorrt_common and the existing YOLOX consumer/model group.
+Keep ONNX, external weights and model metadata versioned in their owning model
+module and discoverable through its ament index. Treat generated engines and
+sidecars as derived artifacts in a separately selected writable runtime cache;
+do not write into model repositories, runfiles or immutable deployment payloads.
+Keep existing runtime generation available while these experiments establish
+which changes are necessary. Broader Universe consumers follow their own module
+boundaries when their integration exposes a need.
+
+- **6.5.1 — Establish the runtime baseline.** Inventory engine, JSON and applicable
+  calibration/histogram outputs and the existing complete module suites. Record
+  model/SDK/plugin identities, GPU/driver profile, precision and shape settings.
+  Measure cold generation, warm reuse and representative inference behavior.
+- **6.5.2 — Exercise a separate writable cache.** Wire explicit output locations
+  through the selected consumer and common configuration where needed. Preserve
+  indexed model lookup. Validate generation/reuse with read-only model resources,
+  cache invalidation after relevant input/profile changes, and failure behavior
+  for unavailable/unwritable or incomplete cache entries. Require the affected
+  complete suites with Cyclone DDS and relevant GPU inference checks; reuse
+  unchanged communication/system evidence.
+- **6.5.3 — Record the compilation-placement decision.** Compare observed startup,
+  cache reuse, deployment size/permissions and compatibility costs. Decide whether
+  to retain runtime generation, use explicit on-device preparation, or conduct a
+  narrowly scoped Bazel engine-output experiment for a validated hardware profile.
+  Implementing a general engine rule or removing build_only is not predetermined.
+
+A later Bazel experiment would declare ONNX/weights, compiler/plugins, build
+settings and calibration inputs, with engine/sidecar outputs. Pin SDK inputs;
+use execution-platform constraints for a provisioned GPU worker and an explicit
+compatibility profile plus runtime prerequisite checks. CUDA compilation alone
+must not acquire a physical-GPU requirement. Descriptive tags do not provision
+or validate a device. Check cache isolation and inference equivalence before
+accepting this path; do not assume bit-identical engines or portability across
+GPU/SDK profiles. No GPU executor framework or cross-platform engine production
+is introduced by this plan.
+
+Record reproducible commands, measurements, diagnosed failures and the final
+choice in the same module-task journal as the experiments progress. No engine
+implementation or new GPU build rule has been validated by this planning entry.
 
 ## Phase 7 — Runtime packaging and planning simulation (complete, 2026-11-23)
 

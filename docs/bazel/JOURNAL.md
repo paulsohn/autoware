@@ -18727,3 +18727,53 @@ Simulator driving, OCI export, GPU and Fast DDS checks are unchanged milestone
 evidence, not rerun or newly claimed here. This completes Phase 7.6 and Phase 7's
 selected runtime distribution scope; full Universe integration remains later
 work. No TensorRT engine-generation implementation changes in this task.
+
+## 2026-11-23: Phase 6.5 — Runtime engine/cache experiment plan
+
+Purpose: investigate TensorRT engine preparation without assuming that engine
+compilation must become a Bazel build action. Keep runtime generation/build_only
+as the baseline, establish a writable-cache contract for immutable model
+resources, then decide from measured behavior. The task sequence and acceptance
+scope are authoritative in [Phase 6.5](PLAN.md#phase-65-tensorrt-runtime-enginecache-experiments-planned).
+Completed GPU and runtime-distribution gates retain their original scope.
+
+Inspected inputs: TrtCommonConfig defaults an empty engine_path to the ONNX path
+with an .engine extension; TrtCommon writes the engine and layer JSON during
+setup. The YOLOX detector currently passes an empty engine path, and its INT8
+calibration/histogram filenames also derive from the ONNX path. Its node checks
+build_only after detector construction. The existing with_models.py test adapter
+copies model fixtures into a writable temporary directory. Those fixtures prove
+the earlier module behavior, not a persistent read-only deployment-cache design.
+Relevant source locations:
+
+- src/core/cuda/autoware_cuda/autoware_tensorrt_common/include/autoware/tensorrt_common/utils.hpp
+- src/core/cuda/autoware_cuda/autoware_tensorrt_common/src/tensorrt_common.cpp
+- src/universe/autoware_universe/perception/autoware_tensorrt_yolox/src/tensorrt_yolox_detector.cpp
+- src/universe/autoware_universe/perception/autoware_tensorrt_yolox/src/tensorrt_yolox.cpp
+- src/universe/autoware_universe/perception/autoware_tensorrt_yolox/src/tensorrt_yolox_node.cpp
+- bazel/tests/autoware_tensorrt_yolox/with_models.py
+
+To repeat the investigation in another tree, trace model lookup through the
+consumer constructor into its engine configuration, inventory every generated
+sidecar and its write location, and compare original test fixtures with deployment
+permissions. Introduce explicit cache locations at those actual owners rather
+than making the source/model installation writable. Keep model inputs versioned
+and indexed; cache validity depends on model/build/SDK/plugin/hardware settings,
+not merely an unchanged filename. Preserve complete package suites as the gate.
+
+Public-reference check on 2026-11-23: searched for trtexec/saveEngine in Bazel
+BUILD/Starlark files and inspected Torch-TensorRT's compiler target and CLI
+manual at 13658aa29828e09c514f2855946faa7b719f5a4b. Its cc_binary builds torchtrtc,
+and the CLI can emit a TensorRT PLAN file through --save-engine. This is a
+Bazel-built engine compiler, not a verified example of an engine file declared
+as a Bazel action output. No direct public example was confirmed in this search;
+that does not establish that none exists. References for a later experiment:
+
+- [torchtrtc BUILD](https://github.com/pytorch/TensorRT/blob/13658aa29828e09c514f2855946faa7b719f5a4b/cpp/bin/torchtrtc/BUILD)
+- [Compiler CLI and engine output](https://github.com/pytorch/TensorRT/blob/13658aa29828e09c514f2855946faa7b719f5a4b/docsrc/cli/torchtrtc.rst)
+
+This entry records a plan only. Verification: git diff --check and review of the
+linked phase sequence/source paths; no builds, GPU execution, middleware checks
+or pre-commit run. Phase 6.5 experiments and the compilation-placement decision
+remain pending; update this entry with exact commands and observations when
+implementation begins. DEVELOPING.md continues to describe established workflows.
