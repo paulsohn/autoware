@@ -92,7 +92,7 @@ only when your current target demonstrates the need.
   [vendor RTTI and exception binding](JOURNAL.md#2026-11-23-phase-652--tensorrt-calibration-and-c-runtime-compatibility).
   [Writable engine caches and caller-owned identity](DEVELOPING.md#common-library-engine-cache);
   [cache failure/invalidation evidence](JOURNAL.md#2026-11-23-phase-652--preserve-the-tensorrt-engine-output-identity);
-  [immutable supplied tables versus generated cache](DEVELOPING.md#yolox-model-inputs-and-engine-caches).
+  [immutable supplied tables and separate engine preparation/inference](DEVELOPING.md#yolox-model-inputs-and-engine-caches).
   [Vendor C++ ABI boundaries](DEVELOPING.md#sparse-sdk-and-tensorrt-plugins);
   [evidence: sparse SDK](JOURNAL.md#2026-11-19-phase-641--sparse-convolution-sdk-compatibility).
 - [ ] Declare caller-owned resources for dynamic runtime package selection.
@@ -1704,9 +1704,10 @@ boundaries when their integration exposes a need.
   on-device build_only process with the final model/SDK/GPU/settings profile,
   then use the same cache for inference. Normal generation remains available for
   development. Keep model inputs immutable and caches replaceable; do not add a
-  general GPU engine-output Bazel rule now. Warm loading still initializes the
-  builder/parser and reads ONNX, so these results do not justify an inference-only
-  SDK payload or a production GPU distribution claim. Automatic cache identity,
+  general GPU engine-output Bazel rule now. At this baseline warm loading still
+  initializes builder/parser and reads ONNX; 6.5.5 separates startup behavior.
+  Neither gate alone justifies an inference-only SDK payload or a production
+  GPU distribution claim. Automatic cache identity,
   atomic/concurrent publication and production calibration accuracy are not
   implemented by this experiment. Revisit a narrow Bazel action only when a real
   product needs a hardware-qualified prebuilt engine and has a provisioned GPU
@@ -1727,6 +1728,26 @@ boundaries when their integration exposes a need.
   required. Deeper vendor compiler debugging is outside the bounded task; resume
   broader Universe adoption.
   [Reproducer, observations and workaround](JOURNAL.md#2026-11-23-phase-654--isolate-the-traffic-light-compiler-failure-and-expose-level-zero).
+
+- **6.5.5 — Separate engine preparation from inference (complete, 2026-11-23).**
+  Add an opt-in prepared-only TrtCommon configuration, preserving existing build
+  behavior for other callers. Read metadata from the restored engine, reject
+  missing/incompatible plans without regeneration, and test ONNX-free inference.
+  Extract YOLOX preparation into a shared setup function and a standalone CLI;
+  keep model provider selection at the root. The ROS node defaults to requiring
+  a prepared engine; allow_engine_build=true is an explicit development fallback
+  and build_only remains compatible. Preserve and run the whole original suites,
+  then test standalone FP16/INT8 preparation, read-only ONNX-free inference,
+  missing-cache behavior and the existing shared-library consumers. Functional
+  startup separation does not yet imply a builder/parser-free linked SDK payload.
+  Do not introduce an engine-output Bazel action or a GPU execution framework.
+  Complete gates pass: thirteen original common plus eleven cache cases,
+  fourteen original YOLOX plus fifteen cache/calibration/preparation cases,
+  five classifier and twenty plugin cases, one SDK ABI case and six Python
+  support cases, with zero native failures/errors/skips. Resume broader Universe
+  coverage; do not extend this into an inference-only packaging framework.
+  [Common loading](JOURNAL.md#2026-11-23-phase-655--prepared-only-common-tensorrt-loading);
+  [CLI, startup contract and acceptance](JOURNAL.md#2026-11-23-phase-655--standalone-yolox-preparation-and-prepared-engine-startup).
 
 A later Bazel experiment would declare ONNX/weights, compiler/plugins, build
 settings and calibration inputs, with engine/sidecar outputs. Pin SDK inputs;

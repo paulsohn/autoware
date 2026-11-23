@@ -3,7 +3,7 @@ load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
 load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
 load("@rules_cc//cc:defs.bzl", "cc_import", "cc_library", "cc_shared_library", "cc_test")
 load("@rules_cuda//cuda:defs.bzl", "cuda_library")
-load("@tensorrt//:defs.bzl", "TENSORRT_VERSION_MAJOR")
+load("@tensorrt//:defs.bzl", "TENSORRT_VERSION_MAJOR", "tensorrt_cc_binary")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -29,13 +29,17 @@ cc_import(
 cc_library(
     name = "autoware_tensorrt_yolox_library",
     srcs = [
-        "src/label.cpp",
         "src/tensorrt_yolox.cpp",
         "src/tensorrt_yolox_detector.cpp",
     ],
     hdrs = glob(
         ["include/**/*.hpp"],
-        exclude = ["include/**/tensorrt_yolox_node.hpp"],
+        exclude = [
+            "include/**/tensorrt_yolox_node.hpp",
+            "include/**/label.hpp",
+            "include/**/calibrator.hpp",
+            "include/**/engine_preparation.hpp",
+        ],
     ),
     copts = [
         "-fopenmp",
@@ -44,6 +48,8 @@ cc_library(
     includes = ["include"],
     local_defines = ["TENSORRT_VERSION_MAJOR=" + TENSORRT_VERSION_MAJOR],
     deps = [
+        ":engine_preparation_library",
+        ":label_library",
         ":gpu_preprocess_library",
         ":openmp_runtime",
         "@autoware_cuda_utils",
@@ -157,6 +163,7 @@ register_ament_files(
     files = [
         ":autoware_tensorrt_yolox_node_exe",
         ":yolox_single_image_inference",
+        ":prepare_engine",
     ],
     prefix = "lib/autoware_tensorrt_yolox",
     strip_prefix = "*",
@@ -202,3 +209,55 @@ exports_files([
     "test/test_tensorrt_yolox_detector.cpp",
     "test/test_tensorrt_yolox_node.cpp",
 ])
+
+cc_library(
+    name = "label_library",
+    srcs = ["src/label.cpp"],
+    hdrs = ["include/autoware/tensorrt_yolox/label.hpp"],
+    includes = ["include"],
+)
+
+cc_library(
+    name = "engine_preparation_library",
+    srcs = ["src/engine_preparation.cpp"],
+    hdrs = [
+        "include/autoware/tensorrt_yolox/engine_preparation.hpp",
+        "include/autoware/tensorrt_yolox/calibrator.hpp",
+    ],
+    copts = ["-Wno-deprecated-declarations"],
+    includes = ["include"],
+    local_defines = ["TENSORRT_VERSION_MAJOR=" + TENSORRT_VERSION_MAJOR],
+    deps = [
+        ":label_library",
+        "@autoware_tensorrt_common//:autoware_tensorrt_common_library",
+        "@autoware_cuda_utils",
+        "@rosdistro//cc:opencv_library",
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "preparation_runtime",
+    dynamic_deps = [
+        "@ament_index_cpp//:ament_index_cpp",
+        "@autoware_tensorrt_common",
+        "@autoware_tensorrt_common//:runtime_dynamic_deps",
+        "@rosdistro//cc:opencv",
+    ],
+)
+
+cc_library(
+    name = "prepare_engine_main",
+    srcs = ["src/prepare_engine_main.cpp"],
+    copts = ["-Wno-deprecated-declarations"],
+    local_defines = ["TENSORRT_VERSION_MAJOR=" + TENSORRT_VERSION_MAJOR],
+    deps = [
+        ":engine_preparation_library",
+        "@ament_index_cpp//:ament_index_cpp_library",
+    ],
+)
+
+tensorrt_cc_binary(
+    name = "prepare_engine",
+    deps = [":prepare_engine_main"],
+    dynamic_deps = [":preparation_runtime"],
+)

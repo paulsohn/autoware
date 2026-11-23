@@ -19339,10 +19339,15 @@ contract. Set GTEST_OUTPUT only when XML_OUTPUT_FILE exists, and keep user argv
 and native exit status intact. Product targets supply their own resource data;
 third_party/tensorrt does not refer to any Autoware label.
 
-Verification: `env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" bazel test
---config=runtime --config=no-agnocast --local_test_jobs=1 --nocache_test_results
---test_output=errors @tensorrt//:runtime_abi_test` passes its one native case in
-0.8 s with no skips. Both component and root preparers build and run --help with
+Verification:
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --nocache_test_results --test_output=errors @tensorrt//:runtime_abi_test
+```
+
+Its one native case passes in 0.8 s with no skips. Both component and root preparers build and run --help with
 no XML environment. Actual subprocess preparation, argument/exit failures and
 FP16/INT8 inference pass in the complete YOLOX gate below; all existing affected
 native wrappers pass the common/classifier/plugin gate. The public binary
@@ -19507,3 +19512,12 @@ matching launch XML require the argument default false and the forwarded param
 type bool. These checks pass; published YAML defaults remain unchanged. Bazel
 loads the new rules and builds both component and root preparer targets. Source
 corrections and Bazel declarations are kept in separate commits.
+
+Bazel-support completion: SDK launcher 99019434, common source/cache tests
+8dfaaeb8 and YOLOX source/tool 2359177e are separate boundaries. Register the
+shared preparation/label libraries, executable/index exports, model-selected
+root product, unchanged-node fixture adapter and four added CLI/startup cache
+cases together. Reuse the passing complete gates above; the remaining edits
+are documentation and rule formatting. Component and root --help runs pass
+without XML_OUTPUT_FILE. Phase 6.5.5 is complete and broader Universe adoption
+can resume; inference-only SDK payload reduction remains deferred.

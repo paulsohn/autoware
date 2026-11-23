@@ -1,3 +1,4 @@
+load("@tensorrt//:defs.bzl", "tensorrt_cc_binary")
 load(":defs.bzl", "executable_template")
 load(":cyclonedds.bzl", "PLANNING_SIMULATOR_CYCLONEDDS_URI")
 load("@launch_ros//:defs.bzl", "launch_ros_binary")
@@ -145,3 +146,11 @@ expand_template(
 )
 
 exports_files(["debug/bin/ros2"])
+
+# Product selects the model resource provider; the component owns preparation.
+tensorrt_cc_binary(
+    name = "yolox_prepare",
+    deps = ["@autoware_tensorrt_yolox//:prepare_engine_main"],
+    dynamic_deps = ["@autoware_tensorrt_yolox//:preparation_runtime"],
+    data = ["@autoware_tensorrt_yolox_models//:ament_index"],
+)

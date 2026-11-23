@@ -1866,12 +1866,13 @@ py_binary(
     testonly = True,
     srcs = ["autoware_tensorrt_yolox/with_models.py"],
     data = [
+        "//bazel/runtime:yolox_prepare",
         "@autoware_tensorrt_yolox//:ament_index",
         "@autoware_tensorrt_yolox_models//:ament_index",
     ],
     main = "autoware_tensorrt_yolox/with_models.py",
     precompile = "disabled",
-    deps = ["@ament_index_python"],
+    deps = ["@ament_index_python", "@rules_python//python/runfiles"],
 )
 
 [
@@ -1993,7 +1994,9 @@ tensorrt_cc_test(
         "autoware_tensorrt_yolox/test_runtime_cache.cpp",
         "autoware_tensorrt_yolox/test_calibration_cache.cpp",
     ],
+    local_defines = ['PREPARER_PATH=\\"$(rootpath //bazel/runtime:yolox_prepare)\\"'],
     data = [
+        "//bazel/runtime:yolox_prepare",
         "@autoware_tensorrt_yolox//:ament_index",
         "@autoware_tensorrt_yolox_models//:ament_index",
     ],

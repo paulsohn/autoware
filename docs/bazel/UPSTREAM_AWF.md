@@ -1784,7 +1784,7 @@ report; no issue/comment was posted.
 A standalone C++ translation unit including tensorrt_conv_calib.hpp exposes four
 Clang errors in the ConvLayerInfo aggregate initializer: TensorRT 10 Dims::d is
 int64_t, and narrowing its channel/spatial dimensions to int is ill-formed.
-Preserve int64_t for channel, spatial, kernel and stride fields and avoid
+Local source correction: 8dfaaeb8. Preserve int64_t for channel, spatial, kernel and stride fields and avoid
 intermediate narrowing of kernel/stride values. This is TensorRT 10 header
 compatibility, not a Lyrical-specific API issue. The struct layout changes, so
 rebuild consumers together.
@@ -1814,7 +1814,7 @@ plans or IO/profile mismatch fail without regeneration. Existing common callers
 retain generation by default. Local common correction: 8dfaaeb8. The YOLOX setup
 is shared with a standalone prepare_engine CLI that does not construct a ROS
 node/executor; normal inference can then avoid compiler/calibration setup.
-This branch chooses prepared-only node startup by default, with an explicit
+Local YOLOX source correction: 2359177e. This branch chooses prepared-only node startup by default, with an explicit
 allow_engine_build=true development fallback and compatible build_only behavior.
 That default is a deployment policy decision, not a necessary upstream API break.
 

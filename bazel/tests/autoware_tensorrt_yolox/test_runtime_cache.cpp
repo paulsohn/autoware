@@ -10,6 +10,8 @@
 #include <sensor_msgs/image_encodings.hpp>
 
 #include <gtest/gtest.h>
+#include <spawn.h>
+#include <sys/wait.h>
 
 #include <cstdlib>
 #include <filesystem>
@@ -17,6 +19,9 @@
 #include <iterator>
 #include <stdexcept>
 #include <string>
+#include <vector>
+
+extern char ** environ;
 
 namespace
 {
@@ -131,6 +136,35 @@ protected:
       std::distance(fs::directory_iterator(model.parent_path()), fs::directory_iterator()), count);
     EXPECT_EQ(read(supplied), supplied_bytes);
     EXPECT_TRUE(fs::exists(directory / "cache/detector.json"));
+  }
+
+  int prepare(std::vector<std::string> arguments)
+  {
+    arguments.insert(arguments.begin(), fs::absolute(PREPARER_PATH).string());
+    std::vector<char *> argv;
+    for (auto & value : arguments) argv.push_back(value.data());
+    argv.push_back(nullptr);
+    pid_t pid;
+    if (posix_spawn(&pid, argv[0], nullptr, nullptr, argv.data(), environ) != 0) return -1;
+    int status = 0;
+    if (waitpid(pid, &status, 0) != pid || !WIFEXITED(status)) return -1;
+    return WEXITSTATUS(status);
+  }
+
+  rclcpp::NodeOptions node_options()
+  {
+    const auto source = ament_index_cpp::get_package_share_path("autoware_tensorrt_yolox_models");
+    rclcpp::NodeOptions options;
+    options.arguments(
+      {"--ros-args", "--params-file",
+       (package / "config/yolox_traffic_light_detector.param.yaml").string()});
+    options.append_parameter_override("model_path", config.model_path);
+    options.append_parameter_override("engine_path", engine.string());
+    options.append_parameter_override(
+      "label_path", (source / "car_ped_tl_detector_labels.txt").string());
+    options.append_parameter_override(
+      "roi_remap_path", (package / "config/traffic_light_roi_label_remap.csv").string());
+    return options;
   }
 
   fs::path directory, model, engine, package, supplied;
@@ -331,6 +365,8 @@ TEST_F(YoloXCache, PublishedSegmentationInt8ProfileSupportsColdAndWarmInference)
   }
   ASSERT_TRUE(fs::exists(engine));
   const auto changed = fs::last_write_time(engine);
+  config.model_path.clear();
+  config.allow_engine_build = false;
   {
     TrtYoloXDetector detector(config);
     infer(detector);
@@ -338,4 +374,96 @@ TEST_F(YoloXCache, PublishedSegmentationInt8ProfileSupportsColdAndWarmInference)
   EXPECT_EQ(fs::last_write_time(engine), changed);
   check_sources();
 }
+TEST_F(YoloXCache, StandalonePreparerValidatesItsArguments)
+{
+  EXPECT_EQ(prepare({"--help"}), 0);
+  EXPECT_EQ(prepare({"--model", model.string()}), 1);
+  EXPECT_EQ(prepare({"--unknown", "value"}), 1);
+  for (const auto & value : {"-1", "6", "9223372036854775808", "0suffix"}) {
+    EXPECT_EQ(
+      prepare(
+        {"--model", model.string(), "--engine", engine.string(), "--builder-optimization-level",
+         value}),
+      1);
+  }
+  EXPECT_EQ(
+    prepare({"--model", model.string(), "--engine", engine.string(), "--clip-value", "nan"}), 1);
+  EXPECT_FALSE(fs::exists(engine));
+}
+
+TEST_F(YoloXCache, StandaloneIndexedPreparationSupportsOnnxFreeReadOnlyInference)
+{
+  ASSERT_EQ(
+    prepare(
+      {"--model-package", "autoware_tensorrt_yolox_models", "--model",
+       "yolox_s_car_ped_tl_detector_960_960_batch_1.onnx", "--engine", engine.string()}),
+    0);
+  ASSERT_TRUE(fs::exists(engine));
+  const auto changed = fs::last_write_time(engine);
+  fs::permissions(model.parent_path(), fs::perms::owner_all);
+  fs::remove(model);
+  fs::remove(supplied);
+  fs::permissions(engine, fs::perms::owner_read);
+  fs::permissions(engine.parent_path(), fs::perms::owner_read | fs::perms::owner_exec);
+  config.model_path.clear();
+  config.allow_engine_build = false;
+  {
+    TrtYoloXDetector detector(config);
+    infer(detector);
+  }
+  rclcpp::init(0, nullptr);
+  {
+    TrtYoloXNode node(node_options());
+    EXPECT_TRUE(rclcpp::ok());
+    EXPECT_FALSE(node.get_parameter("allow_engine_build").as_bool());
+  }
+  EXPECT_EQ(fs::last_write_time(engine), changed);
+  config.roi_labels.pop_back();
+  EXPECT_THROW({ TrtYoloXDetector detector(config); }, std::invalid_argument);
+}
+
+TEST_F(YoloXCache, StandaloneInt8PreparationSupportsInferenceWithoutCalibrationInputs)
+{
+  const auto list = directory / "images.txt";
+  std::ofstream(list) << (package / "test/test_image.jpg").string() << '\n';
+  ASSERT_EQ(
+    prepare(
+      {"--model", model.string(), "--engine", engine.string(), "--precision", "int8",
+       "--calibration-algorithm", "MinMax", "--calibration-images", list.string(), "--clip-value",
+       "0", "--builder-optimization-level", "0"}),
+    0);
+  ASSERT_TRUE(fs::exists(directory / "cache/detector.MinMax-calibration.table"));
+  fs::remove(list);
+  fs::remove(directory / "cache/detector.MinMax-calibration.table");
+  fs::permissions(model.parent_path(), fs::perms::owner_all);
+  fs::remove(model);
+  fs::remove(supplied);
+  config.model_path.clear();
+  config.calibration_image_list_path = list;
+  config.clip_value = 0.0;
+  config.precision = "int8";
+  config.allow_engine_build = false;
+  const auto changed = fs::last_write_time(engine);
+  TrtYoloXDetector detector(config);
+  infer(detector);
+  EXPECT_EQ(fs::last_write_time(engine), changed);
+}
+
+TEST_F(YoloXCache, NodeRequiresPreparedEngineUnlessDevelopmentGenerationIsEnabled)
+{
+  rclcpp::init(0, nullptr);
+  {
+    TrtYoloXNode node(node_options());
+    EXPECT_FALSE(rclcpp::ok());
+    EXPECT_FALSE(fs::exists(engine));
+  }
+  rclcpp::init(0, nullptr);
+  auto options = node_options();
+  options.append_parameter_override("allow_engine_build", true);
+  TrtYoloXNode node(options);
+  EXPECT_TRUE(rclcpp::ok());
+  EXPECT_TRUE(node.get_parameter("allow_engine_build").as_bool());
+  EXPECT_TRUE(fs::exists(engine));
+}
+
 }  // namespace

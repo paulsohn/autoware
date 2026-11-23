@@ -1725,13 +1725,41 @@ use histogram.table. Readers prefer the generated cache, then the supplied table
 beside the ONNX. Writers only use the output path. Provided tables stay immutable
 in their model repository; a matching filename does not guarantee SDK compatibility.
 
-For on-device preparation, run a standalone YOLOX process with build_only=true,
-then start inference with the same engine path and compilation settings. That
-flag shuts down the ROS context, so prepare separately from the live composed
-application. Warm reuse can use a prepared read-only cache and needs no
-calibration image list when a valid engine/table is available. The current common
-implementation still initializes its builder/parser and reads ONNX before cache
-selection; retain those declared runtime resources even on a warm launch.
+Prepare the engine on the target GPU before starting inference. The source-owned
+prepare_engine CLI shares the detector's model/profile/calibration setup without
+initializing a ROS node or executor. The root yolox_prepare product adds the indexed
+model provider. Create a writable output directory and use a qualified cache key:
+
+```sh
+mkdir -p /tmp/yolox-engine-cache
+bazel run --config=runtime --config=no-agnocast //bazel/runtime:yolox_prepare -- \
+  --model-package autoware_tensorrt_yolox_models \
+  --model yolox_s_car_ped_tl_detector_960_960_batch_1.onnx \
+  --engine /tmp/yolox-engine-cache/traffic-light-trt10.16-sm120-fp16.engine
+```
+
+Use --help for precision, calibration and builder-level flags. --model accepts
+an explicit path without --model-package; with a package it is relative to that
+package's share directory. The CLI reuses an existing compatible engine, so select
+a new output key when inputs/settings change. It requires a supported GPU/driver,
+not merely a CUDA compiler; it is a bazel run tool, not an engine-producing action.
+
+TrtYoloXNode and its three single-node launchers default to
+allow_engine_build=false. Supply the same engine_path, matching labels/remaps and
+normal inference parameters. ONNX and calibration inputs are not read in this
+mode; model_path can be empty in a composed node with an explicit engine_path.
+A missing/incompatible plan fails startup without attempting compilation. Prepared
+engines can be read-only; raw output class count must match the configured labels.
+For development, explicitly set allow_engine_build=true to retain build-on-miss.
+Legacy build_only=true still permits generation and shuts down the ROS context;
+it remains compatible but the standalone CLI is the normal preparation interface.
+Direct TrtYoloXDetector C++ callers retain allow_engine_build=true by default for
+compatibility and must set false for prepared-only use.
+
+The shared libraries still link the parser/build code and the declared SDK data
+still includes builder resources. Functional ONNX-free loading does not establish
+an inference-only binary/package closure; retain these SDK resources until a
+separate packaging task demonstrates that they can be removed.
 
 The validated profiles are traffic-light FP16, published segmentation INT8 with
 clip_value=6, and fresh segmentation MinMax calibration as a functional smoke

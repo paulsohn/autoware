@@ -13,6 +13,9 @@ import time
 import xml.etree.ElementTree as ET
 
 from ament_index_python.packages import get_package_prefix, get_package_share_directory
+from python.runfiles import runfiles
+
+preparer = runfiles.Create().Rlocation("_main/bazel/runtime/yolox_prepare")
 
 source = Path(get_package_share_directory("autoware_tensorrt_yolox_models"))
 prefix = get_package_prefix("autoware_tensorrt_yolox")
@@ -29,6 +32,12 @@ with tempfile.TemporaryDirectory(dir=os.environ["TEST_TMPDIR"]) as temporary:
                 raise RuntimeError("Unmaterialized model: " + name)
         shutil.copyfile(path, Path(temporary) / name)
     env = dict(os.environ, AMENT_PREFIX_PATH=prefix, YOLOX_TEST_DATA_DIR=temporary)
+    # The node's steady-state default consumes a prepared engine; keep its upstream tests unchanged.
+    if Path(sys.argv[1]).name == "yolox_node_test_binary":
+        model = Path(temporary) / files[1]
+        subprocess.run([preparer, "--model", str(model), "--engine",
+                        str(model.with_suffix(".engine")), "--precision", "fp16"],
+                       env=env, check=True)
     measured = os.environ.get("YOLOX_CACHE_EXPERIMENT") == "1"
     observations = []
     for phase in ("cold", "warm") if measured else ("cold",):
