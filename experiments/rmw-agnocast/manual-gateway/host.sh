@@ -37,7 +37,7 @@ if [[ $op == gateway ]]; then
 fi
 if [[ $op == ingress-reader ]]; then
   export RMW_IMPLEMENTATION=rmw_agnocast LD_PRELOAD="$hook"
-  exec python3 experiments/rmw-agnocast/manual-gateway/poses-reader.py
+  exec python3 experiments/rmw-agnocast/manual-gateway/poses-reader.py "$@"
 fi
 if [[ $op == verify ]]; then
   exec python3 experiments/rmw-agnocast/manual-gateway/verify.py "$@"

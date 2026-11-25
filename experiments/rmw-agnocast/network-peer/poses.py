@@ -1,4 +1,5 @@
 """Ordinary ROS publisher used by the isolated peer for the native ingress check."""
+import sys
 import time
 from pathlib import Path
 import rclpy
@@ -11,7 +12,7 @@ end = time.monotonic()+20
 while not Path("/tmp/poses-go").exists() or not pub.get_subscription_count():
     if time.monotonic()>end: raise TimeoutError("native gateway did not subscribe")
     time.sleep(.02)
-for seq in range(48):
+for seq in range(int(sys.argv[1]) if len(sys.argv)>1 else 48):
     m = PoseArray()
     m.header.frame_id = f"lidar_{seq}"
     for i in range(0 if seq%8==0 else 1 if seq%3==0 else 1024):

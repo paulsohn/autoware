@@ -11,7 +11,7 @@ import threading
 
 parser = argparse.ArgumentParser()
 parser.add_argument("output", type=Path)
-parser.add_argument("cases", nargs="+", choices=["absent","idle","active","restart","crash","late","conflict","ingress","stall","partition","writer-stall","sustained","sustained-control"])
+parser.add_argument("cases", nargs="+", choices=["absent","idle","active","restart","crash","late","conflict","ingress","stall","partition","writer-stall","sustained","sustained-control","dual-active","dual-writer-stall","dual-restart"])
 args = parser.parse_args()
 args.output.mkdir()
 peer = "awpilot0-stock"
@@ -26,6 +26,10 @@ sp.run(remote+["bash","-ec",'test ! -e /dev/agnocast; test -z "${LD_PRELOAD:-}"'
 for index, mode in enumerate(args.cases):
     case = args.output / f"{index}-{mode}"
     case.mkdir()
+    dual = mode.startswith("dual-")
+    mode = mode.removeprefix("dual-")
+    monitors = []
+    dual_stop = threading.Event()
     children = []
     rec = None
     owned_gateways = {}
@@ -47,13 +51,16 @@ for index, mode in enumerate(args.cases):
     def interrupt_recorder(sig, *, check=True):
         sp.run(["docker","exec",peer,"sh","-ec",'kill -"$1" "$(cat "$2")"',"sh",sig,recpid],check=check)
 
-    def monitor_rss(pids, stop):
-        with (case/"rss.csv").open("w", buffering=1) as output:
+    def monitor_rss(pids, stop, filename="rss.csv"):
+        with (case/filename).open("w", buffering=1) as output:
             writer = csv.writer(output)
             writer.writerow(("time_ns","combined_rss_kib"))
             while not stop.is_set():
-                readings = [re.search(r"^VmRSS:\s+(\d+)", Path(f"/proc/{pid}/status").read_text(), re.M)
-                            for pid in pids]
+                try:
+                    readings = [re.search(r"^VmRSS:\s+(\d+)", Path(f"/proc/{pid}/status").read_text(), re.M)
+                                for pid in pids]
+                except (FileNotFoundError, ProcessLookupError):
+                    return
                 if not all(readings):
                     return
                 writer.writerow((time.time_ns(),sum(int(m[1]) for m in readings)))
@@ -81,10 +88,16 @@ for index, mode in enumerate(args.cases):
 
     def gateway(name):
         route = (["import","geometry_msgs/msg/PoseArray","/peer/poses","/manual/local_poses"]
-                 if mode == "ingress" else ["export","sensor_msgs/msg/PointCloud2","/output","/manual/cloud"])
+                 if mode == "ingress" or name == "import" else ["export","sensor_msgs/msg/PointCloud2","/output","/manual/cloud"])
         p = start(name,host+["gateway",str(case/(name+".pid")),*route])
         owned_gateways[name] = p
         wait(lambda:contains(name,"ready role=source") and contains(name,"ready role=destination"), p)
+        if dual:
+            pids = re.findall(r"ready role=.* pid=(\d+)", (case/(name+".log")).read_text())
+            pids.append((case/(name+".pid")).read_text().strip())
+            monitor = threading.Thread(target=monitor_rss,args=(pids,dual_stop,name+"-rss.csv"),daemon=True)
+            monitors.append(monitor)
+            monitor.start()
         return p
 
     def stop_gateway(name,p):
@@ -126,6 +139,14 @@ for index, mode in enumerate(args.cases):
                 'echo $$ > "$1"; exec ros2 bag record --topics /manual/cloud -s sqlite3 --max-cache-size 0 --disable-keyboard-controls -o "$2"',
                 "bash",recpid,bag])
             wait(lambda:contains("gateway","source armed"),relay)
+        if dual:
+            reader=start("reader",host+["ingress-reader","240"])
+            wait(lambda:contains("reader","reader ready"),reader)
+            incoming=gateway("import")
+            peer_script = bag + "-poses.py"
+            sp.run(["docker","cp","experiments/rmw-agnocast/network-peer/poses.py",peer+":"+peer_script],check=True)
+            poses=start("poses",remote+["bash","-ec",'touch /tmp/poses-go; exec python3 "$1" 240',"bash",peer_script])
+            wait(lambda:contains("reader","pose 0 "),reader)
         stop_monitor = threading.Event()
         if pressure:
             pids = re.findall(r"ready role=.* pid=(\d+)",(case/"gateway.log").read_text())
@@ -173,6 +194,8 @@ for index, mode in enumerate(args.cases):
                 (case/"fault-end").write_text(str(time.time_ns()))
         if mode in ("restart","crash"):
             wait(lambda:(case/"seen-16").exists(),graph)
+            if dual:
+                (case/"fault-start").write_text(str(time.time_ns()))
             if mode == "crash":
                 workers = re.findall(r"ready role=.* pid=(\d+)", (case/"gateway.log").read_text())
                 assert len(workers)==2
@@ -186,6 +209,9 @@ for index, mode in enumerate(args.cases):
                 stop_gateway("gateway",relay)
             wait(lambda:(case/"seen-24").exists(),graph)
             relay=gateway("replacement")
+            if dual:
+                wait(lambda:contains("replacement","source armed"),relay)
+                (case/"fault-end").write_text(str(time.time_ns()))
         if mode=="late":
             wait(lambda:(case/"seen-36").exists(),graph)
         else:
@@ -207,6 +233,15 @@ for index, mode in enumerate(args.cases):
                 done(graph)
         if mode != "absent":
             stop_gateway("replacement" if mode in ("restart","crash") else "gateway",relay)
+        if dual:
+            done(poses)
+            done(reader)
+            stop_gateway("import",incoming)
+            if mode != "active":
+                times = [int(t) for t in re.findall(r"^pose \d+ (\d+)",(case/"reader.log").read_text(),re.M)]
+                a,b = (int((case/("fault-"+edge)).read_text()) for edge in ("start","end"))
+                assert times[0]<a and times[-1]>b and any(a<t<b for t in times)
+            print("import verified 240/240",flush=True)
         done(start("verify",host+["verify",str(case)]))
         if sustained:
             print(mode,(case/"verify.log").read_text().splitlines()[0],flush=True)
@@ -232,6 +267,9 @@ for index, mode in enumerate(args.cases):
                 assert contains("gateway","stats role=source samples=0 bytes=0")
         print(mode,"local=60",f"peer={len(seen)}",flush=True)
     finally:
+        dual_stop.set()
+        for monitor in monitors:
+            monitor.join()
         if rec is not None and rec.poll() is None:
             interrupt_recorder("CONT", check=False)
             interrupt_recorder("INT", check=False)

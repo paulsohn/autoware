@@ -58,3 +58,17 @@ Before the fix a partition blocked a socket send for three seconds, causing the 
 The [pressure results](results/pressure.csv) classify missing clouds by their source stamps relative to the interruption (the corresponding eight-second observation window in the control), and report 50 ms samples of summed RSS for the supervisor and its two endpoint processes. This measure counts shared resident pages in each process and excludes kernel queues, helper processes and the recorder. The per-scope runtime limit is 512 MiB and the container limit is 384 MiB. The experiment measures one minute at the existing payload and rate. Physical hosts, longer outages, permanent stalls and workloads approaching the 64 MiB frame ceiling remain open.
 
 In the uninterrupted one-minute control, both bags contained all 600 clouds. The clean eight-second recorder suspension yielded 530/600 on the peer and 600/600 locally, with all 70 missing source stamps inside the suspension. An earlier run recorded 520 and had ten additional missing stamps before the pause. Both gateway workers forwarded all 600 in each long run. Peak sampled gateway RSS was 174.4 MiB. Pausing the gateway DDS worker itself for four seconds reproduced a different failure mode: both runs took 60, forwarded 22, and counted 38 waiting samples replaced. The final sample reached the peer in every fault run. Use local recording when the archive must span remote outages.
+
+## Simultaneous export and import
+
+On the prepared laptop, start the stock peer if it is stopped. Run from the colcon worktree with a fresh output directory.
+
+```bash
+sg docker -c 'docker start awpilot0-stock'
+sg docker -c 'python3 experiments/rmw-agnocast/manual-gateway/check.py build/manual-gateway/dual-replay dual-active dual-writer-stall dual-restart dual-restart dual-writer-stall dual-active'
+python3 experiments/rmw-agnocast/manual-gateway/dual-report.py build/manual-gateway/dual-replay
+```
+
+Two manual gateway invocations share the ROS domain and device. The export carries native /output to Cyclone /manual/cloud. The import carries Cyclone /peer/poses to native /manual/local_poses. The same stock container runs the recorder and the PoseArray publisher. The native witness checks all 240 sequence IDs, array lengths, positions and orientation values under test. Receive timestamps establish whether the witness made progress during each export interruption. Readback decodes each recorded cloud and compares it against the local output for that source stamp.
+
+The writer-stall case stops only the export DDS worker for roughly four seconds. The restart case terminates only the export supervisor, then starts its replacement and waits for the recorder match. Each case runs a fresh graph and import. [Per-run results](results/dual.csv) include summed endpoint worker CPU seconds, and the peak sampled sum of supervisor and endpoint RSS per route (50 ms samples, shared pages counted per process). Restart CPU includes both export generations, and peak RSS uses the larger generation peak. These figures exclude ROS application processes and do not estimate unique host memory.
