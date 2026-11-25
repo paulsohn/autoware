@@ -94,4 +94,22 @@ export BUFFER_RUNTIME_ONLY=1
 experiments/buffer/run-lyrical.sh bash experiments/rmw-agnocast/manual-gateway/check-ownership.sh build/manual-gateway/ownership-replay
 ```
 
-Startup ownership is local to the user and route configuration. Route discovery, live policy changes and owner replacement after a crash with live contexts remain open. The auto supervisor currently inherits the first application's stderr for diagnostics. Deployments that capture application output through pipes must account for the supervisor retaining that descriptor.
+Startup ownership is local to the user and route configuration. Route discovery and live policy changes remain open. Keep the route file and executable available at their original paths throughout the context lifetime. The auto supervisor currently inherits the first application's stderr for diagnostics. Deployments that capture application output through pipes must account for the supervisor retaining that descriptor.
+
+## Recover an automatic owner after supervisor loss
+
+Updated native contexts request a recoverable lease during the existing startup handshake. When the matching owner is automatic, each participating context parks one thread on the lease and a finalization eventfd. Supervisor death closes the lease. The surviving contexts enter the same serialized election used at startup. A context can make three recovery attempts over its lifetime, with delays of 100, 200 and 400 ms before those attempts. A successful election counts toward the budget. Once exhausted, the context logs the failure and local ROS operation continues. Restart participating applications to renew their budgets. An in-progress bootstrap can delay finalization until that join finishes. Contexts attached to a manual owner or an older gateway keep the original operator-managed lifetime.
+
+The test runs two native String publishers at 20 Hz each, offset by 25 ms. A loopback Cyclone subscriber witnesses the kill after receiving at least ten messages from each. It checks ordering, uniqueness, the end of both streams, the replacement supervisor identity, and final owner exit. The recovery time is the interval between sending SIGKILL and receiving a sample from a publication slot scheduled after the kill. This includes owner election, endpoint creation, ROS discovery and the publication schedule. The experiment does not replay missed volatile samples.
+
+With the overlays rebuilt, run inside the same memory-guarded setup as the ownership replay above. Use a fresh output path each time.
+
+```bash
+export TEST_OWNER_CRASH=crash
+experiments/buffer/run-lyrical.sh bash experiments/rmw-agnocast/manual-gateway/check-ownership.sh build/manual-gateway/live-crash
+export TEST_OWNER_CRASH=exhaust
+experiments/buffer/run-lyrical.sh bash experiments/rmw-agnocast/manual-gateway/check-ownership.sh build/manual-gateway/retry-limit
+export TEST_OWNER_CRASH=manual-stop
+experiments/buffer/run-lyrical.sh bash experiments/rmw-agnocast/manual-gateway/check-ownership.sh build/manual-gateway/manual-stop
+unset TEST_OWNER_CRASH
+```

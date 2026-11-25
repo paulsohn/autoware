@@ -13,6 +13,7 @@
 #include <memory>
 #include <mutex>
 #include <vector>
+#include <thread>
 
 namespace standalone
 {
@@ -33,7 +34,9 @@ struct Context
     }
   }
   int gateway_lease = -1;
-  ~Context() { if (gateway_lease >= 0) close(gateway_lease); }
+  int gateway_stop = -1;
+  std::thread gateway_monitor;
+  ~Context();
   bool stopped = false;
 };
 bool join_gateway(Context & context, size_t domain);

@@ -260,7 +260,8 @@ def join(args, words):
                     creds = client.getsockopt(socket.SOL_SOCKET,socket.SO_PEERCRED,12)
                     if struct.unpack("3i",creds)[1] != os.getuid():
                         raise PermissionError("gateway owner belongs to another user")
-                    socket.send_fds(client,[b"+"],[0])
+                    request = b"R" if os.getenv("AGNOCAST_GATEWAY_RECOVERY_LEASE") == "1" else b"+"
+                    socket.send_fds(client,[request],[0])
                     client.settimeout(8)
                     if client.recv(1)==b"+":
                         return
@@ -272,7 +273,7 @@ def join(args, words):
             raise
 
 
-def accept_lease(listener,leases):
+def accept_lease(listener,leases,automatic):
     client, _ = listener.accept()
     with client:
         creds = client.getsockopt(socket.SOL_SOCKET,socket.SO_PEERCRED,12)
@@ -287,7 +288,7 @@ def accept_lease(listener,leases):
             return
         lease = socket.socket(fileno=fds[0])
         try:
-            lease.sendall(b"+")
+            lease.sendall(b"A" if automatic and data == b"R" else b"+")
             client.sendall(b"+")
         except OSError:
             lease.close()
@@ -346,7 +347,7 @@ def supervise(args):
                     continue
                 readable = select.select([listener,*leases],[],[],.05)[0]
                 if listener in readable:
-                    accept_lease(listener,leases)
+                    accept_lease(listener,leases,args.automatic)
                     joined |= bool(leases)
                 for lease in list(leases):
                     if lease in readable:
