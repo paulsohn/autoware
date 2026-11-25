@@ -93,9 +93,14 @@ rmw_ret_t rmw_init(const rmw_init_options_t * o, rmw_context_t * ctx)
   if (!local) return RMW_RET_BAD_ALLOC;
   auto ret = rmw_init_options_copy(o, &ctx->options);
   if (ret != RMW_RET_OK) return ret;
+  const auto domain = o->domain_id == RMW_DEFAULT_DOMAIN_ID ? 0 : o->domain_id;
+  if (!join_gateway(*local, domain)) {
+    (void)rmw_init_options_fini(&ctx->options);
+    return RMW_RET_ERROR;
+  }
   ctx->implementation_identifier = id;
   ctx->instance_id = o->instance_id;
-  ctx->actual_domain_id = o->domain_id == RMW_DEFAULT_DOMAIN_ID ? 0 : o->domain_id;
+  ctx->actual_domain_id = domain;
   ctx->impl = reinterpret_cast<rmw_context_impl_t *>(local.release());
   return RMW_RET_OK;
 }

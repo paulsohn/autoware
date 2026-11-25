@@ -72,3 +72,26 @@ python3 experiments/rmw-agnocast/manual-gateway/dual-report.py build/manual-gate
 Two manual gateway invocations share the ROS domain and device. The export carries native /output to Cyclone /manual/cloud. The import carries Cyclone /peer/poses to native /manual/local_poses. The same stock container runs the recorder and the PoseArray publisher. The native witness checks all 240 sequence IDs, array lengths, positions and orientation values under test. Receive timestamps establish whether the witness made progress during each export interruption. Readback decodes each recorded cloud and compares it against the local output for that source stamp.
 
 The writer-stall case stops only the export DDS worker for roughly four seconds. The restart case terminates only the export supervisor, then starts its replacement and waits for the recorder match. Each case runs a fresh graph and import. [Per-run results](results/dual.csv) include summed endpoint worker CPU seconds, and the peak sampled sum of supervisor and endpoint RSS per route (50 ms samples, shared pages counted per process). Restart CPU includes both export generations, and peak RSS uses the larger generation peak. These figures exclude ROS application processes and do not estimate unique host memory.
+
+## Opt in to startup from an RMW context
+
+This prototype supports one explicitly configured route per participating context. Build and source the revised rmw_agnocast and gateway overlays from this branch. In the native application's terminal, keep the usual native heap hook and domain configuration. Set CYCLONEDDS_URI to the profile the gateway DDS worker should use. In the checkout, create a JSON array with the same route arguments as the manual command. Substitute the installed hook path on this host.
+
+```bash
+printf '%s\n' '["export","std_msgs/msg/String","/topic","/from_robot/topic","--heaphook","/opt/ros/jazzy/lib/libagnocast_heaphook.so"]' > robot-export.json
+export AGNOCAST_GATEWAY_CONFIG="$PWD/robot-export.json"
+export AGNOCAST_GATEWAY_EXECUTABLE="$(ros2 pkg prefix agnocast_cyclone_gateway)/lib/agnocast_cyclone_gateway/topic_gateway"
+ros2 run examples_rclcpp_minimal_publisher publisher_member_function
+```
+
+Each opted-in rmw_init waits for both endpoint processes to initialize. A short-lived helper joins the matching owner or starts an independent supervisor. Each context holds a socket lease until finalization or process exit. The automatic owner shuts down after its last lease closes. An explicitly launched matching manual owner stays up until its operator stops it. Route names, direction, installed type, QoS, domain, effective hook path and the literal Cyclone profile setting must agree. A matching manual command must be running before context initialization to reuse it. A new manual launch while the route is already owned can report a conflict. Unset AGNOCAST_GATEWAY_CONFIG for the existing local-only behavior. The gateway's own worker clears that variable before initializing ROS.
+
+Replay from the provisioned worktree with both rebuilt overlays. The stock Cyclone witness runs on loopback. Two ordinary rclpy applications synchronize just before rclpy.init. The elected starter exits first. The witness checks the publisher count, delivery order and content through both exits. The automatic case checks the actual supervisor PID exits. The manual case checks it stays running after both applications exit.
+
+```bash
+export LYRICAL_ROOT="$(cat build/agnocast-lyrical/universe-root)"
+export BUFFER_RUNTIME_ONLY=1
+experiments/buffer/run-lyrical.sh bash experiments/rmw-agnocast/manual-gateway/check-ownership.sh build/manual-gateway/ownership-replay
+```
+
+Startup ownership is local to the user and route configuration. Route discovery, live policy changes and owner replacement after a crash with live contexts remain open. The auto supervisor currently inherits the first application's stderr for diagnostics. Deployments that capture application output through pipes must account for the supervisor retaining that descriptor.

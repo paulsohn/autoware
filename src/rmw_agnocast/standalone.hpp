@@ -1,5 +1,6 @@
 #pragma once
 #include <poll.h>
+#include <unistd.h>
 #include <rmw/error_handling.h>
 #include <rmw/event.h>
 #include <rmw/init.h>
@@ -31,8 +32,11 @@ struct Context
       }
     }
   }
+  int gateway_lease = -1;
+  ~Context() { if (gateway_lease >= 0) close(gateway_lease); }
   bool stopped = false;
 };
+bool join_gateway(Context & context, size_t domain);
 struct Guard
 {
   Context * context;

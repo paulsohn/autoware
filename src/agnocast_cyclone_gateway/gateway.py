@@ -4,6 +4,7 @@ import argparse
 import ctypes
 import fcntl
 import hashlib
+import json
 import os
 from pathlib import Path
 import select
@@ -176,6 +177,9 @@ def run_endpoint(args, role):
             if lazy:
                 node.create_timer(.05, advertise_demand)
         print(f"ready role={role} rmw={expected} type={args.type} pid={os.getpid()}", flush=True)
+        fd = int(os.environ.pop("AGNOCAST_ENDPOINT_READY_FD"))
+        os.write(fd,b"+")
+        os.close(fd)
         rclpy.spin(node)
     except (KeyboardInterrupt, ExternalShutdownException):
         pass
@@ -194,13 +198,18 @@ def run_endpoint(args, role):
         rclpy.try_shutdown()
 
 
-def acquire_route(stack, endpoints):
-    domain = int(os.environ.get("ROS_DOMAIN_ID", "0"))
+def route_directory():
     directory = Path(f"/dev/shm/agnocast-gateway-{os.getuid()}")
     directory.mkdir(mode=0o700, exist_ok=True)
     info = directory.stat()
     if directory.is_symlink() or info.st_uid != os.getuid() or info.st_mode & 0o077:
         raise RuntimeError(f"expected private route directory {directory}")
+    return directory
+
+
+def acquire_route(stack, endpoints):
+    directory = route_directory()
+    domain = int(os.environ.get("ROS_DOMAIN_ID", "0"))
     for index, (rmw, topic) in enumerate(endpoints):
         key = hashlib.sha256(f"{domain}/{rmw}/{topic}".encode()).hexdigest()
         lock = stack.enter_context((directory / key).open("a"))
@@ -208,6 +217,82 @@ def acquire_route(stack, endpoints):
             fcntl.flock(lock, (fcntl.LOCK_EX if index else fcntl.LOCK_SH) | fcntl.LOCK_NB)
         except BlockingIOError:
             raise RuntimeError(f"conflicting route for {topic} on {rmw}") from None
+
+
+def control_address(args):
+    settings = [os.getuid(), int(os.environ.get("ROS_DOMAIN_ID", "0")), os.stat("/dev/agnocast").st_rdev,
+                os.stat("/dev/shm").st_dev, os.environ.get("CYCLONEDDS_URI", ""),
+                args.direction, args.type, args.source, args.destination, args.depth,
+                args.input_reliability, args.output_reliability, args.always_on, str(args.heaphook.resolve(strict=True))]
+    return "\0agnocast-" + hashlib.sha256(json.dumps(settings).encode()).hexdigest()
+
+
+def join(args, words):
+    address = control_address(args)
+    # Serialize only bootstrap. The persistent route locks also protect manual starts.
+    with (route_directory() / (address[1:]+".lock")).open("a") as lock:
+        deadline = time.monotonic()+8
+        while True:
+            try:
+                fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                break
+            except BlockingIOError:
+                if time.monotonic() >= deadline:
+                    raise TimeoutError("gateway startup lock timed out")
+                time.sleep(.03)
+        deadline = time.monotonic()+8
+        child = None
+        try:
+            while time.monotonic()<deadline:
+                with socket.socket(socket.AF_UNIX, socket.SOCK_SEQPACKET) as client:
+                    try:
+                        client.connect(address)
+                    except ConnectionRefusedError:
+                        if child is None:
+                            child = subprocess.Popen([sys.executable,__file__,*words,"--automatic"],
+                                stdin=subprocess.DEVNULL, stdout=sys.stderr, start_new_session=True)
+                        elif child.poll() is not None:
+                            # A racing manual start can still win the route.
+                            if time.monotonic()+1 < deadline:
+                                deadline = time.monotonic()+1
+                        time.sleep(.03)
+                        continue
+                    creds = client.getsockopt(socket.SOL_SOCKET,socket.SO_PEERCRED,12)
+                    if struct.unpack("3i",creds)[1] != os.getuid():
+                        raise PermissionError("gateway owner belongs to another user")
+                    socket.send_fds(client,[b"+"],[0])
+                    client.settimeout(8)
+                    if client.recv(1)==b"+":
+                        return
+                    raise RuntimeError("owner declined gateway lease")
+            raise TimeoutError("compatible gateway unavailable")
+        except BaseException:
+            if child and child.poll() is None:
+                child.terminate()
+            raise
+
+
+def accept_lease(listener,leases):
+    client, _ = listener.accept()
+    with client:
+        creds = client.getsockopt(socket.SOL_SOCKET,socket.SO_PEERCRED,12)
+        if struct.unpack("3i",creds)[1] != os.getuid():
+            return
+        client.settimeout(1)
+        try:
+            data,fds,_,_ = socket.recv_fds(client,1,1)
+        except OSError:
+            return
+        if not fds:
+            return
+        lease = socket.socket(fileno=fds[0])
+        try:
+            lease.sendall(b"+")
+            client.sendall(b"+")
+        except OSError:
+            lease.close()
+            return
+        leases.append(lease)
 
 
 def supervise(args):
@@ -221,12 +306,21 @@ def supervise(args):
 
     with ExitStack() as cleanup:
         acquire_route(cleanup, zip(stacks, (args.source, args.destination)))
+        listener = cleanup.enter_context(socket.socket(socket.AF_UNIX, socket.SOCK_SEQPACKET))
+        listener.bind(control_address(args))
+        listener.listen(16)
+        print(f"owner pid={os.getpid()} automatic={args.automatic}",flush=True)
+        leases = []
         ends = socket.socketpair()
+        ready_read,ready_write = os.pipe()
+        cleanup.callback(os.close,ready_read)
         signal.signal(signal.SIGINT, stopping)
         signal.signal(signal.SIGTERM, stopping)
         try:
             for role, rmw, end in zip(("source", "destination"), stacks, ends):
                 env = dict(os.environ, RMW_IMPLEMENTATION=rmw)
+                env.pop("AGNOCAST_GATEWAY_CONFIG",None)
+                env["AGNOCAST_ENDPOINT_READY_FD"] = str(ready_write)
                 hooks = [h for h in env.get("LD_PRELOAD", "").replace(":", " ").split()
                          if "agnocast_heaphook" not in h]
                 if rmw == NATIVE:
@@ -234,15 +328,36 @@ def supervise(args):
                 env["LD_PRELOAD"] = ":".join(hooks)
                 children.append(subprocess.Popen(
                     [sys.executable, __file__, *sys.argv[1:], "--endpoint", role, "--parent-pid", str(os.getpid())],
-                    stdin=end, env=env, start_new_session=True))
+                    stdin=end, env=env, pass_fds=(ready_write,), start_new_session=True))
             for end in ends:
                 end.close()
+            ready = 0
+            deadline = time.monotonic()+8
+            joined = False
             while not stop:
                 for child in children:
                     if child.poll() is not None:
                         raise RuntimeError(f"endpoint exited early (status {child.returncode})")
-                time.sleep(.05)
+                if ready<2:
+                    if select.select([ready_read],[],[],.05)[0]:
+                        ready += len(os.read(ready_read,2-ready))
+                    elif time.monotonic()>deadline:
+                        raise TimeoutError("gateway endpoints failed to become ready")
+                    continue
+                readable = select.select([listener,*leases],[],[],.05)[0]
+                if listener in readable:
+                    accept_lease(listener,leases)
+                    joined |= bool(leases)
+                for lease in list(leases):
+                    if lease in readable:
+                        leases.remove(lease)
+                        lease.close()
+                if args.automatic and not leases and (joined or time.monotonic()>deadline):
+                    break
         finally:
+            os.close(ready_write)
+            for lease in leases:
+                lease.close()
             for end in ends:
                 end.close()
             for child in children:
@@ -269,10 +384,23 @@ if __name__ == "__main__":
         parser.add_argument(f"--{side}-reliability", choices=("best_effort", "reliable"), default=default)
     parser.add_argument("--endpoint", choices=("source", "destination"), help=argparse.SUPPRESS)
     parser.add_argument("--parent-pid", type=int, help=argparse.SUPPRESS)
-    args = parser.parse_args()
+    parser.add_argument("--automatic",action="store_true",help=argparse.SUPPRESS)
+    words = sys.argv[1:]
+    joining = words[:1]==["--join"]
+    if joining:
+        config, domain = words[1:]
+        os.environ["ROS_DOMAIN_ID"] = str(int(domain))
+        words = json.loads(Path(config).read_text())
+        if not isinstance(words,list) or not all(isinstance(w,str) for w in words):
+            parser.error("gateway configuration must be a JSON array of route arguments")
+    args = parser.parse_args(words)
     if args.depth < 1 or any(not t.startswith("/") for t in (args.source, args.destination)):
         parser.error("use a positive depth and absolute topic names")
-    if args.endpoint:
+    if joining:
+        if args.automatic or args.endpoint or args.parent_pid is not None:
+            parser.error("private endpoint arguments cannot be configured")
+        join(args,words)
+    elif args.endpoint:
         run_endpoint(args, args.endpoint)
     else:
         supervise(args)
