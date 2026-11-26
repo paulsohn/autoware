@@ -4444,3 +4444,19 @@ Two publishers concurrently use /domain_probe/data, type Int32, on domains 17 an
 Then one application at a time used process environment 17 and explicit rclpy context 18. Both network RMWs had identical outcomes. Overriding the writer yielded one reported publisher match but 0/20 for each aligned domain-18 reader. A local control reader with environment 17 and context 18 received all 20 from that writer. Overriding only the remote reader yielded 20/20 for the aligned local reader and 0/20 for the overridden remote reader, despite its publisher match. Domain 17 delivered its own ordered sequence in all cases. The announcement markers stayed isolated by effective domain in every trial.
 
 The effective domain keys the RMW graph and native route name, and is passed to the auto gateway. By contrast Agnocast registers the process using the environment domain and the kernel scopes endpoint registration by that process domain (agnocast.cpp, add_process; agnocast_ioctl.c, add_topic on publisher/subscriber creation). Matching in the effective-domain graph alone therefore cannot establish native delivery. Use separate processes with aligned domain settings. This characterization changes no middleware behavior.
+
+## Reject context domains that differ from native process registration
+
+The preceding override trials exposed a false publisher match with zero delivery. The packaged heap hook invokes initialize_agnocast in libagnocast. Cache the domain submitted to the successful application registration ioctl there. Reading ROS_DOMAIN_ID again at context creation would allow a later environment change to misidentify the native registration. The kernel module and heap hook are unchanged. Build this branch's agnocastlib together with rmw_agnocast, as described in the migration tutorial.
+
+rmw_init now uses that registration for the RMW default domain and returns RMW_RET_UNSUPPORTED for an explicit mismatch, with both IDs in the error. It checks before creating a context or joining a gateway. Multiple domains on one island remain available through separate processes.
+
+Rebuild and repeat the four domain fixture commands in the preceding entry using fresh output directories. For the existing Release overlays the rebuild commands were:
+
+```bash
+export LYRICAL_ROOT="$(cat build/agnocast-lyrical/universe-root)"
+experiments/buffer/run-lyrical.sh bash -ec 'source build/migration-guide/install/local_setup.bash; cmake --build build/standalone/o3-obj/agnocastlib --parallel 1; cmake --install build/standalone/o3-obj/agnocastlib'
+experiments/buffer/run-lyrical.sh bash experiments/rmw-agnocast/standalone/build-poll.sh
+```
+
+All eight cells passed on the laptop with separate container IPC namespaces. On each network backend, the writer and reader override probes rejected domain 18 twice in a process registered in 17, including after changing the environment to 18. Neither attempt launched the gateway executable. The original context and a newly created aligned context then exchanged 10/10 ordered samples. Inherited domains 17 and 18 delivered their respective 20/20 sequences locally and across the gateway with both automatic and manual launch. Minimum host MemAvailable across guarded domain trials was 14327 MiB.

@@ -88,12 +88,23 @@ rmw_ret_t rmw_init(const rmw_init_options_t * o, rmw_context_t * ctx)
       "/dev/agnocast");
     return RMW_RET_ERROR;
   }
+  const auto native_domain = agnocast::get_registered_domain_id();
+  if (native_domain == UINT32_MAX) {
+    RMW_SET_ERROR_MSG("native process has no registered Agnocast application domain");
+    return RMW_RET_ERROR;
+  }
+  const auto domain = o->domain_id == RMW_DEFAULT_DOMAIN_ID ? native_domain : o->domain_id;
+  if (domain != native_domain) {
+    RMW_SET_ERROR_MSG_WITH_FORMAT_STRING(
+      "rmw_agnocast: requested ROS domain %zu, but this process is registered with Agnocast in "
+      "domain %u. Start a separate process with ROS_DOMAIN_ID=%zu.", domain, native_domain, domain);
+    return RMW_RET_UNSUPPORTED;
+  }
   if (o->security_options.enforce_security) return RMW_RET_UNSUPPORTED;
   auto local = std::unique_ptr<Context>(new (std::nothrow) Context);
   if (!local) return RMW_RET_BAD_ALLOC;
   auto ret = rmw_init_options_copy(o, &ctx->options);
   if (ret != RMW_RET_OK) return ret;
-  const auto domain = o->domain_id == RMW_DEFAULT_DOMAIN_ID ? 0 : o->domain_id;
   if (!join_gateway(*local, domain)) {
     (void)rmw_init_options_fini(&ctx->options);
     return RMW_RET_ERROR;

@@ -11,12 +11,74 @@ CONTROL = "/_rmw_agnocast/discovery_v2"
 DOMAINS = (17, 18)
 
 
+def check_rejection(domain):
+    import rclpy
+    from rclpy.context import Context
+    from rclpy.executors import SingleThreadedExecutor
+    from std_msgs.msg import Int32
+
+    native = int(os.environ["ROS_DOMAIN_ID"])
+    config = os.environ.pop("RMW_AGNOCAST_GATEWAY_CONFIG")
+    original = Context()
+    rclpy.init(context=original, domain_id=native)
+    writer = rclpy.create_node("domain_guard_writer", context=original)
+    pub = writer.create_publisher(Int32, "/domain_guard", 10)
+
+    # Record any gateway launch attempt. The rejected context must fail before joining.
+    marker = Path("/tmp/rejected-gateway-started")
+    probe = Path("/tmp/domain-guard-gateway")
+    probe.write_text(f"#!/bin/sh\ntouch {marker}\nexit 1\n")
+    probe.chmod(0o700)
+    os.environ["AGNOCAST_GATEWAY_EXECUTABLE"] = str(probe)
+    os.environ["RMW_AGNOCAST_GATEWAY_CONFIG"] = config
+    expected = f"requested ROS domain {domain}, but this process is registered with Agnocast in domain {native}"
+    for environment in (native, domain):
+        os.environ["ROS_DOMAIN_ID"] = str(environment)
+        rejected = Context()
+        try:
+            rclpy.init(context=rejected, domain_id=domain)
+        except RuntimeError as exc:
+            assert expected in str(exc), str(exc)
+        else:
+            raise AssertionError("mismatched context initialized")
+        assert not marker.exists()
+    del os.environ["RMW_AGNOCAST_GATEWAY_CONFIG"]
+
+    # Even with the mutated environment, a second explicitly aligned context is supported.
+    second = Context()
+    rclpy.init(context=second, domain_id=native)
+    reader = rclpy.create_node("domain_guard_reader", context=second)
+    received = []
+    reader.create_subscription(Int32, "/domain_guard", lambda msg: received.append(msg.data), 10)
+    executor = SingleThreadedExecutor(context=second)
+    executor.add_node(reader)
+    deadline = time.monotonic()+5
+    while not pub.get_subscription_count():
+        assert time.monotonic()<deadline
+        time.sleep(.02)
+    for value in range(10):
+        pub.publish(Int32(data=value))
+        while len(received)<=value:
+            assert time.monotonic()<deadline, received
+            executor.spin_once(timeout_sec=.05)
+    assert received == list(range(10))
+    executor.shutdown()
+    reader.destroy_node()
+    second.shutdown()
+    writer.destroy_node()
+    original.shutdown()
+    print(expected, "twice; no gateway attempt; aligned contexts delivered 10/10", flush=True)
+
+
 def worker(role, domain, override):
     import rclpy
     from rmw_agnocast_discovery_msgs.msg import IslandSnapshot
     from std_msgs.msg import Int32
 
-    rclpy.init(domain_id=domain if override else None)
+    if override:
+        check_rejection(domain)
+        return
+    rclpy.init()
     node = rclpy.create_node(f"domain_probe_{role}_{domain}")
     assert node.context.get_domain_id() == domain
     received = []
@@ -72,8 +134,8 @@ def exercise(backend, islands, run, docker, hook, out, mode):
     procs = {}
     def start(role,d):
         i = int(role in ("remote","observer"))
-        override = d==18 and ((mode=="writer-override" and role in ("writer", "paired")) or
-                              (mode=="reader-override" and role=="remote"))
+        override = (d==18 and ((mode=="writer-override" and role=="writer") or
+                               (mode=="reader-override" and role=="remote")))
         env = ["-e","ROS_DOMAIN_ID="+str(17 if override else d)]
         if not manual and role in ("writer","remote"):
             env.extend(["-e","RMW_AGNOCAST_GATEWAY_CONFIG=/tmp/domain.json","-e",
@@ -81,12 +143,14 @@ def exercise(backend, islands, run, docker, hook, out, mode):
         if role=="observer":
             env.extend(["-e","RMW_IMPLEMENTATION="+rmw])
         cmd=f"python3 /ws/experiments/rmw-agnocast/islands/domains.py {role} {d} {int(override)}"
-        procs[role,d] = run(i,f"{role}-{d}",cmd,native=role!="observer",environment=env)
+        proc = run(i,f"{role}-{d}",cmd,native=role!="observer",environment=env)
+        if override:
+            assert proc.wait(timeout=15)==0, "domain guard probe failed; see log"
+        else:
+            procs[role,d] = proc
     for d in DOMAINS:
         for role in ("observer","local","remote","writer"):
             start(role,d)
-    if mode=="writer-override":
-        start("paired",18)
 
     def read():
         states={}
@@ -99,21 +163,23 @@ def exercise(backend, islands, run, docker, hook, out, mode):
         assert all(p.poll() is None for p in [*procs.values(),*gateways]), "worker exited (see logs)"
         return states
 
+    active = DOMAINS if mode.startswith("inherited") else (17,)
     until=time.monotonic()+20
     while time.monotonic()<until:
         state=read()
-        if (("paired",18) not in state or state["paired",18].get("matches",0)>=1) and all(state["observer",d].get("markers")==[f"/domain_probe/marker_{d}"] and
-               state["remote",d].get("matches",0)>=1 and state["writer",d].get("matches",0)>=2
-               for d in DOMAINS):
+        if all(state.values()) and all(
+            state["observer",d]["markers"]==[f"/domain_probe/marker_{d}"] and
+            state["remote",d]["matches"]>=1 and state["writer",d]["matches"]>=2
+            for d in active):
             break
         time.sleep(.25)
-    assert all(state.values()), "application setup incomplete"
-    # Send even when a domain override prevents a match; record the observed failure.
+    else:
+        raise TimeoutError("domain peers did not match")
     docker("exec",islands[0],"touch","/tmp/send")
     until=time.monotonic()+6
     while time.monotonic()<until:
         state=read()
-        if all(len(state[r,d].get("received",[]))>=20 for d in DOMAINS for r in ("local","remote")):
+        if all(len(state[r,d].get("received",[]))>=20 for d in active for r in ("local","remote")):
             break
         time.sleep(.1)
     time.sleep(.5)
@@ -124,20 +190,17 @@ def exercise(backend, islands, run, docker, hook, out, mode):
         docker("exec",c,"touch","/tmp/finish")
     for proc in procs.values():
         assert proc.wait(timeout=15)==0
-    for d in DOMAINS:
+    for d in active:
         assert state["writer",d]["sent"]
-        expected=list(range(d*100,d*100+20))
         assert state["observer",d]["markers"]==[f"/domain_probe/marker_{d}"]
         for role in ("local","remote"):
-            values=state[role,d]["received"]
-            print(backend,mode,d,role,"matched",state[role,d]["matches"],"received",len(values),flush=True)
-            assert all(v in expected for v in values), "cross-domain delivery"
-            assert values in ([], expected), "partial, duplicated or reordered sequence"
-            if mode.startswith("inherited") or d==17 or (mode=="reader-override" and role=="local"):
-                assert values==expected
-    if mode=="writer-override":
-        assert state["paired",18]["received"]==list(range(1800,1820))
-        print(backend, mode, "paired native reader 20/20", flush=True)
+            assert state[role,d]["received"]==list(range(d*100,d*100+20))
+    for (role,d), row in state.items():
+        if role=="observer":
+            assert set(row["markers"]) <= {f"/domain_probe/marker_{d}"}
+        elif role in ("local","remote"):
+            assert all(v//100==d for v in row["received"])
+    print(backend, mode, "passed", flush=True)
 
 
 if __name__=="__main__":

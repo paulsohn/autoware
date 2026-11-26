@@ -71,7 +71,7 @@ Expect five packages finished and all three prefixes under build/migration-guide
 
 ## 3. Use the released hook and kernel module
 
-Use the upstream **2.4.1** runtime for native processes. Relative to the imported Agnocast source, the kernel module is unchanged. The only addition under the heap hook is a Cargo.lock for reproducing source builds. The released hook works with this pilot.
+Use the upstream **2.4.1** runtime for native processes. Relative to the imported Agnocast source, the kernel module is unchanged. The only addition under the heap hook is a Cargo.lock for reproducing source builds. The released hook works with this pilot. Use the agnocastlib built in step 2 alongside rmw_agnocast; it exposes the registered process domain to the middleware.
 
 On the **native host**, check what is already available:
 
@@ -128,7 +128,7 @@ colcon build --executor sequential \
 
 ## 5. Run the same nodes with shared memory
 
-In **each terminal**, source the middleware and application overlays before setting the hook. Substitute your own application install if you built your project. Keep the same ROS_DOMAIN_ID in every terminal participating in this stream. To run another domain, launch separate processes with that domain in their environment. On this pilot, an explicit context domain that differs from the process domain can show a matched endpoint that receives no samples. Set LD_PRELOAD to the absolute hook path you verified in step 3.
+In **each terminal**, source the middleware and application overlays before setting the hook. Substitute your own application install if you built your project. Keep the same ROS_DOMAIN_ID in every terminal participating in this stream. To run another domain, launch separate processes with that domain in their environment. The heap hook registers the process domain at startup. All ROS contexts in that process must use the registered domain. Requesting another domain fails during context initialization and reports both IDs. Changing ROS_DOMAIN_ID in an already running process does not change its registration. Set LD_PRELOAD to the absolute hook path you verified in step 3.
 
 ```bash
 source /opt/ros/lyrical/setup.bash

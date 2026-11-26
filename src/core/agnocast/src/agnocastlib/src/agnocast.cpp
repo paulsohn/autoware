@@ -31,6 +31,13 @@ const char * agnocast_get_version()
 namespace agnocast
 {
 
+static uint32_t registered_domain_id = AGNOCAST_DOMAIN_ID_NONE;
+
+uint32_t get_registered_domain_id() noexcept
+{
+  return registered_domain_id;
+}
+
 int agnocast_fd = -1;
 std::vector<int> shm_fds;
 std::mutex shm_fds_mtx;
@@ -568,6 +575,8 @@ struct initialize_agnocast_result initialize_agnocast(
     close(agnocast_fd);
     exit(EXIT_FAILURE);
   }
+
+  registered_domain_id = domain_id;
 
   bool should_spawn_bridge = false;
   // The standalone RMW owns its graph. An ordinary native endpoint must never
