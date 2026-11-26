@@ -16,6 +16,7 @@
 
 #include <gtest/gtest.h>
 
+#include <algorithm>
 #include <vector>
 
 using autoware::traffic_light::ConflictStatus;
@@ -251,7 +252,10 @@ TEST(CheckConflict, RedCircleMultipleArrows_RedCircleMultipleArrows_ArrowMismatc
     {TrafficLightElement::GREEN, TrafficLightElement::RIGHT_ARROW}};
 
   EXPECT_EQ(result.conflict_type, expected_conflict_type);
-  EXPECT_EQ(result.common_state_key, expected_common_state_key);
+  auto common_state_key = result.common_state_key;
+  std::sort(common_state_key.begin(), common_state_key.end());
+  std::sort(expected_common_state_key.begin(), expected_common_state_key.end());
+  EXPECT_EQ(common_state_key, expected_common_state_key);
 }
 
 // ------------------------------------------

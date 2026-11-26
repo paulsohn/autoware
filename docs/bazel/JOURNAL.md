@@ -22076,3 +22076,36 @@ set; all eight original SDK cases and three new occlusion cases pass, zero
 failures/errors/skips, 24.8 s. Targeted format/diff checks pass. No original code
 or tests changed, and no Fast DDS, GPU or expensive product gate was selected.
 Next: multi-camera signal fusion, then marker/image visualization.
+
+## 2026-11-26: Phase 9.7 — multi-camera traffic-light fusion
+
+Purpose: adopt the four original fusion/filter/validation sources and wrapper
+node, retaining all 94 original core cases and the original synchronized node
+case. Inspect CMake, public/private headers, exact/approximate three-stream
+subscriptions per camera, map grouping, consistency diagnostics and launch/config.
+Select Cyclone/RCLCPP for the complete suite and Agnocast-only for added peers.
+
+The original intersection test fails under libc++ because SignalLUT is an
+unordered set: LEFT_ARROW and UP_ARROW appear in a different vector order, with
+identical members and conflict classification. Sort copies of actual/expected
+pairs in that single intersection assertion, preserving multiplicity and the
+classification assertion. Add the explicit algorithm include. Do not change
+production ordering, probability calculations or other order-sensitive tests.
+This source-test compatibility correction is committed separately from build
+support. The corrected complete suite passes; upstream status is recorded in
+UPSTREAM_AWF.md.
+
+Reproduce the corrected suite and transport qualification with:
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  @autoware_traffic_light_multi_camera_fusion//... \
+  //bazel/tests:traffic_light_multi_camera_transport_test
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --local_test_jobs=1 --strategy=TestRunner=local \
+  --run_under=//bazel/agnocast:with_heaphook \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  //bazel/tests:traffic_light_multi_camera_transport_test
+```

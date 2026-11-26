@@ -2406,3 +2406,18 @@ header and original test, and exceptions.hpp in the implementation. No assertion
 geometry, time-window or exception-handling behavior changes. All 24 original
 cases pass, including real map/camera publication with delayed TF interpolation.
 No older ROS/CMake execution or upstream submission is claimed.
+
+### Multi-camera intersection test assumes unordered iteration order
+
+- [ ] Associate with a matching upstream fix. Checked 2026-11-26: the current
+  [signal validator test](https://github.com/autowarefoundation/autoware_universe/blob/main/perception/autoware_traffic_light_multi_camera_fusion/test/test_signal_validator.cpp)
+  retains the vector-order assertion. A scoped multi_camera_fusion/unordered PR
+  search finds no matching change.
+
+The Phase 9.7 complete core suite fails only
+CheckConflict.RedCircleMultipleArrows_RedCircleMultipleArrows_ArrowMismatch:
+libc++ iterates the unordered SignalLUT intersection differently from the expected
+vector. Sort copies in this assertion before comparison; keep multiplicity and
+conflict-type checks. All 94 original core cases and the original node case pass,
+without altering production fusion behavior. This is test portability, not a
+Lyrical runtime fix; no upstream submission is claimed.
