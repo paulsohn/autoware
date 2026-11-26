@@ -23459,3 +23459,6 @@ pass Agnocast-only with the heaphook (0.8 s), with RCLCPP uninitialized. Reuse
 unchanged pure algorithm results. Targeted formatting and diff checks pass.
 No Fast DDS, simulator, deployment or field safety qualification is selected.
 Next: trajectory ranking.
+
+The module definitions, root override and interface collection are accepted with
+the complete gates above. Universe coverage is 165/244 (79 remaining).

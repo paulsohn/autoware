@@ -1,0 +1,85 @@
+load("@rosdistro//ament:defs.bzl", "ament_index")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
+load("@rosidl_default_generators//:defs.bzl", "default_generators")
+load("@generate_parameter_library//:defs.bzl", "generate_parameter_library")
+
+package(default_visibility = ["//visibility:public"])
+
+default_generators(
+    deps = ["//msg:MetricReport", "//msg:RiskLevel", "//msg:ValidationReport", "//msg:ValidationReportArray"],
+    dependencies = ["@builtin_interfaces", "@unique_identifier_msgs"],
+)
+
+generate_parameter_library(
+    name = "autoware_trajectory_validator_param",
+    yaml_file = "param/parameter_struct.yaml",
+)
+
+cc_library(
+    name = "autoware_trajectory_validator",
+    srcs = ["src/trajectory_validator_wrapper.cpp", "src/detail/trajectory_validator.cpp"],
+    hdrs = ["include/autoware/trajectory_validator/detail/risk_utils.hpp", "include/autoware/trajectory_validator/detail/trajectory_validator.hpp", "include/autoware/trajectory_validator/detail/trajectory_validator_report.hpp", "include/autoware/trajectory_validator/detail/uuid_hash.hpp", "include/autoware/trajectory_validator/detail/validator_context.hpp", "include/autoware/trajectory_validator/filters/safety/uncrossable_boundary_departure.hpp", "include/autoware/trajectory_validator/filters/safety/vehicle_constraint_filter.hpp", "include/autoware/trajectory_validator/filters/traffic_rule/crosswalk_filter.hpp", "include/autoware/trajectory_validator/filters/traffic_rule/traffic_light_filter.hpp", "include/autoware/trajectory_validator/trajectory_validator_wrapper.hpp", "include/autoware/trajectory_validator/validator_interface.hpp"],
+    strip_include_prefix = "include",
+    deps = [":cc", ":autoware_trajectory_validator_param", "@autoware_agnocast_wrapper//:autoware_agnocast_wrapper_library", "@autoware_internal_planning_msgs//:cc", "@autoware_lanelet2_utils", "@autoware_map_msgs//:cc", "@autoware_perception_msgs//:cc", "@autoware_planning_factor_interface", "@autoware_planning_msgs//:cc", "@autoware_utils_debug", "@autoware_utils_diagnostics", "@autoware_utils_system", "@autoware_utils_uuid", "@autoware_utils_visualization", "@autoware_vehicle_info_utils", "@diagnostic_updater//:diagnostic_updater_library", "@geometry_msgs//:cc", "@nav_msgs//:cc", "@pluginlib//:pluginlib_library", "@rosdistro//cc:tl_expected", "@rosdistro//cc:fmt", "@visualization_msgs//:cc"],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = [":cc_shared", "@autoware_agnocast_wrapper//:autoware_agnocast_wrapper", "@autoware_internal_planning_msgs//:cc_shared", "@autoware_lanelet2_utils//:runtime_dynamic_deps", "@autoware_map_msgs//:cc_shared", "@autoware_perception_msgs//:cc_shared", "@autoware_planning_factor_interface//:runtime_dynamic_deps", "@autoware_planning_msgs//:cc_shared", "@autoware_utils_debug//:runtime_dynamic_deps", "@autoware_utils//:runtime_dynamic_deps", "@autoware_boundary_departure_checker//:runtime_dynamic_deps", "@autoware_traffic_light_compliance_checker//:runtime_dynamic_deps", "@diagnostic_updater//:diagnostic_updater", "@generate_parameter_library//:rclcpp_lifecycle", "@generate_parameter_library//:rsl", "@geometry_msgs//:cc_shared", "@nav_msgs//:cc_shared", "@pluginlib//:pluginlib", "@tf2_geometry_msgs//:tf2_geometry_msgs", "@visualization_msgs//:cc_shared"],
+)
+
+cc_shared_library(
+    name = "validator",
+    shared_lib_name = "libautoware_trajectory_validator_lib.so",
+    deps = [":autoware_trajectory_validator", "@autoware_lanelet2_utils", "@autoware_planning_factor_interface", "@autoware_utils_debug", "@autoware_utils_visualization", "@autoware_motion_utils", "@autoware_interpolation", "@autoware_vehicle_info_utils", "@autoware_utils_diagnostics", "@autoware_utils_system", "@autoware_utils_geometry", "@autoware_utils_math"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+)
+
+cc_library(
+    name = "plugins_library",
+    srcs = ["src/filters/safety/uncrossable_boundary_departure.cpp", "src/filters/safety/vehicle_constraint_filter.cpp", "src/filters/traffic_rule/crosswalk_filter.cpp", "src/filters/traffic_rule/traffic_light_filter.cpp"],
+    deps = [":autoware_trajectory_validator", "@autoware_boundary_departure_checker", "@autoware_motion_utils", "@autoware_object_recognition_utils", "@autoware_traffic_light_compliance_checker", "@autoware_traffic_light_utils", "@autoware_utils", "@autoware_utils_geometry", "@autoware_lanelet2_extension//:autoware_lanelet2_extension_lib_library", "@tf2_geometry_msgs//:tf2_geometry_msgs_library"],
+)
+
+cc_shared_library(
+    name = "plugins",
+    shared_lib_name = "libautoware_trajectory_validator_plugins.so",
+    deps = [":plugins_library"],
+    dynamic_deps = [":validator", ":runtime_dynamic_deps"],
+)
+
+ament_index(
+    package_xml = "package.xml",
+    data = [":idl", "config/trajectory_validator.param.yaml"],
+    libraries = [":cc_shared", ":py", ":validator", ":plugins"],
+    plugin_categories = {'plugins.xml': 'autoware_trajectory_validator'},
+)
+
+cc_test(
+    name = "test_risk_utils",
+    srcs = ["test/detail/test_risk_utils.cpp"],
+    deps = [":autoware_trajectory_validator", "@googletest//:gtest_main"],
+    dynamic_deps = [":validator", ":runtime_dynamic_deps"],
+)
+
+cc_test(
+    name = "test_crosswalk_filter",
+    srcs = ["test/plugins/test_crosswalk_filter.cpp", "test/traffic_light_filter/test_utils.hpp"],
+    deps = [":plugins_library", "@googletest//:gtest_main"],
+    dynamic_deps = [":plugins", ":validator", ":runtime_dynamic_deps"],
+)
+
+cc_test(
+    name = "test_traffic_light_filter",
+    srcs = ["test/plugins/test_traffic_light_filter.cpp", "test/traffic_light_filter/test_utils.hpp"],
+    deps = [":plugins_library", "@googletest//:gtest_main"],
+    dynamic_deps = [":plugins", ":validator", ":runtime_dynamic_deps"],
+)
+
+cc_test(
+    name = "test_vehicle_constraint_filter",
+    srcs = ["test/plugins/test_vehicle_constraint_filter.cpp", "test/traffic_light_filter/test_utils.hpp"],
+    deps = [":plugins_library", "@googletest//:gtest_main"],
+    dynamic_deps = [":plugins", ":validator", ":runtime_dynamic_deps"],
+)

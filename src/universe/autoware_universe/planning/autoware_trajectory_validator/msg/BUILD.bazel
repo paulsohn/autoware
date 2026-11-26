@@ -1,0 +1,28 @@
+load("@rosidl_default_generators//:defs.bzl", "ros_message")
+
+package(default_visibility = ["//visibility:public"])
+
+ros_message(
+    name = "MetricReport",
+    src = "MetricReport.msg",
+    deps = [":RiskLevel"],
+)
+
+ros_message(
+    name = "RiskLevel",
+    src = "RiskLevel.msg",
+    deps = [],
+)
+
+ros_message(
+    name = "ValidationReport",
+    src = "ValidationReport.msg",
+    deps = [":RiskLevel", ":MetricReport", "@builtin_interfaces//msg:Time", "@unique_identifier_msgs//msg:UUID"],
+)
+
+ros_message(
+    name = "ValidationReportArray",
+    src = "ValidationReportArray.msg",
+    deps = [":ValidationReport"],
+)
+

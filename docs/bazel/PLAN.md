@@ -2468,12 +2468,16 @@ or deployment gate is selected. Coverage starts at 156/244.
 | autoware_trajectory_concatenator | All17 core and five original wrapper cases; all five wrapper cases also on Agnocast-only |
 | autoware_trajectory_gate | All eight original core cases and real service/routing/status/timeout behavior on both backends |
 
-The five common and three assembly packages are complete (eight of twelve
+The five common and three assembly packages and validator are complete (nine of twelve
 Phase 9.10 packages). The gate's required local system-message/service extension
 passes all generated wire types and collector consumers. Validated Universe
-coverage is164/244, leaving80 without definitions. Next: validator then ranker;
+coverage is 165/244, leaving 79 without definitions. Next: ranker;
 complete modifier and selector afterward with their full plugin, solver,
 interface and behavior contracts. Phase 9.10 remains in progress.
+
+The validator passes all 73 original cases, all four report wire types and
+collector consumers. All four plugins load; active/shadow filtering and report
+transport pass on both RCLCPP and Agnocast-only. See the validator journal.
 
 ### Execution order through complete Universe coverage
 

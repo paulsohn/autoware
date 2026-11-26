@@ -30,7 +30,11 @@ class TestDescriptors(unittest.TestCase):
                      'yabloc_particle_filter/msg/Particle',
                      'yabloc_particle_filter/msg/ParticleArray',
                      'tier4_system_msgs/msg/TrajectorySourceStatus',
-                     'tier4_system_msgs/srv/ChangeTrajectorySource']:
+                     'tier4_system_msgs/srv/ChangeTrajectorySource',
+                     'autoware_trajectory_validator/msg/RiskLevel',
+                     'autoware_trajectory_validator/msg/MetricReport',
+                     'autoware_trajectory_validator/msg/ValidationReport',
+                     'autoware_trajectory_validator/msg/ValidationReportArray']:
             self.assertIn(name, descriptors)
 
     def test_dependency_repository_package_identity(self):

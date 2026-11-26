@@ -2776,3 +2776,12 @@ cc_test(
     data = ["@agnocast_heaphook"],
     tags = ["no-sandbox", "no-remote"],
 )
+
+cc_test(
+    name = "trajectory_validator_wrapper_test",
+    srcs = ["autoware_trajectory_validator/test_wrapper.cpp"],
+    deps = ["@autoware_trajectory_validator", "@googletest//:gtest"],
+    dynamic_deps = ["@autoware_trajectory_validator//:validator", "@autoware_trajectory_validator//:runtime_dynamic_deps"],
+    data = ["@autoware_trajectory_validator//:ament_index", "@agnocast_heaphook"],
+    tags = ["no-sandbox", "no-remote"],
+)

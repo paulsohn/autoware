@@ -27,6 +27,7 @@ ros_interface_set(
         ros_interface_package("@autoware_map_msgs//:cc", "@autoware_map_msgs//:cc_shared"),
         ros_interface_package("@autoware_perception_msgs//:cc", "@autoware_perception_msgs//:cc_shared"),
         ros_interface_package("@autoware_planning_msgs//:cc", "@autoware_planning_msgs//:cc_shared"),
+        ros_interface_package("@autoware_trajectory_validator//:cc", "@autoware_trajectory_validator//:cc_shared"),
         ros_interface_package("@autoware_planning_validator//:cc", "@autoware_planning_validator//:cc_shared"),
         ros_interface_package("@autoware_vehicle_cmd_gate//:cc", "@autoware_vehicle_cmd_gate//:cc_shared"),
         ros_interface_package("@autoware_operation_mode_transition_manager//:cc", "@autoware_operation_mode_transition_manager//:cc_shared"),
@@ -101,3 +102,5 @@ interface_serialization_test(package = "sensor_msgs", name = "sensor_serializati
 interface_serialization_test(package = "yabloc_particle_filter", name = "yabloc_particle_serialization_test")
 
 interface_serialization_test(package = "tier4_system_msgs", name = "tier4_system_serialization_test")
+
+interface_serialization_test(package = "autoware_trajectory_validator", name = "trajectory_validator_serialization_test")
