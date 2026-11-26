@@ -1,0 +1,130 @@
+load("@rclcpp_components//:defs.bzl", "rclcpp_components_register_node")
+load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+load("@rosidl_default_generators//:defs.bzl", "default_generators")
+
+default_generators(
+    deps = ["//msg:Particle", "//msg:ParticleArray"],
+    dependencies = ["@geometry_msgs", "@std_msgs"],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = [":cc_shared", "@geometry_msgs//:cc_shared", "@pcl_conversions//:pcl_conversions", "@rclcpp_components//:rclcpp_components", "@sensor_msgs//:cc_shared", "@std_msgs//:cc_shared", "@std_srvs//:cc_shared", "@tf2_geometry_msgs//:tf2_geometry_msgs", "@tf2_ros//:tf2_ros", "@visualization_msgs//:cc_shared", "@yabloc_common", "@yabloc_common//:runtime_dynamic_deps"],
+)
+
+cc_library(
+    name = "particle_support_library",
+    srcs = ["src/common/mean.cpp", "src/common/visualize.cpp"],
+    hdrs = ["include/yabloc_particle_filter/camera_corrector/camera_particle_corrector.hpp", "include/yabloc_particle_filter/camera_corrector/logit.hpp", "include/yabloc_particle_filter/common/mean.hpp", "include/yabloc_particle_filter/common/prediction_util.hpp", "include/yabloc_particle_filter/common/visualize.hpp", "include/yabloc_particle_filter/correction/abstract_corrector.hpp", "include/yabloc_particle_filter/gnss_corrector/gnss_particle_corrector.hpp", "include/yabloc_particle_filter/gnss_corrector/weight_manager.hpp", "include/yabloc_particle_filter/ll2_cost_map/direct_cost_map.hpp", "include/yabloc_particle_filter/ll2_cost_map/hierarchical_cost_map.hpp", "include/yabloc_particle_filter/prediction/predictor.hpp", "include/yabloc_particle_filter/prediction/resampler.hpp", "include/yabloc_particle_filter/prediction/resampling_history.hpp"],
+    includes = ["include"],
+    deps = [":cc", "@autoware_utils_math", "@geometry_msgs//:cc", "@pcl_conversions//:pcl_conversions_library", "@rclcpp_components//:rclcpp_components_library", "@rosdistro//cc:opencv_library", "@sensor_msgs//:cc", "@sophus//:sophus", "@std_msgs//:cc", "@std_srvs//:cc", "@tf2_geometry_msgs//:tf2_geometry_msgs_library", "@tf2_ros//:tf2_ros_library", "@visualization_msgs//:cc", "@yabloc_common//:yabloc_common_library"],
+)
+
+cc_shared_library(
+    name = "particle_support",
+    deps = [":particle_support_library"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+)
+
+cc_library(
+    name = "abstract_corrector_library",
+    srcs = ["src/correction/abstract_corrector.cpp"],
+    hdrs = ["include/yabloc_particle_filter/camera_corrector/camera_particle_corrector.hpp", "include/yabloc_particle_filter/camera_corrector/logit.hpp", "include/yabloc_particle_filter/common/mean.hpp", "include/yabloc_particle_filter/common/prediction_util.hpp", "include/yabloc_particle_filter/common/visualize.hpp", "include/yabloc_particle_filter/correction/abstract_corrector.hpp", "include/yabloc_particle_filter/gnss_corrector/gnss_particle_corrector.hpp", "include/yabloc_particle_filter/gnss_corrector/weight_manager.hpp", "include/yabloc_particle_filter/ll2_cost_map/direct_cost_map.hpp", "include/yabloc_particle_filter/ll2_cost_map/hierarchical_cost_map.hpp", "include/yabloc_particle_filter/prediction/predictor.hpp", "include/yabloc_particle_filter/prediction/resampler.hpp", "include/yabloc_particle_filter/prediction/resampling_history.hpp"],
+    includes = ["include"],
+    deps = [":cc", "@autoware_utils_math", "@geometry_msgs//:cc", "@pcl_conversions//:pcl_conversions_library", "@rclcpp_components//:rclcpp_components_library", "@rosdistro//cc:opencv_library", "@sensor_msgs//:cc", "@sophus//:sophus", "@std_msgs//:cc", "@std_srvs//:cc", "@tf2_geometry_msgs//:tf2_geometry_msgs_library", "@tf2_ros//:tf2_ros_library", "@visualization_msgs//:cc", "@yabloc_common//:yabloc_common_library", ":particle_support_library"],
+)
+
+cc_shared_library(
+    name = "abstract_corrector",
+    deps = [":abstract_corrector_library"],
+    dynamic_deps = [":runtime_dynamic_deps", ":particle_support"],
+)
+
+cc_library(
+    name = "predictor_library",
+    srcs = ["src/prediction/predictor.cpp", "src/prediction/resampler.cpp"],
+    hdrs = ["include/yabloc_particle_filter/camera_corrector/camera_particle_corrector.hpp", "include/yabloc_particle_filter/camera_corrector/logit.hpp", "include/yabloc_particle_filter/common/mean.hpp", "include/yabloc_particle_filter/common/prediction_util.hpp", "include/yabloc_particle_filter/common/visualize.hpp", "include/yabloc_particle_filter/correction/abstract_corrector.hpp", "include/yabloc_particle_filter/gnss_corrector/gnss_particle_corrector.hpp", "include/yabloc_particle_filter/gnss_corrector/weight_manager.hpp", "include/yabloc_particle_filter/ll2_cost_map/direct_cost_map.hpp", "include/yabloc_particle_filter/ll2_cost_map/hierarchical_cost_map.hpp", "include/yabloc_particle_filter/prediction/predictor.hpp", "include/yabloc_particle_filter/prediction/resampler.hpp", "include/yabloc_particle_filter/prediction/resampling_history.hpp"],
+    includes = ["include"],
+    deps = [":cc", "@autoware_utils_math", "@geometry_msgs//:cc", "@pcl_conversions//:pcl_conversions_library", "@rclcpp_components//:rclcpp_components_library", "@rosdistro//cc:opencv_library", "@sensor_msgs//:cc", "@sophus//:sophus", "@std_msgs//:cc", "@std_srvs//:cc", "@tf2_geometry_msgs//:tf2_geometry_msgs_library", "@tf2_ros//:tf2_ros_library", "@visualization_msgs//:cc", "@yabloc_common//:yabloc_common_library", ":particle_support_library"],
+)
+
+cc_shared_library(
+    name = "predictor",
+    deps = [":predictor_library"],
+    dynamic_deps = [":runtime_dynamic_deps", ":particle_support"],
+)
+
+cc_library(
+    name = "gnss_particle_corrector_library",
+    srcs = ["src/gnss_corrector/gnss_corrector_core.cpp"],
+    hdrs = ["include/yabloc_particle_filter/camera_corrector/camera_particle_corrector.hpp", "include/yabloc_particle_filter/camera_corrector/logit.hpp", "include/yabloc_particle_filter/common/mean.hpp", "include/yabloc_particle_filter/common/prediction_util.hpp", "include/yabloc_particle_filter/common/visualize.hpp", "include/yabloc_particle_filter/correction/abstract_corrector.hpp", "include/yabloc_particle_filter/gnss_corrector/gnss_particle_corrector.hpp", "include/yabloc_particle_filter/gnss_corrector/weight_manager.hpp", "include/yabloc_particle_filter/ll2_cost_map/direct_cost_map.hpp", "include/yabloc_particle_filter/ll2_cost_map/hierarchical_cost_map.hpp", "include/yabloc_particle_filter/prediction/predictor.hpp", "include/yabloc_particle_filter/prediction/resampler.hpp", "include/yabloc_particle_filter/prediction/resampling_history.hpp"],
+    includes = ["include"],
+    deps = [":cc", "@autoware_utils_math", "@geometry_msgs//:cc", "@pcl_conversions//:pcl_conversions_library", "@rclcpp_components//:rclcpp_components_library", "@rosdistro//cc:opencv_library", "@sensor_msgs//:cc", "@sophus//:sophus", "@std_msgs//:cc", "@std_srvs//:cc", "@tf2_geometry_msgs//:tf2_geometry_msgs_library", "@tf2_ros//:tf2_ros_library", "@visualization_msgs//:cc", "@yabloc_common//:yabloc_common_library", ":abstract_corrector_library", ":particle_support_library"],
+)
+
+cc_shared_library(
+    name = "gnss_particle_corrector",
+    deps = [":gnss_particle_corrector_library"],
+    dynamic_deps = [":runtime_dynamic_deps", ":abstract_corrector", ":particle_support"],
+)
+
+cc_library(
+    name = "camera_particle_corrector_library",
+    srcs = ["src/ll2_cost_map/direct_cost_map.cpp", "src/ll2_cost_map/hierarchical_cost_map.cpp", "src/camera_corrector/camera_particle_corrector_core.cpp", "src/camera_corrector/filter_line_segments.cpp", "src/camera_corrector/logit.cpp"],
+    hdrs = ["include/yabloc_particle_filter/camera_corrector/camera_particle_corrector.hpp", "include/yabloc_particle_filter/camera_corrector/logit.hpp", "include/yabloc_particle_filter/common/mean.hpp", "include/yabloc_particle_filter/common/prediction_util.hpp", "include/yabloc_particle_filter/common/visualize.hpp", "include/yabloc_particle_filter/correction/abstract_corrector.hpp", "include/yabloc_particle_filter/gnss_corrector/gnss_particle_corrector.hpp", "include/yabloc_particle_filter/gnss_corrector/weight_manager.hpp", "include/yabloc_particle_filter/ll2_cost_map/direct_cost_map.hpp", "include/yabloc_particle_filter/ll2_cost_map/hierarchical_cost_map.hpp", "include/yabloc_particle_filter/prediction/predictor.hpp", "include/yabloc_particle_filter/prediction/resampler.hpp", "include/yabloc_particle_filter/prediction/resampling_history.hpp"],
+    includes = ["include"],
+    deps = [":cc", "@autoware_utils_system", "@autoware_utils_math", "@geometry_msgs//:cc", "@pcl_conversions//:pcl_conversions_library", "@rclcpp_components//:rclcpp_components_library", "@rosdistro//cc:opencv_library", "@sensor_msgs//:cc", "@sophus//:sophus", "@std_msgs//:cc", "@std_srvs//:cc", "@tf2_geometry_msgs//:tf2_geometry_msgs_library", "@tf2_ros//:tf2_ros_library", "@visualization_msgs//:cc", "@yabloc_common//:yabloc_common_library", ":abstract_corrector_library", ":particle_support_library"],
+)
+
+cc_shared_library(
+    name = "camera_particle_corrector",
+    deps = [":camera_particle_corrector_library"],
+    dynamic_deps = [":runtime_dynamic_deps", ":abstract_corrector", ":particle_support"],
+)
+
+rclcpp_components_register_node(
+    name = "yabloc_predictor_node",
+    node_name = "yabloc_predictor_node",
+    component = ":predictor",
+    plugin = "yabloc::modularized_particle_filter::Predictor",
+)
+
+rclcpp_components_register_node(
+    name = "yabloc_gnss_particle_corrector_node",
+    node_name = "yabloc_gnss_particle_corrector_node",
+    component = ":gnss_particle_corrector",
+    plugin = "yabloc::modularized_particle_filter::GnssParticleCorrector",
+)
+
+rclcpp_components_register_node(
+    name = "yabloc_camera_particle_corrector_node",
+    node_name = "yabloc_camera_particle_corrector_node",
+    component = ":camera_particle_corrector",
+    plugin = "yabloc::modularized_particle_filter::CameraParticleCorrector",
+)
+
+register_ament_files(
+    name = "executables",
+    files = [":yabloc_predictor_node", ":yabloc_gnss_particle_corrector_node", ":yabloc_camera_particle_corrector_node"],
+    prefix = "lib/yabloc_particle_filter",
+    strip_prefix = "*",
+)
+
+ament_index(
+    package_xml = "package.xml",
+    libraries = [":cc_shared", ":py", ":particle_support", ":abstract_corrector", ":predictor", ":gnss_particle_corrector", ":camera_particle_corrector"],
+    data = [":executables", ":idl", "config/camera_particle_corrector.param.yaml", "config/gnss_particle_corrector.param.yaml", "config/predictor.param.yaml", "launch/yabloc_particle_filter.launch.xml"],
+    components = [":yabloc_predictor_node_record", ":yabloc_gnss_particle_corrector_node_record", ":yabloc_camera_particle_corrector_node_record"],
+)
+
+cc_test(
+    name = "test_resampler",
+    srcs = ["test/src/test_resampler.cpp"],
+    deps = [":predictor_library", "@googletest//:gtest_main"],
+    dynamic_deps = [":predictor", ":particle_support", ":runtime_dynamic_deps"],
+)

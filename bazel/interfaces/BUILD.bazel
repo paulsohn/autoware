@@ -74,6 +74,7 @@ ros_interface_set(
         ros_interface_package("@tier4_system_msgs//:cc", "@tier4_system_msgs//:cc_shared"),
         ros_interface_package("@tier4_v2x_msgs//:cc", "@tier4_v2x_msgs//:cc_shared"),
         ros_interface_package("@tier4_vehicle_msgs//:cc", "@tier4_vehicle_msgs//:cc_shared"),
+        ros_interface_package("@yabloc_particle_filter//:cc", "@yabloc_particle_filter//:cc_shared"),
         ros_interface_package("@std_msgs//:cc", "@std_msgs//:cc_shared"),
         ros_interface_package("@std_srvs//:cc", "@std_srvs//:cc_shared"),
     ],
@@ -96,3 +97,5 @@ py_test(
 
 interface_serialization_test(package = "autoware_adapi_version_msgs", name = "adapi_version_serialization_test")
 interface_serialization_test(package = "sensor_msgs", name = "sensor_serialization_test")
+
+interface_serialization_test(package = "yabloc_particle_filter", name = "yabloc_particle_serialization_test")

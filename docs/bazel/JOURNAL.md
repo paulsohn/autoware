@@ -22843,3 +22843,41 @@ both generated message wire types. JUnit inspection confirms zero failures,
 errors, skips or disabled cases. Changed-source ranges and added tests pass
 clang-format; diff checks pass. No older ROS/CMake run, real localization accuracy,
 Fast DDS or full system communication matrix is claimed.
+
+Build pattern: declare Particle and ParticleArray with ros_message and generate
+C++/Python/IDL providers in the same module as the nodes. Call default_generators
+without package_xml, then compose one explicit ament index with interface
+libraries, IDLs, original resources and all three component/executable records.
+Factor CMake's repeated mean/visualize sources into one particle_support shared
+owner. Predictor and abstract/camera/GNSS correctors reuse that owner. Export
+math from its existing common-library owner; restrict the compiled system
+utility dependency to the camera implementation that actually uses it, avoiding
+unnecessary shared ownership. No original algorithm/test changes are required.
+
+The added predictor case seeds the existing engine, requires finite particles,
+stamped map poses/ground height and forward motion, then checks inactive and
+EKF-backed reactivation behavior. GNSS must prefer near particles and reject a
+distant observation on a moved population. Camera correction receives a map,
+pose and labeled line first (its original filter requires latest_pose), emits
+finite positive map-alignment weights and stops publication when switched off.
+These are real topic/service exchanges; no private-method adapters are needed.
+
+Register the package's :cc/:cc_shared pair once in all_interfaces. Existing
+consumer tests now check its two descriptors, Python type support and indexed
+IDL. The selected interface regression gate is:
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  //bazel/interfaces:descriptor_test //bazel/interfaces:python_interfaces_test \
+  //bazel/agnocast:template_tests
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel build --nobuild --config=runtime --config=no-agnocast //bazel/agnocast:plugins
+```
+
+All three test targets pass, 26.0 s; descriptor/Python logs report three/one
+cases. The bridge provider graph analyzes successfully in 4.4 s. This is not a
+full plugin binary/runtime qualification: bridge implementation/templates are
+unchanged, and these plain-rclcpp nodes have no Agnocast variant selected.
+Next: indexed semantic models and model-backed pose initialization.

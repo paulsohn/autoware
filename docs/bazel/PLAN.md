@@ -2436,6 +2436,9 @@ yabloc_monitor: complete; see its Phase 9.9 journal for commands and results.
 
 yabloc_image_processing: complete; four cases cover all six components.
 
+yabloc_particle_filter: complete; original resampling, prediction/correction and
+mixed-interface consumer gates pass.
+
 ### Execution order through complete Universe coverage
 
 The following groups are the initial route through every remaining package.

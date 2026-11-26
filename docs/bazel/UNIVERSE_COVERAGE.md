@@ -21,8 +21,8 @@ may contain multiple package commits and smaller execution batches. Update the
 ledger when a package closes or the source snapshot changes; this is a planning
 record, not a new build-time completeness validator.
 
-Current adoption progress, 2026-11-26: **154/244** packages have both definitions
-and root local overrides; **90** remain without definitions. The census table
+Current adoption progress, 2026-11-26: **155/244** packages have both definitions
+and root local overrides; **89** remain without definitions. The census table
 below preserves the initial 2026-11-23 baseline. Checked ledger items record
 completed module gates; Phase 9.8 is complete. See PLAN.md and the
 package journals for configuration and behavior evidence.
@@ -295,7 +295,7 @@ Start with yabloc_common, then its declared consumers. Declare map/image/camera-
 - [x] [yabloc_common](../../src/universe/autoware_universe/localization/yabloc/yabloc_common/package.xml)
 - [x] [yabloc_monitor](../../src/universe/autoware_universe/localization/yabloc/yabloc_monitor/package.xml)
 - [x] [yabloc_image_processing](../../src/universe/autoware_universe/localization/yabloc/yabloc_image_processing/package.xml)
-- [ ] [yabloc_particle_filter](../../src/universe/autoware_universe/localization/yabloc/yabloc_particle_filter/package.xml)
+- [x] [yabloc_particle_filter](../../src/universe/autoware_universe/localization/yabloc/yabloc_particle_filter/package.xml)
 - [ ] [yabloc_pose_initializer](../../src/universe/autoware_universe/localization/yabloc/yabloc_pose_initializer/package.xml)
 
 ### Phase 9.10: Trajectory contracts and common motion checks

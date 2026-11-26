@@ -26,7 +26,9 @@ class TestDescriptors(unittest.TestCase):
                      'autoware_adapi_v1_msgs/msg/Heartbeat',
                      'autoware_adapi_v1_msgs/srv/GetVehicleDimensions',
                      'autoware_adapi_v1_msgs/srv/ListMrmDescription',
-                     'sensor_msgs/msg/LaserScan']:
+                     'sensor_msgs/msg/LaserScan',
+                     'yabloc_particle_filter/msg/Particle',
+                     'yabloc_particle_filter/msg/ParticleArray']:
             self.assertIn(name, descriptors)
 
     def test_dependency_repository_package_identity(self):

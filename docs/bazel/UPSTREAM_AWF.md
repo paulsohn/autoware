@@ -2525,6 +2525,8 @@ cases pass with the pinned SDK, including detected lines, graph masks, raw/PNG
 undistortion, ground endpoints and the expected map-overlay pixel. Queue80 and
 reliable depth-ten input QoS are retained. No upstream submission is claimed.
 
+Local particle/common header fix: `f5295af2a`.
+
 The Phase 9.9 particle consumer additionally exposes installation-prefixed
 includes in its camera/cost-map sources and the common gamma helper. Checked
 2026-11-26: current

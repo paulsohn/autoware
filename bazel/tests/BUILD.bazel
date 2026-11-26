@@ -2685,3 +2685,12 @@ cc_test(
     data = ["@yabloc_image_processing//:ament_index"],
     tags = ["no-sandbox", "no-remote"],
 )
+
+cc_test(
+    name = "yabloc_particle_filter_test",
+    srcs = ["yabloc_particle_filter/test_particles.cpp"],
+    deps = ["@yabloc_particle_filter//:predictor_library", "@yabloc_particle_filter//:gnss_particle_corrector_library", "@yabloc_particle_filter//:camera_particle_corrector_library", "@googletest//:gtest_main"],
+    dynamic_deps = ["@yabloc_particle_filter//:predictor", "@yabloc_particle_filter//:gnss_particle_corrector", "@yabloc_particle_filter//:camera_particle_corrector", "@yabloc_particle_filter//:abstract_corrector", "@yabloc_particle_filter//:particle_support", "@yabloc_particle_filter//:runtime_dynamic_deps"],
+    data = [],
+    tags = ["no-sandbox", "no-remote"],
+)

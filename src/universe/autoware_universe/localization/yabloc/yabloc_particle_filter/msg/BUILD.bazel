@@ -1,0 +1,15 @@
+load("@rosidl_default_generators//:defs.bzl", "ros_message")
+
+package(default_visibility = ["//visibility:public"])
+
+ros_message(
+    name = "Particle",
+    src = "Particle.msg",
+    deps = ["@geometry_msgs//msg:Pose"],
+)
+
+ros_message(
+    name = "ParticleArray",
+    src = "ParticleArray.msg",
+    deps = [":Particle", "@std_msgs//msg:Header"],
+)

@@ -13,7 +13,8 @@ from rosidl_generator_py import import_type_support
 
 class PythonInterfacesTest(unittest.TestCase):
     def test_python_and_transitive_indexes(self):
-        for package, name in [('autoware_planning_msgs', 'Trajectory'), ('geometry_msgs', 'Pose')]:
+        for package, name in [('autoware_planning_msgs', 'Trajectory'), ('geometry_msgs', 'Pose'),
+                              ('yabloc_particle_filter', 'ParticleArray')]:
             with self.subTest(package=package):
                 self.assertTrue(Path(get_package_share_directory(package)).is_dir())
                 self.assertTrue(Path(get_interface_path(f'{package}/msg/{name}')).is_file())
