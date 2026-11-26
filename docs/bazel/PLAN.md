@@ -2363,7 +2363,9 @@ selects image_geometry 4.1.0-3.rcr.2 because source is absent locally; both nati
 SDK suites (eighteen cases) and the complete consumer validate this selection.
 Cloud occlusion passes three geometry/paired-category cases; its narrow prime-
 synchronizer provider also preserves the full eight-case perception-utils suite.
-Coverage is 139/244; three Phase 9.7 packages remain.
+Fusion passes all 95 original cases and two transport cases, including both
+exact and skewed approximate synchronization on Agnocast-only transport.
+Coverage is 140/244; marker publication and visualization remain.
 
 ### Execution order through complete Universe coverage
 

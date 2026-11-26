@@ -2550,3 +2550,12 @@ cc_test(
     dynamic_deps = ["@autoware_traffic_light_occlusion_predictor//:runtime_dynamic_deps"],
     tags = ["no-sandbox", "no-remote"],
 )
+
+cc_test(
+    name = "traffic_light_multi_camera_transport_test",
+    srcs = ["autoware_traffic_light_multi_camera_fusion/test_transport.cpp"],
+    deps = ["@autoware_traffic_light_multi_camera_fusion//:autoware_traffic_light_multi_camera_fusion_library", "@googletest//:gtest"],
+    dynamic_deps = ["@autoware_traffic_light_multi_camera_fusion//:runtime_dynamic_deps"],
+    data = ["@agnocast_heaphook"],
+    tags = ["no-sandbox", "no-remote"],
+)

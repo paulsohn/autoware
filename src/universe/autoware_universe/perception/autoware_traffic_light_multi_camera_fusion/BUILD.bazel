@@ -1,0 +1,72 @@
+load("@autoware_agnocast_wrapper//:defs.bzl", "autoware_agnocast_node")
+load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "fusion_core_library",
+    srcs = ["src/traffic_light_multi_camera_fusion.cpp", "src/fusion_record.cpp", "src/signal_validator.cpp", "src/map_based_signal_filter.cpp"],
+    hdrs = ["include/autoware/traffic_light_multi_camera_fusion/detail/fusion_record.hpp", "include/autoware/traffic_light_multi_camera_fusion/detail/map_based_signal_filter.hpp", "include/autoware/traffic_light_multi_camera_fusion/detail/signal_validator.hpp", "include/autoware/traffic_light_multi_camera_fusion/detail/types.hpp", "include/autoware/traffic_light_multi_camera_fusion/traffic_light_multi_camera_fusion.hpp"],
+    includes = ["include"],
+    deps = ["@autoware_lanelet2_extension//:autoware_lanelet2_extension_lib_library", "@autoware_perception_msgs//:cc", "@autoware_traffic_light_utils", "@rclcpp//:rclcpp_library", "@sensor_msgs//:cc", "@std_msgs//:cc", "@tier4_perception_msgs//:cc"],
+)
+
+cc_library(
+    name = "autoware_traffic_light_multi_camera_fusion_library",
+    srcs = ["src/traffic_light_multi_camera_fusion_node.cpp"],
+    hdrs = ["src/traffic_light_multi_camera_fusion_node.hpp"],
+    includes = ["src"],
+    deps = [":fusion_core_library", "@autoware_agnocast_wrapper//:autoware_agnocast_wrapper_library", "@autoware_lanelet2_utils", "@autoware_map_msgs//:cc", "@autoware_utils", "@diagnostic_msgs//:cc", "@rclcpp_components//:rclcpp_components_library"],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = ["@autoware_agnocast_wrapper", "@autoware_lanelet2_extension//:autoware_lanelet2_extension_lib", "@autoware_lanelet2_utils//:runtime_dynamic_deps", "@autoware_map_msgs//:cc_shared", "@autoware_perception_msgs//:cc_shared", "@autoware_traffic_light_utils//:runtime_dynamic_deps", "@autoware_utils//:runtime_dynamic_deps", "@diagnostic_msgs//:cc_shared", "@message_filters//:message_filters", "@rclcpp_components//:rclcpp_components", "@sensor_msgs//:cc_shared", "@std_msgs//:cc_shared", "@tier4_perception_msgs//:cc_shared"],
+)
+
+cc_shared_library(
+    name = "autoware_traffic_light_multi_camera_fusion",
+    shared_lib_name = "libautoware_traffic_light_multi_camera_fusion.so",
+    deps = [":autoware_traffic_light_multi_camera_fusion_library", ":fusion_core_library"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+)
+
+autoware_agnocast_node(
+    name = "traffic_light_multi_camera_fusion_node",
+    component = ":autoware_traffic_light_multi_camera_fusion",
+    package_name = "autoware_traffic_light_multi_camera_fusion",
+    plugin = "autoware::traffic_light::MultiCameraFusionNode",
+)
+
+register_ament_files(
+    name = "executables",
+    files = [":traffic_light_multi_camera_fusion_node"],
+    prefix = "lib/autoware_traffic_light_multi_camera_fusion",
+    strip_prefix = "*",
+)
+
+ament_index(
+    package_xml = "package.xml",
+    libraries = [":autoware_traffic_light_multi_camera_fusion"],
+    components = [":traffic_light_multi_camera_fusion_node_components"],
+    data = glob(["launch/**", "config/**"]) + [":executables", ":traffic_light_multi_camera_fusion_node_plugin"],
+)
+
+cc_test(
+    name = "autoware_traffic_light_multi_camera_fusion_test",
+    srcs = ["test/test_utils.cpp", "test/test_signal_validator.cpp", "test/test_multi_camera_fusion.cpp", "test/test_map_based_signal_filter.cpp"],
+    deps = [":fusion_core_library", "@googletest//:gtest"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+    tags = ["no-sandbox", "no-remote"],
+)
+
+cc_test(
+    name = "autoware_traffic_light_multi_camera_fusion_node_test",
+    srcs = ["test/test_traffic_light_multi_camera_fusion_node.cpp"],
+    deps = [":autoware_traffic_light_multi_camera_fusion_library", "@googletest//:gtest"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+    tags = ["no-sandbox", "no-remote"],
+)
+

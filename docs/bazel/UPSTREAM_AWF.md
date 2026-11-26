@@ -2409,6 +2409,8 @@ No older ROS/CMake execution or upstream submission is claimed.
 
 ### Multi-camera intersection test assumes unordered iteration order
 
+Local source-test fix: `62cd5e70a`.
+
 - [ ] Associate with a matching upstream fix. Checked 2026-11-26: the current
   [signal validator test](https://github.com/autowarefoundation/autoware_universe/blob/main/perception/autoware_traffic_light_multi_camera_fusion/test/test_signal_validator.cpp)
   retains the vector-order assertion. A scoped multi_camera_fusion/unordered PR

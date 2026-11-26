@@ -22109,3 +22109,27 @@ env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
   --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
   //bazel/tests:traffic_light_multi_camera_transport_test
 ```
+
+Integration pattern: split the four algorithm sources into :fusion_core_library
+and the node source into its compile provider, then own both in the original
+single shared component. Export public/private include roots and shared SDK
+providers explicitly. Use wrapper node registration (default Agnocast-only), and
+index the component, executable, config and launch. Preserve the original test
+mains: the four-file core target and node target both provide their own main.
+The wrapper Message Filters adapter intentionally accepts raw QoS profiles; do
+not apply the plain-rclcpp subscriber migration to this adapter API.
+
+Add a root-owned peer for two camera/ROI/signal triplets and a serialized map
+mapping physical light IDs 10/20 to regulatory group 1000. Conflicting red/green
+observations must yield UNKNOWN plus WARN/conflict diagnostics for that group.
+Exact mode uses identical triplet stamps; approximate mode offsets ROI/signal
+stamps by 1/2 ms, advancing frames by 50 ms. Check retention of the camera-info
+stamp, not the other streams' stamps. This exercises real node synchronization
+and consistency behavior rather than reproducing fusion logic in the fixture.
+
+Results: twelve non-test targets and three test targets build; all 95 original
+and two added cases pass, zero failures/errors/skips. Final primary gate takes
+14.4 s, reusing unchanged original results; enabled peers both pass in 12.8 s
+with libagnocast_heaphook and kernel module 2.4.1, asserting RCLCPP is inactive.
+Changed-range/added-file clang-format and diff checks pass. No Fast DDS, GPU,
+older toolchain or expensive product gate is claimed. Next: marker publication.
