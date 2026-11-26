@@ -23780,3 +23780,6 @@ ten-package composition also passes with dynamic/external-request managers;
 retain its evidence with those module entries. Targeted formatting and diff
 checks pass. No native Agnocast, Fast DDS, simulator/deployment or field
 reversing-maneuver qualification is selected. Next: dynamic obstacle avoidance.
+
+Source compatibility fix: 39e171e04. The module/root selection and added behavior
+gates are accepted separately; Universe coverage is 169/244 (75 remaining).

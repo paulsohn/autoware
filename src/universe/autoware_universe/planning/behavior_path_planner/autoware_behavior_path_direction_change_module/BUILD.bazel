@@ -1,0 +1,48 @@
+load("@rosdistro//ament:defs.bzl", "ament_index")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "autoware_behavior_path_direction_change_module",
+    srcs = ["src/manager.cpp", "src/scene.cpp", "src/utils.cpp"],
+    hdrs = ["include/autoware/behavior_path_direction_change_module/data_structs.hpp", "include/autoware/behavior_path_direction_change_module/manager.hpp", "include/autoware/behavior_path_direction_change_module/scene.hpp", "include/autoware/behavior_path_direction_change_module/utils.hpp"],
+    includes = ["src"],
+    deps = ["@autoware_behavior_path_planner_common", "@autoware_lanelet2_utils", "@autoware_motion_utils", "@autoware_planning_msgs//:cc", "@autoware_route_handler", "@autoware_utils", "@geometry_msgs//:cc", "@pluginlib//:pluginlib_library", "@rclcpp//:rclcpp_library", "@tf2//:tf2_library", "@tf2_geometry_msgs//:tf2_geometry_msgs_library", "@tier4_planning_msgs//:cc", "@rosdistro//cc:eigen", "@rosdistro//cc:boost.geometry"],
+    strip_include_prefix = "include",
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = ["@autoware_behavior_path_planner_common//:runtime_dynamic_deps", "@autoware_utils//:runtime_dynamic_deps", "@ament_index_cpp//:ament_index_cpp", "@pluginlib//:pluginlib", "@autoware_planning_msgs//:cc_shared", "@geometry_msgs//:cc_shared", "@rclcpp//:rclcpp", "@tf2//:tf2", "@tf2_geometry_msgs//:tf2_geometry_msgs", "@tier4_planning_msgs//:cc_shared"],
+)
+
+cc_shared_library(
+    name = "direction_change_plugin",
+    deps = [":autoware_behavior_path_direction_change_module"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+    shared_lib_name = "libautoware_behavior_path_direction_change_module.so",
+)
+
+ament_index(
+    package_xml = "package.xml",
+    data = ["config/direction_change.param.yaml"],
+    libraries = [":direction_change_plugin"],
+    plugin_categories = {'plugins.xml': 'autoware_behavior_path_planner'},
+)
+
+collect_transitive_dynamic_deps(
+    name = "test_dynamic_deps",
+    dynamic_deps = [":runtime_dynamic_deps", "@autoware_behavior_path_planner//:test_dynamic_deps"],
+)
+
+cc_test(
+    name = "test_autoware_behavior_path_direction_change_module",
+    timeout = "long",
+    srcs = ["test/test_behavior_path_planner_node_interface.cpp"],
+    deps = [":autoware_behavior_path_direction_change_module", "@autoware_behavior_path_planner//:test_utils", "@googletest//:gtest"],
+    dynamic_deps = [":test_dynamic_deps"],
+    data = [":ament_index", "@autoware_behavior_path_planner//:ament_index", "@autoware_behavior_path_planner_common//:ament_index", "@autoware_route_handler//:ament_index", "@autoware_test_utils//:ament_index"],
+    env = {'ENABLE_AGNOCAST': '0', 'LD_LIBRARY_PATH': 'lib', 'ROS_DOMAIN_ID': '74'},
+)

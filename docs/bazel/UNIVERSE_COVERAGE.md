@@ -21,8 +21,8 @@ may contain multiple package commits and smaller execution batches. Update the
 ledger when a package closes or the source snapshot changes; this is a planning
 record, not a new build-time completeness validator.
 
-Current adoption progress, 2026-11-26: **168/244** packages have both definitions
-and root local overrides; **76** remain without definitions. The census table
+Current adoption progress, 2026-11-26: **169/244** packages have both definitions
+and root local overrides; **75** remain without definitions. The census table
 below preserves the initial 2026-11-23 baseline. Checked ledger items record
 completed module gates; Phase 9.8 is complete. See PLAN.md and the
 package journals for configuration and behavior evidence.
@@ -319,7 +319,7 @@ Integrate common checkers before validator/modifier; ranker follows validator an
 
 Publish sampler support before sampling plugins, and consume 9.10 checkers. Revisit the existing behavior-path planner's optional sampler registration when required. Cover every original plugin suite plus individual/joint factory loading, lifecycle/reload and planner outputs; keep stable plugin type identities and indexed YAML/resources.
 
-- [ ] [autoware_behavior_path_direction_change_module](../../src/universe/autoware_universe/planning/behavior_path_planner/autoware_behavior_path_direction_change_module/package.xml)
+- [x] [autoware_behavior_path_direction_change_module](../../src/universe/autoware_universe/planning/behavior_path_planner/autoware_behavior_path_direction_change_module/package.xml)
 - [ ] [autoware_behavior_path_dynamic_obstacle_avoidance_module](../../src/universe/autoware_universe/planning/behavior_path_planner/autoware_behavior_path_dynamic_obstacle_avoidance_module/package.xml)
 - [ ] [autoware_behavior_path_external_request_lane_change_module](../../src/universe/autoware_universe/planning/behavior_path_planner/autoware_behavior_path_external_request_lane_change_module/package.xml)
 - [ ] [autoware_behavior_velocity_no_drivable_lane_module](../../src/universe/autoware_universe/planning/behavior_velocity_planner/autoware_behavior_velocity_no_drivable_lane_module/package.xml)

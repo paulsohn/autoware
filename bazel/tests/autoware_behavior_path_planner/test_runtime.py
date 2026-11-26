@@ -21,6 +21,9 @@ EXECUTABLE = str(Path(sys.argv.pop(1)).resolve())
 MODULES = sys.argv.pop(1).split(',')
 MODULE = MODULES[0]
 PROFILES = {
+    'direction_change': ('DirectionChangeModuleManager',
+                         ['direction_change.th_arrived_distance', 'direction_change.max_allowed_yaw_deg'],
+                         [0.5, 20.0], 21.0),
     'side_shift': ('SideShiftModuleManager',
                    ['side_shift.min_distance_to_start_shifting', 'side_shift.min_drivable_area_margin'],
                    [5.0, 0.3], 0.4),

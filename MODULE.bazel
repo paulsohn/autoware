@@ -2252,3 +2252,9 @@ local_path_override(
     module_name = "autoware_trajectory_selector",
     path = "src/universe/autoware_universe/planning/autoware_trajectory_selector",
 )
+
+bazel_dep(name = "autoware_behavior_path_direction_change_module", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_behavior_path_direction_change_module",
+    path = "src/universe/autoware_universe/planning/behavior_path_planner/autoware_behavior_path_direction_change_module",
+)

@@ -125,6 +125,8 @@ only when your current target demonstrates the need.
   [Evidence: textually included C++ implementation](JOURNAL.md#2026-11-22-phase-732--static-obstacle-avoidance-scene-plugin).
 - [ ] Inventory complete module suites, runtime prerequisites and required
   middleware configurations before implementing each task.
+  [Placeholder-suite behavior checks](DEVELOPING.md#validation-and-commits);
+  [direction-change evidence](JOURNAL.md#2026-11-26-phase-911--direction-change-scene-plugin).
   [Steady-state expensive-target policy](DEVELOPING.md#expensive-targets);
   [evidence: opt-in selection](JOURNAL.md#2026-11-23-phase-75--opt-in-expensive-system-and-deployment-targets);
   [runtime prerequisite execution-context evidence](JOURNAL.md#2026-11-26-phase-910--planned-route-remaining-distance);
@@ -2488,6 +2490,26 @@ additional planners and behavior plugins, following the existing ledger order.
 The modifier's solver-header projections are supported by the separately
 validated acados SDK extension. Exact commands, source compatibility associations
 and limitations are recorded in the respective module journals.
+
+### Phase 9.11: Additional planners and behavior plugins (in progress)
+
+Start with direction-change, dynamic-obstacle-avoidance and external-request
+lane-change managers. Preserve their original one/two/two-case suites; the
+single direction-change case is a placeholder, so add real normal-route path
+publication and initialization/parameter checks. Qualify individual and joint
+plugin discovery using the existing executable/runtime harness with Cyclone DDS.
+These three behavior-path plugins use RCLCPP; no native Agnocast or Fast DDS gate
+is selected for them. Then adopt the remaining velocity plugins, publish the
+sampler provider before its behavior plugin, and finish the standalone planners.
+Use the existing 13-package ledger, module-sized commits and complete suites.
+Coverage starts at 168/244. No simulator or deployment gate is selected.
+
+| Package | Passed gate |
+| --- | --- |
+| autoware_behavior_path_direction_change_module | Original placeholder plus finite-path/invalid-context behavior, individual startup/parameter update and eight-package joint composition |
+
+Validated coverage is 169/244 (75 remaining). Phase 9.11 remains in progress;
+next are dynamic-obstacle and external-request lane-change managers.
 
 ### Execution order through complete Universe coverage
 

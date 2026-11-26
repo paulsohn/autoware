@@ -817,6 +817,10 @@ Probe runtime prerequisites (devices, drivers and permissions) from the same
 execution environment used by the test. A device hidden from a restricted shell
 may still be available to a host-side gate, and the reverse can also occur.
 
+Retain upstream placeholder tests and add root-owned behavior checks when their
+assertions do not observe the component. Placeholder success alone does not
+establish plugin loading, valid outputs or clean shutdown.
+
 Validate in proportion to the change:
 
 - BUILD or module change: build affected target surfaces; label/selection-only

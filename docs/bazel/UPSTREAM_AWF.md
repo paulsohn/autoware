@@ -2693,6 +2693,8 @@ No upstream submission or older ROS/colcon validation is claimed.
 
 ### Direction-change plugin: current TF2 utility header
 
+Local source fix: `39e171e04`.
+
 - [ ] Associate with a matching AWF change. Checked 2026-11-26:
   [scene.cpp](https://github.com/autowarefoundation/autoware_universe/blob/main/planning/behavior_path_planner/autoware_behavior_path_direction_change_module/src/scene.cpp)
   and [utils.cpp](https://github.com/autowarefoundation/autoware_universe/blob/main/planning/behavior_path_planner/autoware_behavior_path_direction_change_module/src/utils.cpp)

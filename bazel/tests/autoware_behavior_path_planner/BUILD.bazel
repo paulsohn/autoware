@@ -8,6 +8,7 @@ _SCENES = [
     "start_planner",
     "side_shift",
     "bidirectional_traffic",
+    "direction_change",
 ]
 
 [

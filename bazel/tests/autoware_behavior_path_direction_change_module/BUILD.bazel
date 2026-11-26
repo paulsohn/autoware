@@ -1,0 +1,17 @@
+load("@rules_cc//cc:defs.bzl", "cc_test")
+
+cc_test(
+    name = "path_test",
+    timeout = "long",
+    srcs = ["test_path.cpp"],
+    data = [
+        "@autoware_behavior_path_direction_change_module//:ament_index",
+        "@autoware_behavior_path_planner//:ament_index",
+        "@autoware_behavior_path_planner_common//:ament_index",
+        "@autoware_route_handler//:ament_index",
+        "@autoware_test_utils//:ament_index",
+    ],
+    deps = ["@autoware_behavior_path_planner//:test_utils", "@googletest//:gtest"],
+    dynamic_deps = ["@autoware_behavior_path_planner//:test_dynamic_deps"],
+    env = {"ENABLE_AGNOCAST": "0", "ROS_DOMAIN_ID": "74", "LD_LIBRARY_PATH": "lib"},
+)
