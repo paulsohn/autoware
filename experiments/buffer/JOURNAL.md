@@ -4401,3 +4401,9 @@ Two remote readers received sequences 0–9 through a single discovered export a
 - zenoh, manual: 4 dynamic export generations; 6 reader lifetimes and 100 checked deliveries across the two topics.
 - cyclone, auto: 4 dynamic export generations; 6 reader lifetimes and 100 checked deliveries across the two topics.
 - zenoh, auto: 4 dynamic export generations; 6 reader lifetimes and 100 checked deliveries across the two topics.
+
+## Generate the gateway discovery interfaces independently
+
+Added the colcon interface package rmw_agnocast_discovery_msgs. IslandSnapshot identifies an IPC island by its AWF boot ID and namespace inode, carries a per-observer generation, and contains DiscoveryEndpoint profiles with role, reliability and the standard rosgraph_msgs/TypeHash. A stock ROS tool can install these definitions independently of Agnocast, the gateway and its heap hook.
+
+From the provisioned colcon checkout, export LYRICAL_ROOT from build/agnocast-lyrical/universe-root. Run experiments/buffer/run-lyrical.sh colcon --log-base build/manual-gateway/log build --paths src/rmw_agnocast_discovery_msgs --build-base build/manual-gateway/obj --install-base build/manual-gateway/install --executor sequential --cmake-args -DCMAKE_BUILD_TYPE=Release. The independent interface build succeeded with at least 9970 MiB host memory available. In the Lyrical runtime source build/manual-gateway/install/local_setup.bash and run ros2 interface show rmw_agnocast_discovery_msgs/msg/IslandSnapshot. The CLI expanded both nested interfaces, including the RIHS version and 32-byte hash.
