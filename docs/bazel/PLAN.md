@@ -2439,6 +2439,20 @@ packages without definitions. No field accuracy, Fast DDS, GUI, simulator or
 deployment gate is claimed. Next: Phase 9.10 trajectory contracts and common
 motion checks.
 
+### Phase 9.10: Trajectory contracts and common motion checks (in progress)
+
+Adopt the five common checkers first, then adapters/concatenation/gating,
+validator and ranking, and modifier/selector with their complete local closure.
+Inventory each original suite before implementing its module; retain plugin,
+parameter generation, interface and solver contracts when their consumers expose
+them. Common boundary/obstacle/traffic-light libraries retain their complete
+original suites; goal/path nodes receive public behavior checks. Select Cyclone
+DDS and Agnocast for wrapper-enabled transport, with actual runtime prerequisites.
+Use module-sized commits and reproducible journal entries. No Fast DDS, simulator
+or deployment gate is selected. Coverage starts at 156/244.
+
+autoware_boundary_departure_checker: complete; exact gates and evidence are in its Phase 9.10 journal.
+
 ### Execution order through complete Universe coverage
 
 The following groups are the initial route through every remaining package.

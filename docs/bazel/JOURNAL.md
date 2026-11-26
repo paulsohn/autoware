@@ -23015,3 +23015,33 @@ Coverage is 156/244, leaving 88 without definitions; all five Phase 9.9 ledger
 items are checked and PLAN.md records the final package table. Documentation-only
 closure/count changes require no runtime rerun. Next: Phase 9.10 trajectory
 contracts and common motion checks.
+
+## 2026-11-26: Phase 9.10 — Uncrossable boundary checks
+
+Purpose: adopt CMake's nine utility sources plus the checker and all five
+original test sources, including parameterized footprint cases. Inspect map
+boundary indexing, footprint generation/projection, severity and hysteresis.
+Select CPU/Cyclone with ENABLE_AGNOCAST=0; this package is a library.
+
+Pattern: expose all ten implementation sources and public headers through one
+package-local C++ provider named after the module. No runtime plugin loads
+CMake's generically named utils library, so a separate generic DSO identity is
+unnecessary. Use the existing local motion/trajectory/universe/vehicle providers
+and canonical SDK runtime owners. The UUID helper is header-only: its runtime
+message owner is unique_identifier_msgs, not a nonexistent helper runtime target.
+Root selects the local override. Preserve all original implementation and tests;
+no new adapter or source patch is required.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  @autoware_boundary_departure_checker//...
+```
+
+Results: all three non-test targets build and all 38 original cases pass,
+zero failures/errors/skips/disabled. The package-specific gate reuses the passing
+joint foundation result (1.2 s invocation, cached test .6 s); source and assertions
+are unchanged. Bazel evaluation and diff checks pass. This qualifies synthetic
+boundary geometry/state, not real vehicle tracking or a system communication
+matrix. Next: obstacle and traffic-light checks, then distance-node behavior.

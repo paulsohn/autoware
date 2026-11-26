@@ -2180,3 +2180,9 @@ local_path_override(
     module_name = "yabloc_pose_initializer",
     path = "src/universe/autoware_universe/localization/yabloc/yabloc_pose_initializer",
 )
+
+bazel_dep(name = "autoware_boundary_departure_checker", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_boundary_departure_checker",
+    path = "src/universe/autoware_universe/common/autoware_boundary_departure_checker",
+)

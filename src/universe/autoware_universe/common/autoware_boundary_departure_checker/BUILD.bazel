@@ -1,0 +1,29 @@
+load("@rosdistro//ament:defs.bzl", "ament_index")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "autoware_boundary_departure_checker",
+    srcs = ["src/detail/boundary_departure_evaluator.cpp", "src/detail/boundary_segment_finder.cpp", "src/detail/conversion.cpp", "src/detail/debug.cpp", "src/detail/footprints_generator.cpp", "src/detail/geometry_projection.cpp", "src/detail/hysteresis_logic.cpp", "src/detail/severity_evaluator.cpp", "src/detail/uncrossable_boundaries_rtree.cpp", "src/uncrossable_boundary_checker.cpp"],
+    hdrs = ["include/autoware/boundary_departure_checker/detail/boundary_departure_evaluator.hpp", "include/autoware/boundary_departure_checker/detail/boundary_segment_finder.hpp", "include/autoware/boundary_departure_checker/detail/conversion.hpp", "include/autoware/boundary_departure_checker/detail/data_structs.hpp", "include/autoware/boundary_departure_checker/detail/debug.hpp", "include/autoware/boundary_departure_checker/detail/footprints_generator.hpp", "include/autoware/boundary_departure_checker/detail/geometry_projection.hpp", "include/autoware/boundary_departure_checker/detail/hysteresis_logic.hpp", "include/autoware/boundary_departure_checker/detail/severity_evaluator.hpp", "include/autoware/boundary_departure_checker/detail/side_struct.hpp", "include/autoware/boundary_departure_checker/detail/type_alias.hpp", "include/autoware/boundary_departure_checker/detail/uncrossable_boundaries_rtree.hpp", "include/autoware/boundary_departure_checker/parameters.hpp", "include/autoware/boundary_departure_checker/uncrossable_boundary_checker.hpp"],
+    strip_include_prefix = "include",
+    deps = ["@autoware_motion_utils", "@autoware_planning_msgs//:cc", "@autoware_trajectory", "@autoware_universe_utils", "@autoware_utils_debug", "@autoware_utils_geometry", "@autoware_utils_system", "@autoware_utils_uuid", "@autoware_utils_visualization", "@autoware_vehicle_info_utils", "@autoware_vehicle_msgs//:cc", "@geometry_msgs//:cc", "@nav_msgs//:cc", "@std_msgs//:cc", "@tf2//:tf2_library", "@visualization_msgs//:cc", "@rosdistro//cc:boost.geometry", "@rosdistro//cc:eigen", "@rosdistro//cc:magic_enum", "@rosdistro//cc:range-v3"],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = ["@autoware_motion_utils//:runtime_dynamic_deps", "@autoware_trajectory//:runtime_dynamic_deps", "@autoware_universe_utils//:runtime_dynamic_deps", "@autoware_utils_debug//:runtime_dynamic_deps", "@unique_identifier_msgs//:cc_shared"],
+)
+
+ament_index(
+    package_xml = "package.xml",
+)
+
+cc_test(
+    name = "test_autoware_boundary_departure_checker",
+    srcs = ["test/test_uncrossable_boundary_checker.cpp", "test/utils/test_boundary_utils.cpp", "test/utils/test_create_vehicle_footprints.cpp", "test/utils/test_footprint_generator.cpp", "test/utils/test_uncrossable_boundary_checker_non_class.cpp"],
+    deps = [":autoware_boundary_departure_checker", "@googletest//:gtest_main"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+)

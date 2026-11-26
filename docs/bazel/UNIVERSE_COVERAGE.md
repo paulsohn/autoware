@@ -21,8 +21,8 @@ may contain multiple package commits and smaller execution batches. Update the
 ledger when a package closes or the source snapshot changes; this is a planning
 record, not a new build-time completeness validator.
 
-Current adoption progress, 2026-11-26: **156/244** packages have both definitions
-and root local overrides; **88** remain without definitions. The census table
+Current adoption progress, 2026-11-26: **157/244** packages have both definitions
+and root local overrides; **87** remain without definitions. The census table
 below preserves the initial 2026-11-23 baseline. Checked ledger items record
 completed module gates; Phase 9.8 is complete. See PLAN.md and the
 package journals for configuration and behavior evidence.
@@ -302,7 +302,7 @@ Start with yabloc_common, then its declared consumers. Declare map/image/camera-
 
 Integrate common checkers before validator/modifier; ranker follows validator and selector follows its adapters/ranker. Cover trajectory interfaces, bounds, obstacle/signal rules, scoring/selection, continuity and gate state. Preserve Python plotting/tool dependencies when an actual original tool/test needs them.
 
-- [ ] [autoware_boundary_departure_checker](../../src/universe/autoware_universe/common/autoware_boundary_departure_checker/package.xml)
+- [x] [autoware_boundary_departure_checker](../../src/universe/autoware_universe/common/autoware_boundary_departure_checker/package.xml)
 - [ ] [autoware_goal_distance_calculator](../../src/universe/autoware_universe/common/autoware_goal_distance_calculator/package.xml)
 - [ ] [autoware_obstacle_proximity_checker](../../src/universe/autoware_universe/common/autoware_obstacle_proximity_checker/package.xml)
 - [ ] [autoware_path_distance_calculator](../../src/universe/autoware_universe/common/autoware_path_distance_calculator/package.xml)
