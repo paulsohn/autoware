@@ -2630,3 +2630,18 @@ four-type wire checks. Source compatibility and test lifecycle corrections are
 separate from Bazel declarations; exact commands and pattern are in the
 [validator journal](JOURNAL.md#2026-11-26-phase-910--trajectory-validator-indexed-plugins-and-report-interfaces).
 No older ROS/colcon execution or upstream submission is claimed.
+
+### Trajectory ranker: current TF2 utility header
+
+- [ ] Associate with a matching AWF fix. Checked 2026-11-26:
+  [current trajectory-consistency metric](https://github.com/autowarefoundation/autoware_universe/blob/main/planning/autoware_trajectory_ranker/src/metrics/trajectory_consistency_metric.cpp)
+  still includes tf2/utils.h; scoped Lyrical/TF2 PR search identifies no matching
+  ranker correction. This is separate from the expected-header PR #13622.
+
+The complete Phase 9.10 ranker build exposes the removed forwarding header.
+Use tf2/utils.hpp with no algorithm change. All 40 original cases and two added
+plugin/wrapper cases pass on Cyclone/RCLCPP; the added pair also passes
+Agnocast-only with the heaphook. See the
+[ranker journal](JOURNAL.md#2026-11-26-phase-910--trajectory-ranking-and-six-indexed-metrics)
+for the reproducible module gate. No upstream submission or older ROS/colcon
+validation is claimed.

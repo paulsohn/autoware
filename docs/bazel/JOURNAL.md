@@ -23462,3 +23462,63 @@ Next: trajectory ranking.
 
 The module definitions, root override and interface collection are accepted with
 the complete gates above. Universe coverage is 165/244 (79 remaining).
+
+## 2026-11-26: Phase 9.10 — Trajectory ranking and six indexed metrics
+
+Purpose: adopt the ranker core/wrapper, parameter schema and six loadable
+metrics, preserving all five original targets: utilities (6 cases), metric
+utilities (11), evaluator (9), direct metrics (8) and ranking integration (6).
+Inspect their own main functions, ROS fixtures and autoware_test_utils resource
+lookups before defining the gate. Select all 40 cases on Cyclone/RCLCPP and two
+root-owned plugin/wrapper cases on both RCLCPP and Agnocast-only.
+
+Pattern: generate autoware_trajectory_ranker_param from the original YAML;
+compile the four core sources separately from src/metrics and preserve
+libautoware_trajectory_ranker_lib.so and
+libautoware_trajectory_ranker_plugins.so. The public library consumes the local
+validator/message provider rather than copying report definitions. Reuse the
+validator's exported common-helper owners and canonical shared ROS SDKs; export
+the ranker's route-handler and rclcpp utility owners for its plugin consumers.
+Index config, libraries and original plugins.xml under the component module.
+Use the existing RCR rosdistro compile provider for magic_enum, not an assumed
+same-name target in the ROS wrapper module.
+
+Direct metric tests link metric implementations. The evaluator and wrapper
+load plugins dynamically instead: link only the core, and provide plugins and
+XML through ament_index runtime data. Linking a plugin DSO into those loader
+executables would register factories before class-loader ownership is set.
+Original tests retain their own main where present; only the integration target
+uses gtest_main. Provide the original indexed test-vehicle fixture through
+@autoware_test_utils. No original assertion or lifecycle change is needed.
+
+Compilation exposes tf2/utils.h in trajectory_consistency_metric.cpp. Replace
+only that removed forwarding header with tf2/utils.hpp. Checked 2026-11-26:
+AWF main retains the old include and the scoped Lyrical/TF2 PR search identifies
+no matching ranker correction. Commit this compatibility fix separately.
+
+The added factory case instantiates all six classes through the real index,
+without early linking. The wrapper case rejects a null TimeKeeper, handles empty
+input, preserves candidate headers/points and generator metadata, calculates the
+expected safety/source scores, then disables safety at runtime and requires the
+ranking to reverse. Its native execution asserts RCLCPP remains uninitialized.
+The original quality/metric suites remain part of the complete gate.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  @autoware_trajectory_ranker//... //bazel/tests:trajectory_ranker_wrapper_test
+
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --local_test_jobs=1 \
+  --run_under=//bazel/agnocast:with_heaphook --test_env=ENABLE_AGNOCAST=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  //bazel/tests:trajectory_ranker_wrapper_test
+```
+
+Results: every module target and all six primary test targets pass, all 40
+original and two added cases, zero failures/errors/skips/disabled. Both added
+cases also pass Agnocast-only with the built/preloaded heaphook and host-visible
+/dev/agnocast. Reuse unchanged pure algorithm evidence. Targeted formatting and
+diff checks pass. No Fast DDS, simulator, deployment or field planning accuracy
+qualification is selected. Next: trajectory modification and its temporal solver.
