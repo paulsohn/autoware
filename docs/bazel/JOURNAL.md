@@ -22504,3 +22504,32 @@ C++ and two original Python cases pass, zero failures/errors/skips. Final
 indexed-library gate takes 4.8 s, reusing unchanged C++ results and executing
 the launch gate in 2.8 s. Diff checks pass. No additional source assertion,
 Agnocast/Fast DDS or expensive product gate is selected. Next: AR-tag localizer.
+
+## 2026-11-26: Phase 9.8 — AR-tag localization
+
+Purpose: adopt the original localizer and constructor test, plus calibrated
+positive/blank image behavior. Inspect CMake, source, config, camera calibration,
+landmark subtype, TF lookup, SmartPoseBuffer interpolation and output validation.
+ArUco is absent from src, so root pins 5.0.5-3.rcr.2 from RCR; child modules retain
+unconstrained placeholders. The immutable source is release/lyrical/aruco/5.0.5-3
+from ros2-gbp/aruco_ros-release, integrity
+sha256-lL1rxnFfINTkrsi+05PcQh1lXc+pgt6QVWUGTSBont4=.
+The registry overlay exposes :aruco_library/:aruco and no native test target.
+
+Compilation first fails at opencv4/opencv2/calib3d.hpp. Use the public OpenCV
+namespace opencv2/calib3d.hpp and opencv2/core/quaternion.hpp, relying on the
+provider's include directories rather than a distribution-specific installation
+prefix. No logic or original assertion changes. Current AWF retains both prefixed
+includes; scoped upstream comparison is recorded in UPSTREAM_AWF.md. Commit this
+source compatibility fix independently from build declarations.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  @autoware_landmark_manager//... //bazel/tests:landmark_manager_test \
+  @autoware_ar_tag_based_localizer//... //bazel/tests:ar_tag_localizer_transport_test
+```
+
+The complete provider/consumer gate passes after the include and shared-ownership
+corrections. This executes Lyrical/Bazel; no older ROS/CMake run is claimed.

@@ -2462,3 +2462,19 @@ supported, lazy subscription, sensor-data image QoS and synchronization. All 63
 original cases pass without assertion changes, including both image publication
 modes and map-node behavior; a new map peer also passes on RCLCPP and Agnocast-only.
 Only Lyrical is executed. No upstream submission is claimed.
+
+### AR-tag localizer assumes an OpenCV installation prefix
+
+- [ ] Associate with a matching upstream fix. Checked 2026-11-26: current
+  [implementation](https://github.com/autowarefoundation/autoware_universe/blob/main/localization/autoware_landmark_based_localizer/autoware_ar_tag_based_localizer/src/ar_tag_based_localizer.cpp)
+  retains opencv4/opencv2/calib3d.hpp and opencv4/opencv2/core/quaternion.hpp.
+  A repository-scoped ar_tag_based_localizer/OpenCV PR search finds no matching
+  correction. AWF #7404 remains the general Lyrical transition tracker.
+
+Reproduce with the complete AR-tag gate in the Phase 9.8 journal: compilation
+fails on the installation-prefixed calibration include. Use OpenCV's public
+opencv2 namespace for both headers and honor exported include directories.
+The original constructor case, generated AprilTag localization and blank-image
+suppression pass with the pinned SDK; no behavior/assertion change is required.
+This is portable SDK layout compatibility, not a new detector or an older
+ROS/CMake validation claim. No upstream submission is claimed.

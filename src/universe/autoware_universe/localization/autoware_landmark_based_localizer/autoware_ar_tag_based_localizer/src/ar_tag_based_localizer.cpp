@@ -48,8 +48,8 @@
 
 #include <Eigen/Core>
 #include <Eigen/Geometry>
-#include <opencv4/opencv2/calib3d.hpp>
-#include <opencv4/opencv2/core/quaternion.hpp>
+#include <opencv2/calib3d.hpp>
+#include <opencv2/core/quaternion.hpp>
 
 #include <memory>
 #include <string>
