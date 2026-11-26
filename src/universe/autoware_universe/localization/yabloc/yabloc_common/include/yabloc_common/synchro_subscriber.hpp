@@ -17,11 +17,12 @@
 
 #include <rclcpp/rclcpp.hpp>
 
-#include <message_filters/subscriber.h>
-#include <message_filters/sync_policies/approximate_time.h>
-#include <message_filters/time_synchronizer.h>
+#include <message_filters/subscriber.hpp>
+#include <message_filters/sync_policies/approximate_time.hpp>
+#include <message_filters/time_synchronizer.hpp>
 
 #include <memory>
+#include <optional>
 #include <string>
 
 namespace yabloc::common
@@ -42,8 +43,8 @@ public:
     using std::placeholders::_2;
     using Synchronizer = message_filters::Synchronizer<SyncPolicy>;
 
-    sub1_ = std::make_shared<Sub1>(n, topic1);
-    sub2_ = std::make_shared<Sub2>(n, topic2);
+    sub1_ = std::make_shared<Sub1>(n, topic1, rclcpp::QoS(10));
+    sub2_ = std::make_shared<Sub2>(n, topic2, rclcpp::QoS(10));
     synchronizer_ = std::make_shared<Synchronizer>(SyncPolicy(80), *sub1_, *sub2_);
     synchronizer_->registerCallback(std::bind(&SynchroSubscriber::raw_callback, this, _1, _2));
   }
@@ -56,7 +57,8 @@ private:
   std::shared_ptr<message_filters::Synchronizer<SyncPolicy>> synchronizer_;
   std::optional<UserCallback> user_callback_{std::nullopt};
 
-  void raw_callback(const typename Msg1::ConstPtr & msg1, const typename Msg2::ConstPtr & msg2)
+  void raw_callback(
+    const typename Msg1::ConstSharedPtr & msg1, const typename Msg2::ConstSharedPtr & msg2)
   {
     if (user_callback_.has_value()) user_callback_.value()(*msg1, *msg2);
   }

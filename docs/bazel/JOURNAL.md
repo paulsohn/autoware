@@ -22757,3 +22757,43 @@ Results: nine non-test targets build and the transition case passes, zero
 failures/errors/skips, 22.5 s (test .8 s). Added-file formatting and diff checks
 pass. No Fast DDS, vehicle accuracy or expensive product gate is selected.
 Next: all six image-processing components.
+
+## 2026-11-26: Phase 9.9 — YabLoc image processing
+
+Purpose: adopt all seven original sources, six components/executables and
+indexed config/launch. CMake has no functional tests. Inspect undistortion,
+graph segmentation, line detection/overlay, ground projection and map overlay.
+Define four root-owned real-component cases, with raw and compressed images,
+actual static camera TF, synchronized clouds/masks and an explicit map line.
+Select Cyclone/RCLCPP and headless synthetic fixtures.
+
+Compilation first exposes installation-prefixed OpenCV includes and an omitted
+ximgproc dependency. Use public opencv2 paths in the affected image sources;
+RCR already exports opencv_contrib_ximgproc_library / opencv_contrib_ximgproc,
+so no custom SDK is needed. Instantiating the common SynchroSubscriber exposes
+removed Message Filters .h aliases, ROS1-style ConstPtr and an implicit QoS
+constructor. Use .hpp, ROS2 ConstSharedPtr and explicit reliable depth-ten QoS,
+retaining the approximate policy's queue80 and callback values. Include optional
+at its owner. Only the selected Lyrical SDK is executed.
+
+The nonempty rectangle then exposes a real detector failure: OpenCV returns
+Nx1 CV_32FC4, but at<float>(i) requires a scalar-element row. Reshape each row to
+one channel before endpoint access; retain the filtering/output behavior. The
+projection fixture separately requires quaternion (1,0,0,0), rather than the
+message's default w1 with x1. Keep production TF checks intact. Strengthen the
+map overlay assertion to require the known yellow line at its expected pixel,
+not merely a nonblack image (the overlay's additive offset makes that trivial).
+Commit source fixes separately; upstream comparisons are in UPSTREAM_AWF.md.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  @yabloc_common//... //bazel/tests:yabloc_common_test \
+  @yabloc_image_processing//... //bazel/tests:yabloc_image_processing_test
+```
+
+Results after these corrections: all common/image targets build; four common
+and four image cases pass, zero failures/errors/skips/disabled, final gate
+31.6 s. Source-range formatting and diff checks pass. No older ROS/CMake,
+real calibration/accuracy, Fast DDS or expensive product gate is claimed.

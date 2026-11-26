@@ -17,7 +17,7 @@
 
 #include "yabloc_image_processing/graph_segment/similar_area_searcher.hpp"
 
-#include <opencv4/opencv2/ximgproc/segmentation.hpp>
+#include <opencv2/ximgproc/segmentation.hpp>
 #include <rclcpp/rclcpp.hpp>
 
 #include <sensor_msgs/msg/image.hpp>

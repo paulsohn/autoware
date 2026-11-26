@@ -15,7 +15,7 @@
 #include "yabloc_image_processing/line_segment_detector/line_segment_detector.hpp"
 
 #include <autoware_utils_system/stop_watch.hpp>
-#include <opencv4/opencv2/imgproc.hpp>
+#include <opencv2/imgproc.hpp>
 #include <yabloc_common/cv_decompress.hpp>
 #include <yabloc_common/pub_sub.hpp>
 
@@ -92,7 +92,7 @@ std::vector<cv::Mat> LineSegmentDetector::remove_too_outer_elements(
 
   std::vector<cv::Mat> filtered_lines;
   for (int i = 0; i < lines.rows; i++) {
-    cv::Mat xy_xy = lines.row(i);
+    cv::Mat xy_xy = lines.row(i).reshape(1);
     cv::Point2f xy1(xy_xy.at<float>(0), xy_xy.at<float>(1));
     cv::Point2f xy2(xy_xy.at<float>(2), xy_xy.at<float>(3));
 

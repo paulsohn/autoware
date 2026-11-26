@@ -2499,3 +2499,26 @@ and a message-backed byte view for imdecode. Preserve color/Bayer branches and
 source bytes. Four geometry/map/ground/codec cases pass with Cyclone/RCLCPP.
 Other legacy templates and older ROS/CMake configurations are outside this gate;
 no upstream submission is claimed.
+
+### YabLoc image processing and synchronized input compatibility
+
+- [ ] Associate with a matching upstream fix. Checked 2026-11-26: current
+  [synchronization helper](https://github.com/autowarefoundation/autoware_universe/blob/main/localization/yabloc/yabloc_common/include/yabloc_common/synchro_subscriber.hpp)
+  retains .h aliases, ConstPtr and implicit QoS. The
+  [undistorter](https://github.com/autowarefoundation/autoware_universe/blob/main/localization/yabloc/yabloc_image_processing/src/undistort/undistort_node.cpp)
+  retains installation-prefixed OpenCV includes. A scoped YabLoc/Message Filters
+  PR search finds no matching correction; AWF #7404 is the general tracker.
+- [ ] Associate the scalar line-access fix. Current
+  [detector](https://github.com/autowarefoundation/autoware_universe/blob/main/localization/yabloc/yabloc_image_processing/src/line_segment_detector/line_segment_detector_core.cpp)
+  still reads a CV_32FC4 row with at<float>.
+  [PR #4717](https://github.com/autowarefoundation/autoware_universe/pull/4717)
+  guards empty drawSegments input, already present locally; its actual diff
+  does not fix this nonempty-line failure.
+
+Reproduce with the Phase 9.9 common/image gate. Compilation needs public OpenCV
+paths and explicit ROS2 synchronization APIs. A real rectangle then triggers
+OpenCV's elemSize()==sizeof(_Tp) assertion. Give each line row a one-channel view
+before reading its four scalar endpoints. All four image cases and four common
+cases pass with the pinned SDK, including detected lines, graph masks, raw/PNG
+undistortion, ground endpoints and the expected map-overlay pixel. Queue80 and
+reliable depth-ten input QoS are retained. No upstream submission is claimed.

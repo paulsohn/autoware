@@ -16,8 +16,8 @@
 #include "yabloc_image_processing/graph_segment/histogram.hpp"
 
 #include <autoware_utils_system/stop_watch.hpp>
-#include <opencv4/opencv2/highgui.hpp>
-#include <opencv4/opencv2/imgproc.hpp>
+#include <opencv2/highgui.hpp>
+#include <opencv2/imgproc.hpp>
 #include <yabloc_common/cv_decompress.hpp>
 #include <yabloc_common/pub_sub.hpp>
 
