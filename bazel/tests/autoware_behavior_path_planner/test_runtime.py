@@ -21,6 +21,9 @@ EXECUTABLE = str(Path(sys.argv.pop(1)).resolve())
 MODULES = sys.argv.pop(1).split(',')
 MODULE = MODULES[0]
 PROFILES = {
+    'sampling_planner': ('SamplingPlannerModuleManager',
+                          ['constraints.hard.max_curvature', 'constraints.soft.curvature_weight'],
+                          [3.0, 2000.0], 2001.0),
     'direction_change': ('DirectionChangeModuleManager',
                          ['direction_change.th_arrived_distance', 'direction_change.max_allowed_yaw_deg'],
                          [0.5, 20.0], 21.0),

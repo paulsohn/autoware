@@ -2524,17 +2524,20 @@ before qualifying the complete plotting entrypoint with the roundabout module.
 | autoware_behavior_velocity_template_module | Unchanged-trajectory and empty-visualization behavior, indexed parameters, individual and four-package experimental factory composition |
 | autoware_behavior_velocity_occlusion_spot_module | All five original cases, both factory lifecycles, standard two-package and experimental five-package composition |
 | autoware_behavior_velocity_roundabout_module | Decision/object behavior, installed TTC plotting/GIF output and both factory lifecycles/compositions |
-
 | autoware_path_sampler | Finite Frenet/Bézier candidates, node interpolation regressions, indexed component/executable and DDS trajectory/fallback behavior |
+| autoware_behavior_path_sampling_planner_module | Real planner path/context checks, direct sampled generation/reuse, indexed factory/parameter updates and eleven-scene composition |
 
-9 of thirteen packages are complete. Validated coverage is
-177/244 (67 remaining). Phase 9.11 remains in progress. Next: the sampling
-behavior-path plugin and the remaining standalone planners.
+10 of thirteen packages are complete. Validated coverage is
+178/244 (66 remaining). Phase 9.11 remains in progress. Next: in-lane MRM,
+minimum-rule-based planning and surround-obstacle checking.
 
 Path-sampler acceptance exposes two independent implementation defects: spline
 derivatives before the first interval and reference velocity/elevation copying.
 Keep their corrections separate from build definitions; preserve complete
 provider/consumer gates and direct boundary regressions in the root test layer.
+The behavior plugin uses the smaller sampling providers directly. Its direct plan/reuse test
+qualifies actual sampling independently from clear-road manager activation;
+no additional behavior-path executable registration is required.
 
 ### Execution order through complete Universe coverage
 

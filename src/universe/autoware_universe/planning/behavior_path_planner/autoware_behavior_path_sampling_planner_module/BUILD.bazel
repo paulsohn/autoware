@@ -1,0 +1,67 @@
+load("@rosdistro//ament:defs.bzl", "ament_index")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "autoware_behavior_path_sampling_planner_module",
+    srcs = ["src/manager.cpp", "src/sampling_planner_module.cpp"],
+    hdrs = glob(["include/**/*.hpp"]),
+    strip_include_prefix = "include",
+    deps = [
+        "@autoware_behavior_path_planner_common",
+        "@autoware_bezier_sampler",
+        "@autoware_frenet_planner",
+        "@autoware_interpolation",
+        "@autoware_lanelet2_utils",
+        "@autoware_motion_utils",
+        "@autoware_perception_msgs//:cc",
+        "@autoware_planning_msgs//:cc",
+        "@autoware_route_handler",
+        "@autoware_sampler_common",
+        "@autoware_signal_processing",
+        "@autoware_utils",
+        "@autoware_vehicle_info_utils",
+        "@autoware_vehicle_msgs//:cc",
+        "@geometry_msgs//:cc",
+        "@lanelet2_core//:lanelet2_core_library",
+        "@pluginlib//:pluginlib_library",
+        "@rclcpp//:rclcpp_library",
+        "@sensor_msgs//:cc",
+        "@tf2//:tf2_library",
+        "@tf2_eigen//:tf2_eigen_library",
+        "@tf2_geometry_msgs//:tf2_geometry_msgs_library",
+        "@tf2_ros//:tf2_ros_library",
+        "@tier4_planning_msgs//:cc",
+        "@visualization_msgs//:cc",
+        "@rosdistro//cc:boost.geometry",
+        "@rosdistro//cc:eigen",
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = [
+        "@autoware_behavior_path_planner_common//:runtime_dynamic_deps",
+        "@autoware_frenet_planner//:runtime_dynamic_deps",
+        "@autoware_utils//:runtime_dynamic_deps",
+        "@pluginlib//:pluginlib",
+        "@tf2_eigen//:tf2_eigen",
+        "@sensor_msgs//:cc_shared",
+    ],
+)
+
+cc_shared_library(
+    name = "sampling_planner_plugin",
+    shared_lib_name = "libautoware_behavior_path_sampling_planner_module.so",
+    deps = [":autoware_behavior_path_sampling_planner_module"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+)
+
+ament_index(
+    package_xml = "package.xml",
+    libraries = [":sampling_planner_plugin"],
+    plugin_categories = {"plugins.xml": "autoware_behavior_path_planner"},
+    data = ["config/sampling_planner.param.yaml"],
+)

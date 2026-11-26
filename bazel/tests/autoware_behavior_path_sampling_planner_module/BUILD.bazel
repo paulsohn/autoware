@@ -1,0 +1,27 @@
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_test")
+
+collect_transitive_dynamic_deps(
+    name = "test_dynamic_deps",
+    dynamic_deps = ["@autoware_behavior_path_sampling_planner_module//:runtime_dynamic_deps", "@autoware_behavior_path_planner//:test_dynamic_deps"],
+)
+
+cc_test(
+    name = "path_test",
+    timeout = "long",
+    srcs = ["test_path.cpp"],
+    data = ["@autoware_behavior_path_sampling_planner_module//:ament_index", "@autoware_behavior_path_planner//:ament_index", "@autoware_behavior_path_planner_common//:ament_index", "@autoware_route_handler//:ament_index", "@autoware_test_utils//:ament_index"],
+    deps = ["@autoware_behavior_path_planner//:test_utils", "@googletest//:gtest"],
+    dynamic_deps = [":test_dynamic_deps"],
+    env = {"ENABLE_AGNOCAST": "0", "ROS_DOMAIN_ID": "74", "LD_LIBRARY_PATH": "lib"},
+)
+
+cc_test(
+    name = "scene_test",
+    timeout = "long",
+    srcs = ["test_scene.cpp"],
+    data = ["@autoware_behavior_path_sampling_planner_module//:ament_index", "@autoware_behavior_path_planner//:ament_index", "@autoware_behavior_path_planner_common//:ament_index", "@autoware_route_handler//:ament_index", "@autoware_test_utils//:ament_index"],
+    deps = ["@autoware_behavior_path_sampling_planner_module", "@autoware_test_utils", "@googletest//:gtest"],
+    dynamic_deps = [":test_dynamic_deps"],
+    env = {"ENABLE_AGNOCAST": "0", "ROS_DOMAIN_ID": "74", "LD_LIBRARY_PATH": "lib"},
+)

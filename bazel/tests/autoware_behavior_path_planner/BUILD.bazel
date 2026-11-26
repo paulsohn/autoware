@@ -11,6 +11,7 @@ _SCENES = [
     "direction_change",
     "dynamic_obstacle_avoidance",
     "external_request_lane_change",
+    "sampling_planner",
 ]
 
 [

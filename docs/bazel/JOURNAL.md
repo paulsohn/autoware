@@ -24478,3 +24478,65 @@ Python syntax and whitespace checks pass. Source correction e38665953 is separat
 regression cases live with the root integration tests. Coverage is 177/244
 (67 packages remaining), with Phase 9.11 nine of thirteen complete. Next:
 qualify the sampling behavior plugin with individual and joint planner gates. No Fast DDS, simulator or deployment check is selected.
+
+## 2026-11-27 — Phase 9.11: Sampling behavior-path plugin
+
+Purpose: make the sampling-based behavior manager selectable alongside existing
+behavior-path scenes. Inspect its two C++ translation units, public manager,
+scene, parameter and constraint headers, plugin XML, YAML, manifest and CMake.
+The package declares no compiled tests and contains no original test files.
+Use the existing local sampler-common/Frenet/Bézier, route-handler, lanelet and
+behavior-path-common providers; the path-sampler task immediately above is a
+prerequisite in the adoption sequence.
+
+Add package-owned MODULE/BUILD definitions and a versionless adjacent root
+selection. Preserve libautoware_behavior_path_sampling_planner_module.so,
+SamplingPlannerModuleManager's exported type, the behavior-path plugin category
+and original indexed configuration. Aggregate canonical shared SDK providers.
+The manifest names path_sampler, but these translation units implement their
+own Frenet sampling and call the smaller sampling providers directly. Retain
+the logical manifest dependency without linking the standalone path-sampler node.
+The behavior-path executable already loads discovered managers through pluginlib;
+no new static registration or implementation change in that package is needed.
+
+Add sampling_planner to the root runtime scene list. Check its factory and mapped
+DSO, indexed curvature parameters, parameter update and SIGINT shutdown, both
+alone and in the eleven-scene composition. Its parameter names are rooted at
+constraints/sampling/preprocessing, not at sampling_planner; preserve the source
+contract rather than inventing a wrapper namespace. Existing scene profiles and
+helper control flow remain unchanged.
+
+New C++ checks under bazel/tests/autoware_behavior_path_sampling_planner_module
+run the real behavior planner on its normal-route fixture, require finite path
+publication and exercise abnormal-route/off-track inputs. A separate native scene case creates
+the actual manager with indexed parameters/vehicle data and a controlled straight
+one-lane map/route with no objects. It calls plan directly and requires a finite
+sampled lane-associated path distinct from the input reference. Keep a nonzero
+lateral sampling extent: the source normalizes lateral cost by its maximum
+target deviation, so an all-zero target list yields NaN costs and fallback. Call again for reuse, then check the
+empty-reference output. Keep the native scene case in a separate executable
+from the pluginlib path check: statically linking the manager into a process
+that also loads its DSO duplicates the factory registration. Direct planning matters because clear-road normal
+planner execution can legitimately leave an avoidance scene inactive.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  @autoware_behavior_path_sampling_planner_module//... \
+  //bazel/tests/autoware_behavior_path_sampling_planner_module:all \
+  //bazel/tests/autoware_behavior_path_planner:sampling_planner_runtime_test \
+  //bazel/tests/autoware_behavior_path_planner:selected_scenes_runtime_test
+```
+
+Results: all module targets build and all four test targets pass with no
+failures or skips. The actual planner publishes a finite normal-route path;
+the direct scene produces twenty sampled poses, then thirty-eight on the
+reuse call, and handles an empty reference. Individual and eleven-scene
+composition verify discovery, parameters/update and clean shutdown. Existing
+passing runtime evidence is reused for unchanged inputs. New C++ formatting,
+Python syntax and whitespace checks pass. No implementation or original-test
+change in this plugin is required. No Fast DDS, native Agnocast, simulator or
+deployment check is selected. Coverage is 178/244 (66 packages remaining),
+with Phase 9.11 ten of thirteen complete. Next: in-lane MRM, minimum-rule-based
+planning and surround-obstacle checking.
