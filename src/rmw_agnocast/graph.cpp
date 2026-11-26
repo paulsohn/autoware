@@ -331,6 +331,8 @@ void standalone::GraphWatch::start(const rmw_node_t * node, rmw_guard_condition_
         eventfd_t value;
         eventfd_read(stop, &value);
       }
+      // Leave changes that arrive during the snapshot queued for the next iteration.
+      const bool graph_changed = read(events, buf, sizeof(buf)) > 0;
       try {
         std::vector<std::shared_ptr<Event>> live;
         {
@@ -351,7 +353,7 @@ void standalone::GraphWatch::start(const rmw_node_t * node, rmw_guard_condition_
       } catch (const std::exception & e) {
         RCUTILS_LOG_ERROR_NAMED("Agnocast", "graph update failed: %s", e.what());
       }
-      if (read(events, buf, sizeof(buf)) > 0) (void)rmw_trigger_guard_condition(guard);
+      if (graph_changed) (void)rmw_trigger_guard_condition(guard);
     }
   });
 }

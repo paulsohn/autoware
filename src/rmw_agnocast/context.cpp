@@ -34,6 +34,23 @@ rmw_ret_t rmw_set_log_severity(rmw_log_severity_t severity)
   }
 }
 
+namespace
+{
+template <class Handle>
+rmw_ret_t check_initialized_handle(const Handle * handle)
+{
+  if (!handle || !handle->implementation_identifier) {
+    RMW_SET_ERROR_MSG("expected an initialized RMW handle");
+    return RMW_RET_INVALID_ARGUMENT;
+  }
+  if (handle->implementation_identifier != id) {
+    RMW_SET_ERROR_MSG("handle belongs to a different middleware implementation");
+    return RMW_RET_INCORRECT_RMW_IMPLEMENTATION;
+  }
+  return RMW_RET_OK;
+}
+}  // namespace
+
 rmw_ret_t rmw_init_options_init(rmw_init_options_t * o, rcutils_allocator_t allocator)
 {
   if (!o || o->implementation_identifier || !rcutils_allocator_is_valid(&allocator))
@@ -48,7 +65,7 @@ rmw_ret_t rmw_init_options_init(rmw_init_options_t * o, rcutils_allocator_t allo
 
 rmw_ret_t rmw_init_options_fini(rmw_init_options_t * o)
 {
-  if (!o || o->implementation_identifier != id) return RMW_RET_INVALID_ARGUMENT;
+  if (auto ret = check_initialized_handle(o); ret != RMW_RET_OK) return ret;
   o->allocator.deallocate(o->enclave, o->allocator.state);
   auto ret = rmw_discovery_options_fini(&o->discovery_options);
   auto sec = rmw_security_options_fini(&o->security_options, &o->allocator);
@@ -58,8 +75,8 @@ rmw_ret_t rmw_init_options_fini(rmw_init_options_t * o)
 
 rmw_ret_t rmw_init_options_copy(const rmw_init_options_t * src, rmw_init_options_t * dst)
 {
-  if (!src || src->implementation_identifier != id || !dst || dst->implementation_identifier)
-    return RMW_RET_INVALID_ARGUMENT;
+  if (!dst || dst->implementation_identifier) return RMW_RET_INVALID_ARGUMENT;
+  if (auto ret = check_initialized_handle(src); ret != RMW_RET_OK) return ret;
   rmw_init_options_t o{};
   o.implementation_identifier = id;
   o.instance_id = src->instance_id;
@@ -81,7 +98,8 @@ rmw_ret_t rmw_init_options_copy(const rmw_init_options_t * src, rmw_init_options
 
 rmw_ret_t rmw_init(const rmw_init_options_t * o, rmw_context_t * ctx)
 {
-  if (!o || !o->enclave || !ctx || ctx->impl) return RMW_RET_INVALID_ARGUMENT;
+  if (auto ret = check_initialized_handle(o); ret != RMW_RET_OK) return ret;
+  if (!o->enclave || !ctx || ctx->impl) return RMW_RET_INVALID_ARGUMENT;
   if (agnocast::agnocast_fd < 0) {
     RMW_SET_ERROR_MSG(
       "native transport unavailable: preload the matching Agnocast heap hook and check "
@@ -118,6 +136,7 @@ rmw_ret_t rmw_init(const rmw_init_options_t * o, rmw_context_t * ctx)
 
 rmw_ret_t rmw_shutdown(rmw_context_t * ctx)
 {
+  if (auto ret = check_initialized_handle(ctx); ret != RMW_RET_OK) return ret;
   auto s = state(ctx);
   if (!s) return RMW_RET_INVALID_ARGUMENT;
   {
@@ -129,6 +148,7 @@ rmw_ret_t rmw_shutdown(rmw_context_t * ctx)
 }
 rmw_ret_t rmw_context_fini(rmw_context_t * ctx)
 {
+  if (auto ret = check_initialized_handle(ctx); ret != RMW_RET_OK) return ret;
   auto s = state(ctx);
   if (!s || !s->stopped) return RMW_RET_INVALID_ARGUMENT;
   delete s;
@@ -259,7 +279,7 @@ rmw_wait_set_t * rmw_create_wait_set(rmw_context_t * ctx, size_t)
 }
 rmw_ret_t rmw_destroy_wait_set(rmw_wait_set_t * set)
 {
-  if (!set || set->implementation_identifier != id) return RMW_RET_INVALID_ARGUMENT;
+  if (auto ret = check_initialized_handle(set); ret != RMW_RET_OK) return ret;
   delete static_cast<LocalWaitSet *>(set);
   return RMW_RET_OK;
 }
@@ -267,7 +287,7 @@ rmw_ret_t rmw_wait(
   rmw_subscriptions_t * subs, rmw_guard_conditions_t * guards, rmw_services_t * services,
   rmw_clients_t * clients, rmw_events_t * events, rmw_wait_set_t * set, const rmw_time_t * timeout)
 {
-  if (!set || set->implementation_identifier != id) return RMW_RET_INVALID_ARGUMENT;
+  if (auto ret = check_initialized_handle(set); ret != RMW_RET_OK) return ret;
 
   auto s = static_cast<Context *>(set->data);
   std::unique_lock lock(s->mutex);

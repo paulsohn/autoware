@@ -90,7 +90,8 @@ rmw_ret_t rmw_take_event(const rmw_event_t * handle, void * out, bool * taken)
     return RMW_RET_INVALID_ARGUMENT;
   auto & e = *static_cast<Event *>(handle->data);
   std::lock_guard lock(e.context->mutex);
-  *taken = e.pending;
+  *taken = e.pending || e.kind == RMW_EVENT_PUBLICATION_MATCHED ||
+           e.kind == RMW_EVENT_SUBSCRIPTION_MATCHED;
   if (!*taken) return RMW_RET_OK;
   int32_t change = static_cast<int32_t>(e.added) - static_cast<int32_t>(e.removed);
   if (e.kind == RMW_EVENT_OFFERED_DEADLINE_MISSED)

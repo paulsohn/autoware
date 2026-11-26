@@ -4,6 +4,9 @@ set -e
 out=$(realpath "${1:?supply staged workspace}")
 repo=${2:?supply path to rmw_implementation git checkout}
 repo=$(realpath "$repo")
+# All rehearsal workspaces in this checkout use one native test domain.
+exec 9>"build/rehearsal-conformance.lock"
+flock --exclusive 9
 pinned=b2083abba8c13900acf55f1dbdb8447757ff2b75
 git -C "$repo" cat-file -e "$pinned^{commit}"
 mkdir -p "$out/upstream-src"

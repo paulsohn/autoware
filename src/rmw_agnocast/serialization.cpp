@@ -1,6 +1,7 @@
 #include "standalone.hpp"
 
 #include <fastcdr/FastBuffer.h>
+#include <fastcdr/exceptions/Exception.h>
 #include <rosidl_typesupport_fastrtps_cpp/message_type_support.h>
 
 #include <cstring>
@@ -42,6 +43,9 @@ rmw_ret_t rmw_serialize(
     if (!cb->cdr_serialize(msg, stream)) return RMW_RET_ERROR;
     out->buffer_length = stream.get_serialized_data_length();
     return RMW_RET_OK;
+  } catch (const eprosima::fastcdr::exception::Exception & e) {
+    RMW_SET_ERROR_MSG(e.what());
+    return RMW_RET_ERROR;
   } catch (const std::exception & e) {
     RMW_SET_ERROR_MSG(e.what());
     return RMW_RET_ERROR;
@@ -60,6 +64,9 @@ rmw_ret_t rmw_deserialize(
       buffer, eprosima::fastcdr::Cdr::DEFAULT_ENDIAN, eprosima::fastcdr::CdrVersion::XCDRv1);
     stream.read_encapsulation();
     return cb->cdr_deserialize(stream, msg) ? RMW_RET_OK : RMW_RET_ERROR;
+  } catch (const eprosima::fastcdr::exception::Exception & e) {
+    RMW_SET_ERROR_MSG(e.what());
+    return RMW_RET_ERROR;
   } catch (const std::exception & e) {
     RMW_SET_ERROR_MSG(e.what());
     return RMW_RET_ERROR;

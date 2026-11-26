@@ -4619,3 +4619,33 @@ cmp experiments/rmw-agnocast/rehearsal/baseline.csv build/rehearsal-confirm/conf
 ```
 
 The clean build finished nine packages in 7 min 28 s. The six runtime cases reproduced the same delivery windows. Each application's hash stayed fixed through its own migration and rollback. The peer's stock package index contained both network RMWs and excluded the native RMW and gateway. The API inventory matched byte for byte across all 230 cases. Minimum host memory available in the confirmation was 11259 MiB for the build, 10208 MiB for the runtime matrix and 10798 MiB for conformance. This completes the automated one-laptop stage. A first-time human walkthrough and physical two-host qualification remain open.
+
+## Correct RMW endpoint lifecycle, codec errors, QoS defaults and matched events
+
+Use the pinned 3.1.6 upstream suite and the four rclcpp programs from the [rehearsal](../rmw-agnocast/rehearsal/README.md). Baseline commit be6f03373 had 80 upstream passes, one publisher abort, 56 assertion failures and one skip. Publisher destruction ignored its node and released a live endpoint on an invalid call. Check the node, implementation and ownership before releasing a publisher, subscription, service or client. Fast CDR's Exception base is independent of std::exception in this Lyrical userspace. Translate it at the serialize/deserialize C entry points. The existing valid C and C++ round trips and both invalid-CDR cases pass.
+
+Resolve system-default liveliness to automatic and accept an infinite lease without creating a native timer. Finite liveliness leases remain unsupported. Matched-event takes now report the current counters even before a transition, while wait readiness still depends on pending changes. The graph watcher previously read its notification queue after the snapshot. Read it first so a change during sampling can trigger another pass. Both match callbacks, matched counters and the explicit infinite-duration endpoint passed their upstream cases. Initialization, shutdown and wait sets now distinguish foreign implementation identifiers from null or zero-initialized handles.
+
+For incremental verification on the provisioned fixture, copy the changed middleware sources into the staged workspace, rebuild rmw_agnocast against that workspace's install, and run the pinned test programs. For a fresh checkout use the full run.sh recipe. The outer run-lyrical.sh memory guard and serial compile flags apply throughout.
+
+```bash
+cp src/rmw_agnocast/{context,endpoints,events,graph,rmw,serialization,services}.cpp build/rehearsal-confirm/src/rmw_agnocast/
+```
+
+Inside the guarded Lyrical shell, from /ws, using the released hook and Debian prerequisite paths specified in the rehearsal README:
+
+```bash
+source /opt/ros/lyrical/setup.bash
+cd /ws/build/rehearsal-confirm
+source install/local_setup.bash
+export MAKEFLAGS=-j1 PYTHON_CPU_COUNT=1 CMAKE_BUILD_PARALLEL_LEVEL=1
+colcon build --base-paths src --packages-select rmw_agnocast --executor sequential
+cd /ws
+export REHEARSAL_HOOK=/ws/build/rehearsal-confirm/libagnocast_heaphook.so
+bash experiments/rmw-agnocast/rehearsal/conformance.sh build/rehearsal-confirm build/rehearsal1/upstream-rmw /ws/build/rehearsal-confirm/api-verified
+python3 experiments/rmw-agnocast/rehearsal/compare.py experiments/rmw-agnocast/rehearsal/baseline.csv build/rehearsal-confirm/api-verified/cases.csv
+```
+
+One overlapping diagnostic run observed two nodes in a graph test expecting one. The conformance job now takes an exclusive checkout-local lock because its processes share domain 177. On the final isolated run 100/138 RMW cases passed, 37 failed assertions and one skipped. All 92 selected rclcpp cases retained their baseline outcomes (88 passing). Twenty RMW cases improved, and no case regressed. Minimum host MemAvailable was 12662 MiB during the final conformance run. Keep remaining failures visible in the case inventory, including native naming, loan capability reporting, finite liveliness QoS, invalid inputs and KeepAll subscriptions.
+
+The six-case live runtime rehearsal also passed on the rebuilt middleware. During manual gateway replacement the Cyclone run delivered 21 consecutive listener samples and the Zenoh run delivered 20. Each stock peer bag contained both required five-sample windows and omitted the checked outage window. Native recording, RMW-triggered Cyclone startup and Cyclone rollback passed. Minimum host MemAvailable was 13916 MiB. This was a functional regression run.

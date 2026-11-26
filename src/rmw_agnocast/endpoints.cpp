@@ -53,13 +53,14 @@ const char * resolve_qos(rmw_qos_profile_t & qos)
     qos.reliability = RMW_QOS_POLICY_RELIABILITY_RELIABLE;
   if (qos.durability == RMW_QOS_POLICY_DURABILITY_SYSTEM_DEFAULT)
     qos.durability = RMW_QOS_POLICY_DURABILITY_VOLATILE;
+  if (qos.liveliness == RMW_QOS_POLICY_LIVELINESS_SYSTEM_DEFAULT)
+    qos.liveliness = RMW_QOS_POLICY_LIVELINESS_AUTOMATIC;
   if (
     (qos.reliability != RMW_QOS_POLICY_RELIABILITY_RELIABLE &&
      qos.reliability != RMW_QOS_POLICY_RELIABILITY_BEST_EFFORT) ||
-    qos.liveliness_lease_duration.sec || qos.liveliness_lease_duration.nsec ||
-    (qos.liveliness != RMW_QOS_POLICY_LIVELINESS_AUTOMATIC &&
-     qos.liveliness != RMW_QOS_POLICY_LIVELINESS_SYSTEM_DEFAULT) ||
-    qos.avoid_ros_namespace_conventions)
+    (!rmw_time_equal(qos.liveliness_lease_duration, RMW_DURATION_UNSPECIFIED) &&
+     !rmw_time_equal(qos.liveliness_lease_duration, RMW_DURATION_INFINITE)) ||
+    qos.liveliness != RMW_QOS_POLICY_LIVELINESS_AUTOMATIC || qos.avoid_ros_namespace_conventions)
     return "unsupported native endpoint QoS";
   if (
     !qos.depth || qos.history != RMW_QOS_POLICY_HISTORY_KEEP_LAST ||
@@ -145,6 +146,7 @@ Endpoint::~Endpoint()
 rclcpp::QoS Endpoint::ros_qos() const
 {
   auto native = qos;
+  native.liveliness_lease_duration = {};  // Native automatic liveliness has no lease timer.
   native.deadline = {};
   native.lifespan = {};  // The RMW enforces publisher lifespan at receive and take.
   return rclcpp::QoS(rclcpp::QoSInitialization::from_rmw(native), native);

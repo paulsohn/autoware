@@ -180,17 +180,39 @@ rmw_subscription_t * rmw_create_subscription(
     return nullptr;
   }
 }
-rmw_ret_t rmw_destroy_publisher(rmw_node_t *, rmw_publisher_t * p)
+namespace
 {
-  if (!p || p->implementation_identifier != standalone::id) return RMW_RET_INVALID_ARGUMENT;
-  delete static_cast<Writer *>(p->data);
+template <class Native, class Handle>
+rmw_ret_t destroy_endpoint(rmw_node_t * node, Handle * handle)
+{
+  if (!node || !handle) {
+    RMW_SET_ERROR_MSG("endpoint destruction requires a node and an endpoint");
+    return RMW_RET_INVALID_ARGUMENT;
+  }
+  if (
+    node->implementation_identifier != standalone::id ||
+    handle->implementation_identifier != standalone::id) {
+    RMW_SET_ERROR_MSG("endpoint or node belongs to a different middleware implementation");
+    return RMW_RET_INCORRECT_RMW_IMPLEMENTATION;
+  }
+  auto * endpoint = static_cast<Native *>(handle->data);
+  if (!endpoint || endpoint->owner_node != node) {
+    RMW_SET_ERROR_MSG("node does not own this endpoint");
+    return RMW_RET_INVALID_ARGUMENT;
+  }
+  delete endpoint;
   return RMW_RET_OK;
 }
-rmw_ret_t rmw_destroy_subscription(rmw_node_t *, rmw_subscription_t * s)
+}  // namespace
+
+rmw_ret_t rmw_destroy_publisher(rmw_node_t * node, rmw_publisher_t * publisher)
 {
-  if (!s || s->implementation_identifier != standalone::id) return RMW_RET_INVALID_ARGUMENT;
-  delete static_cast<Reader *>(s->data);
-  return RMW_RET_OK;
+  return destroy_endpoint<Writer>(node, publisher);
+}
+
+rmw_ret_t rmw_destroy_subscription(rmw_node_t * node, rmw_subscription_t * subscription)
+{
+  return destroy_endpoint<Reader>(node, subscription);
 }
 rmw_ret_t rmw_publish(const rmw_publisher_t * p, const void * msg, rmw_publisher_allocation_t *)
 {

@@ -97,8 +97,19 @@ Handle * create(
 template <class H>
 rmw_ret_t destroy(rmw_node_t * n, H * h)
 {
-  auto ep = rpc(h);
-  if (!ep || ep->node != n) return RMW_RET_INVALID_ARGUMENT;
+  if (!n || !h) {
+    RMW_SET_ERROR_MSG("RPC endpoint destruction requires a node and an endpoint");
+    return RMW_RET_INVALID_ARGUMENT;
+  }
+  if (n->implementation_identifier != id || h->implementation_identifier != id) {
+    RMW_SET_ERROR_MSG("RPC endpoint or node belongs to a different middleware implementation");
+    return RMW_RET_INCORRECT_RMW_IMPLEMENTATION;
+  }
+  auto * ep = static_cast<Rpc *>(h->data);
+  if (!ep || ep->node != n) {
+    RMW_SET_ERROR_MSG("node does not own this RPC endpoint");
+    return RMW_RET_INVALID_ARGUMENT;
+  }
   delete ep;
   delete h;
   return RMW_RET_OK;
