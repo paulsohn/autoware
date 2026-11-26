@@ -113,3 +113,15 @@ export TEST_OWNER_CRASH=manual-stop
 experiments/buffer/run-lyrical.sh bash experiments/rmw-agnocast/manual-gateway/check-ownership.sh build/manual-gateway/manual-stop
 unset TEST_OWNER_CRASH
 ```
+
+## Hand off a route as the last context exits
+
+For a matching configuration, a new context can join the current automatic supervisor while it still accepts leases. Once retirement starts, a successor waits for endpoint teardown and route-lock release. A manual and an automatic launcher can both contend for the released route. Whichever claims it first owns it. A matching incoming context joins either winner. A manual command that loses to an active owner reports a conflict. A manual owner continues running after the application exits and needs an operator stop.
+
+The laptop replay uses two native publishers and a stock loopback Cyclone subscriber. The overlap case joins the new context before the original one exits. The race case releases both applications on the same filesystem marker. The drain and competing-launcher cases briefly suspend one old worker to hold the supervisor in its real teardown path. Linux pidfds verify worker and supervisor exit. The witness checks one matched publisher during successor traffic and checks the exact 40-message sequence. The two publishers send on either side of the handoff. This test does not measure continuous delivery through the transition.
+
+```bash
+export LYRICAL_ROOT="$(cat build/agnocast-lyrical/universe-root)"
+export BUFFER_RUNTIME_ONLY=1
+experiments/buffer/run-lyrical.sh bash experiments/rmw-agnocast/manual-gateway/check-ownership.sh build/manual-gateway/handoff-replay --handoff overlap overlap-manual race drain manual-first auto-first successor-first
+```

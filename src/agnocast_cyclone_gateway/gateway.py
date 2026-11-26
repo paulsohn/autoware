@@ -227,19 +227,23 @@ def control_address(args):
     return "\0agnocast-" + hashlib.sha256(json.dumps(settings).encode()).hexdigest()
 
 
+def lock_before_start(file, operation):
+    deadline = time.monotonic()+8
+    while True:
+        try:
+            fcntl.flock(file, operation | fcntl.LOCK_NB)
+            break
+        except BlockingIOError:
+            if time.monotonic() >= deadline:
+                raise TimeoutError("gateway startup lock timed out")
+            time.sleep(.03)
+
+
 def join(args, words):
     address = control_address(args)
     # Serialize only bootstrap. The persistent route locks also protect manual starts.
     with (route_directory() / (address[1:]+".lock")).open("a") as lock:
-        deadline = time.monotonic()+8
-        while True:
-            try:
-                fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
-                break
-            except BlockingIOError:
-                if time.monotonic() >= deadline:
-                    raise TimeoutError("gateway startup lock timed out")
-                time.sleep(.03)
+        lock_before_start(lock, fcntl.LOCK_EX)
         deadline = time.monotonic()+8
         child = None
         try:
@@ -257,14 +261,20 @@ def join(args, words):
                                 deadline = time.monotonic()+1
                         time.sleep(.03)
                         continue
-                    creds = client.getsockopt(socket.SOL_SOCKET,socket.SO_PEERCRED,12)
-                    if struct.unpack("3i",creds)[1] != os.getuid():
-                        raise PermissionError("gateway owner belongs to another user")
-                    request = b"R" if os.getenv("AGNOCAST_GATEWAY_RECOVERY_LEASE") == "1" else b"+"
-                    socket.send_fds(client,[request],[0])
-                    client.settimeout(8)
-                    if client.recv(1)==b"+":
+                    try:
+                        creds = client.getsockopt(socket.SOL_SOCKET,socket.SO_PEERCRED,12)
+                        if struct.unpack("3i",creds)[1] != os.getuid():
+                            raise PermissionError("gateway owner belongs to another user")
+                        request = b"R" if os.getenv("AGNOCAST_GATEWAY_RECOVERY_LEASE") == "1" else b"+"
+                        socket.send_fds(client,[request],[0])
+                        client.settimeout(8)
+                        ack = client.recv(1)
+                    except (BrokenPipeError, ConnectionResetError):
+                        continue
+                    if ack == b"+":
                         return
+                    if not ack:
+                        continue
                     raise RuntimeError("owner declined gateway lease")
             raise TimeoutError("compatible gateway unavailable")
         except BaseException:
@@ -305,11 +315,17 @@ def supervise(args):
         nonlocal stop
         stop = True
 
-    with ExitStack() as cleanup:
+    address = control_address(args)
+    phase_file = route_directory() / (address[1:]+".phase")
+    # The old supervisor holds this lock through endpoint teardown and route-lock release.
+    # A healthy owner keeps it unlocked so conflicting launchers fail promptly.
+    with phase_file.open("a") as phase, ExitStack() as cleanup:
+        lock_before_start(phase, fcntl.LOCK_SH)
         acquire_route(cleanup, zip(stacks, (args.source, args.destination)))
         listener = cleanup.enter_context(socket.socket(socket.AF_UNIX, socket.SOCK_SEQPACKET))
-        listener.bind(control_address(args))
+        listener.bind(address)
         listener.listen(16)
+        fcntl.flock(phase, fcntl.LOCK_UN)
         print(f"owner pid={os.getpid()} automatic={args.automatic}",flush=True)
         leases = []
         ends = socket.socketpair()
@@ -356,6 +372,8 @@ def supervise(args):
                 if args.automatic and not leases and (joined or time.monotonic()>deadline):
                     break
         finally:
+            fcntl.flock(phase, fcntl.LOCK_EX)
+            listener.close()
             os.close(ready_write)
             for lease in leases:
                 lease.close()
