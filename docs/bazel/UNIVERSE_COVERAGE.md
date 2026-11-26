@@ -21,8 +21,8 @@ may contain multiple package commits and smaller execution batches. Update the
 ledger when a package closes or the source snapshot changes; this is a planning
 record, not a new build-time completeness validator.
 
-Current adoption progress, 2026-11-24: **137/244** packages have both definitions
-and root local overrides; **107** remain without definitions. The census table
+Current adoption progress, 2026-11-24: **138/244** packages have both definitions
+and root local overrides; **106** remain without definitions. The census table
 below preserves the initial 2026-11-23 baseline. Checked ledger items record
 completed module gates; Phase 9.5 is complete. See PLAN.md and the
 package journals for configuration and behavior evidence.
@@ -267,7 +267,7 @@ Cover ROI/map association, visibility/occlusion, camera synchronization, state a
 - [x] [autoware_crosswalk_traffic_light_estimator](../../src/universe/autoware_universe/perception/autoware_crosswalk_traffic_light_estimator/package.xml)
 - [x] [autoware_traffic_light_arbiter](../../src/universe/autoware_universe/perception/autoware_traffic_light_arbiter/package.xml)
 - [x] [autoware_traffic_light_category_merger](../../src/universe/autoware_universe/perception/autoware_traffic_light_category_merger/package.xml)
-- [ ] [autoware_traffic_light_map_based_detector](../../src/universe/autoware_universe/perception/autoware_traffic_light_map_based_detector/package.xml)
+- [x] [autoware_traffic_light_map_based_detector](../../src/universe/autoware_universe/perception/autoware_traffic_light_map_based_detector/package.xml)
 - [ ] [autoware_traffic_light_multi_camera_fusion](../../src/universe/autoware_universe/perception/autoware_traffic_light_multi_camera_fusion/package.xml)
 - [ ] [autoware_traffic_light_occlusion_predictor](../../src/universe/autoware_universe/perception/autoware_traffic_light_occlusion_predictor/package.xml)
 - [ ] [autoware_traffic_light_recognition_marker_publisher](../../src/universe/autoware_universe/common/autoware_traffic_light_recognition_marker_publisher/package.xml)

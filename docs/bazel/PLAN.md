@@ -2358,7 +2358,10 @@ cases pass. Selector is also complete: all 23 original and one nonempty four-
 stream case pass. Arbiter passes all 46 original and two added cases, with
 both added cases also passing Agnocast-only. Crosswalk estimation passes all
 eighteen original and one inferred-color transport case, including Agnocast-only.
-Coverage is 137/244; five Phase 9.7 packages remain.
+Map-based projection passes all 24 original cases, including delayed TF. Root
+selects image_geometry 4.1.0-3.rcr.2 because source is absent locally; both native
+SDK suites (eighteen cases) and the complete consumer validate this selection.
+Coverage is 138/244; four Phase 9.7 packages remain.
 
 ### Execution order through complete Universe coverage
 

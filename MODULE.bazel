@@ -46,6 +46,7 @@ bazel_dep(name = "sensor_msgs", version = "5.9.3-1.rcr.0")
 bazel_dep(name = "sensor_msgs_py", version = "5.9.3-1.rcr.0")
 bazel_dep(name = "radar_msgs", version = "0.2.2-5.rcr.2")
 bazel_dep(name = "cv_bridge", version = "4.1.0-3.rcr.2")
+bazel_dep(name = "image_geometry", version = "4.1.0-3.rcr.2")
 bazel_dep(name = "image_transport", version = "6.4.10-1.rcr.0")
 bazel_dep(name = "pcl_conversions", version = "2.10.0-1.rcr.0")
 bazel_dep(name = "tf2", version = "0.45.10-1.rcr.0")
@@ -2055,4 +2056,10 @@ bazel_dep(name = "autoware_crosswalk_traffic_light_estimator", version = "0.0.0"
 local_path_override(
     module_name = "autoware_crosswalk_traffic_light_estimator",
     path = "src/universe/autoware_universe/perception/autoware_crosswalk_traffic_light_estimator",
+)
+
+bazel_dep(name = "autoware_traffic_light_map_based_detector", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_traffic_light_map_based_detector",
+    path = "src/universe/autoware_universe/perception/autoware_traffic_light_map_based_detector",
 )

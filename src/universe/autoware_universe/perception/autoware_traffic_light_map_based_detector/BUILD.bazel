@@ -1,0 +1,92 @@
+load("@rclcpp_components//:defs.bzl", "rclcpp_components_register_node")
+load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "autoware_traffic_light_map_based_detector_library",
+    srcs = ["src/traffic_light_map_based_detector.cpp", "src/traffic_light_map_based_detector_process.cpp"],
+    hdrs = ["include/autoware/traffic_light_map_based_detector/traffic_light_map_based_detector.hpp", "src/traffic_light_map_based_detector_process.hpp"],
+    includes = ["include", "src"],
+    deps = ["@autoware_lanelet2_extension//:autoware_lanelet2_extension_lib_library", "@autoware_lanelet2_utils", "@autoware_map_msgs//:cc", "@autoware_planning_msgs//:cc", "@autoware_traffic_light_utils", "@autoware_utils", "@geometry_msgs//:cc", "@image_geometry//:image_geometry_library", "@lanelet2_routing//:lanelet2_routing_library", "@lanelet2_traffic_rules//:lanelet2_traffic_rules_library", "@rclcpp//:rclcpp_library", "@sensor_msgs//:cc", "@tf2//:tf2_library", "@tf2_eigen//:tf2_eigen_library", "@tf2_geometry_msgs//:tf2_geometry_msgs_library", "@tf2_ros//:tf2_ros_library", "@tier4_perception_msgs//:cc", "@visualization_msgs//:cc", "@rosdistro//cc:eigen"],
+)
+
+collect_transitive_dynamic_deps(
+    name = "sdk_dynamic_deps",
+    dynamic_deps = ["@autoware_lanelet2_extension//:autoware_lanelet2_extension_lib", "@autoware_lanelet2_utils//:runtime_dynamic_deps", "@autoware_map_msgs//:cc_shared", "@autoware_planning_msgs//:cc_shared", "@autoware_traffic_light_utils//:runtime_dynamic_deps", "@autoware_utils//:runtime_dynamic_deps", "@geometry_msgs//:cc_shared", "@image_geometry//:image_geometry", "@rclcpp_components//:rclcpp_components", "@sensor_msgs//:cc_shared", "@tf2_eigen//:tf2_eigen", "@tf2_geometry_msgs//:tf2_geometry_msgs", "@tf2_ros//:tf2_ros", "@tier4_perception_msgs//:cc_shared", "@visualization_msgs//:cc_shared"],
+)
+
+cc_shared_library(
+    name = "autoware_traffic_light_map_based_detector",
+    shared_lib_name = "libautoware_traffic_light_map_based_detector.so",
+    deps = [":autoware_traffic_light_map_based_detector_library", "@autoware_lanelet2_utils", "@autoware_traffic_light_utils", "@autoware_utils_debug", "@autoware_utils_diagnostics", "@autoware_utils_geometry", "@autoware_utils_math", "@autoware_utils_system", "@autoware_utils_visualization"],
+    dynamic_deps = [":sdk_dynamic_deps"],
+)
+
+cc_library(
+    name = "autoware_traffic_light_map_based_detector_node_library",
+    srcs = ["src/traffic_light_map_based_detector_node.cpp"],
+    hdrs = ["src/traffic_light_map_based_detector_node.hpp"],
+    includes = ["src"],
+    deps = [":autoware_traffic_light_map_based_detector_library", "@rclcpp_components//:rclcpp_components_library"],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = [":autoware_traffic_light_map_based_detector", ":sdk_dynamic_deps"],
+)
+
+cc_shared_library(
+    name = "autoware_traffic_light_map_based_detector_node",
+    shared_lib_name = "libautoware_traffic_light_map_based_detector_node.so",
+    deps = [":autoware_traffic_light_map_based_detector_node_library"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+)
+
+rclcpp_components_register_node(
+    name = "traffic_light_map_based_detector_node",
+    node_name = "traffic_light_map_based_detector_node",
+    component = ":autoware_traffic_light_map_based_detector_node",
+    plugin = "autoware::traffic_light::MapBasedDetector",
+)
+
+register_ament_files(
+    name = "executables",
+    files = [":traffic_light_map_based_detector_node"],
+    prefix = "lib/autoware_traffic_light_map_based_detector",
+    strip_prefix = "*",
+)
+
+ament_index(
+    package_xml = "package.xml",
+    libraries = [":autoware_traffic_light_map_based_detector", ":autoware_traffic_light_map_based_detector_node"],
+    components = [":traffic_light_map_based_detector_node_record"],
+    data = glob(["launch/**", "config/**"]) + [":executables"],
+)
+
+cc_test(
+    name = "test_utils",
+    srcs = ["test/test_utils.cpp"],
+    deps = [":autoware_traffic_light_map_based_detector_library", "@googletest//:gtest"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+    tags = ["no-sandbox", "no-remote"],
+)
+
+cc_test(
+    name = "test_traffic_light_map_based_detector",
+    srcs = ["test/test_traffic_light_map_based_detector.cpp"],
+    deps = [":autoware_traffic_light_map_based_detector_library", "@googletest//:gtest"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+    tags = ["no-sandbox", "no-remote"],
+)
+
+cc_test(
+    name = "test_traffic_light_map_based_detector_node",
+    srcs = ["test/test_traffic_light_map_based_detector_node.cpp"],
+    deps = [":autoware_traffic_light_map_based_detector_node_library", "@googletest//:gtest"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+    tags = ["no-sandbox", "no-remote"],
+)
+
