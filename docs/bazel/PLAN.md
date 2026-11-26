@@ -2453,6 +2453,8 @@ or deployment gate is selected. Coverage starts at 156/244.
 
 autoware_boundary_departure_checker: complete; exact gates and evidence are in its Phase 9.10 journal.
 
+autoware_obstacle_proximity_checker: complete; exact gates and evidence are in its Phase 9.10 journal.
+
 ### Execution order through complete Universe coverage
 
 The following groups are the initial route through every remaining package.

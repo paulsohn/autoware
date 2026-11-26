@@ -2186,3 +2186,9 @@ local_path_override(
     module_name = "autoware_boundary_departure_checker",
     path = "src/universe/autoware_universe/common/autoware_boundary_departure_checker",
 )
+
+bazel_dep(name = "autoware_obstacle_proximity_checker", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_obstacle_proximity_checker",
+    path = "src/universe/autoware_universe/common/autoware_obstacle_proximity_checker",
+)

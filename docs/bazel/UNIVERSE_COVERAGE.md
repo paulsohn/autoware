@@ -21,8 +21,8 @@ may contain multiple package commits and smaller execution batches. Update the
 ledger when a package closes or the source snapshot changes; this is a planning
 record, not a new build-time completeness validator.
 
-Current adoption progress, 2026-11-26: **157/244** packages have both definitions
-and root local overrides; **87** remain without definitions. The census table
+Current adoption progress, 2026-11-26: **158/244** packages have both definitions
+and root local overrides; **86** remain without definitions. The census table
 below preserves the initial 2026-11-23 baseline. Checked ledger items record
 completed module gates; Phase 9.8 is complete. See PLAN.md and the
 package journals for configuration and behavior evidence.
@@ -304,7 +304,7 @@ Integrate common checkers before validator/modifier; ranker follows validator an
 
 - [x] [autoware_boundary_departure_checker](../../src/universe/autoware_universe/common/autoware_boundary_departure_checker/package.xml)
 - [ ] [autoware_goal_distance_calculator](../../src/universe/autoware_universe/common/autoware_goal_distance_calculator/package.xml)
-- [ ] [autoware_obstacle_proximity_checker](../../src/universe/autoware_universe/common/autoware_obstacle_proximity_checker/package.xml)
+- [x] [autoware_obstacle_proximity_checker](../../src/universe/autoware_universe/common/autoware_obstacle_proximity_checker/package.xml)
 - [ ] [autoware_path_distance_calculator](../../src/universe/autoware_universe/common/autoware_path_distance_calculator/package.xml)
 - [ ] [autoware_traffic_light_compliance_checker](../../src/universe/autoware_universe/common/autoware_traffic_light_compliance_checker/package.xml)
 - [ ] [autoware_trajectory_adapter](../../src/universe/autoware_universe/planning/autoware_trajectory_adapter/package.xml)

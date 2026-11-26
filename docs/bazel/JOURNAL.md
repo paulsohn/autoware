@@ -23045,3 +23045,31 @@ joint foundation result (1.2 s invocation, cached test .6 s); source and asserti
 are unchanged. Bazel evaluation and diff checks pass. This qualifies synthetic
 boundary geometry/state, not real vehicle tracking or a system communication
 matrix. Next: obstacle and traffic-light checks, then distance-node behavior.
+
+## 2026-11-26: Phase 9.10 — Obstacle proximity checks
+
+Purpose: adopt the original obstacle checker and its complete eleven-case
+suite. Inspect admission for point clouds and classified objects, vehicle
+footprints, contact thresholds, nearest-obstacle selection and parameter updates.
+Select CPU/Cyclone; this package has no node or transport variant.
+
+Pattern: one module-local C++ provider with original source/public headers,
+local vehicle/universe/utility providers and canonical PCL/conversion/message
+SDK owners. Export runtime dependencies separately so future shared consumers
+can reuse the SDK owners. No implementation, original test or assertion changes
+are needed; do not add duplicate synthetic tests to an already-covered API.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  @autoware_obstacle_proximity_checker//...
+```
+
+Results: all three non-test targets and all eleven original cases pass,
+zero failures/errors/skips/disabled. Cases include empty/disabled inputs, near/
+far points, object admission and unknown classifications, over-drivable objects,
+nearest-input selection and parameter changes. The package gate reuses the
+passing joint result (1.2 s invocation, cached test .6 s). Bazel evaluation and
+diff checks pass. No physical obstacle/sensor qualification or full system
+communication matrix is claimed. Next: signal compliance and distance nodes.

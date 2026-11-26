@@ -1,0 +1,29 @@
+load("@rosdistro//ament:defs.bzl", "ament_index")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "autoware_obstacle_proximity_checker",
+    srcs = ["src/obstacle_proximity_checker.cpp"],
+    hdrs = ["include/autoware/obstacle_proximity_checker/obstacle_proximity_checker.hpp", "include/autoware/obstacle_proximity_checker/structs.hpp"],
+    strip_include_prefix = "include",
+    deps = ["@autoware_perception_msgs//:cc", "@autoware_universe_utils", "@autoware_utils", "@autoware_vehicle_info_utils", "@geometry_msgs//:cc", "@pcl_conversions//:pcl_conversions_library", "@sensor_msgs//:cc", "@unique_identifier_msgs//:cc", "@rosdistro//cc:pcl_common", "@rosdistro//cc:eigen", "@rosdistro//cc:boost.geometry"],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = ["@autoware_perception_msgs//:cc_shared", "@autoware_universe_utils//:runtime_dynamic_deps", "@autoware_utils//:runtime_dynamic_deps", "@pcl_conversions//:pcl_conversions", "@sensor_msgs//:cc_shared", "@unique_identifier_msgs//:cc_shared", "@rosdistro//cc:pcl"],
+)
+
+ament_index(
+    package_xml = "package.xml",
+)
+
+cc_test(
+    name = "test_autoware_obstacle_proximity_checker",
+    srcs = ["test/test_obstacle_proximity_checker.cpp"],
+    deps = [":autoware_obstacle_proximity_checker", "@googletest//:gtest_main"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+)
