@@ -22299,6 +22299,15 @@ No existing source/test changes, wrapper variant, Fast DDS or expensive product
 gate is required. The deterministic map geometry qualifies the API, not real
 sensor accuracy. Next: geographic pose projection and remaining adapters.
 
+Consumer qualification: AR-tag localization directly uses the same localization,
+geometry and math compile providers embedded by landmark_manager. Bazel reports
+linked-statically-but-not-exported ownership for those three libraries. Add all
+three as explicit roots of liblandmark_manager.so (and declare the math module),
+matching its actual public symbol ownership. The provider's two cases and the
+AR-tag original/added gates pass together with the command in that consumer's
+entry, 58.2 s. This changes build metadata only; source and provider behavior
+are unchanged. Keep the ownership correction separate from consumer adoption.
+
 ## 2026-11-26: Phase 9.8 — geographic pose projection
 
 Purpose: integrate the existing plain-rclcpp geographic adapter and its optional

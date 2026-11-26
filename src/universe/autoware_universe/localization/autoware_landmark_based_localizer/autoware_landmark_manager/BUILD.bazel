@@ -20,7 +20,7 @@ collect_transitive_dynamic_deps(
 cc_shared_library(
     name = "autoware_landmark_manager",
     shared_lib_name = "liblandmark_manager.so",
-    deps = [":autoware_landmark_manager_library"],
+    deps = [":autoware_landmark_manager_library", "@autoware_localization_util", "@autoware_utils_geometry", "@autoware_utils_math"],
     dynamic_deps = [":runtime_dynamic_deps"],
 )
 
