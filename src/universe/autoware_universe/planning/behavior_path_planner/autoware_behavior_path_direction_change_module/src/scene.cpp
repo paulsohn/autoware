@@ -25,7 +25,7 @@
 
 #include <lanelet2_core/Forward.h>
 #include <lanelet2_core/LaneletMap.h>
-#include <tf2/utils.h>
+#include <tf2/utils.hpp>
 
 #include <algorithm>
 #include <cstddef>

@@ -23727,3 +23727,56 @@ original cases and nine added cases (eight plugin/backend cases plus the
 temporal solve); all eight plugin/backend cases also pass Agnocast-only.
 Their unchanged passing evidence is reused, with no repeated full communication
 matrix. Universe coverage is 168/244 (76 remaining); Phase 9.10 is complete.
+
+## 2026-11-26: Phase 9.11 — Direction-change scene plugin
+
+Purpose: adopt the three direction-change sources, public headers, original
+plugin XML/config and its complete one-case CMake suite. That original BasicTest
+is a placeholder (EXPECT_TRUE(true)); retaining it does not establish functional
+coverage. Select Cyclone/RCLCPP and add root-owned path and runtime checks.
+Inspect the manager's declarations/update handler, scene utilities, YAML and
+behavior-path planner's existing node/test-manager helpers before implementation.
+
+Pattern: one package MODULE/BUILD plus a root local override. Expose the original
+C++ library and a separate plugin DSO with the CMake/XML library filename.
+Register the XML under autoware_behavior_path_planner with package.xml and config
+in the package-owned index. Aggregate canonical planner-common, utility and ROS
+SDK runtime owners; tf2_geometry_msgs is a conversion library, so use its
+library/shared providers rather than assuming every *_msgs package exposes :cc.
+Keep the original test in place with its own main and explicit ROS teardown.
+The component has no metarepository dependency.
+
+Compatibility blocker: compiling scene.cpp and utils.cpp fails on the removed
+TF2 utils.h forwarding header. Use tf2/utils.hpp in just those two sources.
+Checked 2026-11-26: AWF main still has both old includes; the Universe Lyrical
+tracker #13620 and scoped direction_change/TF2 PR search identify no matching
+fix. Preserve all implementation and original assertions; commit this source
+correction separately from build definitions.
+
+The added C++ peer uses the original generateNode/publishMandatoryTopics and
+PlanningInterfaceTestManager with the real direction-change factory. Require a
+nonempty map-frame path with finite x/y/velocity, then exercise empty-route and
+off-track input handling. The existing root Python executable harness gains a
+direction-change profile: require the indexed plugin DSO in /proc maps, the
+actual loaded-class log, expected arrival/yaw parameters, a supported yaw update
+and clean SIGINT shutdown. Also load it alongside all seven previously supported
+scene packages. Keep these integration companions under bazel/tests; the original
+placeholder remains unchanged. Isolate C++ ROS traffic in the test domain.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  @autoware_behavior_path_direction_change_module//... \
+  //bazel/tests/autoware_behavior_path_direction_change_module:path_test \
+  //bazel/tests/autoware_behavior_path_planner:direction_change_runtime_test \
+  //bazel/tests/autoware_behavior_path_planner:selected_scenes_runtime_test
+```
+
+Results: every module target and all four test targets pass: the original
+placeholder, finite-path/context behavior, individual initialization/update and
+the eight-package composition, zero failures/errors/skips/disabled. The later
+ten-package composition also passes with dynamic/external-request managers;
+retain its evidence with those module entries. Targeted formatting and diff
+checks pass. No native Agnocast, Fast DDS, simulator/deployment or field
+reversing-maneuver qualification is selected. Next: dynamic obstacle avoidance.

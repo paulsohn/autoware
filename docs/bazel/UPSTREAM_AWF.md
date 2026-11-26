@@ -2690,3 +2690,19 @@ heaphook. No original assertion or algorithm change is needed. The separate
 test-index manifest fix is build metadata, not an upstream source defect.
 See the [selector journal](JOURNAL.md#2026-11-26-phase-910--trajectory-selector-and-complete-selection-pipeline).
 No upstream submission or older ROS/colcon validation is claimed.
+
+### Direction-change plugin: current TF2 utility header
+
+- [ ] Associate with a matching AWF change. Checked 2026-11-26:
+  [scene.cpp](https://github.com/autowarefoundation/autoware_universe/blob/main/planning/behavior_path_planner/autoware_behavior_path_direction_change_module/src/scene.cpp)
+  and [utils.cpp](https://github.com/autowarefoundation/autoware_universe/blob/main/planning/behavior_path_planner/autoware_behavior_path_direction_change_module/src/utils.cpp)
+  still include tf2/utils.h. The Lyrical tracker #13620 and scoped direction-change/
+  TF2 PR search identify no matching correction.
+
+The Phase 9.11 build fails at both removed forwarding headers. Replace them
+with tf2/utils.hpp without changing algorithms or assertions. The complete
+original suite and added finite-path/context, individual startup/parameter-update
+and joint-plugin gates pass with Cyclone/RCLCPP. The original suite contains
+only a placeholder; the added behavior gates supply actual consumer evidence.
+See the [direction-change journal](JOURNAL.md#2026-11-26-phase-911--direction-change-scene-plugin)
+for exact commands. No upstream submission or older ROS/colcon validation is claimed.
