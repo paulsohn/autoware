@@ -2050,3 +2050,9 @@ local_path_override(
     module_name = "autoware_traffic_light_arbiter",
     path = "src/universe/autoware_universe/perception/autoware_traffic_light_arbiter",
 )
+
+bazel_dep(name = "autoware_crosswalk_traffic_light_estimator", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_crosswalk_traffic_light_estimator",
+    path = "src/universe/autoware_universe/perception/autoware_crosswalk_traffic_light_estimator",
+)

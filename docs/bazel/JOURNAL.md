@@ -21902,3 +21902,49 @@ preloaded heaphook and the loaded 2.4.1 kernel module (6.3 s). Zero failures,
 errors or skips; targeted format/diff checks pass. No source modifications.
 Synthetic mapped traffic states establish integration, not vehicle replay or
 end-to-end traffic-light recognition. Next: crosswalk inference and flashing.
+
+## 2026-11-26: Phase 9.7 — crosswalk inference and flashing
+
+Purpose: integrate map-aware crosswalk signal inference and its wrapper node.
+Inspect both core sources, node, public/private headers, YAML/launch and all
+three original tests. Preserve twelve estimator, five flashing and one original
+empty-node case. Add a nonempty road/crosswalk transport check in both RCLCPP and
+Agnocast-only execution. No source correction, Fast DDS, GPU or product gate is
+needed. Reuse local lanelet/map/perception/debug/wrapper providers.
+
+Pattern: package-owned module/root override, separate core and node shared
+libraries, wrapper executable/component record and indexed config/launch.
+The core builds vehicle/pedestrian routing graphs and invokes lanelet conversion;
+export its compiled lanelet-utils and geometry/math owners for the node's map
+conversion instead of duplicating those symbols. Declare lanelet routing/traffic
+rules directly. Keep the original tests as three independent targets, each with
+its own main using gtest. Component code remains independent of root test labels.
+
+The added root peer constructs two overlapping lanelets: a straight road with
+signal 100 and a crossing with signal 200. Serialize/publish the map through the
+real latched input, then publish a GREEN vehicle observation. Expect a RED
+crosswalk and exact retention of the vehicle group/stamp. This exercises actual
+map deserialization, routing conflicts, inference and nested-message transport;
+empty output cannot pass. Use pedestrian detection off for this inferred-color
+profile, retaining all original configured cases. Enabled wrapper peers assert
+RCLCPP remains off and use the Agnocast-only executor with built/preloaded hook.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  @autoware_crosswalk_traffic_light_estimator//... \
+  //bazel/tests:crosswalk_traffic_light_transport_test
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --local_test_jobs=1 --strategy=TestRunner=local \
+  --run_under=//bazel/agnocast:with_heaphook \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  //bazel/tests:crosswalk_traffic_light_transport_test
+```
+
+Results: all fourteen non-test targets and four test targets build. All eighteen
+original plus one added case pass (21.9 s final primary gate, reusing original
+results after the 57.6 s module build). The enabled case passes in 12.1 s with
+loaded kernel module/heaphook. Zero failures/errors/skips; targeted format/diff
+checks pass. These synthetic map/state checks do not establish road-scene replay
+accuracy. Next: map-based ROI geometry and cloud occlusion.

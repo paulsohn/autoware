@@ -2356,8 +2356,9 @@ for enabled peers. No Fast DDS, GPU, simulator or deployment gate is selected.
 Category merger is complete: twelve non-test targets and all seven original
 cases pass. Selector is also complete: all 23 original and one nonempty four-
 stream case pass. Arbiter passes all 46 original and two added cases, with
-both added cases also passing Agnocast-only. Coverage is 136/244; six Phase 9.7
-packages remain.
+both added cases also passing Agnocast-only. Crosswalk estimation passes all
+eighteen original and one inferred-color transport case, including Agnocast-only.
+Coverage is 137/244; five Phase 9.7 packages remain.
 
 ### Execution order through complete Universe coverage
 

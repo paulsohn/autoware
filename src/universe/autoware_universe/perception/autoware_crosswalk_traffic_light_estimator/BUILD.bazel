@@ -1,0 +1,92 @@
+load("@autoware_agnocast_wrapper//:defs.bzl", "autoware_agnocast_node")
+load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "autoware_crosswalk_traffic_light_estimator_library",
+    srcs = ["src/crosswalk_traffic_light_estimator.cpp", "src/flashing_detection.cpp"],
+    hdrs = ["include/autoware/crosswalk_traffic_light_estimator/crosswalk_traffic_light_estimator.hpp", "include/autoware/crosswalk_traffic_light_estimator/flashing_detection.hpp"],
+    includes = ["include"],
+    deps = ["@autoware_lanelet2_utils", "@autoware_lanelet2_extension//:autoware_lanelet2_extension_lib_library", "@autoware_perception_msgs//:cc", "@lanelet2_routing//:lanelet2_routing_library", "@lanelet2_traffic_rules//:lanelet2_traffic_rules_library", "@rclcpp//:rclcpp_library"],
+)
+
+collect_transitive_dynamic_deps(
+    name = "sdk_dynamic_deps",
+    dynamic_deps = ["@autoware_agnocast_wrapper", "@autoware_lanelet2_extension//:autoware_lanelet2_extension_lib", "@autoware_lanelet2_utils//:runtime_dynamic_deps", "@autoware_map_msgs//:cc_shared", "@autoware_perception_msgs//:cc_shared", "@autoware_utils//:runtime_dynamic_deps", "@autoware_utils_debug//:runtime_dynamic_deps", "@rclcpp_components//:rclcpp_components"],
+)
+
+cc_shared_library(
+    name = "autoware_crosswalk_traffic_light_estimator",
+    shared_lib_name = "libautoware_crosswalk_traffic_light_estimator.so",
+    deps = [":autoware_crosswalk_traffic_light_estimator_library", "@autoware_lanelet2_utils", "@autoware_utils_geometry", "@autoware_utils_math"],
+    dynamic_deps = [":sdk_dynamic_deps"],
+)
+
+cc_library(
+    name = "autoware_crosswalk_traffic_light_estimator_node_library",
+    srcs = ["src/node.cpp"],
+    hdrs = ["src/node.hpp"],
+    includes = ["src"],
+    deps = [":autoware_crosswalk_traffic_light_estimator_library", "@autoware_agnocast_wrapper//:autoware_agnocast_wrapper_library", "@autoware_utils", "@autoware_utils_debug", "@autoware_internal_debug_msgs//:cc", "@autoware_map_msgs//:cc", "@rclcpp_components//:rclcpp_components_library"],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = [":autoware_crosswalk_traffic_light_estimator", ":sdk_dynamic_deps"],
+)
+
+cc_shared_library(
+    name = "autoware_crosswalk_traffic_light_estimator_node",
+    shared_lib_name = "libautoware_crosswalk_traffic_light_estimator_node.so",
+    deps = [":autoware_crosswalk_traffic_light_estimator_node_library"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+)
+
+autoware_agnocast_node(
+    name = "crosswalk_traffic_light_estimator_node",
+    component = ":autoware_crosswalk_traffic_light_estimator_node",
+    package_name = "autoware_crosswalk_traffic_light_estimator",
+    plugin = "autoware::crosswalk_traffic_light_estimator::CrosswalkTrafficLightEstimatorNode",
+)
+
+register_ament_files(
+    name = "executables",
+    files = [":crosswalk_traffic_light_estimator_node"],
+    prefix = "lib/autoware_crosswalk_traffic_light_estimator",
+    strip_prefix = "*",
+)
+
+ament_index(
+    package_xml = "package.xml",
+    libraries = [":autoware_crosswalk_traffic_light_estimator", ":autoware_crosswalk_traffic_light_estimator_node"],
+    components = [":crosswalk_traffic_light_estimator_node_components"],
+    data = glob(["launch/**", "config/**"]) + [":executables", ":crosswalk_traffic_light_estimator_node_plugin"],
+)
+
+cc_test(
+    name = "test_crosswalk_traffic_light_estimator",
+    srcs = ["test/test_crosswalk_traffic_light_estimator.cpp"],
+    deps = [":autoware_crosswalk_traffic_light_estimator_library", "@googletest//:gtest"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+    tags = ["no-sandbox", "no-remote"],
+)
+
+cc_test(
+    name = "test_flashing_detection",
+    srcs = ["test/test_flashing_detection.cpp"],
+    deps = [":autoware_crosswalk_traffic_light_estimator_library", "@googletest//:gtest"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+    tags = ["no-sandbox", "no-remote"],
+)
+
+cc_test(
+    name = "test_crosswalk_traffic_light_estimator_node",
+    srcs = ["test/test_crosswalk_traffic_light_estimator_node.cpp"],
+    deps = [":autoware_crosswalk_traffic_light_estimator_node_library", "@googletest//:gtest"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+    tags = ["no-sandbox", "no-remote"],
+)
+

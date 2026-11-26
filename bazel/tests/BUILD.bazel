@@ -2533,3 +2533,12 @@ cc_test(
     data = ["@agnocast_heaphook"],
     tags = ["no-sandbox", "no-remote"],
 )
+
+cc_test(
+    name = "crosswalk_traffic_light_transport_test",
+    srcs = ["autoware_crosswalk_traffic_light_estimator/test_transport.cpp"],
+    deps = ["@autoware_crosswalk_traffic_light_estimator//:autoware_crosswalk_traffic_light_estimator_node_library", "@googletest//:gtest"],
+    dynamic_deps = ["@autoware_crosswalk_traffic_light_estimator//:runtime_dynamic_deps"],
+    data = ["@agnocast_heaphook"],
+    tags = ["no-sandbox", "no-remote"],
+)
