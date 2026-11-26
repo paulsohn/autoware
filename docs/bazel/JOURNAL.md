@@ -25000,3 +25000,30 @@ Cyclone DDS. The consumer's diagnosed float-constant correction is validated in
 the same working tree and committed separately. This extends an already-adopted
 message module, so Universe coverage remains 185/244. No Fast DDS middleware,
 simulator or deployment check is selected.
+
+## 2026-11-27 — Phase 9.12: Control-command gate
+
+Purpose: adopt all fifteen original gate sources, internal public build headers,
+registered class and wrapper-selected executors, executable and indexed resources.
+CMake declares no functional tests. Define the gate as live command selection,
+filter selection, safety overrides, invalid-input timeout fallback and the filter's
+symmetric half-pi boundary; qualify both supported executor selections.
+
+The compile rejects the GNU M_PI_2f extension in two steering-limit expressions.
+Use static_cast<float>(M_PI_2), as in the already-qualified vehicle command gate,
+retaining float precision and symmetric clipping. AWF main still uses M_PI_2f
+on 2026-11-27; a scoped command-gate/constant PR search finds no matching change.
+Keep this source portability correction separate from Bazel declarations.
+The external C++ regression configures a steering limit above pi/2 and checks
+both signs against acos(0.0F). The complete module build and that case pass;
+the Cyclone DDS command scenario also passes. The enabled wrapper-executor run
+remains the final package gate before adopting the build definitions.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  @autoware_control_command_gate//... \
+  //bazel/tests/control_operators:gate_filter_test \
+  //bazel/tests/control_operators:gate_runtime_test
+```

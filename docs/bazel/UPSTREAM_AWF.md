@@ -2895,3 +2895,19 @@ clear/collision, height separation and recovery using Cyclone DDS. See the
 for the reproducible command. Source compatibility correction is committed
 separately from build rules; no upstream submission or older ROS/colcon result
 is claimed.
+
+### Control-command gate: float half-pi portability
+
+- [ ] Associate with a matching AWF correction. Checked 2026-11-27:
+  [current filter](https://github.com/autowarefoundation/autoware_universe/blob/main/control/autoware_control_command_gate/src/common/control_command_filter.cpp)
+  still uses M_PI_2f; a scoped command-gate/constant PR search finds no match.
+  The reviewed [Lyrical tracker](https://github.com/autowarefoundation/autoware_universe/issues/13620)
+  supplies transition context, not local validation.
+
+The pinned LLVM/libc++ build rejects both M_PI_2f expressions. Cast the supported
+M_PI_2 constant to float, preserving the original bound and precision. The
+external filter case verifies positive and negative limits above pi/2 against
+acos(0.0F), and the full module build plus ROS command behavior pass. See the
+[command-gate journal](JOURNAL.md#2026-11-27-phase-912--control-command-gate)
+for exact commands and executor results. Source correction is separate from
+Bazel declarations; no upstream submission or older ROS/colcon result is claimed.
