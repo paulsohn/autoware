@@ -124,6 +124,7 @@ only when your current target demonstrates the need.
   middleware configurations before implementing each task.
   [Steady-state expensive-target policy](DEVELOPING.md#expensive-targets);
   [evidence: opt-in selection](JOURNAL.md#2026-11-23-phase-75--opt-in-expensive-system-and-deployment-targets);
+  [runtime prerequisite execution-context evidence](JOURNAL.md#2026-11-26-phase-910--planned-route-remaining-distance);
   [live-node input ownership and freshness evidence](JOURNAL.md#2026-11-26-phase-910--goal-distance-and-live-input-ownership);
   [ROS-time boundary evidence](JOURNAL.md#2026-11-22-phase-732--perception-metric-windows-at-ros-time-zero);
   [Backend executor convention](DEVELOPING.md#switchable-standalone-nodes);
@@ -2452,13 +2453,18 @@ DDS and Agnocast for wrapper-enabled transport, with actual runtime prerequisite
 Use module-sized commits and reproducible journal entries. No Fast DDS, simulator
 or deployment gate is selected. Coverage starts at 156/244.
 
-autoware_boundary_departure_checker: complete; exact gates and evidence are in its Phase 9.10 journal.
+| Common package | Passed gate |
+| --- | --- |
+| autoware_boundary_departure_checker | All 38 original cases |
+| autoware_goal_distance_calculator | Three rotated-frame/live/freshness cases |
+| autoware_obstacle_proximity_checker | All eleven original cases |
+| autoware_path_distance_calculator | All three route/TF/timer cases on RCLCPP and Agnocast-only |
+| autoware_traffic_light_compliance_checker | All 23 original cases |
 
-autoware_obstacle_proximity_checker: complete; exact gates and evidence are in its Phase 9.10 journal.
-
-autoware_traffic_light_compliance_checker: complete; all 23 original cases pass.
-
-autoware_goal_distance_calculator: complete; rotated-frame, live-node and stale-pose cases pass.
+The common group is complete; validated Universe coverage is161/244. Next:
+trajectory adaptation, concatenation and gating, before validator/ranker and
+modifier/selector. Preserve the remaining seven package boundaries and their
+complete original/behavior gates.
 
 ### Execution order through complete Universe coverage
 

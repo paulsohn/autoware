@@ -23157,3 +23157,57 @@ their canonical SDK runtime owners. Keep config/launch with the package and the
 three added cases under bazel/tests. Source correctness fix: 93b3d6dad. No original
 test changes are needed. Next: finish the path-distance wrapper gate before
 moving to trajectory adaptation/concatenation and validation.
+
+## 2026-11-26: Phase 9.10 — Planned-route remaining distance
+
+Purpose: adopt the two original path-distance sources, wrapper component/
+executable and launch. CMake declares no functional tests. Inspect the planned
+LaneletRoute segment sequence, map/route readiness, route invalidation, TF pose
+listener, polling and one-second publication timer. Select complete RCLCPP and
+Agnocast-only behavior gates; the latter requires the kernel device and heaphook.
+
+Pattern: one shared owner and unconditional wrapper support, matching
+CMake's AgnocastOnlyCallbackIsolatedExecutor with its RCLCPP fallback. Keep
+headers with their existing src owner, declare local lanelet/map/planning/
+utility providers and canonical SDK shared owners, and index the original launch
+and switchable executable. Add three root-owned cases: multi-lane planned distance
+and zero clamping; route-before-map readiness plus invalid/empty route recovery;
+and real map/route/TF timer output, using a wrapper peer for both backends.
+The fixture must include the complete LaneletMap definition, not only its forward
+declaration. Existing implementation is unchanged.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  @autoware_path_distance_calculator//... //bazel/tests:path_distance_test
+# Required before the enabled gate: load the installed, matching kernel module.
+sudo modprobe agnocast
+test -c /dev/agnocast
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --local_test_jobs=1 \
+  --run_under=//bazel/agnocast:with_heaphook --test_env=ENABLE_AGNOCAST=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  //bazel/tests:path_distance_test
+```
+
+RCLCPP result: every module target builds and all three cases pass, zero
+failures/errors/skips/disabled (test1.6 s). The synthetic three-lane route yields
+25m from x2 to goal x27, 15m from x12, and zero beyond the goal. The timer must
+publish25m and retain TF stamp123. Empty/unknown-ID routes invalidate prior
+readiness, and a subsequent valid route restores it.
+
+Enabled result: all three cases also pass with ENABLE_AGNOCAST=1, the built
+heaphook preloaded and the installed2.4.1 module active (15.9 s invocation,
+test1.8 s). JUnit confirms zero failures/errors/skips/disabled. The transport
+case verifies an Agnocast-only executor without an initialized RCLCPP context.
+Reuse the unchanged complete RCLCPP gate; no original source changes are needed.
+
+Prerequisite know-how: check device availability from the same execution
+environment that runs the gate. A restricted filesystem probe did not expose
+the host device, while the host-side probe and enabled test could use it. Probe
+/dev/agnocast and module version in that context before diagnosing a missing
+runtime prerequisite. This convention is linked from the adoption checklist.
+Both selected backend gates are complete, so this module can be committed.
+No Fast DDS or expensive system/deployment gate is selected. Next: trajectory
+adaptation, concatenation and gating with their complete original suites.

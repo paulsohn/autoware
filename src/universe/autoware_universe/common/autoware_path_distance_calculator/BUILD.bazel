@@ -1,0 +1,47 @@
+load("@autoware_agnocast_wrapper//:defs.bzl", "autoware_agnocast_node")
+load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "autoware_path_distance_calculator_library",
+    srcs = ["src/main.cpp", "src/ros_interface.cpp"],
+    hdrs = ["src/main.hpp", "src/ros_interface.hpp"],
+    includes = ["src"],
+    deps = ["@autoware_agnocast_wrapper//:autoware_agnocast_wrapper_library", "@autoware_internal_debug_msgs//:cc", "@autoware_lanelet2_utils", "@autoware_map_msgs//:cc", "@autoware_planning_msgs//:cc", "@autoware_utils", "@geometry_msgs//:cc", "@rclcpp_components//:rclcpp_components_library"],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = ["@autoware_agnocast_wrapper//:autoware_agnocast_wrapper", "@autoware_internal_debug_msgs//:cc_shared", "@autoware_lanelet2_utils//:runtime_dynamic_deps", "@autoware_map_msgs//:cc_shared", "@autoware_planning_msgs//:cc_shared", "@autoware_utils//:runtime_dynamic_deps", "@rclcpp_components//:rclcpp_components"],
+)
+
+cc_shared_library(
+    name = "autoware_path_distance_calculator",
+    shared_lib_name = "libautoware_path_distance_calculator.so",
+    deps = [":autoware_path_distance_calculator_library"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+)
+
+autoware_agnocast_node(
+    name = "autoware_path_distance_calculator_node",
+    component = ":autoware_path_distance_calculator",
+    plugin = "autoware::path_distance_calculator::PathDistanceCalculator",
+    package_name = "autoware_path_distance_calculator",
+)
+
+register_ament_files(
+    name = "executables",
+    files = [":autoware_path_distance_calculator_node"],
+    prefix = "lib/autoware_path_distance_calculator",
+    strip_prefix = "*",
+)
+
+ament_index(
+    package_xml = "package.xml",
+    libraries = [":autoware_path_distance_calculator"],
+    components = [":autoware_path_distance_calculator_node_components"],
+    data = glob(["launch/**"]) + [":executables", ":autoware_path_distance_calculator_node_plugin"],
+)

@@ -1,0 +1,12 @@
+module(name = "autoware_path_distance_calculator", version = "0.0.0")
+
+bazel_dep(name = "autoware_agnocast_wrapper", version = "0.0.0")
+bazel_dep(name = "autoware_internal_debug_msgs", version = "0.0.0")
+bazel_dep(name = "autoware_lanelet2_utils", version = "0.0.0")
+bazel_dep(name = "autoware_map_msgs", version = "0.0.0")
+bazel_dep(name = "autoware_planning_msgs", version = "0.0.0")
+bazel_dep(name = "autoware_utils", version = "0.0.0")
+bazel_dep(name = "geometry_msgs", version = "0.0.0")
+bazel_dep(name = "rclcpp_components", version = "0.0.0")
+bazel_dep(name = "rosdistro", version = "0.0.0")
+bazel_dep(name = "rules_cc", version = "0.2.26.rcr.0")

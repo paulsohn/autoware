@@ -120,7 +120,8 @@ experiments, and milestones belong in PLAN.md and JOURNAL.md.
   existing test suite and required behavior checks before implementation.
   Declare a module task successful only after that whole suite passes in the
   required configurations. Prepare dependencies and runtime prerequisites
-  needed by those tests; dependency-related skips, omitted test groups, and
+  needed by those tests. Probe runtime prerequisites from the same execution
+  environment used by the tests; dependency-related skips, omitted test groups, and
   failures deferred to another session do not satisfy the completion gate.
   Keep working through in-scope failures. If an external prerequisite prevents
   completion, report the task as incomplete with the evidence and required

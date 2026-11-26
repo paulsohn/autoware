@@ -813,6 +813,10 @@ Fast DDS still requires separate explicit approval.
 
 ## Validation and commits
 
+Probe runtime prerequisites (devices, drivers and permissions) from the same
+execution environment used by the test. A device hidden from a restricted shell
+may still be available to a host-side gate, and the reverse can also occur.
+
 Validate in proportion to the change:
 
 - BUILD or module change: build affected target surfaces; label/selection-only

@@ -2740,3 +2740,12 @@ cc_test(
     data = [],
     tags = ["no-sandbox", "no-remote"],
 )
+
+cc_test(
+    name = "path_distance_test",
+    srcs = ["autoware_path_distance_calculator/test_path.cpp"],
+    deps = ["@autoware_path_distance_calculator//:autoware_path_distance_calculator_library", "@googletest//:gtest"],
+    dynamic_deps = ["@autoware_path_distance_calculator", "@autoware_path_distance_calculator//:runtime_dynamic_deps"],
+    data = ["@agnocast_heaphook"],
+    tags = ["no-sandbox", "no-remote"],
+)
