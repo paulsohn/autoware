@@ -21793,7 +21793,7 @@ subscriber construction on rclcpp-major-32+, keeping the older raw-profile
 branch. Preserve reliable depth-one input queues, ApproximateTime queue ten and
 all merge assertions. Current upstream retains both old APIs on 2026-11-26;
 UPSTREAM_AWF.md records the inspected files and scoped PR search. The source
-compatibility correction is committed separately from the Bazel definitions.
+compatibility correction 5bc4849f9 is separate from the Bazel definitions.
 
 ```sh
 env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \

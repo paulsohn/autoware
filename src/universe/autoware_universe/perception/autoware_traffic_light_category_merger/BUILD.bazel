@@ -1,0 +1,84 @@
+load("@rclcpp_components//:defs.bzl", "rclcpp_components_register_node")
+load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "autoware_traffic_light_category_merger_library",
+    srcs = ["src/traffic_light_category_merger.cpp"],
+    hdrs = ["include/autoware/traffic_light_category_merger/traffic_light_category_merger.hpp"],
+    includes = ["include"],
+    deps = ["@tier4_perception_msgs//:cc"],
+)
+
+collect_transitive_dynamic_deps(
+    name = "sdk_dynamic_deps",
+    dynamic_deps = ["@message_filters//:message_filters", "@rclcpp_components//:rclcpp_components", "@tier4_perception_msgs//:cc_shared"],
+)
+
+cc_shared_library(
+    name = "autoware_traffic_light_category_merger",
+    shared_lib_name = "libautoware_traffic_light_category_merger.so",
+    deps = [":autoware_traffic_light_category_merger_library"],
+    dynamic_deps = [":sdk_dynamic_deps"],
+)
+
+cc_library(
+    name = "autoware_traffic_light_category_merger_node_library",
+    srcs = ["src/traffic_light_category_merger_node.cpp"],
+    hdrs = ["src/traffic_light_category_merger_node.hpp"],
+    includes = ["src"],
+    deps = [":autoware_traffic_light_category_merger_library", "@message_filters//:message_filters_library", "@rclcpp_components//:rclcpp_components_library"],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = [":autoware_traffic_light_category_merger", ":sdk_dynamic_deps"],
+)
+
+cc_shared_library(
+    name = "autoware_traffic_light_category_merger_node",
+    shared_lib_name = "libautoware_traffic_light_category_merger_node.so",
+    deps = [":autoware_traffic_light_category_merger_node_library"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+)
+
+rclcpp_components_register_node(
+    name = "traffic_light_category_merger_node",
+    node_name = "traffic_light_category_merger_node",
+    component = ":autoware_traffic_light_category_merger_node",
+    plugin = "autoware::traffic_light::TrafficLightCategoryMergerNode",
+)
+
+register_ament_files(
+    name = "executables",
+    files = [":traffic_light_category_merger_node"],
+    prefix = "lib/autoware_traffic_light_category_merger",
+    strip_prefix = "*",
+)
+
+ament_index(
+    package_xml = "package.xml",
+    libraries = [":autoware_traffic_light_category_merger", ":autoware_traffic_light_category_merger_node"],
+    components = [":traffic_light_category_merger_node_record"],
+    data = glob(["launch/**"]) + [":executables"],
+)
+
+cc_test(
+    name = "test_traffic_light_category_merger",
+    srcs = ["test/test_traffic_light_category_merger.cpp"],
+    deps = [":autoware_traffic_light_category_merger_library", "@googletest//:gtest"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+    tags = ["no-sandbox", "no-remote"],
+)
+
+cc_test(
+    name = "test_traffic_light_category_merger_integration",
+    srcs = ["test/test_traffic_light_category_merger_integration.cpp"],
+    deps = [":autoware_traffic_light_category_merger_node_library", "@googletest//:gtest"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+    tags = ["no-sandbox", "no-remote"],
+)
+

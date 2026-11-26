@@ -2339,6 +2339,23 @@ ending with [group acceptance](JOURNAL.md#2026-11-24-phase-96--predicted-path-pr
 Phase 9.5 is also complete, as recorded above. Subsequent groups keep their
 existing phase identifiers; next is Phase 9.7.
 
+### Phase 9.7: Traffic-light geometry, fusion and postprocessing (in progress)
+
+Integrate the nine ledger packages in these dependency-oriented batches, retaining
+package-sized commits and full original suites: category merging/selection, then
+arbitration/crosswalk estimation; map/ROI projection and occlusion; multi-camera
+fusion, marker publication and visualization. Reuse local traffic-light and
+perception utilities, inspecting their actual providers as consumers require.
+Keep model execution in 9.13. Inspect original sources, tests/data, component and
+resource contracts before each package. Add behavior coverage for untested nodes
+and selected Agnocast-only wrapper paths (arbiter, crosswalk, fusion and map
+visualizer); preserve plain ROS paths elsewhere. Run Cyclone gates sequentially
+with original suites in no-agnocast mode, and prepare heaphook/device prerequisites
+for enabled peers. No Fast DDS, GPU, simulator or deployment gate is selected.
+
+Category merger is complete: twelve non-test targets and all seven original
+cases pass. Coverage is 134/244; eight Phase 9.7 packages remain.
+
 ### Execution order through complete Universe coverage
 
 The following groups are the initial route through every remaining package.

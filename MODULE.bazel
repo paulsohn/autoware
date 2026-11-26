@@ -2032,3 +2032,9 @@ local_path_override(
     module_name = "autoware_detection_by_tracker",
     path = "src/universe/autoware_universe/perception/autoware_detection_by_tracker",
 )
+
+bazel_dep(name = "autoware_traffic_light_category_merger", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_traffic_light_category_merger",
+    path = "src/universe/autoware_universe/perception/autoware_traffic_light_category_merger",
+)

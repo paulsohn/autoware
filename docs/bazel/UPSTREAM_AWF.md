@@ -2349,6 +2349,8 @@ is claimed.
 
 ### Traffic-light category merger needs current Message Filters APIs
 
+Local source fix: `5bc4849f9`.
+
 - [ ] Associate with a matching upstream fix. Checked 2026-11-26: current
   [node header](https://github.com/autowarefoundation/autoware_universe/blob/main/perception/autoware_traffic_light_category_merger/src/traffic_light_category_merger_node.hpp)
   retains removed .h includes and the
