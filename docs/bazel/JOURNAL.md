@@ -23526,3 +23526,34 @@ qualification is selected. Next: trajectory modification and its temporal solver
 The ranker module/root selection is accepted with those complete gates. Universe
 coverage is 166/244 (78 remaining). Also remove an extra final blank line from
 the validator message BUILD declaration; no build behavior changes.
+
+## 2026-11-26: Phase 9.10 — acados generated C and header projections
+
+Purpose: let the trajectory modifier install its generated temporal-solver
+headers under autoware/trajectory_modifier/c_generated_code without copying
+files or using the source-tree IDE stub. The existing codegen rule returns a
+combined DefaultInfo set; files declared dynamically with actions.declare_file
+are not separately addressable implicit output labels. Treating their paths as
+labels therefore fails with missing input files before compilation.
+
+Keep combined DefaultInfo unchanged and additionally return OutputGroupInfo
+with headers (.h) and sources (.c). Consumers project these through ordinary
+filegroup(output_group=...) targets. A cc_library can then put generated headers
+in hdrs with strip_include_prefix/include_prefix, while generated C stays in
+srcs. This is generic SDK support under third_party/acados, with no dependency
+on Autoware or product labels. Exercise both projections in the existing
+integrator generated_solver target; its public include path remains unchanged.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_output=errors @acados//:tests
+```
+
+Results: both complete SDK targets pass: all original native unit assertions
+and the generated integrator solve (status 0, x0=1, finite terminal within .01
+of zero). The projected inputs compile/link to identical passing test artifacts,
+so Bazel reuses their unchanged runtime results. Generated headers remain in
+Bazel outputs; no host Python/CMake environment or source stub is used.
+Diff checks pass. The modifier consumer gate follows; no GPU, middleware matrix
+or deployment gate is required by this provider-only metadata change.

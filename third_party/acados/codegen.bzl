@@ -19,7 +19,13 @@ def _generate_impl(ctx):
         mnemonic = "AcadosGenerate",
         progress_message = "Generating acados solver %{label}",
     )
-    return [DefaultInfo(files = depset(outputs))]
+    return [
+        DefaultInfo(files = depset(outputs)),
+        OutputGroupInfo(
+            headers = depset([file for file in outputs if file.extension == "h"]),
+            sources = depset([file for file in outputs if file.extension == "c"]),
+        ),
+    ]
 
 _acados_codegen = rule(
     implementation = _generate_impl,

@@ -23,6 +23,8 @@ acados_codegen(
         "c_generated_code/integrator_model/integrator_model.h",
     ],
 )
-cc_library(name = "generated_solver", srcs = [":test_solver"], includes = ["test_solver"], deps = [":acados"])
+filegroup(name = "solver_sources", srcs = [":test_solver"], output_group = "sources")
+filegroup(name = "solver_headers", srcs = [":test_solver"], output_group = "headers")
+cc_library(name = "generated_solver", srcs = [":solver_sources"], hdrs = [":solver_headers"], includes = ["test_solver"], deps = [":acados"])
 cc_test(name = "generated_solver_test", srcs = ["solver_test.c"], deps = [":generated_solver"])
 test_suite(name = "tests", tests = ["@acados_source//:unit_tests", ":generated_solver_test"])
