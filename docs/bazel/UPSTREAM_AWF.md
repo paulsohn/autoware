@@ -2423,3 +2423,21 @@ vector. Sort copies in this assertion before comparison; keep multiplicity and
 conflict-type checks. All 94 original core cases and the original node case pass,
 without altering production fusion behavior. This is test portability, not a
 Lyrical runtime fix; no upstream submission is claimed.
+
+### Recognition text markers use physical IDs for group messages
+
+- [ ] Associate with a matching upstream fix. Checked 2026-11-26: current
+  [implementation](https://github.com/autowarefoundation/autoware_universe/blob/main/common/autoware_traffic_light_recognition_marker_publisher/src/traffic_light_recognition_marker_publisher.cpp)
+  stores physical linestring IDs but reads traffic_light_group_id; the
+  [header](https://github.com/autowarefoundation/autoware_universe/blob/main/common/autoware_traffic_light_recognition_marker_publisher/src/traffic_light_recognition_marker_publisher.hpp)
+  retains an int32-to-single-pose cache. A repository-scoped PR search for
+  recognition_marker_publisher finds no matching change.
+
+Reproduce with the complete marker gate in the Phase 9.7 journal: a real map with
+64-bit group ID, two distinct physical housing IDs and two signal elements
+produces zero rather than four markers. Key by lanelet::Id regulatory ID and
+store a vector of poses per group; draw each element at each housing. Clear
+cached poses when receiving a replacement map. All three new ROS cases pass,
+including no-map suppression, exact marker payload and map replacement. The
+package has no original functional suite. This is message/map correctness,
+independent of Lyrical; no upstream submission is claimed.

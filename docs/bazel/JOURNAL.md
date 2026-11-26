@@ -22133,3 +22133,35 @@ and two added cases pass, zero failures/errors/skips. Final primary gate takes
 with libagnocast_heaphook and kernel module 2.4.1, asserting RCLCPP is inactive.
 Changed-range/added-file clang-format and diff checks pass. No Fast DDS, GPU,
 older toolchain or expensive product gate is claimed. Next: marker publication.
+
+## 2026-11-26: Phase 9.7 — traffic-light recognition text markers
+
+Purpose: adopt the original one-source component, executable and launch resources.
+CMake declares no functional tests. Inspect map conversion, regulatory elements,
+message identity and marker formatting; add three root-owned Cyclone/RCLCPP
+cases: signals before map, nonempty text/color/geometry, and map replacement.
+
+The nonempty case initially receives zero markers instead of four: the node
+keys poses by physical linestring ID but looks them up by traffic_light_group_id
+(the regulatory element ID). Its int32 key also truncates valid Lanelet IDs,
+and the cache retains old maps. Correct the source separately: map a lanelet::Id
+group to all its housing poses, append each housing during map import, clear the
+cache on map replacement, then render each signal element at every housing.
+Keep existing marker text/color, height increments, lifetime and topics.
+
+The peer supplies a serialized map with group (1<<34)+1000, physical lines 10/20,
+and red-circle/green-left-arrow observations. Assert four markers' positions,
+text, color, IDs, frame, scale and lifetime; ignore an unknown group. Before a
+map there is no publication. Replacing the map removes old-group output and
+allows the new group. Wait for ROS endpoint discovery and settle the latched
+map before signals. These are payload/transport checks without a GUI. The full
+three-case gate passes after the source correction; current upstream evidence
+is recorded in UPSTREAM_AWF.md.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  @autoware_traffic_light_recognition_marker_publisher//... \
+  //bazel/tests:traffic_light_recognition_marker_test
+```

@@ -42,6 +42,7 @@ TrafficLightRecognitionMarkerPublisher::TrafficLightRecognitionMarkerPublisher(
 void TrafficLightRecognitionMarkerPublisher::onMap(const LaneletMapBin::ConstSharedPtr msg_ptr)
 {
   is_map_ready_ = false;
+  tl_position_map_.clear();
   lanelet::LaneletMapPtr viz_lanelet_map = autoware::experimental::lanelet2_utils::remove_const(
     autoware::experimental::lanelet2_utils::from_autoware_map_msgs(*msg_ptr));
   lanelet::ConstLanelets lanelets = lanelet::utils::query::laneletLayer(viz_lanelet_map);
@@ -53,12 +54,11 @@ void TrafficLightRecognitionMarkerPublisher::onMap(const LaneletMapBin::ConstSha
       if (tl_light.isLineString()) {
         lanelet::ConstLineString3d tl_linestring =
           static_cast<lanelet::ConstLineString3d>(tl_light);
-        int32_t tl_id = static_cast<int32_t>(tl_light.id());
         Pose tl_pose;
         tl_pose.position.x = (tl_linestring.front().x() + tl_linestring.back().x()) / 2;
         tl_pose.position.y = (tl_linestring.front().y() + tl_linestring.back().y()) / 2;
         tl_pose.position.z = tl_linestring.front().z() + 1.0;
-        tl_position_map_[tl_id] = tl_pose;
+        tl_position_map_[tl->id()].push_back(tl_pose);
       }
     }
   }
@@ -75,12 +75,13 @@ void TrafficLightRecognitionMarkerPublisher::onTrafficSignalArray(
   marker_id = 0;
   for (const auto & tl : msg_ptr->traffic_light_groups) {
     if (tl_position_map_.count(tl.traffic_light_group_id) == 0) continue;
-    auto tl_position = tl_position_map_[tl.traffic_light_group_id];
-    for (const auto tl_light : tl.elements) {
-      const auto marker = getTrafficLightMarker(tl_position, tl_light.color, tl_light.shape);
-      markers.markers.emplace_back(marker);
-      marker_id++;
-      tl_position.position.z += 0.5;
+    for (auto tl_position : tl_position_map_[tl.traffic_light_group_id]) {
+      for (const auto tl_light : tl.elements) {
+        const auto marker = getTrafficLightMarker(tl_position, tl_light.color, tl_light.shape);
+        markers.markers.emplace_back(marker);
+        marker_id++;
+        tl_position.position.z += 0.5;
+      }
     }
   }
   pub_marker_ptr_->publish(markers);
