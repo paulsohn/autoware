@@ -2373,6 +2373,22 @@ No Fast DDS, GPU, simulator, GUI or deployment rerun is claimed. Model execution
 remains in Phase 9.13. Definition coverage is 142/244, with 102 packages remaining;
 next is Phase 9.8 localization adapters, landmarks and monitoring.
 
+### Phase 9.8: Localization adapters, landmarks and monitoring (in progress)
+
+Integrate the nine ledger packages in dependency order: landmark support and
+pose adapters/requester, then monitoring/arbitration, then AR-tag and LiDAR-marker
+localizers. Retain package-sized commits and the complete original suites,
+including arbiter example-rule and Python launch tests. Add root-owned behavior
+gates for untested libraries/nodes: mapped landmark transforms, projection/TF,
+covariance and initialization, diagnostics/state transitions and localization
+inputs/outputs. Select Cyclone/RCLCPP for original suites and selected
+Agnocast-only peers for wrapper monitors. Inspect actual dependency, fixture,
+component and indexed-resource requirements before each package. Physical
+sensor/vehicle accuracy qualification, Fast DDS, GUI, simulator and deployment
+gates are outside this phase. Coverage starts at 142/244.
+
+autoware_landmark_manager: complete; see its Phase 9.8 journal for commands and results.
+
 ### Execution order through complete Universe coverage
 
 The following groups are the initial route through every remaining package.

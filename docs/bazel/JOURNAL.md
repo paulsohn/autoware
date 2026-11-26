@@ -22268,3 +22268,33 @@ PY
 
 All nine Phase 9.7 ledger entries are checked; model execution remains in 9.13.
 Next: Phase 9.8 localization adapters, landmarks and monitoring.
+
+## 2026-11-26: Phase 9.8 — landmark support
+
+Purpose: provide the existing landmark library before its AR/LiDAR consumers.
+Inspect its CMake, public header, map polygon parser and pose/marker APIs. There
+is no original functional suite. Add two root-owned cases: subtype/target-ID
+selection with actual map serialization and marker geometry, and known landmark
+translation recovery with orientation consideration both off and on.
+
+Pattern: one package module/root override, compile provider with original include
+prefix, shared library preserving liblandmark_manager.so and package index.
+Declare local localization/geometry/lanelet/message providers and shared SDK
+owners explicitly; this library has no component, executable or launch/config
+resources. Build only its actual resource contract. The fixtures use pose_marker
+quadrilaterals tagged artag, an unrelated subtype, and a selected marker ID.
+A mapped landmark at x=10 observed at base-link x=8 recovers self x=2 from an
+initial x=3, without reproducing the transform algorithm in the test.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  @autoware_landmark_manager//... //bazel/tests:landmark_manager_test
+```
+
+Results: all four module non-test targets build and both added cases pass,
+zero failures/errors/skips, 29.2 s. Added-file clang-format/diff checks pass.
+No existing source/test changes, wrapper variant, Fast DDS or expensive product
+gate is required. The deterministic map geometry qualifies the API, not real
+sensor accuracy. Next: geographic pose projection and remaining adapters.

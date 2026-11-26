@@ -2087,3 +2087,9 @@ local_path_override(
     module_name = "autoware_traffic_light_visualization",
     path = "src/universe/autoware_universe/perception/autoware_traffic_light_visualization",
 )
+
+bazel_dep(name = "autoware_landmark_manager", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_landmark_manager",
+    path = "src/universe/autoware_universe/localization/autoware_landmark_based_localizer/autoware_landmark_manager",
+)

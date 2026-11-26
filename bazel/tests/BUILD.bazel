@@ -2576,3 +2576,13 @@ cc_test(
     data = ["@agnocast_heaphook"],
     tags = ["no-sandbox", "no-remote"],
 )
+
+cc_test(
+    name = "landmark_manager_test",
+    srcs = ["autoware_landmark_manager/test_landmarks.cpp"],
+    deps = ["@autoware_landmark_manager//:autoware_landmark_manager_library", "@autoware_lanelet2_utils", "@googletest//:gtest_main"],
+    dynamic_deps = ["@autoware_landmark_manager//:runtime_dynamic_deps", "@autoware_lanelet2_utils//:runtime_dynamic_deps"],
+    data = [],
+    tags = ["no-sandbox", "no-remote"],
+)
+
