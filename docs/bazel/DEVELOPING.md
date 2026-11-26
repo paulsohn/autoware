@@ -1965,7 +1965,12 @@ module/package autoware_yabloc_pose_initializer_models. Its indexed
 saved_model/model_float32.onnx is the pose initializer's CPU OpenCV DNN input;
 :models retains both original formats and metadata. Run
 //bazel/tests:yabloc_model_resources_test for hashes and relocation. The retained
-TensorFlow file is not the selected runtime format.
+TensorFlow file is not the selected runtime format. The initializer's ament
+index depends on the model index; its launch default uses that package's share
+path. Run //bazel/tests:yabloc_pose_initializer_test and
+//bazel/tests:yabloc_launch_paths_test after changing its inference/service or
+resource defaults. The shared models/test_launch_paths.py serves both YabLoc and
+YOLOX launch-path targets, including nested model directories.
 
 ## TensorRT classifier
 

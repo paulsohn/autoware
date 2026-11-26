@@ -21,7 +21,7 @@ collect_transitive_dynamic_deps(
 cc_shared_library(
     name = "yabloc_common",
     shared_lib_name = "libyabloc_common.so",
-    deps = [":yabloc_common_library", "@autoware_signal_processing", "@autoware_utils_visualization", "@autoware_utils_math", "@rosdistro//cc:fmt"],
+    deps = [":yabloc_common_library", "@autoware_lanelet2_utils", "@autoware_utils_geometry", "@autoware_signal_processing", "@autoware_utils_visualization", "@autoware_utils_math", "@rosdistro//cc:fmt"],
     dynamic_deps = [":runtime_dynamic_deps"],
 )
 

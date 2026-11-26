@@ -2549,5 +2549,5 @@ The PR explains the OpenCV4.9+ TensorFlow softmax-axis issue and switches to the
 same network's NHWC ONNX boundary. The Phase 9.9 gate validates that existing
 path against the pinned SDK using the materialized v1.0 model: CPU inference,
 threshold/shape behavior and model-backed alignment all pass. The local indexed
-model-resource default is separate integration work, outside that PR's scope.
+model-resource default (`7d8f16d3`) is separate integration work, outside that PR's scope.
 No local TensorFlow failure reproduction or field-accuracy claim is made.

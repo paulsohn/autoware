@@ -13,7 +13,7 @@ from launch.utilities import perform_substitutions
 import launch_ros.substitutions  # Register ROS frontend substitutions.
 from python.runfiles import runfiles
 
-PACKAGE = "autoware_tensorrt_yolox_models"
+PACKAGE = sys.argv.pop(1)
 r = runfiles.Create()
 INPUTS = [Path(r.Rlocation(p)) for arg in sys.argv[1:] for p in arg.split()]
 sys.argv[1:] = []
@@ -30,7 +30,7 @@ class LaunchModels(unittest.TestCase):
                 for expression in element.attrib.values():
                     if "$(find-pkg-share " + PACKAGE + ")" in expression:
                         resolved = Path(perform_substitutions(LaunchContext(), parse_substitution(expression)))
-                        self.assertEqual(resolved.parent, share)
+                        self.assertTrue(resolved.is_relative_to(share), expression)
                         self.assertTrue(resolved.is_file(), expression)
                         count += 1
         self.assertGreater(count, 0)

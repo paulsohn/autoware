@@ -2174,3 +2174,9 @@ local_path_override(
     module_name = "autoware_yabloc_pose_initializer_models",
     path = "src/models/yabloc_pose_initializer",
 )
+
+bazel_dep(name = "yabloc_pose_initializer", version = "0.0.0")
+local_path_override(
+    module_name = "yabloc_pose_initializer",
+    path = "src/universe/autoware_universe/localization/yabloc/yabloc_pose_initializer",
+)

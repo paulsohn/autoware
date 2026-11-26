@@ -22997,3 +22997,21 @@ nonexistent-file case confirms the original yaw-preserving fallback, without
 using it as evidence of successful inference. This is synthetic API/inference
 qualification, not trained-model quality, real camera calibration or field
 localization accuracy. No Fast DDS, GUI, simulator or deployment rerun is selected.
+
+Build pattern: one original compile/shared owner with public component headers,
+canonical SDK runtime providers, explicit local lanelet/common dependencies and
+a MultiThreadedExecutor registration matching CMake. Keep config/launch and the
+model index in the node's own ament index; the model module has no application
+or product dependency. Export only the two launch/manifests needed by the
+product's path test, with all added tests under bazel/tests. Source resource fix
+is 7d8f16d3; no additional original C++/CMake/test changes are required.
+
+Phase closure: all five Universe package tasks and the model-provider task pass
+their complete original functional suites and selected behavior/resource gates.
+Reuse the unchanged monitor result; rerun all consumers affected by common shared
+ownership exports. Both new interfaces are registered in the existing collector,
+with descriptor/Python/wire checks and bridge graph analysis recorded above.
+Coverage is 156/244, leaving 88 without definitions; all five Phase 9.9 ledger
+items are checked and PLAN.md records the final package table. Documentation-only
+closure/count changes require no runtime rerun. Next: Phase 9.10 trajectory
+contracts and common motion checks.

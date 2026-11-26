@@ -1914,13 +1914,13 @@ filegroup(
 
 py_test(
     name = "yolox_launch_paths_test",
-    srcs = ["autoware_tensorrt_yolox/test_launch_paths.py"],
-    args = ["$(rlocationpaths :yolox_launch_inputs)"],
+    srcs = ["models/test_launch_paths.py"],
+    args = ["autoware_tensorrt_yolox_models", "$(rlocationpaths :yolox_launch_inputs)"],
     data = [
         ":yolox_launch_inputs",
         "@autoware_tensorrt_yolox_models//:ament_index",
     ],
-    main = "autoware_tensorrt_yolox/test_launch_paths.py",
+    main = "models/test_launch_paths.py",
     precompile = "disabled",
     deps = [
         "@ament_index_python",
@@ -2702,4 +2702,32 @@ py_test(
     data = ["@autoware_yabloc_pose_initializer_models//:ament_index"],
     precompile = "disabled",
     deps = ["@ament_index_python"],
+)
+
+cc_test(
+    name = "yabloc_pose_initializer_test",
+    srcs = ["yabloc_pose_initializer/test_initializer.cpp"],
+    deps = ["@yabloc_pose_initializer//:yabloc_pose_initializer_library", "@ament_index_cpp//:ament_index_cpp_library", "@googletest//:gtest_main"],
+    dynamic_deps = ["@yabloc_pose_initializer", "@yabloc_pose_initializer//:runtime_dynamic_deps", "@ament_index_cpp//:ament_index_cpp"],
+    data = ["@autoware_yabloc_pose_initializer_models//:ament_index"],
+    tags = ["no-sandbox", "no-remote"],
+)
+
+filegroup(
+    name = "yabloc_launch_inputs",
+    testonly = True,
+    srcs = [
+        "@yabloc_pose_initializer//:launch/yabloc_pose_initializer.launch.xml",
+        "@yabloc_pose_initializer//:package.xml",
+    ],
+)
+
+py_test(
+    name = "yabloc_launch_paths_test",
+    srcs = ["models/test_launch_paths.py"],
+    main = "models/test_launch_paths.py",
+    args = ["autoware_yabloc_pose_initializer_models", "$(rlocationpaths :yabloc_launch_inputs)"],
+    data = [":yabloc_launch_inputs", "@autoware_yabloc_pose_initializer_models//:ament_index"],
+    precompile = "disabled",
+    deps = ["@ament_index_python", "@launch", "@launch_ros", "@launch_xml", "@rules_python//python/runfiles"],
 )

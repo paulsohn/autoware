@@ -1,0 +1,51 @@
+load("@rclcpp_components//:defs.bzl", "rclcpp_components_register_node")
+load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "yabloc_pose_initializer_library",
+    srcs = ["src/camera/camera_pose_initializer_core.cpp", "src/camera/lane_image.cpp", "src/camera/marker_module.cpp", "src/camera/projector_module.cpp", "src/camera/semantic_segmentation.cpp"],
+    hdrs = ["include/yabloc_pose_initializer/camera/camera_pose_initializer.hpp", "include/yabloc_pose_initializer/camera/lane_image.hpp", "include/yabloc_pose_initializer/camera/marker_module.hpp", "include/yabloc_pose_initializer/camera/projector_module.hpp", "include/yabloc_pose_initializer/camera/semantic_segmentation.hpp"],
+    includes = ["include"],
+    deps = ["@autoware_internal_localization_msgs//:cc", "@autoware_lanelet2_utils", "@autoware_map_msgs//:cc", "@cv_bridge//:cv_bridge_library", "@geometry_msgs//:cc", "@lanelet2_core//:lanelet2_core_library", "@rclcpp_components//:rclcpp_components_library", "@sensor_msgs//:cc", "@sophus//:sophus", "@visualization_msgs//:cc", "@yabloc_common//:yabloc_common_library", "@rosdistro//cc:opencv_library"],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = ["@autoware_internal_localization_msgs//:cc_shared", "@autoware_lanelet2_utils//:runtime_dynamic_deps", "@autoware_map_msgs//:cc_shared", "@cv_bridge//:cv_bridge", "@geometry_msgs//:cc_shared", "@lanelet2_core//:lanelet2_core", "@rclcpp_components//:rclcpp_components", "@sensor_msgs//:cc_shared", "@visualization_msgs//:cc_shared", "@yabloc_common", "@yabloc_common//:runtime_dynamic_deps"],
+)
+
+cc_shared_library(
+    name = "yabloc_pose_initializer",
+    shared_lib_name = "libyabloc_pose_initializer.so",
+    deps = [":yabloc_pose_initializer_library"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+)
+
+rclcpp_components_register_node(
+    name = "yabloc_pose_initializer_node",
+    component = ":yabloc_pose_initializer",
+    plugin = "yabloc::CameraPoseInitializer",
+    executor = "MultiThreadedExecutor",
+    node_name = "yabloc_pose_initializer_node",
+)
+
+register_ament_files(
+    name = "executables",
+    files = [":yabloc_pose_initializer_node"],
+    prefix = "lib/yabloc_pose_initializer",
+    strip_prefix = "*",
+)
+
+ament_index(
+    package_xml = "package.xml",
+    deps = ["@autoware_yabloc_pose_initializer_models//:ament_index"],
+    libraries = [":yabloc_pose_initializer"],
+    components = [":yabloc_pose_initializer_node_record"],
+    data = glob(["launch/**", "config/**"]) + [":executables"],
+)
+
+exports_files(["launch/yabloc_pose_initializer.launch.xml", "package.xml"])

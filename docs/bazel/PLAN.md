@@ -2415,29 +2415,29 @@ qualify module behavior, not physical sensor/vehicle accuracy. No Fast DDS, GPU,
 GUI, simulator or deployment gate is claimed. Next: Phase 9.9 YabLoc visual
 localization.
 
-### Phase 9.9: YabLoc visual localization (in progress)
+### Phase 9.9: YabLoc visual localization (complete)
 
-Integrate yabloc_common first, then monitor/image processing, particle filtering
-and pose initialization. Inventory all original registrations/resources and
-retain the complete three-case resampler suite. Add root-owned library/node
-gates for map decomposition and ground, image processing/projection, diagnostic
-freshness, particle prediction/correction and initialization/service readiness.
-Prepare the actual semantic model and indexed provider when the initializer
-requires it; validate inference separately from its explicit missing-model
-fallback. Select Cyclone/RCLCPP for these plain-rclcpp packages, headless synthetic
-map/image/particle fixtures and reproducible seeded or invariant-based checks.
-No Fast DDS, GUI, vehicle accuracy or expensive product gate is selected.
-Coverage starts at 151/244; keep validated package/provider commits separate.
+All five packages have module-owned definitions, original resources and their
+complete selected Cyclone/RCLCPP gates. Keep package and source-compatibility
+commits separate; exact commands and diagnosed failures are in JOURNAL.md.
 
-yabloc_common: complete; four geometry, codec and map/ground cases pass. Root
-retains Sophus 1.22.9102-4.rcr.2 for these consumers.
+| Package | Integrated surface | Passed gate |
+| --- | --- | --- |
+| yabloc_common | Eleven support/node sources, ground server and map decomposer | Four transform/codec/ground/map cases |
+| yabloc_monitor | Availability module and monitor component | Missing/fresh/expired pose transition |
+| yabloc_image_processing | All six image components and executables | Four raw/PNG, segmentation/detection, projection and overlay cases |
+| yabloc_particle_filter | Two messages, shared support and three node components | Three original resampler cases, three prediction/correction cases, generated wire types and interface consumers |
+| yabloc_pose_initializer | Five sources, multi-threaded executable and indexed model default | Three real-model/readiness/fallback cases plus model-resource and launch-path gates |
 
-yabloc_monitor: complete; see its Phase 9.9 journal for commands and results.
-
-yabloc_image_processing: complete; four cases cover all six components.
-
-yabloc_particle_filter: complete; original resampling, prediction/correction and
-mixed-interface consumer gates pass.
+The separate src/models/yabloc_pose_initializer subtree owns module/package
+autoware_yabloc_pose_initializer_models and both original materialized weights.
+Its indexed ONNX path, hashes, relocation and colcon symlink installation pass.
+The existing upstream ONNX/NHWC implementation needs no new inference patch.
+Common ownership exports are qualified against every affected YabLoc suite;
+unchanged monitor results are reused. Universe coverage is 156/244, leaving 88
+packages without definitions. No field accuracy, Fast DDS, GUI, simulator or
+deployment gate is claimed. Next: Phase 9.10 trajectory contracts and common
+motion checks.
 
 ### Execution order through complete Universe coverage
 
