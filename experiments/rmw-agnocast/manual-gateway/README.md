@@ -75,20 +75,26 @@ The writer-stall case stops only the export DDS worker for roughly four seconds.
 
 ## Opt in to startup from an RMW context
 
-This prototype supports one explicitly configured route per participating context. Build and source the revised rmw_agnocast and gateway overlays from this branch. In the native application's terminal, keep the usual native heap hook and domain configuration. Set CYCLONEDDS_URI to the profile the gateway DDS worker should use. In the checkout, create a JSON array with the same route arguments as the manual command. Substitute the installed hook path on this host.
+Each participating context can request one route. Build and source the middleware and gateway overlays. Set RMW_AGNOCAST_GATEWAY_CONFIG to a JSON object file. The required fields are `direction` (export or import), `type` (installed ROS message type), `source` and `destination` (absolute ROS topic names), and `heaphook` (path to the native allocator hook). Source and destination follow the direction of data flow. An export reads the native source; an import reads the network source.
 
-```bash
-printf '%s\n' '["export","std_msgs/msg/String","/topic","/from_robot/topic","--heaphook","/opt/ros/jazzy/lib/libagnocast_heaphook.so"]' > robot-export.json
-export RMW_AGNOCAST_GATEWAY_CONFIG="$PWD/robot-export.json"
-export AGNOCAST_GATEWAY_EXECUTABLE="$(ros2 pkg prefix agnocast_cyclone_gateway)/lib/agnocast_cyclone_gateway/topic_gateway"
-ros2 run examples_rclcpp_minimal_publisher publisher_member_function
+```json
+{
+  "direction": "export",
+  "type": "std_msgs/msg/String",
+  "source": "/topic",
+  "destination": "/from_robot/topic",
+  "network_rmw": "rmw_zenoh_cpp",
+  "heaphook": "/opt/ros/jazzy/lib/libagnocast_heaphook.so"
+}
 ```
+
+The optional `network_rmw` defaults to `rmw_cyclonedds_cpp`. Set `always_on` to true to keep an export subscribed without a network reader. To override queue depth or reliability, add a `qos` object, for example `"qos": {"depth": 20, "input_reliability": "best_effort", "output_reliability": "reliable"}`. Each QoS field is optional. Old argument-array files still load with a deprecation warning.
 
 ### Select the gateway network
 
-The installed package provides [cyclonedds.json](../../../src/agnocast_cyclone_gateway/config/cyclonedds.json) and [zenoh.json](../../../src/agnocast_cyclone_gateway/config/zenoh.json). Each exports native /topic as /from_robot/topic. Cyclone is the default when --network-rmw is omitted. The package retains its existing name and Cyclone dependency. Install rmw_zenoh_cpp on the gateway and peer to select Zenoh, and start a reachable Zenoh router using your usual session configuration. On the peer select the same RMW and ROS domain.
+The installed package provides [cyclonedds.json](../../../src/agnocast_cyclone_gateway/config/cyclonedds.json) and [zenoh.json](../../../src/agnocast_cyclone_gateway/config/zenoh.json). Each exports native /topic as /from_robot/topic. Cyclone is the default when network_rmw is omitted. The package retains its existing name and Cyclone dependency. Install rmw_zenoh_cpp on the gateway and peer to select Zenoh, and start a reachable Zenoh router using your usual session configuration. On the peer select the same RMW and ROS domain.
 
-In the native application terminal, after sourcing both overlays and setting the heaphook, select either installed file. Copy the file and edit --heaphook if the host uses another absolute hook path.
+In the native application terminal, after sourcing both overlays and setting the heaphook, select either installed file. Copy the file and edit the heaphook field if the host uses another absolute hook path.
 
 ```bash
 export RMW_IMPLEMENTATION=rmw_agnocast

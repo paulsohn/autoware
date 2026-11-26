@@ -19,8 +19,9 @@ out.mkdir()
 gateway = os.environ["AGNOCAST_GATEWAY_EXECUTABLE"]
 hook = os.environ["TEST_HEAPHOOK"]
 route = ["export","std_msgs/msg/String","/ownership/input","/ownership/output","--heaphook",hook]
+config_object=dict(direction="export",type="std_msgs/msg/String",source="/ownership/input",destination="/ownership/output",heaphook=hook)
 config = out/"route.json"
-config.write_text(json.dumps(route))
+config.write_text(json.dumps(config_object))
 native = dict(os.environ,RMW_IMPLEMENTATION="rmw_agnocast",LD_PRELOAD=hook,RMW_AGNOCAST_GATEWAY_CONFIG=str(config))
 rclpy.init()
 node = rclpy.create_node("handoff_witness")

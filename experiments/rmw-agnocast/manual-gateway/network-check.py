@@ -23,7 +23,7 @@ if len(sys.argv)>2:
     from std_msgs.msg import String
     role=sys.argv[2]
     route=json.loads((out/"route.json").read_text())
-    cloud=route[1]=="sensor_msgs/msg/PointCloud2"
+    cloud=route["type"]=="sensor_msgs/msg/PointCloud2"
     cls=PointCloud2 if cloud else String
     def sample(i):
         if not cloud:
@@ -42,7 +42,7 @@ if len(sys.argv)>2:
     assert get_rmw_implementation_identifier()==os.environ["RMW_IMPLEMENTATION"]
     node=rclpy.create_node("gateway_test_"+role)
     if role=="source":
-        pub=node.create_publisher(cls,route[2],10)
+        pub=node.create_publisher(cls,route["source"],10)
         (out/"source-ready").touch()
         wait(pub.get_subscription_count)
         for i in range(20):
@@ -53,7 +53,7 @@ if len(sys.argv)>2:
         def receive(msg):
             assert msg==sample(len(seen))
             seen.append(len(seen))
-        sub=node.create_subscription(cls,route[3],receive,10)
+        sub=node.create_subscription(cls,route["destination"],receive,10)
         (out/"sink-ready").touch()
         end=time.monotonic()+15
         while len(seen)<20 and time.monotonic()<end:
@@ -88,19 +88,19 @@ for backend in ("cyclonedds","zenoh"):
             case=out/f"{backend}-{direction}-{kind}"
             case.mkdir()
             args=json.loads((examples/(backend+".json")).read_text())
-            args[0]=direction
+            args["direction"]=direction
             if kind=="PointCloud2":
-                args[1]="sensor_msgs/msg/PointCloud2"
+                args["type"]="sensor_msgs/msg/PointCloud2"
             if direction=="import":
-                args[2],args[3]=args[3],args[2]
-            args[-1]=os.environ["TEST_HEAPHOOK"]
+                args["source"],args["destination"]=args["destination"],args["source"]
+            args["heaphook"]=os.environ["TEST_HEAPHOOK"]
             config=case/"route.json"
             config.write_text(json.dumps(args))
-            network=args[args.index("--network-rmw")+1]
+            network=args["network_rmw"]
             peer=dict(os.environ,RMW_IMPLEMENTATION=network)
             peer.pop("RMW_AGNOCAST_GATEWAY_CONFIG",None)
             peer.pop("LD_PRELOAD",None)
-            native=dict(peer,RMW_IMPLEMENTATION="rmw_agnocast",RMW_AGNOCAST_GATEWAY_CONFIG=str(config),LD_PRELOAD=args[-1])
+            native=dict(peer,RMW_IMPLEMENTATION="rmw_agnocast",RMW_AGNOCAST_GATEWAY_CONFIG=str(config),LD_PRELOAD=args["heaphook"])
             local,remote=("source","sink") if direction=="export" else ("sink","source")
             with ExitStack() as stack:
                 def endpoint(role,env):

@@ -53,8 +53,9 @@ from std_msgs.msg import String
 gateway = os.environ["AGNOCAST_GATEWAY_EXECUTABLE"]
 hook = os.environ["TEST_HEAPHOOK"]
 route = ["export","std_msgs/msg/String","/ownership/input","/ownership/output","--heaphook",hook]
+config_object=dict(direction="export",type="std_msgs/msg/String",source="/ownership/input",destination="/ownership/output",heaphook=hook)
 out.mkdir()
-(out/"route.json").write_text(json.dumps(route))
+(out/"route.json").write_text(json.dumps(route if os.getenv("TEST_OWNER_CRASH")=="legacy" else config_object))
 rclpy.init()
 node = rclpy.create_node("cyclone_witness")
 received = []
@@ -87,7 +88,7 @@ for mode in ((fault_mode,) if fault_mode else ("auto","manual")):
                  RMW_AGNOCAST_GATEWAY_CONFIG=str(out/"route.json"))
         if mode == "manual":
             mismatch=case/"different-depth.json"
-            mismatch.write_text(json.dumps(route+["--depth","7"]))
+            mismatch.write_text(json.dumps(dict(config_object,qos={"depth":7})))
             rejected=start("incompatible",[sys.executable,"-c","import rclpy; rclpy.init()"],
                            dict(env,RMW_AGNOCAST_GATEWAY_CONFIG=str(mismatch)))
             assert rejected.wait(timeout=15)!=0

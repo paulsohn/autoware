@@ -393,6 +393,44 @@ def supervise(args):
                     child.wait()
 
 
+def route_arguments(config):
+    """Translate the public file schema into the same validated route as a manual launch."""
+    if isinstance(config, list) and all(isinstance(word, str) for word in config):
+        print("Deprecated gateway argument array; migrate to a JSON route object", file=sys.stderr)
+        return config
+    if not isinstance(config, dict):
+        raise ValueError("expected a JSON route object")
+    required = ("direction", "type", "source", "destination", "heaphook")
+    unknown = config.keys() - {*required, "network_rmw", "always_on", "qos"}
+    if unknown:
+        raise ValueError(f"unknown route fields: {', '.join(sorted(unknown))}")
+    for key in required:
+        if not isinstance(config.get(key), str) or not config[key] or config[key].startswith("-"):
+            raise ValueError(f"{key} requires a nonempty route value")
+    words = [config[key] for key in ("direction", "type", "source", "destination")]
+    words.append("--heaphook=" + config["heaphook"])
+    if "network_rmw" in config:
+        if not isinstance(config["network_rmw"], str):
+            raise ValueError("network_rmw requires an RMW name")
+        words.append("--network-rmw=" + config["network_rmw"])
+    always_on = config.get("always_on", False)
+    if not isinstance(always_on, bool):
+        raise ValueError("always_on requires a boolean")
+    if always_on:
+        words.append("--always-on")
+    qos = config.get("qos", {})
+    if not isinstance(qos, dict) or qos.keys() - {"depth", "input_reliability", "output_reliability"}:
+        raise ValueError("qos accepts depth, input_reliability and output_reliability")
+    for key, value in qos.items():
+        if key == "depth":
+            if type(value) is not int or value < 1:
+                raise ValueError("qos.depth requires a positive integer")
+        elif not isinstance(value, str):
+            raise ValueError(f"qos.{key} requires a reliability name")
+        words.append(f"--{key.replace('_', '-')}={value}")
+    return words
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("direction", choices=("export", "import"))
@@ -413,9 +451,10 @@ if __name__ == "__main__":
     if joining:
         config, domain = words[1:]
         os.environ["ROS_DOMAIN_ID"] = str(int(domain))
-        words = json.loads(Path(config).read_text())
-        if not isinstance(words,list) or not all(isinstance(w,str) for w in words):
-            parser.error("gateway configuration must be a JSON array of route arguments")
+        try:
+            words = route_arguments(json.loads(Path(config).read_text()))
+        except (OSError, ValueError) as exc:
+            parser.error(f"{config}: {exc}")
     args = parser.parse_args(words)
     if args.depth < 1 or any(not t.startswith("/") for t in (args.source, args.destination)):
         parser.error("use a positive depth and absolute topic names")

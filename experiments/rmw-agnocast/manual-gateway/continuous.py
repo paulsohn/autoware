@@ -63,8 +63,9 @@ def trial(case,mode,stack):
     gateway=os.environ["AGNOCAST_GATEWAY_EXECUTABLE"]
     hook=os.environ["TEST_HEAPHOOK"]
     route=["export","std_msgs/msg/String",source,destination,"--heaphook",hook]
+    config_object=dict(direction="export",type="std_msgs/msg/String",source=source,destination=destination,heaphook=hook)
     config=case/"route.json"
-    config.write_text(json.dumps(route))
+    config.write_text(json.dumps(config_object))
     ordinary=os.environ.copy()
     ordinary.pop("RMW_AGNOCAST_GATEWAY_CONFIG",None)
     native=dict(ordinary,RMW_IMPLEMENTATION="rmw_agnocast",LD_PRELOAD=hook)
