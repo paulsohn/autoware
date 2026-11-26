@@ -23,7 +23,7 @@
 #include <autoware_utils_rclcpp/parameter.hpp>
 #include <rclcpp/logging.hpp>
 
-#include <tf2/utils.h>
+#include <tf2/utils.hpp>
 
 #include <algorithm>
 #include <cmath>

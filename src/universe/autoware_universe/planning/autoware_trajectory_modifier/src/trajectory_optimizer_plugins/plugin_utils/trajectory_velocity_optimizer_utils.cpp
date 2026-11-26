@@ -20,8 +20,8 @@
 #include <autoware_utils_geometry/geometry.hpp>
 #include <rclcpp/logging.hpp>
 
-#include <tf2/LinearMath/Quaternion.h>
-#include <tf2/convert.h>
+#include <tf2/LinearMath/Quaternion.hpp>
+#include <tf2/convert.hpp>
 
 #include <algorithm>
 #include <cmath>

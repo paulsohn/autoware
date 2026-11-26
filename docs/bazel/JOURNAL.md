@@ -23644,3 +23644,6 @@ with the heaphook (.7 s), with RCLCPP uninitialized. Reuse unchanged pure
 algorithm/solver evidence. Targeted formatting and diff checks pass. No Fast
 DDS, exhaustive optimizer-profile matrix, simulator, deployment or field safety
 qualification is selected. Next: final trajectory selection.
+
+The UUID include correction is 8a4f7306d. The expected/TF2 header compatibility
+changes are a separate source commit; no algorithm or assertion change is made.

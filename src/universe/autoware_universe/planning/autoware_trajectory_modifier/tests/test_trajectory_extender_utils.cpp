@@ -16,7 +16,7 @@
 #include "test_utils.hpp"
 
 #include <gtest/gtest.h>
-#include <tf2/utils.h>
+#include <tf2/utils.hpp>
 
 #include <cmath>
 #include <vector>

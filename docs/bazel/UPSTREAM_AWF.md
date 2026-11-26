@@ -2648,6 +2648,8 @@ validation is claimed.
 
 ### Trajectory modifier: Boost hashing and Lyrical headers
 
+Local UUID include fix: `8a4f7306d`.
+
 - [x] Associate the missing boost::hash definition with merged
   [PR #13593](https://github.com/autowarefoundation/autoware_universe/pull/13593),
   merge commit 9bd42c582e892f238d2ffba8568637c3cb87cf61 (2026-11-09).

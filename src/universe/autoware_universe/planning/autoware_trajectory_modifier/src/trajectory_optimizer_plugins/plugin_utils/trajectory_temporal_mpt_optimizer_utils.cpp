@@ -16,7 +16,7 @@
 
 #include <autoware_utils_geometry/geometry.hpp>
 
-#include <tf2/utils.h>
+#include <tf2/utils.hpp>
 
 #include <algorithm>
 #include <cmath>
