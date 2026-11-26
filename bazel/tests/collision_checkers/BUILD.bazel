@@ -12,3 +12,16 @@ py_test(
     tags = ["no-sandbox", "no-remote"],
     precompile = "disabled",
 )
+
+py_test(
+    name = "spheric_runtime_test",
+    timeout = "long",
+    srcs = ["test_runtime.py"],
+    main = "test_runtime.py",
+    args = ["$(rootpath @autoware_spheric_collision_detector//:spheric_collision_detector_node)", "autoware_spheric_collision_detector"],
+    data = ["@autoware_spheric_collision_detector//:spheric_collision_detector_node", "@autoware_spheric_collision_detector//:ament_index", "@autoware_test_utils//:ament_index"],
+    deps = ["@ament_index_python", "@rclpy", "@autoware_planning_msgs//:py", "@autoware_perception_msgs//:py", "@diagnostic_msgs//:py", "@geometry_msgs//:py", "@sensor_msgs//:py", "@nav_msgs//:py", "@tf2_msgs//:py"],
+    env = {"LD_LIBRARY_PATH": "lib", "ROS_DOMAIN_ID": "80"},
+    tags = ["no-sandbox", "no-remote"],
+    precompile = "disabled",
+)

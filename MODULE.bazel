@@ -2236,6 +2236,12 @@ local_path_override(
     path = "src/universe/autoware_universe/control/autoware_obstacle_collision_checker",
 )
 
+bazel_dep(name = "autoware_spheric_collision_detector")
+local_path_override(
+    module_name = "autoware_spheric_collision_detector",
+    path = "src/universe/autoware_universe/control/autoware_spheric_collision_detector",
+)
+
 # Launcher source modules.
 bazel_dep(name = "sample_vehicle_description")
 local_path_override(

@@ -24881,3 +24881,15 @@ collision again and lateral recovery over Cyclone DDS, with clean shutdown.
 No algorithm changes or original assertions are introduced. The next commit
 records and adopts the package build/index pattern; no colcon/older-ROS, Fast DDS,
 simulator or deployment result is claimed.
+
+Add the package-local MODULE/BUILD pair with a versionless root selection. Use
+local perception/planning interfaces and vehicle/utilities, direct sensor and
+visualization messages and pinned ROS/PCL providers for the actual public
+headers. Preserve the original library/class/executable names and register all
+launch/configuration in the package-owned index. Declare the original textual
+.cpp include with a test-only provider rather than changing its source. Reuse
+the external collision peer with DetectedObjects, indexed vehicle parameters,
+TF and trajectory/odometry; raising the object to z=10 m must clear the collision
+without changing its x/y position. Both selected targets pass with no skips;
+the zero-case runner alone is explicitly insufficient. Coverage is 183/244,
+with two of nine Phase 9.12 package gates complete. Next: predicted-path checker.
