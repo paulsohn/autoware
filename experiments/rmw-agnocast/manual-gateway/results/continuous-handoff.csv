@@ -1,0 +1,11 @@
+trial,owner,local,cyclone,missing_ranges,duplicates,max_receive_gap_ms,first_fresh_ms
+0-stable,original,100,100,,0,50.28,42.68
+1-overlap,original,100,100,,0,50.4,48.3
+2-replace,automatic,100,88,30-41,0,650.12,648.62
+3-manual-lead,manual,100,88,30-41,0,650.28,646.43
+4-auto-lead,automatic,100,88,30-41,0,650.41,647.65
+5-auto-lead,automatic,100,88,30-41,0,649.88,648.54
+6-manual-lead,manual,100,89,30-40,0,600.36,599.01
+7-replace,automatic,100,88,30-41,0,650.34,647.38
+8-overlap,original,100,100,,0,50.76,48.65
+9-stable,original,100,100,,0,50.4,44.09

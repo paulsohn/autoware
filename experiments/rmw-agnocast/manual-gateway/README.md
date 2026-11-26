@@ -125,3 +125,19 @@ export LYRICAL_ROOT="$(cat build/agnocast-lyrical/universe-root)"
 export BUFFER_RUNTIME_ONLY=1
 experiments/buffer/run-lyrical.sh bash experiments/rmw-agnocast/manual-gateway/check-ownership.sh build/manual-gateway/handoff-replay --handoff overlap overlap-manual race drain manual-first auto-first successor-first
 ```
+
+## Measure what a running recorder loses during handoff
+
+Keep the source, its local rosbag2 recorder, and the Cyclone rosbag2 recorder alive throughout each trial. The native source and local recorder run without AGNOCAST_GATEWAY_CONFIG. Separate native contexts control the gateway lifetime. Each application message contains a sequence number and the laptop wall-clock timestamp taken just before publication. Each bag uses SQLite with the recorder cache disabled. The witness decodes both bags, checks the exact source timestamp for every forwarded sequence, and checks ordering, duplicates and the final sequence.
+
+On the provisioned laptop with the current overlays, run the balanced matrix from the colcon worktree. Use a fresh output directory. This multi-process fixture uses the 1,200 MiB aggregate memory guard. Trials run sequentially.
+
+```bash
+export LYRICAL_ROOT="$(cat build/agnocast-lyrical/universe-root)"
+unset BUFFER_RUNTIME_ONLY
+experiments/buffer/run-lyrical.sh bash experiments/rmw-agnocast/manual-gateway/check-ownership.sh build/manual-gateway/continuity-replay --continuous stable overlap replace manual-lead auto-lead auto-lead manual-lead replace overlap stable
+```
+
+The source publishes 100 samples at 20 Hz, starting only after the native recorder and gateway have subscribed. After sequence 29, the driver records an event timestamp. In the stable control this is only a timing marker. In overlap it admits the incoming context before letting the old context exit. In replacement it waits for the outgoing supervisor to exit before releasing the incoming context. The two competing cases also launch a manual gateway, either just before releasing the incoming context or 120 ms afterward. The result reports the actual owner. The overlap check verifies that the original supervisor stayed alive.
+
+[Trial results](results/continuous-handoff.csv) report missing sequence ranges (inclusive, zero-based), the longest interval between consecutive Cyclone bag receipt timestamps, and the elapsed time from the event to receipt of the first sample published after the event. These metrics include the publication cadence and discovery. A 20 Hz stream has a nominal 50 ms interval even with uninterrupted forwarding. Both recorders use the same machine clock; this fixture does not infer one-way delay between physical hosts.
