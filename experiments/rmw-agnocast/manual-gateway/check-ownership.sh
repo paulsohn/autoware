@@ -11,6 +11,9 @@ if [[ -n ${TEST_GATEWAY_EXECUTABLE:-} ]]; then export AGNOCAST_GATEWAY_EXECUTABL
 export TEST_HEAPHOOK=/ws/build/migration-guide/packaged-hook-check/libagnocast_heaphook.so
 export ROS_DOMAIN_ID=175 RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
 export CYCLONEDDS_URI='<CycloneDDS><Domain><General><Interfaces><NetworkInterface name="lo"/></Interfaces><AllowMulticast>false</AllowMulticast></General><Discovery><ParticipantIndex>auto</ParticipantIndex><Peers><Peer Address="127.0.0.1"/></Peers></Discovery></Domain></CycloneDDS>'
+if [[ ${2:-} == --network ]]; then
+  exec python3 experiments/rmw-agnocast/manual-gateway/network-check.py "$1"
+fi
 if [[ ${2:-} == --continuous ]]; then
   out=$1
   shift 2

@@ -1,0 +1,5 @@
+[
+  "export", "std_msgs/msg/String", "/topic", "/from_robot/topic",
+  "--network-rmw", "rmw_cyclonedds_cpp",
+  "--heaphook", "/opt/ros/jazzy/lib/libagnocast_heaphook.so"
+]

@@ -18,7 +18,8 @@ import time
 from contextlib import ExitStack
 
 NATIVE = "rmw_agnocast"
-DDS = "rmw_cyclonedds_cpp"
+CYCLONE = "rmw_cyclonedds_cpp"
+ZENOH = "rmw_zenoh_cpp"
 HEADER = struct.Struct("!I")
 MAX_BYTES = 64 * 1024 * 1024
 
@@ -220,8 +221,10 @@ def acquire_route(stack, endpoints):
 
 
 def control_address(args):
+    network_config = (["CYCLONEDDS_URI"] if args.network_rmw == CYCLONE else
+                      ["ZENOH_SESSION_CONFIG_URI","ZENOH_CONFIG_OVERRIDE","ROS_AUTOMATIC_DISCOVERY_RANGE","ROS_STATIC_PEERS"])
     settings = [os.getuid(), int(os.environ.get("ROS_DOMAIN_ID", "0")), os.stat("/dev/agnocast").st_rdev,
-                os.stat("/dev/shm").st_dev, os.environ.get("CYCLONEDDS_URI", ""),
+                os.stat("/dev/shm").st_dev, args.network_rmw, [os.environ.get(key) for key in network_config],
                 args.direction, args.type, args.source, args.destination, args.depth,
                 args.input_reliability, args.output_reliability, args.always_on, str(args.heaphook.resolve(strict=True))]
     return "\0agnocast-" + hashlib.sha256(json.dumps(settings).encode()).hexdigest()
@@ -307,7 +310,7 @@ def accept_lease(listener,leases,automatic):
 
 
 def supervise(args):
-    stacks = (NATIVE, DDS) if args.direction == "export" else (DDS, NATIVE)
+    stacks = (NATIVE, args.network_rmw) if args.direction == "export" else (args.network_rmw, NATIVE)
     children = []
     stop = False
 
@@ -336,7 +339,7 @@ def supervise(args):
         try:
             for role, rmw, end in zip(("source", "destination"), stacks, ends):
                 env = dict(os.environ, RMW_IMPLEMENTATION=rmw)
-                env.pop("AGNOCAST_GATEWAY_CONFIG",None)
+                env.pop("RMW_AGNOCAST_GATEWAY_CONFIG",None)
                 env["AGNOCAST_ENDPOINT_READY_FD"] = str(ready_write)
                 hooks = [h for h in env.get("LD_PRELOAD", "").replace(":", " ").split()
                          if "agnocast_heaphook" not in h]
@@ -396,9 +399,10 @@ if __name__ == "__main__":
     parser.add_argument("type", metavar="PACKAGE/msg/TYPE")
     parser.add_argument("source")
     parser.add_argument("destination")
+    parser.add_argument("--network-rmw", choices=(CYCLONE, ZENOH), default=CYCLONE)
     parser.add_argument("--heaphook", type=Path, required=True)
     parser.add_argument("--depth", type=int, default=10)
-    parser.add_argument("--always-on", action="store_true", help="arm export even without a DDS reader")
+    parser.add_argument("--always-on", action="store_true", help="arm export even without a network reader")
     for side, default in (("input", "best_effort"), ("output", "reliable")):
         parser.add_argument(f"--{side}-reliability", choices=("best_effort", "reliable"), default=default)
     parser.add_argument("--endpoint", choices=("source", "destination"), help=argparse.SUPPRESS)

@@ -108,7 +108,7 @@ standalone::Context::~Context()
 
 bool standalone::join_gateway(Context & context, size_t domain)
 {
-  const char * config = std::getenv("AGNOCAST_GATEWAY_CONFIG");
+  const char * config = std::getenv("RMW_AGNOCAST_GATEWAY_CONFIG");
   if (!config || !*config) return true;
   const char * program = std::getenv("AGNOCAST_GATEWAY_EXECUTABLE");
   if (!program || program[0] != '/') {

@@ -66,9 +66,9 @@ def trial(case,mode,stack):
     config=case/"route.json"
     config.write_text(json.dumps(route))
     ordinary=os.environ.copy()
-    ordinary.pop("AGNOCAST_GATEWAY_CONFIG",None)
+    ordinary.pop("RMW_AGNOCAST_GATEWAY_CONFIG",None)
     native=dict(ordinary,RMW_IMPLEMENTATION="rmw_agnocast",LD_PRELOAD=hook)
-    lease=dict(native,AGNOCAST_GATEWAY_CONFIG=str(config))
+    lease=dict(native,RMW_AGNOCAST_GATEWAY_CONFIG=str(config))
     def start(name,cmd,env):
         log=stack.enter_context((case/(name+".log")).open("w"))
         proc=subprocess.Popen(cmd,env=env,stdout=log,stderr=log)

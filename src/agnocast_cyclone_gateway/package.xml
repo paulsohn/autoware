@@ -2,7 +2,7 @@
 <package format="3">
   <name>agnocast_cyclone_gateway</name>
   <version>0.1.0</version>
-  <description>Explicit same-host Agnocast to Cyclone DDS topic gateway.</description>
+  <description>Topic gateway between native Agnocast and a Cyclone DDS or Zenoh network.</description>
   <maintainer email="paulsohn@users.noreply.github.com">Paul Sohn</maintainer>
   <license>Apache-2.0</license>
   <buildtool_depend>ament_cmake</buildtool_depend>

@@ -79,12 +79,32 @@ This prototype supports one explicitly configured route per participating contex
 
 ```bash
 printf '%s\n' '["export","std_msgs/msg/String","/topic","/from_robot/topic","--heaphook","/opt/ros/jazzy/lib/libagnocast_heaphook.so"]' > robot-export.json
-export AGNOCAST_GATEWAY_CONFIG="$PWD/robot-export.json"
+export RMW_AGNOCAST_GATEWAY_CONFIG="$PWD/robot-export.json"
 export AGNOCAST_GATEWAY_EXECUTABLE="$(ros2 pkg prefix agnocast_cyclone_gateway)/lib/agnocast_cyclone_gateway/topic_gateway"
 ros2 run examples_rclcpp_minimal_publisher publisher_member_function
 ```
 
-Each opted-in rmw_init waits for both endpoint processes to initialize. A short-lived helper joins the matching owner or starts an independent supervisor. Each context holds a socket lease until finalization or process exit. The automatic owner shuts down after its last lease closes. An explicitly launched matching manual owner stays up until its operator stops it. Route names, direction, installed type, QoS, domain, effective hook path and the literal Cyclone profile setting must agree. A matching manual command must be running before context initialization to reuse it. A new manual launch while the route is already owned can report a conflict. Unset AGNOCAST_GATEWAY_CONFIG for the existing local-only behavior. The gateway's own worker clears that variable before initializing ROS.
+### Select the gateway network
+
+The installed package provides [cyclonedds.json](../../../src/agnocast_cyclone_gateway/config/cyclonedds.json) and [zenoh.json](../../../src/agnocast_cyclone_gateway/config/zenoh.json). Each exports native /topic as /from_robot/topic. Cyclone is the default when --network-rmw is omitted. The package retains its existing name and Cyclone dependency. Install rmw_zenoh_cpp on the gateway and peer to select Zenoh, and start a reachable Zenoh router using your usual session configuration. On the peer select the same RMW and ROS domain.
+
+In the native application terminal, after sourcing both overlays and setting the heaphook, select either installed file. Copy the file and edit --heaphook if the host uses another absolute hook path.
+
+```bash
+export RMW_IMPLEMENTATION=rmw_agnocast
+export AGNOCAST_GATEWAY_EXECUTABLE="$(ros2 pkg prefix agnocast_cyclone_gateway)/lib/agnocast_cyclone_gateway/topic_gateway"
+export RMW_AGNOCAST_GATEWAY_CONFIG="$(ros2 pkg prefix --share agnocast_cyclone_gateway)/config/cyclonedds.json"
+```
+
+For Zenoh, change the final assignment before launching the native application:
+
+```bash
+export RMW_AGNOCAST_GATEWAY_CONFIG="$(ros2 pkg prefix --share agnocast_cyclone_gateway)/config/zenoh.json"
+```
+
+Migrate launch environments using the old AGNOCAST_GATEWAY_CONFIG name to RMW_AGNOCAST_GATEWAY_CONFIG and restart contexts and gateways together when updating versions. For manual startup, pass --network-rmw rmw_zenoh_cpp or --network-rmw rmw_cyclonedds_cpp directly to topic_gateway. The gateway distinguishes route owners by network RMW and the selected network's profile settings.
+
+Each opted-in rmw_init waits for both endpoint processes to initialize. A short-lived helper joins the matching owner or starts an independent supervisor. Each context holds a socket lease until finalization or process exit. The automatic owner shuts down after its last lease closes. An explicitly launched matching manual owner stays up until its operator stops it. Route names, direction, installed type, QoS, domain, effective hook path and the selected network RMW and profile settings must agree. A matching manual command must be running before context initialization to reuse it. A new manual launch while the route is already owned can report a conflict. Unset RMW_AGNOCAST_GATEWAY_CONFIG for the existing local-only behavior. The gateway's own worker clears that variable before initializing ROS.
 
 Replay from the provisioned worktree with both rebuilt overlays. The stock Cyclone witness runs on loopback. Two ordinary rclpy applications synchronize just before rclpy.init. The elected starter exits first. The witness checks the publisher count, delivery order and content through both exits. The automatic case checks the actual supervisor PID exits. The manual case checks it stays running after both applications exit.
 
@@ -128,7 +148,7 @@ experiments/buffer/run-lyrical.sh bash experiments/rmw-agnocast/manual-gateway/c
 
 ## Measure what a running recorder loses during handoff
 
-Keep the source, its local rosbag2 recorder, and the Cyclone rosbag2 recorder alive throughout each trial. The native source and local recorder run without AGNOCAST_GATEWAY_CONFIG. Separate native contexts control the gateway lifetime. Each application message contains a sequence number and the laptop wall-clock timestamp taken just before publication. Each bag uses SQLite with the recorder cache disabled. The witness decodes both bags, checks the exact source timestamp for every forwarded sequence, and checks ordering, duplicates and the final sequence.
+Keep the source, its local rosbag2 recorder, and the Cyclone rosbag2 recorder alive throughout each trial. The native source and local recorder run without RMW_AGNOCAST_GATEWAY_CONFIG. Separate native contexts control the gateway lifetime. Each application message contains a sequence number and the laptop wall-clock timestamp taken just before publication. Each bag uses SQLite with the recorder cache disabled. The witness decodes both bags, checks the exact source timestamp for every forwarded sequence, and checks ordering, duplicates and the final sequence.
 
 On the provisioned laptop with the current overlays, run the balanced matrix from the colcon worktree. Use a fresh output directory. This multi-process fixture uses the 1,200 MiB aggregate memory guard. Trials run sequentially.
 

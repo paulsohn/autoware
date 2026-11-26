@@ -21,7 +21,7 @@ hook = os.environ["TEST_HEAPHOOK"]
 route = ["export","std_msgs/msg/String","/ownership/input","/ownership/output","--heaphook",hook]
 config = out/"route.json"
 config.write_text(json.dumps(route))
-native = dict(os.environ,RMW_IMPLEMENTATION="rmw_agnocast",LD_PRELOAD=hook,AGNOCAST_GATEWAY_CONFIG=str(config))
+native = dict(os.environ,RMW_IMPLEMENTATION="rmw_agnocast",LD_PRELOAD=hook,RMW_AGNOCAST_GATEWAY_CONFIG=str(config))
 rclpy.init()
 node = rclpy.create_node("handoff_witness")
 received = []

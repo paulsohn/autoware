@@ -84,12 +84,12 @@ for mode in ((fault_mode,) if fault_mode else ("auto","manual")):
             manual=start("owner",[gateway,*route],os.environ)
             spin_until(lambda:sub.get_publisher_count()==1)
         env=dict(os.environ,RMW_IMPLEMENTATION="rmw_agnocast",LD_PRELOAD=hook,
-                 AGNOCAST_GATEWAY_CONFIG=str(out/"route.json"))
+                 RMW_AGNOCAST_GATEWAY_CONFIG=str(out/"route.json"))
         if mode == "manual":
             mismatch=case/"different-depth.json"
             mismatch.write_text(json.dumps(route+["--depth","7"]))
             rejected=start("incompatible",[sys.executable,"-c","import rclpy; rclpy.init()"],
-                           dict(env,AGNOCAST_GATEWAY_CONFIG=str(mismatch)))
+                           dict(env,RMW_AGNOCAST_GATEWAY_CONFIG=str(mismatch)))
             assert rejected.wait(timeout=15)!=0
             assert "conflicting route" in (case/"incompatible.log").read_text()
             assert manual.poll() is None and sub.get_publisher_count()==1
