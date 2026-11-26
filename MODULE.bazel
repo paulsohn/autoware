@@ -2099,3 +2099,9 @@ local_path_override(
     module_name = "autoware_geo_pose_projector",
     path = "src/universe/autoware_universe/localization/autoware_geo_pose_projector",
 )
+
+bazel_dep(name = "autoware_pose_covariance_modifier", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_pose_covariance_modifier",
+    path = "src/universe/autoware_universe/localization/autoware_pose_covariance_modifier",
+)

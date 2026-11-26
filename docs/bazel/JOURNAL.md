@@ -22330,3 +22330,32 @@ Results: nine module non-test targets build; both cases pass, zero failures/
 errors/skips, 12.2 s. Added-file formatting and diff checks pass. No geoid download
 is required for the selected WGS84-to-WGS84 profile. Fast DDS, wrapper, vehicle
 accuracy and expensive product gates are not selected. Next: covariance policy.
+
+## 2026-11-26: Phase 9.8 — pose covariance selection
+
+Purpose: expose the original plain-rclcpp modifier, executable, config and launch.
+Inspect every selection branch, interpolation bounds, expiry clock and covariance
+indices; there is no original functional suite. Add five root-owned topic cases:
+NDT before GNSS, precise GNSS suppression of NDT, mixed variance update, poor
+GNSS fallback and expired mixed-profile covariance retention.
+
+Pattern: original one-source compile/shared owner, component registration and
+indexed resource/executable closure; local interpolation and geometry/std/rclcpp
+SDK providers. Keep src/include as the existing public header root. No source
+changes are required. Fixtures select GNSS bounds .1/.3 and NDT bounds .1/.5;
+GNSS standard deviation .2 gives mixed NDT variance .09. Check all 36 entries,
+pose and header, not just the selected source string. Precise GNSS suppresses
+later NDT publication; an expired mixed source preserves original NDT variance.
+Wait for endpoint discovery and selection delivery before the next observation.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  @autoware_pose_covariance_modifier//... //bazel/tests:pose_covariance_modifier_test
+```
+
+Results: nine module non-test targets build and all five added cases pass,
+zero failures/errors/skips, 22.0 s. Added-file formatting and diff checks pass.
+No wrapper, Fast DDS, field accuracy or expensive product gate is selected.
+Next: initialization requests and the two wrapper monitors.

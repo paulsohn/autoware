@@ -2594,3 +2594,12 @@ cc_test(
     data = [],
     tags = ["no-sandbox", "no-remote"],
 )
+
+cc_test(
+    name = "pose_covariance_modifier_test",
+    srcs = ["autoware_pose_covariance_modifier/test_selection.cpp"],
+    deps = ["@autoware_pose_covariance_modifier//:autoware_pose_covariance_modifier_library", "@googletest//:gtest_main"],
+    dynamic_deps = ["@autoware_pose_covariance_modifier//:runtime_dynamic_deps"],
+    data = [],
+    tags = ["no-sandbox", "no-remote"],
+)

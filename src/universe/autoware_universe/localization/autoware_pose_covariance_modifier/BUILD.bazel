@@ -1,0 +1,47 @@
+load("@rclcpp_components//:defs.bzl", "rclcpp_components_register_node")
+load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "autoware_pose_covariance_modifier_library",
+    srcs = ["src/pose_covariance_modifier.cpp"],
+    hdrs = ["src/include/pose_covariance_modifier.hpp"],
+    includes = ["src", "src/include"],
+    deps = ["@autoware_interpolation", "@geometry_msgs//:cc", "@rclcpp_components//:rclcpp_components_library", "@std_msgs//:cc"],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = ["@geometry_msgs//:cc_shared", "@rclcpp_components//:rclcpp_components", "@std_msgs//:cc_shared"],
+)
+
+cc_shared_library(
+    name = "autoware_pose_covariance_modifier",
+    shared_lib_name = "libautoware_pose_covariance_modifier.so",
+    deps = [":autoware_pose_covariance_modifier_library"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+)
+
+rclcpp_components_register_node(
+    name = "autoware_pose_covariance_modifier_node",
+    component = ":autoware_pose_covariance_modifier",
+    plugin = "autoware::pose_covariance_modifier::PoseCovarianceModifierNode",
+    node_name = "autoware_pose_covariance_modifier_node",
+)
+
+register_ament_files(
+    name = "executables",
+    files = [":autoware_pose_covariance_modifier_node"],
+    prefix = "lib/autoware_pose_covariance_modifier",
+    strip_prefix = "*",
+)
+
+ament_index(
+    package_xml = "package.xml",
+    libraries = [":autoware_pose_covariance_modifier"],
+    components = [":autoware_pose_covariance_modifier_node_record"],
+    data = glob(["launch/**", "config/**"]) + [":executables"],
+)

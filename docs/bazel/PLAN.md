@@ -2391,6 +2391,8 @@ autoware_landmark_manager: complete; see its Phase 9.8 journal for commands and 
 
 autoware_geo_pose_projector: complete; see its Phase 9.8 journal for commands and results.
 
+autoware_pose_covariance_modifier: complete; see its Phase 9.8 journal for commands and results.
+
 ### Execution order through complete Universe coverage
 
 The following groups are the initial route through every remaining package.
