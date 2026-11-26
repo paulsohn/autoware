@@ -1,5 +1,6 @@
 """Timed endpoints sharing the 600-frame Universe replay's clock and ROS domain."""
 import json
+import os
 import sys
 import time
 from pathlib import Path
@@ -30,6 +31,11 @@ def collect(topic, msg):
         emit(first=topic, value=msg.data)
     received.setdefault(topic, []).append(msg.data)
 
+waves = os.getenv("ZENOH_RETIREMENT_WAVES") == "1"
+if waves:
+    assert policy == "discovered" and os.getenv("ZENOH_RETIREMENT_OBSERVERS") == "1"
+removed_at = {}
+late = set()
 last_tick = -1
 while True:
     t = (time.time_ns() - t0) / 1e9
@@ -58,16 +64,24 @@ while True:
             last_tick = tick
     else:
         desired = {"active1"} if phase == "one" else active if phase == "two" else set()
+        if waves:
+            # Reuse both names and the same router for four generations during one replay.
+            desired = active if t >= 3 and (t-3) % 13 < 4 and not late else set()
         for name in sorted(subs.keys() - desired):
             node.destroy_subscription(subs.pop(name))
+            removed_at[name] = time.time_ns()
             emit(removed=name)
         for name in sorted(desired - subs.keys()):
             subs[name] = node.create_subscription(Int32, "/churn/" + name,
                 lambda msg, n=name: collect(n, msg), 10)
             emit(created=name)
-        if phase == "detach":
+        if (waves and not desired) or (not waves and phase == "detach"):
             for name in list(received):
                 present = node.count_publishers("/churn/" + name)
+                if waves and present and time.time_ns()-removed_at[name] >= 7_000_000_000:
+                    if name not in late:
+                        emit(deadline_miss=name)
+                    late.add(name)
                 if policy == "configured-matched" or present == 0:
                     active_samples = received.pop(name)
                     assert active_samples == sorted(set(active_samples))
@@ -99,6 +113,7 @@ if role == "network":
                     emit(late_retirement=name)
                     pending.remove(name)
         raise AssertionError(f"publishers visible at retirement deadline: {sorted(received)}")
+    assert not late, late
     assert retired == ({"active1", "active2"} if policy in ("discovered","configured-matched") else set()), retired
 node.destroy_node()
 rclpy.shutdown()

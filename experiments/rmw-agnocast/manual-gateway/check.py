@@ -160,6 +160,16 @@ for index, mode in enumerate(args.cases):
         tmp.rename(case/"churn-start")
 
     try:
+        observe = os.getenv("ZENOH_RETIREMENT_OBSERVERS") == "1"
+        if observe:
+            assert args.churn == "discovered" and network == "rmw_zenoh_cpp"
+            script = Path(__file__).with_name("retirement-observer.py")
+            sp.run(["docker","cp",str(script),peer+":/tmp/observer.py"],check=True)
+            observers = [
+                start("observer-host",host+["observer",str(case/"stop-observer")]),
+                start("observer-peer",peer_cmd+["python3","/tmp/observer.py","peer","/tmp/stop-observer"])]
+            for side,worker in zip(("host","peer"),observers):
+                wait(lambda:contains("observer-"+side,'"ready": true'),worker)
         if args.churn:
             churn_workers=[]
             for role in ("native","network"):
@@ -295,6 +305,11 @@ for index, mode in enumerate(args.cases):
                 assert graph.wait(timeout=90) == 0
             else:
                 done(graph)
+        if observe:
+            (case/"stop-observer").touch()
+            sp.run(["docker","exec",peer,"touch","/tmp/stop-observer"],check=True)
+            for worker in observers:
+                done(worker)
         if pressure:
             stop_monitor.set()
             monitor.join()

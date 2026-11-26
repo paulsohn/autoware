@@ -4579,3 +4579,22 @@ sg docker -c 'bash experiments/rmw-agnocast/islands/zenoh-retirement.sh routed'
 ```
 
 Retain the inventory optimization. Investigate the remaining Zenoh visibility issue with an independent simultaneous stock graph observer during repeated gateway retirements under load, comparing the advertised GIDs and the actual worker exit times. Physical-host qualification stays open.
+
+## Compare independent Zenoh graph observers during loaded route retirement
+
+The preceding inventory series had one auxiliary publisher still counted by its former subscriber seven seconds after unsubscribe. Repeat the same 600-group Universe workload and 48-offer churn schedule with a passive stock rmw_zenoh_cpp observer on the application host and another in the recorder/router container. The requesting network subscriber retains its existing seven-second test. Neither observer subscribes to the data. Every 50 ms they sample publisher count and endpoint GID/name separately on each auxiliary topic. On first appearance the host observer opens a pidfd for the destination worker named by the endpoint and checks its command line. Polling that fd observes the original process exit without PID reuse ambiguity. Host and container use the same laptop clock. Times are observation times with polling uncertainty; counts and endpoint lists are separate calls.
+
+From the provisioned colcon worktree at the native inventory revision, run this command for each fresh output prefix:
+
+```bash
+sg docker -c 'ZENOH_RETIREMENT_OBSERVERS=1 bash experiments/rmw-agnocast/manual-gateway/churn-run.sh build/manual-gateway/retire-replay zenoh discovered'
+python3 experiments/rmw-agnocast/manual-gateway/retirement-report.py build/manual-gateway/retire-replay-zenoh-discovered
+```
+
+The report checks the same GID on both observers before unsubscribe, considers reappearances when reporting retirement, and requires coverage beyond the seven-second deadline. It retains the longest polling interval and the former subscriber's own result. Each execution starts a fresh router and peer, verifies local and remote bag readback, and runs under the existing host and container memory limits.
+
+The repeated-generation variant uses the same two topic names and one router for four subscribe/unsubscribe cycles during a replay. The native workload and cloud export continue throughout. Set ZENOH_RETIREMENT_WAVES=1 together with ZENOH_RETIREMENT_OBSERVERS=1 on the same run command. Each generation must deliver payload, have a new destination GID and leave a seven-second observation window before the next subscription. The requesting reader records any missed deadline even if the publisher later disappears.
+
+Six original-schedule replays supplied 12 retirements. Two four-generation replays supplied 16 more. All 28 fresh GIDs agreed across both observers, and every worker exit was confirmed with a pidfd. Relative to unsubscribe, the requesting reader observed retirement at 40–524 ms, the passive host observer at 73–547 ms and the passive recorder-side observer at 78–555 ms. The two passive observation times differed by at most 29 ms; their longest polling gap was 53 ms. The destination processes exited within 598 ms. All 28 had zero publishers and empty endpoint lists on both passive observers at the seven-second check. All eight runs verified 600/600 local and remote clouds and 596/596 steady tracker outputs. Four Zenoh SubscriberCallback errors appeared on the requesting side in this passing batch. That error alone is insufficient evidence of stale graph state. Minimum guarded host MemAvailable was 11645 MiB. [Per-GID results](../rmw-agnocast/manual-gateway/results/zenoh-observed-retirement.csv).
+
+The previous loaded seven-second miss remains unexplained. These instrumented runs found neither a one-observer stale entry nor a shared stale advertisement. They establish routine retirement with the inventory cache and same-name reuse in this laptop topology; they do not bound rare failures. Keep the seven-second test and the optional observers for recurrence. A transport or shutdown patch needs a trace that identifies which layer retained the endpoint.

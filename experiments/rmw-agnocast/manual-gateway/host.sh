@@ -29,6 +29,10 @@ source build/standalone/release-path/install/local_setup.bash
 source build/standalone/poll-install/local_setup.bash
 source build/manual-gateway/install/local_setup.bash
 hook=/ws/build/migration-guide/packaged-hook-check/libagnocast_heaphook.so
+if [[ $op == observer ]]; then
+  export RMW_IMPLEMENTATION=rmw_zenoh_cpp
+  exec python3 experiments/rmw-agnocast/manual-gateway/retirement-observer.py host "$1"
+fi
 if [[ $op == churn ]]; then
   export RMW_IMPLEMENTATION="$GATEWAY_BENCH_RMW" CYCLONEDDS_URI="$GATEWAY_CYCLONE_PROFILE"
   if [[ $2 == native ]]; then export LD_PRELOAD="$hook" RMW_IMPLEMENTATION=rmw_agnocast; fi
