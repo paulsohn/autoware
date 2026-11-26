@@ -1219,8 +1219,9 @@ Local source fix: `67287e6e`, separate from Bazel definitions.
 
 - [x] Associated with open [universe#13605](https://github.com/autowarefoundation/autoware_universe/pull/13605),
   reviewed 2026-11-22 at head c4e36a66e05eef83f000a4d28e59c9cab648c71d.
-  The intersection edit matches; the PR also changes the unselected roundabout
-  module. Current main still contains the failing initializer. The
+  Rechecked 2026-11-27 at the same head. Phase 9.11 exposes the roundabout
+  constructor failure and applies the PR's matching roundabout hunk as well.
+  Current main still contains the failing initializer. The
   [Lyrical tracker](https://github.com/autowarefoundation/autoware/issues/7404) and
   [toolchain tracker](https://github.com/autowarefoundation/autoware_universe/issues/13590)
   provide context. This is not a new upstream submission.
@@ -1232,6 +1233,40 @@ Local source fix: `67287e6e`, separate from Bazel definitions.
   module gate passes its original suite, added UUID lookup regression and both
   standard/experimental lifecycle checks with CPU/Cyclone DDS and Agnocast off.
   Older Boost builds and enabled-Agnocast runtime are not claimed.
+
+Roundabout's four added behavior cases preserve identity across all sixteen
+UUID bytes, object/safety state and collision interval calculations. Both
+standard/experimental factory lifecycles and their composed profiles pass
+after the same value-initialize-and-copy correction. Its source fix is recorded
+with the [roundabout module task](JOURNAL.md#2026-11-27-phase-911--roundabout-velocity-plugin-and-ttc-tool).
+
+### Roundabout TTC recording: Matplotlib buffer API and shutdown
+
+- [ ] Associate with a matching AWF change. Reviewed 2026-11-27:
+  [current ttc.py](https://github.com/autowarefoundation/autoware_universe/blob/main/planning/behavior_velocity_planner/autoware_behavior_velocity_roundabout_module/scripts/ttc.py)
+  still calls tostring_rgb and does not call cleanup from main. Scoped
+  roundabout/Matplotlib and roundabout/TTC/cleanup PR searches find no matching
+  correction. The Lyrical tracker remains related transition context.
+
+With Matplotlib 3.10.9, Python 3.14/Tk 9.0 and Cyclone DDS, the indexed tool
+receives real debug messages but --save raises AttributeError on FigureCanvasTkAgg.
+The [Matplotlib 3.10 removal notice](https://matplotlib.org/stable/api/prev_api_changes/api_changes_3.10.0.html#rendereragg-tostring-rgb-and-figurecanvasagg-tostring-rgb)
+recommends buffer_rgba. Read that buffer and retain its RGB channels before
+constructing the recorded frame.
+
+After correcting the API, interrupting the running command still produces no
+GIF because main never invokes its writer. Handle keyboard/context shutdown
+and call cleanup, destroy the ROS node and close the figure. Check rclpy.ok()
+before context shutdown, and avoid encoding an empty frame list when no data
+arrived. Both defects are independent of the Bazel rule.
+
+The root executable gate launches the actual indexed command with a fresh font
+cache, publishes the C++ producer's 57-field object records and ego samples over
+Cyclone, interrupts it and decodes the resulting nonblank GIF. Help and no-data
+shutdown also pass, along with the complete roundabout gate. See the
+[module journal](JOURNAL.md#2026-11-27-phase-911--roundabout-velocity-plugin-and-ttc-tool)
+for exact commands and the separate source/build commit boundaries. No upstream
+submission or older ROS/colcon verification is claimed.
 
 ### Path optimizer's production header includes unused GTest
 

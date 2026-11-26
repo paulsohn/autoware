@@ -28,6 +28,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 import rclpy
+from rclpy.executors import ExternalShutdownException
 from rclpy.node import Node
 
 matplotlib.use("TKAgg")
@@ -217,7 +218,7 @@ class TTCVisualizer(Node):
         self.world_ax.plot(ego_path_x, ego_path_y, c="k", linestyle="--")
 
     def cleanup(self):
-        if self.args.save:
+        if self.args.save and self.images:
             kwargs_write = {"fps": self.args.fps, "quantizer": "nq"}
             max_size_total = 0
             max_size = None
@@ -232,7 +233,8 @@ class TTCVisualizer(Node):
 
             imageio.mimsave("./" + self.args.gif + ".gif", reshaped, **kwargs_write)
             print("saved fig")
-        rclpy.shutdown()
+        if rclpy.ok():
+            rclpy.shutdown()
 
     def on_plot_timer(self):
         if (not self.ego_ttc_data) or (not self.object_ttc_data):
@@ -246,8 +248,7 @@ class TTCVisualizer(Node):
         self.fig.canvas.flush_events()
 
         if self.args.save:
-            image = np.frombuffer(self.fig.canvas.tostring_rgb(), dtype="uint8")
-            image = image.reshape(self.fig.canvas.get_width_height()[::-1] + (3,))
+            image = np.asarray(self.fig.canvas.buffer_rgba())[:, :, :3]
             image = Image.fromarray(image.astype(np.uint8))
             self.images.append(image)
 
@@ -293,4 +294,11 @@ if __name__ == "__main__":
 
     rclpy.init()
     visualizer = TTCVisualizer(args)
-    rclpy.spin(visualizer)
+    try:
+        rclpy.spin(visualizer)
+    except (KeyboardInterrupt, ExternalShutdownException):
+        pass
+    finally:
+        visualizer.destroy_node()
+        visualizer.cleanup()
+        plt.close(visualizer.fig)

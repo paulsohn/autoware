@@ -24287,3 +24287,81 @@ and every existing standard/experimental runtime-helper consumer. Changed
 Bazel/Python syntax and whitespace checks pass. The provider task is complete;
 roundabout remains pending its own full gate. No source implementation changes,
 Fast DDS, simulator or deployment checks are included. Coverage stays 175/244.
+
+## 2026-11-27: Phase 9.11 — Roundabout velocity plugin and TTC tool
+
+Purpose: adopt both roundabout factories and the installed TTC plotting tool.
+Inspect all twelve CMake-listed C++ sources, public intersection utility calls,
+plugin XML, original YAML, object/collision helpers and scripts/ttc.py. CMake
+declares no compiled tests. Select four added behavior cases, both individual
+factory lifecycles, standard/experimental compositions and the actual installed
+plotting command. Use Cyclone/RCLCPP and a working X11 display for the Tk gate.
+
+Pattern: add package-owned MODULE/BUILD and the adjacent versionless root pair
+in the Universe group. Build one reusable C++ provider and the original named
+plugin DSO. Consume intersection's new :utils provider and its canonical shared
+SDK aggregate; linking the full intersection plugin instead exposes statically
+linked-but-unexported planner/common dependencies. That prerequisite is accepted
+in 4c38612d6 after its complete suite and all 33 existing helper-consumer targets.
+Index the original package.xml, plugin XML and YAML without root-owned resources.
+
+Expose ttc.py as a Python binary with RCR Matplotlib/NumPy/Pillow, @imageio and
+the local debug messages. Declare the debug package's :ament_index in the binary's
+data as well as its Python type dependency, so Cyclone can dlopen C introspection
+support. Register the command at lib/<package>/ttc.py through register_ament_files
+and include it in the package index. The ImageIO dependency provider is separately
+accepted in 7c6f191e6. No host pip installation is used.
+
+The first compile rejects the old sixteen-byte Boost.UUID aggregate initializer.
+Value-initialize the UUID and copy its bytes through begin(). This matches the
+roundabout hunk of AWF PR #13605 at c4e36a66e05eef83f000a4d28e59c9cab648c71d,
+rechecked 2026-11-27. The source fix preserves the existing intersection hash
+semantics. UPSTREAM_AWF.md records the association and current-main comparison.
+
+Place new checks under bazel/tests/autoware_behavior_velocity_roundabout_module.
+The C++ cases cover sixteen-byte object identity, attention membership/reset,
+observed speed and safety reset, decision/RTC reporting and predicted collision
+entry/exit times with disjoint/empty paths. The runtime helper checks the actual
+XML factory, attention_area_margin=.75, mapped DSO, unload/reload and shutdown.
+Standard composition loads roundabout, occlusion-spot, intersection and walkway.
+Experimental composition also includes no-drivable-lane, speed-bump and template.
+
+For the Python tool, run the indexed executable in a separate process with a
+fresh MPLCONFIGDIR. Importing plotting into the ROS test peer changes native
+C++ runtime load order and exposes a font-scan unwinding crash. A temporary GNU
+preload is diagnostic, not the tool's startup contract. The executable gate
+preserves the original plotting-before-ROS startup and uses no preload. Resolve
+the child's library search directories before changing its working directory.
+
+Probe the display from the same host execution environment. Pass DISPLAY,
+XAUTHORITY and XDG_RUNTIME_DIR to the test. Wait for a parameter-service reply,
+which proves GUI construction finished and the ROS executor is spinning; DDS
+subscription discovery alone happens earlier. Publish real ego samples and
+57-field object rows: seventeen metadata values and twenty x/y pairs, matching
+scene_roundabout_collision.cpp. Check help, actual rendering/GIF recording after
+SIGINT, and shutdown with no incoming data. Decode the GIF and require nonblank
+pixels. These are three cases in one Python test target.
+
+The executable exposes two source defects. Recording fails because Matplotlib
+3.10 removed tostring_rgb; use buffer_rgba and select RGB channels. Once frames
+render, SIGINT still saves no file because main never calls cleanup. Invoke it
+from the shutdown path, avoid repeated context shutdown and handle an empty
+recording. Preserve the existing Tk backend and plotting behavior. These source
+corrections are separate from Bazel definitions and documented in UPSTREAM_AWF.md.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  DISPLAY="$DISPLAY" XAUTHORITY="$XAUTHORITY" XDG_RUNTIME_DIR="$XDG_RUNTIME_DIR" \
+  bazel test --keep_going --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  @autoware_behavior_velocity_roundabout_module//... \
+  //bazel/tests/autoware_behavior_velocity_roundabout_module:all
+```
+
+Results: all module targets build and all six test targets pass. The C++ runner
+executes four cases, the factory gates execute four profiles and the plotting
+runner executes all three CLI cases. There are no failures, errors or skips.
+Changed Python/Bazel syntax, new C++ clang-format and whitespace checks pass.
+The gate validates the complete working-tree module before its separate source
+and build commits. No Fast DDS, native Agnocast, simulator or OCI export gate is
+selected. The source correction precedes the definitions/ledger integration.
