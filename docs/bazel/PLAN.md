@@ -132,7 +132,8 @@ only when your current target demonstrates the need.
 - [ ] Inventory complete module suites, runtime prerequisites and required
   middleware configurations before implementing each task.
   [Placeholder-suite behavior checks](DEVELOPING.md#validation-and-commits);
-  [direction-change evidence](JOURNAL.md#2026-11-26-phase-911--direction-change-scene-plugin).
+  [direction-change evidence](JOURNAL.md#2026-11-26-phase-911--direction-change-scene-plugin);
+  [default live-node pipeline evidence](JOURNAL.md#2026-11-27-phase-911--minimum-rule-based-planner).
   [Steady-state expensive-target policy](DEVELOPING.md#expensive-targets);
   [evidence: opt-in selection](JOURNAL.md#2026-11-23-phase-75--opt-in-expensive-system-and-deployment-targets);
   [runtime prerequisite execution-context evidence](JOURNAL.md#2026-11-26-phase-910--planned-route-remaining-distance);
@@ -2498,7 +2499,7 @@ The modifier's solver-header projections are supported by the separately
 validated acados SDK extension. Exact commands, source compatibility associations
 and limitations are recorded in the respective module journals.
 
-### Phase 9.11: Additional planners and behavior plugins (in progress)
+### Phase 9.11: Additional planners and behavior plugins (complete)
 
 Start with direction-change, dynamic-obstacle-avoidance and external-request
 lane-change managers. Preserve their original one/two/two-case suites; the
@@ -2529,10 +2530,11 @@ before qualifying the complete plotting entrypoint with the roundabout module.
 | autoware_path_sampler | Finite Frenet/Bézier candidates, node interpolation regressions, indexed component/executable and DDS trajectory/fallback behavior |
 | autoware_behavior_path_sampling_planner_module | Real planner path/context checks, direct sampled generation/reuse, indexed factory/parameter updates and eleven-scene composition |
 | autoware_surround_obstacle_checker | All three original cases: stop/hold/release and object/point-cloud planning factors; indexed component and executable |
-| autoware_in_lane_mrm_planner | Complete original suite, stopping/latching behavior, both node factories and rosbag tool checks in selected transport profiles |
+| autoware_in_lane_mrm_planner | All 71 original cases, both node factories, stopping/profile latch/release on RCLCPP and native Agnocast, and actual rosbag recording/analysis |
+| autoware_minimum_rule_based_planner | All 17 original cases, both modifier factories, candidate identity, optimizer debug publication and obstacle stop/recovery on both transports |
 
-12 of thirteen packages are complete. Validated coverage is
-180/244 (64 remaining). Phase 9.11 remains in progress. Next: minimum-rule-based planning.
+All thirteen packages are complete. Validated coverage is
+181/244 (63 remaining). Phase 9.11 is complete.
 
 Path-sampler acceptance exposes two independent implementation defects: spline
 derivatives before the first interval and reference velocity/elevation copying.

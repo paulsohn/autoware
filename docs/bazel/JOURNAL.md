@@ -24737,7 +24737,7 @@ There are no failures or skips, and whitespace checks pass. No implementation
 changes or broad export-filter additions are needed. Universe coverage is
 unchanged. No Fast DDS, simulator or deployment gate is selected.
 
-## 2026-11-27 — Phase 9.11: Minimum-rule-based planner (in progress)
+## 2026-11-27 — Phase 9.11: Minimum-rule-based planner
 
 Purpose: adopt the standalone minimum-rule planner and both of its modifier
 factories. Inspect three main-library sources, two plugin sources, public plugin
@@ -24807,7 +24807,9 @@ scenario also passes natively with the prepared Agnocast device and preloaded
 heaphook, while RCLCPP remains uninitialized. Both original modifier factories
 are instantiated from the indexed DSO. Source code and original assertions
 remain unchanged apart from the diagnosed TF2 and optimizer-debug corrections.
-New C++ formatting and whitespace checks pass. The source correction is ready
-for its separate commit; package adoption awaits its build-definition commit.
-No Fast DDS, simulator or deployment gate is selected. Coverage remains 180/244
-until that commit.
+New C++ formatting and whitespace checks pass. Source correction 8c779961f is
+separate from these build definitions. The
+complete package gate closes Phase 9.11 at thirteen of thirteen packages,
+with coverage 181/244 and 63 packages remaining. Next: Phase 9.12, control
+gates, operators and calibration tools. No Fast DDS, simulator or deployment
+gate is selected.

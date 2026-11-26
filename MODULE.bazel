@@ -2224,6 +2224,12 @@ local_path_override(
     path = "src/universe/autoware_universe/planning/autoware_in_lane_mrm_planner",
 )
 
+bazel_dep(name = "autoware_minimum_rule_based_planner")
+local_path_override(
+    module_name = "autoware_minimum_rule_based_planner",
+    path = "src/universe/autoware_universe/planning/autoware_minimum_rule_based_planner",
+)
+
 # Launcher source modules.
 bazel_dep(name = "sample_vehicle_description")
 local_path_override(

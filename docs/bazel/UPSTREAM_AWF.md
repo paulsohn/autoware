@@ -2853,6 +2853,8 @@ No upstream submission or older ROS/colcon validation is claimed.
 
 ### Minimum-rule planner: current TF2 headers and optimizer debug publisher
 
+Local source correction: `8c779961f`.
+
 - [ ] Associate the TF2 header correction with an AWF PR. Reviewed 2026-11-27:
   [path_planner.cpp](https://github.com/autowarefoundation/autoware_universe/blob/main/planning/autoware_minimum_rule_based_planner/src/path_planner.cpp)
   uses utils.h; velocity_smoother.cpp uses LinearMath/Quaternion.h and convert.h.

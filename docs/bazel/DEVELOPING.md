@@ -2172,3 +2172,29 @@ invalidation, latched status and input timeout diagnostics. These three root
 companions also run with --run_under=//bazel/agnocast:with_heaphook and
 --test_env=ENABLE_AGNOCAST=1 after the runtime prerequisites are prepared. Use
 --config=no-agnocast for their RCLCPP gate; Fast DDS remains approval-only.
+
+## Standalone stopping and fallback planners
+
+The surround-obstacle checker exports its original component, executable and
+generated parameters. Its complete package suite checks stop/hold/release and
+object/point-cloud planning factors. Run @autoware_surround_obstacle_checker//...
+with Cyclone DDS after changes.
+
+For the in-lane MRM planner, run @autoware_in_lane_mrm_planner//... and
+//bazel/tests/autoware_in_lane_mrm_planner:all. Its transport check covers both
+indexed node factories, stopping candidates, profile latch/re-latch/release and
+auxiliary gear/hazard commands. The rosbag tools companion covers actual
+recording and report generation; see the subprocess CLI convention above.
+
+For minimum-rule planning, run @autoware_minimum_rule_based_planner//... and
+//bazel/tests/autoware_minimum_rule_based_planner:all. Keep default optimizer
+debugging enabled: the live test requires optimizer-topic output, both modifier
+factories, candidate identity, obstacle stopping and recovery. Its package index
+owns the internally loaded optimizer and core-planning resource dependencies.
+Original algorithm tests alone do not exercise the full node pipeline.
+
+Use --config=runtime --config=no-agnocast and Cyclone DDS for those complete
+package/companion gates. Qualify either planner's :transport_test again on native
+Agnocast with --config=runtime --run_under=//bazel/agnocast:with_heaphook and
+--test_env=ENABLE_AGNOCAST=1 after preparing its runtime prerequisites. These
+focused gates do not require simulator or deployment exports.
