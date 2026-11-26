@@ -22730,3 +22730,30 @@ targets and four cases pass, zero failures/errors/skips, 19.0 s. Changed-range /
 added-file formatting and diff checks pass. This does not qualify real ground
 accuracy, unused synchronization helpers or graphical/product behavior. No Fast
 DDS or expensive gate is selected. Next: monitor and image-processing consumers.
+
+## 2026-11-26: Phase 9.9 — YabLoc availability monitoring
+
+Purpose: adopt the original two-source monitor and component/executable/config/
+launch. CMake declares no functional tests. Inspect AvailabilityModule's stamped
+pose admission, wall timer and diagnostic updater. Add one root-owned transition
+case: no pose gives ERROR/NG, a current pose gives OK, and expiry returns ERROR.
+Select Cyclone/RCLCPP; this package has no wrapper variant.
+
+Pattern: one compile/shared owner with diagnostic_updater, geometry and rclcpp
+SDK providers, plain SingleThreadedExecutor registration and original indexed
+resources. Set availability/timestamp_tolerance=.5 for the test, drive the real
+input topic and inspect the published named status and Availability key. Use
+bounded polling through both timer and pose callbacks; do not replace the clock
+comparison with a test-side implementation. No source changes are needed.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  @yabloc_monitor//... //bazel/tests:yabloc_monitor_test
+```
+
+Results: nine non-test targets build and the transition case passes, zero
+failures/errors/skips, 22.5 s (test .8 s). Added-file formatting and diff checks
+pass. No Fast DDS, vehicle accuracy or expensive product gate is selected.
+Next: all six image-processing components.

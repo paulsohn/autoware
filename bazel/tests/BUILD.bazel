@@ -2667,3 +2667,12 @@ cc_test(
     data = [],
     tags = ["no-sandbox", "no-remote"],
 )
+
+cc_test(
+    name = "yabloc_monitor_test",
+    srcs = ["yabloc_monitor/test_freshness.cpp"],
+    deps = ["@yabloc_monitor//:yabloc_monitor_library", "@googletest//:gtest_main"],
+    dynamic_deps = ["@yabloc_monitor//:runtime_dynamic_deps"],
+    data = [],
+    tags = ["no-sandbox", "no-remote"],
+)

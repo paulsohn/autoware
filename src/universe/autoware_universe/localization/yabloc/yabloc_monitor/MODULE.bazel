@@ -1,0 +1,7 @@
+module(name = "yabloc_monitor", version = "0.0.0")
+
+bazel_dep(name = "diagnostic_updater", version = "0.0.0")
+bazel_dep(name = "geometry_msgs", version = "0.0.0")
+bazel_dep(name = "rclcpp_components", version = "0.0.0")
+bazel_dep(name = "rosdistro", version = "0.0.0")
+bazel_dep(name = "rules_cc", version = "0.2.26.rcr.0")

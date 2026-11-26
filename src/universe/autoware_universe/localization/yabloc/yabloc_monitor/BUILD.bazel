@@ -1,0 +1,47 @@
+load("@rclcpp_components//:defs.bzl", "rclcpp_components_register_node")
+load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "yabloc_monitor_library",
+    srcs = ["src/availability_module.cpp", "src/yabloc_monitor_core.cpp"],
+    hdrs = ["src/availability_module.hpp", "src/yabloc_monitor_core.hpp"],
+    includes = ["src"],
+    deps = ["@diagnostic_updater//:diagnostic_updater_library", "@geometry_msgs//:cc", "@rclcpp_components//:rclcpp_components_library"],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = ["@diagnostic_updater//:diagnostic_updater", "@geometry_msgs//:cc_shared", "@rclcpp_components//:rclcpp_components"],
+)
+
+cc_shared_library(
+    name = "yabloc_monitor",
+    shared_lib_name = "libyabloc_monitor.so",
+    deps = [":yabloc_monitor_library"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+)
+
+rclcpp_components_register_node(
+    name = "yabloc_monitor_node",
+    component = ":yabloc_monitor",
+    plugin = "YabLocMonitor",
+    node_name = "yabloc_monitor_node",
+)
+
+register_ament_files(
+    name = "executables",
+    files = [":yabloc_monitor_node"],
+    prefix = "lib/yabloc_monitor",
+    strip_prefix = "*",
+)
+
+ament_index(
+    package_xml = "package.xml",
+    libraries = [":yabloc_monitor"],
+    components = [":yabloc_monitor_node_record"],
+    data = glob(["launch/**", "config/**"]) + [":executables"],
+)

@@ -2149,3 +2149,9 @@ local_path_override(
     module_name = "yabloc_common",
     path = "src/universe/autoware_universe/localization/yabloc/yabloc_common",
 )
+
+bazel_dep(name = "yabloc_monitor", version = "0.0.0")
+local_path_override(
+    module_name = "yabloc_monitor",
+    path = "src/universe/autoware_universe/localization/yabloc/yabloc_monitor",
+)
