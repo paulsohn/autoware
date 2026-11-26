@@ -2694,3 +2694,12 @@ cc_test(
     data = [],
     tags = ["no-sandbox", "no-remote"],
 )
+
+py_test(
+    name = "yabloc_model_resources_test",
+    srcs = ["models/test_yabloc_resources.py"],
+    main = "models/test_yabloc_resources.py",
+    data = ["@autoware_yabloc_pose_initializer_models//:ament_index"],
+    precompile = "disabled",
+    deps = ["@ament_index_python"],
+)

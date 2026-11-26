@@ -22881,3 +22881,55 @@ cases. The bridge provider graph analyzes successfully in 4.4 s. This is not a
 full plugin binary/runtime qualification: bridge implementation/templates are
 unchanged, and these plain-rclcpp nodes have no Agnocast variant selected.
 Next: indexed semantic models and model-backed pose initialization.
+
+## 2026-11-26: Phase 9.9 — Indexed YabLoc semantic models
+
+Purpose: prepare the actual CPU segmentation input before adopting the pose
+initializer. Inspect its existing ONNX/NHWC path and launch default, then import
+https://huggingface.co/AutowareFoundation/yabloc_pose_initializer at tag v1.0,
+immutable commit b24e397472836bc41b11a4c47e52ff6adac30a74, as a squashed
+subtree at src/models/yabloc_pose_initializer. The upstream README declares
+Apache-2.0 and Intel Open Model Zoo/PINTO provenance. Keep both original formats
+and deployment metadata; only ONNX execution is selected here.
+
+Clone the pinned repository in an isolated directory with GIT_LFS_SKIP_SMUDGE=1,
+materialize with git lfs pull, unshallow the small Git history and import the
+local immutable revision with git subtree add --squash. Retain its nested
+.gitattributes; mirror verified objects into the containing Git repository's
+LFS storage before checkout. Do not redirect the parent's LFS endpoint to HF.
+Compare payload hashes and sizes with the original Git LFS pointers:
+ONNX 931f80db4faa9eb37fafaaec35cdd6c7498a0b8afb45e335a535da028d27e50a /
+829642 bytes; PB c4e373552f4efb91592ed99f49afc6df179f8a95174ceaddd1ab35692f435b47 /
+877691 bytes. Both match and git lfs ls-files marks both payloads materialized.
+
+Add repository-owned module/package autoware_yabloc_pose_initializer_models,
+:models and :ament_index, plus package.xml and minimal ament_cmake support.
+Register the unchanged saved_model/ hierarchy and metadata in that package's
+share directory. Record immutable provenance and current hashes inside the
+repository boundary. Root selects the local override. No source or packaging
+consumer constructs a HOME/workspace model path. Leave reference Ansible and
+repositories manifests unchanged.
+
+```sh
+# From the imported model repository:
+sha256sum -c SHA256SUMS
+# From the product root:
+git lfs ls-files -l -I 'src/models/yabloc_pose_initializer/**'
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_output=errors @autoware_yabloc_pose_initializer_models//... \
+  //bazel/tests:yabloc_model_resources_test
+# In a separate sourced ROS/colcon environment, from an isolated build directory:
+colcon build --base-paths <checkout>/src/models/yabloc_pose_initializer --symlink-install
+. install/setup.bash
+python3 -c 'from ament_index_python.packages import get_package_share_directory; print(get_package_share_directory("autoware_yabloc_pose_initializer_models"))'
+```
+
+Results: all model module targets and both resource cases pass, 3.5 s. Cases
+require real weight hashes/index lookup and a copied standalone relocated prefix
+with AMENT_PREFIX_PATH restricted to it. The actual imported package also builds
+under existing Jazzy/colcon in an isolated prefix (0.71 s); both indexed installed
+weights are symlinks with matching hashes. This host ROS environment is used only
+for the requested colcon interoperability check, never as a Bazel SDK provider.
+No TensorFlow importer or model quality claim is made. Next: remove the consumer's
+HOME/data_path default and qualify real ONNX inference and alignment behavior.

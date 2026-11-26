@@ -1,0 +1,6 @@
+cmake_minimum_required(VERSION 3.16)
+project(autoware_yabloc_pose_initializer_models NONE)
+find_package(ament_cmake REQUIRED)
+install(DIRECTORY saved_model DESTINATION share/${PROJECT_NAME})
+install(FILES deploy_metadata.yaml MODEL_PROVENANCE.md SHA256SUMS DESTINATION share/${PROJECT_NAME})
+ament_package()

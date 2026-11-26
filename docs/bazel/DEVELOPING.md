@@ -1960,6 +1960,13 @@ runtime dependencies. It resolves actual launch substitutions and checks the
 two launcher manifests. Remaining model families retain their migration work;
 this test does not launch the full perception stack.
 
+The YabLoc repository at src/models/yabloc_pose_initializer similarly owns
+module/package autoware_yabloc_pose_initializer_models. Its indexed
+saved_model/model_float32.onnx is the pose initializer's CPU OpenCV DNN input;
+:models retains both original formats and metadata. Run
+//bazel/tests:yabloc_model_resources_test for hashes and relocation. The retained
+TensorFlow file is not the selected runtime format.
+
 ## TensorRT classifier
 
 Use @autoware_tensorrt_classifier//:autoware_tensorrt_classifier_library for C++
