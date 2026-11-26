@@ -2123,3 +2123,9 @@ local_path_override(
     module_name = "autoware_pose_instability_detector",
     path = "src/universe/autoware_universe/localization/autoware_pose_instability_detector",
 )
+
+bazel_dep(name = "autoware_pose_estimator_arbiter", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_pose_estimator_arbiter",
+    path = "src/universe/autoware_universe/localization/autoware_pose_estimator_arbiter",
+)

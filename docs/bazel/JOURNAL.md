@@ -22459,3 +22459,39 @@ Results: eleven module non-test targets build; three original and two added
 cases pass, zero failures/errors/skips, 40.2 s. Both enabled cases also pass in
 5.5 s. Added-file formatting and diff checks pass. No Fast DDS, physical accuracy
 or expensive product gate is selected. Next: complete arbiter/example suites.
+
+## 2026-11-26: Phase 9.8 — pose estimator arbitration and example rules
+
+Purpose: adopt the arbiter plus its separate example-rule library. Inventory all
+four original C++ targets (seven cases) and original Python launch target
+(two cases). Inspect stoppers, default enable-all switching, shared callback
+state, map/PCD examples and original XML remaps before selecting the complete gate.
+
+Pattern: package module/override, two-source node compile provider and shared
+component with the original MultiThreadedExecutor, separate four-source example
+compile/shared provider, and both libraries in the package index. Register the
+executable and original launch. Use local message, lanelet, QoS and utility
+providers with explicit shared SDK owners. The SDK magic_enum alias resolves
+0.9.8-1.rcr.0 from the root-selected rosdistro provider and accepts the source's
+existing include/customization API. The original tests use only GoogleTest APIs;
+selected gtest_main supplies their main. No source/test changes are needed.
+
+Expose the original Python source publicly and run it from a root launch_test
+with indexed executable/launch, pinned Python ROS messages, launch_ros and rclpy.
+Preserve its actual relay assertions for NDT cloud, YabLoc/AR-tag image and Eagleye
+pose, mocked YabLoc trigger service, and process exit. Keep example tests for
+map regions, density hysteresis/grid keys and shared-data callback behavior;
+the examples are exercised without replacing the node's default rule.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  @autoware_pose_estimator_arbiter//... //bazel/tests:pose_estimator_arbiter_original_launch_test
+```
+
+Results: eleven non-test targets and all five test targets build; seven original
+C++ and two original Python cases pass, zero failures/errors/skips. Final
+indexed-library gate takes 4.8 s, reusing unchanged C++ results and executing
+the launch gate in 2.8 s. Diff checks pass. No additional source assertion,
+Agnocast/Fast DDS or expensive product gate is selected. Next: AR-tag localizer.

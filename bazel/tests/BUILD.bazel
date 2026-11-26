@@ -2630,3 +2630,13 @@ cc_test(
     data = ["@agnocast_heaphook"],
     tags = ["no-sandbox", "no-remote"],
 )
+
+launch_test(
+    name = "pose_estimator_arbiter_original_launch_test",
+    src = "@autoware_pose_estimator_arbiter//:test/test_pose_estimator_arbiter.py",
+    data = ["@autoware_pose_estimator_arbiter//:ament_index"],
+    env = {"ENABLE_AGNOCAST": "0", "LD_LIBRARY_PATH": "lib", "ROS_DOMAIN_ID": "95"},
+    precompile = "disabled",
+    tags = ["no-sandbox", "no-remote"],
+    deps = ["@ament_index_python", "@geometry_msgs//:py", "@launch_ros", "@rclpy", "@sensor_msgs//:py", "@std_srvs//:py"],
+)
