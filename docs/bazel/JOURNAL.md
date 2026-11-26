@@ -24369,3 +24369,44 @@ also succeeds. No Fast DDS, native Agnocast, simulator or OCI export gate is
 selected. Coverage is 176/244, with 68 packages remaining. Phase 9.11 is eight
 of thirteen complete. Next: path-sampler support, its behavior-path plugin and
 the three standalone planners.
+
+## 2026-11-27 — Phase 9.11: Sampler spline derivatives at the first knot
+
+Purpose: unblock path sampling at the beginning of a valid reference. The new
+path-sampler candidate gate observes NaN Cartesian points, yaw and curvature;
+the real node consequently emits its stopped fallback on a clear straight road.
+Trace generateFrenetPaths through Spline2D::curvature/yaw to Spline::velocity
+and acceleration. Both use lower_bound minus one, which underflows size_t when
+the query equals the first knot. This is an implementation memory-access defect,
+not a dependency or ROS-distribution compatibility policy.
+
+Preserve the spline coefficients, interior/last-knot selection and public API.
+Select interval zero when lower_bound equals begin in both derivative methods.
+Keep the source fix separate from package build definitions. Add regression
+checks under bazel/tests/autoware_sampler_common: a nonzero-origin linear
+spline's first/interior/last derivatives, finite straight-reference origin
+heading/curvature, and continuity at a curved reference origin. The path-sampler
+candidate test also changes from NaN results to finite Frenet/Bézier families.
+
+Checked AWF main and related PR #12390 on 2026-11-27. The PR's actual sampler
+source at head 5f0db737409fd59e9e640d1e21995fa6fcd22481 retains both underflowing
+expressions; its broader Frenet/smoothing changes are related, not this fix.
+UPSTREAM_AWF.md records reproducible evidence and the open association.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  @autoware_sampler_common//... //bazel/tests/autoware_sampler_common:all \
+  @autoware_frenet_planner//... //bazel/tests/autoware_frenet_planner:all \
+  @autoware_bezier_sampler//... //bazel/tests/autoware_bezier_sampler:all
+```
+
+Results: all four provider test targets pass, including the complete original
+sampler-common executable, both new endpoint cases and both sampling consumer
+suites. The original runner retains its two explicit pre-existing skips
+(unsupported projection edge cases and a benchmark), with five other cases
+passing; there are no failures or dependency-related skips. Targeted new C++
+formatting and whitespace checks pass. The separate path-sampler task remains
+open for its newly exposed velocity-copy boundary defect. No simulator,
+deployment, Fast DDS or native Agnocast gate is selected.

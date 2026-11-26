@@ -1,0 +1,9 @@
+load("@rules_cc//cc:defs.bzl", "cc_test")
+
+cc_test(
+    name = "spline_boundary_test",
+    srcs = ["test_spline_boundary.cpp"],
+    deps = ["@autoware_sampler_common", "@googletest//:gtest_main"],
+    dynamic_deps = ["@autoware_sampler_common//:runtime_dynamic_deps"],
+    env = {"LD_LIBRARY_PATH": "lib"},
+)

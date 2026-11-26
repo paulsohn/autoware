@@ -79,7 +79,7 @@ double Spline::value(const double query, const std::vector<double> & base_index)
 double Spline::velocity(const double query, const std::vector<double> & base_index) const
 {
   const auto lb = std::lower_bound(base_index.begin(), base_index.end(), query);
-  const size_t i = std::distance(base_index.begin(), lb) - 1;
+  const size_t i = lb == base_index.begin() ? 0 : std::distance(base_index.begin(), lb) - 1;
   const auto delta = query - base_index[i];
   return b_[i] + 2.0 * c_[i] * delta + 3.0 * d_[i] * delta * delta;
 }
@@ -87,7 +87,7 @@ double Spline::velocity(const double query, const std::vector<double> & base_ind
 double Spline::acceleration(const double query, const std::vector<double> & base_index) const
 {
   const auto lb = std::lower_bound(base_index.begin(), base_index.end(), query);
-  const size_t i = std::distance(base_index.begin(), lb) - 1;
+  const size_t i = lb == base_index.begin() ? 0 : std::distance(base_index.begin(), lb) - 1;
   return 2.0 * c_[i] + 6.0 * d_[i] * (query - base_index[i]);
 }
 

@@ -2768,3 +2768,26 @@ and joint-plugin gates pass with Cyclone/RCLCPP. The original suite contains
 only a placeholder; the added behavior gates supply actual consumer evidence.
 See the [direction-change journal](JOURNAL.md#2026-11-26-phase-911--direction-change-scene-plugin)
 for exact commands. No upstream submission or older ROS/colcon validation is claimed.
+
+### Sampler spline: derivative index underflows at the reference origin
+
+- [ ] Associate with a matching AWF change. Checked 2026-11-27:
+  [current spline_transform.cpp](https://github.com/autowarefoundation/autoware_universe/blob/main/planning/sampling_based_planner/autoware_sampler_common/src/sampler_common/transform/spline_transform.cpp)
+  still subtracts one from lower_bound in velocity and acceleration without
+  handling begin. Related [PR #12390](https://github.com/autowarefoundation/autoware_universe/pull/12390)
+  retains both expressions at inspected head
+  5f0db737409fd59e9e640d1e21995fa6fcd22481; its Frenet/smoothing improvements
+  do not supply this boundary correction.
+
+At the first reference knot, lower_bound returns begin and the size_t interval
+index underflows. The path-sampler's straight-reference candidate check observes
+NaN geometry, heading and curvature; the node emits a stopped fallback on an
+empty road. Select the first polynomial interval for this boundary in both
+derivative methods, preserving interior/end behavior. New external regression
+checks cover a nonzero-origin spline's derivatives and straight/curved origin
+heading/curvature. Keep the original provider suite and existing sampling
+consumers in the gate, including their explicit upstream benchmark/unsupported
+projection skips. See the
+[spline-boundary journal](JOURNAL.md#2026-11-27-phase-911--sampler-spline-derivatives-at-the-first-knot)
+for commands and results. This is a source correctness issue; no upstream
+submission or colcon validation is claimed.
