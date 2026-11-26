@@ -2361,7 +2361,9 @@ eighteen original and one inferred-color transport case, including Agnocast-only
 Map-based projection passes all 24 original cases, including delayed TF. Root
 selects image_geometry 4.1.0-3.rcr.2 because source is absent locally; both native
 SDK suites (eighteen cases) and the complete consumer validate this selection.
-Coverage is 138/244; four Phase 9.7 packages remain.
+Cloud occlusion passes three geometry/paired-category cases; its narrow prime-
+synchronizer provider also preserves the full eight-case perception-utils suite.
+Coverage is 139/244; three Phase 9.7 packages remain.
 
 ### Execution order through complete Universe coverage
 

@@ -2063,3 +2063,9 @@ local_path_override(
     module_name = "autoware_traffic_light_map_based_detector",
     path = "src/universe/autoware_universe/perception/autoware_traffic_light_map_based_detector",
 )
+
+bazel_dep(name = "autoware_traffic_light_occlusion_predictor", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_traffic_light_occlusion_predictor",
+    path = "src/universe/autoware_universe/perception/autoware_traffic_light_occlusion_predictor",
+)

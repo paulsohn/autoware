@@ -2542,3 +2542,11 @@ cc_test(
     data = ["@agnocast_heaphook"],
     tags = ["no-sandbox", "no-remote"],
 )
+
+cc_test(
+    name = "traffic_light_occlusion_test",
+    srcs = ["autoware_traffic_light_occlusion_predictor/test_occlusion.cpp"],
+    deps = ["@autoware_traffic_light_occlusion_predictor//:autoware_traffic_light_occlusion_predictor_library", "@googletest//:gtest"],
+    dynamic_deps = ["@autoware_traffic_light_occlusion_predictor//:runtime_dynamic_deps"],
+    tags = ["no-sandbox", "no-remote"],
+)

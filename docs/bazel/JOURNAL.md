@@ -22035,3 +22035,44 @@ zero failures/errors/skips, reusing unchanged SDK results. The real node instant
 both synchronizers and publishes paired car/pedestrian output; this validates the
 new header provider beyond declaration-only analysis. No source changes or
 Fast DDS/GPU/product reruns are needed. Consumer details follow in its own entry.
+
+## 2026-11-26: Phase 9.7 — traffic-light cloud occlusion
+
+Purpose: integrate the original cloud predictor and node, which have no functional
+suite. Inspect both sources/private headers, manifest, config/launch, projection/
+angular sampling and two-category synchronization. Acceptance adds three cases
+under bazel/tests: foreground/background/state reset, maximum valid distance,
+and paired real car/pedestrian signal publication. Select Cyclone/RCLCPP;
+this node has no enabled-wrapper configuration. No source change is required.
+
+Pattern: package module/root override, a compile provider for the original
+prediction helper, node compile provider and the original single shared component.
+Consume the existing prime-synchronizer header provider, not perception_utils's
+unrelated compiled algorithms. Use the selected image_geometry release, local
+lanelet/map/traffic-light utilities and existing PCL/TF/ROS shared SDK providers.
+Register/index the executable, component record, config and launch. The module
+owns its build declarations; added tests remain in the root.
+
+Geometry fixtures use calibrated 640x480 projection, coincident map/camera/cloud
+frames and a light at distance 20. A dense foreground plane at depth 10 covers all
+ROI rays (100% occlusion); a background plane at 35 produces 0%, and switching
+back checks ray-state clearing. A separate max-distance-five predictor rejects
+the foreground plane. These checks call the actual public predict API with real
+PCL messages and TF buffer lookup, not a substitute ray algorithm.
+
+The node peer supplies the actual serialized AutowareTrafficLight map, ROIs,
+camera, cloud and both traffic categories. Reserve fixed map IDs before generating
+other primitives and include LaneletMap.h for createMap/getId declarations.
+Wait for all subscriptions, then settle the latched map before primaries; publish
+one car/pedestrian pair so repeated primaries cannot accumulate duplicate categories.
+Both secondary topic sets and primaries use the node's SensorDataQoS contract.
+Expect UNKNOWN/zero confidence for the occluded CAR and exact retention of the
+unoccluded PEDESTRIAN, with paired stamped output. Coincident synthetic frames
+qualify the algorithm/transport, not a vehicle's calibrated extrinsic transforms.
+
+Verification is the combined command in the preceding prerequisite entry.
+All ten module non-test targets build, plus the complete six-target SDK provider
+set; all eight original SDK cases and three new occlusion cases pass, zero
+failures/errors/skips, 24.8 s. Targeted format/diff checks pass. No original code
+or tests changed, and no Fast DDS, GPU or expensive product gate was selected.
+Next: multi-camera signal fusion, then marker/image visualization.

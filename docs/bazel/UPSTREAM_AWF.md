@@ -2389,6 +2389,8 @@ ROS/CMake run or upstream submission is claimed.
 
 ### Map-based traffic-light detector retains removed TF2 aliases
 
+Local source fix: `330819ef8`.
+
 - [ ] Associate with a matching upstream fix. Checked 2026-11-26: current
   [public header](https://github.com/autowarefoundation/autoware_universe/blob/main/perception/autoware_traffic_light_map_based_detector/include/autoware/traffic_light_map_based_detector/traffic_light_map_based_detector.hpp)
   and [core test](https://github.com/autowarefoundation/autoware_universe/blob/main/perception/autoware_traffic_light_map_based_detector/test/test_traffic_light_map_based_detector.cpp)

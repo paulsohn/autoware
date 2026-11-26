@@ -1,0 +1,55 @@
+load("@rclcpp_components//:defs.bzl", "rclcpp_components_register_node")
+load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "occlusion_predictor_library",
+    srcs = ["src/occlusion_predictor.cpp"],
+    hdrs = ["src/occlusion_predictor.hpp"],
+    includes = ["src"],
+    deps = ["@autoware_utils", "@geometry_msgs//:cc", "@image_geometry//:image_geometry_library", "@lanelet2_core//:lanelet2_core_library", "@pcl_conversions//:pcl_conversions_library", "@rclcpp//:rclcpp_library", "@sensor_msgs//:cc", "@tf2_eigen//:tf2_eigen_library", "@tf2_geometry_msgs//:tf2_geometry_msgs_library", "@tf2_ros//:tf2_ros_library", "@tier4_perception_msgs//:cc", "@rosdistro//cc:pcl_common"],
+)
+
+cc_library(
+    name = "autoware_traffic_light_occlusion_predictor_library",
+    srcs = ["src/node.cpp"],
+    hdrs = ["src/node.hpp"],
+    includes = ["src"],
+    deps = [":occlusion_predictor_library", "@autoware_lanelet2_extension//:autoware_lanelet2_extension_lib_library", "@autoware_lanelet2_utils", "@autoware_map_msgs//:cc", "@autoware_traffic_light_utils", "@perception_utils//:prime_synchronizer", "@rclcpp_components//:rclcpp_components_library"],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = ["@autoware_lanelet2_extension//:autoware_lanelet2_extension_lib", "@autoware_lanelet2_utils//:runtime_dynamic_deps", "@autoware_map_msgs//:cc_shared", "@autoware_traffic_light_utils//:runtime_dynamic_deps", "@autoware_utils//:runtime_dynamic_deps", "@geometry_msgs//:cc_shared", "@image_geometry//:image_geometry", "@pcl_conversions//:pcl_conversions", "@rclcpp_components//:rclcpp_components", "@sensor_msgs//:cc_shared", "@tf2_eigen//:tf2_eigen", "@tf2_geometry_msgs//:tf2_geometry_msgs", "@tf2_ros//:tf2_ros", "@tier4_perception_msgs//:cc_shared", "@rosdistro//cc:pcl"],
+)
+
+cc_shared_library(
+    name = "autoware_traffic_light_occlusion_predictor",
+    shared_lib_name = "libautoware_traffic_light_occlusion_predictor.so",
+    deps = [":autoware_traffic_light_occlusion_predictor_library"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+)
+
+rclcpp_components_register_node(
+    name = "traffic_light_occlusion_predictor_node",
+    node_name = "traffic_light_occlusion_predictor_node",
+    component = ":autoware_traffic_light_occlusion_predictor",
+    plugin = "autoware::traffic_light::TrafficLightOcclusionPredictorNode",
+)
+
+register_ament_files(
+    name = "executables",
+    files = [":traffic_light_occlusion_predictor_node"],
+    prefix = "lib/autoware_traffic_light_occlusion_predictor",
+    strip_prefix = "*",
+)
+
+ament_index(
+    package_xml = "package.xml",
+    libraries = [":autoware_traffic_light_occlusion_predictor"],
+    components = [":traffic_light_occlusion_predictor_node_record"],
+    data = glob(["launch/**", "config/**"]) + [":executables"],
+)
