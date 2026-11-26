@@ -2393,6 +2393,8 @@ autoware_geo_pose_projector: complete; see its Phase 9.8 journal for commands an
 
 autoware_pose_covariance_modifier: complete; see its Phase 9.8 journal for commands and results.
 
+autoware_pose_initialization_requester: complete; see its Phase 9.8 journal for commands and results.
+
 ### Execution order through complete Universe coverage
 
 The following groups are the initial route through every remaining package.

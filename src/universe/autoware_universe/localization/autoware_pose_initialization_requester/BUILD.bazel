@@ -1,0 +1,48 @@
+load("@rclcpp_components//:defs.bzl", "rclcpp_components_register_node")
+load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "autoware_pose_initialization_requester_library",
+    srcs = ["src/pose_initialization_requester.cpp"],
+    hdrs = ["src/pose_initialization_requester.hpp"],
+    includes = ["src"],
+    deps = ["@autoware_component_interface_specs", "@autoware_component_interface_utils", "@rclcpp_components//:rclcpp_components_library"],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = ["@autoware_component_interface_specs//:runtime_dynamic_deps", "@autoware_component_interface_utils//:runtime_dynamic_deps", "@rclcpp_components//:rclcpp_components"],
+)
+
+cc_shared_library(
+    name = "autoware_pose_initialization_requester",
+    shared_lib_name = "libautoware_pose_initialization_requester.so",
+    deps = [":autoware_pose_initialization_requester_library"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+)
+
+rclcpp_components_register_node(
+    name = "autoware_pose_initialization_requester_node",
+    component = ":autoware_pose_initialization_requester",
+    plugin = "autoware::pose_initialization_requester::PoseInitializationRequester",
+    node_name = "autoware_pose_initialization_requester_node",
+    executor = "MultiThreadedExecutor",
+)
+
+register_ament_files(
+    name = "executables",
+    files = [":autoware_pose_initialization_requester_node"],
+    prefix = "lib/autoware_pose_initialization_requester",
+    strip_prefix = "*",
+)
+
+ament_index(
+    package_xml = "package.xml",
+    libraries = [":autoware_pose_initialization_requester"],
+    components = [":autoware_pose_initialization_requester_node_record"],
+    data = glob(["launch/**"]) + [":executables"],
+)

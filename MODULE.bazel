@@ -2105,3 +2105,9 @@ local_path_override(
     module_name = "autoware_pose_covariance_modifier",
     path = "src/universe/autoware_universe/localization/autoware_pose_covariance_modifier",
 )
+
+bazel_dep(name = "autoware_pose_initialization_requester", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_pose_initialization_requester",
+    path = "src/universe/autoware_universe/localization/autoware_pose_initialization_requester",
+)

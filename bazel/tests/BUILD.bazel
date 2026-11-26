@@ -2603,3 +2603,12 @@ cc_test(
     data = [],
     tags = ["no-sandbox", "no-remote"],
 )
+
+cc_test(
+    name = "pose_initialization_requester_test",
+    srcs = ["autoware_pose_initialization_requester/test_request.cpp"],
+    deps = ["@autoware_pose_initialization_requester//:autoware_pose_initialization_requester_library", "@googletest//:gtest_main"],
+    dynamic_deps = ["@autoware_pose_initialization_requester//:runtime_dynamic_deps"],
+    data = [],
+    tags = ["no-sandbox", "no-remote"],
+)

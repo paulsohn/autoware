@@ -22359,3 +22359,32 @@ Results: nine module non-test targets build and all five added cases pass,
 zero failures/errors/skips, 22.0 s. Added-file formatting and diff checks pass.
 No wrapper, Fast DDS, field accuracy or expensive product gate is selected.
 Next: initialization requests and the two wrapper monitors.
+
+## 2026-11-26: Phase 9.8 — automatic initialization requests
+
+Purpose: adopt the original requester, launch and multithreaded executable.
+Inspect state/interface specs, timer cancellation/reset and synchronous client
+callback groups; the package has no original functional suite. Add one root-owned
+state-transition/service case. Preserve MultiThreadedExecutor from CMake: the
+timer's synchronous call must allow its client response callback to progress.
+
+Pattern: one compile/shared owner, plain component registration with explicit
+executor, indexed executable/launch, and local interface-spec/utils providers.
+A real peer service inspects AUTO and empty pose_with_covariance (the selected
+local schema), returning success. UNKNOWN yields no request; UNINITIALIZED yields
+an automatic request; INITIALIZED stops further requests across a complete timer
+period. Run the test executor with three threads and a separate client callback
+group, matching the source concurrency contract. No implementation change is
+needed; wait for endpoint discovery before state publication.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  @autoware_pose_initialization_requester//... //bazel/tests:pose_initialization_requester_test
+```
+
+Results: all nine non-test module targets build and the state/service case passes,
+zero failures/errors/skips, 11.0 s (test 3.5 s). Added-file formatting and diff
+checks pass. No wrapper, Fast DDS or expensive product gate is selected.
+Next: localization-error diagnostics and pose-instability monitoring.
