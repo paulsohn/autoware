@@ -24065,3 +24065,46 @@ checks pass. No native Agnocast, Fast DDS or simulator/deployment gate is
 selected. These checks qualify integration and the tested geometry contracts,
 not on-road stopping safety. Coverage is 172/244, with 72 packages remaining.
 Phase 9.11 remains in progress. Next: speed-bump and template experimental scenes.
+
+## 2026-11-27: Phase 9.11 — Speed-bump velocity plugin
+
+Purpose: adopt the speed-bump scene, indexed settings and experimental factory.
+Inspect all three CMake-listed sources, the speed-bump regulatory-element API,
+plugin XML and parameter YAML. There is no original compiled test suite.
+Select the complete module build, added polygon/height-speed checks, individual
+executable lifecycle and joint composition with no-drivable-lane and walkway.
+Use Cyclone/RCLCPP. Both existing scene providers have already passed their
+module gates and require no source changes.
+
+Use the preceding no-drivable-lane integration pattern: package-owned MODULE,
+reusable C++ provider, CMake-named plugin DSO, indexed original XML/YAML and a
+versionless root dependency/override pair in the Universe group. Use the local
+lanelet2 speed-bump regulatory element and existing trajectory/geometry providers.
+Keep ROS/TF/geometry shared SDK owners with planner-common's runtime provider.
+No new dependency release, implementation patch or package-local test is needed.
+
+Add five C++ cases under bazel/tests/autoware_behavior_velocity_speed_bump_module.
+Build real trajectories to check entry/exit distances, entering versus exiting,
+fully contained and disjoint paths. Check that bump height interpolates the
+configured slowdown speed and clamps values outside the height interval.
+Use the existing XML-based root harness to load SpeedBumpModulePlugin through
+the experimental base interface, require slow_start_margin=1.0, unload/reload
+the factory and shut down cleanly. Repeat with all three scene DSOs in one
+process. Keep the original indexed slow_start/slow_end and height/speed YAML.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  @autoware_behavior_velocity_speed_bump_module//... \
+  //bazel/tests/autoware_behavior_velocity_speed_bump_module:all
+```
+
+Results: all module targets build and all three test targets pass. XML records
+five geometry/velocity cases and two runtime cases, with no failures, errors
+or skips. Bazel/Python syntax, changed C++ clang-format and whitespace checks
+pass. No source fix or diagnosed integration failure is required. No native
+Agnocast, Fast DDS or simulator/deployment gate is selected. Vehicle comfort
+and physical bump traversal remain outside these integration checks.
+Coverage is 173/244, with 71 packages remaining. Phase 9.11 remains in progress.
+Next: the template experimental scene, then occlusion-spot and roundabout.
