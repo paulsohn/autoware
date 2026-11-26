@@ -370,8 +370,14 @@ def supervise(routes, address, automatic, discovery=None):
             stacks = (NATIVE, args.network_rmw) if args.direction == "export" else (args.network_rmw, NATIVE)
             acquire_route(cleanup, zip(stacks, (args.source, args.destination)))
         if discovery:
-            lock = cleanup.enter_context((route_directory() / ("discovery-" + os.getenv("ROS_DOMAIN_ID", "0"))).open("a"))
-            fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            domain = os.getenv("ROS_DOMAIN_ID", "0")
+            lock = cleanup.enter_context((route_directory() / ("discovery-" + domain)).open("a"))
+            try:
+                fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            except BlockingIOError:
+                raise SystemExit(f"A discovery gateway already owns ROS domain {domain} in {route_directory()}. "
+                                 "Use the running configuration to join from an RMW context, "
+                                 "or stop its owner before switching configurations.") from None
         listener = cleanup.enter_context(socket.socket(socket.AF_UNIX, socket.SOCK_SEQPACKET))
         listener.bind(address)
         listener.listen(16)
