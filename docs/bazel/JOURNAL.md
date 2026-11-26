@@ -24160,3 +24160,51 @@ two package tasks. No native Agnocast, Fast DDS or simulator/deployment gate is
 selected. Phase 9.11 is six of thirteen packages complete. Seventy Universe
 packages remain. Next: occlusion-spot and roundabout, then sampler/provider
 support and standalone planners.
+
+## 2026-11-27: Phase 9.11 — Occlusion-spot velocity plugin
+
+Purpose: adopt both occlusion-spot planner factories and the complete original
+suite. Inspect all nine CMake-listed sources, package dependencies, plugin XML,
+parameter YAML and all three test files. Select all five original cases plus
+individual and joint factory lifecycle gates for both standard and experimental
+planners with Cyclone/RCLCPP. No native Agnocast or Fast DDS gate is selected.
+
+Pattern: package-owned MODULE/BUILD, reusable C++ provider, the original
+CMake-named plugin DSO and indexed package.xml/XML/config. Add a versionless root
+dependency/local override in the Universe group. Reuse the accepted grid_map
+core/ROS providers, autoware_grid_map_utils, OpenCV, planner-common, trajectory
+and motion/route utilities. Keep shared SDK ownership in their existing runtime
+providers. Expose all three original test translation units and their fixture
+header in one cc_test. Keep all original cases and Eigen bounds assertions.
+
+The original grid iterator case aborts in Eigen before the remaining cases run.
+Its 3x3 neighbor loop reads index +/- 1 at the map boundary without checking
+matrix dimensions. Guard row/column bounds before reading each neighbor. This
+corrects undefined behavior in the test, without changing planner algorithms,
+disabling assertions or filtering a case. Current AWF main retains the unsafe
+access. The Lyrical trackers and scoped PR review identify no matching fix.
+UPSTREAM_AWF.md records the reproducer and review limits.
+
+Use the root XML-based executable harness to select each published base
+interface and require pedestrian_vel=1.5, the mapped DSO, observed unload/reload
+and clean shutdown. Standard composition loads occlusion-spot with walkway.
+Experimental composition loads it with no-drivable-lane, speed-bump, template
+and walkway. Index every selected package's original YAML in the test closure.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  @autoware_behavior_velocity_occlusion_spot_module//... \
+  //bazel/tests/autoware_behavior_velocity_occlusion_spot_module:all
+```
+
+Results: after the bounds correction, every module target builds and all five
+test targets pass. XML records all five original cases and four runtime cases,
+with no failures, errors or skips. The original suite includes collision
+slowdown, signed offsets, predictive braking and grid/image operations. Its
+iterator timing output is not a performance qualification. Targeted Bazel/Python
+syntax and whitespace checks pass. No simulator/deployment gate is selected.
+The source correction is committed separately before the Bazel definitions.
+The gate uses the complete working-tree definitions described above; their
+root selection and adoption ledger follow in the module integration commit.

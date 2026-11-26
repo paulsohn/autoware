@@ -2691,6 +2691,27 @@ test-index manifest fix is build metadata, not an upstream source defect.
 See the [selector journal](JOURNAL.md#2026-11-26-phase-910--trajectory-selector-and-complete-selection-pipeline).
 No upstream submission or older ROS/colcon validation is claimed.
 
+### Occlusion-spot grid test: neighbor reads outside the matrix
+
+- [ ] Associate with a matching AWF change. Reviewed 2026-11-27: current
+  [test_grid_utils.cpp](https://github.com/autowarefoundation/autoware_universe/blob/main/planning/behavior_velocity_planner/autoware_behavior_velocity_occlusion_spot_module/test/src/test_grid_utils.cpp)
+  still reads grid_data(index.x()+i, index.y()+j) without clipping neighbors.
+  The [Universe Lyrical tracker](https://github.com/autowarefoundation/autoware_universe/issues/13620)
+  and scoped occlusion_spot/bounds PR search provide no matching correction.
+  This is a test memory-access defect, independently of ROS distribution.
+
+The 0.53.0 package snapshot's full five-case suite aborts in
+compareTime.polygon_vs_line_iterator with Eigen's matrix bounds assertion under
+Clang 21.1.8, Lyrical/RCR and checked Eigen. A line iterator can visit edge
+cells; the 3x3 comparison loop then accesses a negative index or the matrix
+size itself. Check each neighbor's row and column before reading it.
+Preserve all cases and checked Eigen. The complete original suite and four
+standard/experimental individual/composed runtime cases pass after correction.
+See the [module journal](JOURNAL.md#2026-11-27-phase-911--occlusion-spot-velocity-plugin)
+for the exact command and integration pattern. The source change is separate
+from Bazel definitions. No upstream submission, colcon result or timing claim
+is made.
+
 ### Direction-change plugin: current TF2 utility header
 
 Local source fix: `39e171e04`.

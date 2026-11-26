@@ -135,7 +135,12 @@ TEST(compareTime, polygon_vs_line_iterator)
           } else {
             for (int i = -1; i <= 1; i++) {
               for (int j = -1; j <= 1; j++) {
-                if (grid_data(index.x() + i, index.y() + j) == OCCUPIED) {
+                const auto row = index.x() + i;
+                const auto col = index.y() + j;
+                if (row < 0 || row >= grid_data.rows() || col < 0 || col >= grid_data.cols()) {
+                  continue;
+                }
+                if (grid_data(row, col) == OCCUPIED) {
                   // for compare
                 }
                 count++;
