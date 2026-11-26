@@ -21,8 +21,8 @@ may contain multiple package commits and smaller execution batches. Update the
 ledger when a package closes or the source snapshot changes; this is a planning
 record, not a new build-time completeness validator.
 
-Current adoption progress, 2026-11-27: **175/244** packages have both definitions
-and root local overrides; **69** remain without definitions. The census table
+Current adoption progress, 2026-11-27: **176/244** packages have both definitions
+and root local overrides; **68** remain without definitions. The census table
 below preserves the initial 2026-11-23 baseline. Checked ledger items record
 completed module gates; Phase 9.8 is complete. See PLAN.md and the
 package journals for configuration and behavior evidence.
@@ -324,7 +324,7 @@ Publish sampler support before sampling plugins, and consume 9.10 checkers. Revi
 - [x] [autoware_behavior_path_external_request_lane_change_module](../../src/universe/autoware_universe/planning/behavior_path_planner/autoware_behavior_path_external_request_lane_change_module/package.xml)
 - [x] [autoware_behavior_velocity_no_drivable_lane_module](../../src/universe/autoware_universe/planning/behavior_velocity_planner/autoware_behavior_velocity_no_drivable_lane_module/package.xml)
 - [x] [autoware_behavior_velocity_occlusion_spot_module](../../src/universe/autoware_universe/planning/behavior_velocity_planner/autoware_behavior_velocity_occlusion_spot_module/package.xml)
-- [ ] [autoware_behavior_velocity_roundabout_module](../../src/universe/autoware_universe/planning/behavior_velocity_planner/autoware_behavior_velocity_roundabout_module/package.xml)
+- [x] [autoware_behavior_velocity_roundabout_module](../../src/universe/autoware_universe/planning/behavior_velocity_planner/autoware_behavior_velocity_roundabout_module/package.xml)
 - [x] [autoware_behavior_velocity_speed_bump_module](../../src/universe/autoware_universe/planning/behavior_velocity_planner/autoware_behavior_velocity_speed_bump_module/package.xml)
 - [x] [autoware_behavior_velocity_template_module](../../src/universe/autoware_universe/planning/behavior_velocity_planner/autoware_behavior_velocity_template_module/package.xml)
 - [ ] [autoware_in_lane_mrm_planner](../../src/universe/autoware_universe/planning/autoware_in_lane_mrm_planner/package.xml)

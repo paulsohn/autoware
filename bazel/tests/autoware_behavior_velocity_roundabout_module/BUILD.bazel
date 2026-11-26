@@ -1,0 +1,71 @@
+load("@pip_ros//:requirements.bzl", "requirement")
+load("@rules_cc//cc:defs.bzl", "cc_test")
+load("@rules_python//python:defs.bzl", "py_test")
+
+[
+    py_test(
+        name = mode + "_" + profile + "_test",
+        srcs = ["//bazel/tests/behavior_velocity_planner:test_runtime.py"],
+        args = [
+            "$(rootpath @autoware_behavior_velocity_planner//:" + executable + ")",
+            enabled,
+            ",".join(["roundabout"] + companions),
+        ],
+        data = [
+            "@autoware_behavior_velocity_planner//:" + executable,
+            "@autoware_behavior_velocity_planner//:ament_index",
+            "@autoware_behavior_velocity_planner_common//:ament_index",
+            "@autoware_behavior_velocity_roundabout_module//:ament_index",
+            "@autoware_test_utils//:ament_index",
+            "@autoware_velocity_smoother//:ament_index",
+        ] + ["@autoware_behavior_velocity_" + scene + "_module//:ament_index" for scene in companions],
+        env = {"ENABLE_AGNOCAST": "0", "LD_LIBRARY_PATH": "lib"},
+        main = "//bazel/tests/behavior_velocity_planner:test_runtime.py",
+        precompile = "disabled",
+        tags = ["no-remote", "no-sandbox"],
+        deps = [
+            "@ament_index_python",
+            "@autoware_internal_planning_msgs//:py",
+            "@rcl_interfaces//:py",
+            "@rclpy",
+        ],
+    )
+    for mode, executable, enabled in [
+        ("standard", "autoware_behavior_velocity_planner_node", "0"),
+        ("experimental", "experimental_autoware_behavior_velocity_planner_node", "1"),
+    ]
+    for profile, companions in [
+        ("runtime", []),
+        ("composition", ["occlusion_spot", "intersection", "walkway"] if mode == "standard" else ["occlusion_spot", "intersection", "no_drivable_lane", "speed_bump", "template", "walkway"]),
+    ]
+]
+
+cc_test(
+    name = "behavior_test",
+    srcs = ["test_behavior.cpp"],
+    dynamic_deps = ["@autoware_behavior_velocity_roundabout_module//:runtime_dynamic_deps"],
+    env = {"ENABLE_AGNOCAST": "0", "LD_LIBRARY_PATH": "lib"},
+    deps = [
+        "@autoware_behavior_velocity_roundabout_module",
+        "@googletest//:gtest_main",
+    ],
+)
+
+py_test(
+    name = "ttc_test",
+    srcs = ["test_ttc.py"],
+    main = "test_ttc.py",
+    data = ["@autoware_behavior_velocity_roundabout_module//:ament_index"],
+    env = {"ENABLE_AGNOCAST": "0", "LD_LIBRARY_PATH": "lib", "ROS_DOMAIN_ID": "78"},
+    env_inherit = ["DISPLAY", "XAUTHORITY", "XDG_RUNTIME_DIR"],
+    precompile = "disabled",
+    tags = ["no-remote", "no-sandbox", "requires-display"],
+    deps = [
+        "@ament_index_python",
+        "@autoware_internal_debug_msgs//:py",
+        "@rcl_interfaces//:py",
+        "@rclpy",
+        requirement("pillow"),
+        "@std_msgs//:py",
+    ],
+)

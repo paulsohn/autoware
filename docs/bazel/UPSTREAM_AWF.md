@@ -1234,13 +1234,15 @@ Local source fix: `67287e6e`, separate from Bazel definitions.
   standard/experimental lifecycle checks with CPU/Cyclone DDS and Agnocast off.
   Older Boost builds and enabled-Agnocast runtime are not claimed.
 
-Roundabout's four added behavior cases preserve identity across all sixteen
+Roundabout source fix: `de83c0539`. Its four added behavior cases preserve identity across all sixteen
 UUID bytes, object/safety state and collision interval calculations. Both
 standard/experimental factory lifecycles and their composed profiles pass
 after the same value-initialize-and-copy correction. Its source fix is recorded
 with the [roundabout module task](JOURNAL.md#2026-11-27-phase-911--roundabout-velocity-plugin-and-ttc-tool).
 
 ### Roundabout TTC recording: Matplotlib buffer API and shutdown
+
+Local source fix: `de83c0539`.
 
 - [ ] Associate with a matching AWF change. Reviewed 2026-11-27:
   [current ttc.py](https://github.com/autowarefoundation/autoware_universe/blob/main/planning/behavior_velocity_planner/autoware_behavior_velocity_roundabout_module/scripts/ttc.py)

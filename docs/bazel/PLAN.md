@@ -86,6 +86,7 @@ only when your current target demonstrates the need.
   [evidence: composed utility closure](JOURNAL.md#2026-11-22-phase-733--shared-utility-sdk-ownership-in-containers);
   [shared filter-base provider evidence](JOURNAL.md#2026-11-24-phase-95--shared-cpu-filter-base-provider);
   [plugin utility provider evidence](JOURNAL.md#2026-11-27-phase-911-prerequisite--intersection-utility-provider);
+  [indexed graphical command evidence](JOURNAL.md#2026-11-27-phase-911--roundabout-velocity-plugin-and-ttc-tool);
   [narrow layout provider evidence](JOURNAL.md#2026-11-26-phase-98-prerequisite--shared-point-layout-checks);
   [independent component SDK/index closure](JOURNAL.md#2026-11-26-phase-97--traffic-light-image-and-map-visualization);
   [combined-plugin type identity](JOURNAL.md#2026-11-22-phase-732--distinct-motion-plugin-internal-types);
@@ -2522,9 +2523,10 @@ before qualifying the complete plotting entrypoint with the roundabout module.
 | autoware_behavior_velocity_speed_bump_module | Five polygon/height-speed cases, indexed parameters, individual and three-package experimental factory composition |
 | autoware_behavior_velocity_template_module | Unchanged-trajectory and empty-visualization behavior, indexed parameters, individual and four-package experimental factory composition |
 | autoware_behavior_velocity_occlusion_spot_module | All five original cases, both factory lifecycles, standard two-package and experimental five-package composition |
+| autoware_behavior_velocity_roundabout_module | Decision/object behavior, installed TTC plotting/GIF output and both factory lifecycles/compositions |
 
-7 of thirteen packages are complete. Validated coverage is
-175/244 (69 remaining). Phase 9.11 remains in progress. Next: roundabout, then sampler/provider support and standalone planners.
+8 of thirteen packages are complete. Validated coverage is
+176/244 (68 remaining). Phase 9.11 remains in progress. Next: sampler/provider support, its behavior-path plugin and the remaining standalone planners.
 
 ### Execution order through complete Universe coverage
 

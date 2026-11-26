@@ -24362,6 +24362,10 @@ Results: all module targets build and all six test targets pass. The C++ runner
 executes four cases, the factory gates execute four profiles and the plotting
 runner executes all three CLI cases. There are no failures, errors or skips.
 Changed Python/Bazel syntax, new C++ clang-format and whitespace checks pass.
-The gate validates the complete working-tree module before its separate source
-and build commits. No Fast DDS, native Agnocast, simulator or OCI export gate is
-selected. The source correction precedes the definitions/ledger integration.
+Source corrections are separate commit de83c0539. The definitions
+and root selection are accepted with this complete gate. Direct bazel run
+--config=runtime @autoware_behavior_velocity_roundabout_module//:ttc.py -- --help
+also succeeds. No Fast DDS, native Agnocast, simulator or OCI export gate is
+selected. Coverage is 176/244, with 68 packages remaining. Phase 9.11 is eight
+of thirteen complete. Next: path-sampler support, its behavior-path plugin and
+the three standalone planners.

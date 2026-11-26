@@ -592,7 +592,8 @@ libraries from multiple components can coexist in a runtime prefix.
 
 Python integration peers need their C message type-support libraries available
 to dlopen as well as their generated Python modules. Declare the package
-ament_index in test data and check that its runfiles expose the exercised shared
+ament_index in the consuming Python program's data and its integration test
+data. Check that their runfiles expose the exercised shared
 libraries. Set the test's `LD_LIBRARY_PATH` to `lib`; `--run_env` settings
 alone do not configure a native py_test environment. Native ROS-only nodes do
 not interpret ENABLE_AGNOCAST as a backend switch.
@@ -956,6 +957,15 @@ with shared SDK libraries supplied by the existing runtime dependency aggregate.
 For example, `@autoware_behavior_velocity_intersection_module//:utils` owns
 `src/util.cpp`; both the intersection plugin and roundabout consume it.
 Factory registration remains in each package's plugin implementation.
+
+Roundabout also indexes its original `ttc.py` plotting command. Use
+`bazel run --config=runtime @autoware_behavior_velocity_roundabout_module//:ttc.py -- --help`
+to inspect its arguments. Recording uses `--save` and flushes its GIF on
+interruption. The GUI requires an accessible DISPLAY and XAUTHORITY. Validate
+the registered command as its own process, including its startup environment,
+message/resource closure and shutdown. Its complete gate is
+`//bazel/tests/autoware_behavior_velocity_roundabout_module:all`; the plotting
+test exercises real ROS inputs, recording and shutdown before any data arrives.
 
 CPU filter consumers compile against
 @autoware_pointcloud_preprocessor//:pointcloud_preprocessor_filter_base and link

@@ -1,0 +1,94 @@
+load("@pip_ros//:requirements.bzl", "requirement")
+load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library")
+load("@rules_python//python:defs.bzl", "py_binary")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "autoware_behavior_velocity_roundabout_module",
+    srcs = glob(["src/**/*.cpp"]),
+    hdrs = glob(["src/**/*.hpp"]),
+    includes = ["src"],
+    deps = [
+        "@ament_index_cpp//:ament_index_cpp_library",
+        "@autoware_behavior_velocity_intersection_module//:utils",
+        "@autoware_behavior_velocity_planner",
+        "@autoware_behavior_velocity_planner_common",
+        "@autoware_behavior_velocity_rtc_interface",
+        "@autoware_internal_debug_msgs//:cc",
+        "@autoware_internal_planning_msgs//:cc",
+        "@autoware_interpolation",
+        "@autoware_lanelet2_extension//:autoware_lanelet2_extension_lib_library",
+        "@autoware_lanelet2_utils",
+        "@autoware_motion_utils",
+        "@autoware_object_recognition_utils",
+        "@autoware_perception_msgs//:cc",
+        "@autoware_planning_msgs//:cc",
+        "@autoware_route_handler",
+        "@autoware_rtc_interface",
+        "@autoware_test_utils",
+        "@autoware_trajectory",
+        "@autoware_utils",
+        "@autoware_vehicle_info_utils",
+        "@geometry_msgs//:cc",
+        "@lanelet2_core//:lanelet2_core_library",
+        "@lanelet2_routing//:lanelet2_routing_library",
+        "@nav_msgs//:cc",
+        "@pluginlib//:pluginlib_library",
+        "@rclcpp//:rclcpp_library",
+        "@rosdistro//cc:fmt",
+        "@rosdistro//cc:magic_enum",
+        "@rosdistro//cc:opencv_library",
+        "@std_msgs//:cc",
+        "@tf2//:tf2_library",
+        "@tf2_geometry_msgs//:tf2_geometry_msgs_library",
+        "@tier4_planning_msgs//:cc",
+        "@unique_identifier_msgs//:cc",
+        "@visualization_msgs//:cc",
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = [
+        "@autoware_behavior_velocity_intersection_module//:runtime_dynamic_deps",
+    ],
+)
+
+cc_shared_library(
+    name = "roundabout_plugin",
+    dynamic_deps = [":runtime_dynamic_deps"],
+    shared_lib_name = "libautoware_behavior_velocity_roundabout_module.so",
+    deps = [":autoware_behavior_velocity_roundabout_module"],
+)
+
+py_binary(
+    name = "ttc.py",
+    srcs = ["scripts/ttc.py"],
+    main = "scripts/ttc.py",
+    data = ["@autoware_internal_debug_msgs//:ament_index"],
+    deps = [
+        "@autoware_internal_debug_msgs//:py",
+        "@imageio",
+        "@rclpy",
+        requirement("matplotlib"),
+        requirement("numpy"),
+        requirement("pillow"),
+    ],
+)
+
+register_ament_files(
+    name = "node_executables",
+    files = [":ttc.py"],
+    prefix = "lib/autoware_behavior_velocity_roundabout_module",
+    strip_prefix = "*",
+)
+
+ament_index(
+    data = glob(["config/**"]) + [":node_executables"],
+    libraries = [":roundabout_plugin"],
+    package_xml = "package.xml",
+    plugin_categories = {"plugins.xml": "autoware_behavior_velocity_planner"},
+)
