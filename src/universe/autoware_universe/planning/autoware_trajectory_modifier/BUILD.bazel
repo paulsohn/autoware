@@ -62,7 +62,7 @@ collect_transitive_dynamic_deps(
 cc_shared_library(
     name = "utils",
     shared_lib_name = "libautoware_trajectory_modifier_utils.so",
-    deps = [":utils_library", "@autoware_motion_utils", "@autoware_object_recognition_utils", "@autoware_trajectory", "@autoware_lanelet2_utils", "@autoware_path_smoother", "@autoware_planning_factor_interface", "@autoware_utils", "@autoware_vehicle_info_utils", "@autoware_interpolation", "@autoware_osqp_interface", "@autoware_utils_geometry", "@autoware_utils_math"],
+    deps = [":utils_library", "@autoware_motion_utils", "@autoware_object_recognition_utils", "@autoware_trajectory", "@autoware_lanelet2_utils", "@autoware_path_smoother", "@autoware_planning_factor_interface", "@autoware_utils", "@autoware_vehicle_info_utils", "@autoware_interpolation", "@autoware_osqp_interface", "@autoware_utils_geometry", "@autoware_utils_math", "@autoware_utils_debug", "@autoware_utils_diagnostics", "@autoware_utils_system"],
     exports_filter = ["@osqp_legacy//:__pkg__", "@qdldl//:__pkg__", "@suitesparse//:__pkg__"],
     dynamic_deps = [":runtime_dynamic_deps"],
 )

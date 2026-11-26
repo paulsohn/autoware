@@ -24697,3 +24697,42 @@ checklist links this actual record/analyze evidence. Coverage is 180/244
 (64 remaining), with Phase 9.11 twelve of thirteen complete. Next:
 minimum-rule-based planning. No Fast DDS, simulator or
 deployment gate is selected. Coverage remains 179/244 until that commit.
+
+## 2026-11-27 — Phase 9.11 prerequisite: Public trajectory-modifier utility ownership
+
+Purpose: let the current minimum-rule planner consume the existing modifier
+utility SDK together with public debug/diagnostic/system helpers. Its component,
+plugin and test analysis reject autoware_utils_debug, autoware_utils_diagnostics
+and autoware_utils_system as statically linked inside :utils but not exported.
+Inspect the owning :utils cc_shared_library and the consumer's direct utility
+calls. The implementation already resides in this SDK; duplicating it into the
+consumer or broadly disabling export checks would misrepresent ownership.
+
+Add the three logical bazel_dep declarations to the modifier module and name
+these actual providers as explicit :utils roots. Preserve its existing shared
+SDK ownership and narrow exports_filter, all implementation sources and original
+tests. This is build metadata, not an Autoware algorithm fix. Qualify the whole
+modifier suite, indexed plugin/transport behavior and actual generated solver;
+then run the existing native Agnocast behavior pair with the prepared device and
+heaphook. Minimum-rule integration follows in its own package commit.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  @autoware_trajectory_modifier//... \
+  //bazel/tests:trajectory_modifier_transport_test \
+  //bazel/tests:trajectory_modifier_solver_test
+
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --local_test_jobs=1 \
+  --run_under=//bazel/agnocast:with_heaphook --test_env=ENABLE_AGNOCAST=1 \
+  --test_output=errors //bazel/tests:trajectory_modifier_transport_test
+```
+
+Results: all module targets and all four RCLCPP test targets pass: the complete
+original suite, both indexed plugin/transport cases and the actual generated
+solver. The same two behavior cases pass on native Agnocast with the heaphook.
+There are no failures or skips, and whitespace checks pass. No implementation
+changes or broad export-filter additions are needed. Universe coverage is
+unchanged. No Fast DDS, simulator or deployment gate is selected.
