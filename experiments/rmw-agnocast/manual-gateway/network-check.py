@@ -22,7 +22,7 @@ if len(sys.argv)>2:
     from sensor_msgs.msg import PointCloud2, PointField
     from std_msgs.msg import String
     role=sys.argv[2]
-    route=json.loads((out/"route.json").read_text())
+    route=json.loads((out/"witness.json").read_text())
     cloud=route["type"]=="sensor_msgs/msg/PointCloud2"
     cls=PointCloud2 if cloud else String
     def sample(i):
@@ -88,12 +88,14 @@ for backend in ("cyclonedds","zenoh"):
             case=out/f"{backend}-{direction}-{kind}"
             case.mkdir()
             args=json.loads((examples/(backend+".json")).read_text())
-            args["direction"]=direction
-            if kind=="PointCloud2":
-                args["type"]="sensor_msgs/msg/PointCloud2"
+            entry=args["exports"][0]
+            entry["type"]="sensor_msgs/msg/"+kind if kind=="PointCloud2" else "std_msgs/msg/String"
             if direction=="import":
-                args["source"],args["destination"]=args["destination"],args["source"]
+                entry["topic"],entry["remap"]=entry["remap"],entry["topic"]
+                del args["exports"]
+                args["imports"]=[entry]
             args["heaphook"]=os.environ["TEST_HEAPHOOK"]
+            (case/"witness.json").write_text(json.dumps(dict(type=entry["type"],source=entry["topic"],destination=entry["remap"])))
             config=case/"route.json"
             config.write_text(json.dumps(args))
             network=args["network_rmw"]

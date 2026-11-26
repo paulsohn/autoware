@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 """One manually owned, directed ROS topic route between two process-local RMWs."""
+from gateway_config import configured_routes
+
 import argparse
 import ctypes
 import fcntl
@@ -37,7 +39,8 @@ def run_endpoint(args, role):
     from rclpy.utilities import get_rmw_implementation_identifier
     from rosidl_runtime_py.utilities import get_message
 
-    cls = get_message(args.type)
+    inferred = args.type == "?"
+    cls = None if inferred else get_message(args.type)
     channel = socket.socket(fileno=0)
     rx = role == "source"
     exporting = rx and args.direction == "export"
@@ -159,7 +162,46 @@ def run_endpoint(args, role):
             matched = active
             print(f"destination demand={int(active)} topic={topic}", flush=True)
 
+    def signal_ready():
+        fd = int(os.environ.pop("AGNOCAST_ENDPOINT_READY_FD"))
+        os.write(fd,b"+")
+        os.close(fd)
+
+    def discover():
+        # Initialization must finish even when the initializing application is the first publisher.
+        signal_ready()
+        if rx:
+            previous = None
+            while rclpy.ok():
+                types = sorted({info.topic_type for info in node.get_publishers_info_by_topic(topic)})
+                if len(types) == 1:
+                    encoded = types[0].encode()
+                    channel.sendall(HEADER.pack(len(encoded)) + encoded)
+                    return types[0]
+                if previous != types:
+                    print(f"waiting for one publisher type on {topic}: {types}", flush=True)
+                    previous = types
+                rclpy.spin_once(node, timeout_sec=.1)
+        else:
+            while rclpy.ok():
+                if select.select([channel], [], [], .1)[0]:
+                    header = channel.recv(HEADER.size, socket.MSG_WAITALL)
+                    if len(header) != HEADER.size:
+                        raise EOFError("source closed before type discovery")
+                    size, = HEADER.unpack(header)
+                    if not 0 < size <= 65536:
+                        raise ValueError("invalid type name length")
+                    data = channel.recv(size, socket.MSG_WAITALL)
+                    if len(data) != size:
+                        raise EOFError("incomplete type name")
+                    return data.decode()
+
     try:
+        if inferred:
+            args.type = discover()
+            if args.type is None:
+                return
+            cls = get_message(args.type)
         lazy = args.direction == "export" and not args.always_on
         if rx:
             if exporting:
@@ -178,9 +220,8 @@ def run_endpoint(args, role):
             if lazy:
                 node.create_timer(.05, advertise_demand)
         print(f"ready role={role} rmw={expected} type={args.type} pid={os.getpid()}", flush=True)
-        fd = int(os.environ.pop("AGNOCAST_ENDPOINT_READY_FD"))
-        os.write(fd,b"+")
-        os.close(fd)
+        if not inferred:
+            signal_ready()
         rclpy.spin(node)
     except (KeyboardInterrupt, ExternalShutdownException):
         pass
@@ -242,8 +283,7 @@ def lock_before_start(file, operation):
             time.sleep(.03)
 
 
-def join(args, words):
-    address = control_address(args)
+def join(address, words):
     # Serialize only bootstrap. The persistent route locks also protect manual starts.
     with (route_directory() / (address[1:]+".lock")).open("a") as lock:
         lock_before_start(lock, fcntl.LOCK_EX)
@@ -256,7 +296,7 @@ def join(args, words):
                         client.connect(address)
                     except ConnectionRefusedError:
                         if child is None:
-                            child = subprocess.Popen([sys.executable,__file__,*words,"--automatic"],
+                            child = subprocess.Popen([sys.executable,__file__,*words],
                                 stdin=subprocess.DEVNULL, stdout=sys.stderr, start_new_session=True)
                         elif child.poll() is not None:
                             # A racing manual start can still win the route.
@@ -309,8 +349,7 @@ def accept_lease(listener,leases,automatic):
         leases.append(lease)
 
 
-def supervise(args):
-    stacks = (NATIVE, args.network_rmw) if args.direction == "export" else (args.network_rmw, NATIVE)
+def supervise(routes, address, automatic):
     children = []
     stop = False
 
@@ -318,37 +357,42 @@ def supervise(args):
         nonlocal stop
         stop = True
 
-    address = control_address(args)
     phase_file = route_directory() / (address[1:]+".phase")
     # The old supervisor holds this lock through endpoint teardown and route-lock release.
     # A healthy owner keeps it unlocked so conflicting launchers fail promptly.
     with phase_file.open("a") as phase, ExitStack() as cleanup:
         lock_before_start(phase, fcntl.LOCK_SH)
-        acquire_route(cleanup, zip(stacks, (args.source, args.destination)))
+        for args, _ in routes:
+            stacks = (NATIVE, args.network_rmw) if args.direction == "export" else (args.network_rmw, NATIVE)
+            acquire_route(cleanup, zip(stacks, (args.source, args.destination)))
         listener = cleanup.enter_context(socket.socket(socket.AF_UNIX, socket.SOCK_SEQPACKET))
         listener.bind(address)
         listener.listen(16)
         fcntl.flock(phase, fcntl.LOCK_UN)
-        print(f"owner pid={os.getpid()} automatic={args.automatic}",flush=True)
+        print(f"owner pid={os.getpid()} automatic={automatic}",flush=True)
         leases = []
-        ends = socket.socketpair()
+        ends = []
         ready_read,ready_write = os.pipe()
         cleanup.callback(os.close,ready_read)
         signal.signal(signal.SIGINT, stopping)
         signal.signal(signal.SIGTERM, stopping)
         try:
-            for role, rmw, end in zip(("source", "destination"), stacks, ends):
-                env = dict(os.environ, RMW_IMPLEMENTATION=rmw)
-                env.pop("RMW_AGNOCAST_GATEWAY_CONFIG",None)
-                env["AGNOCAST_ENDPOINT_READY_FD"] = str(ready_write)
-                hooks = [h for h in env.get("LD_PRELOAD", "").replace(":", " ").split()
-                         if "agnocast_heaphook" not in h]
-                if rmw == NATIVE:
-                    hooks.insert(0, str(args.heaphook.resolve(strict=True)))
-                env["LD_PRELOAD"] = ":".join(hooks)
-                children.append(subprocess.Popen(
-                    [sys.executable, __file__, *sys.argv[1:], "--endpoint", role, "--parent-pid", str(os.getpid())],
-                    stdin=end, env=env, pass_fds=(ready_write,), start_new_session=True))
+            for args, words in routes:
+                stacks = (NATIVE, args.network_rmw) if args.direction == "export" else (args.network_rmw, NATIVE)
+                pair = socket.socketpair()
+                ends.extend(pair)
+                for role, rmw, end in zip(("source", "destination"), stacks, pair):
+                    env = dict(os.environ, RMW_IMPLEMENTATION=rmw)
+                    env.pop("RMW_AGNOCAST_GATEWAY_CONFIG",None)
+                    env["AGNOCAST_ENDPOINT_READY_FD"] = str(ready_write)
+                    hooks = [h for h in env.get("LD_PRELOAD", "").replace(":", " ").split()
+                             if "agnocast_heaphook" not in h]
+                    if rmw == NATIVE:
+                        hooks.insert(0, str(args.heaphook.resolve(strict=True)))
+                    env["LD_PRELOAD"] = ":".join(hooks)
+                    children.append(subprocess.Popen(
+                        [sys.executable, __file__, *words, "--endpoint", role, "--parent-pid", str(os.getpid())],
+                        stdin=end, env=env, pass_fds=(ready_write,), start_new_session=True))
             for end in ends:
                 end.close()
             ready = 0
@@ -358,21 +402,21 @@ def supervise(args):
                 for child in children:
                     if child.poll() is not None:
                         raise RuntimeError(f"endpoint exited early (status {child.returncode})")
-                if ready<2:
+                if ready<len(children):
                     if select.select([ready_read],[],[],.05)[0]:
-                        ready += len(os.read(ready_read,2-ready))
+                        ready += len(os.read(ready_read,len(children)-ready))
                     elif time.monotonic()>deadline:
                         raise TimeoutError("gateway endpoints failed to become ready")
                     continue
                 readable = select.select([listener,*leases],[],[],.05)[0]
                 if listener in readable:
-                    accept_lease(listener,leases,args.automatic)
+                    accept_lease(listener,leases,automatic)
                     joined |= bool(leases)
                 for lease in list(leases):
                     if lease in readable:
                         leases.remove(lease)
                         lease.close()
-                if args.automatic and not leases and (joined or time.monotonic()>deadline):
+                if automatic and not leases and (joined or time.monotonic()>deadline):
                     break
         finally:
             fcntl.flock(phase, fcntl.LOCK_EX)
@@ -393,46 +437,8 @@ def supervise(args):
                     child.wait()
 
 
-def route_arguments(config):
-    """Translate the public file schema into the same validated route as a manual launch."""
-    if isinstance(config, list) and all(isinstance(word, str) for word in config):
-        print("Deprecated gateway argument array; migrate to a JSON route object", file=sys.stderr)
-        return config
-    if not isinstance(config, dict):
-        raise ValueError("expected a JSON route object")
-    required = ("direction", "type", "source", "destination", "heaphook")
-    unknown = config.keys() - {*required, "network_rmw", "always_on", "qos"}
-    if unknown:
-        raise ValueError(f"unknown route fields: {', '.join(sorted(unknown))}")
-    for key in required:
-        if not isinstance(config.get(key), str) or not config[key] or config[key].startswith("-"):
-            raise ValueError(f"{key} requires a nonempty route value")
-    words = [config[key] for key in ("direction", "type", "source", "destination")]
-    words.append("--heaphook=" + config["heaphook"])
-    if "network_rmw" in config:
-        if not isinstance(config["network_rmw"], str):
-            raise ValueError("network_rmw requires an RMW name")
-        words.append("--network-rmw=" + config["network_rmw"])
-    always_on = config.get("always_on", False)
-    if not isinstance(always_on, bool):
-        raise ValueError("always_on requires a boolean")
-    if always_on:
-        words.append("--always-on")
-    qos = config.get("qos", {})
-    if not isinstance(qos, dict) or qos.keys() - {"depth", "input_reliability", "output_reliability"}:
-        raise ValueError("qos accepts depth, input_reliability and output_reliability")
-    for key, value in qos.items():
-        if key == "depth":
-            if type(value) is not int or value < 1:
-                raise ValueError("qos.depth requires a positive integer")
-        elif not isinstance(value, str):
-            raise ValueError(f"qos.{key} requires a reliability name")
-        words.append(f"--{key.replace('_', '-')}={value}")
-    return words
-
-
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser = argparse.ArgumentParser(description=__doc__, epilog="Use --config FILE to launch a deployment of one or more routes.")
     parser.add_argument("direction", choices=("export", "import"))
     parser.add_argument("type", metavar="PACKAGE/msg/TYPE")
     parser.add_argument("source")
@@ -447,22 +453,47 @@ if __name__ == "__main__":
     parser.add_argument("--parent-pid", type=int, help=argparse.SUPPRESS)
     parser.add_argument("--automatic",action="store_true",help=argparse.SUPPRESS)
     words = sys.argv[1:]
-    joining = words[:1]==["--join"]
-    if joining:
-        config, domain = words[1:]
-        os.environ["ROS_DOMAIN_ID"] = str(int(domain))
+    joining = words[:1] == ["--join"]
+    automatic = False
+    if joining or words[:1] == ["--config"]:
+        if joining:
+            config, domain = words[1:]
+            os.environ["ROS_DOMAIN_ID"] = str(int(domain))
+        elif len(words) == 2:
+            config = words[1]
+        else:
+            parser.error("--config requires one route file")
         try:
-            words = route_arguments(json.loads(Path(config).read_text()))
+            entries = configured_routes(json.loads(Path(config).read_text()))
         except (OSError, ValueError) as exc:
             parser.error(f"{config}: {exc}")
-    args = parser.parse_args(words)
-    if args.depth < 1 or any(not t.startswith("/") for t in (args.source, args.destination)):
-        parser.error("use a positive depth and absolute topic names")
-    if joining:
-        if args.automatic or args.endpoint or args.parent_pid is not None:
-            parser.error("private endpoint arguments cannot be configured")
-        join(args,words)
-    elif args.endpoint:
-        run_endpoint(args, args.endpoint)
+    elif words[:1] == ["--automatic-group"]:
+        entries = json.loads(words[1])
+        automatic = True
     else:
-        supervise(args)
+        entries = [words]
+    routes = []
+    sources, destinations = set(), set()
+    for entry in entries:
+        args = parser.parse_args(entry)
+        if args.depth < 1 or any(not t.startswith("/") for t in (args.source, args.destination)):
+            parser.error("use a positive depth and absolute topic names")
+        if entry is not words and (args.automatic or args.endpoint or args.parent_pid is not None):
+            parser.error("private endpoint arguments cannot be configured")
+        if args.endpoint:
+            run_endpoint(args, args.endpoint)
+            sys.exit(0)
+        src, dst = ((NATIVE,args.source),(args.network_rmw,args.destination)) if args.direction == "export" else (
+            (args.network_rmw,args.source),(NATIVE,args.destination))
+        if dst in destinations or dst in sources or src in destinations:
+            parser.error("conflicting route: a destination must be unique and cannot be another route's source")
+        sources.add(src)
+        destinations.add(dst)
+        routes.append((args,entry))
+    addresses = sorted(control_address(args) for args, _ in routes)
+    address = addresses[0] if len(routes)==1 else "\0agnocast-group-"+hashlib.sha256(
+        json.dumps(addresses).encode()).hexdigest()
+    if joining:
+        join(address,["--automatic-group",json.dumps(entries)])
+    else:
+        supervise(routes,address,automatic or args.automatic)

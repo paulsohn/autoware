@@ -207,9 +207,24 @@ For the reverse direction, open another gateway terminal with both overlays sour
 ros2 run agnocast_cyclone_gateway topic_gateway import std_msgs/msg/String /from_peer/topic /local/peer_topic --heaphook /opt/ros/jazzy/lib/libagnocast_heaphook.so
 ```
 
-Run a listener on /local/peer_topic with the native setup from step 5. Publish on /from_peer/topic from the Cyclone peer. An import subscribes immediately. Each command owns one direction until Ctrl+C. Both routes use volatile history, depth 10, best-effort input and reliable output. Use `--input-reliability reliable` for a reliable source when the bridge must request retransmission, or set `--output-reliability best_effort` for compatible readers. Use `--depth` for queue depth. Each serialized sample must fit within 64 MiB. When the Cyclone writer stalls, an export keeps the sample being sent plus the newest waiting sample. New arrivals replace older waiting samples. On shutdown, the native worker reports the number replaced as `export overwritten`. A reliable DDS output covers samples the gateway publishes. For a complete archive through a peer outage, record on the native host as well. This release has laptop-to-isolated-container evidence in both directions. Two physical hosts still need qualification.
+Run a listener on /local/peer_topic with the native setup from step 5. Publish on /from_peer/topic from the Cyclone peer. An import subscribes immediately. Each positional command above owns one route until Ctrl+C. Both routes use volatile history, depth 10, best-effort input and reliable output. Use `--input-reliability reliable` for a reliable source when the bridge must request retransmission, or set `--output-reliability best_effort` for compatible readers. Use `--depth` for queue depth. Each serialized sample must fit within 64 MiB. When the Cyclone writer stalls, an export keeps the sample being sent plus the newest waiting sample. New arrivals replace older waiting samples. On shutdown, the native worker reports the number replaced as `export overwritten`. A reliable DDS output covers samples the gateway publishes. For a complete archive through a peer outage, record on the native host as well. This release has laptop-to-isolated-container evidence in both directions. Two physical hosts still need qualification.
 
-For RMW-triggered startup, select either the installed Cyclone or Zenoh route with RMW_AGNOCAST_GATEWAY_CONFIG before starting the native application. See the [worked network configurations](manual-gateway/README.md#select-the-gateway-network).
+For several topics, put the native-to-network topic names under `exports` and the network-to-native names under `imports` in one JSON file. Start with the installed example and edit the heap hook path for your host.
+
+```bash
+cp "$(ros2 pkg prefix --share agnocast_cyclone_gateway)/config/cyclonedds.json" ./gateway.json
+export RMW_AGNOCAST_GATEWAY_CONFIG="$PWD/gateway.json"
+```
+
+An entry such as `"/commands"` keeps the same topic name on both sides. The gateway waits for exactly one distinct source publisher type before activating that route. Specify `{"topic":"/status","remap":"/robot/status","type":"std_msgs/msg/String"}` to rename it and advertise the destination before the source starts. Volatile samples sent during discovery can be missed.
+
+For manual startup, run the following command in the gateway terminal. For automatic startup, export the configuration path in the native application's terminal and launch the application normally with the gateway executable available as described in the [startup instructions](manual-gateway/README.md#opt-in-to-startup-from-an-rmw-context).
+
+```bash
+ros2 run agnocast_cyclone_gateway topic_gateway --config "$RMW_AGNOCAST_GATEWAY_CONFIG"
+```
+
+The installed `zenoh.json` selects a Zenoh worker. Start your Zenoh router before launching that gateway. See the [worked network configurations](manual-gateway/README.md#select-the-gateway-network).
 
 ## 8. Decide which processes to migrate together
 

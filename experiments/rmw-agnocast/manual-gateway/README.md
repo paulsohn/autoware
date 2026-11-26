@@ -75,24 +75,35 @@ The writer-stall case stops only the export DDS worker for roughly four seconds.
 
 ## Opt in to startup from an RMW context
 
-Each participating context can request one route. Build and source the middleware and gateway overlays. Set RMW_AGNOCAST_GATEWAY_CONFIG to a JSON object file. The required fields are `direction` (export or import), `type` (installed ROS message type), `source` and `destination` (absolute ROS topic names), and `heaphook` (path to the native allocator hook). Source and destination follow the direction of data flow. An export reads the native source; an import reads the network source.
+One file describes the topics a participating context should bridge. Set `RMW_AGNOCAST_GATEWAY_CONFIG` to its path. Put native-to-network routes in `exports` and network-to-native routes in `imports`. Either list can be omitted. Use an absolute topic name alone to keep the same name on both sides. Use an object with `topic` and optional `remap` to give the destination another name. In both directions, `topic` names the source.
 
 ```json
 {
-  "direction": "export",
-  "type": "std_msgs/msg/String",
-  "source": "/topic",
-  "destination": "/from_robot/topic",
   "network_rmw": "rmw_zenoh_cpp",
-  "heaphook": "/opt/ros/jazzy/lib/libagnocast_heaphook.so"
+  "heaphook": "/opt/ros/jazzy/lib/libagnocast_heaphook.so",
+  "exports": [
+    "/lidar/points",
+    {"topic": "/status", "remap": "/robot/status", "type": "std_msgs/msg/String"}
+  ],
+  "imports": ["/commands"]
 }
 ```
 
-The optional `network_rmw` defaults to `rmw_cyclonedds_cpp`. Set `always_on` to true to keep an export subscribed without a network reader. To override queue depth or reliability, add a `qos` object, for example `"qos": {"depth": 20, "input_reliability": "best_effort", "output_reliability": "reliable"}`. Each QoS field is optional. Old argument-array files still load with a deprecation warning.
+Provide `type` when a destination must be advertised before a source publisher starts. Otherwise the source worker checks publisher endpoint types and activates once it sees exactly one distinct type. A missing or ambiguous type leaves that route pending; other routes can run and application initialization can finish. Discovery binds the type for the current owner lifetime. Install the interfaces on both workers. Volatile traffic sent before activation can be lost.
+
+Set `network_rmw` and `heaphook` once for the group. The default network is Cyclone. An optional top-level `qos` object supplies defaults such as `{"depth":20,"input_reliability":"best_effort","output_reliability":"reliable"}`. A route's `qos` object overrides individual fields. An export can set `always_on` to keep its subscription armed without network readers. The earlier single-route object and legacy argument-array files remain readable.
+
+For an operator-managed group use the same file:
+
+```bash
+ros2 run agnocast_cyclone_gateway topic_gateway --config "$RMW_AGNOCAST_GATEWAY_CONFIG"
+```
+
+One supervisor owns the complete group and starts two worker processes per route. Matching groups share ownership irrespective of declaration order. An overlapping subset cannot silently attach to part of an existing group. Route locks reject duplicate destinations and local reciprocal forwarding, including across gateway processes in the same ownership scope. An endpoint process failure can restart the whole automatically owned group. Use separate owners for routes requiring independent failure recovery. Loop prevention across unrelated hosts is unqualified.
 
 ### Select the gateway network
 
-The installed package provides [cyclonedds.json](../../../src/agnocast_cyclone_gateway/config/cyclonedds.json) and [zenoh.json](../../../src/agnocast_cyclone_gateway/config/zenoh.json). Each exports native /topic as /from_robot/topic. Cyclone is the default when network_rmw is omitted. The package retains its existing name and Cyclone dependency. Install rmw_zenoh_cpp on the gateway and peer to select Zenoh, and start a reachable Zenoh router using your usual session configuration. On the peer select the same RMW and ROS domain.
+The installed package provides [cyclonedds.json](../../../src/agnocast_cyclone_gateway/config/cyclonedds.json) and [zenoh.json](../../../src/agnocast_cyclone_gateway/config/zenoh.json). Each exports native /topic as /from_robot/topic and imports /commands under its original name. Cyclone is the default when network_rmw is omitted. The package retains its existing name and Cyclone dependency. Install rmw_zenoh_cpp on the gateway and peer to select Zenoh, and start a reachable Zenoh router using your usual session configuration. On the peer select the same RMW and ROS domain.
 
 In the native application terminal, after sourcing both overlays and setting the heaphook, select either installed file. Copy the file and edit the heaphook field if the host uses another absolute hook path.
 
@@ -110,7 +121,7 @@ export RMW_AGNOCAST_GATEWAY_CONFIG="$(ros2 pkg prefix --share agnocast_cyclone_g
 
 Migrate launch environments using the old AGNOCAST_GATEWAY_CONFIG name to RMW_AGNOCAST_GATEWAY_CONFIG and restart contexts and gateways together when updating versions. For manual startup, pass --network-rmw rmw_zenoh_cpp or --network-rmw rmw_cyclonedds_cpp directly to topic_gateway. The gateway distinguishes route owners by network RMW and the selected network's profile settings.
 
-Each opted-in rmw_init waits for both endpoint processes to initialize. A short-lived helper joins the matching owner or starts an independent supervisor. Each context holds a socket lease until finalization or process exit. The automatic owner shuts down after its last lease closes. An explicitly launched matching manual owner stays up until its operator stops it. Route names, direction, installed type, QoS, domain, effective hook path and the selected network RMW and profile settings must agree. A matching manual command must be running before context initialization to reuse it. A new manual launch while the route is already owned can report a conflict. Unset RMW_AGNOCAST_GATEWAY_CONFIG for the existing local-only behavior. The gateway's own worker clears that variable before initializing ROS.
+Each opted-in rmw_init waits for the group workers to initialize. Inferred routes may still be waiting for a source type at that point. A short-lived helper joins the matching owner or starts an independent supervisor. Each context holds a socket lease until finalization or process exit. The automatic owner shuts down after its last lease closes. An explicitly launched matching manual owner stays up until its operator stops it. Route names, direction, installed type, QoS, domain, effective hook path and the selected network RMW and profile settings must agree. A matching manual command must be running before context initialization to reuse it. A new manual launch while the route is already owned can report a conflict. Unset RMW_AGNOCAST_GATEWAY_CONFIG for the existing local-only behavior. The gateway's own worker clears that variable before initializing ROS.
 
 Replay from the provisioned worktree with both rebuilt overlays. The stock Cyclone witness runs on loopback. Two ordinary rclpy applications synchronize just before rclpy.init. The elected starter exits first. The witness checks the publisher count, delivery order and content through both exits. The automatic case checks the actual supervisor PID exits. The manual case checks it stays running after both applications exit.
 

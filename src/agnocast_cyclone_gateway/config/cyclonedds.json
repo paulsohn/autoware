@@ -1,8 +1,14 @@
 {
-  "direction": "export",
-  "type": "std_msgs/msg/String",
-  "source": "/topic",
-  "destination": "/from_robot/topic",
   "network_rmw": "rmw_cyclonedds_cpp",
-  "heaphook": "/opt/ros/jazzy/lib/libagnocast_heaphook.so"
+  "heaphook": "/opt/ros/jazzy/lib/libagnocast_heaphook.so",
+  "exports": [
+    {
+      "topic": "/topic",
+      "remap": "/from_robot/topic",
+      "type": "std_msgs/msg/String"
+    }
+  ],
+  "imports": [
+    "/commands"
+  ]
 }
