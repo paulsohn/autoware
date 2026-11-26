@@ -22933,3 +22933,67 @@ weights are symlinks with matching hashes. This host ROS environment is used onl
 for the requested colcon interoperability check, never as a Bazel SDK provider.
 No TensorFlow importer or model quality claim is made. Next: remove the consumer's
 HOME/data_path default and qualify real ONNX inference and alignment behavior.
+
+## 2026-11-26: Phase 9.9 — Model-backed YabLoc pose initialization
+
+Purpose: adopt the five original initializer sources, component, MultiThreaded
+executable and config/launch. CMake declares no functional tests. Inspect the
+real semantic preprocessing/inference, camera projection, lane image, candidate
+markers and alignment service. The preceding model-provider task supplies the
+actual immutable ONNX payload. Define three root-owned cases: CPU inference
+shape/threshold behavior, model-backed service readiness/alignment and the
+explicit missing-file fallback. Select Cyclone/RCLCPP; no GUI is needed.
+
+The source snapshot already contains the ONNX/NHWC support from merged AWF
+PR #13206. Inspect its actual three-file diff: extension-selected NHWC input,
+NHWC output conversion and the ONNX launch default. Retain that implementation;
+do not add another model conversion or a speculative TensorFlow patch. The
+only original-package changes here replace the launch's HOME/data_path default
+with $(find-pkg-share autoware_yabloc_pose_initializer_models)/saved_model/model_float32.onnx
+and declare that package as an exec_depend. The containing autoware_localization_launch
+YabLoc include inherits this default and has no independent model path to change.
+Source-checkout paths and HOME fallbacks are not retained. Commit this resource
+compatibility change separately from Bazel definitions. Colcon users must build
+and source the model package, as demonstrated by the preceding task.
+
+Analysis exposes lanelet utilities and geometry already linked by yabloc_common
+but not publicly exported to this new direct consumer. Add both as roots of the
+existing shared owner, with a direct geometry module declaration; keep one owner
+rather than linking duplicate implementations. The complete affected common,
+image and particle suites are rerun with the initializer. No new implementation
+compatibility patch is required.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  @yabloc_common//... //bazel/tests:yabloc_common_test \
+  @yabloc_image_processing//... //bazel/tests:yabloc_image_processing_test \
+  @yabloc_particle_filter//... //bazel/tests:yabloc_particle_filter_test \
+  @yabloc_pose_initializer//... //bazel/tests:yabloc_pose_initializer_test \
+  //bazel/tests:yabloc_model_resources_test
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_output=errors //bazel/tests:yolox_launch_paths_test \
+  //bazel/tests:yabloc_launch_paths_test
+```
+
+Results: all 88 non-test targets and six test targets pass in the combined gate,
+52.7 s. Initializer has three passing cases, alongside four common, four image,
+three particle, three original resampler and two model-resource cases. JUnit has
+zero failures/errors/skips/disabled. Both launcher targets pass, 25.6 s, with two
+cases each. They use actual ROS launch substitution evaluation and check the
+model-package manifest dependency. Share their existing path-test implementation
+under bazel/tests/models, parameterized by package and accepting nested resource
+paths; rerun the existing YOLOX caller without a GPU/engine rebuild.
+
+The model test runs the real CPU network at thresholds0/1, requiring correctly
+sized three-channel masks and their acceptance/rejection behavior. The real
+service first rejects a request without camera/map/image inputs. After supplying
+a road lanelet, camera information, downward camera TF and an image, it returns
+a finite candidate yaw in the requested search interval, preserves position,
+stamp/covariance and publishes all six scored candidates. A separate explicit
+nonexistent-file case confirms the original yaw-preserving fallback, without
+using it as evidence of successful inference. This is synthetic API/inference
+qualification, not trained-model quality, real camera calibration or field
+localization accuracy. No Fast DDS, GUI, simulator or deployment rerun is selected.

@@ -2536,3 +2536,18 @@ retain these paths. The same public-header correction passes the full original
 three-case resampler suite, three prediction/correction cases and both generated
 message wire types, alongside unchanged common/image gates. This extends the
 OpenCV-layout finding above; no independent Lyrical algorithm change is needed.
+
+### YabLoc initializer already has the ONNX compatibility path
+
+- [x] Associate the existing ONNX/NHWC implementation with merged
+  [PR #13206](https://github.com/autowarefoundation/autoware_universe/pull/13206),
+  merge 59c95b737f865866336ca12a00d5783f2ef11341. Checked 2026-11-26:
+  its actual header/implementation/launch diff matches the code already in the
+  source snapshot before this module task. No additional inference patch is made.
+
+The PR explains the OpenCV4.9+ TensorFlow softmax-axis issue and switches to the
+same network's NHWC ONNX boundary. The Phase 9.9 gate validates that existing
+path against the pinned SDK using the materialized v1.0 model: CPU inference,
+threshold/shape behavior and model-backed alignment all pass. The local indexed
+model-resource default is separate integration work, outside that PR's scope.
+No local TensorFlow failure reproduction or field-accuracy claim is made.
