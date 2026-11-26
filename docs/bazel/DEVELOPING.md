@@ -1287,6 +1287,16 @@ source packages and compiler/header/CMake SDK exports are outside this runtime
 distribution. Add missing runtime exports to their owning package/index and
 update the product's dependencies when its supported functionality changes.
 
+Tools that spawn ros2 commands need the declared CLI and its extensions on
+PATH as well as their Python imports. Supply them through the selected product's
+sourceable environment; include the tool's package index in that product too.
+For the in-lane MRM recorder/analyzer, expose the original commands as indexed
+executables and retain the reusable rosbag_common Python provider. The gate
+//bazel/tests/autoware_in_lane_mrm_planner:rosbag_tools_test supplies a pinned
+ros2cli/ros2bag entrypoint, records actual DDS samples and checks generated CSV/PNG
+reports. Use that behavior check after changes to the command line, dependencies
+or plotting startup. --help or imports alone do not qualify recording/analysis.
+
 The pinned RCR also provides ament_package and ament_underlay from
 `@rosdistro//ament:defs.bzl`. They describe conventional installed package trees
 and generate setup scripts/environment hooks. Use them when exporting that

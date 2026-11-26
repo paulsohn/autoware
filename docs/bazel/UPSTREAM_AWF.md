@@ -2824,6 +2824,8 @@ no upstream submission or colcon validation is claimed.
 
 ### In-lane MRM planner: Lyrical TF2 and complete Boost hash headers
 
+Local source compatibility commit: `3d8f29bc6`.
+
 - [ ] Associate with a matching AWF correction. Checked 2026-11-27:
   [path_planner.cpp](https://github.com/autowarefoundation/autoware_universe/blob/main/planning/autoware_in_lane_mrm_planner/src/path_planner.cpp)
   and in_lane_mrm_trajectory_planner.cpp use the removed tf2/utils.h, and

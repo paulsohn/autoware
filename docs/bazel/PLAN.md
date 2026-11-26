@@ -95,6 +95,8 @@ only when your current target demonstrates the need.
   [multi-package dependency identity and link closure](../../third_party/grid_map/README.md);
   [evidence: stop-line plugin](JOURNAL.md#2026-11-17-phase-525--stop-line-plugin).
 - [ ] Preserve executable contracts and unique library identities in composed indexes.
+  [Subprocess CLI closure](DEVELOPING.md#sourceable-native-debugging-environment);
+  [record/analyze behavior evidence](JOURNAL.md#2026-11-27-phase-911--in-lane-mrm-planner).
   [Plugin discovery and manifest-backed index views](DEVELOPING.md#native-plugin-libraries);
   [selector test-index evidence](JOURNAL.md#2026-11-26-phase-910--trajectory-selector-and-complete-selection-pipeline).
   [Runtime resource convention](DEVELOPING.md#launch-resource-composition);
@@ -2527,9 +2529,10 @@ before qualifying the complete plotting entrypoint with the roundabout module.
 | autoware_path_sampler | Finite Frenet/Bézier candidates, node interpolation regressions, indexed component/executable and DDS trajectory/fallback behavior |
 | autoware_behavior_path_sampling_planner_module | Real planner path/context checks, direct sampled generation/reuse, indexed factory/parameter updates and eleven-scene composition |
 | autoware_surround_obstacle_checker | All three original cases: stop/hold/release and object/point-cloud planning factors; indexed component and executable |
+| autoware_in_lane_mrm_planner | Complete original suite, stopping/latching behavior, both node factories and rosbag tool checks in selected transport profiles |
 
-11 of thirteen packages are complete. Validated coverage is
-179/244 (65 remaining). Phase 9.11 remains in progress. Next: in-lane MRM and minimum-rule-based planning.
+12 of thirteen packages are complete. Validated coverage is
+180/244 (64 remaining). Phase 9.11 remains in progress. Next: minimum-rule-based planning.
 
 Path-sampler acceptance exposes two independent implementation defects: spline
 derivatives before the first interval and reference velocity/elevation copying.

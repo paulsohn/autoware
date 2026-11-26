@@ -24605,7 +24605,7 @@ message as a source-only edit. The subsequent planner gate exercises profile
 constants and actual trigger transitions. Whitespace checks pass. No Fast DDS
 or deployment gate is selected. Universe coverage is unchanged.
 
-## 2026-11-27 — Phase 9.11: In-lane MRM planner (in progress)
+## 2026-11-27 — Phase 9.11: In-lane MRM planner
 
 Purpose: adopt the in-lane stopping planner, both executable factories and its
 record/analyze tools. Inspect fourteen production C++ sources, eight original
@@ -24691,6 +24691,9 @@ and uninitialized RCLCPP. Recorder/analyzer help, real three-second recording,
 recorded-topic validation and generated nonempty CSV/PNG reports pass with a
 fresh plotting cache. Unchanged C++ native evidence is reused after Python-only
 corrections. New C++ formatting, Python syntax and whitespace checks pass.
-The compatibility source edits are ready for their separate commit; package
-adoption awaits its build-definition commit. No Fast DDS, simulator or
+Source compatibility corrections are separate commit 3d8f29bc6. The
+steady-state manual documents subprocess CLI composition, and the adoption
+checklist links this actual record/analyze evidence. Coverage is 180/244
+(64 remaining), with Phase 9.11 twelve of thirteen complete. Next:
+minimum-rule-based planning. No Fast DDS, simulator or
 deployment gate is selected. Coverage remains 179/244 until that commit.

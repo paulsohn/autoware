@@ -2218,6 +2218,12 @@ local_path_override(
     path = "src/universe/autoware_universe/planning/autoware_surround_obstacle_checker",
 )
 
+bazel_dep(name = "autoware_in_lane_mrm_planner")
+local_path_override(
+    module_name = "autoware_in_lane_mrm_planner",
+    path = "src/universe/autoware_universe/planning/autoware_in_lane_mrm_planner",
+)
+
 # Launcher source modules.
 bazel_dep(name = "sample_vehicle_description")
 local_path_override(
