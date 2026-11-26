@@ -4,6 +4,16 @@ load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
 package(default_visibility = ["//visibility:public"])
 
 cc_library(
+    name = "prime_synchronizer",
+    hdrs = ["include/perception_utils/prime_synchronizer.hpp"],
+    strip_include_prefix = "include",
+    deps = [
+        "@rclcpp//:rclcpp_library",
+        "@std_msgs//:cc",
+    ],
+)
+
+cc_library(
     name = "perception_utils_library",
     srcs = [
         "src/detection_class_remapper.cpp",
@@ -11,10 +21,14 @@ cc_library(
     ],
     hdrs = glob(
         ["include/**/*.hpp"],
-        exclude = ["include/perception_utils/run_length_encoder.hpp"],
+        exclude = [
+            "include/perception_utils/prime_synchronizer.hpp",
+            "include/perception_utils/run_length_encoder.hpp",
+        ],
     ),
     strip_include_prefix = "include",
     deps = [
+        ":prime_synchronizer",
         ":run_length_encoder_library",
         "@autoware_object_recognition_utils",
         "@autoware_perception_msgs//:cc",

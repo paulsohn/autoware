@@ -22000,3 +22000,38 @@ failures/errors/skips. Targeted changed-range formatting (without reordering
 unrelated includes) and diff checks pass. No Fast DDS, GPU, Python camera API,
 older ROS/CMake or expensive product check is claimed. Next: cloud occlusion,
 using the now-qualified camera geometry provider.
+
+## 2026-11-26: Phase 9.7 prerequisite — header-only prime synchronizer
+
+Purpose: provide the actual synchronization API needed by cloud occlusion without
+linking unrelated detection-remapping, NMS or encoder implementations. Inspect
+perception_utils's CMake, all three original tests, existing Bazel providers and
+prime_synchronizer.hpp. The synchronizer is an existing header-only rclcpp/std_msgs
+template; no implementation change or new facade module is needed.
+
+Add :prime_synchronizer with that header, the original include prefix and explicit
+rclcpp/std_msgs compile dependencies. Have the existing default library export it
+transitively, excluding the duplicate header from its own glob. Existing callers
+keep the same include/API; the occlusion node consumes the narrow target directly
+and links its own ROS runtime providers. Keep all eight original perception-utils
+cases and all existing compiled libraries.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  @perception_utils//...
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  @perception_utils//... @autoware_traffic_light_occlusion_predictor//... \
+  //bazel/tests:traffic_light_occlusion_test
+```
+
+Results: the complete original three-target/eight-case suite passes in 41.8 s.
+The combined consumer gate builds sixteen non-test targets and passes four test
+targets/eleven cases (eight original plus three new occlusion cases) in 24.8 s,
+zero failures/errors/skips, reusing unchanged SDK results. The real node instantiates
+both synchronizers and publishes paired car/pedestrian output; this validates the
+new header provider beyond declaration-only analysis. No source changes or
+Fast DDS/GPU/product reruns are needed. Consumer details follow in its own entry.
