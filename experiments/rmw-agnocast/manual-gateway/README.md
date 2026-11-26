@@ -75,7 +75,7 @@ The writer-stall case stops only the export DDS worker for roughly four seconds.
 
 ## Opt in to startup from an RMW context
 
-One file describes the topics a participating context should bridge. Set `RMW_AGNOCAST_GATEWAY_CONFIG` to its path. Put native-to-network routes in `exports` and network-to-native routes in `imports`. Either list can be omitted. Every entry is an object with a `topic` field. Omit `remap` to keep the same name on both sides. In both directions, `topic` names the source.
+One file describes the topics a participating context should bridge. Set `RMW_AGNOCAST_GATEWAY_CONFIG` to its path. Put native-to-network routes in `exports` and network-to-native routes in `imports`. Either list can be omitted. Every entry names the local Agnocast topic in `topic`. For an export, `remap_to` names the network destination. For an import, `remap_from` names the network source. Omit the directional key to use the same name on both sides.
 
 ```json
 {
@@ -83,9 +83,9 @@ One file describes the topics a participating context should bridge. Set `RMW_AG
   "heaphook": "/opt/ros/jazzy/lib/libagnocast_heaphook.so",
   "exports": [
     {"topic": "/lidar/points"},
-    {"topic": "/status", "remap": "/robot/status", "type": "std_msgs/msg/String"}
+    {"topic": "/status", "remap_to": "/robot/status", "type": "std_msgs/msg/String"}
   ],
-  "imports": [{"topic": "/commands"}]
+  "imports": [{"topic": "/commands", "remap_from": "/to_robot/commands"}]
 }
 ```
 
@@ -103,7 +103,7 @@ One supervisor owns the complete group and starts two worker processes per route
 
 ### Select the gateway network
 
-The installed package provides [cyclonedds.json](../../../src/agnocast_cyclone_gateway/config/cyclonedds.json) and [zenoh.json](../../../src/agnocast_cyclone_gateway/config/zenoh.json). Each exports native /topic as /from_robot/topic and imports /commands under its original name. Cyclone is the default when network_rmw is omitted. The package retains its existing name and Cyclone dependency. Install rmw_zenoh_cpp on the gateway and peer to select Zenoh, and start a reachable Zenoh router using your usual session configuration. On the peer select the same RMW and ROS domain.
+The installed package provides [cyclonedds.json](../../../src/agnocast_cyclone_gateway/config/cyclonedds.json) and [zenoh.json](../../../src/agnocast_cyclone_gateway/config/zenoh.json). Each exports native /topic as /from_robot/topic and imports network /to_robot/commands as local /commands. Cyclone is the default when network_rmw is omitted. The package retains its existing name and Cyclone dependency. Install rmw_zenoh_cpp on the gateway and peer to select Zenoh, and start a reachable Zenoh router using your usual session configuration. On the peer select the same RMW and ROS domain.
 
 In the native application terminal, after sourcing both overlays and setting the heaphook, select either installed file. Copy the file and edit the heaphook field if the host uses another absolute hook path.
 

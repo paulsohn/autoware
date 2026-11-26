@@ -4,11 +4,11 @@
   "exports": [
     {
       "topic": "/topic",
-      "remap": "/from_robot/topic",
+      "remap_to": "/from_robot/topic",
       "type": "std_msgs/msg/String"
     }
   ],
   "imports": [
-    {"topic": "/commands"}
+    {"topic": "/commands", "remap_from": "/to_robot/commands"}
   ]
 }

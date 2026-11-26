@@ -28,8 +28,8 @@ if len(sys.argv)>2:
     node = rclpy.create_node("group_test_"+side)
     if side=="peer":
         # Both types exist before the owner is elected.
-        cmd = node.create_publisher(String,"/cmd",10)
-        competing = node.create_publisher(Int32,"/cmd",10)
+        cmd = node.create_publisher(String,"/peer/cmd",10)
+        competing = node.create_publisher(Int32,"/peer/cmd",10)
         data, status = [], []
         node.create_subscription(Int32,"/data",lambda m:data.append(m.data),64)
         node.create_subscription(String,"/robot/status",lambda m:status.append(m.data),64)
@@ -81,7 +81,7 @@ for backend in ("rmw_cyclonedds_cpp","rmw_zenoh_cpp"):
         peer_env=dict(os.environ,RMW_IMPLEMENTATION=backend)
         peer_env.pop("RMW_AGNOCAST_GATEWAY_CONFIG",None)
         hook=os.environ["TEST_HEAPHOOK"]
-        config=dict(network_rmw=backend, heaphook=hook, exports=[dict(topic="/data"),dict(topic="/status",remap="/robot/status",type="std_msgs/msg/String")],imports=[dict(topic="/cmd")])
+        config=dict(network_rmw=backend, heaphook=hook, exports=[dict(topic="/data"),dict(topic="/status",remap_to="/robot/status",type="std_msgs/msg/String")],imports=[dict(topic="/cmd",remap_from="/peer/cmd")])
         path=root/"route.json"
         path.write_text(json.dumps(config))
         with ExitStack() as stack:

@@ -88,14 +88,14 @@ for backend in ("cyclonedds","zenoh"):
             case=out/f"{backend}-{direction}-{kind}"
             case.mkdir()
             args=json.loads((examples/(backend+".json")).read_text())
-            entry=args["exports"][0]
+            entry=args[direction+"s"][0]
             entry["type"]="sensor_msgs/msg/"+kind if kind=="PointCloud2" else "std_msgs/msg/String"
             if direction=="import":
-                entry["topic"],entry["remap"]=entry["remap"],entry["topic"]
-                del args["exports"]
-                args["imports"]=[entry]
+                source, destination = entry["remap_from"], entry["topic"]
+            else:
+                source, destination = entry["topic"], entry["remap_to"]
             args["heaphook"]=os.environ["TEST_HEAPHOOK"]
-            (case/"witness.json").write_text(json.dumps(dict(type=entry["type"],source=entry["topic"],destination=entry["remap"])))
+            (case/"witness.json").write_text(json.dumps(dict(type=entry["type"],source=source,destination=destination)))
             config=case/"route.json"
             config.write_text(json.dumps(args))
             network=args["network_rmw"]

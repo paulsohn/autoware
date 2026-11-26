@@ -51,21 +51,24 @@ def configured_routes(config):
     if not isinstance(base_qos, dict):
         raise ValueError("deployment qos must be an object")
     routes = []
-    for direction in ("export", "import"):
+    for direction, remap_key in (("export", "remap_to"), ("import", "remap_from")):
         entries = config.get(direction+"s", [])
         if not isinstance(entries, list):
             raise ValueError(f"{direction}s must be an array of topics")
         for index, entry in enumerate(entries):
             if not isinstance(entry, dict) or "topic" not in entry:
                 raise ValueError(f"{direction}s[{index}] must be an object with a topic field")
-            unknown = entry.keys() - {"topic", "remap", "type", "always_on", "qos"}
+            unknown = entry.keys() - {"topic", remap_key, "type", "always_on", "qos"}
             if unknown:
                 raise ValueError(f"unknown {direction} fields: {sorted(unknown)}")
             qos = entry.get("qos", {})
             if not isinstance(qos, dict):
                 raise ValueError("route qos must be an object")
+            local = entry["topic"]
+            network = entry.get(remap_key, local)
+            source, destination = (local, network) if direction == "export" else (network, local)
             routes.append(route_arguments(dict(defaults, direction=direction,
-                source=entry["topic"], destination=entry.get("remap",entry["topic"]),
+                source=source, destination=destination,
                 type=entry.get("type","?"), always_on=entry.get("always_on",False),
                 qos={**base_qos, **qos})))
     if not routes:
