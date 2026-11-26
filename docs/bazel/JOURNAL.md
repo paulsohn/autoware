@@ -23827,3 +23827,52 @@ obstacle-avoidance qualification is selected. Next: external-request lane change
 
 The module and root selection are accepted with those complete gates. Universe
 coverage is 170/244 (74 remaining); Phase 9.11 remains in progress.
+
+## 2026-11-26: Phase 9.11 — External-request lane-change scene managers
+
+Purpose: adopt both original external-request sources and exported left/right
+manager factories, preserving the complete two-case suite. Inspect CMake, the
+plugin XML, manager inheritance and original normal/empty-route/off-track node
+fixtures. Select Cyclone/RCLCPP, both original cases, individual factory/parameter
+startup and the final ten-package behavior-path composition. No source change
+is needed.
+
+Pattern: package-local MODULE/BUILD and root local override. Depend on the local
+lane-change implementation and planner-common/RTC/utility providers. Keep one
+CMake-named external-request DSO and register both original factory names under
+SceneModuleManagerInterface, with package.xml in its own index. Preserve the
+existing tests and use the planner's test_utils/runtime providers and indexed
+map/vehicle fixtures. Keep SDK globals with canonical shared owners.
+
+The package has no separate config directory. Both managers derive from the
+existing lane-change implementation and consume its lane_change parameter
+namespace. Declare the base package's index in the test/runtime closure and load
+its original lane_change.param.yaml. Do not manufacture or copy another YAML.
+Extend the root harness profile to require both left/right loaded-class records,
+the external-request DSO in /proc maps, time_limit=50/backward_lane_length=200,
+a supported backward-length update to 201 and clean shutdown. The individual
+profile loads only the external managers; the joint profile also loads ordinary
+lane-change factories and the other accepted scene packages in one process.
+This checks the actual derived/base factory composition.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  @autoware_behavior_path_external_request_lane_change_module//... \
+  //bazel/tests/autoware_behavior_path_planner:external_request_lane_change_runtime_test \
+  //bazel/tests/autoware_behavior_path_planner:selected_scenes_runtime_test
+```
+
+Results: all module targets and three test targets pass: both original cases,
+both-factory startup/update/shutdown and the ten-package composition, zero
+failures/errors/skips/disabled. Verify the direction-change eight-package and
+dynamic-obstacle nine-package intermediate commit states separately; their
+individual gates and original suites also pass. Targeted Python syntax, Bazel
+evaluation and diff checks pass. No native Agnocast, Fast DDS, simulator/
+deployment or field lane-change qualification is selected.
+
+The first three of thirteen Phase 9.11 packages are complete. Coverage is
+171/244 (73 remaining). Continue with the five behavior-velocity plugins, then
+the sampler/provider pair and remaining standalone planners. Phase 9.11 remains
+in progress.

@@ -28,6 +28,9 @@ PROFILES = {
                                   ['dynamic_avoidance.target_object.max_obstacle_vel',
                                    'dynamic_avoidance.target_object.min_obj_lat_offset_to_ego_path'],
                                   [100.0, 0.0], 0.1),
+    'external_request_lane_change': ('ExternalRequestLaneChangeLeftModuleManager,ExternalRequestLaneChangeRightModuleManager',
+                                     ['lane_change.time_limit', 'lane_change.backward_lane_length'],
+                                     [50.0, 200.0], 201.0),
     'side_shift': ('SideShiftModuleManager',
                    ['side_shift.min_distance_to_start_shifting', 'side_shift.min_drivable_area_margin'],
                    [5.0, 0.3], 0.4),
@@ -68,7 +71,9 @@ class PlannerRuntime(unittest.TestCase):
         args = [EXECUTABLE, '--ros-args', '-r', '__ns:=' + namespace,
                 '-r', '__node:=behavior_path_planner', '--log-level', 'debug']
         configs = list(dict.fromkeys(
-            (['lane_change', 'static_obstacle_avoidance'] if 'avoidance_by_lane_change' in MODULES else []) + MODULES))
+            (['lane_change', 'static_obstacle_avoidance'] if 'avoidance_by_lane_change' in MODULES else []) +
+            (['lane_change'] if 'external_request_lane_change' in MODULES else []) +
+            [m for m in MODULES if m != 'external_request_lane_change']))
         for package, files in [
             ('autoware_test_utils', ['test_common.param.yaml', 'test_nearest_search.param.yaml',
                                      'test_vehicle_info.param.yaml']),

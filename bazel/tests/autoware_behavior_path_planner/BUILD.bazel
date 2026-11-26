@@ -10,6 +10,7 @@ _SCENES = [
     "bidirectional_traffic",
     "direction_change",
     "dynamic_obstacle_avoidance",
+    "external_request_lane_change",
 ]
 
 [
@@ -30,7 +31,8 @@ _SCENES = [
             "@autoware_behavior_path_" + module + "_module//:ament_index"
             for module in _SCENES
             if module in modules or (
-                "avoidance_by_lane_change" in modules and module in ["lane_change", "static_obstacle_avoidance"]
+                ("avoidance_by_lane_change" in modules and module in ["lane_change", "static_obstacle_avoidance"]) or
+                ("external_request_lane_change" in modules and module == "lane_change")
             )
         ],
         env = {

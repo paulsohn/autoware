@@ -2264,3 +2264,9 @@ local_path_override(
     module_name = "autoware_behavior_path_dynamic_obstacle_avoidance_module",
     path = "src/universe/autoware_universe/planning/behavior_path_planner/autoware_behavior_path_dynamic_obstacle_avoidance_module",
 )
+
+bazel_dep(name = "autoware_behavior_path_external_request_lane_change_module", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_behavior_path_external_request_lane_change_module",
+    path = "src/universe/autoware_universe/planning/behavior_path_planner/autoware_behavior_path_external_request_lane_change_module",
+)
