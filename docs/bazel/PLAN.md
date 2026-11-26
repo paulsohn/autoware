@@ -83,6 +83,7 @@ only when your current target demonstrates the need.
   [Qt/RViz runtime ownership and graphical prerequisites](DEVELOPING.md#rviz-plugin-packages);
   [evidence: composed utility closure](JOURNAL.md#2026-11-22-phase-733--shared-utility-sdk-ownership-in-containers);
   [shared filter-base provider evidence](JOURNAL.md#2026-11-24-phase-95--shared-cpu-filter-base-provider);
+  [narrow layout provider evidence](JOURNAL.md#2026-11-26-phase-98-prerequisite--shared-point-layout-checks);
   [independent component SDK/index closure](JOURNAL.md#2026-11-26-phase-97--traffic-light-image-and-map-visualization);
   [combined-plugin type identity](JOURNAL.md#2026-11-22-phase-732--distinct-motion-plugin-internal-types);
   [validator collision-type evidence](JOURNAL.md#2026-11-22-phase-734--distinct-validator-collision-checker-debug-types);

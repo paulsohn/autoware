@@ -69,11 +69,24 @@ cc_binary(
 )
 
 _COMMON_HEADERS = ["include/autoware/pointcloud_preprocessor/transform_info.hpp"]
-_FILTER_BASE_HEADERS = [
-    "include/autoware/pointcloud_preprocessor/filter.hpp",
-    "include/autoware/pointcloud_preprocessor/utility/memory.hpp",
-]
+_FILTER_BASE_HEADERS = ["include/autoware/pointcloud_preprocessor/filter.hpp"]
+_LAYOUT_HEADERS = ["include/autoware/pointcloud_preprocessor/utility/memory.hpp"]
 _FAST_HEADERS = ["include/autoware/pointcloud_preprocessor/downsample_filter/faster_voxel_grid_downsample_filter.hpp"]
+
+cc_library(
+    name = "pointcloud_layout_library",
+    srcs = ["src/utility/memory.cpp"],
+    hdrs = _LAYOUT_HEADERS,
+    includes = ["include"],
+    deps = ["@autoware_point_types", "@sensor_msgs//:cc"],
+)
+
+cc_shared_library(
+    name = "pointcloud_layout",
+    shared_lib_name = "libautoware_pointcloud_preprocessor_layout.so",
+    deps = [":pointcloud_layout_library"],
+    dynamic_deps = ["@sensor_msgs//:cc_shared", "@rosdistro//cc:pcl"],
+)
 
 cc_library(
     name = "filter_common_headers",
@@ -84,7 +97,7 @@ cc_library(
 
 cc_library(
     name = "headers",
-    hdrs = glob(["include/**"], exclude = _CORE_HEADERS + _COMMON_HEADERS + _FAST_HEADERS + _FILTER_BASE_HEADERS),
+    hdrs = glob(["include/**"], exclude = _CORE_HEADERS + _COMMON_HEADERS + _FAST_HEADERS + _FILTER_BASE_HEADERS + _LAYOUT_HEADERS),
     data = ["@image_transport//:ament_index"],
     includes = ["include"],
     deps = [":concatenate_core", ":filter_common_headers", ":filter_base_headers"] + [
@@ -133,6 +146,7 @@ cc_library(
     includes = ["include"],
     deps = [
         ":filter_common_headers",
+        ":pointcloud_layout_library",
         "@autoware_agnocast_wrapper//:autoware_agnocast_wrapper_library",
         "@autoware_point_types",
         "@autoware_utils",
@@ -150,6 +164,7 @@ cc_library(
 collect_transitive_dynamic_deps(
     name = "filter_base_sdk_dynamic_deps",
     dynamic_deps = [
+        ":pointcloud_layout",
         "@autoware_agnocast_wrapper",
         "@autoware_utils//:runtime_dynamic_deps",
         "@managed_transform_buffer//:runtime_dynamic_deps",
@@ -186,7 +201,6 @@ cc_library(
     name = "pointcloud_preprocessor_filter_base",
     srcs = [
         "src/filter.cpp",
-        "src/utility/memory.cpp",
     ],
     deps = [
         ":filter_base_headers",
@@ -542,7 +556,7 @@ ament_index(
         ":polar_voxel_outlier_filter_node_plugin",
         ":blockage_diag_node_plugin",
     ],
-    libraries = [":pointcloud_preprocessor_filter_component", ":pointcloud_preprocessor_filter_base_shared", ":concatenate_core_shared"],
+    libraries = [":pointcloud_preprocessor_filter_component", ":pointcloud_preprocessor_filter_base_shared", ":concatenate_core_shared", ":pointcloud_layout"],
 )
 
 cc_test(

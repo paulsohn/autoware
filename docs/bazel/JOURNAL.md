@@ -22557,3 +22557,67 @@ image cases pass; both provider cases remain passing, zero failures/errors/skips
 58.2 s combined. Added-file and changed-range formatting plus diff checks pass.
 No Fast DDS, wrapper, GUI or expensive product gate is selected. Next: LiDAR
 reflector localization, retaining the same landmark provider boundary.
+
+## 2026-11-26: Phase 9.8 prerequisite — shared point-layout checks
+
+Purpose: expose the existing memory.hpp layout API without importing filter
+implementations into LiDAR localization. Inspect its sole memory.cpp source,
+point-type/message dependencies, filter-base header/library ownership and all
+original preprocessor CMake suites. The localizer initially links the filter
+base and landmark shared providers, which both own compiled geometry/math;
+Bazel correctly rejects the duplicate static ownership. The localizer needs
+only the layout predicates, so do not solve this by coupling landmark support
+to filter implementations or allowing duplicate linkage.
+
+Pattern: add :pointcloud_layout_library for unchanged memory.cpp/memory.hpp with
+point-types and sensor-message compile providers; add :pointcloud_layout as its
+single shared owner. Move memory.cpp out of filter-base sources, re-export the
+compile API from filter_base_headers and delegate its runtime provider to the
+new DSO. Exclude the header from the broad headers glob to keep ownership clear.
+Index the new shared library with the original package. Existing filter callers
+keep their include/API; the localizer consumes the narrow pair directly. No
+source, original test or ROS topic changes are needed.
+
+The point-types headers also carry PCL common's compile provider. Delegating
+only sensor messages in the new DSO produces duplicate PCL common ownership
+when composed with the canonical PCL SDK. Delegate both sensor_msgs and the
+shared PCL owner, even though the layout implementation itself uses no PCL
+runtime operation. Keep the developer convention in the native-plugin section;
+the adoption checklist links this evidence without repeating it.
+
+Required gate: the complete prior CPU preprocessor acceptance (all sixteen
+original C++ groups, original eight-scenario Python component test, existing
+polygon/crop-box, fast-voxel, comparison and standalone-example checks), plus
+the localizer gate. After the primary gate, repeat the four selected crop-box/
+polygon cases in Agnocast-only mode because its filter-base runtime changed.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  @autoware_pointcloud_preprocessor//... \
+  //bazel/tests:pointcloud_preprocessor_behavior_test \
+  //bazel/tests:pointcloud_fast_voxel_test \
+  //bazel/tests:pointcloud_concatenate_core_example_test \
+  //bazel/tests:pointcloud_concatenate_component_test \
+  //bazel/tests:pointcloud_comparison_test \
+  @autoware_lidar_marker_localizer//... //bazel/tests:lidar_marker_localizer_transport_test
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --local_test_jobs=1 --strategy=TestRunner=local \
+  --run_under=//bazel/agnocast:with_heaphook \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  //bazel/tests:pointcloud_preprocessor_behavior_test
+```
+
+Results: every preprocessor module target builds; all 21 selected SDK test targets
+pass: 185 original C++ cases, eight original Python cases, four polygon/crop-box
+cases, two voxel regressions, three comparison checks and the standalone example.
+The combined run takes 540.5 s; its only failure is the consumer's padded-input
+fixture, corrected and qualified in the following localizer entry (three cases,
+26.6 s). SDK inputs are unchanged by that fixture correction, so retain these
+passing SDK results. All four enabled polygon/crop-box cases also pass in
+17.5 s, zero failures/errors/skips. ELF inspection confirms both the localizer
+and filter base depend on libautoware_pointcloud_preprocessor_layout.so; the
+localizer keeps liblandmark_manager.so and has no filter-base dependency.
+Diff checks pass. No source changes, Fast DDS or expensive product gate is
+selected. Commit the provider boundary separately from its consumer.

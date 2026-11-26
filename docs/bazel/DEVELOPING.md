@@ -910,6 +910,12 @@ boundary without depending on the complete filter-plugin DSO. The package owns
 the helper, compiled utility roots and shared SDK delegation; products select
 versions and compose consumers.
 
+Consumers needing only point-cloud layout checks compile against
+@autoware_pointcloud_preprocessor//:pointcloud_layout_library and link its
+:pointcloud_layout shared owner. The filter-base provider re-exports this API
+and delegates to the same owner. This keeps utility-only consumers independent
+of filter components and their compiled geometry/math libraries.
+
 Keep existing test helper sources in testonly libraries rather than linking
 planning test managers into production components.
 
