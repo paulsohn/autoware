@@ -2526,10 +2526,10 @@ before qualifying the complete plotting entrypoint with the roundabout module.
 | autoware_behavior_velocity_roundabout_module | Decision/object behavior, installed TTC plotting/GIF output and both factory lifecycles/compositions |
 | autoware_path_sampler | Finite Frenet/Bézier candidates, node interpolation regressions, indexed component/executable and DDS trajectory/fallback behavior |
 | autoware_behavior_path_sampling_planner_module | Real planner path/context checks, direct sampled generation/reuse, indexed factory/parameter updates and eleven-scene composition |
+| autoware_surround_obstacle_checker | All three original cases: stop/hold/release and object/point-cloud planning factors; indexed component and executable |
 
-10 of thirteen packages are complete. Validated coverage is
-178/244 (66 remaining). Phase 9.11 remains in progress. Next: in-lane MRM,
-minimum-rule-based planning and surround-obstacle checking.
+11 of thirteen packages are complete. Validated coverage is
+179/244 (65 remaining). Phase 9.11 remains in progress. Next: in-lane MRM and minimum-rule-based planning.
 
 Path-sampler acceptance exposes two independent implementation defects: spline
 derivatives before the first interval and reference velocity/elevation copying.

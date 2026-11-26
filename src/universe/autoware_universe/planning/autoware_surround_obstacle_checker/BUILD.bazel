@@ -1,0 +1,127 @@
+load("@generate_parameter_library//:defs.bzl", "generate_parameter_library")
+load("@rclcpp_components//:defs.bzl", "rclcpp_components_register_node")
+load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+generate_parameter_library(
+    name = "surround_obstacle_checker_node_parameters",
+    yaml_file = "param/surround_obstacle_checker_node_parameters.yaml",
+)
+
+cc_library(
+    name = "autoware_surround_obstacle_checker",
+    srcs = ['src/node.cpp', 'src/debug_marker.cpp'],
+    hdrs = glob(["src/**/*.hpp"]),
+    includes = ["src"],
+    deps = [
+        "@autoware_internal_planning_msgs//:cc",
+        "@autoware_motion_utils",
+        "@autoware_obstacle_proximity_checker",
+        "@autoware_perception_msgs//:cc",
+        "@autoware_planning_factor_interface",
+        "@autoware_planning_msgs//:cc",
+        "@autoware_planning_test_manager",
+        "@autoware_universe_utils",
+        "@autoware_utils",
+        "@autoware_vehicle_info_utils",
+        "@diagnostic_msgs//:cc",
+        "@rclcpp//:rclcpp_library",
+        "@rclcpp_components//:rclcpp_components_library",
+        "@sensor_msgs//:cc",
+        "@std_msgs//:cc",
+        "@tf2//:tf2_library",
+        "@tf2_eigen//:tf2_eigen_library",
+        "@tf2_ros//:tf2_ros_library",
+        "@tier4_planning_msgs//:cc",
+        "@visualization_msgs//:cc",
+        "@autoware_internal_debug_msgs//:cc",
+        "@autoware_vehicle_msgs//:cc",
+        "@autoware_utils_uuid",
+        "@autoware_test_utils",
+        "@ament_index_cpp//:ament_index_cpp_library",
+        "@nav_msgs//:cc",
+        "@geometry_msgs//:cc",
+        "@pcl_conversions//:pcl_conversions_library",
+        "@unique_identifier_msgs//:cc",
+        ":surround_obstacle_checker_node_parameters",
+        "@rosdistro//cc:boost.geometry",
+        "@rosdistro//cc:eigen",
+        "@rosdistro//cc:pcl_common",
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = [
+        "@autoware_utils//:runtime_dynamic_deps",
+        "@autoware_motion_utils//:runtime_dynamic_deps",
+        "@autoware_obstacle_proximity_checker//:runtime_dynamic_deps",
+        "@generate_parameter_library//:rclcpp_lifecycle",
+        "@generate_parameter_library//:rsl",
+        "@rclcpp//:rclcpp",
+        "@rclcpp_components//:rclcpp_components",
+        "@tf2//:tf2",
+        "@tf2_eigen//:tf2_eigen",
+        "@tf2_ros//:tf2_ros",
+        "@ament_index_cpp//:ament_index_cpp",
+        "@pcl_conversions//:pcl_conversions",
+        "@autoware_internal_planning_msgs//:cc_shared",
+        "@autoware_perception_msgs//:cc_shared",
+        "@autoware_planning_msgs//:cc_shared",
+        "@diagnostic_msgs//:cc_shared",
+        "@sensor_msgs//:cc_shared",
+        "@std_msgs//:cc_shared",
+        "@tier4_planning_msgs//:cc_shared",
+        "@visualization_msgs//:cc_shared",
+        "@autoware_internal_debug_msgs//:cc_shared",
+        "@autoware_vehicle_msgs//:cc_shared",
+        "@nav_msgs//:cc_shared",
+        "@geometry_msgs//:cc_shared",
+        "@unique_identifier_msgs//:cc_shared",
+    ],
+)
+
+cc_shared_library(
+    name = "component",
+    shared_lib_name = "libautoware_surround_obstacle_checker.so",
+    deps = [":autoware_surround_obstacle_checker"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+)
+
+rclcpp_components_register_node(
+    name = "autoware_surround_obstacle_checker_node",
+    component = ":component",
+    node_name = "autoware_surround_obstacle_checker_node",
+    plugin = "autoware::surround_obstacle_checker::SurroundObstacleCheckerNode",
+)
+
+register_ament_files(
+    name = "executables",
+    files = [":autoware_surround_obstacle_checker_node"],
+    prefix = "lib/autoware_surround_obstacle_checker",
+    strip_prefix = "*",
+)
+
+ament_index(
+    package_xml = "package.xml",
+    components = [":autoware_surround_obstacle_checker_node_record"],
+    data = glob(["config/**", "launch/**"]) + [":executables"],
+)
+
+collect_transitive_dynamic_deps(
+    name = "test_dynamic_deps",
+    dynamic_deps = [":runtime_dynamic_deps", "@autoware_planning_test_manager//:runtime_dynamic_deps", "@autoware_test_utils//:runtime_dynamic_deps", "@ament_index_cpp//:ament_index_cpp"],
+)
+
+cc_test(
+    name = "test_autoware_surround_obstacle_checker",
+    timeout = "long",
+    srcs = glob(["test/*.cpp"]),
+    deps = [":autoware_surround_obstacle_checker", "@autoware_planning_test_manager", "@autoware_test_utils", "@autoware_utils_uuid", "@ament_index_cpp//:ament_index_cpp_library", "@googletest//:gtest_main"],
+    dynamic_deps = [":test_dynamic_deps"],
+    data = [":ament_index", "@autoware_test_utils//:ament_index"],
+    env = {"LD_LIBRARY_PATH": "lib", "ROS_DOMAIN_ID": "76"},
+)

@@ -24540,3 +24540,36 @@ change in this plugin is required. No Fast DDS, native Agnocast, simulator or
 deployment check is selected. Coverage is 178/244 (66 packages remaining),
 with Phase 9.11 ten of thirteen complete. Next: in-lane MRM, minimum-rule-based
 planning and surround-obstacle checking.
+
+## 2026-11-27 — Phase 9.11: Surround-obstacle checker
+
+Purpose: expose the standalone stopped-vehicle proximity checker and its indexed
+configuration. Inspect both production translation units, private/public node
+headers, parameter schema, launch/YAML, manifest/CMake and both original test
+sources. The complete original suite contains three cases: the stop/hold/release
+state machine and actual planning-factor publication from dynamic objects and
+point clouds. Reuse the local obstacle_proximity_checker implementation and its
+canonical PCL/message runtime providers rather than duplicating collision logic.
+
+Add package-owned MODULE/BUILD definitions, generate the original typed parameter
+header and select the source with an adjacent versionless root dependency pair.
+Build both source files, the component factory and original executable name;
+register the executable, component and configuration through the ament index.
+Keep original tests in place and expose their combined executable with indexed
+vehicle/test data and planning-test-manager dependencies. The original cases
+exercise actual ROS timers, perception/point-cloud messages and planning-factor
+identities; no new source-package fixtures are needed. This node uses RCLCPP,
+so the selected gate is Cyclone DDS without a native Agnocast variant.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  @autoware_surround_obstacle_checker//...
+```
+
+Results: all module targets build and all three original cases pass with no
+failures or skips. No source implementation or original test modification is
+needed. Bazel parsing and whitespace checks pass. No Fast DDS, simulator or
+deployment gate is selected. Coverage is 179/244 (65 remaining); Phase 9.11
+is eleven of thirteen complete. Next: the two Agnocast-aware planners.
