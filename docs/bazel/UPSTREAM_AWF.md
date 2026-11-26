@@ -2480,3 +2480,20 @@ The original constructor case, generated AprilTag localization and blank-image
 suppression pass with the pinned SDK; no behavior/assertion change is required.
 This is portable SDK layout compatibility, not a new detector or an older
 ROS/CMake validation claim. No upstream submission is claimed.
+
+### YabLoc common OpenCV layout and message-buffer compatibility
+
+- [ ] Associate with a matching upstream fix. Checked 2026-11-26: current
+  [color header](https://github.com/autowarefoundation/autoware_universe/blob/main/localization/yabloc/yabloc_common/include/yabloc_common/color.hpp)
+  and [decoder header](https://github.com/autowarefoundation/autoware_universe/blob/main/localization/yabloc/yabloc_common/include/yabloc_common/cv_decompress.hpp)
+  retain installation-prefixed includes; the
+  [decoder](https://github.com/autowarefoundation/autoware_universe/blob/main/localization/yabloc/yabloc_common/src/cv_decompress.cpp)
+  constructs cv::Mat directly from message data. Scoped YabLoc/OpenCV and
+  YabLoc/Lyrical PR searches find no matching common-library correction.
+
+The complete common gate in the Phase 9.9 journal first fails on opencv4/opencv2,
+then on cv::Mat(Buffer). Use public OpenCV paths in the currently required files
+and a message-backed byte view for imdecode. Preserve color/Bayer branches and
+source bytes. Four geometry/map/ground/codec cases pass with Cyclone/RCLCPP.
+Other legacy templates and older ROS/CMake configurations are outside this gate;
+no upstream submission is claimed.

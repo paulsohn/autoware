@@ -14,8 +14,8 @@
 
 #include "yabloc_common/cv_decompress.hpp"
 
-#include <opencv4/opencv2/imgcodecs.hpp>
-#include <opencv4/opencv2/imgproc.hpp>
+#include <opencv2/imgcodecs.hpp>
+#include <opencv2/imgproc.hpp>
 
 #include <string>
 
@@ -39,11 +39,14 @@ cv::Mat decompress_image(const sensor_msgs::msg::CompressedImage & compressed_im
   constexpr int decode_gray = 0;
   constexpr int decode_rgb = 1;
 
+  const cv::Mat encoded(
+    1, static_cast<int>(compressed_img.data.size()), CV_8UC1,
+    const_cast<std::uint8_t *>(compressed_img.data.data()));
   bool encoding_is_bayer = encoding.find("bayer") != std::string::npos;
   if (!encoding_is_bayer) {
-    return cv::imdecode(cv::Mat(compressed_img.data), decode_rgb);
+    return cv::imdecode(encoded, decode_rgb);
   }
-  raw_image = cv::imdecode(cv::Mat(compressed_img.data), decode_gray);
+  raw_image = cv::imdecode(encoded, decode_gray);
 
   // TODO(KYabuuchi) integrate with implementation in the sensing/perception component
   if (encoding == "bayer_rggb8") {

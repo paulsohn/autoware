@@ -15,7 +15,7 @@
 #ifndef YABLOC_COMMON__CV_DECOMPRESS_HPP_
 #define YABLOC_COMMON__CV_DECOMPRESS_HPP_
 
-#include <opencv4/opencv2/core.hpp>
+#include <opencv2/core.hpp>
 
 #include <sensor_msgs/msg/compressed_image.hpp>
 #include <sensor_msgs/msg/image.hpp>

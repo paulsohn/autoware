@@ -15,7 +15,7 @@
 #ifndef YABLOC_COMMON__COLOR_HPP_
 #define YABLOC_COMMON__COLOR_HPP_
 
-#include <opencv4/opencv2/core.hpp>
+#include <opencv2/core.hpp>
 
 #include <std_msgs/msg/color_rgba.hpp>
 

@@ -15,7 +15,7 @@
 #ifndef YABLOC_COMMON__PUB_SUB_HPP_
 #define YABLOC_COMMON__PUB_SUB_HPP_
 
-#include <opencv4/opencv2/core.hpp>
+#include <opencv2/core.hpp>
 #include <rclcpp/rclcpp.hpp>
 
 #include <sensor_msgs/msg/image.hpp>

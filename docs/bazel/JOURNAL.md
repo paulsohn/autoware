@@ -22685,3 +22685,31 @@ override census is 151/244, leaving 93 packages without definitions; all nine
 Phase 9.8 ledger items are checked. PLAN.md contains the final per-package table.
 No runtime rerun is needed for these final documentation/count updates.
 Next: Phase 9.9 YabLoc visual localization.
+
+## 2026-11-26: Phase 9.9 — YabLoc common support
+
+Purpose: adopt all eleven original support/node sources, two components and
+indexed config/launch. CMake has no functional tests. Inspect pose/line transforms,
+compressed image decoding, ground fitting, map decomposition and public helper
+headers; define four root-owned cases for transforms, ground-plane slope/message,
+real map/ground nodes and color/Bayer decoding. Select Cyclone/RCLCPP.
+
+Compilation exposes installation-prefixed opencv4/opencv2 includes in color,
+pub_sub and cv_decompress. Use public opencv2 paths in the four files needed by
+this target. The compressed-image constructor then fails because the selected
+Lyrical SDK uses a Buffer container rather than std::vector. Build one byte Mat
+view from data()/size() for both decode modes, as in the existing decompressor
+package; imdecode reads the view and does not mutate the message. Preserve
+encoding selection and Bayer conversions. Tests decode real PNG payloads in both
+modes and assert all source bytes remain intact. Commit source compatibility
+separately. Current upstream retains the old expressions; see UPSTREAM_AWF.md.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  @yabloc_common//... //bazel/tests:yabloc_common_test
+```
+
+The full declared common gate passes after these corrections. No older ROS/CMake
+run is claimed; uninstantiated legacy helper templates are not qualified here.
