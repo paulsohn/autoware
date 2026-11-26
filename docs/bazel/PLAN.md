@@ -2365,7 +2365,9 @@ Cloud occlusion passes three geometry/paired-category cases; its narrow prime-
 synchronizer provider also preserves the full eight-case perception-utils suite.
 Fusion passes all 95 original cases and two transport cases, including both
 exact and skewed approximate synchronization on Agnocast-only transport.
-Coverage is 140/244; marker publication and visualization remain.
+Recognition text markers pass all three new ROS cases after correcting group-ID
+lookup, multiple housing poses and map replacement.
+Coverage is 141/244; visualization remains.
 
 ### Execution order through complete Universe coverage
 

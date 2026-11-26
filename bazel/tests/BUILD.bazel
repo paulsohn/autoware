@@ -2559,3 +2559,11 @@ cc_test(
     data = ["@agnocast_heaphook"],
     tags = ["no-sandbox", "no-remote"],
 )
+
+cc_test(
+    name = "traffic_light_recognition_marker_test",
+    srcs = ["autoware_traffic_light_recognition_marker_publisher/test_transport.cpp"],
+    deps = ["@autoware_traffic_light_recognition_marker_publisher//:autoware_traffic_light_recognition_marker_publisher_library", "@googletest//:gtest"],
+    dynamic_deps = ["@autoware_traffic_light_recognition_marker_publisher//:runtime_dynamic_deps"],
+    tags = ["no-sandbox", "no-remote"],
+)

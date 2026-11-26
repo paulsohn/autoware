@@ -22165,3 +22165,15 @@ env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
   @autoware_traffic_light_recognition_marker_publisher//... \
   //bazel/tests:traffic_light_recognition_marker_test
 ```
+
+Build pattern: one compile provider for the original source/private header,
+explicit local lanelet/map/message SDK dependencies, one shared owner and plain
+rclcpp component/executable registration. Index the executable, component record
+and original launch directory. Do not introduce a wrapper transport into this
+plain-rclcpp package. Keep all added fixtures under bazel/tests.
+
+Results: all nine module non-test targets and the added test target build;
+all three cases pass in 21.8 s, zero failures/errors/skips. Changed source-range
+and full added-file formatting plus diff checks pass. No original functional
+test was omitted; no Fast DDS, GPU, GUI or expensive product gate was selected.
+Next: the existing image and map visualization components and full suites.

@@ -2426,6 +2426,8 @@ Lyrical runtime fix; no upstream submission is claimed.
 
 ### Recognition text markers use physical IDs for group messages
 
+Local source fix: `f4c4b8e4c`.
+
 - [ ] Associate with a matching upstream fix. Checked 2026-11-26: current
   [implementation](https://github.com/autowarefoundation/autoware_universe/blob/main/common/autoware_traffic_light_recognition_marker_publisher/src/traffic_light_recognition_marker_publisher.cpp)
   stores physical linestring IDs but reads traffic_light_group_id; the
