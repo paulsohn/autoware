@@ -117,6 +117,8 @@ only when your current target demonstrates the need.
   [C++ bag-fixture evidence](JOURNAL.md#2026-11-22-phase-732--multi-object-tracking);
   [evidence: interface lint](JOURNAL.md#2026-11-18-phase-534--interface-spec-lint);
   [source-relative C++ resource evidence](JOURNAL.md#2026-11-24-phase-96--object-association-and-fusion-merge).
+  [Native point-layout fixtures](DEVELOPING.md#original-test-source-layout);
+  [evidence: both LiDAR layouts](JOURNAL.md#2026-11-26-phase-98--lidar-marker-localization).
   [Evidence: textually included C++ implementation](JOURNAL.md#2026-11-22-phase-732--static-obstacle-avoidance-scene-plugin).
 - [ ] Inventory complete module suites, runtime prerequisites and required
   middleware configurations before implementing each task.
@@ -2366,45 +2368,52 @@ six selected added cases also pass Agnocast-only. Source fixes preserve test
 semantics and correct demonstrated compatibility/map-identity issues; upstream
 checks and commit associations are in UPSTREAM_AWF.md. Since image_geometry
 sources are absent locally, root selects release 4.1.0-3.rcr.2; its eighteen
-native C++ SDK cases pass. A narrow header-only prime synchronizer preserves perception_utils's full
-eight-case suite. Independent image/map components keep separate shared SDK
+native C++ SDK cases pass. A narrow header-only prime synchronizer preserves
+perception_utils's full eight-case suite. Independent image/map components keep separate shared SDK
 closures and declare image transport's plugin index with its consumers.
 
 No Fast DDS, GPU, simulator, GUI or deployment rerun is claimed. Model execution
 remains in Phase 9.13. Definition coverage is 142/244, with 102 packages remaining;
 next is Phase 9.8 localization adapters, landmarks and monitoring.
 
-### Phase 9.8: Localization adapters, landmarks and monitoring (in progress)
+### Phase 9.8: Localization adapters, landmarks and monitoring (complete)
 
-Integrate the nine ledger packages in dependency order: landmark support and
-pose adapters/requester, then monitoring/arbitration, then AR-tag and LiDAR-marker
-localizers. Retain package-sized commits and the complete original suites,
-including arbiter example-rule and Python launch tests. Add root-owned behavior
-gates for untested libraries/nodes: mapped landmark transforms, projection/TF,
-covariance and initialization, diagnostics/state transitions and localization
-inputs/outputs. Select Cyclone/RCLCPP for original suites and selected
-Agnocast-only peers for wrapper monitors. Inspect actual dependency, fixture,
-component and indexed-resource requirements before each package. Physical
-sensor/vehicle accuracy qualification, Fast DDS, GUI, simulator and deployment
-gates are outside this phase. Coverage starts at 142/244.
+Completed 2026-11-26. All nine package boundaries expose their original libraries,
+components/executables where applicable, and indexed resources. Original suites
+run with Cyclone/RCLCPP; both wrapper monitors additionally pass their selected
+Agnocast-only peers with heaphook/kernel2.4.1. Package/provider boundaries and the
+OpenCV source compatibility fix are separate signed-off commits.
 
-autoware_landmark_manager: complete; see its Phase 9.8 journal for commands and results.
+| Module | Primary cases (original + added) | Behavior and selected configurations |
+| --- | ---: | --- |
+| autoware_landmark_manager | 0 + 2 | Serialized map subtype/ID filtering, marker geometry and pose correction with either orientation policy. |
+| autoware_geo_pose_projector | 0 + 2 | Projector readiness, calibrated origin/height, retained header/covariance contract and TF off/on. |
+| autoware_pose_covariance_modifier | 0 + 5 | NDT/GNSS/mixed selection, covariance interpolation, suppression and expiry. |
+| autoware_pose_initialization_requester | 0 + 1 | UNKNOWN/UNINITIALIZED/INITIALIZED transitions, AUTO/empty-pose request and multithreaded service progress. |
+| autoware_localization_error_monitor | 2 + 3 | Healthy/warning/error diagnostics and ellipse payload; all three added cases also pass Agnocast-only. |
+| autoware_pose_instability_detector | 3 + 2 | Original abnormal-data suite, consistent motion and pose jump/debug residual; both added cases also pass Agnocast-only. |
+| autoware_pose_estimator_arbiter | 9 + 0 | Seven C++ shared-data/example-rule cases plus two original Python relay/shutdown cases; preserve both libraries and MultiThreadedExecutor. |
+| autoware_ar_tag_based_localizer | 1 + 2 | Original constructor, generated AprilTag/blank-image behavior, static camera TF, interpolated pose and covariance. |
+| autoware_lidar_marker_localizer | 0 + 3 | Both native point layouts, activation, reflector voting, corrected pose/covariance, debug cloud and flat-intensity rejection. |
 
-autoware_geo_pose_projector: complete; see its Phase 9.8 journal for commands and results.
+All fifteen original and twenty added cases pass, zero failures/errors/skips;
+five added monitor cases also pass Agnocast-only. ArUco sources are absent locally; root pins
+5.0.5-3.rcr.2 alongside the existing OpenCV SDK. Portable OpenCV header names
+replace installation-prefixed names; UPSTREAM_AWF.md records current upstream
+checks and source association. Landmark support explicitly exports the compiled
+utilities reused by its consumers.
 
-autoware_pose_covariance_modifier: complete; see its Phase 9.8 journal for commands and results.
+LiDAR requires only point-layout predicates from the preprocessor. Publish a
+narrow shared layout provider, retain its API through the filter base, and
+preserve canonical PCL ownership. The complete preprocessor acceptance passes:
+185 original C++ cases, eight original Python cases and all existing external
+checks/example, plus the four selected Agnocast-only filter cases. Use padded
+native-layout fixtures rather than weakening production layout admission.
 
-autoware_pose_initialization_requester: complete; see its Phase 9.8 journal for commands and results.
-
-autoware_localization_error_monitor: complete; see its Phase 9.8 journal for commands and results.
-
-autoware_pose_instability_detector: complete; see its Phase 9.8 journal for commands and results.
-
-autoware_pose_estimator_arbiter: complete; see its Phase 9.8 journal for commands and results.
-
-autoware_ar_tag_based_localizer: complete; generated AprilTag/blank-image gates
-and the original constructor case pass. Root pins ArUco 5.0.5-3.rcr.2 with the
-existing OpenCV SDK; sources are absent locally.
+Definition coverage is 151/244, with 93 packages remaining. These synthetic gates
+qualify module behavior, not physical sensor/vehicle accuracy. No Fast DDS, GPU,
+GUI, simulator or deployment gate is claimed. Next: Phase 9.9 YabLoc visual
+localization.
 
 ### Execution order through complete Universe coverage
 

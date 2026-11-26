@@ -1,0 +1,47 @@
+load("@rclcpp_components//:defs.bzl", "rclcpp_components_register_node")
+load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "autoware_lidar_marker_localizer_library",
+    srcs = ["src/lidar_marker_localizer.cpp"],
+    hdrs = ["src/lidar_marker_localizer.hpp"],
+    includes = ["src"],
+    deps = ["@autoware_landmark_manager//:autoware_landmark_manager_library", "@autoware_localization_util", "@autoware_map_msgs//:cc", "@autoware_point_types", "@autoware_pointcloud_preprocessor//:pointcloud_layout_library", "@autoware_qos_utils", "@autoware_utils", "@pcl_conversions//:pcl_conversions_library", "@pcl_ros//:pcl_ros_tf_library", "@rclcpp_components//:rclcpp_components_library", "@sensor_msgs//:cc", "@nav_msgs//:cc", "@std_srvs//:cc", "@tf2_eigen//:tf2_eigen_library", "@tf2_geometry_msgs//:tf2_geometry_msgs_library", "@tf2_ros//:tf2_ros_library", "@tf2_sensor_msgs//:tf2_sensor_msgs_library", "@rosdistro//cc:pcl_common", "@rosdistro//cc:pcl_io"],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = ["@autoware_landmark_manager", "@autoware_landmark_manager//:runtime_dynamic_deps", "@autoware_map_msgs//:cc_shared", "@autoware_pointcloud_preprocessor//:pointcloud_layout", "@autoware_utils//:runtime_dynamic_deps", "@pcl_conversions//:pcl_conversions", "@pcl_ros//:pcl_ros_tf", "@rclcpp_components//:rclcpp_components", "@sensor_msgs//:cc_shared", "@nav_msgs//:cc_shared", "@std_srvs//:cc_shared", "@tf2_eigen//:tf2_eigen", "@tf2_geometry_msgs//:tf2_geometry_msgs", "@tf2_ros//:tf2_ros", "@tf2_sensor_msgs//:tf2_sensor_msgs", "@rosdistro//cc:pcl"],
+)
+
+cc_shared_library(
+    name = "autoware_lidar_marker_localizer",
+    shared_lib_name = "libautoware_lidar_marker_localizer.so",
+    deps = [":autoware_lidar_marker_localizer_library"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+)
+
+rclcpp_components_register_node(
+    name = "autoware_lidar_marker_localizer_node",
+    component = ":autoware_lidar_marker_localizer",
+    plugin = "autoware::lidar_marker_localizer::LidarMarkerLocalizer",
+    node_name = "autoware_lidar_marker_localizer_node",
+)
+
+register_ament_files(
+    name = "executables",
+    files = [":autoware_lidar_marker_localizer_node"],
+    prefix = "lib/autoware_lidar_marker_localizer",
+    strip_prefix = "*",
+)
+
+ament_index(
+    package_xml = "package.xml",
+    libraries = [":autoware_lidar_marker_localizer"],
+    components = [":autoware_lidar_marker_localizer_node_record"],
+    data = glob(["launch/**", "config/**"]) + [":executables"],
+)

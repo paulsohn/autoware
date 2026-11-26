@@ -1325,6 +1325,11 @@ in the component's own ament_index; a direct C++ test's data edges do not reach
 that process. Use ament_package when a launch needs a dependency's installed
 executable, rather than only its resource index.
 
+For point-cloud consumers requiring native struct layouts, preserve padding in
+fixtures with pcl::toPCLPointCloud2(cloud, message, true) before conversion to ROS,
+and check point_step against sizeof(PointT). The ROS conversion convenience API
+can remove padding; matching field names alone does not satisfy native offsets.
+
 For outputs with no ordering contract, compare contents using stable fixture
 keys while retaining multiplicity, shape and numerical tolerances. Do not change
 production ordering or relax tolerances to accommodate container iteration order.

@@ -22614,10 +22614,74 @@ pass: 185 original C++ cases, eight original Python cases, four polygon/crop-box
 cases, two voxel regressions, three comparison checks and the standalone example.
 The combined run takes 540.5 s; its only failure is the consumer's padded-input
 fixture, corrected and qualified in the following localizer entry (three cases,
-26.6 s). SDK inputs are unchanged by that fixture correction, so retain these
+26.1 s). SDK inputs are unchanged by that fixture correction, so retain these
 passing SDK results. All four enabled polygon/crop-box cases also pass in
 17.5 s, zero failures/errors/skips. ELF inspection confirms both the localizer
 and filter base depend on libautoware_pointcloud_preprocessor_layout.so; the
 localizer keeps liblandmark_manager.so and has no filter-base dependency.
 Diff checks pass. No source changes, Fast DDS or expensive product gate is
 selected. Commit the provider boundary separately from its consumer.
+
+## 2026-11-26: Phase 9.8 — LiDAR marker localization
+
+Purpose: adopt the existing plain-rclcpp localizer, executable and config/launch.
+There is no original functional suite. Inspect point-type admission, map parsing,
+activation service, SmartPoseBuffer, intensity voting, covariance rotation and
+debug extraction. Add three root-owned cases: patterned XYZIRC, patterned
+XYZIRADRT and flat-intensity rejection. Select Cyclone/RCLCPP; physical sensor
+accuracy and file-logging profiles are outside this deterministic gate.
+
+Pattern: original one-source compile/shared owner and plain component/indexed
+executable. Consume local landmark/localization/point-type/QoS/utility providers,
+actual ROS/PCL/TF SDKs and the narrow point-layout compile/shared pair. Declare
+nav_msgs directly for occupancy-grid headers; its implicit CMake environment
+visibility is not a Bazel dependency. Reuse liblandmark_manager.so and avoid the
+unrelated filter-base implementation/compiled-utility ownership conflict. The
+preceding prerequisite entry records the complete preprocessor regression.
+No implementation or original-test changes are required.
+
+The fixture calls the actual activation service, loads a serialized reflector
+quadrilateral centered at (11.5,1,1), and brackets scan stamp101 with map-frame
+EKF poses at100/102 and x9.8. Supply two populated rings, x bins0..4, y/z1,
+and intensity[0,100,0,0,0] against the selected [-1,1,-1] pattern, resolution1,
+positive/negative thresholds1/2 and vote threshold1. Expect one marker at base
+x1.5 and corrected self x10, retained map stamp/orientation, all 36 covariance
+entries, two mapped visualization markers and four extracted points. Flat
+intensity must yield detection count0/WARN and no pose. Require a diagnostic
+with self-pose readiness and assert its detection count/level; do not let early
+readiness warnings or later repeated-scan warnings replace the processed result.
+
+XYZIRADRT first reports unknown layout: pcl::toROSMsg removes padding in the
+selected newer PCL conversion, while the node's predicates require native struct
+offsets. Generate pcl::PCLPointCloud2 with padding=true, move it into the ROS
+message and assert point_step==sizeof(PointT). Keep production admission checks
+unchanged. This setup lesson belongs in the steady-state fixture convention,
+linked from the adoption checklist. Both point layouts then exercise the same
+real localization pipeline, not a copied detector or a private-method adapter.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  @autoware_lidar_marker_localizer//... //bazel/tests:lidar_marker_localizer_transport_test
+readelf -d bazel-bin/external/autoware_lidar_marker_localizer+/libautoware_lidar_marker_localizer.so
+```
+
+Results: all nine module non-test targets build and all three cases pass,
+zero failures/errors/skips, final gate 26.1 s. ELF dependencies contain the
+landmark and narrow layout DSOs, without the filter-base DSO. Added-file
+clang-format and diff checks pass. Logging stays disabled and synthetic poses
+use identity orientation; this does not qualify real calibration, rotated
+vehicle covariance or physical reflector performance. No Fast DDS, Agnocast
+variant, GUI, simulator or deployment gate is selected for this plain node.
+
+Phase closure: all nine package tasks pass their complete original suites and
+selected added behavior gates, totaling fifteen original cases (including the
+two arbiter Python cases) and twenty added cases. All five selected monitor
+cases also pass Agnocast-only. Reuse unchanged earlier package results while
+qualifying the full changed preprocessor prerequisite separately. JUnit inspection
+confirms zero failures/errors/skips/disabled cases. The manifest/definition/root-
+override census is 151/244, leaving 93 packages without definitions; all nine
+Phase 9.8 ledger items are checked. PLAN.md contains the final per-package table.
+No runtime rerun is needed for these final documentation/count updates.
+Next: Phase 9.9 YabLoc visual localization.

@@ -2136,3 +2136,9 @@ local_path_override(
     module_name = "autoware_ar_tag_based_localizer",
     path = "src/universe/autoware_universe/localization/autoware_landmark_based_localizer/autoware_ar_tag_based_localizer",
 )
+
+bazel_dep(name = "autoware_lidar_marker_localizer", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_lidar_marker_localizer",
+    path = "src/universe/autoware_universe/localization/autoware_landmark_based_localizer/autoware_lidar_marker_localizer",
+)
