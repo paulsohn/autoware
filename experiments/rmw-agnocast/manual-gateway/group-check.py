@@ -81,7 +81,7 @@ for backend in ("rmw_cyclonedds_cpp","rmw_zenoh_cpp"):
         peer_env=dict(os.environ,RMW_IMPLEMENTATION=backend)
         peer_env.pop("RMW_AGNOCAST_GATEWAY_CONFIG",None)
         hook=os.environ["TEST_HEAPHOOK"]
-        config=dict(network_rmw=backend, heaphook=hook, exports=[dict(topic="/data"),dict(topic="/status",remap_to="/robot/status",type="std_msgs/msg/String")],imports=[dict(topic="/cmd",remap_from="/peer/cmd")])
+        config=dict(dynamic_discovery=False, network_rmw=backend, heaphook=hook, exports=[dict(topic="/data"),dict(topic="/status",remap_to="/robot/status",type="std_msgs/msg/String")],imports=[dict(topic="/cmd",remap_from="/peer/cmd")])
         path=root/"route.json"
         path.write_text(json.dumps(config))
         with ExitStack() as stack:

@@ -41,15 +41,24 @@ def route_arguments(config):
 
 
 def configured_routes(config):
-    if not isinstance(config, dict) or not ({"exports", "imports"} & config.keys()):
+    if not isinstance(config, dict) or not ({"exports", "imports", "dynamic_discovery"} & config.keys()):
         return [route_arguments(config)]
-    unknown = config.keys() - {"exports", "imports", "network_rmw", "heaphook", "qos"}
+    if type(config.get("dynamic_discovery")) is not bool:
+        raise ValueError("dynamic_discovery requires an explicit true or false")
+    unknown = config.keys() - {"dynamic_discovery", "discovery_namespace", "exports", "imports", "network_rmw", "heaphook", "qos"}
     if unknown:
         raise ValueError(f"unknown deployment fields: {sorted(unknown)}")
     defaults = {k: config[k] for k in ("network_rmw", "heaphook") if k in config}
     base_qos = config.get("qos", {})
     if not isinstance(base_qos, dict):
         raise ValueError("deployment qos must be an object")
+    if config["dynamic_discovery"]:
+        # Validate discovery defaults even when no fixed routes were supplied.
+        route_arguments(dict(defaults, direction="export", source="/probe", destination="/probe",
+                             type="?", qos=base_qos))
+    namespace = config.get("discovery_namespace", "/")
+    if not isinstance(namespace, str) or not namespace.startswith("/") or "//" in namespace:
+        raise ValueError("discovery_namespace must be an absolute ROS namespace")
     routes = []
     for direction, remap_key in (("export", "remap_to"), ("import", "remap_from")):
         entries = config.get(direction+"s", [])
@@ -71,6 +80,6 @@ def configured_routes(config):
                 source=source, destination=destination,
                 type=entry.get("type","?"), always_on=entry.get("always_on",False),
                 qos={**base_qos, **qos})))
-    if not routes:
+    if not routes and not config["dynamic_discovery"]:
         raise ValueError("configure at least one export or import")
     return routes

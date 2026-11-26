@@ -1,4 +1,5 @@
 {
+  "dynamic_discovery": false,
   "network_rmw": "rmw_zenoh_cpp",
   "heaphook": "/opt/ros/jazzy/lib/libagnocast_heaphook.so",
   "exports": [

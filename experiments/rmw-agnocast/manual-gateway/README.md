@@ -79,6 +79,7 @@ One file describes the topics a participating context should bridge. Set `RMW_AG
 
 ```json
 {
+  "dynamic_discovery": false,
   "network_rmw": "rmw_zenoh_cpp",
   "heaphook": "/opt/ros/jazzy/lib/libagnocast_heaphook.so",
   "exports": [
@@ -100,6 +101,23 @@ ros2 run agnocast_cyclone_gateway topic_gateway --config "$RMW_AGNOCAST_GATEWAY_
 ```
 
 One supervisor owns the complete group and starts two worker processes per route. Matching groups share ownership irrespective of declaration order. An overlapping subset cannot silently attach to part of an existing group. Route locks reject duplicate destinations and local reciprocal forwarding, including across gateway processes in the same ownership scope. An endpoint process failure can restart the whole automatically owned group. Use separate owners for routes requiring independent failure recovery. Loop prevention across unrelated hosts is unqualified.
+
+### Discover a peer Agnocast application
+
+Set `dynamic_discovery` explicitly in each grouped JSON file. Use the JSON boolean `false` to run only the listed routes. Use `true` on both native islands to add same-name routes when a native publisher and a compatible native subscriber appear. The option takes effect when starting the gateway. Existing grouped files need the new field. Legacy single-route files and positional commands remain static.
+
+For example, use the following discovery-only file on both sides after setting the absolute hook path for each host. Select the same network RMW and domain and a reachable network interface or Zenoh router.
+
+```json
+{
+  "dynamic_discovery": true,
+  "discovery_namespace": "/sensing",
+  "network_rmw": "rmw_cyclonedds_cpp",
+  "heaphook": "/opt/ros/jazzy/lib/libagnocast_heaphook.so"
+}
+```
+
+The optional namespace bounds matching to topics below that namespace. It defaults to the root namespace. Explicitly configured route names take precedence in the same file. Use explicit routes for remapping, stock peer recorders and QoS outside the tested volatile profiles. The pilot sends native endpoint snapshots over the selected network every half second, filters gateway nodes, and expires silent peers after three seconds. Both workers need installed message types. Route startup and graph convergence can lose early volatile samples. Two isolated containers on one laptop have exercised this path.
 
 ### Select the gateway network
 

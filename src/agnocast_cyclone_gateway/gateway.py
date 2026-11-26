@@ -26,13 +26,17 @@ HEADER = struct.Struct("!I")
 MAX_BYTES = 64 * 1024 * 1024
 
 
-def run_endpoint(args, role):
+def follow_parent(pid, signum):
     # An unexpected supervisor death must also release both ROS endpoints.
     libc = ctypes.CDLL(None, use_errno=True)
-    if libc.prctl(1, signal.SIGKILL, 0, 0, 0) != 0:  # Linux PR_SET_PDEATHSIG
+    if libc.prctl(1, signum, 0, 0, 0) != 0:  # Linux PR_SET_PDEATHSIG
         raise OSError(ctypes.get_errno(), "prctl(PR_SET_PDEATHSIG)")
-    if os.getppid() != args.parent_pid:
+    if os.getppid() != pid:
         raise RuntimeError("gateway supervisor disappeared during startup")
+
+
+def run_endpoint(args, role):
+    follow_parent(args.parent_pid, signal.SIGKILL)
     import rclpy
     from rclpy.executors import ExternalShutdownException
     from rclpy.qos import QoSProfile, ReliabilityPolicy
@@ -349,7 +353,7 @@ def accept_lease(listener,leases,automatic):
         leases.append(lease)
 
 
-def supervise(routes, address, automatic):
+def supervise(routes, address, automatic, discovery=None):
     children = []
     stop = False
 
@@ -365,6 +369,9 @@ def supervise(routes, address, automatic):
         for args, _ in routes:
             stacks = (NATIVE, args.network_rmw) if args.direction == "export" else (args.network_rmw, NATIVE)
             acquire_route(cleanup, zip(stacks, (args.source, args.destination)))
+        if discovery:
+            lock = cleanup.enter_context((route_directory() / ("discovery-" + os.getenv("ROS_DOMAIN_ID", "0"))).open("a"))
+            fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
         listener = cleanup.enter_context(socket.socket(socket.AF_UNIX, socket.SOCK_SEQPACKET))
         listener.bind(address)
         listener.listen(16)
@@ -393,6 +400,9 @@ def supervise(routes, address, automatic):
                     children.append(subprocess.Popen(
                         [sys.executable, __file__, *words, "--endpoint", role, "--parent-pid", str(os.getpid())],
                         stdin=end, env=env, pass_fds=(ready_write,), start_new_session=True))
+            if discovery:
+                from gateway_discovery import start_workers
+                start_workers(children, ends, discovery, ready_write, __file__)
             for end in ends:
                 end.close()
             ready = 0
@@ -455,6 +465,7 @@ if __name__ == "__main__":
     words = sys.argv[1:]
     joining = words[:1] == ["--join"]
     automatic = False
+    discovery = None
     if joining or words[:1] == ["--config"]:
         if joining:
             config, domain = words[1:]
@@ -464,11 +475,19 @@ if __name__ == "__main__":
         else:
             parser.error("--config requires one route file")
         try:
-            entries = configured_routes(json.loads(Path(config).read_text()))
+            deployment = json.loads(Path(config).read_text())
+            entries = configured_routes(deployment)
+            if isinstance(deployment, dict) and deployment.get("dynamic_discovery"):
+                discovery = {k: deployment[k] for k in ("heaphook","network_rmw","qos","discovery_namespace") if k in deployment}
+                discovery["fixed"] = sorted({name for entry in entries for name in entry[2:4]})
+                discovery.setdefault("network_rmw", CYCLONE)
+                if discovery["network_rmw"] not in (CYCLONE, ZENOH):
+                    raise ValueError("unsupported discovery network RMW")
+                discovery["heaphook"] = str(Path(discovery["heaphook"]).resolve(strict=True))
         except (OSError, ValueError) as exc:
             parser.error(f"{config}: {exc}")
     elif words[:1] == ["--automatic-group"]:
-        entries = json.loads(words[1])
+        entries, discovery = json.loads(words[1])
         automatic = True
     else:
         entries = [words]
@@ -491,9 +510,14 @@ if __name__ == "__main__":
         destinations.add(dst)
         routes.append((args,entry))
     addresses = sorted(control_address(args) for args, _ in routes)
-    address = addresses[0] if len(routes)==1 else "\0agnocast-group-"+hashlib.sha256(
+    if discovery:
+        addresses.append(json.dumps([discovery, os.getuid(), os.stat("/dev/shm").st_dev,
+            os.getenv("ROS_DOMAIN_ID","0"), [os.getenv(k) for k in ("CYCLONEDDS_URI","ZENOH_SESSION_CONFIG_URI","ZENOH_CONFIG_OVERRIDE","ROS_AUTOMATIC_DISCOVERY_RANGE","ROS_STATIC_PEERS")]], sort_keys=True))
+    address = addresses[0] if len(routes)==1 and not discovery else "\0agnocast-group-"+hashlib.sha256(
         json.dumps(addresses).encode()).hexdigest()
     if joining:
-        join(address,["--automatic-group",json.dumps(entries)])
+        join(address,["--automatic-group",json.dumps([entries, discovery])])
     else:
-        supervise(routes,address,automatic or args.automatic)
+        if routes and args.parent_pid is not None:
+            follow_parent(args.parent_pid, signal.SIGTERM)
+        supervise(routes,address,automatic or bool(routes and args.automatic),discovery)
