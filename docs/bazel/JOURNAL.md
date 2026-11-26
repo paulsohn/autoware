@@ -23876,3 +23876,62 @@ The first three of thirteen Phase 9.11 packages are complete. Coverage is
 171/244 (73 remaining). Continue with the five behavior-velocity plugins, then
 the sampler/provider pair and remaining standalone planners. Phase 9.11 remains
 in progress.
+
+## 2026-11-26: Root local dependencies without placeholder versions
+
+Purpose: make root declarations express local source selection without a
+redundant dependency version. Inspect the root MODULE, all included MODULE
+fragments, existing local overrides and dependency conventions before editing.
+The root has 345 local overrides, each paired with a bazel_dep at 0.0.0.
+The included fragments introduce no additional local overrides.
+
+The placeholder followed the package-dependency convention and allowed the
+root to select the actual source. It does not contribute to resolution when a
+local override is active. Bazel's
+[migration guide](https://bazel.build/external/migration#introduce-local-repositories)
+documents versionless bazel_dep/local_path_override pairs. Its
+[non-registry override rules](https://bazel.build/external/module#non-registry-overrides)
+exclude the overridden module from registry version resolution, including
+published versions requested transitively. Missing local sources fail without
+registry fallback. Only the consumer root's overrides apply.
+
+Remove version = "0.0.0" only from root bazel_dep declarations whose module
+names have a local_path_override. Keep each pair adjacent and preserve its
+path and ordering. Keep package-local module metadata and dependency versions.
+Keep registry declarations, including 0.0.0 dependencies whose concrete releases
+are selected by the pinned RCR graph. Removing those versions is a different
+resolution change. The steady-state pattern lives in DEVELOPING.md under
+Dependency declarations. AGENTS.md and the adoption checklist link to it.
+
+Before editing, save MODULE.bazel to
+/tmp/autoware-local-versions-before.MODULE.bazel and capture representative
+Core, Universe, asset and registry target locations. Repeat after editing:
+
+```sh
+bazel query --output=location \
+  'set(@autoware_vehicle_msgs//... @autoware_trajectory_ranker//... @autoware_map_asset//... @rclcpp//:rclcpp)' \
+  > /tmp/autoware-local-versions-before.locations
+# Remove only the redundant versions from local pairs.
+bazel query --lockfile_mode=error --output=location \
+  'set(@autoware_vehicle_msgs//... @autoware_trajectory_ranker//... @autoware_map_asset//... @rclcpp//:rclcpp)' \
+  > /tmp/autoware-local-versions-after.locations
+sort /tmp/autoware-local-versions-before.locations > /tmp/autoware-local-versions-before.sorted
+sort /tmp/autoware-local-versions-after.locations > /tmp/autoware-local-versions-after.sorted
+diff -u /tmp/autoware-local-versions-before.sorted /tmp/autoware-local-versions-after.sorted
+git diff --exit-code -- MODULE.bazel.lock
+git diff --check
+```
+
+Results: both queries pass on Bazel 9.3.2. All 59 target locations match, and
+the lockfile remains unchanged. A one-time Python AST comparison removes only
+the local dependencies' version keywords from the saved manifest and compares
+the complete resulting AST with the edited manifest. They match exactly.
+The same audit checks all 345 adjacent pairs, their existing MODULE.bazel
+paths, and all 345 materialized external repository symlinks against the
+selected checkout directories. All pass. No source-selection or syntax failure
+occurs. No persistent validator is added for this mechanical edit.
+
+No compilation or runtime suite is rerun. The dependency sources and targets
+remain unchanged, so their existing module acceptance results still apply.
+No Fast DDS, simulator or deployment gate is selected. Phase 9.11 remains in
+progress at 171/244 packages. Continue with its behavior-velocity plugins.

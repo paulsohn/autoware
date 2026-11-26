@@ -309,8 +309,25 @@ and [.bazelignore](https://bazel.build/run/bazelrc#bazelignore) documentation.
 
 In the root MODULE.bazel, list registry dependencies first and keep local modules
 at the end, after extension and toolchain configuration. Within each dependency
-group, place prerequisites before consumers where possible. Each local bazel_dep uses version
-0.0.0 and is immediately followed by its matching local_path_override.
+group, place prerequisites before consumers where possible. Each local
+`bazel_dep` omits its version and is immediately followed by its matching
+`local_path_override`:
+
+```starlark
+bazel_dep(name = "autoware_vehicle_msgs")
+local_path_override(
+    module_name = "autoware_vehicle_msgs",
+    path = "src/core/autoware_msgs/autoware_vehicle_msgs",
+)
+```
+
+The override selects the local module for every dependent, including those
+requesting published versions. Bazel bypasses registry metadata and source
+lookup for that module. An invalid local path fails without registry fallback.
+Every independent consumer root must supply its own overrides. Bazel ignores
+overrides declared by dependency modules and does not discover local checkouts.
+See [Bazel's non-registry overrides](https://bazel.build/external/module#non-registry-overrides)
+and [the documented versionless pair](https://bazel.build/external/migration#introduce-local-repositories).
 
 Use the local source snapshot for every supported package present under src/.
 Use the ROS Central Registry for dependencies absent from the source checkout.

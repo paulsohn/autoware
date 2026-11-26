@@ -56,7 +56,8 @@ conventions from the outset, but introduce technical dependencies and patches
 only when your current target demonstrates the need.
 
 - [ ] Select local dependency snapshots and inventory missing Bazel support.
-  [Root declaration layout](DEVELOPING.md#dependency-conventions);
+  [Root declaration layout and versionless local pairs](DEVELOPING.md#dependency-declarations);
+  [evidence: local source selection](JOURNAL.md#2026-11-26-root-local-dependencies-without-placeholder-versions);
   [published external providers](JOURNAL.md#2026-11-22-phase-732--published-angles-dependency);
   [evidence: local interface adoption](JOURNAL.md#2026-11-17-local-interface-adoption--autoware_adapi_v1_msgs).
 - [ ] Establish source-preservation and added-test locations.
@@ -278,8 +279,8 @@ only when your current target demonstrates the need.
   Registry sources supply dependencies absent locally; explicit source-selection
   comparisons are separate experiments requested by the user.
 - A local Autoware ROS package is a package-local Bazel module selected by a
-  root `local_path_override`; its root bazel_dep uses 0.0.0, with version
-  metadata retained in the package-local module.
+  root `local_path_override`; its immediately preceding `bazel_dep` omits the
+  version, with version metadata retained in the package-local module.
   Registry comparisons require explicit user direction and compatible temporary
   version selection without changing consumer BUILD files.
 - An interface package retains its manifest-level package dependencies in its
@@ -436,8 +437,8 @@ Exit criteria:
 Answers from Phase 1:
 
 - Package source selection belongs in the root module. Phase 1 compared local
-  and registry sources through overrides. Current adoption uses root version
-  0.0.0 for local modules; registry comparisons require an explicit source and
+  and registry sources through overrides. Current adoption omits root dependency
+  versions for local modules; registry comparisons require an explicit source and
   version selection (see Current decisions).
 - Cross-package interfaces retain the RCR target convention. The consuming
   package needs a direct module dependency, the referenced message target on
@@ -836,9 +837,10 @@ one module at a time, committing each successful module separately:
 | 5 | autoware_vehicle_info_utils | Both sources, current and compatibility include paths, ament-indexed YAML/launch resources, calculator entry point, and both existing test targets (2 ROS parameter cases plus 13 pure geometry cases). |
 
 All listed test cases have executed successfully; actual results and commands
-are recorded per module in JOURNAL.md. Local-only modules use 0.0.0 and
-root local_path_override selections; no RCR counterpart is asserted. Reuse the
-already-selected Eigen, Boost.Optional, ROS/message and geometry/TF providers.
+are recorded per module in JOURNAL.md. Local-only modules retain their package
+version metadata and use versionless root bazel_dep/local_path_override pairs;
+no RCR counterpart is asserted. Reuse the already-selected Eigen, Boost.Optional,
+ROS/message and geometry/TF providers.
 Do not introduce another dependency version or source patch without an actual
 current-target need.
 
