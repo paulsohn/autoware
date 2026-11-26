@@ -1,0 +1,22 @@
+load("@rosdistro//ament:defs.bzl", "ament_index")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "autoware_trajectory_adapter",
+    srcs = ["src/trajectory_adapter.cpp", "src/trajectory_adapter_wrapper.cpp"],
+    hdrs = ["include/autoware/trajectory_adapter/trajectory_adapter.hpp", "include/autoware/trajectory_adapter/trajectory_adapter_wrapper.hpp"],
+    strip_include_prefix = "include",
+    deps = ["@autoware_agnocast_wrapper//:autoware_agnocast_wrapper_library", "@autoware_internal_debug_msgs//:cc", "@autoware_internal_planning_msgs//:cc", "@autoware_planning_msgs//:cc", "@autoware_utils_debug", "@autoware_vehicle_msgs//:cc", "@rosdistro//cc:tl_expected"],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = ["@autoware_agnocast_wrapper//:autoware_agnocast_wrapper", "@autoware_internal_planning_msgs//:cc_shared", "@autoware_planning_msgs//:cc_shared", "@autoware_utils_debug//:runtime_dynamic_deps", "@autoware_vehicle_msgs//:cc_shared"],
+)
+
+ament_index(
+    package_xml = "package.xml",
+)

@@ -2749,3 +2749,12 @@ cc_test(
     data = ["@agnocast_heaphook"],
     tags = ["no-sandbox", "no-remote"],
 )
+
+cc_test(
+    name = "trajectory_adapter_test",
+    srcs = ["autoware_trajectory_adapter/test_adapter.cpp"],
+    deps = ["@autoware_trajectory_adapter", "@googletest//:gtest"],
+    dynamic_deps = ["@autoware_trajectory_adapter//:runtime_dynamic_deps"],
+    data = ["@agnocast_heaphook"],
+    tags = ["no-sandbox", "no-remote"],
+)

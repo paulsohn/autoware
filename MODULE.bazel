@@ -2210,3 +2210,9 @@ local_path_override(
     module_name = "autoware_path_distance_calculator",
     path = "src/universe/autoware_universe/common/autoware_path_distance_calculator",
 )
+
+bazel_dep(name = "autoware_trajectory_adapter", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_trajectory_adapter",
+    path = "src/universe/autoware_universe/planning/autoware_trajectory_adapter",
+)

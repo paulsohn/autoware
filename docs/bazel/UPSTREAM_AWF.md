@@ -2591,6 +2591,8 @@ no upstream submission, old ROS/CMake validation or field qualification is claim
 
 ### Trajectory adapter: native expected compatibility
 
+Local source fix: `2004c0c48`.
+
 - [x] Associate with merged
   [PR #13622](https://github.com/autowarefoundation/autoware_universe/pull/13622).
   Checked 2026-11-26: the actual trajectory-adapter diff uses tl/expected.hpp and

@@ -23290,3 +23290,10 @@ metadata, require missing TimeKeeper rejection, and observe actual latency
 publication from a trajectory stamped .2 s earlier. No original test/algorithm
 changes, field planning accuracy or full system communication matrix are claimed.
 Added-file/source-range formatting, manifest parsing and diff checks pass.
+
+Build pattern: one reusable C++ library provider, separate canonical SDK runtime
+aggregation and package index; no standalone component/factory is invented for
+this library-only CMake contract. Depend on local planning/debug/vehicle message
+providers and unconditional wrapper support. Root tests own the real-node peer
+and mode-aware driver. Native expected source fix:2004c0c48. Next: original
+concatenation/clock/threading suites and trajectory source gating.

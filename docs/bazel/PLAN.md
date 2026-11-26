@@ -2466,6 +2466,8 @@ trajectory adaptation, concatenation and gating, before validator/ranker and
 modifier/selector. Preserve the remaining seven package boundaries and their
 complete original/behavior gates.
 
+autoware_trajectory_adapter: complete; all four public/wrapper cases pass on RCLCPP and Agnocast-only.
+
 ### Execution order through complete Universe coverage
 
 The following groups are the initial route through every remaining package.
