@@ -1,0 +1,66 @@
+load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
+load("@rclcpp_components//:defs.bzl", "rclcpp_components_register_node")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "autoware_stop_mode_operator",
+    srcs = glob(["src/**/*.cpp"]),
+    hdrs = glob(['src/**/*.hpp']),
+    includes = ["include", "src"],
+    deps = [
+        "@autoware_control_msgs//:cc",
+        "@autoware_motion_utils",
+        "@autoware_planning_msgs//:cc",
+        "@autoware_vehicle_cmd_gate",
+        "@autoware_vehicle_msgs//:cc",
+        "@diagnostic_updater//:diagnostic_updater_library",
+        "@rclcpp//:rclcpp_library",
+        "@rclcpp_components//:rclcpp_components_library",
+        "@tier4_system_msgs//:cc",
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = [
+        "@autoware_control_msgs//:cc_shared",
+        "@autoware_motion_utils//:runtime_dynamic_deps",
+        "@autoware_planning_msgs//:cc_shared",
+        "@autoware_vehicle_cmd_gate//:runtime_dynamic_deps",
+        "@autoware_vehicle_msgs//:cc_shared",
+        "@diagnostic_updater//:diagnostic_updater",
+        "@rclcpp//:rclcpp",
+        "@rclcpp_components//:rclcpp_components",
+        "@tier4_system_msgs//:cc_shared",
+    ],
+)
+
+cc_shared_library(
+    name = "component",
+    shared_lib_name = "libautoware_stop_mode_operator.so",
+    deps = [":autoware_stop_mode_operator"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+)
+
+rclcpp_components_register_node(
+    name = "stop_mode_operator_node",
+    component = ":component",
+    node_name = "stop_mode_operator_node",
+    plugin = "autoware::stop_mode_operator::StopModeOperator",
+)
+
+register_ament_files(
+    name = "executables",
+    files = [":stop_mode_operator_node"],
+    prefix = "lib/autoware_stop_mode_operator",
+    strip_prefix = "*",
+)
+
+ament_index(
+    package_xml = "package.xml",
+    components = [":stop_mode_operator_node_record"],
+    data = glob(["config/**", "launch/**"]) + [":executables"],
+)

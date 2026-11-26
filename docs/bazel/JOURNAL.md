@@ -24933,3 +24933,39 @@ the shared peer changes. No tests are skipped; the package has no original
 functional cases to omit. Python syntax and whitespace checks pass. Coverage is
 184/244, with three of nine package gates complete. Next: stop-mode operator and
 control-command gate. No Fast DDS, simulator or deployment gate is selected.
+
+## 2026-11-27 — Phase 9.12: Stop-mode operator
+
+Purpose: adopt the original stop-mode component and its ContinuousCondition
+helper, executable and indexed default parameters/launcher. The upstream CMake
+has no functional test suite. Define its software gate as actual command and
+route/feedback transitions; no hardware parking behavior is claimed.
+
+Add package-local MODULE/BUILD rules and the root versionless local selection.
+Expose original source headers and both .cpp files; explicitly declare the
+planning messages used by RouteState in addition to the manifest's dependencies.
+Retain the original component/executable identity and package-owned ament index.
+The new fixture stays under bazel/tests/control_operators; implementation remains
+unchanged. Use generated ROS message objects for nested fields when constructing
+synthetic inputs (a Python dictionary is not a std_msgs/Header).
+
+Run the executable with its indexed default parameters and publish steering,
+velocity and route feedback. Require zero commanded speed, -1.5 m/s² stop hold,
+steering preservation and disabled turn/hazard commands. Hold a stopped vehicle
+on a SET route: PARK must remain absent. ARRIVED and UNSET permit PARK after the
+existing continuous-stop duration; moving feedback cancels PARK, and missing
+velocity feedback clears it after the existing timeout. These live transitions
+exercise both helper reset paths and original timer behavior.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  @autoware_stop_mode_operator//... \
+  //bazel/tests/control_operators:stop_runtime_test
+```
+
+Results: all module targets build and the full transition scenario passes on
+Cyclone DDS with clean shutdown and no skipped checks. Python syntax and
+whitespace checks pass. Coverage is 185/244, four of nine Phase 9.12 gates.
+Next: control-command gate. No Fast DDS, simulator or deployment gate is selected.

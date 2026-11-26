@@ -1,0 +1,23 @@
+load("@rules_python//python:defs.bzl", "py_test")
+
+py_test(
+    name = "stop_runtime_test",
+    timeout = "long",
+    srcs = ["test_stop.py"],
+    main = "test_stop.py",
+    args = ["$(rootpath @autoware_stop_mode_operator//:stop_mode_operator_node)"],
+    data = [
+        "@autoware_stop_mode_operator//:ament_index",
+        "@autoware_stop_mode_operator//:stop_mode_operator_node",
+    ],
+    deps = [
+        "@ament_index_python",
+        "@autoware_control_msgs//:py",
+        "@autoware_planning_msgs//:py",
+        "@autoware_vehicle_msgs//:py",
+        "@rclpy",
+    ],
+    env = {"LD_LIBRARY_PATH": "lib", "ROS_DOMAIN_ID": "81"},
+    precompile = "disabled",
+    tags = ["no-sandbox", "no-remote"],
+)

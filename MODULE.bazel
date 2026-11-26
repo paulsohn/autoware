@@ -2248,6 +2248,12 @@ local_path_override(
     path = "src/universe/autoware_universe/control/autoware_predicted_path_checker",
 )
 
+bazel_dep(name = "autoware_stop_mode_operator")
+local_path_override(
+    module_name = "autoware_stop_mode_operator",
+    path = "src/universe/autoware_universe/control/autoware_stop_mode_operator",
+)
+
 # Launcher source modules.
 bazel_dep(name = "sample_vehicle_description")
 local_path_override(
