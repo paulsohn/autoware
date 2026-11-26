@@ -2645,3 +2645,30 @@ Agnocast-only with the heaphook. See the
 [ranker journal](JOURNAL.md#2026-11-26-phase-910--trajectory-ranking-and-six-indexed-metrics)
 for the reproducible module gate. No upstream submission or older ROS/colcon
 validation is claimed.
+
+### Trajectory modifier: Boost hashing and Lyrical headers
+
+- [x] Associate the missing boost::hash definition with merged
+  [PR #13593](https://github.com/autowarefoundation/autoware_universe/pull/13593),
+  merge commit 9bd42c582e892f238d2ffba8568637c3cb87cf61 (2026-11-09).
+  Checked 2026-11-26: its actual one-file diff adds boost/functional/hash.hpp to
+  obstacle_stop_utils.hpp, matching the local correction. Without it, libc++
+  rejects the persistent-object/point unordered_map hash as an undefined template.
+- [x] Associate both native expected header corrections and libexpected-dev
+  manifest dependency with merged
+  [PR #13622](https://github.com/autowarefoundation/autoware_universe/pull/13622).
+  Its actual modifier diff matches all three local files, checked 2026-11-26.
+- [ ] Associate the optimizer/test-helper TF2 header changes. Checked
+  2026-11-26: [current temporal optimizer](https://github.com/autowarefoundation/autoware_universe/blob/main/planning/autoware_trajectory_modifier/src/trajectory_optimizer_plugins/trajectory_temporal_mpt_optimizer.cpp)
+  and [test helper](https://github.com/autowarefoundation/autoware_universe/blob/main/planning/autoware_trajectory_modifier/tests/test_utils.hpp)
+  retain .h includes removed by the selected SDK. Scoped modifier/TF2 PR search
+  returns the older feature #12338, not a matching fix. Use the .hpp forms of
+  utils, Quaternion and convert throughout this package, preserving assertions.
+
+The complete modifier gate passes all 216 original cases, two added indexed-plugin/
+transport cases and an actual generated temporal-model solve. The added
+transport pair also passes Agnocast-only with the heaphook. The source fixes
+are separate from build definitions and generated-code ownership; see the
+[modifier journal](JOURNAL.md#2026-11-26-phase-910--trajectory-modification-and-temporal-mpc)
+for exact commands and limits. No upstream submission, exhaustive optimizer
+profile matrix or older ROS/colcon validation is claimed.

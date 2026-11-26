@@ -23557,3 +23557,90 @@ so Bazel reuses their unchanged runtime results. Generated headers remain in
 Bazel outputs; no host Python/CMake environment or source stub is used.
 Diff checks pass. The modifier consumer gate follows; no GPU, middleware matrix
 or deployment gate is required by this provider-only metadata change.
+
+## 2026-11-26: Phase 9.10 — Trajectory modification and temporal MPC
+
+Purpose: adopt the complete modifier package: three common utility sources,
+component/executable, nine optimizer plugins, five modifier plugins, parameter
+schema, launch/config and temporal acados interface. Inventory the original
+CMake grouping before implementation: 127 utility/optimizer cases and 89
+node/plugin cases, all 216 required on Cyclone/RCLCPP. Add two indexed-plugin/
+transport cases for both RCLCPP and Agnocast-only plus an actual temporal solve.
+No original assertions or algorithm behavior need changing.
+
+Prerequisites: the locally integrated motion/object/obstacle/traffic-light,
+path-smoother/path-optimizer, trajectory, vehicle and QP providers; the pinned
+acados SDK and its preceding generated-output-group extension. Inspect the
+original src/acados_mpt CMake, Python model/generator, C++ AcadosInterface,
+plugins.xml, parameter schema and both complete test groups. Native transport
+requires the loaded kernel module, host-visible /dev/agnocast and heaphook.
+
+Pattern: preserve the distinct common-utils, component, optimizer-plugin and
+modifier-plugin DSOs and original shared-library/executable names. Compile
+plugin implementations separately; register the original XML and config/launch
+inside the component's own index. Aggregate canonical ROS SDK owners and give
+shared compiled trajectory/lanelet/utility helpers one owner in the utils DSO.
+Export the legacy OSQP/qdldl/SuiteSparse inputs that the smoother and optimizer
+both consume. Those BCR libraries have no 0.0.0 placeholders; use the existing
+0.6.3.bcr.3/0.1.8.bcr.1/7.6.0.bcr.2 ABI inputs, retaining root's OSQP selection.
+Keep the temporal acados interface with optimizer consumers, rather than making
+all utilities own it.
+
+Declare the original temporal generator as a py_binary using @acados//:template
+and the original import root. Declare its nine C/header outputs with
+acados_codegen. Project sources and headers via filegroup output groups; map
+headers with strip_include_prefix/include_prefix to
+`autoware/trajectory_modifier/c_generated_code`. Compile the six generated C
+files and original interface against @acados. No /opt SDK, host Python packages,
+post-build installation or source-tree IDE stub is used. Runtime code consumes
+the native provider, not the generator's Python/tool closure.
+
+Source blockers and fixes, independently exposed by this complete build:
+
+- Obstacle tracking instantiates an undefined boost::hash<uuid>. Add the missing
+  boost/functional/hash.hpp and its ContainerHash compile provider, exactly
+  matching merged AWF #13593 (9bd42c582e892f238d2ffba8568637c3cb87cf61).
+- Two public headers use the unavailable tl_expected wrapper. Use tl/expected.hpp
+  and libexpected-dev, matching the actual modifier diff in merged AWF #13622.
+- Optimizer sources and original test helpers include removed TF2 .h forwarders.
+  Use the matching utils.hpp, Quaternion.hpp and convert.hpp forms throughout
+  this package. No test assertion changes. Checked 2026-11-26: current AWF
+  temporal-optimizer source and test helper still use .h; a scoped modifier/TF2
+  PR search finds the older feature #12338, not a matching compatibility fix.
+
+Expose both complete original suites with their original grouping, all test
+headers and indexed autoware_test_utils and autoware_core_planning resources.
+The extra root-owned factory case loads all 14 classes through the actual index,
+without linking plugin DSOs into its executable. Its transport peer activates
+StopPointFixer: a nearby candidate becomes a stopped trajectory, a distant
+candidate remains byte-for-byte equal, and the selected output preserves the
+first candidate's header. Preserve the original millimetre spacing used to avoid
+degenerate stopped points. The native driver asserts RCLCPP is uninitialized.
+
+The separate solver case uses the public AcadosInterface, wheelbase split
+1.25/1.25, the generated 80-stage/.1 s horizon and a straight 5 m/s reference.
+Require solve status 0, finite state/control sequences, lateral error below .01,
+speed error below .05 and terminal x within .05 m of 40 m. This exercises the
+actual generated model and C/C++ ABI, beyond merely building an optional plugin.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  @autoware_trajectory_modifier//... \
+  //bazel/tests:trajectory_modifier_transport_test //bazel/tests:trajectory_modifier_solver_test
+
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --local_test_jobs=1 \
+  --run_under=//bazel/agnocast:with_heaphook --test_env=ENABLE_AGNOCAST=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  //bazel/tests:trajectory_modifier_transport_test
+```
+
+Results: all module targets and four primary test targets pass: 216 original
+cases, two added factory/transport cases and the generated temporal-model solve,
+zero failures/errors/skips/disabled. Both transport cases also pass Agnocast-only
+with the heaphook (.7 s), with RCLCPP uninitialized. Reuse unchanged pure
+algorithm/solver evidence. Targeted formatting and diff checks pass. No Fast
+DDS, exhaustive optimizer-profile matrix, simulator, deployment or field safety
+qualification is selected. Next: final trajectory selection.
