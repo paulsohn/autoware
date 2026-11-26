@@ -2514,9 +2514,10 @@ Coverage starts at 168/244. No simulator or deployment gate is selected.
 | autoware_behavior_path_external_request_lane_change_module | Both original cases, both exported factory initializations/parameter update/shutdown and ten-package composition |
 | autoware_behavior_velocity_no_drivable_lane_module | Five trajectory/polygon cases, indexed parameters, individual and joint experimental factory unload/reload; both walkway profiles pass |
 | autoware_behavior_velocity_speed_bump_module | Five polygon/height-speed cases, indexed parameters, individual and three-package experimental factory composition |
+| autoware_behavior_velocity_template_module | Unchanged-trajectory and empty-visualization behavior, indexed parameters, individual and four-package experimental factory composition |
 
-5 of thirteen packages are complete. Validated coverage is
-173/244 (71 remaining). Phase 9.11 remains in progress. Next: the template scene, then occlusion-spot and roundabout.
+6 of thirteen packages are complete. Validated coverage is
+174/244 (70 remaining). Phase 9.11 remains in progress. Next: occlusion-spot and roundabout, then sampler/provider support and standalone planners.
 
 ### Execution order through complete Universe coverage
 

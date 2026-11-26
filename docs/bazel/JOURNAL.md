@@ -24108,3 +24108,55 @@ Agnocast, Fast DDS or simulator/deployment gate is selected. Vehicle comfort
 and physical bump traversal remain outside these integration checks.
 Coverage is 173/244, with 71 packages remaining. Phase 9.11 remains in progress.
 Next: the template experimental scene, then occlusion-spot and roundabout.
+
+## 2026-11-27: Phase 9.11 — Template velocity plugin and joint experimental gate
+
+Purpose: adopt the original template scene as a usable experimental plugin
+example. Inspect both CMake-listed sources, plugin XML, dummy parameter and
+the scene's documented no-op behavior. There is no original compiled test
+suite. Select the whole module build, an added direct scene contract check,
+individual factory lifecycle and a four-package executable composition with
+no-drivable-lane, speed-bump and walkway. Use Cyclone/RCLCPP.
+
+Add package-owned MODULE/BUILD, the original CMake-named DSO and XML/YAML resource
+index, using the preceding scene integration pattern. Place the versionless
+root dependency/override pair with Universe modules. Keep test utilities and
+fixtures at root. The production package consumes only component/SDK providers.
+Refresh the lockfile's CUDA extension usage digest produced by evaluating the
+current root graph. Its SDK versions, archives and generated repositories are
+unchanged.
+
+Add a C++ check under bazel/tests/autoware_behavior_velocity_template_module.
+Construct PlannerData from the indexed test vehicle and planner-common YAML,
+then instantiate the original TemplateModule. Build a real trajectory with
+poses, velocities and lane IDs. Require modifyPathVelocity to report no change,
+all restored trajectory values to remain equal, and debug markers/virtual walls
+to remain empty. Close the ROS context after destroying the fixture node.
+
+Through the existing root helper, read TemplateModulePlugin from its indexed
+XML using experimental::PluginInterface. Require dummy=1.2, the actual plugin
+DSO, observed unload/reload and clean shutdown. Repeat with all four scene
+factories in one planner process. All three newly added scenes export their
+classes without an experimental namespace while implementing the experimental
+base interface. Keep those original class identities and use the experimental
+planner executable for them.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  @autoware_behavior_velocity_template_module//... \
+  //bazel/tests/autoware_behavior_velocity_template_module:all
+```
+
+Results: all module targets build and all three test targets pass. XML records
+one trajectory/visualization case and two runtime cases, with no failures,
+errors or skips. Bazel/Python syntax, all three added C++ clang-format checks
+and whitespace checks pass. A one-time final inventory confirms 174 of 244
+Universe packages have definitions and root overrides, all 348 root local pairs
+remain adjacent/versionless, and the deployment include remains last. No source
+fix is needed. Reuse the unchanged individual/geometry gates from the preceding
+two package tasks. No native Agnocast, Fast DDS or simulator/deployment gate is
+selected. Phase 9.11 is six of thirteen packages complete. Seventy Universe
+packages remain. Next: occlusion-spot and roundabout, then sampler/provider
+support and standalone planners.

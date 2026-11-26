@@ -21,8 +21,8 @@ may contain multiple package commits and smaller execution batches. Update the
 ledger when a package closes or the source snapshot changes; this is a planning
 record, not a new build-time completeness validator.
 
-Current adoption progress, 2026-11-27: **173/244** packages have both definitions
-and root local overrides; **71** remain without definitions. The census table
+Current adoption progress, 2026-11-27: **174/244** packages have both definitions
+and root local overrides; **70** remain without definitions. The census table
 below preserves the initial 2026-11-23 baseline. Checked ledger items record
 completed module gates; Phase 9.8 is complete. See PLAN.md and the
 package journals for configuration and behavior evidence.
@@ -326,7 +326,7 @@ Publish sampler support before sampling plugins, and consume 9.10 checkers. Revi
 - [ ] [autoware_behavior_velocity_occlusion_spot_module](../../src/universe/autoware_universe/planning/behavior_velocity_planner/autoware_behavior_velocity_occlusion_spot_module/package.xml)
 - [ ] [autoware_behavior_velocity_roundabout_module](../../src/universe/autoware_universe/planning/behavior_velocity_planner/autoware_behavior_velocity_roundabout_module/package.xml)
 - [x] [autoware_behavior_velocity_speed_bump_module](../../src/universe/autoware_universe/planning/behavior_velocity_planner/autoware_behavior_velocity_speed_bump_module/package.xml)
-- [ ] [autoware_behavior_velocity_template_module](../../src/universe/autoware_universe/planning/behavior_velocity_planner/autoware_behavior_velocity_template_module/package.xml)
+- [x] [autoware_behavior_velocity_template_module](../../src/universe/autoware_universe/planning/behavior_velocity_planner/autoware_behavior_velocity_template_module/package.xml)
 - [ ] [autoware_in_lane_mrm_planner](../../src/universe/autoware_universe/planning/autoware_in_lane_mrm_planner/package.xml)
 - [ ] [autoware_minimum_rule_based_planner](../../src/universe/autoware_universe/planning/autoware_minimum_rule_based_planner/package.xml)
 - [ ] [autoware_path_sampler](../../src/universe/autoware_universe/planning/sampling_based_planner/autoware_path_sampler/package.xml)

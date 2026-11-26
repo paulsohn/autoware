@@ -99,6 +99,7 @@ class PlannerRuntime(unittest.TestCase):
                     expected = {
                         'no_drivable_lane': ('no_drivable_lane.stop_margin', 1.5),
                         'speed_bump': ('speed_bump.slow_start_margin', 1.0),
+                        'template': ('template.dummy', 1.2),
                     }
                     for module in MODULES:
                         if module in expected:
