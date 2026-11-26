@@ -14,6 +14,8 @@
 
 #include "traffic_light_category_merger_node.hpp"
 
+#include <rclcpp/version.h>
+
 #include <memory>
 
 namespace autoware::traffic_light
@@ -22,8 +24,13 @@ namespace autoware::traffic_light
 TrafficLightCategoryMergerNode::TrafficLightCategoryMergerNode(
   const rclcpp::NodeOptions & node_options)
 : rclcpp::Node("traffic_light_category_merger_node", node_options),
+#if RCLCPP_VERSION_MAJOR >= 32
+  car_signal_sub_(this, "input/car_signals", rclcpp::QoS{1}),
+  pedestrian_signal_sub_(this, "input/pedestrian_signals", rclcpp::QoS{1}),
+#else
   car_signal_sub_(this, "input/car_signals", rclcpp::QoS{1}.get_rmw_qos_profile()),
   pedestrian_signal_sub_(this, "input/pedestrian_signals", rclcpp::QoS{1}.get_rmw_qos_profile()),
+#endif
   sync_(SyncPolicy(10), car_signal_sub_, pedestrian_signal_sub_)
 {
   using std::placeholders::_1;

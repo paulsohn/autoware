@@ -2346,3 +2346,22 @@ positions; original package has no functional suite. Required utility and
 clustering suites pass too. This is geometry/candidate-state correctness,
 independent of ROS distribution; no upstream submission or full-system replay
 is claimed.
+
+### Traffic-light category merger needs current Message Filters APIs
+
+- [ ] Associate with a matching upstream fix. Checked 2026-11-26: current
+  [node header](https://github.com/autowarefoundation/autoware_universe/blob/main/perception/autoware_traffic_light_category_merger/src/traffic_light_category_merger_node.hpp)
+  retains removed .h includes and the
+  [constructor](https://github.com/autowarefoundation/autoware_universe/blob/main/perception/autoware_traffic_light_category_merger/src/traffic_light_category_merger_node.cpp)
+  passes raw QoS profiles. A repository-scoped Lyrical/message_filters PR search
+  finds no matching change. [AWF #7404](https://github.com/autowarefoundation/autoware/issues/7404)
+  is the general distribution tracker, not a matching fix association.
+
+Reproduce with the complete category-merger module gate in the Phase 9.7 journal.
+Compilation fails on message_filters/subscriber.h in the pinned Lyrical SDK.
+Use subscriber/synchronizer/ApproximateTime .hpp headers and the QoS-object
+constructor on rclcpp major 32+, retaining raw-profile initialization on older
+versions. Keep reliable depth-one input queues, sync queue ten and output policy.
+All five original merge cases and both original synchronized node cases pass;
+no test assertions or merge semantics change. Only the Lyrical branch is
+executed here; no older ROS/CMake run or upstream submission is claimed.

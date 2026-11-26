@@ -21767,3 +21767,45 @@ Closure: all ten Phase 9.5 packages are now checked in the ledger. Reconcile the
 module gates pass 91 original plus 33 added cases; twelve selected enabled cases
 also pass. Earlier unchanged evidence remains valid; no full simulator, OCI or
 Fast DDS rerun is needed. Phase 9.6 was already complete; next is Phase 9.7.
+
+## 2026-11-26: Phase 9.7 — traffic-light category merger
+
+Purpose: start signal postprocessing with the local car/pedestrian category
+merger. Inspect its manifest, two implementation sources, public/private headers,
+launch and both complete original tests. Acceptance is all five ROS-free core
+cases plus two synchronized ROS node cases, with component/executable/index
+builds and Cyclone/RCLCPP. This plain rclcpp::Node has no enabled-wrapper profile.
+No GPU, Fast DDS or expensive product gate is selected.
+
+Pattern: package-owned MODULE/BUILD and an adjacent root local override. Preserve
+the pure merge library and separate node shared owner. The core compiles against
+tier4 messages; the node additionally uses Message Filters and rclcpp components.
+Compose their shared SDK providers explicitly. Register the plain component with
+node_name to create its standalone executable, install it under lib/<package>,
+and index both libraries, the component record and original launch file. Retain
+each original test source as its own target; both supply main, so use gtest,
+not gtest_main. No extra integration test is needed: the original node suite
+publishes both real inputs and observes merged output, including the empty case.
+
+Current-target blocker: compilation fails on message_filters/subscriber.h in
+Lyrical. Replace the three Message Filters aliases with .hpp and select QoS-object
+subscriber construction on rclcpp-major-32+, keeping the older raw-profile
+branch. Preserve reliable depth-one input queues, ApproximateTime queue ten and
+all merge assertions. Current upstream retains both old APIs on 2026-11-26;
+UPSTREAM_AWF.md records the inspected files and scoped PR search. The source
+compatibility correction is committed separately from the Bazel definitions.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  @autoware_traffic_light_category_merger//...
+```
+
+Results: all twelve non-test targets and both test targets build. All seven
+original cases pass, zero failures/errors/skips: car-first ordering, car-header
+source, empty combinations, preserved signals and real synchronized publication.
+The first corrected gate takes 13.8 s; final declaration/include-order check
+11.1 s reuses unchanged passing test results. Targeted formatting/diff checks
+pass. Only Lyrical is executed, not the preserved older constructor branch.
+Next: selector geometry and nonempty four-stream publication.
