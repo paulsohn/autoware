@@ -1,0 +1,122 @@
+load("@autoware_agnocast_wrapper//:defs.bzl", "autoware_agnocast_node")
+load("@rclcpp_components//:defs.bzl", "rclcpp_components_register_node")
+load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "traffic_light_roi_visualizer_library",
+    srcs = ["src/traffic_light_roi_visualizer/roi_visualizer_node.cpp", "src/traffic_light_roi_visualizer/roi_visualizer.cpp", "src/traffic_light_roi_visualizer/shape_draw.cpp"],
+    hdrs = ["src/traffic_light_roi_visualizer/roi_visualizer_node.hpp", "src/traffic_light_roi_visualizer/roi_visualizer.hpp", "src/traffic_light_roi_visualizer/shape_draw.hpp"],
+    includes = ["src"],
+    deps = ["@ament_index_cpp//:ament_index_cpp_library", "@cv_bridge//:cv_bridge_library", "@image_transport//:image_transport_library", "@message_filters//:message_filters_library", "@rclcpp_components//:rclcpp_components_library", "@sensor_msgs//:cc", "@tier4_perception_msgs//:cc", "@rosdistro//cc:opencv_library"],
+)
+
+cc_library(
+    name = "traffic_light_map_visualizer_library",
+    srcs = ["src/traffic_light_map_visualizer/traffic_light_visualizer_node.cpp", "src/traffic_light_map_visualizer/traffic_light_visualizer.cpp"],
+    hdrs = ["src/traffic_light_map_visualizer/traffic_light_visualizer_node.hpp", "src/traffic_light_map_visualizer/traffic_light_visualizer.hpp"],
+    includes = ["src"],
+    deps = ["@autoware_agnocast_wrapper//:autoware_agnocast_wrapper_library", "@autoware_lanelet2_extension//:autoware_lanelet2_extension_lib_library", "@autoware_lanelet2_utils", "@autoware_map_msgs//:cc", "@autoware_perception_msgs//:cc", "@builtin_interfaces//:cc", "@geometry_msgs//:cc", "@rclcpp_components//:rclcpp_components_library", "@std_msgs//:cc", "@visualization_msgs//:cc"],
+)
+
+collect_transitive_dynamic_deps(
+    name = "roi_runtime_dynamic_deps",
+    dynamic_deps = ["@ament_index_cpp//:ament_index_cpp", "@cv_bridge//:cv_bridge", "@image_transport//:image_transport", "@message_filters//:message_filters", "@rclcpp_components//:rclcpp_components", "@sensor_msgs//:cc_shared", "@tier4_perception_msgs//:cc_shared", "@rosdistro//cc:opencv"],
+)
+
+collect_transitive_dynamic_deps(
+    name = "map_runtime_dynamic_deps",
+    dynamic_deps = ["@autoware_agnocast_wrapper", "@autoware_lanelet2_extension//:autoware_lanelet2_extension_lib", "@autoware_lanelet2_utils//:runtime_dynamic_deps", "@autoware_map_msgs//:cc_shared", "@autoware_perception_msgs//:cc_shared", "@builtin_interfaces//:cc_shared", "@geometry_msgs//:cc_shared", "@rclcpp_components//:rclcpp_components", "@std_msgs//:cc_shared", "@visualization_msgs//:cc_shared"],
+)
+
+cc_shared_library(
+    name = "traffic_light_roi_visualizer",
+    shared_lib_name = "libtraffic_light_roi_visualizer.so",
+    deps = [":traffic_light_roi_visualizer_library"],
+    dynamic_deps = [":roi_runtime_dynamic_deps"],
+)
+
+cc_shared_library(
+    name = "traffic_light_map_visualizer",
+    shared_lib_name = "libtraffic_light_map_visualizer.so",
+    deps = [":traffic_light_map_visualizer_library"],
+    dynamic_deps = [":map_runtime_dynamic_deps"],
+)
+
+rclcpp_components_register_node(
+    name = "traffic_light_visualization_node",
+    node_name = "traffic_light_visualization_node",
+    component = ":traffic_light_roi_visualizer",
+    plugin = "autoware::traffic_light::TrafficLightRoiVisualizerNode",
+)
+
+autoware_agnocast_node(
+    name = "traffic_light_map_visualizer_node",
+    component = ":traffic_light_map_visualizer",
+    package_name = "autoware_traffic_light_visualization",
+    plugin = "autoware::traffic_light::TrafficLightMapVisualizerNode",
+)
+
+register_ament_files(
+    name = "executables",
+    files = [":traffic_light_visualization_node", ":traffic_light_map_visualizer_node"],
+    prefix = "lib/autoware_traffic_light_visualization",
+    strip_prefix = "*",
+)
+
+ament_index(
+    package_xml = "package.xml",
+    libraries = [":traffic_light_roi_visualizer", ":traffic_light_map_visualizer"],
+    components = [":traffic_light_visualization_node_record", ":traffic_light_map_visualizer_node_components"],
+    data = glob(["launch/**", "config/**", "images/**"]) + ["@image_transport//:ament_index_plugin", ":executables", ":traffic_light_map_visualizer_node_plugin"],
+)
+
+cc_test(
+    name = "test_roi_visualizer_node",
+    srcs = ["test/traffic_light_roi_visualizer/test_roi_visualizer_node.cpp"],
+    deps = [":traffic_light_roi_visualizer_library", "@googletest//:gtest_main"],
+    dynamic_deps = [":roi_runtime_dynamic_deps"],
+    data = [":ament_index"],
+    tags = ["no-sandbox", "no-remote"],
+    timeout = "long",
+)
+
+cc_test(
+    name = "test_roi_visualizer",
+    srcs = ["test/traffic_light_roi_visualizer/test_roi_visualizer.cpp"],
+    deps = [":traffic_light_roi_visualizer_library", "@googletest//:gtest_main"],
+    dynamic_deps = [":roi_runtime_dynamic_deps"],
+    data = [":ament_index"],
+    tags = ["no-sandbox", "no-remote"],
+)
+
+cc_test(
+    name = "test_traffic_light_map_visualizer",
+    srcs = ["test/traffic_light_map_visualizer/test_traffic_light_map_visualizer.cpp"],
+    deps = [":traffic_light_map_visualizer_library", "@googletest//:gtest_main"],
+    dynamic_deps = [":map_runtime_dynamic_deps"],
+    data = [":ament_index"],
+    tags = ["no-sandbox", "no-remote"],
+)
+
+cc_test(
+    name = "test_extract_bulbs",
+    srcs = ["test/traffic_light_map_visualizer/test_extract_bulbs.cpp"],
+    deps = [":traffic_light_map_visualizer_library", "@googletest//:gtest_main"],
+    dynamic_deps = [":map_runtime_dynamic_deps"],
+    data = [":ament_index"],
+    tags = ["no-sandbox", "no-remote"],
+)
+
+cc_test(
+    name = "test_traffic_light_map_visualizer_node",
+    srcs = ["test/traffic_light_map_visualizer/test_traffic_light_map_visualizer_node.cpp"],
+    deps = [":traffic_light_map_visualizer_library", "@googletest//:gtest_main"],
+    dynamic_deps = [":map_runtime_dynamic_deps"],
+    data = [":ament_index"],
+    tags = ["no-sandbox", "no-remote"],
+)
+

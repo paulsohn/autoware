@@ -22212,3 +22212,59 @@ env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
 With the build/resource pattern below, the full original suite and added peer
 pass; the enabled peer also passes with RCLCPP inactive. Older ROS/CMake builds
 are not executed here.
+
+Build pattern: retain the original two shared owners, with a compile provider
+for each. Register the image component through plain rclcpp and the map component
+through the wrapper's Agnocast-only/default and ROS fallback executable. Index
+both registrations/executables, launch/config and images/** in the package.
+Original tests use gtest_main; expose all five, with the original image-node
+long timeout and package index in test data. Declare the selected image_transport
+raw-plugin index with the image resource closure so plugins and metadata travel
+with the consumer; installed host packages are not prerequisites.
+
+A first broad shared SDK aggregate lets all original tests pass but aborts the
+added map-only peer before main: image_transport's global Impl constructs
+pluginlib loaders, and its package index is absent from that map-only runfiles
+closure. Split :roi_runtime_dynamic_deps and :map_runtime_dynamic_deps and select
+the appropriate provider for each DSO/test. This removes the unrelated image SDK
+from map-only execution rather than adding image metadata to every consumer.
+The original image tests still carry the raw-plugin index and exercise both
+plain and image_transport publication, with real shape assets and pixel checks.
+The convention is linked from the adoption checklist and described once in
+DEVELOPING.md's native-plugin section.
+
+The added map peer serializes one regulatory group with red/green/amber bulb
+points, sends only red/green observations plus an unknown group, and asserts
+exactly two spheres with the expected bulb IDs/positions, colors, frame, stamp,
+scale, orientation and lifetime. Run the same case with a wrapper peer and
+Agnocast-only executor, asserting RCLCPP is inactive. Original extraction and
+node tests preserve unknown/missing attributes and detection-before-map checks.
+
+Results: eighteen non-test module targets and six test targets build. All 63
+original cases plus the added case pass in 14.3 s, zero failures/errors/skips;
+the enabled case passes in 6.0 s with heaphook/kernel 2.4.1. Targeted source-range
+and added-file formatting and diff checks pass. No Fast DDS, GPU, GUI, simulator
+or deployment gate is selected. Deprecation warnings remain for supported image
+transport APIs; no older ROS/CMake execution is claimed.
+
+Phase closure: all nine package gates pass, totaling 276 original and thirteen
+added primary cases; six added cases also pass Agnocast-only. The required SDK
+suites add eighteen image_geometry and eight perception_utils cases. Inspect
+JUnit XML for zero failures/errors/disabled/skipped cases. Reuse earlier package
+results as sources/configurations are unchanged. A one-off inventory confirms
+244 manifests, 142 MODULE/BUILD pairs and all corresponding root overrides:
+
+```sh
+python3 - <<'PY'
+from pathlib import Path
+packages = [p.parent for p in Path('src/universe/autoware_universe').rglob('package.xml')]
+integrated = [p for p in packages if (p/'MODULE.bazel').exists() and (p/'BUILD.bazel').exists()]
+root = Path('MODULE.bazel').read_text()
+assert len(packages) == 244 and len(integrated) == 142
+assert all(f'path = "{p}"' in root for p in integrated)
+print('142/244 definitions and root overrides; 102 remaining')
+PY
+```
+
+All nine Phase 9.7 ledger entries are checked; model execution remains in 9.13.
+Next: Phase 9.8 localization adapters, landmarks and monitoring.

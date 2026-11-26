@@ -895,6 +895,13 @@ PCL/conversions/VTK globals must remain in their existing shared owners.
 Check actual ELF exports/dependencies and unload multiple components together;
 a standalone process exiting once does not exercise cross-DSO ownership.
 
+Give independent components separate runtime dependency providers. Image transport
+constructs pluginlib loaders during library initialization, so image consumers
+carry @image_transport//:ament_index_plugin in their indexed data. Visualization
+consumers use :roi_runtime_dynamic_deps for the image component and
+:map_runtime_dynamic_deps for the map component. This keeps each consumer's
+shared libraries and runtime metadata aligned with its actual inputs.
+
 CPU filter consumers compile against
 @autoware_pointcloud_preprocessor//:pointcloud_preprocessor_filter_base and link
 through its :filter_base_runtime_dynamic_deps provider. Header-only consumers

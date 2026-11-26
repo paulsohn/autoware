@@ -83,6 +83,7 @@ only when your current target demonstrates the need.
   [Qt/RViz runtime ownership and graphical prerequisites](DEVELOPING.md#rviz-plugin-packages);
   [evidence: composed utility closure](JOURNAL.md#2026-11-22-phase-733--shared-utility-sdk-ownership-in-containers);
   [shared filter-base provider evidence](JOURNAL.md#2026-11-24-phase-95--shared-cpu-filter-base-provider);
+  [independent component SDK/index closure](JOURNAL.md#2026-11-26-phase-97--traffic-light-image-and-map-visualization);
   [combined-plugin type identity](JOURNAL.md#2026-11-22-phase-732--distinct-motion-plugin-internal-types);
   [validator collision-type evidence](JOURNAL.md#2026-11-22-phase-734--distinct-validator-collision-checker-debug-types);
   [node-owned parameter lifetime](JOURNAL.md#2026-11-22-phase-732--cruise-pid-plugin-reload);
@@ -2339,35 +2340,38 @@ ending with [group acceptance](JOURNAL.md#2026-11-24-phase-96--predicted-path-pr
 Phase 9.5 is also complete, as recorded above. Subsequent groups keep their
 existing phase identifiers; next is Phase 9.7.
 
-### Phase 9.7: Traffic-light geometry, fusion and postprocessing (in progress)
+### Phase 9.7: Traffic-light geometry, fusion and postprocessing (complete)
 
-Integrate the nine ledger packages in these dependency-oriented batches, retaining
-package-sized commits and full original suites: category merging/selection, then
-arbitration/crosswalk estimation; map/ROI projection and occlusion; multi-camera
-fusion, marker publication and visualization. Reuse local traffic-light and
-perception utilities, inspecting their actual providers as consumers require.
-Keep model execution in 9.13. Inspect original sources, tests/data, component and
-resource contracts before each package. Add behavior coverage for untested nodes
-and selected Agnocast-only wrapper paths (arbiter, crosswalk, fusion and map
-visualizer); preserve plain ROS paths elsewhere. Run Cyclone gates sequentially
-with original suites in no-agnocast mode, and prepare heaphook/device prerequisites
-for enabled peers. No Fast DDS, GPU, simulator or deployment gate is selected.
+Completed 2026-11-26. All nine ledger packages expose their original components,
+executables and indexed resources. Package/provider boundaries and demonstrated
+source fixes are separate signed-off commits. Complete original suites run with
+Cyclone/RCLCPP; selected wrapper peers additionally run Agnocast-only with the
+prepared heaphook/device. Unchanged passing evidence is reused.
 
-Category merger is complete: twelve non-test targets and all seven original
-cases pass. Selector is also complete: all 23 original and one nonempty four-
-stream case pass. Arbiter passes all 46 original and two added cases, with
-both added cases also passing Agnocast-only. Crosswalk estimation passes all
-eighteen original and one inferred-color transport case, including Agnocast-only.
-Map-based projection passes all 24 original cases, including delayed TF. Root
-selects image_geometry 4.1.0-3.rcr.2 because source is absent locally; both native
-SDK suites (eighteen cases) and the complete consumer validate this selection.
-Cloud occlusion passes three geometry/paired-category cases; its narrow prime-
-synchronizer provider also preserves the full eight-case perception-utils suite.
-Fusion passes all 95 original cases and two transport cases, including both
-exact and skewed approximate synchronization on Agnocast-only transport.
-Recognition text markers pass all three new ROS cases after correcting group-ID
-lookup, multiple housing poses and map replacement.
-Coverage is 141/244; visualization remains.
+| Module | Primary cases (original + added) | Behavior and selected configurations |
+| --- | ---: | --- |
+| autoware_traffic_light_category_merger | 7 + 0 | Original synchronized empty/nonempty category flows; current Message Filters API. |
+| autoware_traffic_light_selector | 23 + 1 | Four-stream association with known pixel offset, IDs/categories/header retention. |
+| autoware_traffic_light_arbiter | 46 + 2 | External priority and mismatched-group policy; both added cases also pass Agnocast-only. |
+| autoware_crosswalk_traffic_light_estimator | 18 + 1 | Mapped conflicting pedestrian color inference and retained vehicle group/stamp; added case also passes Agnocast-only. |
+| autoware_traffic_light_map_based_detector | 24 + 0 | Calibrated projection and delayed TF interpolation/ROI widening; current TF2 headers. |
+| autoware_traffic_light_occlusion_predictor | 0 + 3 | Foreground/background/reset, distance bound and real paired car/pedestrian output. |
+| autoware_traffic_light_multi_camera_fusion | 95 + 2 | Exact/skewed approximate triplets, conflict output and diagnostics; both added cases also pass Agnocast-only. |
+| autoware_traffic_light_recognition_marker_publisher | 0 + 3 | 64-bit regulatory group identity, multiple housings, text/color/geometry, no-map suppression and replacement. |
+| autoware_traffic_light_visualization | 63 + 1 | Image pixels, lazy subscriptions, both image output modes, bulb extraction and map markers; added map peer also passes Agnocast-only. |
+
+All 276 original and thirteen added cases pass, zero failures/errors/skips;
+six selected added cases also pass Agnocast-only. Source fixes preserve test
+semantics and correct demonstrated compatibility/map-identity issues; upstream
+checks and commit associations are in UPSTREAM_AWF.md. Since image_geometry
+sources are absent locally, root selects release 4.1.0-3.rcr.2; its eighteen
+native C++ SDK cases pass. A narrow header-only prime synchronizer preserves perception_utils's full
+eight-case suite. Independent image/map components keep separate shared SDK
+closures and declare image transport's plugin index with its consumers.
+
+No Fast DDS, GPU, simulator, GUI or deployment rerun is claimed. Model execution
+remains in Phase 9.13. Definition coverage is 142/244, with 102 packages remaining;
+next is Phase 9.8 localization adapters, landmarks and monitoring.
 
 ### Execution order through complete Universe coverage
 

@@ -2446,6 +2446,8 @@ independent of Lyrical; no upstream submission is claimed.
 
 ### ROI visualization needs current Message Filters subscription APIs
 
+Local source fix: `3ea19c7a7`.
+
 - [ ] Associate with a matching upstream fix. Checked 2026-11-26: current
   [ROI node header](https://github.com/autowarefoundation/autoware_universe/blob/main/perception/autoware_traffic_light_visualization/src/traffic_light_roi_visualizer/roi_visualizer_node.hpp)
   retains .h aliases; the
