@@ -2544,6 +2544,22 @@ The behavior plugin uses the smaller sampling providers directly. Its direct pla
 qualifies actual sampling independently from clear-road manager activation;
 no additional behavior-path executable registration is required.
 
+### Phase 9.12: Control gates, operators and calibration tools (in progress)
+
+Adopt all nine ledger packages in four execution groups: collision checking
+(obstacle, spheric, predicted path); command gate and stop-mode operator;
+joystick and control-performance analysis; steering-offset and accel/brake
+calibration. Keep module commits independent and build sequentially. Inventory
+and preserve each original suite; packages with empty/no tests need actual
+algorithm/ROS behavior checks. Select Cyclone DDS for all packages, adding native
+Agnocast behavior where the current node contract uses it. Gates cover collision
+and recovery, command selection/filtering and stop transitions, synthetic joystick
+commands, performance metrics, and deterministic calibration data/tools. Real
+vehicle calibration accuracy is outside these software gates. No Fast DDS,
+simulator or deployment gate is selected. Coverage starts at 181/244.
+
+Progress: 1/9 package gates complete; current coverage 182/244 (62 remaining).
+
 ### Execution order through complete Universe coverage
 
 The following groups are the initial route through every remaining package.

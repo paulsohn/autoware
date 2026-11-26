@@ -24813,3 +24813,42 @@ complete package gate closes Phase 9.11 at thirteen of thirteen packages,
 with coverage 181/244 and 63 packages remaining. Next: Phase 9.12, control
 gates, operators and calibration tools. No Fast DDS, simulator or deployment
 gate is selected.
+
+## 2026-11-27 — Phase 9.12: Obstacle collision checker
+
+Purpose: expose the point-cloud collision checker library, registered component,
+standalone executable and indexed launch/configuration. Inspect the three source
+files, public headers, CMake dependency effects and original four-case test file.
+The software gate is the complete original suite plus actual Cyclone DDS node
+collision/recovery; it does not assess real sensor accuracy.
+
+Add a package-local MODULE/BUILD pair and an adjacent versionless root dependency
+and local override. Use the local planning interfaces, vehicle information and
+utility providers with the pinned ROS/PCL SDK. Preserve canonical shared-library
+ownership through collect_transitive_dynamic_deps. Register the original component
+class, executable and resources in the package index. The original test textually
+includes its implementation .cpp; declare that file through a test-only textual
+header provider without editing its assertions or compiling another copy as a
+test source. Keep the new peer in bazel/tests/collision_checkers.
+
+The peer supplies indexed vehicle/configuration parameters, a straight 40 m
+trajectory, odometry and map-to-base_link TF while the executable is starting
+(the constructor waits for its first pose). Publish a point outside the footprint,
+move it onto the path at 8 m with ego speed 10 m/s, then move it away. Require
+OK, ERROR and OK diagnostics from the actual checker and clean process shutdown.
+An initial fixture timeout was caused by comparing ROS diagnostic byte values
+with Python integers; comparing bytes observes the already-published results.
+No original source changes are required.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  @autoware_obstacle_collision_checker//... \
+  //bazel/tests/collision_checkers:obstacle_runtime_test
+```
+
+Results: every module target builds; all four original cases and the live DDS
+collision/recovery scenario pass with no skips. Python syntax and git whitespace
+checks pass. Coverage is 182/244; Phase 9.12 remains in progress. No Fast DDS,
+simulator or deployment gate is selected. Next: spheric and predicted-path checks.
