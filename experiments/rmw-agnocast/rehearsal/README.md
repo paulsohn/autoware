@@ -32,19 +32,19 @@ A second machine and an independent developer following the tutorial remain sepa
 
 ## API support on the tested revision
 
-The original migration rehearsal reproduced all six scenarios from two fresh builds. After the API fixes, 100 of 138 upstream RMW cases passed, 37 failed assertions and one skipped. All cases completed without an abort. Of 92 selected rclcpp cases, 88 passed and four failed assertions.
+The original migration rehearsal reproduced all six scenarios from two fresh builds. After the API fixes, 125 of 138 upstream RMW cases passed, eight failed assertions and five skipped. All cases completed without an abort. Of 92 selected rclcpp cases, 88 passed and four failed assertions.
 
 The [case inventory](baseline.csv) records each outcome against rmw_implementation 3.1.6 and the patched Lyrical rclcpp. It covers all 16 upstream RMW GoogleTest programs and four selected rclcpp programs. The GoogleTest counts include bad-input, fault-injection and mocked client-library cases. Use the separate two-process migration as the application check.
 
 | Area | Verified behavior | Remaining limitation |
 |---|---|---|
-| Local topics and local recording | Ordinary C++ nodes exchanged String over the native RMW. A stock native recorder produced a readable SQLite bag. Positive RMW sequence take and ignore-local-publications cases passed. | The RMW publisher and subscription suites report remaining error-contract failures. |
+| Local topics and local recording | Ordinary C++ nodes exchanged String over the native RMW. A stock native recorder produced a readable SQLite bag. Positive RMW sequence take and ignore-local-publications cases passed. | Creating endpoints with native transport names remains unsupported. |
 | Graph and executors | All 17 RMW graph cases, 39 rclcpp node-graph cases and 28 selected executor cases passed. | The upstream matched-event and wait-set programs now pass. Finite liveliness-lease support remains open. |
-| Services and clients | Default create/destroy, server availability with valid arguments and ordinary client/service counts passed. | Requested native naming, some QoS queries and invalid-input cases still fail expectations. |
+| Services and clients | Default create/destroy, server availability with valid arguments and ordinary client/service counts passed. | Native naming and the client/service QoS profiles requesting a finite liveliness lease remain open. |
 | QoS | KeepLast, effective system-default liveliness and the explicit infinite-duration test passed. | A finite-liveliness-lease profile compared with itself returned a compatibility error. KeepAll subscription cases also differed from upstream. |
 | Serialization | The upstream clean C and C++ round trips passed for ordinary and bounded messages. Local and stock-peer bag payloads decoded in sequence. | The C and C++ invalid-CDR cases now return errors. The suite covers the upstream fixtures. |
-| Loans and preallocation | All four selected rclcpp LoanedMessage cases passed. | Four upstream loan cases reported failed assertions as well as a skip in setup. They count as failures. Publisher preallocation was the only clean upstream skip. |
-| Lifecycle and input validation | Ordinary node init/shutdown and default publisher/client/service creation passed. | Publisher and subscription destruction, client/service destruction, and the upstream init/shutdown tests pass. Other bad-input cases remain open. |
+| Loans and preallocation | All four selected rclcpp LoanedMessage cases passed. | Four upstream cases use C-layout endpoints, verify the unsupported-loan returns and skip. Publisher preallocation also skips. The typed C++ Path and Trajectory probes passed in loan and copy modes. |
+| Lifecycle and input validation | Ordinary node init/shutdown and default publisher/client/service creation passed. | Publisher and subscription destruction, client/service destruction, and the upstream init/shutdown tests pass. Node, name, foreign-handle and missing-output validation now pass their pinned tests. |
 | Network migration | Both manually configured networks delivered across a gateway restart, and the native RMW started a configured Cyclone gateway. | The rehearsal covers a configured export on a single laptop. Previous discovery, import and Universe workload results have their own fixtures. |
 
 Five entry points explicitly return RMW_RET_UNSUPPORTED on this revision. They cover the two DynamicData take functions, serialization-support initialization, and publisher allocation init/fini. Dynamic discovery of a gateway topic by its installed type name is a separate capability. The recorded failures include APIs with implementations that differ from the upstream contract.

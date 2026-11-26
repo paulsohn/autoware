@@ -146,7 +146,9 @@ rmw_publisher_t * rmw_create_publisher(
   const rmw_node_t * n, const rosidl_message_type_support_t * t, const char * name,
   const rmw_qos_profile_t * q, const rmw_publisher_options_t * o)
 {
-  if (!n || n->implementation_identifier != standalone::id || !t || !name || !q || !o)
+  if (
+    !n || n->implementation_identifier != standalone::id || !t || !name || !q || !o ||
+    (!q->avoid_ros_namespace_conventions && !valid_ros_topic(name)))
     return nullptr;
   if (
     o->require_unique_network_flow_endpoints ==
@@ -165,7 +167,9 @@ rmw_subscription_t * rmw_create_subscription(
   const rmw_node_t * n, const rosidl_message_type_support_t * t, const char * name,
   const rmw_qos_profile_t * q, const rmw_subscription_options_t * o)
 {
-  if (!n || n->implementation_identifier != standalone::id || !t || !name || !q || !o)
+  if (
+    !n || n->implementation_identifier != standalone::id || !t || !name || !q || !o ||
+    (!q->avoid_ros_namespace_conventions && !valid_ros_topic(name)))
     return nullptr;
   if (
     o->require_unique_network_flow_endpoints ==
@@ -216,7 +220,8 @@ rmw_ret_t rmw_destroy_subscription(rmw_node_t * node, rmw_subscription_t * subsc
 }
 rmw_ret_t rmw_publish(const rmw_publisher_t * p, const void * msg, rmw_publisher_allocation_t *)
 {
-  if (!p || p->implementation_identifier != standalone::id || !msg) return RMW_RET_INVALID_ARGUMENT;
+  if (auto ret = check_initialized_handle(p); ret != RMW_RET_OK) return ret;
+  if (!msg) return RMW_RET_INVALID_ARGUMENT;
   auto & w = *static_cast<Writer *>(p->data);
   try {
     if (w.cdr_wire) {
@@ -344,8 +349,9 @@ static rmw_ret_t take(
   const rmw_subscription_t * sub, void * msg, void ** loan, bool * taken, rmw_message_info_t * info,
   rmw_subscription_allocation_t * allocation = nullptr)
 {
-  if (!sub || sub->implementation_identifier != standalone::id || (!msg && !loan) || !taken)
-    return RMW_RET_INVALID_ARGUMENT;
+  if (auto ret = check_initialized_handle(sub); ret != RMW_RET_OK) return ret;
+  if (loan && !sub->can_loan_messages) return RMW_RET_UNSUPPORTED;
+  if ((!msg && !loan) || !taken) return RMW_RET_INVALID_ARGUMENT;
   auto & r = *static_cast<Reader *>(sub->data);
   r.before_take();
   std::lock_guard lock(r.context->mutex);
@@ -422,12 +428,14 @@ rmw_ret_t rmw_take_with_info(
   const rmw_subscription_t * s, void * m, bool * t, rmw_message_info_t * i,
   rmw_subscription_allocation_t * allocation)
 {
+  if (!i) return RMW_RET_INVALID_ARGUMENT;
   return take(s, m, nullptr, t, i, allocation);
 }
 rmw_ret_t rmw_take_loaned_message_with_info(
   const rmw_subscription_t * s, void ** m, bool * t, rmw_message_info_t * i,
   rmw_subscription_allocation_t *)
 {
+  if (!i) return RMW_RET_INVALID_ARGUMENT;
   return take(s, nullptr, m, t, i);
 }
 rmw_ret_t rmw_take_loaned_message(
@@ -437,16 +445,18 @@ rmw_ret_t rmw_take_loaned_message(
 }
 rmw_ret_t rmw_return_loaned_message_from_subscription(const rmw_subscription_t * s, void * msg)
 {
-  if (!s || s->implementation_identifier != standalone::id || !msg) return RMW_RET_INVALID_ARGUMENT;
+  if (auto ret = check_initialized_handle(s); ret != RMW_RET_OK) return ret;
+  if (!s->can_loan_messages) return RMW_RET_UNSUPPORTED;
+  if (!msg) return RMW_RET_INVALID_ARGUMENT;
   auto & r = *static_cast<Reader *>(s->data);
   std::lock_guard lock(r.context->mutex);
   return r.held.erase(msg) ? RMW_RET_OK : RMW_RET_INVALID_ARGUMENT;
 }
 rmw_ret_t rmw_borrow_loaned_message(
-  const rmw_publisher_t * p, const rosidl_message_type_support_t *, void ** msg)
+  const rmw_publisher_t * p, const rosidl_message_type_support_t * ts, void ** msg)
 {
-  if (!p || p->implementation_identifier != standalone::id || !msg || *msg)
-    return RMW_RET_INVALID_ARGUMENT;
+  if (auto ret = check_initialized_handle(p); ret != RMW_RET_OK) return ret;
+  if (!ts || !msg || *msg) return RMW_RET_INVALID_ARGUMENT;
   auto & w = *static_cast<Writer *>(p->data);
   if (!p->can_loan_messages) return RMW_RET_UNSUPPORTED;
   std::lock_guard lock(w.mutex);
@@ -468,7 +478,9 @@ rmw_ret_t rmw_borrow_loaned_message(
 }
 static rmw_ret_t finish_loan(const rmw_publisher_t * p, void * msg, bool publish)
 {
-  if (!p || p->implementation_identifier != standalone::id || !msg) return RMW_RET_INVALID_ARGUMENT;
+  if (auto ret = check_initialized_handle(p); ret != RMW_RET_OK) return ret;
+  if (!p->can_loan_messages) return RMW_RET_UNSUPPORTED;
+  if (!msg) return RMW_RET_INVALID_ARGUMENT;
   auto & w = *static_cast<Writer *>(p->data);
   std::lock_guard lock(w.mutex);
   auto it = w.borrowed.find(msg);
@@ -509,39 +521,41 @@ rmw_ret_t rmw_return_loaned_message_from_publisher(const rmw_publisher_t * p, vo
 rmw_ret_t rmw_take(
   const rmw_subscription_t * s, void * m, bool * t, rmw_subscription_allocation_t * a)
 {
-  return rmw_take_with_info(s, m, t, nullptr, a);
+  return take(s, m, nullptr, t, nullptr, a);
 }
 rmw_ret_t rmw_get_gid_for_publisher(const rmw_publisher_t * p, rmw_gid_t * gid)
 {
-  if (!p || p->implementation_identifier != standalone::id || !gid) return RMW_RET_INVALID_ARGUMENT;
+  if (auto ret = check_initialized_handle(p); ret != RMW_RET_OK) return ret;
+  if (!gid) return RMW_RET_INVALID_ARGUMENT;
   *gid = static_cast<Writer *>(p->data)->gid;
   return RMW_RET_OK;
 }
 rmw_ret_t rmw_compare_gids_equal(const rmw_gid_t * a, const rmw_gid_t * b, bool * equal)
 {
-  if (
-    !a || !b || !equal || a->implementation_identifier != standalone::id ||
-    b->implementation_identifier != standalone::id)
-    return RMW_RET_INVALID_ARGUMENT;
+  if (!equal) return RMW_RET_INVALID_ARGUMENT;
+  if (auto ret = check_initialized_handle(a); ret != RMW_RET_OK) return ret;
+  if (auto ret = check_initialized_handle(b); ret != RMW_RET_OK) return ret;
   *equal = std::memcmp(a->data, b->data, sizeof(a->data)) == 0;
   return RMW_RET_OK;
 }
 rmw_ret_t rmw_publisher_get_actual_qos(const rmw_publisher_t * p, rmw_qos_profile_t * q)
 {
-  if (!p || p->implementation_identifier != standalone::id || !q) return RMW_RET_INVALID_ARGUMENT;
+  if (auto ret = check_initialized_handle(p); ret != RMW_RET_OK) return ret;
+  if (!q) return RMW_RET_INVALID_ARGUMENT;
   *q = static_cast<Writer *>(p->data)->qos;
   return RMW_RET_OK;
 }
 rmw_ret_t rmw_subscription_get_actual_qos(const rmw_subscription_t * s, rmw_qos_profile_t * q)
 {
-  if (!s || s->implementation_identifier != standalone::id || !q) return RMW_RET_INVALID_ARGUMENT;
+  if (auto ret = check_initialized_handle(s); ret != RMW_RET_OK) return ret;
+  if (!q) return RMW_RET_INVALID_ARGUMENT;
   *q = static_cast<Reader *>(s->data)->qos;
   return RMW_RET_OK;
 }
 rmw_ret_t rmw_publisher_count_matched_subscriptions(const rmw_publisher_t * p, size_t * count)
 {
-  if (!p || p->implementation_identifier != standalone::id || !count)
-    return RMW_RET_INVALID_ARGUMENT;
+  if (auto ret = check_initialized_handle(p); ret != RMW_RET_OK) return ret;
+  if (!count) return RMW_RET_INVALID_ARGUMENT;
   auto & w = *static_cast<Writer *>(p->data);
   if (!w.internal) return count_compatible(w.owner_node, w.topic, w.type, w.qos, true, count);
   *count = w.native.get_subscription_count();
@@ -549,8 +563,8 @@ rmw_ret_t rmw_publisher_count_matched_subscriptions(const rmw_publisher_t * p, s
 }
 rmw_ret_t rmw_subscription_count_matched_publishers(const rmw_subscription_t * s, size_t * count)
 {
-  if (!s || s->implementation_identifier != standalone::id || !count)
-    return RMW_RET_INVALID_ARGUMENT;
+  if (auto ret = check_initialized_handle(s); ret != RMW_RET_OK) return ret;
+  if (!count) return RMW_RET_INVALID_ARGUMENT;
   *count = 0;
   auto & r = *static_cast<Reader *>(s->data);
   if (!r.internal) return count_compatible(r.owner_node, r.topic, r.type, r.qos, false, count);
@@ -597,8 +611,8 @@ rmw_ret_t rmw_qos_profile_check_compatible(
 rmw_ret_t rmw_publish_serialized_message(
   const rmw_publisher_t * pub, const rmw_serialized_message_t * msg, rmw_publisher_allocation_t *)
 {
-  if (!pub || pub->implementation_identifier != standalone::id || !msg)
-    return RMW_RET_INVALID_ARGUMENT;
+  if (auto ret = check_initialized_handle(pub); ret != RMW_RET_OK) return ret;
+  if (!msg) return RMW_RET_INVALID_ARGUMENT;
   auto & writer = *static_cast<Writer *>(pub->data);
   try {
     if (writer.cdr_wire) {
@@ -632,8 +646,8 @@ rmw_ret_t rmw_take_serialized_message_with_info(
   const rmw_subscription_t * sub, rmw_serialized_message_t * msg, bool * taken,
   rmw_message_info_t * info, rmw_subscription_allocation_t *)
 {
-  if (!sub || sub->implementation_identifier != standalone::id || !msg || !taken || !info)
-    return RMW_RET_INVALID_ARGUMENT;
+  if (auto ret = check_initialized_handle(sub); ret != RMW_RET_OK) return ret;
+  if (!msg || !taken || !info) return RMW_RET_INVALID_ARGUMENT;
   auto & reader = *static_cast<Reader *>(sub->data);
   reader.before_take();
   std::lock_guard lock(reader.context->mutex);
@@ -716,8 +730,8 @@ rmw_ret_t rmw_subscription_set_on_new_message_callback(
 rmw_ret_t rmw_subscription_set_content_filter(
   rmw_subscription_t * sub, const rmw_subscription_content_filter_options_t * options)
 {
-  if (!sub || sub->implementation_identifier != standalone::id || !options)
-    return RMW_RET_INVALID_ARGUMENT;
+  if (auto ret = check_initialized_handle(sub); ret != RMW_RET_OK) return ret;
+  if (!options) return RMW_RET_INVALID_ARGUMENT;
   auto & r = *static_cast<Reader *>(sub->data);
   try {
     if (!r.typed_wire()) return RMW_RET_UNSUPPORTED;
@@ -737,11 +751,15 @@ rmw_ret_t rmw_subscription_get_content_filter(
   const rmw_subscription_t * sub, rcutils_allocator_t * a,
   rmw_subscription_content_filter_options_t * options)
 {
-  if (!sub || sub->implementation_identifier != standalone::id || !a || !options)
-    return RMW_RET_INVALID_ARGUMENT;
+  if (auto ret = check_initialized_handle(sub); ret != RMW_RET_OK) return ret;
+  if (!a || !options) return RMW_RET_INVALID_ARGUMENT;
   auto & r = *static_cast<Reader *>(sub->data);
   try {
     std::lock_guard lock(r.context->mutex);
+    if (!r.filter.matches) {
+      RMW_SET_ERROR_MSG("subscription has no active content filter");
+      return RMW_RET_ERROR;
+    }
     return r.filter.get(a, options);
   } catch (const std::bad_alloc &) {
     return RMW_RET_BAD_ALLOC;

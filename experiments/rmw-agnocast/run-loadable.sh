@@ -11,7 +11,14 @@ export AGNOCAST_BRIDGE_MODE=OFF AGNOCAST_NO_DISCOVERY_AGENT=1
 export CYCLONEDDS_URI='<CycloneDDS><Domain><General><Interfaces><NetworkInterface name="lo"/></Interfaces><AllowMulticast>false</AllowMulticast></General><Discovery><ParticipantIndex>auto</ParticipantIndex><Peers><Peer Address="127.0.0.1"/></Peers></Discovery></Domain></CycloneDDS>'
 hook=/ws/build/agnocast-lyrical/install/agnocastlib/lib/libagnocast_heaphook.so
 
-if [[ ${1:-} == --standalone ]]; then
+if [[ ${1:-} == --rehearsal ]]; then
+  rehearsal=$(realpath "${2:?supply a built rehearsal workspace}")
+  shift 2
+  source "$rehearsal/install/local_setup.bash"
+  test "$(ros2 pkg prefix rmw_agnocast)" = "$rehearsal/install/rmw_agnocast"
+  unset AGNOCAST_RMW_TOPIC AGNOCAST_BRIDGE_MODE AGNOCAST_NO_DISCOVERY_AGENT
+  hook="$rehearsal/libagnocast_heaphook.so"
+elif [[ ${1:-} == --standalone ]]; then
   shift
   source build/standalone/o3-install/local_setup.bash
   source build/standalone/release-path/install/local_setup.bash

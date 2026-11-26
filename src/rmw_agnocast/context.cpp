@@ -5,6 +5,8 @@
 #include <rcutils/logging.h>
 #include <rcutils/strdup.h>
 #include <rmw/domain_id.h>
+#include <rmw/validate_namespace.h>
+#include <rmw/validate_node_name.h>
 #include <sys/eventfd.h>
 
 #include <chrono>
@@ -33,23 +35,6 @@ rmw_ret_t rmw_set_log_severity(rmw_log_severity_t severity)
       return RMW_RET_INVALID_ARGUMENT;
   }
 }
-
-namespace
-{
-template <class Handle>
-rmw_ret_t check_initialized_handle(const Handle * handle)
-{
-  if (!handle || !handle->implementation_identifier) {
-    RMW_SET_ERROR_MSG("expected an initialized RMW handle");
-    return RMW_RET_INVALID_ARGUMENT;
-  }
-  if (handle->implementation_identifier != id) {
-    RMW_SET_ERROR_MSG("handle belongs to a different middleware implementation");
-    return RMW_RET_INCORRECT_RMW_IMPLEMENTATION;
-  }
-  return RMW_RET_OK;
-}
-}  // namespace
 
 rmw_ret_t rmw_init_options_init(rmw_init_options_t * o, rcutils_allocator_t allocator)
 {
@@ -198,7 +183,26 @@ standalone::GraphCache & standalone::graph_cache(const rmw_node_t * node)
 }
 rmw_node_t * rmw_create_node(rmw_context_t * ctx, const char * name, const char * ns)
 {
-  if (!state(ctx) || !name || !ns) return nullptr;
+  auto * context = state(ctx);
+  if (!context || !name || !ns) return nullptr;
+  {
+    std::lock_guard lock(context->mutex);
+    if (context->stopped) {
+      RMW_SET_ERROR_MSG("cannot create a node after shutdown");
+      return nullptr;
+    }
+  }
+  int result;
+  if (rmw_validate_node_name(name, &result, nullptr) != RMW_RET_OK) return nullptr;
+  if (result != RMW_NODE_NAME_VALID) {
+    RMW_SET_ERROR_MSG(rmw_node_name_validation_result_string(result));
+    return nullptr;
+  }
+  if (rmw_validate_namespace(ns, &result, nullptr) != RMW_RET_OK) return nullptr;
+  if (result != RMW_NAMESPACE_VALID) {
+    RMW_SET_ERROR_MSG(rmw_namespace_validation_result_string(result));
+    return nullptr;
+  }
   try {
     auto node = std::unique_ptr<LocalNode>(
       new LocalNode{name, ns, {rmw_create_guard_condition(ctx), rmw_destroy_guard_condition}});
@@ -216,7 +220,7 @@ rmw_node_t * rmw_create_node(rmw_context_t * ctx, const char * name, const char 
 }
 rmw_ret_t rmw_destroy_node(rmw_node_t * node)
 {
-  if (!node || node->implementation_identifier != id) return RMW_RET_INVALID_ARGUMENT;
+  if (auto ret = check_initialized_handle(node); ret != RMW_RET_OK) return ret;
   delete static_cast<LocalNode *>(node->data);
   delete node;
   return RMW_RET_OK;

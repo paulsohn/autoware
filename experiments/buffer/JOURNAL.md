@@ -4649,3 +4649,25 @@ python3 experiments/rmw-agnocast/rehearsal/compare.py experiments/rmw-agnocast/r
 One overlapping diagnostic run observed two nodes in a graph test expecting one. The conformance job now takes an exclusive checkout-local lock because its processes share domain 177. On the final isolated run 100/138 RMW cases passed, 37 failed assertions and one skipped. All 92 selected rclcpp cases retained their baseline outcomes (88 passing). Twenty RMW cases improved, and no case regressed. Minimum host MemAvailable was 12662 MiB during the final conformance run. Keep remaining failures visible in the case inventory, including native naming, loan capability reporting, finite liveliness QoS, invalid inputs and KeepAll subscriptions.
 
 The six-case live runtime rehearsal also passed on the rebuilt middleware. During manual gateway replacement the Cyclone run delivered 21 consecutive listener samples and the Zenoh run delivered 20. Each stock peer bag contained both required five-sample windows and omitted the checked outage window. Native recording, RMW-triggered Cyclone startup and Cyclone rollback passed. Minimum host MemAvailable was 13916 MiB. This was a functional regression run.
+
+## Align loan capability reporting and ROS endpoint validation
+
+Starting from 5767c110c, the pinned upstream fixtures use C message type support while native shared loans contain C++ objects. Keep can_loan_messages false on those C-layout endpoints. Previously an empty reader returned success before checking its loan capability, and return/publish of an unsupported loan could report an invalid pointer instead. Check capability before queue access or loan return. The four fixtures now verify unsupported results and skip cleanly. For loan-capable C++ callers, normal take and take-with-info validate their respective outputs. The ordinary typed take still permits omitting metadata.
+
+Share the existing initialized-handle check across topic, client and service APIs so a foreign handle receives the specified error before its private data is accessed. Public endpoint creation now validates ROS topic/service names, node names and namespaces. Creating a node after shutdown and querying a missing content filter return errors. Check service type support at creation. Internal RPC route names continue to be constructed by the transport.
+
+Rebuild the staged middleware and run the pinned conformance script as in the preceding entry, copying the changed standalone.hpp along with the .cpp files. Use api-loan-confirm as the fresh results directory. All 230 cases ran. The upstream totals were 125 passed, eight failed and five skipped. Compared to the preceding baseline, 25 failures became passes and four became verified upstream skips. All 92 selected rclcpp results were unchanged (88 passes). The regression comparator flagged the four changed skips for manual review before updating the inventory. Minimum host MemAvailable was 12629 MiB.
+
+The provisioned laptop also has the existing loadable_probe binary and its Autoware planning message overlay. The following runs select the staged middleware install as the final overlay and use its released hook. The probe checks shared object and nested-storage addresses, retains a callback loan across subscription teardown, throws in a callback and publishes an ordinary copied message. Both message types passed four samples each in both reader modes.
+
+```bash
+export LYRICAL_ROOT="$(cat build/agnocast-lyrical/universe-root)"
+ROS_DOMAIN_ID=181 experiments/buffer/run-lyrical.sh bash experiments/rmw-agnocast/run-loadable.sh --rehearsal build/rehearsal-confirm path
+ROS_DOMAIN_ID=181 experiments/buffer/run-lyrical.sh bash experiments/rmw-agnocast/run-loadable.sh --rehearsal build/rehearsal-confirm trajectory
+export REHEARSAL_HOOK=/opt/ros/jazzy/lib/libagnocast_heaphook.so
+sg docker -c 'experiments/buffer/run-limited.sh python3 experiments/rmw-agnocast/rehearsal/runtime.py build/rehearsal-confirm build/rehearsal-confirm/api-loan-runtime'
+```
+
+All six live migration cases passed. Both manual gateway restart runs maintained 21 consecutive local listener samples, and the remote bag checks passed on Cyclone and Zenoh. Runtime minimum host MemAvailable was 11868 MiB.
+
+The eight remaining upstream failures split into four raw transport-name cases, three cases involving finite liveliness QoS, and one reliability mismatch-count case. The last fixture creates a best-effort publisher and reliable subscriber, but calls rmw_qos_profile_check_compatible with the subscriber profile first. In an independent copy of test_rmw_implementation 3.1.6, swap the two profile arguments in TestSubscriptionUse.count_mismatched_subscriptions, build the test_subscription target and run that case with the native RMW and released hook. The corrected direction passed on the same middleware. The original test and its failing status remain in the regression inventory.

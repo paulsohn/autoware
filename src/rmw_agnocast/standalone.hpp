@@ -1,23 +1,48 @@
 #pragma once
 #include <poll.h>
-#include <unistd.h>
 #include <rmw/error_handling.h>
 #include <rmw/event.h>
 #include <rmw/init.h>
 #include <rmw/rmw.h>
+#include <rmw/validate_full_topic_name.h>
 #include <sys/eventfd.h>
+#include <unistd.h>
 
 #include <atomic>
 #include <condition_variable>
 #include <list>
 #include <memory>
 #include <mutex>
-#include <vector>
 #include <thread>
+#include <vector>
 
 namespace standalone
 {
 inline constexpr char id[] = "rmw_agnocast";
+template <class Handle>
+rmw_ret_t check_initialized_handle(const Handle * handle)
+{
+  if (!handle || !handle->implementation_identifier) {
+    RMW_SET_ERROR_MSG("expected an initialized RMW handle");
+    return RMW_RET_INVALID_ARGUMENT;
+  }
+  if (handle->implementation_identifier != id) {
+    RMW_SET_ERROR_MSG("handle belongs to a different middleware implementation");
+    return RMW_RET_INCORRECT_RMW_IMPLEMENTATION;
+  }
+  return RMW_RET_OK;
+}
+
+inline bool valid_ros_topic(const char * name)
+{
+  int result;
+  if (rmw_validate_full_topic_name(name, &result, nullptr) != RMW_RET_OK) return false;
+  if (result != RMW_TOPIC_VALID) {
+    RMW_SET_ERROR_MSG(rmw_full_topic_name_validation_result_string(result));
+    return false;
+  }
+  return true;
+}
 struct Context
 {
   std::mutex mutex;

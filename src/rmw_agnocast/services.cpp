@@ -59,17 +59,19 @@ struct Rpc
   }
 };
 template <class Handle>
-Rpc * rpc(const Handle * handle)
-{
-  return handle && handle->implementation_identifier == id ? static_cast<Rpc *>(handle->data)
-                                                           : nullptr;
-}
-template <class Handle>
 Handle * create(
   const rmw_node_t * n, const rosidl_service_type_support_t * ts, const char * name,
   const rmw_qos_profile_t * qos)
 {
   if (!n || n->implementation_identifier != id || !ts || !name || !qos) return nullptr;
+  if (!qos->avoid_ros_namespace_conventions && !valid_ros_topic(name)) return nullptr;
+  if (!get_service_typesupport_handle(ts, "rosidl_typesupport_introspection_cpp")) {
+    rmw_reset_error();
+    if (!get_service_typesupport_handle(ts, "rosidl_typesupport_introspection_c")) {
+      RMW_SET_ERROR_MSG("missing generated service type support");
+      return nullptr;
+    }
+  }
   try {
     auto ep = std::make_unique<Rpc>(n, name, ts, *qos);
     if constexpr (std::is_same_v<Handle, rmw_client_t>) {
@@ -199,19 +201,22 @@ rmw_ret_t rmw_destroy_client(rmw_node_t * n, rmw_client_t * h)
 rmw_ret_t rmw_take_request(
   const rmw_service_t * h, rmw_service_info_t * info, void * msg, bool * taken)
 {
-  auto ep = rpc(h);
+  if (auto ret = check_initialized_handle(h); ret != RMW_RET_OK) return ret;
+  auto ep = static_cast<Rpc *>(h->data);
   return ep ? receive(ep, ep->ts->request_typesupport, info, msg, taken) : RMW_RET_INVALID_ARGUMENT;
 }
 rmw_ret_t rmw_take_response(
   const rmw_client_t * h, rmw_service_info_t * info, void * msg, bool * taken)
 {
-  auto ep = rpc(h);
+  if (auto ret = check_initialized_handle(h); ret != RMW_RET_OK) return ret;
+  auto ep = static_cast<Rpc *>(h->data);
   return ep ? receive(ep, ep->ts->response_typesupport, info, msg, taken)
             : RMW_RET_INVALID_ARGUMENT;
 }
 rmw_ret_t rmw_send_request(const rmw_client_t * h, const void * msg, int64_t * seq)
 {
-  auto ep = rpc(h);
+  if (auto ret = check_initialized_handle(h); ret != RMW_RET_OK) return ret;
+  auto ep = static_cast<Rpc *>(h->data);
   if (!ep || !msg || !seq) return RMW_RET_INVALID_ARGUMENT;
   rmw_request_id_t id{};
   std::memcpy(id.writer_guid, ep->gid.data, sizeof(id.writer_guid));
@@ -222,7 +227,8 @@ rmw_ret_t rmw_send_request(const rmw_client_t * h, const void * msg, int64_t * s
 }
 rmw_ret_t rmw_send_response(const rmw_service_t * h, rmw_request_id_t * id, void * msg)
 {
-  auto ep = rpc(h);
+  if (auto ret = check_initialized_handle(h); ret != RMW_RET_OK) return ret;
+  auto ep = static_cast<Rpc *>(h->data);
   if (!ep || !msg || !id) return RMW_RET_INVALID_ARGUMENT;
   try {
     std::lock_guard lock(ep->mutex);
@@ -256,7 +262,9 @@ rmw_ret_t rmw_send_response(const rmw_service_t * h, rmw_request_id_t * id, void
 rmw_ret_t rmw_service_server_is_available(
   const rmw_node_t * n, const rmw_client_t * h, bool * available)
 {
-  auto ep = rpc(h);
+  if (auto ret = check_initialized_handle(h); ret != RMW_RET_OK) return ret;
+  auto ep = static_cast<Rpc *>(h->data);
+  if (auto ret = check_initialized_handle(n); ret != RMW_RET_OK) return ret;
   if (!ep || ep->node != n || !available) return RMW_RET_INVALID_ARGUMENT;
   size_t matched;
   auto ret = rmw_publisher_count_matched_subscriptions(ep->writer, &matched);
@@ -265,45 +273,52 @@ rmw_ret_t rmw_service_server_is_available(
 }
 rmw_ret_t rmw_get_gid_for_client(const rmw_client_t * h, rmw_gid_t * gid)
 {
-  auto ep = rpc(h);
+  if (auto ret = check_initialized_handle(h); ret != RMW_RET_OK) return ret;
+  auto ep = static_cast<Rpc *>(h->data);
   if (!ep || !gid) return RMW_RET_INVALID_ARGUMENT;
   *gid = ep->gid;
   return RMW_RET_OK;
 }
 rmw_ret_t rmw_client_request_publisher_get_actual_qos(const rmw_client_t * h, rmw_qos_profile_t * q)
 {
-  auto ep = rpc(h);
+  if (auto ret = check_initialized_handle(h); ret != RMW_RET_OK) return ret;
+  auto ep = static_cast<Rpc *>(h->data);
   return ep ? rmw_subscription_get_actual_qos(ep->reader, q) : RMW_RET_INVALID_ARGUMENT;
 }
 rmw_ret_t rmw_client_response_subscription_get_actual_qos(
   const rmw_client_t * h, rmw_qos_profile_t * q)
 {
-  auto ep = rpc(h);
+  if (auto ret = check_initialized_handle(h); ret != RMW_RET_OK) return ret;
+  auto ep = static_cast<Rpc *>(h->data);
   return ep ? rmw_subscription_get_actual_qos(ep->reader, q) : RMW_RET_INVALID_ARGUMENT;
 }
 rmw_ret_t rmw_service_request_subscription_get_actual_qos(
   const rmw_service_t * h, rmw_qos_profile_t * q)
 {
-  auto ep = rpc(h);
+  if (auto ret = check_initialized_handle(h); ret != RMW_RET_OK) return ret;
+  auto ep = static_cast<Rpc *>(h->data);
   return ep ? rmw_subscription_get_actual_qos(ep->reader, q) : RMW_RET_INVALID_ARGUMENT;
 }
 rmw_ret_t rmw_service_response_publisher_get_actual_qos(
   const rmw_service_t * h, rmw_qos_profile_t * q)
 {
-  auto ep = rpc(h);
+  if (auto ret = check_initialized_handle(h); ret != RMW_RET_OK) return ret;
+  auto ep = static_cast<Rpc *>(h->data);
   return ep ? rmw_subscription_get_actual_qos(ep->reader, q) : RMW_RET_INVALID_ARGUMENT;
 }
 rmw_ret_t rmw_client_set_on_new_response_callback(
   rmw_client_t * h, rmw_event_callback_t callback, const void * data)
 {
-  auto ep = rpc(h);
+  if (auto ret = check_initialized_handle(h); ret != RMW_RET_OK) return ret;
+  auto ep = static_cast<Rpc *>(h->data);
   return ep ? rmw_subscription_set_on_new_message_callback(ep->reader, callback, data)
             : RMW_RET_INVALID_ARGUMENT;
 }
 rmw_ret_t rmw_service_set_on_new_request_callback(
   rmw_service_t * h, rmw_event_callback_t callback, const void * data)
 {
-  auto ep = rpc(h);
+  if (auto ret = check_initialized_handle(h); ret != RMW_RET_OK) return ret;
+  auto ep = static_cast<Rpc *>(h->data);
   return ep ? rmw_subscription_set_on_new_message_callback(ep->reader, callback, data)
             : RMW_RET_INVALID_ARGUMENT;
 }
