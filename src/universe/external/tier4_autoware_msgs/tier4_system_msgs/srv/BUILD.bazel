@@ -32,3 +32,21 @@ ros_service(
     src = "ChangeTrajectorySource.srv",
     deps = ["@autoware_common_msgs//msg:ResponseStatus"],
 )
+
+ros_service(
+    name = "ChangeCommandFilter",
+    src = "ChangeCommandFilter.srv",
+    deps = ["@autoware_common_msgs//msg:ResponseStatus"],
+)
+
+ros_service(
+    name = "ChangeCommandSource",
+    src = "ChangeCommandSource.srv",
+    deps = ["@autoware_common_msgs//msg:ResponseStatus"],
+)
+
+ros_service(
+    name = "SelectCommandSource",
+    src = "SelectCommandSource.srv",
+    deps = ["@autoware_common_msgs//msg:ResponseStatus"],
+)

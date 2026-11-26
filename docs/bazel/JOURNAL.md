@@ -24969,3 +24969,34 @@ Results: all module targets build and the full transition scenario passes on
 Cyclone DDS with clean shutdown and no skipped checks. Python syntax and
 whitespace checks pass. Coverage is 185/244, four of nine Phase 9.12 gates.
 Next: control-command gate. No Fast DDS, simulator or deployment gate is selected.
+
+## 2026-11-27 — Phase 9.12 prerequisite: Command-gate interfaces
+
+Purpose: satisfy the current command-gate consumer from the local tier4_system_msgs
+snapshot. Its first compile cannot find command_filter_status.hpp because the
+corresponding source interfaces have not been selected in Bazel. Inspect the
+original two messages and three services; no interface source edits are needed.
+
+Add ros_message declarations for CommandFilterStatus and CommandSourceStatus,
+with builtin_interfaces/Time; add ros_service declarations for ChangeCommandFilter,
+ChangeCommandSource and SelectCommandSource, with autoware_common_msgs/ResponseStatus.
+Select all five in the existing package-level default_generators list, retaining
+the package-owned index and public :cc/:cc_shared/:py providers. The existing
+interface collection consumes those providers; no duplicate plugin list is added.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  @tier4_system_msgs//... @autoware_control_command_gate//... \
+  //bazel/tests/control_operators:gate_runtime_test \
+  //bazel/tests/control_operators:gate_filter_test
+```
+
+Results: all tier4_system_msgs targets build, including generated native, Python
+and protobuf outputs. Both selected consumer tests pass with no skips; live
+service calls and status subscriptions exercise all five new interface types on
+Cyclone DDS. The consumer's diagnosed float-constant correction is validated in
+the same working tree and committed separately. This extends an already-adopted
+message module, so Universe coverage remains 185/244. No Fast DDS middleware,
+simulator or deployment check is selected.

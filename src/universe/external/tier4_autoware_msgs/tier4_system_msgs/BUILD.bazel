@@ -11,6 +11,8 @@ default_generators(
     ],
     package_xml = "package.xml",
     deps = [
+        "//msg:CommandFilterStatus",
+        "//msg:CommandSourceStatus",
         "//msg:CommandModeAvailability",
         "//msg:CommandModeAvailabilityItem",
         "//msg:DiagGraphStatus",
@@ -34,6 +36,9 @@ default_generators(
         "//msg:MrmBehaviorStatus",
         "//msg:OperationModeAvailability",
         "//msg:TrajectorySourceStatus",
+        "//srv:ChangeCommandFilter",
+        "//srv:ChangeCommandSource",
+        "//srv:SelectCommandSource",
         "//srv:ChangeTrajectorySource",
         "//srv:OperateMrm",
         "//srv:ResetDiagGraph",

@@ -173,3 +173,15 @@ ros_message(
     src = "InLaneStopTrigger.msg",
     deps = ["@builtin_interfaces//msg:Time"],
 )
+
+ros_message(
+    name = "CommandFilterStatus",
+    src = "CommandFilterStatus.msg",
+    deps = ["@builtin_interfaces//msg:Time"],
+)
+
+ros_message(
+    name = "CommandSourceStatus",
+    src = "CommandSourceStatus.msg",
+    deps = ["@builtin_interfaces//msg:Time"],
+)
