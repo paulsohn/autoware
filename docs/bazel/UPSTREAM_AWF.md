@@ -2771,6 +2771,8 @@ for exact commands. No upstream submission or older ROS/colcon validation is cla
 
 ### Sampler spline: derivative index underflows at the reference origin
 
+Local source fix: `8c229bccc`.
+
 - [ ] Associate with a matching AWF change. Checked 2026-11-27:
   [current spline_transform.cpp](https://github.com/autowarefoundation/autoware_universe/blob/main/planning/sampling_based_planner/autoware_sampler_common/src/sampler_common/transform/spline_transform.cpp)
   still subtracts one from lower_bound in velocity and acceleration without
@@ -2793,6 +2795,8 @@ for commands and results. This is a source correctness issue; no upstream
 submission or colcon validation is claimed.
 
 ### Path sampler: unsafe and shifted velocity/elevation interpolation
+
+Local source fix: `e38665953`.
 
 - [ ] Associate with a matching AWF correction. Checked 2026-11-27:
   [current node.cpp](https://github.com/autowarefoundation/autoware_universe/blob/main/planning/sampling_based_planner/autoware_path_sampler/src/node.cpp)

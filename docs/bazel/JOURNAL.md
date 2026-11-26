@@ -24411,7 +24411,7 @@ formatting and whitespace checks pass. The separate path-sampler task remains
 open for its newly exposed velocity-copy boundary defect. No simulator,
 deployment, Fast DDS or native Agnocast gate is selected.
 
-## 2026-11-27 — Phase 9.11: Path-sampler provider and node (in progress)
+## 2026-11-27 — Phase 9.11: Path-sampler provider and node
 
 Purpose: expose the local autoware_path_sampler algorithms, component and native
 executable before qualifying sampling-based behavior planning. Inspect its
@@ -24474,6 +24474,7 @@ env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
 Result: all three package test targets pass: two candidate/target-selection
 cases, three direct node interpolation cases and the real DDS executable
 scenario. All module targets build, with no failures or skips. New C++ format,
-Python syntax and whitespace checks pass. The source correction is ready for
-its separate commit; package adoption remains pending its build-definition
-commit. No Fast DDS, simulator or deployment check is selected.
+Python syntax and whitespace checks pass. Source correction e38665953 is separate from these definitions; its three
+regression cases live with the root integration tests. Coverage is 177/244
+(67 packages remaining), with Phase 9.11 nine of thirteen complete. Next:
+qualify the sampling behavior plugin with individual and joint planner gates. No Fast DDS, simulator or deployment check is selected.

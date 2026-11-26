@@ -1,0 +1,94 @@
+load("@rclcpp_components//:defs.bzl", "rclcpp_components_register_node")
+load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "path_generation",
+    srcs = ["src/path_generation.cpp", "src/prepare_inputs.cpp", "src/utils/trajectory_utils.cpp"],
+    hdrs = glob(["include/**/*.hpp"], exclude = ["include/autoware_path_sampler/node.hpp"]),
+    strip_include_prefix = "include",
+    deps = [
+        "@autoware_bezier_sampler",
+        "@autoware_frenet_planner",
+        "@autoware_internal_debug_msgs//:cc",
+        "@autoware_interpolation",
+        "@autoware_motion_utils",
+        "@autoware_perception_msgs//:cc",
+        "@autoware_planning_msgs//:cc",
+        "@autoware_sampler_common",
+        "@autoware_utils",
+        "@autoware_vehicle_info_utils",
+        "@geometry_msgs//:cc",
+        "@nav_msgs//:cc",
+        "@rclcpp//:rclcpp_library",
+        "@rclcpp_components//:rclcpp_components_library",
+        "@std_msgs//:cc",
+        "@tf2//:tf2_library",
+        "@tf2_geometry_msgs//:tf2_geometry_msgs_library",
+        "@tf2_ros//:tf2_ros_library",
+        "@tier4_planning_msgs//:cc",
+        "@visualization_msgs//:cc",
+        "@rosdistro//cc:boost.geometry",
+        "@rosdistro//cc:eigen",
+    ],
+)
+
+cc_library(
+    name = "autoware_path_sampler",
+    srcs = ["src/node.cpp"],
+    hdrs = ["include/autoware_path_sampler/node.hpp"],
+    strip_include_prefix = "include",
+    deps = [":path_generation"],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = [
+        "@autoware_internal_debug_msgs//:cc_shared",
+        "@autoware_perception_msgs//:cc_shared",
+        "@autoware_planning_msgs//:cc_shared",
+        "@geometry_msgs//:cc_shared",
+        "@nav_msgs//:cc_shared",
+        "@std_msgs//:cc_shared",
+        "@tier4_planning_msgs//:cc_shared",
+        "@visualization_msgs//:cc_shared",
+        "@rclcpp//:rclcpp",
+        "@rclcpp_components//:rclcpp_components",
+        "@tf2//:tf2",
+        "@tf2_geometry_msgs//:tf2_geometry_msgs",
+        "@tf2_ros//:tf2_ros",
+        "@autoware_frenet_planner//:runtime_dynamic_deps",
+        "@autoware_motion_utils//:runtime_dynamic_deps",
+        "@autoware_utils//:runtime_dynamic_deps",
+    ],
+)
+
+cc_shared_library(
+    name = "path_sampler_component",
+    shared_lib_name = "libautoware_path_sampler.so",
+    deps = [":autoware_path_sampler"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+)
+
+rclcpp_components_register_node(
+    name = "path_sampler_exe",
+    component = ":path_sampler_component",
+    node_name = "path_sampler",
+    plugin = "autoware::path_sampler::PathSampler",
+)
+
+register_ament_files(
+    name = "node_executables",
+    files = [":path_sampler_exe"],
+    prefix = "lib/autoware_path_sampler",
+    strip_prefix = "*",
+)
+
+ament_index(
+    package_xml = "package.xml",
+    components = [":path_sampler_exe_record"],
+    data = glob(["config/**"]) + [":node_executables"],
+)

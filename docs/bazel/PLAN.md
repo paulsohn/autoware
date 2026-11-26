@@ -2525,8 +2525,16 @@ before qualifying the complete plotting entrypoint with the roundabout module.
 | autoware_behavior_velocity_occlusion_spot_module | All five original cases, both factory lifecycles, standard two-package and experimental five-package composition |
 | autoware_behavior_velocity_roundabout_module | Decision/object behavior, installed TTC plotting/GIF output and both factory lifecycles/compositions |
 
-8 of thirteen packages are complete. Validated coverage is
-176/244 (68 remaining). Phase 9.11 remains in progress. Next: sampler/provider support, its behavior-path plugin and the remaining standalone planners.
+| autoware_path_sampler | Finite Frenet/Bézier candidates, node interpolation regressions, indexed component/executable and DDS trajectory/fallback behavior |
+
+9 of thirteen packages are complete. Validated coverage is
+177/244 (67 remaining). Phase 9.11 remains in progress. Next: the sampling
+behavior-path plugin and the remaining standalone planners.
+
+Path-sampler acceptance exposes two independent implementation defects: spline
+derivatives before the first interval and reference velocity/elevation copying.
+Keep their corrections separate from build definitions; preserve complete
+provider/consumer gates and direct boundary regressions in the root test layer.
 
 ### Execution order through complete Universe coverage
 

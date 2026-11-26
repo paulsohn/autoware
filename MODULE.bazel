@@ -2200,6 +2200,12 @@ local_path_override(
     path = "src/universe/autoware_universe/planning/behavior_velocity_planner/autoware_behavior_velocity_roundabout_module",
 )
 
+bazel_dep(name = "autoware_path_sampler")
+local_path_override(
+    module_name = "autoware_path_sampler",
+    path = "src/universe/autoware_universe/planning/sampling_based_planner/autoware_path_sampler",
+)
+
 # Launcher source modules.
 bazel_dep(name = "sample_vehicle_description")
 local_path_override(
