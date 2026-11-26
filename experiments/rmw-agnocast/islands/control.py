@@ -117,20 +117,24 @@ def trial(backend, dynamic):
         before=counters()
         launched=time.monotonic_ns()
         gateway=[]
+        def start_gateway(i,label):
+            exe = "/ws/build/manual-gateway/install/agnocast_cyclone_gateway/lib/agnocast_cyclone_gateway/topic_gateway"
+            if os.getenv("ISLAND_AUTO")=="1":
+                return run(i,label,
+                    """python3 -c 'import rclpy,time; rclpy.init(); time.sleep(90)'""",True,
+                    ("-e","RMW_AGNOCAST_GATEWAY_CONFIG=/tmp/gateway.json","-e","AGNOCAST_GATEWAY_EXECUTABLE="+exe))
+            else:
+                return run(i,label,exe+" --config /tmp/gateway.json")
         for i,direction in ((1,"import"),(0,"export")):
             config=dict(dynamic_discovery=dynamic, network_rmw="rmw_"+("cyclonedds" if backend=="cyclone" else backend)+"_cpp",
                         heaphook=hook, discovery_namespace="/island_control")
+            if os.getenv("ISLAND_LIFECYCLE")=="1":
+                config[direction+"s"]=[dict(topic="/island_control/pinned",type="std_msgs/msg/Int32")]
             if not dynamic:
                 config[direction+"s"]=[dict(topic=TOPIC,type="std_msgs/msg/Int32")]
             subprocess.run(["docker","exec","-i",islands[i],"tee","/tmp/gateway.json"],
                            input=json.dumps(config), text=True, stdout=subprocess.DEVNULL,check=True)
-            exe = "/ws/build/manual-gateway/install/agnocast_cyclone_gateway/lib/agnocast_cyclone_gateway/topic_gateway"
-            if os.getenv("ISLAND_AUTO")=="1":
-                gateway.append(run(i,direction,
-                    """python3 -c 'import rclpy,time; rclpy.init(); time.sleep(90)'""",True,
-                    ("-e","RMW_AGNOCAST_GATEWAY_CONFIG=/tmp/gateway.json","-e","AGNOCAST_GATEWAY_EXECUTABLE="+exe)))
-            else:
-                gateway.append(run(i,direction,exe+" --config /tmp/gateway.json"))
+            gateway.append(start_gateway(i,direction))
         for p in apps:
             assert p.wait(timeout=50)==0, "see endpoint logs"
         def timings():
@@ -166,5 +170,9 @@ def trial(backend, dynamic):
         delta=[a-b for a,b in zip(counters(),before)]
         assert min(delta)>0
         print(backend,"20/20; eth0 tx/rx deltas including discovery",delta,flush=True)
+        if os.getenv("ISLAND_LIFECYCLE")=="1":
+            from lifecycle import exercise
+            assert dynamic
+            exercise(islands,backend,out,run,docker,start_gateway)
 for backend in sys.argv[2:] or ("cyclone","zenoh"):
     trial(backend, os.getenv("ISLAND_DISCOVERY")=="1")

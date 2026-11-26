@@ -4385,3 +4385,19 @@ PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=src/agnocast_cyclone_gateway python3 experi
 ```
 
 Both network backends delivered 20/20 ordered samples with discovery disabled while an unlisted publisher and subscriber stayed unmatched. With discovery enabled and no data routes listed, both passed 20/20 in each startup mode, retired both route endpoints and delivered another 20/20 on rejoin. The manual and automatic repeats exercised writer-first and reader-first rejoin, respectively. The original three-route, manual/automatic grouped regression also passed all four backend/startup combinations. The first automatic island fixture exec'd env under the heap hook before starting Python; native registration failed on re-exec. Passing the variables via docker exec and preloading only the application corrected the fixture. The final three batches ran sequentially with at least 8579 MiB host memory available. Timestamps are collected for startup and individual samples. No repeated latency or throughput claim follows from these functional runs.
+
+## Exercise discovery lifetime with a configured route alongside it
+
+From the provisioned colcon worktree use fresh output directories. Docker containers share the kernel device and have private IPC and network addresses. Use the existing interface-preserving link helper inside the temporary peer network namespace. Both startup modes keep a configured /island_control/pinned route active alongside the discovered /island_control/lifecycle route. A second RMW context with the same file joins and releases the live owner.
+
+```bash
+sg docker -c 'ISLAND_DISCOVERY=1 ISLAND_LIFECYCLE=1 experiments/buffer/run-limited.sh python3 experiments/rmw-agnocast/islands/control.py build/manual-gateway/discovery-life-manual'
+sg docker -c 'ISLAND_DISCOVERY=1 ISLAND_LIFECYCLE=1 ISLAND_AUTO=1 experiments/buffer/run-limited.sh python3 experiments/rmw-agnocast/islands/control.py build/manual-gateway/discovery-life-auto'
+```
+
+Two remote readers received sequences 0–9 through a single discovered export and import; the remaining reader received 10–19 through those same routes. After the last reader exited, the native writer became unmatched and the per-topic route processes exited. A fresh reader received 20–29, stayed alive through a link outage long enough for both routes to retire, and received 30–39 after eth0 returned. Killing the receiver container retired the source export; restarting the container and its gateway/context on the same IP delivered 40–49 to a new reader. The configured topic delivered 100–139 in four batches at the tested checkpoints. No discovered route claimed the configured topic. Traffic was gated during the faults, so this measures recovery and ownership only. The receiver gateway was explicitly relaunched after the container restart in manual mode and started by a fresh RMW context in automatic mode. All four cells passed with at least 8868 MiB host memory available in the final sequential runs.
+
+- cyclone, manual: 4 dynamic export generations; 6 reader lifetimes and 100 checked deliveries across the two topics.
+- zenoh, manual: 4 dynamic export generations; 6 reader lifetimes and 100 checked deliveries across the two topics.
+- cyclone, auto: 4 dynamic export generations; 6 reader lifetimes and 100 checked deliveries across the two topics.
+- zenoh, auto: 4 dynamic export generations; 6 reader lifetimes and 100 checked deliveries across the two topics.
