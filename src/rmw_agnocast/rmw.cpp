@@ -580,31 +580,52 @@ rmw_ret_t rmw_qos_profile_check_compatible(
     RMW_SET_ERROR_MSG("invalid QoS compatibility output");
     return RMW_RET_INVALID_ARGUMENT;
   }
-  const char * publisher_error = resolve_qos(publisher);
-  const char * subscription_error = resolve_qos(subscription);
+  resolve_defaults(publisher);
+  resolve_defaults(subscription);
   const bool mismatch = publisher.reliability == RMW_QOS_POLICY_RELIABILITY_BEST_EFFORT &&
                         subscription.reliability == RMW_QOS_POLICY_RELIABILITY_RELIABLE;
   *compatibility = RMW_QOS_COMPATIBILITY_OK;
   if (reason_size) reason[0] = '\0';
   size_t used = 0;
-  auto report = [&](const char * label, const char * error) {
-    if (!error) return;
-    *compatibility = RMW_QOS_COMPATIBILITY_ERROR;
-    if (used < reason_size) {
-      const auto n =
-        std::snprintf(reason + used, reason_size - used, "%s%s%s", used ? "; " : "", label, error);
-      if (n > 0) used += static_cast<size_t>(n);
-    }
+  auto report =
+    [&](const char * error, rmw_qos_compatibility_type_t severity = RMW_QOS_COMPATIBILITY_ERROR) {
+      if (*compatibility != RMW_QOS_COMPATIBILITY_ERROR) *compatibility = severity;
+      if (used < reason_size) {
+        const auto n =
+          std::snprintf(reason + used, reason_size - used, "%s%s", used ? "; " : "", error);
+        if (n > 0) used += static_cast<size_t>(n);
+      }
+    };
+  auto concrete_kind = [](auto value) {
+    return value == RMW_QOS_POLICY_LIVELINESS_AUTOMATIC ||
+           value == RMW_QOS_POLICY_LIVELINESS_MANUAL_BY_TOPIC;
   };
-  report("publisher: ", publisher_error);
-  report("subscription: ", subscription_error);
+  for (const auto & profile : {publisher, subscription}) {
+    if (
+      !concrete_kind(profile.liveliness) ||
+      (profile.reliability != RMW_QOS_POLICY_RELIABILITY_RELIABLE &&
+       profile.reliability != RMW_QOS_POLICY_RELIABILITY_BEST_EFFORT) ||
+      (profile.durability != RMW_QOS_POLICY_DURABILITY_VOLATILE &&
+       profile.durability != RMW_QOS_POLICY_DURABILITY_TRANSIENT_LOCAL)) {
+      report("endpoint policy is unresolved", RMW_QOS_COMPATIBILITY_WARNING);
+      break;
+    }
+  }
+  if (
+    concrete_kind(publisher.liveliness) && concrete_kind(subscription.liveliness) &&
+    publisher.liveliness < subscription.liveliness)
+    report("offered liveliness kind cannot satisfy the request");
+  if (
+    deadline_ns(publisher.liveliness_lease_duration) >
+    deadline_ns(subscription.liveliness_lease_duration))
+    report("offered liveliness lease exceeds requested lease");
   if (deadline_ns(publisher.deadline) > deadline_ns(subscription.deadline))
-    report("", "offered deadline exceeds requested deadline");
-  if (mismatch) report("", "best-effort publisher cannot satisfy reliable subscription");
+    report("offered deadline exceeds requested deadline");
+  if (mismatch) report("best-effort publisher cannot satisfy reliable subscription");
   if (
     publisher.durability == RMW_QOS_POLICY_DURABILITY_VOLATILE &&
     subscription.durability == RMW_QOS_POLICY_DURABILITY_TRANSIENT_LOCAL)
-    report("", "volatile publisher cannot satisfy transient-local subscription");
+    report("volatile publisher cannot satisfy transient-local subscription");
   return RMW_RET_OK;
 }
 
@@ -778,7 +799,8 @@ rmw_ret_t init_event(rmw_event_t * handle, Endpoint & ep, bool publisher, rmw_ev
     if (it == ep.events.end()) {
       auto event = std::shared_ptr<Event>(
         new Event{state(ep.owner_node->context), ep.topic, ep.type, publisher, ep.qos, kind});
-      if (!deadline_event(kind)) observe_event(ep.owner_node, event);
+      if (!deadline_event(kind) && kind != RMW_EVENT_MESSAGE_LOST)
+        observe_event(ep.owner_node, event);
       it = ep.events.emplace(kind, event).first;
     }
     *handle = {standalone::id, it->second.get(), kind};

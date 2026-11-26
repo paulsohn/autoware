@@ -18,3 +18,4 @@ env_cmd=(experiments/buffer/run-lyrical.sh env -i HOME=/tmp PATH=/usr/bin:/bin)
 experiments/buffer/run-limited.sh python3 "$here/runtime.py" "$out" "$out/runtime" 2>&1 | tee "$out/runtime.log"
 "${env_cmd[@]}" REHEARSAL_TEST_DEBS="${REHEARSAL_TEST_DEBS:-}" REHEARSAL_HOOK="/ws/$out/libagnocast_heaphook.so" bash "$here/conformance.sh" "$out" "$rmw_repo" 2>&1 | tee "$out/conformance.log"
 python3 "$here/compare.py" "$here/baseline.csv" "$out/conformance-results/cases.csv"
+"${env_cmd[@]}" bash "$here/contracts.sh" "$out" 2>&1 | tee "$out/contracts.log"

@@ -4,7 +4,7 @@
   <maintainer email="paulsohn@users.noreply.github.com">Paul Sohn</maintainer>
   <license>Apache-2.0</license><buildtool_depend>ament_cmake</buildtool_depend>
   <depend>std_msgs</depend><depend>rosidl_typesupport_fastrtps_cpp</depend><depend>fastcdr</depend><depend>rcl_interfaces</depend><depend>sensor_msgs</depend><depend>agnocastlib</depend><depend>rosidl_typesupport_introspection_cpp</depend>
-  <depend>rclcpp</depend><depend>rmw</depend>
+  <depend>rcutils</depend><depend>rclcpp</depend><depend>rmw</depend>
   <member_of_group>rmw_implementation_packages</member_of_group>
   <export><build_type>ament_cmake</build_type></export>
 </package>

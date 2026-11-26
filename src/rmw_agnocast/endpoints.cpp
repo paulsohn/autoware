@@ -4,6 +4,7 @@
 #include <rclcpp/typesupport_helpers.hpp>
 #include <rosidl_typesupport_introspection_cpp/field_types.hpp>
 
+#include <rcutils/sha256.h>
 #include <rosidl_runtime_c/type_description/type_description__struct.h>
 #include <sys/random.h>
 
@@ -29,6 +30,9 @@ bool has_buffer(const MessageMembers & m)
   return false;
 }
 
+// Per subscription, across all reliability/durability routes. Keep the oldest unread loans.
+constexpr size_t keep_all_sample_limit = 256;
+
 int64_t monotonic_ns()
 {
   return std::chrono::duration_cast<std::chrono::nanoseconds>(
@@ -43,7 +47,7 @@ int64_t system_ns()
 }
 }  // namespace
 
-const char * resolve_qos(rmw_qos_profile_t & qos)
+void resolve_defaults(rmw_qos_profile_t & qos)
 {
   if (qos.history == RMW_QOS_POLICY_HISTORY_SYSTEM_DEFAULT) {
     qos.history = RMW_QOS_POLICY_HISTORY_KEEP_LAST;
@@ -55,15 +59,19 @@ const char * resolve_qos(rmw_qos_profile_t & qos)
     qos.durability = RMW_QOS_POLICY_DURABILITY_VOLATILE;
   if (qos.liveliness == RMW_QOS_POLICY_LIVELINESS_SYSTEM_DEFAULT)
     qos.liveliness = RMW_QOS_POLICY_LIVELINESS_AUTOMATIC;
+}
+static const char * validate_endpoint_qos(const rmw_qos_profile_t & qos, bool rpc)
+{
   if (
     (qos.reliability != RMW_QOS_POLICY_RELIABILITY_RELIABLE &&
      qos.reliability != RMW_QOS_POLICY_RELIABILITY_BEST_EFFORT) ||
-    (!rmw_time_equal(qos.liveliness_lease_duration, RMW_DURATION_UNSPECIFIED) &&
+    (!rpc && !rmw_time_equal(qos.liveliness_lease_duration, RMW_DURATION_UNSPECIFIED) &&
      !rmw_time_equal(qos.liveliness_lease_duration, RMW_DURATION_INFINITE)) ||
-    qos.liveliness != RMW_QOS_POLICY_LIVELINESS_AUTOMATIC || qos.avoid_ros_namespace_conventions)
+    qos.liveliness != RMW_QOS_POLICY_LIVELINESS_AUTOMATIC)
     return "unsupported native endpoint QoS";
   if (
-    !qos.depth || qos.history != RMW_QOS_POLICY_HISTORY_KEEP_LAST ||
+    ((qos.history != RMW_QOS_POLICY_HISTORY_KEEP_LAST || !qos.depth) &&
+     (rpc || qos.history != RMW_QOS_POLICY_HISTORY_KEEP_ALL)) ||
     (qos.durability != RMW_QOS_POLICY_DURABILITY_VOLATILE &&
      qos.durability != RMW_QOS_POLICY_DURABILITY_TRANSIENT_LOCAL))
     return "standalone endpoint requires supported durability and KeepLast with positive depth";
@@ -73,7 +81,8 @@ const char * resolve_qos(rmw_qos_profile_t & qos)
 void Endpoint::configure_deadline(bool publisher)
 {
   if (deadline_period == INT64_MAX) return;
-  if (internal || members->has_any_key_member_)
+  if (internal) return;  // RPC has no public deadline event; its frames carry the offered deadline.
+  if (members->has_any_key_member_)
     throw std::invalid_argument("finite deadlines require unkeyed topic endpoints");
   auto kind = publisher ? RMW_EVENT_OFFERED_DEADLINE_MISSED : RMW_EVENT_REQUESTED_DEADLINE_MISSED;
   auto event = std::shared_ptr<Event>(
@@ -118,12 +127,34 @@ Endpoint::Endpoint(
   // Buffer backends belong to the publishing process. Transport nested layouts with
   // their generated serializer; PointCloud2 retains its specialized host representation.
   cdr_wire = !host_cloud && has_buffer(*members);
-  if (const char * error = resolve_qos(qos)) throw std::runtime_error(error);
+  resolve_defaults(qos);
+  if (const char * error = validate_endpoint_qos(qos, rpc)) throw std::runtime_error(error);
   type = std::string(members->message_namespace_) + "/" + members->message_name_;
   for (auto pos = type.find("::"); pos != std::string::npos; pos = type.find("::"))
     type.replace(pos, 2, "/");
-  route = std::string(rpc ? "/_rmw_agnocast/rpc3/d" : "/_rmw_agnocast/v4/d") +
-          std::to_string(owner->context->actual_domain_id) + topic + "/" + type;
+  const bool timed_rpc = rpc && (deadline_ns(qos.deadline) != INT64_MAX ||
+                                 deadline_ns(qos.liveliness_lease_duration) != INT64_MAX);
+  if (qos.avoid_ros_namespace_conventions || timed_rpc) {
+    if (topic.empty()) throw std::invalid_argument("empty native endpoint name");
+    // Use a fixed-size component: RPC reply names can already approach the native name limit.
+    rcutils_sha256_ctx_t sha;
+    uint8_t digest[RCUTILS_SHA256_BLOCK_SIZE];
+    rcutils_sha256_init(&sha);
+    rcutils_sha256_update(&sha, reinterpret_cast<const uint8_t *>(topic.data()), topic.size());
+    rcutils_sha256_final(&sha, digest);
+    constexpr char digits[] = "0123456789abcdef";
+    const char * prefix = !qos.avoid_ros_namespace_conventions ? "/_rmw_agnocast/timed_rpc/d"
+                          : rpc                                ? "/_rmw_agnocast/raw_rpc/d"
+                                                               : "/_rmw_agnocast/raw/d";
+    route = std::string(prefix) + std::to_string(owner->context->actual_domain_id) + "/n";
+    for (uint8_t byte : digest) {
+      route += digits[byte >> 4];
+      route += digits[byte & 15];
+    }
+    route += "/" + type;
+  } else
+    route = std::string(rpc ? "/_rmw_agnocast/rpc3/d" : "/_rmw_agnocast/v4/d") +
+            std::to_string(owner->context->actual_domain_id) + topic + "/" + type;
   if (cdr_wire) route += "/cdr_v1";
   if (host_cloud) route += "/cpu_cloud_v1";
   static std::once_flag once;
@@ -143,9 +174,15 @@ Endpoint::~Endpoint()
   }
 }
 
-rclcpp::QoS Endpoint::ros_qos() const
+rclcpp::QoS Endpoint::ros_qos(bool reader) const
 {
   auto native = qos;
+  if (qos.history == RMW_QOS_POLICY_HISTORY_KEEP_ALL) {
+    if (!reader) throw std::invalid_argument("native publishers require KeepLast history");
+    native.history = RMW_QOS_POLICY_HISTORY_KEEP_LAST;
+    native.depth = keep_all_sample_limit;
+  }
+  native.avoid_ros_namespace_conventions = false;  // Already applied to the route.
   native.liveliness_lease_duration = {};  // Native automatic liveliness has no lease timer.
   native.deadline = {};
   native.lifespan = {};  // The RMW enforces publisher lifespan at receive and take.
@@ -319,6 +356,11 @@ Reader::Reader(
 : Endpoint(owner, ts, name, q, rpc), context(state(owner->context))
 {
   configure_deadline(false);
+  if (qos.history == RMW_QOS_POLICY_HISTORY_KEEP_ALL) {
+    admission_loss =
+      std::shared_ptr<Event>(new Event{context, topic, type, false, qos, RMW_EVENT_MESSAGE_LOST});
+    events.emplace(RMW_EVENT_MESSAGE_LOST, admission_loss);
+  }
   const std::string backends =
     options.acceptable_buffer_backends ? options.acceptable_buffer_backends : "";
   host_view = host_cloud && !library && std::getenv("AGNOCAST_RMW_HOST_VIEW") &&
@@ -335,8 +377,9 @@ Reader::Reader(
     opt.ignore_local_publications = options.ignore_local_publications;
     routes.push_back(
       std::make_shared<PollSubscription>(
-        node.get(), route + suffix, type, ros_qos(),
+        node.get(), route + suffix, type, ros_qos(true),
         [this](Loan sample) {
+          bool rejected = false;
           {
             std::lock_guard lock(context->mutex);
             SampleHeader header;
@@ -346,10 +389,25 @@ Reader::Reader(
             if (header.expiry && monotonic_ns() >= header.expiry) return;
             if (filter.matches && !filter.matches(sample.get())) return;
             if (deadline) deadline->sample();
-            if (pending.size() == qos.depth) pending.pop_front();
-            pending.push_back({std::move(sample), header, system_ns(), ++sequence});
+            if (admission_loss && ready() && pending.size() >= keep_all_sample_limit) {
+              ++admission_loss->added;
+              ++admission_loss->total;
+              admission_loss->pending = true;
+              rejected = true;
+            } else {
+              if (!admission_loss && pending.size() == qos.depth) pending.pop_front();
+              pending.push_back({std::move(sample), header, system_ns(), ++sequence});
+            }
           }
           context->notify();
+          if (rejected) {
+            std::lock_guard lock(admission_loss->callback_mutex);
+            if (admission_loss->callback)
+              admission_loss->callback(admission_loss->data, 1);
+            else
+              ++admission_loss->unreported;
+            return;
+          }
           std::lock_guard callback_lock(callback_mutex);
           if (callback)
             callback(callback_data, 1);

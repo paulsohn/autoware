@@ -19,7 +19,7 @@ namespace endpoints __attribute__((visibility("hidden")))
 using Loan = agnocast::ipc_shared_ptr<const void>;
 using rosidl_typesupport_introspection_cpp::MessageMembers;
 
-const char * resolve_qos(rmw_qos_profile_t & qos);
+void resolve_defaults(rmw_qos_profile_t & qos);
 
 struct Endpoint
 {
@@ -51,7 +51,7 @@ struct Endpoint
     const rmw_node_t * owner, const rosidl_message_type_support_t * ts, const char * name,
     const rmw_qos_profile_t & requested, bool rpc);
   ~Endpoint();
-  rclcpp::QoS ros_qos() const;
+  rclcpp::QoS ros_qos(bool reader = false) const;
 };
 struct SampleHeader
 {
@@ -129,6 +129,7 @@ struct Reader : Endpoint
   std::vector<std::shared_ptr<PollSubscription>> routes;
   std::vector<std::pair<uint32_t, agnocast::CallbackInfo>> ready_routes;
   std::deque<QueuedSample> pending;
+  std::shared_ptr<Event> admission_loss;
   Filter filter;
   std::recursive_mutex callback_mutex;
   rmw_event_callback_t callback{};

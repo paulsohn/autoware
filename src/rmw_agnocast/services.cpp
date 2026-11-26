@@ -1,3 +1,4 @@
+#include "endpoints.hpp"
 #include "graph.hpp"
 
 #include <rclcpp/serialized_message.hpp>
@@ -5,11 +6,14 @@
 #include <std_msgs/msg/string.hpp>
 
 #include <rosidl_runtime_c/type_description/type_description__struct.h>
+#include <sys/stat.h>
 
 #include <algorithm>
 #include <chrono>
+#include <condition_variable>
 #include <cstring>
 #include <map>
+#include <thread>
 
 namespace
 {
@@ -24,11 +28,38 @@ std::string hex(const uint8_t * bytes, size_t size)
   }
   return str;
 }
+// A finite automatic service lease advances even while the application executor is idle.
+// Store a monotonic timestamp on the existing process-owned graph record.
+bool renew_service_lease(int fd)
+{
+  timespec times[2]{{0, UTIME_OMIT}, {}};
+  return clock_gettime(CLOCK_MONOTONIC, &times[1]) == 0 && futimens(fd, times) == 0;
+}
+
+struct ServiceHeartbeat
+{
+  std::mutex mutex;
+  std::condition_variable_any wake;
+  std::jthread worker;
+
+  ServiceHeartbeat(int fd, std::chrono::nanoseconds duration)
+  {
+    if (!renew_service_lease(fd)) throw std::runtime_error("cannot initialize service liveliness");
+    worker = std::jthread([this, fd, duration](std::stop_token stop) {
+      std::unique_lock lock(mutex);
+      while (!stop.stop_requested()) {
+        wake.wait_for(lock, stop, duration / 3, [] { return false; });
+        if (!stop.stop_requested() && !renew_service_lease(fd)) return;
+      }
+    });
+  }
+};
 struct Rpc
 {
   const rmw_node_t * node;
   std::string name, path;
   Lease lease;
+  std::unique_ptr<ServiceHeartbeat> heartbeat;
   const rosidl_service_type_support_t * ts;
   rmw_qos_profile_t qos;
   rmw_subscription_t * reader{};
@@ -48,10 +79,22 @@ struct Rpc
       throw std::runtime_error("service needs request/response typesupport and a type hash");
     auto hash = ts->get_type_hash_func(ts);
     if (!hash || !hash->version) throw std::runtime_error("service type has no hash");
+    if (name.empty()) throw std::invalid_argument("empty service name");
+    endpoints::resolve_defaults(qos);
     path = name + "/h" + hex(hash->value, sizeof(hash->value));
+    // Request and response reverse the offer and request, so both directions require equal periods.
+    if (deadline_ns(q.deadline) != INT64_MAX)
+      path += "/deadline" + std::to_string(deadline_ns(q.deadline));
+    auto lease_ns = deadline_ns(q.liveliness_lease_duration);
+    if (lease_ns != INT64_MAX) {
+      if (lease_ns < 1000000) throw std::invalid_argument("service lease must be at least 1 ms");
+      path += "/lease" + std::to_string(lease_ns) + "/r" + std::to_string(qos.reliability) + "/d" +
+              std::to_string(qos.durability);
+    }
   }
   ~Rpc()
   {
+    heartbeat.reset();
     auto n = const_cast<rmw_node_t *>(node);
     if (reader) (void)rmw_destroy_subscription(n, reader);
     if (writer) (void)rmw_destroy_publisher(n, writer);
@@ -84,10 +127,17 @@ Handle * create(
     const auto * desc = ts->get_type_description_func(ts);
     rmw_qos_profile_t actual{};
     if (!desc || rmw_subscription_get_actual_qos(ep->reader, &actual) != RMW_RET_OK) return nullptr;
+    ep->qos = actual;  // Also used to construct each per-client response writer.
     ep->lease.announce(
       n, std::is_same_v<Handle, rmw_client_t> ? 'C' : 'V', name,
       desc->type_description.type_name.data, ts->get_type_hash_func(ts), &actual,
       ep->writer ? &ep->gid : nullptr);
+    if constexpr (std::is_same_v<Handle, rmw_service_t>) {
+      auto ns = deadline_ns(actual.liveliness_lease_duration);
+      if (ns != INT64_MAX)
+        ep->heartbeat =
+          std::make_unique<ServiceHeartbeat>(ep->lease.fd, std::chrono::nanoseconds(ns));
+    }
     auto handle = new Handle{id, ep.get(), ep->name.c_str()};
     ep.release();
     return handle;
@@ -268,8 +318,11 @@ rmw_ret_t rmw_service_server_is_available(
   if (!ep || ep->node != n || !available) return RMW_RET_INVALID_ARGUMENT;
   size_t matched;
   auto ret = rmw_publisher_count_matched_subscriptions(ep->writer, &matched);
-  if (ret == RMW_RET_OK) *available = matched > 0;
-  return ret;
+  if (ret != RMW_RET_OK) return ret;
+  *available = matched > 0;
+  if (*available && deadline_ns(ep->qos.liveliness_lease_duration) != INT64_MAX)
+    return live_service_lease(n, ep->name, ep->ts->get_type_hash_func(ep->ts), ep->qos, available);
+  return RMW_RET_OK;
 }
 rmw_ret_t rmw_get_gid_for_client(const rmw_client_t * h, rmw_gid_t * gid)
 {
@@ -283,7 +336,7 @@ rmw_ret_t rmw_client_request_publisher_get_actual_qos(const rmw_client_t * h, rm
 {
   if (auto ret = check_initialized_handle(h); ret != RMW_RET_OK) return ret;
   auto ep = static_cast<Rpc *>(h->data);
-  return ep ? rmw_subscription_get_actual_qos(ep->reader, q) : RMW_RET_INVALID_ARGUMENT;
+  return ep ? rmw_publisher_get_actual_qos(ep->writer, q) : RMW_RET_INVALID_ARGUMENT;
 }
 rmw_ret_t rmw_client_response_subscription_get_actual_qos(
   const rmw_client_t * h, rmw_qos_profile_t * q)
@@ -304,7 +357,9 @@ rmw_ret_t rmw_service_response_publisher_get_actual_qos(
 {
   if (auto ret = check_initialized_handle(h); ret != RMW_RET_OK) return ret;
   auto ep = static_cast<Rpc *>(h->data);
-  return ep ? rmw_subscription_get_actual_qos(ep->reader, q) : RMW_RET_INVALID_ARGUMENT;
+  if (!ep || !q) return RMW_RET_INVALID_ARGUMENT;
+  *q = ep->qos;
+  return RMW_RET_OK;
 }
 rmw_ret_t rmw_client_set_on_new_response_callback(
   rmw_client_t * h, rmw_event_callback_t callback, const void * data)

@@ -18,7 +18,7 @@ bool is_type(rmw_event_type_t k)
 }  // namespace
 bool rmw_event_type_is_supported(rmw_event_type_t k)
 {
-  return deadline_event(k) || is_match(k) || is_type(k) ||
+  return k == RMW_EVENT_MESSAGE_LOST || deadline_event(k) || is_match(k) || is_type(k) ||
          k == RMW_EVENT_REQUESTED_QOS_INCOMPATIBLE || k == RMW_EVENT_OFFERED_QOS_INCOMPATIBLE;
 }
 void Event::update(
@@ -27,7 +27,10 @@ void Event::update(
   std::set<std::string> current;
   auto last = RMW_QOS_POLICY_INVALID;
   for (const auto & r : graph) {
-    if (r.kind != (publisher ? 'S' : 'P') || r.name != name) continue;
+    if (
+      r.kind != (publisher ? 'S' : 'P') || r.name != name ||
+      qos.avoid_ros_namespace_conventions != r.qos.avoid_ros_namespace_conventions)
+      continue;
     auto & offer = publisher ? qos : r.qos;
     auto & request = publisher ? r.qos : qos;
     auto reason = RMW_QOS_POLICY_INVALID;
@@ -90,11 +93,12 @@ rmw_ret_t rmw_take_event(const rmw_event_t * handle, void * out, bool * taken)
     return RMW_RET_INVALID_ARGUMENT;
   auto & e = *static_cast<Event *>(handle->data);
   std::lock_guard lock(e.context->mutex);
-  *taken = e.pending || e.kind == RMW_EVENT_PUBLICATION_MATCHED ||
-           e.kind == RMW_EVENT_SUBSCRIPTION_MATCHED;
-  if (!*taken) return RMW_RET_OK;
+  // Taking a status reads its current counters. Only changes wake a wait set.
+  *taken = true;
   int32_t change = static_cast<int32_t>(e.added) - static_cast<int32_t>(e.removed);
-  if (e.kind == RMW_EVENT_OFFERED_DEADLINE_MISSED)
+  if (e.kind == RMW_EVENT_MESSAGE_LOST)
+    *static_cast<rmw_message_lost_status_t *>(out) = {e.total, e.added};
+  else if (e.kind == RMW_EVENT_OFFERED_DEADLINE_MISSED)
     *static_cast<rmw_offered_deadline_missed_status_t *>(out) = {
       static_cast<int32_t>(e.total), static_cast<int32_t>(e.added)};
   else if (e.kind == RMW_EVENT_REQUESTED_DEADLINE_MISSED)

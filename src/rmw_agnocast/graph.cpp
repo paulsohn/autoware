@@ -39,6 +39,7 @@ struct Metadata
 struct GraphRecord
 {
   Metadata meta;
+  timespec modified;
   std::string node, ns, enclave, name, type;
 };
 }  // namespace standalone
@@ -91,6 +92,7 @@ std::vector<GraphRecord> snapshot(const rmw_node_t * node)
     close(fd);
     if (n != st.st_size) continue;
     GraphRecord r;
+    r.modified = st.st_mtim;
     std::memcpy(&r.meta, bytes.data(), sizeof(Metadata));
     std::istringstream fields(bytes.substr(sizeof(Metadata)));
     if (
@@ -232,7 +234,8 @@ rmw_ret_t count(const rmw_node_t * node, const char * name, char kind, size_t * 
   return inspect(node, [&](const auto & rows) {
     *out = 0;
     for (auto & r : rows)
-      if (r.meta.kind == kind && r.name == name) ++*out;
+      if (r.meta.kind == kind && r.name == name && !r.meta.qos.avoid_ros_namespace_conventions)
+        ++*out;
     return RMW_RET_OK;
   });
 }
@@ -445,7 +448,7 @@ namespace
 template <class Array>
 rmw_ret_t endpoint_info(
   const rmw_node_t * node, rcutils_allocator_t * allocator, const char * name, char kind,
-  Array * out)
+  bool no_mangle, Array * out)
 {
   if (!name || !out || !allocator || !rcutils_allocator_is_valid(allocator))
     return RMW_RET_INVALID_ARGUMENT;
@@ -458,7 +461,10 @@ rmw_ret_t endpoint_info(
   return inspect(node, [&](const auto & rows) -> rmw_ret_t {
     size_t n = 0;
     for (auto & row : rows)
-      if (row.meta.kind == kind && row.name == name) ++n;
+      if (
+        row.meta.kind == kind && row.name == name &&
+        row.meta.qos.avoid_ros_namespace_conventions == no_mangle)
+        ++n;
     rmw_ret_t ret;
     if constexpr (service)
       ret = rmw_service_endpoint_info_array_init_with_size(out, n, allocator);
@@ -467,7 +473,10 @@ rmw_ret_t endpoint_info(
     if (ret != RMW_RET_OK) return ret;
     size_t i = 0;
     for (auto & row : rows) {
-      if (row.meta.kind != kind || row.name != name) continue;
+      if (
+        row.meta.kind != kind || row.name != name ||
+        row.meta.qos.avoid_ros_namespace_conventions != no_mangle)
+        continue;
       auto & entry = out->info_array[i++];
       entry.node_name = rcutils_strdup(row.node.c_str(), *allocator);
       entry.node_namespace = rcutils_strdup(row.ns.c_str(), *allocator);
@@ -515,30 +524,63 @@ rmw_ret_t rmw_get_clients_info_by_service(
   const rmw_node_t * node, rcutils_allocator_t * allocator, const char * service_name,
   bool no_mangle, rmw_service_endpoint_info_array_t * clients_info)
 {
-  return endpoint_info(node, allocator, service_name, 'C', clients_info);
+  return endpoint_info(node, allocator, service_name, 'C', no_mangle, clients_info);
 }
 rmw_ret_t rmw_get_servers_info_by_service(
   const rmw_node_t * node, rcutils_allocator_t * allocator, const char * service_name,
   bool no_mangle, rmw_service_endpoint_info_array_t * servers_info)
 {
-  return endpoint_info(node, allocator, service_name, 'V', servers_info);
+  return endpoint_info(node, allocator, service_name, 'V', no_mangle, servers_info);
 }
 rmw_ret_t rmw_get_publishers_info_by_topic(
   const rmw_node_t * node, rcutils_allocator_t * allocator, const char * topic_name, bool no_mangle,
   rmw_topic_endpoint_info_array_t * publishers_info)
 {
-  return endpoint_info(node, allocator, topic_name, 'P', publishers_info);
+  return endpoint_info(node, allocator, topic_name, 'P', no_mangle, publishers_info);
 }
 rmw_ret_t rmw_get_subscriptions_info_by_topic(
   const rmw_node_t * node, rcutils_allocator_t * allocator, const char * topic_name, bool no_mangle,
   rmw_topic_endpoint_info_array_t * subscriptions_info)
 {
-  return endpoint_info(node, allocator, topic_name, 'S', subscriptions_info);
+  return endpoint_info(node, allocator, topic_name, 'S', no_mangle, subscriptions_info);
 }
 
 standalone::GraphCache::~GraphCache()
 {
   if (events >= 0) close(events);
+}
+
+rmw_ret_t standalone::live_service_lease(
+  const rmw_node_t * node, const std::string & name, const rosidl_type_hash_t * hash,
+  const rmw_qos_profile_t & qos, bool * available)
+{
+  *available = false;
+  try {
+    auto rows = snapshot(node);
+    timespec now;
+    if (clock_gettime(CLOCK_MONOTONIC, &now) != 0) return RMW_RET_ERROR;
+    for (const auto & row : rows) {
+      if (
+        row.meta.kind != 'V' || row.name != name || row.meta.hash.version != hash->version ||
+        std::memcmp(row.meta.hash.value, hash->value, sizeof(hash->value)) ||
+        row.meta.qos.avoid_ros_namespace_conventions != qos.avoid_ros_namespace_conventions ||
+        row.meta.qos.reliability != qos.reliability || row.meta.qos.durability != qos.durability ||
+        deadline_ns(row.meta.qos.deadline) != deadline_ns(qos.deadline) ||
+        deadline_ns(row.meta.qos.liveliness_lease_duration) !=
+          deadline_ns(qos.liveliness_lease_duration))
+        continue;
+      auto age = std::chrono::seconds(now.tv_sec - row.modified.tv_sec) +
+                 std::chrono::nanoseconds(now.tv_nsec - row.modified.tv_nsec);
+      if (age.count() >= 0 && age.count() <= deadline_ns(qos.liveliness_lease_duration)) {
+        *available = true;
+        break;
+      }
+    }
+    return RMW_RET_OK;
+  } catch (const std::exception & e) {
+    RMW_SET_ERROR_MSG(e.what());
+    return RMW_RET_ERROR;
+  }
 }
 
 rmw_ret_t standalone::count_compatible(
@@ -550,7 +592,10 @@ rmw_ret_t standalone::count_compatible(
   return inspect(node, [&](const auto & rows) -> rmw_ret_t {
     *count = 0;
     for (const auto & row : rows) {
-      if (row.name != topic || row.type != type || row.meta.kind != (publisher ? 'S' : 'P')) continue;
+      if (
+        row.name != topic || row.type != type || row.meta.kind != (publisher ? 'S' : 'P') ||
+        row.meta.qos.avoid_ros_namespace_conventions != qos.avoid_ros_namespace_conventions)
+        continue;
       rmw_qos_compatibility_type_t compatible;
       auto ret = rmw_qos_profile_check_compatible(
         publisher ? qos : row.meta.qos, publisher ? row.meta.qos : qos, &compatible, nullptr, 0);
