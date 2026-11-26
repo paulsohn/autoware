@@ -23522,3 +23522,7 @@ cases also pass Agnocast-only with the built/preloaded heaphook and host-visible
 /dev/agnocast. Reuse unchanged pure algorithm evidence. Targeted formatting and
 diff checks pass. No Fast DDS, simulator, deployment or field planning accuracy
 qualification is selected. Next: trajectory modification and its temporal solver.
+
+The ranker module/root selection is accepted with those complete gates. Universe
+coverage is 166/244 (78 remaining). Also remove an extra final blank line from
+the validator message BUILD declaration; no build behavior changes.

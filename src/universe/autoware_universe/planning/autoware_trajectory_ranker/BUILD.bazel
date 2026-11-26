@@ -1,0 +1,101 @@
+load("@rosdistro//ament:defs.bzl", "ament_index")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
+load("@generate_parameter_library//:defs.bzl", "generate_parameter_library")
+
+package(default_visibility = ["//visibility:public"])
+
+generate_parameter_library(
+    name = "autoware_trajectory_ranker_param",
+    yaml_file = "param/trajectory_ranker_parameter_struct.yaml",
+)
+
+cc_library(
+    name = "autoware_trajectory_ranker",
+    srcs = ["src/evaluation.cpp", "src/trajectory_ranker.cpp", "src/trajectory_ranker_wrapper.cpp", "src/utils.cpp"],
+    hdrs = ["include/autoware/trajectory_ranker/data_structs.hpp", "include/autoware/trajectory_ranker/evaluation.hpp", "include/autoware/trajectory_ranker/interface/data_interface.hpp", "include/autoware/trajectory_ranker/interface/metrics_interface.hpp", "include/autoware/trajectory_ranker/metrics/distance_metric.hpp", "include/autoware/trajectory_ranker/metrics/lateral_acceleration_metric.hpp", "include/autoware/trajectory_ranker/metrics/lateral_deviation_metric.hpp", "include/autoware/trajectory_ranker/metrics/longitudinal_jerk_metric.hpp", "include/autoware/trajectory_ranker/metrics/metrics_utils.hpp", "include/autoware/trajectory_ranker/metrics/steering_consistency_metric.hpp", "include/autoware/trajectory_ranker/metrics/trajectory_consistency_metric.hpp", "include/autoware/trajectory_ranker/trajectory_ranker.hpp", "include/autoware/trajectory_ranker/trajectory_ranker_wrapper.hpp", "include/autoware/trajectory_ranker/utils.hpp"],
+    strip_include_prefix = "include",
+    deps = [":autoware_trajectory_ranker_param", "@autoware_agnocast_wrapper//:autoware_agnocast_wrapper_library", "@autoware_internal_planning_msgs//:cc", "@autoware_motion_utils", "@autoware_route_handler", "@autoware_trajectory_validator", "@autoware_utils_debug", "@autoware_utils_rclcpp", "@autoware_utils_uuid", "@autoware_vehicle_info_utils", "@autoware_vehicle_msgs//:cc", "@rosdistro//cc:magic_enum", "@nav_msgs//:cc", "@pluginlib//:pluginlib_library", "@rosdistro//cc:tl_expected", "@tf2_geometry_msgs//:tf2_geometry_msgs_library"],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = ["@autoware_trajectory_validator//:validator", "@autoware_trajectory_validator//:runtime_dynamic_deps", "@autoware_motion_utils//:runtime_dynamic_deps", "@autoware_route_handler//:runtime_dynamic_deps", "@autoware_vehicle_msgs//:cc_shared", "@generate_parameter_library//:rclcpp_lifecycle", "@generate_parameter_library//:rsl", "@tf2_geometry_msgs//:tf2_geometry_msgs"],
+)
+
+cc_shared_library(
+    name = "ranker",
+    shared_lib_name = "libautoware_trajectory_ranker_lib.so",
+    deps = [":autoware_trajectory_ranker", "@autoware_route_handler", "@autoware_utils_rclcpp"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+)
+
+cc_library(
+    name = "plugins_library",
+    srcs = ["src/metrics/distance_metric.cpp", "src/metrics/lateral_acceleration_metric.cpp", "src/metrics/lateral_deviation_metric.cpp", "src/metrics/longitudinal_jerk_metric.cpp", "src/metrics/metrics_utils.cpp", "src/metrics/steering_consistency_metric.cpp", "src/metrics/trajectory_consistency_metric.cpp"],
+    deps = [":autoware_trajectory_ranker", "@autoware_utils_geometry"],
+)
+
+cc_shared_library(
+    name = "plugins",
+    shared_lib_name = "libautoware_trajectory_ranker_plugins.so",
+    deps = [":plugins_library"],
+    dynamic_deps = [":ranker", ":runtime_dynamic_deps"],
+)
+
+ament_index(
+    package_xml = "package.xml",
+    data = ["config/trajectory_ranker.param.yaml"],
+    libraries = [":ranker", ":plugins"],
+    plugin_categories = {'plugins.xml': 'autoware_trajectory_ranker'},
+)
+
+collect_transitive_dynamic_deps(
+    name = "test_dynamic_deps",
+    dynamic_deps = [":runtime_dynamic_deps", "@ament_index_cpp//:ament_index_cpp", "@autoware_test_utils//:runtime_dynamic_deps"],
+)
+
+cc_test(
+    name = "test_evaluator",
+    srcs = ["test/test_evaluator.cpp"],
+    deps = [":autoware_trajectory_ranker", "@autoware_test_utils", "@ament_index_cpp//:ament_index_cpp_library", "@googletest//:gtest"],
+    dynamic_deps = [":ranker", ":test_dynamic_deps"],
+    data = [":ament_index", "@autoware_test_utils//:ament_index"],
+    env = {'ENABLE_AGNOCAST': '0'},
+)
+
+cc_test(
+    name = "test_metrics",
+    srcs = ["test/test_metrics.cpp"],
+    deps = [":plugins_library", "@autoware_test_utils", "@ament_index_cpp//:ament_index_cpp_library", "@googletest//:gtest"],
+    dynamic_deps = [":ranker", ":test_dynamic_deps", ":plugins"],
+    data = [":ament_index", "@autoware_test_utils//:ament_index"],
+    env = {'ENABLE_AGNOCAST': '0'},
+)
+
+cc_test(
+    name = "test_metrics_utils",
+    srcs = ["test/test_metrics_utils.cpp"],
+    deps = [":plugins_library", "@autoware_test_utils", "@ament_index_cpp//:ament_index_cpp_library", "@googletest//:gtest"],
+    dynamic_deps = [":ranker", ":test_dynamic_deps", ":plugins"],
+    data = [":ament_index", "@autoware_test_utils//:ament_index"],
+    env = {'ENABLE_AGNOCAST': '0'},
+)
+
+cc_test(
+    name = "test_trajectory_ranker_integration",
+    srcs = ["test/test_trajectory_ranker_integration.cpp"],
+    deps = [":autoware_trajectory_ranker", "@autoware_test_utils", "@ament_index_cpp//:ament_index_cpp_library", "@googletest//:gtest_main"],
+    dynamic_deps = [":ranker", ":test_dynamic_deps"],
+    data = [":ament_index", "@autoware_test_utils//:ament_index"],
+    env = {'ENABLE_AGNOCAST': '0'},
+)
+
+cc_test(
+    name = "test_utils",
+    srcs = ["test/test_utils.cpp"],
+    deps = [":autoware_trajectory_ranker", "@autoware_test_utils", "@ament_index_cpp//:ament_index_cpp_library", "@googletest//:gtest"],
+    dynamic_deps = [":ranker", ":test_dynamic_deps"],
+    data = [":ament_index", "@autoware_test_utils//:ament_index"],
+    env = {'ENABLE_AGNOCAST': '0'},
+)

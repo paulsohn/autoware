@@ -2234,3 +2234,9 @@ local_path_override(
     module_name = "autoware_trajectory_validator",
     path = "src/universe/autoware_universe/planning/autoware_trajectory_validator",
 )
+
+bazel_dep(name = "autoware_trajectory_ranker", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_trajectory_ranker",
+    path = "src/universe/autoware_universe/planning/autoware_trajectory_ranker",
+)

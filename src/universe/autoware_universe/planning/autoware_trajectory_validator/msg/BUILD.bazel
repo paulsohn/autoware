@@ -25,4 +25,3 @@ ros_message(
     src = "ValidationReportArray.msg",
     deps = [":ValidationReport"],
 )
-
