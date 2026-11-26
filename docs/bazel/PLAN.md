@@ -2389,6 +2389,8 @@ gates are outside this phase. Coverage starts at 142/244.
 
 autoware_landmark_manager: complete; see its Phase 9.8 journal for commands and results.
 
+autoware_geo_pose_projector: complete; see its Phase 9.8 journal for commands and results.
+
 ### Execution order through complete Universe coverage
 
 The following groups are the initial route through every remaining package.

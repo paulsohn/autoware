@@ -22298,3 +22298,35 @@ zero failures/errors/skips, 29.2 s. Added-file clang-format/diff checks pass.
 No existing source/test changes, wrapper variant, Fast DDS or expensive product
 gate is required. The deterministic map geometry qualifies the API, not real
 sensor accuracy. Next: geographic pose projection and remaining adapters.
+
+## 2026-11-26: Phase 9.8 — geographic pose projection
+
+Purpose: integrate the existing plain-rclcpp geographic adapter and its optional
+TF broadcaster. Inspect source/header, interface specs, geographic conversion,
+CMake and launch/config; there is no original functional suite. Add two root
+cases for TF off/on, including no output before latched projector metadata.
+
+Pattern: package module/override, original one-source shared component,
+SingleThreaded executable and indexed resources. Consume local interface-spec,
+interface-utils and geography providers and their shared SDK closures. No source
+change is needed: the existing TF broadcaster alias remains supported.
+
+Use TransverseMercator with WGS84, a positive scale_factor=1 and origin latitude
+36/longitude139/altitude0. A pose at that origin and altitude50 must project to
+(0,0,50), retain orientation/header and all covariance entries except the node's
+existing latitude/longitude diagonal swap. Compare optional TF frame, stamp,
+translation and rotation. A default-zero scale fixture initially throws Scale
+is not positive; providing valid projector metadata fixes the setup. This
+qualifies the current swap contract, not every geographic covariance model.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  @autoware_geo_pose_projector//... //bazel/tests:geo_pose_projector_test
+```
+
+Results: nine module non-test targets build; both cases pass, zero failures/
+errors/skips, 12.2 s. Added-file formatting and diff checks pass. No geoid download
+is required for the selected WGS84-to-WGS84 profile. Fast DDS, wrapper, vehicle
+accuracy and expensive product gates are not selected. Next: covariance policy.

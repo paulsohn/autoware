@@ -2586,3 +2586,11 @@ cc_test(
     tags = ["no-sandbox", "no-remote"],
 )
 
+cc_test(
+    name = "geo_pose_projector_test",
+    srcs = ["autoware_geo_pose_projector/test_projection.cpp"],
+    deps = ["@autoware_geo_pose_projector//:autoware_geo_pose_projector_library", "@tf2_msgs//:cc", "@googletest//:gtest_main"],
+    dynamic_deps = ["@autoware_geo_pose_projector//:runtime_dynamic_deps", "@tf2_msgs//:cc_shared"],
+    data = [],
+    tags = ["no-sandbox", "no-remote"],
+)

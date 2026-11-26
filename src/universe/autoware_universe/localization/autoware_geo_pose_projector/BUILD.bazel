@@ -1,0 +1,47 @@
+load("@rclcpp_components//:defs.bzl", "rclcpp_components_register_node")
+load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "autoware_geo_pose_projector_library",
+    srcs = ["src/geo_pose_projector.cpp"],
+    hdrs = ["src/geo_pose_projector.hpp"],
+    includes = ["src"],
+    deps = ["@autoware_component_interface_specs_universe", "@autoware_component_interface_utils", "@autoware_geography_utils", "@geographic_msgs//:cc", "@geometry_msgs//:cc", "@rclcpp_components//:rclcpp_components_library", "@tf2_geometry_msgs//:tf2_geometry_msgs_library", "@tf2_ros//:tf2_ros_library"],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = ["@autoware_component_interface_specs_universe//:runtime_dynamic_deps", "@autoware_component_interface_utils//:runtime_dynamic_deps", "@autoware_geography_utils//:runtime_dynamic_deps", "@geographic_msgs//:cc_shared", "@geometry_msgs//:cc_shared", "@rclcpp_components//:rclcpp_components", "@tf2_geometry_msgs//:tf2_geometry_msgs", "@tf2_ros//:tf2_ros"],
+)
+
+cc_shared_library(
+    name = "autoware_geo_pose_projector",
+    shared_lib_name = "libautoware_geo_pose_projector.so",
+    deps = [":autoware_geo_pose_projector_library"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+)
+
+rclcpp_components_register_node(
+    name = "autoware_geo_pose_projector_node",
+    component = ":autoware_geo_pose_projector",
+    plugin = "autoware::geo_pose_projector::GeoPoseProjector",
+    node_name = "autoware_geo_pose_projector_node",
+)
+
+register_ament_files(
+    name = "executables",
+    files = [":autoware_geo_pose_projector_node"],
+    prefix = "lib/autoware_geo_pose_projector",
+    strip_prefix = "*",
+)
+
+ament_index(
+    package_xml = "package.xml",
+    libraries = [":autoware_geo_pose_projector"],
+    components = [":autoware_geo_pose_projector_node_record"],
+    data = glob(["launch/**", "config/**"]) + [":executables"],
+)
