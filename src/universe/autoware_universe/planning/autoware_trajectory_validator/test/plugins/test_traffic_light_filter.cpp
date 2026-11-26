@@ -40,6 +40,8 @@ using autoware_planning_msgs::msg::TrajectoryPoint;
 class TrafficLightFilterTest : public ::testing::Test
 {
 protected:
+  void TearDown() override { rclcpp::shutdown(); }
+
   void SetUp() override
   {
     if (!rclcpp::ok()) {

@@ -2606,6 +2606,8 @@ change or older ROS/CMake validation is claimed. See its journal for commands.
 
 ### Trajectory validator: Lyrical headers and test-context lifetime
 
+Local header/manifest fix: `573c93ccc`.
+
 - [x] Associate the native expected header and manifest correction with merged
   [PR #13622](https://github.com/autowarefoundation/autoware_universe/pull/13622).
   Checked 2026-11-26: its actual validator diff changes tl_expected/expected.hpp

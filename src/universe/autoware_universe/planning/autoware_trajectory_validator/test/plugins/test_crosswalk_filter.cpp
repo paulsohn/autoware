@@ -89,6 +89,8 @@ std::optional<StopDistances> calc_stop_distances(const double velocity)
 class CrosswalkFilterTest : public ::testing::Test
 {
 protected:
+  void TearDown() override { rclcpp::shutdown(); }
+
   void SetUp() override
   {
     if (!rclcpp::ok()) {

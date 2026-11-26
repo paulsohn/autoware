@@ -23411,6 +23411,8 @@ it. Add TearDown with rclcpp::shutdown, retaining all assertions and ensuring
 normal test process exit. The neighboring ranker fixtures use this same lifecycle.
 GDB's exit status can mask the child's signal; only ordinary Bazel test runs
 count for acceptance. Source changes are committed separately from definitions.
+The header/manifest fix is 573c93ccc; fixture teardown is a separate source
+correctness commit, with the same passing complete gate above.
 
 Integration pattern: declare the four original msg files and dependencies under
 msg/BUILD.bazel, invoke default_generators, then explicitly compose the mixed
