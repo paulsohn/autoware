@@ -2502,6 +2502,8 @@ no upstream submission is claimed.
 
 ### YabLoc image processing and synchronized input compatibility
 
+Local source fix: `0379a5f0a`.
+
 - [ ] Associate with a matching upstream fix. Checked 2026-11-26: current
   [synchronization helper](https://github.com/autowarefoundation/autoware_universe/blob/main/localization/yabloc/yabloc_common/include/yabloc_common/synchro_subscriber.hpp)
   retains .h aliases, ConstPtr and implicit QoS. The

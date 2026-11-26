@@ -2434,6 +2434,8 @@ retains Sophus 1.22.9102-4.rcr.2 for these consumers.
 
 yabloc_monitor: complete; see its Phase 9.9 journal for commands and results.
 
+yabloc_image_processing: complete; four cases cover all six components.
+
 ### Execution order through complete Universe coverage
 
 The following groups are the initial route through every remaining package.

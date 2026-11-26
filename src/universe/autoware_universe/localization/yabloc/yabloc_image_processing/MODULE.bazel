@@ -1,0 +1,13 @@
+module(name = "yabloc_image_processing", version = "0.0.0")
+
+bazel_dep(name = "autoware_utils_system", version = "0.0.0")
+bazel_dep(name = "cv_bridge", version = "0.0.0")
+bazel_dep(name = "pcl_conversions", version = "0.0.0")
+bazel_dep(name = "rclcpp_components", version = "0.0.0")
+bazel_dep(name = "sensor_msgs", version = "0.0.0")
+bazel_dep(name = "sophus", version = "0.0.0")
+bazel_dep(name = "std_msgs", version = "0.0.0")
+bazel_dep(name = "visualization_msgs", version = "0.0.0")
+bazel_dep(name = "yabloc_common", version = "0.0.0")
+bazel_dep(name = "rosdistro", version = "0.0.0")
+bazel_dep(name = "rules_cc", version = "0.2.26.rcr.0")

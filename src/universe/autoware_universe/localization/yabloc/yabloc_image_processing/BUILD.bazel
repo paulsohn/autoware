@@ -1,0 +1,82 @@
+load("@rclcpp_components//:defs.bzl", "rclcpp_components_register_node")
+load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "yabloc_image_processing_library",
+    srcs = ["src/graph_segment/graph_segment_core.cpp", "src/graph_segment/similar_area_searcher.cpp", "src/lanelet2_overlay/lanelet2_overlay_core.cpp", "src/line_segment_detector/line_segment_detector_core.cpp", "src/line_segments_overlay/line_segments_overlay_core.cpp", "src/segment_filter/segment_filter_core.cpp", "src/undistort/undistort_node.cpp"],
+    hdrs = ["include/yabloc_image_processing/graph_segment/graph_segment.hpp", "include/yabloc_image_processing/graph_segment/histogram.hpp", "include/yabloc_image_processing/graph_segment/similar_area_searcher.hpp", "include/yabloc_image_processing/lanelet2_overlay/lanelet2_overlay.hpp", "include/yabloc_image_processing/line_segment_detector/line_segment_detector.hpp", "include/yabloc_image_processing/line_segments_overlay/line_segments_overlay.hpp", "include/yabloc_image_processing/segment_filter/segment_filter.hpp"],
+    includes = ["include"],
+    deps = ["@autoware_utils_system", "@cv_bridge//:cv_bridge_library", "@pcl_conversions//:pcl_conversions_library", "@rclcpp_components//:rclcpp_components_library", "@sensor_msgs//:cc", "@sophus//:sophus", "@std_msgs//:cc", "@visualization_msgs//:cc", "@yabloc_common//:yabloc_common_library", "@rosdistro//cc:opencv_library", "@rosdistro//cc:opencv_contrib_ximgproc_library"],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = ["@cv_bridge//:cv_bridge", "@pcl_conversions//:pcl_conversions", "@rclcpp_components//:rclcpp_components", "@sensor_msgs//:cc_shared", "@std_msgs//:cc_shared", "@visualization_msgs//:cc_shared", "@rosdistro//cc:opencv_contrib_ximgproc", "@yabloc_common", "@yabloc_common//:runtime_dynamic_deps"],
+)
+
+cc_shared_library(
+    name = "yabloc_image_processing",
+    shared_lib_name = "libyabloc_image_processing.so",
+    deps = [":yabloc_image_processing_library"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+)
+
+rclcpp_components_register_node(
+    name = "yabloc_graph_segment_node",
+    node_name = "yabloc_graph_segment_node",
+    component = ":yabloc_image_processing",
+    plugin = "yabloc::graph_segment::GraphSegment",
+)
+
+rclcpp_components_register_node(
+    name = "yabloc_lanelet2_overlay_node",
+    node_name = "yabloc_lanelet2_overlay_node",
+    component = ":yabloc_image_processing",
+    plugin = "yabloc::lanelet2_overlay::Lanelet2Overlay",
+)
+
+rclcpp_components_register_node(
+    name = "yabloc_line_segment_detector_node",
+    node_name = "yabloc_line_segment_detector_node",
+    component = ":yabloc_image_processing",
+    plugin = "yabloc::line_segment_detector::LineSegmentDetector",
+)
+
+rclcpp_components_register_node(
+    name = "yabloc_line_segments_overlay_node",
+    node_name = "yabloc_line_segments_overlay_node",
+    component = ":yabloc_image_processing",
+    plugin = "yabloc::line_segments_overlay::LineSegmentsOverlay",
+)
+
+rclcpp_components_register_node(
+    name = "yabloc_segment_filter_node",
+    node_name = "yabloc_segment_filter_node",
+    component = ":yabloc_image_processing",
+    plugin = "yabloc::segment_filter::SegmentFilter",
+)
+
+rclcpp_components_register_node(
+    name = "yabloc_undistort_node",
+    node_name = "yabloc_undistort_node",
+    component = ":yabloc_image_processing",
+    plugin = "yabloc::undistort::UndistortNode",
+)
+
+register_ament_files(
+    name = "executables",
+    files = [":yabloc_graph_segment_node", ":yabloc_lanelet2_overlay_node", ":yabloc_line_segment_detector_node", ":yabloc_line_segments_overlay_node", ":yabloc_segment_filter_node", ":yabloc_undistort_node"],
+    prefix = "lib/yabloc_image_processing",
+    strip_prefix = "*",
+)
+
+ament_index(
+    package_xml = "package.xml",
+    libraries = [":yabloc_image_processing"],
+    components = [":yabloc_graph_segment_node_record", ":yabloc_lanelet2_overlay_node_record", ":yabloc_line_segment_detector_node_record", ":yabloc_line_segments_overlay_node_record", ":yabloc_segment_filter_node_record", ":yabloc_undistort_node_record"],
+    data = glob(["launch/**", "config/**"]) + [":executables"],
+)

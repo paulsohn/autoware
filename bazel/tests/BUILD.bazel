@@ -2676,3 +2676,12 @@ cc_test(
     data = [],
     tags = ["no-sandbox", "no-remote"],
 )
+
+cc_test(
+    name = "yabloc_image_processing_test",
+    srcs = ["yabloc_image_processing/test_components.cpp"],
+    deps = ["@yabloc_image_processing//:yabloc_image_processing_library", "@ament_index_cpp//:ament_index_cpp_library", "@class_loader//:class_loader_library", "@googletest//:gtest_main"],
+    dynamic_deps = ["@yabloc_image_processing", "@yabloc_image_processing//:runtime_dynamic_deps", "@ament_index_cpp//:ament_index_cpp", "@class_loader//:class_loader"],
+    data = ["@yabloc_image_processing//:ament_index"],
+    tags = ["no-sandbox", "no-remote"],
+)

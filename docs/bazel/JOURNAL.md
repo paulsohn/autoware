@@ -22797,3 +22797,14 @@ Results after these corrections: all common/image targets build; four common
 and four image cases pass, zero failures/errors/skips/disabled, final gate
 31.6 s. Source-range formatting and diff checks pass. No older ROS/CMake,
 real calibration/accuracy, Fast DDS or expensive product gate is claimed.
+
+Build pattern: retain one seven-source shared owner, six plain component factories
+and six executable index records. Depend on the common compile/shared providers
+and canonical OpenCV, ximgproc and ROS SDK owners. The root test loads the real
+factories through the ament-indexed library, including UndistortNode whose class
+is private to its original CPP. Pin the already-selected class_loader
+2.9.4-3.rcr.2 for that test's direct public API. This avoids adding source test
+accessors. Raw/PNG cases check size, stamp, frame and pixels; the other cases
+require detected lines, nonempty road masks, label-colored overlays, known
+ground endpoints/labels and map markers/pixels. Next: the particle filter's
+original resampler suite, mixed interface/node providers and correction gates.
