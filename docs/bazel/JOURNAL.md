@@ -23073,3 +23073,33 @@ nearest-input selection and parameter changes. The package gate reuses the
 passing joint result (1.2 s invocation, cached test .6 s). Bazel evaluation and
 diff checks pass. No physical obstacle/sensor qualification or full system
 communication matrix is claimed. Next: signal compliance and distance nodes.
+
+## 2026-11-26: Phase 9.10 — Traffic-light compliance checks
+
+Purpose: adopt all three original checker/tracker/utility sources and the full
+23-case suite from both test files. Inspect stop-line intersection, trajectory
+lookahead, red/amber/unknown handling, arrow context and temporal state tracking.
+Select CPU/Cyclone; this is a library task, not a new transport matrix.
+
+Compilation fails at tl_expected/expected.hpp with RCR's native tl-expected
+provider. Inspect the actual autoware_traffic_light_compliance_checker diff in
+merged AWF PR #13622: replace that header with tl/expected.hpp and the manifest
+dependency with libexpected-dev. Apply only those two changes to this currently
+exposed package, preserving implementation and all assertions. Bazel continues
+to use pinned native tl-expected1.3.1 through @rosdistro//cc:tl_expected; the
+manifest correction does not introduce a host apt dependency. Commit the source
+compatibility fix separately; its upstream association is in UPSTREAM_AWF.md.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  @autoware_traffic_light_compliance_checker//...
+```
+
+Results after the aligned fix: all three non-test targets and all 23 original
+cases pass, zero failures/errors/skips/disabled. The package-specific invocation
+reuses the passing joint result (.9 s invocation, cached test .2 s). The original
+traffic-light fixtures exercise real Lanelet2 regulatory elements and crossing
+rules. No older ROS/colcon, real signal timing or full system communication gate
+is claimed. Source-range formatting and diff checks pass.

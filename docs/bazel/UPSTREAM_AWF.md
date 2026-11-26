@@ -2551,3 +2551,18 @@ path against the pinned SDK using the materialized v1.0 model: CPU inference,
 threshold/shape behavior and model-backed alignment all pass. The local indexed
 model-resource default (`7d8f16d3`) is separate integration work, outside that PR's scope.
 No local TensorFlow failure reproduction or field-accuracy claim is made.
+
+### Traffic-light compliance checker: native expected compatibility
+
+- [x] Associate with merged
+  [PR #13622](https://github.com/autowarefoundation/autoware_universe/pull/13622).
+  Checked 2026-11-26: its actual compliance-checker header/manifest diff matches
+  tl/expected.hpp plus libexpected-dev. This package independently exposes the
+  missing wrapper header during Phase 9.10 compilation.
+
+The complete original 23-case checker/tracker suite passes after those two
+package-scoped changes, without assertion changes or skips. Reproduce with the
+module gate in the Phase 9.10 journal. Bazel uses the existing native
+@rosdistro//cc:tl_expected provider, not a host-installed package. No older ROS
+or colcon validation is claimed; unrelated expected users are left for their
+own exposed consumer tasks.
