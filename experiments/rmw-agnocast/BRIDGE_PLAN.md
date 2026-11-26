@@ -1,5 +1,9 @@
 # Inter-host topics and recording with rmw_agnocast
 
+## Stage 1 migration qualification
+
+Run the [single-laptop migration and conformance job](rehearsal/README.md) before advancing the deployment baseline. The checked-in case inventory makes API regressions visible and records outstanding differences. Physical-host qualification and an independent developer following the tutorial remain open.
+
 ## Next colcon experiments in order
 
 The configured gateway at `fe8ce6977` is the control. Grouped routes, both startup modes, and laptop loopback delivery already have Cyclone DDS and Zenoh evidence. Recorder outages and isolated network tests have more extensive Cyclone coverage. The following queue takes precedence over historical next steps later in this document.

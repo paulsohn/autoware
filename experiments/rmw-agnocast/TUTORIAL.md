@@ -16,7 +16,7 @@ git rev-parse --short HEAD
 cat src/core/agnocast/agnocast_kmod/version.txt
 ```
 
-Save the commit ID alongside your project's dependencies. This walkthrough was checked against middleware revision `761e6029`. The kernel module version for this recipe is **2.4.1**. Install the build tools on the development host if missing. These instructions assume your existing ROS apt repository and rosdep initialization.
+Save the commit ID alongside your project's dependencies. The automated rehearsal records the exact middleware revision and application hashes for each run. The kernel module version for this recipe is **2.4.1**. Install the build tools on the development host if missing. These instructions assume your existing ROS apt repository and rosdep initialization.
 
 ```bash
 sudo apt install clang-21 g++-15 curl python3-colcon-common-extensions python3-rosdep ros-lyrical-rmw-zenoh-cpp ros-lyrical-rosbag2-storage-default-plugins
@@ -48,6 +48,8 @@ export RMW_IMPLEMENTATION=rmw_zenoh_cpp
 export CC=/usr/bin/clang-21
 export CXX=/usr/bin/clang++-21
 export CMAKE_BUILD_PARALLEL_LEVEL=1
+export MAKEFLAGS=-j1
+export PYTHON_CPU_COUNT=1
 colcon --log-base build/migration-guide/log build \
   --build-base build/migration-guide/obj \
   --install-base build/migration-guide/install \
@@ -108,6 +110,8 @@ From your own project's clean workspace root, run your usual colcon build. For e
 source /opt/ros/lyrical/setup.bash
 source "$HOME/rmw-agnocast-pilot/build/migration-guide/install/local_setup.bash"
 export CMAKE_BUILD_PARALLEL_LEVEL=1
+export MAKEFLAGS=-j1
+export PYTHON_CPU_COUNT=1
 colcon build --executor sequential
 ```
 
@@ -120,6 +124,8 @@ git checkout cc721964a79192e46db0111c0ba9f6a831fc9395
 source /opt/ros/lyrical/setup.bash
 source "$HOME/rmw-agnocast-pilot/build/migration-guide/install/local_setup.bash"
 export CMAKE_BUILD_PARALLEL_LEVEL=1
+export MAKEFLAGS=-j1
+export PYTHON_CPU_COUNT=1
 colcon build --executor sequential \
   --base-paths rclcpp/topics \
   --packages-select examples_rclcpp_minimal_publisher examples_rclcpp_minimal_subscriber \
@@ -236,9 +242,14 @@ The installed `zenoh.json` selects a Zenoh worker. Start your Zenoh router befor
 | A cluster subscription reports “unsupported Buffer wire type” | The older standalone library rejected enclosing types such as DetectedObjectsWithFeature when creating the endpoint. Check the sourced middleware prefix in both processes. Use the revision with generated CDR support for enclosing Buffer fields. |
 | Two local nodes start but no samples arrive | Check the resolved topic, compatible QoS, domain, effective user, IPC namespace and shared /dev/shm. Verify both can access the device and resolve the same middleware overlay and hook. Start the worked String pair to isolate application-specific problems. |
 
-To return to Cyclone, stop the migrated processes. Open fresh terminals, source the same Lyrical, middleware and application overlays, select your usual Cyclone configuration and restart the same binaries.
+## 9. Check your migration and roll back
+
+To return the example to Cyclone, stop the native processes and any manually started gateway. Open fresh shells, source the same Lyrical, middleware and application overlays, and run the same executables.
 
 ```bash
 unset LD_PRELOAD
+unset RMW_AGNOCAST_GATEWAY_CONFIG
 export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
 ```
+
+Launch the listener and talker from step 5 again and check that their sequence advances. The [automated rehearsal](rehearsal/README.md) checks the hashes of both running executables across migration and rollback, decodes both bags, and stops and replaces a live gateway.
