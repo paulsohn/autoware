@@ -2044,3 +2044,19 @@ payload cases per backend and two component cases, without skips. The component
 test invokes the original image launch and validates exact pixels, frame and
 stamp. The payload test checks image/cloud device round trips and a separate
 process receiving the async publisher's image through the selected backend.
+
+## Common trajectory checks and goal distance
+
+Use @autoware_boundary_departure_checker, @autoware_obstacle_proximity_checker
+and @autoware_traffic_light_compliance_checker as C++ library providers. Their
+:runtime_dynamic_deps targets expose canonical SDK owners to shared consumers.
+Run each changed module's complete //... suite.
+
+The goal-distance node requires live map-to-base_link TF and a LaneletRoute on
+/planning/mission_planning/route. It waits for its first pose during construction,
+publishes lateral/longitudinal/yaw deviations from the goal frame and suppresses
+poses older than one second. Run @autoware_goal_distance_calculator//... with
+//bazel/tests:goal_distance_test after changes. Keep the test's TF publisher
+independent of node startup so construction can complete; refresh timestamps
+when checking live inputs. Pure geometry tests do not cover timer input transfer
+or freshness behavior.

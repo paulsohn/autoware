@@ -1,0 +1,47 @@
+load("@rclcpp_components//:defs.bzl", "rclcpp_components_register_node")
+load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "autoware_goal_distance_calculator_library",
+    srcs = ["src/goal_distance_calculator.cpp", "src/goal_distance_calculator_node.cpp"],
+    hdrs = ["include/autoware/goal_distance_calculator/goal_distance_calculator.hpp", "include/autoware/goal_distance_calculator/goal_distance_calculator_node.hpp"],
+    includes = ["include", "src"],
+    deps = ["@autoware_internal_debug_msgs//:cc", "@autoware_planning_msgs//:cc", "@autoware_utils", "@geometry_msgs//:cc", "@rclcpp_components//:rclcpp_components_library"],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = ["@autoware_internal_debug_msgs//:cc_shared", "@autoware_planning_msgs//:cc_shared", "@autoware_utils//:runtime_dynamic_deps", "@rclcpp_components//:rclcpp_components"],
+)
+
+cc_shared_library(
+    name = "autoware_goal_distance_calculator",
+    shared_lib_name = "libautoware_goal_distance_calculator.so",
+    deps = [":autoware_goal_distance_calculator_library"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+)
+
+rclcpp_components_register_node(
+    name = "autoware_goal_distance_calculator_node",
+    component = ":autoware_goal_distance_calculator",
+    plugin = "autoware::goal_distance_calculator::GoalDistanceCalculatorNode",
+    node_name = "autoware_goal_distance_calculator_node",
+)
+
+register_ament_files(
+    name = "executables",
+    files = [":autoware_goal_distance_calculator_node"],
+    prefix = "lib/autoware_goal_distance_calculator",
+    strip_prefix = "*",
+)
+
+ament_index(
+    package_xml = "package.xml",
+    libraries = [":autoware_goal_distance_calculator"],
+    components = [":autoware_goal_distance_calculator_node_record"],
+    data = glob(["launch/**", "config/**"]) + [":executables"],
+)

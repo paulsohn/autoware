@@ -2731,3 +2731,12 @@ py_test(
     precompile = "disabled",
     deps = ["@ament_index_python", "@launch", "@launch_ros", "@launch_xml", "@rules_python//python/runfiles"],
 )
+
+cc_test(
+    name = "goal_distance_test",
+    srcs = ["autoware_goal_distance_calculator/test_goal.cpp"],
+    deps = ["@autoware_goal_distance_calculator//:autoware_goal_distance_calculator_library", "@googletest//:gtest_main"],
+    dynamic_deps = ["@autoware_goal_distance_calculator", "@autoware_goal_distance_calculator//:runtime_dynamic_deps"],
+    data = [],
+    tags = ["no-sandbox", "no-remote"],
+)

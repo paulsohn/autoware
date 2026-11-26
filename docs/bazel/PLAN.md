@@ -124,6 +124,7 @@ only when your current target demonstrates the need.
   middleware configurations before implementing each task.
   [Steady-state expensive-target policy](DEVELOPING.md#expensive-targets);
   [evidence: opt-in selection](JOURNAL.md#2026-11-23-phase-75--opt-in-expensive-system-and-deployment-targets);
+  [live-node input ownership and freshness evidence](JOURNAL.md#2026-11-26-phase-910--goal-distance-and-live-input-ownership);
   [ROS-time boundary evidence](JOURNAL.md#2026-11-22-phase-732--perception-metric-windows-at-ros-time-zero);
   [Backend executor convention](DEVELOPING.md#switchable-standalone-nodes);
   [evidence: complete Agnocast test inventory](JOURNAL.md#2026-11-15-phase-41--adopt-the-complete-agnocast-library-test-inventory);
@@ -2456,6 +2457,8 @@ autoware_boundary_departure_checker: complete; exact gates and evidence are in i
 autoware_obstacle_proximity_checker: complete; exact gates and evidence are in its Phase 9.10 journal.
 
 autoware_traffic_light_compliance_checker: complete; all 23 original cases pass.
+
+autoware_goal_distance_calculator: complete; rotated-frame, live-node and stale-pose cases pass.
 
 ### Execution order through complete Universe coverage
 

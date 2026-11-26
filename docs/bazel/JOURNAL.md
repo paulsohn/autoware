@@ -23150,3 +23150,10 @@ case requires longitudinal3/lateral-2/yaw-minus-pi-over-two; the live node must
 publish longitudinal3/lateral2/yaw0, while stale TF must publish nothing. This
 exposes integration defects that a pure library-only gate would miss. No real
 vehicle accuracy, older ROS/CMake or full communication matrix is claimed.
+
+Build pattern: one two-source shared owner, plain component registration and
+executable/index records, using the existing local utility/message providers and
+their canonical SDK runtime owners. Keep config/launch with the package and the
+three added cases under bazel/tests. Source correctness fix: 93b3d6dad. No original
+test changes are needed. Next: finish the path-distance wrapper gate before
+moving to trajectory adaptation/concatenation and validation.

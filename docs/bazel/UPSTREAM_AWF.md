@@ -2571,6 +2571,8 @@ own exposed consumer tasks.
 
 ### Goal-distance node loses inputs and reverses the pose age
 
+Local source fix: `93b3d6dad`.
+
 - [ ] Associate with a matching upstream fix. Checked 2026-11-26: current
   [node implementation](https://github.com/autowarefoundation/autoware_universe/blob/main/common/autoware_goal_distance_calculator/src/goal_distance_calculator_node.cpp)
   still takes both shared-pointer output arguments by value and computes
