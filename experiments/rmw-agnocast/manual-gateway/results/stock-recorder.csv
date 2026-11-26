@@ -1,0 +1,17 @@
+backend,route_policy,recorder_selection,recorder_order,publisher_seen_ns,subscription_seen_ns,send_signal_ns,sent,decoded,first,last
+cyclone,dynamic,explicit,early,,,7607436600642,40,0,,
+cyclone,dynamic,explicit,late,,,7615619242944,40,0,,
+cyclone,dynamic,all,early,,,7623856511435,40,0,,
+cyclone,dynamic,all,late,,,7632024519697,40,0,,
+cyclone,configured,explicit,early,7635092644334,7635476496646,7640273725432,40,40,0,39
+cyclone,configured,explicit,late,7643333914919,7645412606317,7648515601708,40,40,0,39
+cyclone,configured,all,early,7651575525639,7651959960229,7656740377107,40,40,0,39
+cyclone,configured,all,late,7659818333535,7661837646991,7664957618485,40,40,0,39
+zenoh,dynamic,explicit,early,,,7685996405047,40,0,,
+zenoh,dynamic,explicit,late,,,7693809223816,40,0,,
+zenoh,dynamic,all,early,,,7701549229412,40,0,,
+zenoh,dynamic,all,late,,,7709343012041,40,0,,
+zenoh,configured,explicit,early,7712005009115,7712388129390,7717341583908,40,40,0,39
+zenoh,configured,explicit,late,7719928597996,7721971248245,7725078367597,40,40,0,39
+zenoh,configured,all,early,7727676757230,7728103724943,7732838304577,40,40,0,39
+zenoh,configured,all,late,7735461684851,7737504800358,7740632194836,40,40,0,39

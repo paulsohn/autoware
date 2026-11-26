@@ -33,7 +33,8 @@ if [[ $op == gateway ]]; then
   pidfile=$1
   shift
   export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp CYCLONEDDS_URI="${GATEWAY_CYCLONE_PROFILE:-file:///ws/build/lyrical-peer-ready/host.xml}"
-  exec ros2 run --prefix "bash $0 capture-pid $pidfile" agnocast_cyclone_gateway topic_gateway "$@" --heaphook "$hook"
+  if [[ $1 != --config ]]; then set -- "$@" --heaphook "$hook"; fi
+  exec ros2 run --prefix "bash $0 capture-pid $pidfile" agnocast_cyclone_gateway topic_gateway "$@"
 fi
 if [[ $op == ingress-reader ]]; then
   export RMW_IMPLEMENTATION=rmw_agnocast LD_PRELOAD="$hook"

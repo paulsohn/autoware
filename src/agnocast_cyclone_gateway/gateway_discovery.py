@@ -54,17 +54,16 @@ def snapshot(node, prefix):
             for topic, cls, version, value, role, qos in sorted(rows)]
 
 
-def endpoint_rows(message):
+def endpoint_rows(endpoints):
     from rmw_agnocast_discovery_msgs.msg import DiscoveryEndpoint
     roles = {DiscoveryEndpoint.PUBLISHER: "pub", DiscoveryEndpoint.SUBSCRIPTION: "sub"}
     policies = {DiscoveryEndpoint.RELIABLE: "reliable", DiscoveryEndpoint.BEST_EFFORT: "best_effort"}
     return [(ep.topic_name, ep.type_name, (ep.type_hash.version, bytes(ep.type_hash.value)),
-             roles[ep.role], policies[ep.reliability]) for ep in message.endpoints]
+             roles[ep.role], policies[ep.reliability]) for ep in endpoints]
 
 
-def wanted_routes(local, peers, fixed):
+def wanted_routes(local, remote, fixed):
     # Require matching type identity and compatible reliability. Refuse ambiguous directions or types.
-    remote = {tuple(row) for _, _, rows in peers.values() for row in rows}
     types = {}
     for topic, cls, identity, _, _ in [*local, *remote]:
         types.setdefault(topic,set()).add((cls,identity))
@@ -100,7 +99,7 @@ def network_loop(node, channel, config, gateway, ready):
         if origin == island or message.generation < peers.get(origin, (0, 0, ()))[1]:
             return
         try:
-            rows = endpoint_rows(message)
+            rows = endpoint_rows(message.endpoints)
         except KeyError:
             return  # Unknown role or reliability in this protocol version.
         peers[origin] = (time.monotonic(), message.generation, rows)
@@ -115,14 +114,17 @@ def network_loop(node, channel, config, gateway, ready):
             except BlockingIOError:
                 break
             announcement = deserialize_message(payload, IslandSnapshot)
-            local = endpoint_rows(announcement)
+            local = endpoint_rows(announcement.endpoints)
         now = time.monotonic()
         if announcement is not None:
             pub.publish(announcement)
         for key in list(peers):
             if now-peers[key][0]>LEASE:
                 del peers[key]
-        wanted = wanted_routes(local, peers, config["fixed"])
+        remote = {row for _, _, rows in peers.values() for row in rows}
+        prefix = config.get("discovery_namespace", "/").rstrip("/") + "/"
+        remote.update(endpoint_rows(snapshot(node, prefix)))
+        wanted = wanted_routes(local, remote, config["fixed"])
         for topic, (spec, proc) in list(active.items()):
             if proc.poll() is not None or wanted.get(topic)!=spec:
                 if proc.poll() is None:

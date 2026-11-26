@@ -16,7 +16,7 @@ assert configured_routes(dict(dynamic_discovery=True, heaphook="/hook")) == []
 writer = ["/a","std_msgs/msg/String","hash","pub","best_effort"]
 reader = [*writer[:3],"sub","best_effort"]
 def match(local, remote, fixed=()):
-    return wanted_routes(local, {"peer":(0,1,remote)}, fixed)
+    return wanted_routes(local, remote, fixed)
 assert "/a" in match([writer],[reader])
 assert not match([writer],[reader],["/a"])
 assert not match([writer],[[*reader[:4],"reliable"]])

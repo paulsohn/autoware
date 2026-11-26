@@ -129,6 +129,24 @@ ros2 topic echo /_rmw_agnocast/discovery_v2 rmw_agnocast_discovery_msgs/msg/Isla
 ```
 
 
+### Record from a stock network peer
+
+An ordinary Cyclone DDS or Zenoh node can trigger a same-name route by creating a compatible publisher or subscription in the discovery namespace. It needs the application message type, its usual network RMW and the gateway's ROS domain. The gateway reads the network graph directly. Install the discovery messages on hosts running a gateway.
+
+For a stock Lyrical recorder, add the topic to the gateway's `exports` list even with dynamic discovery enabled. For example, add this field to the discovery configuration above:
+
+```json
+"exports": [{"topic": "/sensing/cloud", "type": "sensor_msgs/msg/PointCloud2"}]
+```
+
+Start the gateway, then run the recorder on the peer:
+
+```bash
+ros2 bag record --topics /sensing/cloud -o cloud-bag
+```
+
+The configured export advertises the topic on the network before a reader exists. Once rosbag2 subscribes, the gateway starts taking native samples. With discovery alone, both `--topics` and `-a` waited for the publisher advertisement while the exporter waited for a subscription. Starting the recorder first or last gave the same result on both network backends. Wait for the gateway's `source armed` before publishing if the bag must contain the first sample.
+
 ### Select the gateway network
 
 The installed package provides [cyclonedds.json](../../../src/agnocast_cyclone_gateway/config/cyclonedds.json) and [zenoh.json](../../../src/agnocast_cyclone_gateway/config/zenoh.json). Each exports native /topic as /from_robot/topic and imports network /to_robot/commands as local /commands. Cyclone is the default when network_rmw is omitted. The package retains its existing name and Cyclone dependency. Install rmw_zenoh_cpp on the gateway and peer to select Zenoh, and start a reachable Zenoh router using your usual session configuration. On the peer select the same RMW and ROS domain.

@@ -4460,3 +4460,44 @@ experiments/buffer/run-lyrical.sh bash experiments/rmw-agnocast/standalone/build
 ```
 
 All eight cells passed on the laptop with separate container IPC namespaces. On each network backend, the writer and reader override probes rejected domain 18 twice in a process registered in 17, including after changing the environment to 18. Neither attempt launched the gateway executable. The original context and a newly created aligned context then exchanged 10/10 ordered samples. Inherited domains 17 and 18 delivered their respective 20/20 sequences locally and across the gateway with both automatic and manual launch. Minimum host MemAvailable across guarded domain trials was 14327 MiB.
+
+## Discover ordinary network endpoints and qualify stock recorder bootstrap
+
+The gateway previously matched native inventory snapshots only. A stock subscriber already exposes its type, type hash, role and QoS on the network graph. Scan that graph from the existing network discovery worker, apply the same namespace and gateway-node filters, and merge its endpoints with peer announcements before the existing route matcher. The discovery protocol and application RMW stay unchanged.
+
+Rebuild the two gateway packages using the guarded colcon command in the manual gateway README. From the colcon worktree run:
+
+```bash
+PYTHONPATH=src/agnocast_cyclone_gateway python3 experiments/rmw-agnocast/islands/check-policy.py
+sg docker -c 'ISLAND_STOCK=1 ISLAND_DISCOVERY=1 experiments/buffer/run-limited.sh python3 experiments/rmw-agnocast/islands/control.py build/manual-gateway/stock-peer-replay'
+```
+
+The peer sources only the Lyrical distro and has no native device or workspace overlay. Ordinary typed readers and writers delivered all 40 ordered Int32 samples in each direction on both networks. The recorder matrix ran two policies, two recorder selections and both source/recorder launch orders for each network; each publisher sent 0 through 39 after both processes started. A passive stock node polled publisher and subscriber counts while rosbag2 recorded MCAP. Decoded target counts were 0/40 in all eight demand-only bags and 40/40 in all eight configured-export bags. The observer saw neither target endpoint on the wire in the demand-only cases. A configured export advertised first and the recorder subscribed before the send signal. The initial explicit-topic probe used obsolete positional CLI syntax; the measured cases used Lyrical's --topics option or -a. See the [per-bag counts and monotonic graph observations](../rmw-agnocast/manual-gateway/results/stock-recorder.csv). The memory guard recorded at least 14264 MiB host MemAvailable. Keep explicit exports for loggable topics today; the evidence does not require advertising every native topic.
+
+## Measure the discovery startup cost and replay a stock three-LiDAR recorder
+
+Use the same guarded colcon installation and laptop containers. The two-island fixture uses Cyclone unicast or a Zenoh router on the private network. Five repetitions per route, payload and backend compare cold launch to first correct sample, publisher-to-reader callback latency on the shared laptop monotonic clock, and idle resources after endpoints leave. It checks 20 consecutive messages per launch and 20 more on discovered rejoin. Int32 runs at 20 Hz. PointCloud2 runs at 10 Hz with a 655360-byte data field; the reader checks its layout and all data bytes. Times include both gateway hops, Python bindings and scheduling. The nearest-rank p95 is the 19th of 20 samples, so use run-to-run spread when interpreting differences. The three-second idle interval sums RSS (shared pages can count more than once), CPU across gateway processes on both sides, and interface bytes including control traffic.
+
+```bash
+sg docker -c 'bash experiments/rmw-agnocast/islands/paired.sh build/manual-gateway/paired-replay'
+python3 experiments/rmw-agnocast/islands/paired-report.py build/manual-gateway/paired-replay
+sg docker -c 'docker start awpilot0-stock'
+sg docker -c 'python3 experiments/rmw-agnocast/manual-gateway/check.py build/manual-gateway/universe-replay --discovery-control sustained-control'
+```
+
+The first alternating series exposed a control mismatch: positional configured workers defaulted to best-effort input, while the discovered workers selected the reliable publisher profile. The corrected fixture explicitly sets reliable input and output with depth ten. Retain the original measurements with their QoS and use only reliable rows for latency comparisons. The corrected configured controls ran as a second block on the same laptop, so small differences can include host drift. The checked-in replay alternates both matched configurations.
+
+With dynamic discovery running and a configured recorder export, the standalone CIE Universe graph produced 600 three-LiDAR output groups in the sustained Cyclone trial. Both the local and remote stock bag contained all 600 clouds in order; every remote message matched its local reference including stamp and payload. The tracker verified 596/596 steady outputs. The two gateway data workers each reported 600 samples and 393334200 serialized bytes, with zero overwritten. Minimum guarded host MemAvailable was 13216 MiB during the workload. Physical links, large graph sweeps and churn under load remain separate qualification.
+
+Median of five run summaries for each matched-QoS cell. Each run delivered 20/20. All discovered rejoins also delivered 20/20. The [run table](../rmw-agnocast/manual-gateway/results/discovery-pairs.csv) includes the original best-effort controls, per-run spread and idle interface bytes.
+
+| Network | Payload | Route | Cold first (ms) | Delivery median (µs) | Delivery p95 (µs) | Idle CPU (% of one core) | Idle summed RSS (MiB) |
+| --- | --- | --- | ---: | ---: | ---: | ---: | ---: |
+| cyclone | Int32 | configured | 744.69 | 797.84 | 1105.11 | 2.18 | 291.6 |
+| cyclone | Int32 | discovered | 2377.76 | 748.85 | 1086.23 | 1.56 | 282.4 |
+| cyclone | 640KiB | configured | 836.03 | 5875.69 | 7332.89 | 2.18 | 327.8 |
+| cyclone | 640KiB | discovered | 2437.43 | 7201.66 | 8752.55 | 1.56 | 283.5 |
+| zenoh | Int32 | configured | 753.21 | 857.13 | 1429.01 | 1.87 | 305.7 |
+| zenoh | Int32 | discovered | 2355.64 | 711.79 | 1377.56 | 1.25 | 295.6 |
+| zenoh | 640KiB | configured | 799.82 | 5659.49 | 7133.68 | 1.56 | 342.0 |
+| zenoh | 640KiB | discovered | 2396.15 | 6308.02 | 7918.52 | 1.56 | 295.8 |

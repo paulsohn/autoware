@@ -12,16 +12,30 @@ TOPIC = "/island_control/data"
 if len(sys.argv) > 1 and sys.argv[1] in ("writer", "reader"):
     import rclpy
     from std_msgs.msg import Int32
+    from sensor_msgs.msg import PointCloud2, PointField
+    cloud = os.getenv("ISLAND_CLOUD") == "1"
+    cls = PointCloud2 if cloud else Int32
+    data = bytes(range(256)) * 2560 if cloud else b""
+    def message(seq):
+        if not cloud:
+            return Int32(data=seq)
+        msg = PointCloud2(height=1, width=len(data)//4, point_step=4, row_step=len(data),
+                          fields=[PointField(name="x", offset=0, datatype=PointField.FLOAT32, count=1)])
+        msg.header.stamp.sec = seq
+        msg.data.frombytes(data)
+        return msg
     rclpy.init()
     node = rclpy.create_node("island_" + sys.argv[1])
     received = []
     timestamps = []
     def record(msg):
         timestamps.append(time.monotonic_ns())
-        received.append(msg.data)
+        if cloud:
+            assert msg.row_step == len(data) and msg.data.tobytes() == data
+        received.append(msg.header.stamp.sec if cloud else msg.data)
     writer = sys.argv[1] == "writer"
-    endpoint = (node.create_publisher(Int32, TOPIC, 64) if writer else
-                node.create_subscription(Int32, TOPIC, record, 64))
+    endpoint = (node.create_publisher(cls, TOPIC, 64) if writer else
+                node.create_subscription(cls, TOPIC, record, 64))
     unlisted = "/island_control/unlisted"
     # These endpoints stay live through configured delivery and must never match in static mode.
     if os.getenv("ISLAND_STATIC_WITNESS"):
@@ -37,7 +51,7 @@ if len(sys.argv) > 1 and sys.argv[1] in ("writer", "reader"):
         count = endpoint.get_subscription_count() if writer else endpoint.get_publisher_count()
         assert count == 0 and not received, (count, received)
         if writer:
-            endpoint.publish(Int32(data=-1))
+            endpoint.publish(message(-1))
         rclpy.spin_once(node, timeout_sec=.03)
     Path("/tmp/isolated").touch()
     while not (endpoint.get_subscription_count() if writer else endpoint.get_publisher_count()):
@@ -46,9 +60,10 @@ if len(sys.argv) > 1 and sys.argv[1] in ("writer", "reader"):
     if writer:
         # The export subscription is created after the importer matches over the wire.
         for i in range(20):
+            msg = message(i)
             timestamps.append(time.monotonic_ns())
-            endpoint.publish(Int32(data=i))
-            time.sleep(.05)
+            endpoint.publish(msg)
+            time.sleep(.1 if cloud else .05)
     else:
         while len(received) < 20:
             assert time.monotonic() < end, received
@@ -79,11 +94,12 @@ def trial(backend, dynamic):
         stack.callback(docker,"network","rm",net)
         islands = []
         memory = "768m" if os.getenv("ISLAND_DOMAINS") else "512m"
+        stock = os.getenv("ISLAND_STOCK") == "1"
         for i in range(2):
             container = docker("run","-d","--pull=never","--network",net,"--ipc=private",
-                f"--memory={memory}",f"--memory-swap={memory}","--device=/dev/agnocast",
-                "-v",f"{ws}:/ws:ro","-v",f"{Path('build/agnocast-lyrical/universe-root').read_text().strip()}/opt/ros/lyrical:/opt/ros/lyrical:ro",
-                "--entrypoint=sleep",image,"180")
+                f"--memory={memory}",f"--memory-swap={memory}",*([] if stock and i else ["--device=/dev/agnocast"]),
+                "-v",(f"{ws}/experiments/rmw-agnocast/islands:/fixture:ro" if stock and i else f"{ws}:/ws:ro"),"-v",f"{Path('build/agnocast-lyrical/universe-root').read_text().strip()}/opt/ros/lyrical:/opt/ros/lyrical:ro",
+                "--entrypoint=sleep",image,"360" if stock else "180")
             stack.callback(docker,"rm","-f",container)
             islands.append(container)
         ips = [docker("inspect","-f","{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}",c) for c in islands]
@@ -95,14 +111,19 @@ def trial(backend, dynamic):
             xml=f'<CycloneDDS><Domain><General><Interfaces><NetworkInterface name="eth0"/></Interfaces><AllowMulticast>false</AllowMulticast></General><Discovery><ParticipantIndex>auto</ParticipantIndex><Peers><Peer Address="{ips[1-i]}"/></Peers></Discovery></Domain></CycloneDDS>'
             args=["docker","--context","default","exec","-e","ROS_DOMAIN_ID=175","-e","HOME=/tmp",
                   "-e",f"CYCLONEDDS_URI={xml}","-e",f'ZENOH_CONFIG_OVERRIDE=connect/endpoints=["tcp/{ips[0]}:7447"];listen/endpoints=["tcp/{ips[i]}:0"]',
-                  *([] if dynamic else ["-e","ISLAND_STATIC_WITNESS=1"]),*environment,islands[i],"bash","-ec",setup+("export LD_PRELOAD="+hook+" RMW_IMPLEMENTATION=rmw_agnocast\n" if native else "")+"exec "+command]
+                  "-e", "ISLAND_CLOUD=" + os.getenv("ISLAND_CLOUD", "0"),
+                  *([] if dynamic else ["-e","ISLAND_STATIC_WITNESS=1"]),*environment,islands[i],"bash","-ec",("source /opt/ros/lyrical/setup.bash\n" if stock and i else setup)+("export LD_PRELOAD="+hook+" RMW_IMPLEMENTATION=rmw_agnocast\n" if native else "")+"exec "+command]
             return subprocess.Popen(args,stdout=log,stderr=subprocess.STDOUT)
-        if os.getenv("ISLAND_DOMAINS"):
-            from domains import exercise
-            if backend=="zenoh":
+        if stock or os.getenv("ISLAND_DOMAINS"):
+            if backend == "zenoh":
                 run(0,"router","env -u ZENOH_CONFIG_OVERRIDE /opt/ros/lyrical/lib/rmw_zenoh_cpp/rmw_zenohd")
                 time.sleep(.5)
-            exercise(backend, islands, run, docker, hook, out, os.environ["ISLAND_DOMAINS"])
+            if stock:
+                from stock import exercise
+                exercise(backend, islands, run, docker, hook, out)
+            else:
+                from domains import exercise
+                exercise(backend, islands, run, docker, hook, out, os.environ["ISLAND_DOMAINS"])
             return
         apps=[run(i,role,"python3 /ws/experiments/rmw-agnocast/islands/control.py "+role,True)
               for i,role in enumerate(("writer","reader"))]
@@ -136,10 +157,12 @@ def trial(backend, dynamic):
         for i,direction in ((1,"import"),(0,"export")):
             config=dict(dynamic_discovery=dynamic, network_rmw="rmw_"+("cyclonedds" if backend=="cyclone" else backend)+"_cpp",
                         heaphook=hook, discovery_namespace="/island_control")
+            if os.getenv("ISLAND_PROFILE") == "1":
+                config["qos"] = dict(input_reliability="reliable", output_reliability="reliable", depth=10)
             if os.getenv("ISLAND_LIFECYCLE")=="1":
                 config[direction+"s"]=[dict(topic="/island_control/pinned",type="std_msgs/msg/Int32")]
             if not dynamic:
-                config[direction+"s"]=[dict(topic=TOPIC,type="std_msgs/msg/Int32")]
+                config[direction+"s"]=[dict(topic=TOPIC,type="sensor_msgs/msg/PointCloud2" if os.getenv("ISLAND_CLOUD")=="1" else "std_msgs/msg/Int32")]
             subprocess.run(["docker","exec","-i",islands[i],"tee","/tmp/gateway.json"],
                            input=json.dumps(config), text=True, stdout=subprocess.DEVNULL,check=True)
             gateway.append(start_gateway(i,direction))
@@ -174,6 +197,37 @@ def trial(backend, dynamic):
             for app in apps:
                 assert app.wait(timeout=40)==0
             result["rejoin"]=timings()
+        if os.getenv("ISLAND_PROFILE") == "1":
+            # Both apps have exited. Observe only gateway processes over the same idle interval.
+            sample = """import json, os
+from pathlib import Path
+rows = {}
+for p in Path('/proc').glob('[0-9]*'):
+    try:
+        args = (p/'cmdline').read_bytes().split(b'\\0')
+        if not any(a.endswith((b'/topic_gateway', b'/gateway_discovery.py')) for a in args):
+            continue
+        stat = (p/'stat').read_text().rsplit(')',1)[1].split()
+        rows[p.name] = [int(stat[11])+int(stat[12]), int(stat[21])*os.sysconf('SC_PAGE_SIZE')]
+    except FileNotFoundError:
+        pass
+print(json.dumps(rows))"""
+            time.sleep(3)
+            def idle_sample():
+                return [json.loads(docker("exec",c,"python3","-c",sample)) for c in islands]
+            initial = idle_sample()
+            net_before = counters()
+            t0 = time.monotonic()
+            time.sleep(3)
+            final = idle_sample()
+            elapsed = time.monotonic() - t0
+            assert all(a and a.keys()==b.keys() for a,b in zip(initial,final)), (initial,final)
+            ticks = sum(v[0]-a[k][0] for a,b in zip(initial,final) for k,v in b.items())
+            result["input_reliability"] = "reliable"
+            result["idle"] = dict(workers=sum(map(len, final)), seconds=elapsed,
+                cpu_percent=100*ticks/os.sysconf("SC_CLK_TCK")/elapsed,
+                summed_rss_bytes=sum(v[1] for b in final for v in b.values()),
+                eth0_delta=[x-y for x,y in zip(counters(),net_before)])
         (out/(backend+"-timing.json")).write_text(json.dumps(result))
         delta=[a-b for a,b in zip(counters(),before)]
         assert min(delta)>0

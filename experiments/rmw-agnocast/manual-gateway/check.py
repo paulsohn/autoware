@@ -1,6 +1,7 @@
 """Sequential gateway laptop replay with the prepared, device-free Lyrical peer."""
 import argparse
 import csv
+import json
 import os
 from pathlib import Path
 import re
@@ -12,7 +13,11 @@ import threading
 parser = argparse.ArgumentParser()
 parser.add_argument("output", type=Path)
 parser.add_argument("cases", nargs="+", choices=["absent","idle","active","restart","crash","late","conflict","ingress","stall","partition","writer-stall","sustained","sustained-control","dual-active","dual-writer-stall","dual-restart"])
+parser.add_argument("--discovery-control", action="store_true",
+                    help="advertise the recorder export with dynamic discovery running")
 args = parser.parse_args()
+if args.discovery_control and args.cases != ["sustained-control"]:
+    parser.error("--discovery-control requires the sustained-control case")
 args.output.mkdir()
 peer = "awpilot0-stock"
 env = dict(os.environ, LYRICAL_ROOT=Path("build/agnocast-lyrical/universe-root").read_text().strip(),
@@ -89,6 +94,12 @@ for index, mode in enumerate(args.cases):
     def gateway(name):
         route = (["import","geometry_msgs/msg/PoseArray","/peer/poses","/manual/local_poses"]
                  if mode == "ingress" or name == "import" else ["export","sensor_msgs/msg/PointCloud2","/output","/manual/cloud"])
+        if args.discovery_control:
+            config = case/"gateway.json"
+            config.write_text(json.dumps(dict(dynamic_discovery=True,
+                heaphook="/ws/build/migration-guide/packaged-hook-check/libagnocast_heaphook.so",
+                exports=[dict(topic="/output", remap_to="/manual/cloud", type="sensor_msgs/msg/PointCloud2")])))
+            route = ["--config", str(config)]
         p = start(name,host+["gateway",str(case/(name+".pid")),*route])
         owned_gateways[name] = p
         wait(lambda:contains(name,"ready role=source") and contains(name,"ready role=destination"), p)
