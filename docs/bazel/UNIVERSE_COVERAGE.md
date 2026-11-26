@@ -21,8 +21,8 @@ may contain multiple package commits and smaller execution batches. Update the
 ledger when a package closes or the source snapshot changes; this is a planning
 record, not a new build-time completeness validator.
 
-Current adoption progress, 2026-11-26: **149/244** packages have both definitions
-and root local overrides; **95** remain without definitions. The census table
+Current adoption progress, 2026-11-26: **150/244** packages have both definitions
+and root local overrides; **94** remain without definitions. The census table
 below preserves the initial 2026-11-23 baseline. Checked ledger items record
 completed module gates; Phase 9.7 is complete. See PLAN.md and the
 package journals for configuration and behavior evidence.
@@ -285,7 +285,7 @@ Adopt landmark support before its localizers, using point-cloud support from 9.4
 - [x] [autoware_pose_estimator_arbiter](../../src/universe/autoware_universe/localization/autoware_pose_estimator_arbiter/package.xml)
 - [x] [autoware_pose_initialization_requester](../../src/universe/autoware_universe/localization/autoware_pose_initialization_requester/package.xml)
 - [x] [autoware_pose_instability_detector](../../src/universe/autoware_universe/localization/autoware_pose_instability_detector/package.xml)
-- [ ] [autoware_ar_tag_based_localizer](../../src/universe/autoware_universe/localization/autoware_landmark_based_localizer/autoware_ar_tag_based_localizer/package.xml)
+- [x] [autoware_ar_tag_based_localizer](../../src/universe/autoware_universe/localization/autoware_landmark_based_localizer/autoware_ar_tag_based_localizer/package.xml)
 - [ ] [autoware_lidar_marker_localizer](../../src/universe/autoware_universe/localization/autoware_landmark_based_localizer/autoware_lidar_marker_localizer/package.xml)
 
 ### Phase 9.9: YabLoc visual localization

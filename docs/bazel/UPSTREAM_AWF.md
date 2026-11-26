@@ -2465,6 +2465,8 @@ Only Lyrical is executed. No upstream submission is claimed.
 
 ### AR-tag localizer assumes an OpenCV installation prefix
 
+Local source fix: `ba69d89f2`.
+
 - [ ] Associate with a matching upstream fix. Checked 2026-11-26: current
   [implementation](https://github.com/autowarefoundation/autoware_universe/blob/main/localization/autoware_landmark_based_localizer/autoware_ar_tag_based_localizer/src/ar_tag_based_localizer.cpp)
   retains opencv4/opencv2/calib3d.hpp and opencv4/opencv2/core/quaternion.hpp.

@@ -146,6 +146,9 @@
     "https://bazel.ros.org/modules/apple_support/2.5.2/MODULE.bazel": "not found",
     "https://bazel.ros.org/modules/apple_support/2.8.0/MODULE.bazel": "not found",
     "https://bazel.ros.org/modules/apple_support/2.9.1/MODULE.bazel": "not found",
+    "https://bazel.ros.org/modules/aruco/0.0.0/MODULE.bazel": "26566acc9de3238e9ada18afd8b22240348dec8e184f4e1175ccd176f597ddba",
+    "https://bazel.ros.org/modules/aruco/5.0.5-3.rcr.2/MODULE.bazel": "0cee47d9cf3f742e5ae67369c10d4b1ba1fd7ca3b2910dc69e56e02729dfedd2",
+    "https://bazel.ros.org/modules/aruco/5.0.5-3.rcr.2/source.json": "54c82b1dcfe42d9ea27b83be405fabe85d0094058e534a22cb1a2235b09da34e",
     "https://bazel.ros.org/modules/asio/1.28.2/MODULE.bazel": "not found",
     "https://bazel.ros.org/modules/asio/1.34.2.bcr.0/MODULE.bazel": "not found",
     "https://bazel.ros.org/modules/asio/1.34.2.bcr.1/MODULE.bazel": "not found",
@@ -3579,7 +3582,7 @@
     "@@rosdistro+//python:defs.bzl%pip_ros": {
       "general": {
         "bzlTransitiveDigest": "9KPSmaWfGTp6RN0By0DcuUgpR00WASpGuGN+q6IHLUY=",
-        "usagesDigest": "Ki3bTOcm0ilIPQiLWxNX0VoGSUeGgz2BZwmtdjsWe0g=",
+        "usagesDigest": "YnWLRL4p0/snPBZVX7+FA/kjuQa5lB1xI648L7ju0bE=",
         "recordedInputs": [
           "REPO_MAPPING:bazel_features+,bazel_features_globals bazel_features++version_extension+bazel_features_globals",
           "REPO_MAPPING:bazel_features+,bazel_features_version bazel_features++version_extension+bazel_features_version",

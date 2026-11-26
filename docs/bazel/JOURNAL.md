@@ -22533,3 +22533,27 @@ env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
 
 The complete provider/consumer gate passes after the include and shared-ownership
 corrections. This executes Lyrical/Bazel; no older ROS/CMake run is claimed.
+
+Build pattern: original one-source compile/shared owner, plain component and
+SingleThreadedExecutor executable, indexed launch/config, and the original test
+with its own main, indexed YAML plus ament_index_cpp/rcl_yaml_param_parser.
+Reuse the landmark shared owner for its exported localization/geometry/math
+providers. Declare ArUco and OpenCV compile/shared SDKs together; keep added
+peers under bazel/tests. No host apt/Python model or marker-image dependency is
+needed: generate the TAG16h5 dictionary image in the test.
+
+Map a pose_marker quadrilateral with subtype apriltag_16h5 and ID0 at
+(1,0,1.5). Calibrate a 640x480 camera with focal400, center320/240, marker size.6,
+and a 160px tag. A static base_link-to-camera translation of x1 exercises TF;
+identity EKF poses at stamps100/102 bracket image101. Check approximately zero
+corrected self pose (3cm projection tolerance), exact orientation/covariance,
+map frame/stamp, mapped markers and debug image. A blank image must produce
+its debug image while suppressing localization output. This exercises real
+ArUco detection, TF and interpolation; it is not field accuracy qualification.
+
+Results: all nine consumer non-test targets and the original test build, along
+with the four-target landmark provider. One original constructor and two added
+image cases pass; both provider cases remain passing, zero failures/errors/skips,
+58.2 s combined. Added-file and changed-range formatting plus diff checks pass.
+No Fast DDS, wrapper, GUI or expensive product gate is selected. Next: LiDAR
+reflector localization, retaining the same landmark provider boundary.

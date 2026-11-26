@@ -2401,6 +2401,10 @@ autoware_pose_instability_detector: complete; see its Phase 9.8 journal for comm
 
 autoware_pose_estimator_arbiter: complete; see its Phase 9.8 journal for commands and results.
 
+autoware_ar_tag_based_localizer: complete; generated AprilTag/blank-image gates
+and the original constructor case pass. Root pins ArUco 5.0.5-3.rcr.2 with the
+existing OpenCV SDK; sources are absent locally.
+
 ### Execution order through complete Universe coverage
 
 The following groups are the initial route through every remaining package.

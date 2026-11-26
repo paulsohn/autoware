@@ -46,6 +46,7 @@ bazel_dep(name = "sensor_msgs", version = "5.9.3-1.rcr.0")
 bazel_dep(name = "sensor_msgs_py", version = "5.9.3-1.rcr.0")
 bazel_dep(name = "radar_msgs", version = "0.2.2-5.rcr.2")
 bazel_dep(name = "cv_bridge", version = "4.1.0-3.rcr.2")
+bazel_dep(name = "aruco", version = "5.0.5-3.rcr.2")
 bazel_dep(name = "image_geometry", version = "4.1.0-3.rcr.2")
 bazel_dep(name = "image_transport", version = "6.4.10-1.rcr.0")
 bazel_dep(name = "pcl_conversions", version = "2.10.0-1.rcr.0")
@@ -2128,4 +2129,10 @@ bazel_dep(name = "autoware_pose_estimator_arbiter", version = "0.0.0")
 local_path_override(
     module_name = "autoware_pose_estimator_arbiter",
     path = "src/universe/autoware_universe/localization/autoware_pose_estimator_arbiter",
+)
+
+bazel_dep(name = "autoware_ar_tag_based_localizer", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_ar_tag_based_localizer",
+    path = "src/universe/autoware_universe/localization/autoware_landmark_based_localizer/autoware_ar_tag_based_localizer",
 )

@@ -2640,3 +2640,12 @@ launch_test(
     tags = ["no-sandbox", "no-remote"],
     deps = ["@ament_index_python", "@geometry_msgs//:py", "@launch_ros", "@rclpy", "@sensor_msgs//:py", "@std_srvs//:py"],
 )
+
+cc_test(
+    name = "ar_tag_localizer_transport_test",
+    srcs = ["autoware_ar_tag_based_localizer/test_transport.cpp"],
+    deps = ["@autoware_ar_tag_based_localizer//:autoware_ar_tag_based_localizer_library", "@autoware_lanelet2_utils", "@googletest//:gtest_main"],
+    dynamic_deps = ["@autoware_ar_tag_based_localizer//:runtime_dynamic_deps", "@autoware_lanelet2_utils//:runtime_dynamic_deps"],
+    data = [],
+    tags = ["no-sandbox", "no-remote"],
+)
