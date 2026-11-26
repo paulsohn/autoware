@@ -4528,3 +4528,14 @@ All eight Universe runs verified 600/600 local clouds and 596/596 steady tracker
 In the native-only control the local full-cloud p95 rose from 4.31 ms in the stable phase to 10.16 ms under endpoint churn. Churn-phase p95 ranged from 9.11 to 11.51 ms across all eight runs. This shows that the tail can move in the absence of a gateway; a short phase with 30–50 full groups does not isolate OS scheduling or establish equivalent tail behavior across modes. With 12 unmatched offers, the native discovery process used 58% of a core on Cyclone and 54% on Zenoh. With 48 it used 100% and 98%, respectively, while the network discovery processes remained below 1% each. The extra CPU cost appeared before adding any matched auxiliary route. See [phase results including activation, RSS and delivery](../rmw-agnocast/manual-gateway/results/universe-churn.csv).
 
 The native gateway scan calls both endpoint-info APIs for each visible permitted topic. In rmw_agnocast/graph.cpp both calls reach inspect(), which constructs a complete snapshot by opening live graph records. The process measurements and this code path make repeated native registry reads the first optimization candidate. A follow-up should reuse a consistent inventory while graph membership is unchanged and retain timely invalidation for endpoint exit, process crash and domain isolation. Verify that CPU stops growing at the observed rate without delaying route creation or retirement.
+
+The separate stable-graph fixture completed five consecutive matched-QoS pairs per backend at 640 KiB and 10 Hz (pair IDs 2–6, reversing order each pair). The isolated configured preflight before the Universe series is excluded. Each launch and discovered rejoin verified all 20 clouds in sequence and checked payload bytes. Median of the five within-run summaries:
+
+| Network | Route | Cold first (s) | Delivery median (ms) | Delivery p95 (ms) |
+| --- | --- | ---: | ---: | ---: |
+| cyclone | configured | 0.84 | 5.5 | 7.27 |
+| cyclone | discovered | 2.42 | 5.43 | 6.49 |
+| zenoh | configured | 0.83 | 5.02 | 6.22 |
+| zenoh | discovered | 2.4 | 4.65 | 5.99 |
+
+Cold route discovery still delays the first sample. The earlier steady-state cloud-median penalty did not reproduce consistently across pairs. These 20-sample routes have limited tail resolution. Prioritize reducing native inventory scan CPU. [All 20 matched-QoS run summaries](../rmw-agnocast/manual-gateway/results/cloud-interleaved.csv).
