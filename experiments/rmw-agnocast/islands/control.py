@@ -78,9 +78,10 @@ def trial(backend, dynamic):
         net = docker("network","create",f"island-control-{os.getpid()}")
         stack.callback(docker,"network","rm",net)
         islands = []
+        memory = "768m" if os.getenv("ISLAND_DOMAINS") else "512m"
         for i in range(2):
             container = docker("run","-d","--pull=never","--network",net,"--ipc=private",
-                "--memory=512m","--memory-swap=512m","--device=/dev/agnocast",
+                f"--memory={memory}",f"--memory-swap={memory}","--device=/dev/agnocast",
                 "-v",f"{ws}:/ws:ro","-v",f"{Path('build/agnocast-lyrical/universe-root').read_text().strip()}/opt/ros/lyrical:/opt/ros/lyrical:ro",
                 "--entrypoint=sleep",image,"180")
             stack.callback(docker,"rm","-f",container)
@@ -96,6 +97,13 @@ def trial(backend, dynamic):
                   "-e",f"CYCLONEDDS_URI={xml}","-e",f'ZENOH_CONFIG_OVERRIDE=connect/endpoints=["tcp/{ips[0]}:7447"];listen/endpoints=["tcp/{ips[i]}:0"]',
                   *([] if dynamic else ["-e","ISLAND_STATIC_WITNESS=1"]),*environment,islands[i],"bash","-ec",setup+("export LD_PRELOAD="+hook+" RMW_IMPLEMENTATION=rmw_agnocast\n" if native else "")+"exec "+command]
             return subprocess.Popen(args,stdout=log,stderr=subprocess.STDOUT)
+        if os.getenv("ISLAND_DOMAINS"):
+            from domains import exercise
+            if backend=="zenoh":
+                run(0,"router","env -u ZENOH_CONFIG_OVERRIDE /opt/ros/lyrical/lib/rmw_zenoh_cpp/rmw_zenohd")
+                time.sleep(.5)
+            exercise(backend, islands, run, docker, hook, out, os.environ["ISLAND_DOMAINS"])
+            return
         apps=[run(i,role,"python3 /ws/experiments/rmw-agnocast/islands/control.py "+role,True)
               for i,role in enumerate(("writer","reader"))]
         def markers(path):

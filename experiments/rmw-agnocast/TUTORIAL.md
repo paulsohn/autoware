@@ -128,7 +128,7 @@ colcon build --executor sequential \
 
 ## 5. Run the same nodes with shared memory
 
-In **each terminal**, source the middleware and application overlays before setting the hook. Substitute your own application install if you built your project. Keep the same ROS_DOMAIN_ID in every terminal. Set LD_PRELOAD to the absolute hook path you verified in step 3.
+In **each terminal**, source the middleware and application overlays before setting the hook. Substitute your own application install if you built your project. Keep the same ROS_DOMAIN_ID in every terminal participating in this stream. To run another domain, launch separate processes with that domain in their environment. On this pilot, an explicit context domain that differs from the process domain can show a matched endpoint that receives no samples. Set LD_PRELOAD to the absolute hook path you verified in step 3.
 
 ```bash
 source /opt/ros/lyrical/setup.bash
