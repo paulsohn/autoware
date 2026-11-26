@@ -2603,3 +2603,28 @@ The package-scoped correction passes all four selection/output/wrapper-latency
 cases on both Cyclone/RCLCPP and Agnocast-only with the heaphook. The native
 Bazel SDK provider remains pinned; no host apt installation, original algorithm
 change or older ROS/CMake validation is claimed. See its journal for commands.
+
+### Trajectory validator: Lyrical headers and test-context lifetime
+
+- [x] Associate the native expected header and manifest correction with merged
+  [PR #13622](https://github.com/autowarefoundation/autoware_universe/pull/13622).
+  Checked 2026-11-26: its actual validator diff changes tl_expected/expected.hpp
+  to tl/expected.hpp and tl_expected to libexpected-dev, matching this correction.
+- [ ] Associate the crosswalk TF2 include with a matching AWF fix. Checked
+  2026-11-26: [current crosswalk source](https://github.com/autowarefoundation/autoware_universe/blob/main/planning/autoware_trajectory_validator/src/filters/traffic_rule/crosswalk_filter.cpp)
+  still uses tf2/utils.h. Scoped Lyrical/TF2 PR search finds no matching validator
+  correction. The selected TF SDK removes that forwarder; use tf2/utils.hpp.
+- [ ] Associate the original traffic-light/crosswalk fixture shutdown fix.
+  Scoped trajectory_validator/shutdown PR search finds no matching correction
+  on 2026-11-26. Both original fixtures initialize a global ROS context and omit
+  shutdown. All 51 assertions pass, then ordinary test processes segfault.
+  GDB shows rclcpp::Context destruction calling rcl_logging_external_shutdown
+  after the spdlog registry is destroyed. Add TearDown with rclcpp::shutdown,
+  preserving every assertion; both processes then exit normally.
+
+The complete validator gate passes all 73 original cases and the three added
+plugin/wrapper cases with Cyclone/RCLCPP, plus descriptor, Python/index and
+four-type wire checks. Source compatibility and test lifecycle corrections are
+separate from Bazel declarations; exact commands and pattern are in the
+[validator journal](JOURNAL.md#2026-11-26-phase-910--trajectory-validator-indexed-plugins-and-report-interfaces).
+No older ROS/colcon execution or upstream submission is claimed.

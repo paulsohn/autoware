@@ -23383,3 +23383,77 @@ This qualifies actual pub/sub, request/reply, state and timeout behavior without
 private-method adapters. Added-file formatting and diff checks pass. No Fast
 DDS, simulator, deployment or field-planning qualification is claimed. Next:
 trajectory validation and ranking, then modification and final selection.
+
+## 2026-11-26: Phase 9.10 — Trajectory validator, indexed plugins and report interfaces
+
+Purpose: adopt the validator as a reusable wrapper/core plus four loadable
+filters, retaining every original case: vehicle constraints (16), traffic
+lights (31), crosswalks (20) and risk utilities (6). Inspect CMake, plugin XML,
+parameter schema, all four messages, wrapper/context APIs and the complete
+original fixtures. Select all 73 cases on Cyclone/RCLCPP and added plugin/wrapper
+behavior on both RCLCPP and Agnocast-only. The native gate requires the matching
+loaded kernel module, /dev/agnocast and built/preloaded heaphook, checked from
+the same execution environment as the tests.
+
+Source compatibility: compilation first fails on tl_expected/expected.hpp.
+Use the pinned native tl-expected provider's tl/expected.hpp and replace the
+manifest dependency with libexpected-dev, matching the actual validator diff in
+merged AWF #13622 (checked 2026-11-26). Crosswalk compilation separately exposes
+the removed tf2/utils.h forwarding header; use tf2/utils.hpp. Current AWF main
+still uses the old TF2 include; the scoped Lyrical/TF2 PR search finds no matching
+validator fix. These changes preserve algorithms and message definitions.
+
+Test lifecycle: all crosswalk and traffic-light assertions initially pass,
+then both processes segfault at exit. A diagnostic GDB backtrace shows the
+live global rclcpp::Context destructing after the spdlog registry, through
+rcl_logging_external_shutdown. Both fixtures initialize RCLCPP without closing
+it. Add TearDown with rclcpp::shutdown, retaining all assertions and ensuring
+normal test process exit. The neighboring ranker fixtures use this same lifecycle.
+GDB's exit status can mask the child's signal; only ordinary Bazel test runs
+count for acceptance. Source changes are committed separately from definitions.
+
+Integration pattern: declare the four original msg files and dependencies under
+msg/BUILD.bazel, invoke default_generators, then explicitly compose the mixed
+package's index from IDL, Python/type-support libraries, config and plugin XML.
+Generate autoware_trajectory_validator_param from param/parameter_struct.yaml.
+Keep the core libautoware_trajectory_validator_lib.so and filter
+libautoware_trajectory_validator_plugins.so as separate shared owners, preserving
+the CMake/plugin XML filenames. Plugins dynamically depend on the core and
+canonical ROS SDK providers. Export the compiled motion/interpolation/vehicle
+and utility helpers already owned by the core when plugins also use them;
+Bazel's linked-but-not-exported error identifies those roots. Do not duplicate
+SDK or helper state across DSOs. Tests that instantiate filters directly link
+the plugin library; factory tests consume its index as runtime data without
+linking the plugin DSO into the loader executable.
+
+Register this package once in bazel/interfaces:all_interfaces. Its four types
+then feed existing descriptor, Python/index, serialization and bridge consumers
+without a second plugin list. The root-owned wrapper suite loads every indexed
+class and proves active vehicle constraints reject overspeed, shadow constraints
+retain it while still reporting failure, generator identity/stamps survive,
+and validation reports actually reach a peer. Null TimeKeeper is rejected.
+Both transport paths use wrapper initialization, with RCLCPP explicitly
+uninitialized on the Agnocast-only path.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  @autoware_trajectory_validator//... //bazel/tests:trajectory_validator_wrapper_test \
+  //bazel/interfaces:trajectory_validator_serialization_test \
+  //bazel/interfaces:descriptor_test //bazel/interfaces:python_interfaces_test
+
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --local_test_jobs=1 \
+  --run_under=//bazel/agnocast:with_heaphook --test_env=ENABLE_AGNOCAST=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  //bazel/tests:trajectory_validator_wrapper_test
+```
+
+Results: the complete module and eight primary test targets pass: all 73 original
+cases, three added plugin/wrapper cases, four wire types and both collector
+consumers, zero failures/errors/skips/disabled. All three wrapper cases also
+pass Agnocast-only with the heaphook (0.8 s), with RCLCPP uninitialized. Reuse
+unchanged pure algorithm results. Targeted formatting and diff checks pass.
+No Fast DDS, simulator, deployment or field safety qualification is selected.
+Next: trajectory ranking.
