@@ -23968,3 +23968,47 @@ their matching bazel_dep. OSQP remains the only transitive-only module override.
 No new validator, dependency, version or patch is introduced. No compilation or
 runtime gate is rerun for this declaration-order change. Existing module
 acceptance evidence still applies. Phase 9.11 remains in progress.
+
+## 2026-11-26: Root dependency groups and deployment fragment
+
+Purpose: make the root manifest readable by dependency ownership. Inspect all
+root declarations, their local paths, the included fragments and the deployment
+BUILD file. Preserve all versions, patches, source paths and repository inputs.
+
+Group BCR/RCR declarations and Conda archives first, followed by third_party
+SDK includes and five local dependency providers. Put the four asset, model
+and sensor resource providers before source consumers. Then group 133 core,
+185 Universe and 18 launcher modules. Preserve the previous relative order
+inside each local group and keep every dependency/override pair adjacent.
+Place the Bazel product include last. The directory groups organize the
+manifest without changing the dependency graph or source selection.
+
+deployments.MODULE.bazel is a root-module fragment, not an independent module.
+It declares the digest-pinned ubuntu_runtime repository consumed by OCI image
+base attributes in bazel/deployments/BUILD.bazel. Keep the root include because
+those rules need that repository declaration. The fragment keeps product OS
+selection with product composition. No new module or facade is needed.
+Document the order and fragment ownership in DEVELOPING.md, with links from
+AGENTS.md and the adoption checklist.
+
+```sh
+bazel query --lockfile_mode=error --output=location \
+  'set(@autoware_vehicle_msgs//... @autoware_trajectory_ranker//... @autoware_map_asset//... @rclcpp//:rclcpp)' \
+  > /tmp/autoware-grouped-deps-after.locations
+bazel query --lockfile_mode=error --output=build //bazel/deployments:core \
+  > /tmp/autoware-grouped-deployment-core.build
+git diff --exit-code -- MODULE.bazel.lock
+git diff --check
+```
+
+Results: both queries and whitespace checks pass. All 59 representative target
+locations match the preceding task, and the lockfile is unchanged. The loaded
+core image rule still references ubuntu_runtime as its base. A one-time Python
+AST comparison confirms the same complete set of declaration contents before
+and after grouping. Its additional checks verify group order, stable local
+order within each group, all 351 adjacent direct-dependency override pairs,
+and the final deployment include. All pass. No failure or source fix occurs.
+
+No compilation, runtime suite, image build or OCI export is run for this
+manifest-order change. Existing module acceptance evidence still applies.
+Phase 9.11 remains in progress at 171/244 packages.

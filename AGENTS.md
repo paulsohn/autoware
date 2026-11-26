@@ -107,6 +107,9 @@ experiments, and milestones belong in PLAN.md and JOURNAL.md.
   dependency's module override immediately after its bazel_dep. Keep
   transitive-only overrides in a separate labeled block. See
   [dependency declarations](docs/bazel/DEVELOPING.md#dependency-declarations).
+  Group root inputs as BCR/RCR/Conda, third_party, core, universe, launcher,
+  then bazel. Keep asset/model/sensor providers before source consumers and
+  root product includes last, following the linked declaration convention.
   Do not substitute an older registry source because it already has Bazel
   support. Use registry sources for dependencies absent locally; use a registry
   counterpart for a local package only when the user explicitly requests a

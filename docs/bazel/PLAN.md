@@ -56,7 +56,8 @@ conventions from the outset, but introduce technical dependencies and patches
 only when your current target demonstrates the need.
 
 - [ ] Select local dependency snapshots and inventory missing Bazel support.
-  [Root dependency and override layout](DEVELOPING.md#dependency-declarations);
+  [Root dependency groups and adjacent overrides](DEVELOPING.md#dependency-declarations);
+  [evidence: declaration ownership groups](JOURNAL.md#2026-11-26-root-dependency-groups-and-deployment-fragment);
   [evidence: local source selection](JOURNAL.md#2026-11-26-root-local-dependencies-without-placeholder-versions);
   [published external providers](JOURNAL.md#2026-11-22-phase-732--published-angles-dependency);
   [evidence: local interface adoption](JOURNAL.md#2026-11-17-local-interface-adoption--autoware_adapi_v1_msgs).

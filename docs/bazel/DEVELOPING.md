@@ -307,9 +307,13 @@ and [.bazelignore](https://bazel.build/run/bazelrc#bazelignore) documentation.
 
 ### Dependency declarations
 
-In the root MODULE.bazel, list registry dependencies first and keep local modules
-at the end, after extension and toolchain configuration. Within each dependency
-group, place prerequisites before consumers where possible. Each local
+Group root MODULE.bazel declarations by ownership: BCR/RCR and Conda inputs,
+third_party providers, core sources, Universe sources, launcher sources, then
+root Bazel product configuration. Keep asset, model and sensor resource
+providers between third_party and core sources. Put SDK includes with
+third_party and product includes with bazel at the end. Within each group,
+place prerequisites before consumers where possible. This layout does not
+change Bazel's dependency resolution. Each local
 `bazel_dep` omits its version and is immediately followed by its matching
 `local_path_override`:
 
@@ -335,6 +339,11 @@ version and patch overrides. Keep overrides for transitive-only modules in a
 separate labeled block. Do not add a direct dependency just to place an
 override. Repository overrides through `override_repo` stay with their module
 extension configuration.
+
+`bazel/deployments/deployments.MODULE.bazel` is an included root-module fragment,
+not a standalone module. It declares the pinned `@ubuntu_runtime` repository
+used by OCI image targets. Keep its include at the end of the root manifest.
+Moving the include does not change that repository's digest or the image rules.
 
 Use the local source snapshot for every supported package present under src/.
 Use the ROS Central Registry for dependencies absent from the source checkout.

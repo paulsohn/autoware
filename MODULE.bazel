@@ -1,6 +1,6 @@
 module(name = "autoware_bazel")
 
-# Registry dependencies, with prerequisites before consumers where known.
+# BCR/RCR dependencies, with prerequisites before consumers where known.
 bazel_dep(name = "platforms", version = "1.1.0")
 bazel_dep(name = "bazel_skylib", version = "1.9.2")
 bazel_dep(name = "rules_cc", version = "0.2.26.rcr.0")
@@ -174,7 +174,7 @@ use_repo(llvm, "llvm-project")
 pip_ros = use_extension("@rosdistro//python:defs.bzl", "pip_ros")
 use_repo(pip_ros, "pip_ros")
 
-# GNU runtime ABI required by the pinned manylinux numerical wheels.
+# Conda archives. GNU runtime ABI required by pinned manylinux numerical wheels.
 http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 http_archive(
@@ -195,15 +195,13 @@ filegroup(name = "runtime", srcs = glob(["lib/libgcc_s.so*"]), visibility = ["//
     urls = ["https://conda.anaconda.org/conda-forge/linux-64/libgcc-ng-12.2.0-h65d4601_19.tar.bz2"],
 )
 
+# Third-party providers and SDK configuration.
 include("//third_party/cuda:cuda.MODULE.bazel")
 include("//third_party/graphics_runtime:graphics_runtime.MODULE.bazel")
 include("//third_party/s6:s6.MODULE.bazel")
 include("//third_party/systemd:systemd.MODULE.bazel")
 include("//third_party/ostree:ostree.MODULE.bazel")
-include("//bazel/deployments:deployments.MODULE.bazel")
 
-# Local modules omit versions; each override selects sources for all dependents.
-# Reusable dependency provider; selected before application source modules.
 bazel_dep(name = "acados")
 local_path_override(
     module_name = "acados",
@@ -219,8 +217,44 @@ local_path_override(
 bazel_dep(name = "grid_map")
 local_path_override(module_name = "grid_map", path = "third_party/grid_map")
 
-# Local source dependencies, ordered by their package-local MODULE declarations.
-# Overrides select the source; root declarations need no registry release version.
+bazel_dep(name = "tensorrt")
+local_path_override(
+    module_name = "tensorrt",
+    path = "third_party/tensorrt",
+)
+
+bazel_dep(name = "spconv")
+local_path_override(
+    module_name = "spconv",
+    path = "third_party/spconv",
+)
+
+# Asset, model and sensor resource providers.
+bazel_dep(name = "velodyne_description")
+local_path_override(
+    module_name = "velodyne_description",
+    path = "src/sensor_component/external/sensor_component_description/velodyne_description",
+)
+
+bazel_dep(name = "autoware_map_asset")
+local_path_override(
+    module_name = "autoware_map_asset",
+    path = "assets/map",
+)
+
+bazel_dep(name = "autoware_tensorrt_yolox_models")
+local_path_override(
+    module_name = "autoware_tensorrt_yolox_models",
+    path = "src/models/tensorrt_yolox",
+)
+
+bazel_dep(name = "autoware_yabloc_pose_initializer_models")
+local_path_override(
+    module_name = "autoware_yabloc_pose_initializer_models",
+    path = "src/models/yabloc_pose_initializer",
+)
+
+# Core source modules.
 bazel_dep(name = "agnocast_cie_config_msgs")
 local_path_override(
     module_name = "agnocast_cie_config_msgs",
@@ -243,12 +277,6 @@ bazel_dep(name = "agnocastlib")
 local_path_override(
     module_name = "agnocastlib",
     path = "src/core/agnocast/src/agnocastlib",
-)
-
-bazel_dep(name = "glog")
-local_path_override(
-    module_name = "glog",
-    path = "src/universe/external/glog",
 )
 
 bazel_dep(name = "agnocast_components")
@@ -863,12 +891,6 @@ local_path_override(
     path = "src/core/autoware_core/localization/autoware_core_localization",
 )
 
-bazel_dep(name = "velodyne_description")
-local_path_override(
-    module_name = "velodyne_description",
-    path = "src/sensor_component/external/sensor_component_description/velodyne_description",
-)
-
 bazel_dep(name = "autoware_sample_sensor_kit_description")
 local_path_override(
     module_name = "autoware_sample_sensor_kit_description",
@@ -917,12 +939,6 @@ local_path_override(
     path = "src/core/autoware_core/testing/autoware_testing",
 )
 
-bazel_dep(name = "autoware_map_asset")
-local_path_override(
-    module_name = "autoware_map_asset",
-    path = "assets/map",
-)
-
 bazel_dep(name = "autoware_core")
 local_path_override(
     module_name = "autoware_core",
@@ -933,12 +949,6 @@ bazel_dep(name = "autoware_cuda_utils")
 local_path_override(
     module_name = "autoware_cuda_utils",
     path = "src/core/cuda/autoware_cuda/autoware_cuda_utils",
-)
-
-bazel_dep(name = "tensorrt")
-local_path_override(
-    module_name = "tensorrt",
-    path = "third_party/tensorrt",
 )
 
 bazel_dep(name = "autoware_tensorrt_common")
@@ -971,10 +981,83 @@ local_path_override(
     path = "src/core/cuda/cuda_blackboard",
 )
 
-bazel_dep(name = "spconv")
+bazel_dep(name = "autoware_utils")
 local_path_override(
-    module_name = "spconv",
-    path = "third_party/spconv",
+    module_name = "autoware_utils",
+    path = "src/core/autoware_utils/autoware_utils",
+)
+
+bazel_dep(name = "autoware_learning_based_vehicle_model")
+local_path_override(
+    module_name = "autoware_learning_based_vehicle_model",
+    path = "src/core/autoware_simple_planning_simulator/autoware_learning_based_vehicle_model",
+)
+
+bazel_dep(name = "autoware_simple_planning_simulator")
+local_path_override(
+    module_name = "autoware_simple_planning_simulator",
+    path = "src/core/autoware_simple_planning_simulator/autoware_simple_planning_simulator",
+)
+
+bazel_dep(name = "autoware_dummy_perception_publisher")
+local_path_override(
+    module_name = "autoware_dummy_perception_publisher",
+    path = "src/core/autoware_simple_planning_simulator/autoware_dummy_perception_publisher",
+)
+
+bazel_dep(name = "autoware_perception_rviz_plugin")
+local_path_override(
+    module_name = "autoware_perception_rviz_plugin",
+    path = "src/core/autoware_rviz_plugins/autoware_perception_rviz_plugin",
+)
+
+bazel_dep(name = "autoware_localization_rviz_plugin")
+local_path_override(
+    module_name = "autoware_localization_rviz_plugin",
+    path = "src/core/autoware_rviz_plugins/autoware_localization_rviz_plugin",
+)
+
+bazel_dep(name = "autoware_planning_rviz_plugin")
+local_path_override(
+    module_name = "autoware_planning_rviz_plugin",
+    path = "src/core/autoware_rviz_plugins/autoware_planning_rviz_plugin",
+)
+
+bazel_dep(name = "autoware_overlay_rviz_plugin")
+local_path_override(
+    module_name = "autoware_overlay_rviz_plugin",
+    path = "src/core/autoware_rviz_plugins/autoware_overlay_rviz_plugin/autoware_overlay_rviz_plugin",
+)
+
+bazel_dep(name = "autoware_mission_details_overlay_rviz_plugin")
+local_path_override(
+    module_name = "autoware_mission_details_overlay_rviz_plugin",
+    path = "src/core/autoware_rviz_plugins/autoware_overlay_rviz_plugin/autoware_mission_details_overlay_rviz_plugin",
+)
+
+bazel_dep(name = "autoware_string_stamped_rviz_plugin")
+local_path_override(
+    module_name = "autoware_string_stamped_rviz_plugin",
+    path = "src/core/autoware_rviz_plugins/autoware_overlay_rviz_plugin/autoware_string_stamped_overlay_rviz_plugin",
+)
+
+bazel_dep(name = "tier4_datetime_rviz_plugin")
+local_path_override(
+    module_name = "tier4_datetime_rviz_plugin",
+    path = "src/core/autoware_rviz_plugins/tier4_datetime_rviz_plugin",
+)
+
+bazel_dep(name = "autoware_polar_grid")
+local_path_override(
+    module_name = "autoware_polar_grid",
+    path = "src/core/autoware_rviz_plugins/autoware_polar_grid",
+)
+
+# Universe source modules.
+bazel_dep(name = "glog")
+local_path_override(
+    module_name = "glog",
+    path = "src/universe/external/glog",
 )
 
 bazel_dep(name = "autoware_tensorrt_plugins")
@@ -987,12 +1070,6 @@ bazel_dep(name = "autoware_tensorrt_classifier")
 local_path_override(
     module_name = "autoware_tensorrt_classifier",
     path = "src/universe/autoware_universe/perception/autoware_tensorrt_classifier",
-)
-
-bazel_dep(name = "autoware_utils")
-local_path_override(
-    module_name = "autoware_utils",
-    path = "src/core/autoware_utils/autoware_utils",
 )
 
 bazel_dep(name = "perception_utils")
@@ -1013,34 +1090,10 @@ local_path_override(
     path = "src/universe/autoware_universe/sensing/autoware_image_transport_decompressor",
 )
 
-bazel_dep(name = "autoware_tensorrt_yolox_models")
-local_path_override(
-    module_name = "autoware_tensorrt_yolox_models",
-    path = "src/models/tensorrt_yolox",
-)
-
 bazel_dep(name = "autoware_tensorrt_yolox")
 local_path_override(
     module_name = "autoware_tensorrt_yolox",
     path = "src/universe/autoware_universe/perception/autoware_tensorrt_yolox",
-)
-
-bazel_dep(name = "autoware_learning_based_vehicle_model")
-local_path_override(
-    module_name = "autoware_learning_based_vehicle_model",
-    path = "src/core/autoware_simple_planning_simulator/autoware_learning_based_vehicle_model",
-)
-
-bazel_dep(name = "autoware_simple_planning_simulator")
-local_path_override(
-    module_name = "autoware_simple_planning_simulator",
-    path = "src/core/autoware_simple_planning_simulator/autoware_simple_planning_simulator",
-)
-
-bazel_dep(name = "autoware_dummy_perception_publisher")
-local_path_override(
-    module_name = "autoware_dummy_perception_publisher",
-    path = "src/core/autoware_simple_planning_simulator/autoware_dummy_perception_publisher",
 )
 
 bazel_dep(name = "autoware_vehicle_door_simulator")
@@ -1071,18 +1124,6 @@ bazel_dep(name = "autoware_manual_lane_change_handler")
 local_path_override(
     module_name = "autoware_manual_lane_change_handler",
     path = "src/universe/autoware_universe/planning/autoware_manual_lane_change_handler",
-)
-
-bazel_dep(name = "sample_vehicle_description")
-local_path_override(
-    module_name = "sample_vehicle_description",
-    path = "src/launcher/autoware_launch/vehicle/sample_vehicle_launch/sample_vehicle_description",
-)
-
-bazel_dep(name = "sample_sensor_kit_description")
-local_path_override(
-    module_name = "sample_sensor_kit_description",
-    path = "src/launcher/autoware_launch/sensor_kit/sample_sensor_kit_launch/sample_sensor_kit_description",
 )
 
 bazel_dep(name = "autoware_traffic_light_utils")
@@ -1655,48 +1696,6 @@ local_path_override(
     path = "src/universe/autoware_universe/system/autoware_default_adapi_universe",
 )
 
-bazel_dep(name = "autoware_planning_config")
-local_path_override(
-    module_name = "autoware_planning_config",
-    path = "src/launcher/autoware_launch/autoware_universe_launch/autoware_planning_config",
-)
-
-bazel_dep(name = "autoware_control_config")
-local_path_override(
-    module_name = "autoware_control_config",
-    path = "src/launcher/autoware_launch/autoware_universe_launch/autoware_control_config",
-)
-
-bazel_dep(name = "autoware_perception_config")
-local_path_override(
-    module_name = "autoware_perception_config",
-    path = "src/launcher/autoware_launch/autoware_universe_launch/autoware_perception_config",
-)
-
-bazel_dep(name = "autoware_map_config")
-local_path_override(
-    module_name = "autoware_map_config",
-    path = "src/launcher/autoware_launch/autoware_universe_launch/autoware_map_config",
-)
-
-bazel_dep(name = "autoware_localization_config")
-local_path_override(
-    module_name = "autoware_localization_config",
-    path = "src/launcher/autoware_launch/autoware_universe_launch/autoware_localization_config",
-)
-
-bazel_dep(name = "sample_vehicle_launch")
-local_path_override(
-    module_name = "sample_vehicle_launch",
-    path = "src/launcher/autoware_launch/vehicle/sample_vehicle_launch/sample_vehicle_launch",
-)
-
-bazel_dep(name = "sample_sensor_kit_launch")
-local_path_override(
-    module_name = "sample_sensor_kit_launch",
-    path = "src/launcher/autoware_launch/sensor_kit/sample_sensor_kit_launch/sample_sensor_kit_launch",
-)
-
 bazel_dep(name = "autoware_map_tf_generator")
 local_path_override(
     module_name = "autoware_map_tf_generator",
@@ -1707,96 +1706,6 @@ bazel_dep(name = "autoware_topic_state_monitor")
 local_path_override(
     module_name = "autoware_topic_state_monitor",
     path = "src/universe/autoware_universe/system/autoware_topic_state_monitor",
-)
-
-bazel_dep(name = "autoware_map_launch")
-local_path_override(
-    module_name = "autoware_map_launch",
-    path = "src/launcher/autoware_launch/autoware_universe_launch/autoware_map_launch",
-)
-
-bazel_dep(name = "tier4_vehicle_launch")
-local_path_override(
-    module_name = "tier4_vehicle_launch",
-    path = "src/launcher/autoware_launch/tier4_universe_launch/tier4_vehicle_launch",
-)
-
-bazel_dep(name = "tier4_autoware_api_launch")
-local_path_override(
-    module_name = "tier4_autoware_api_launch",
-    path = "src/launcher/autoware_launch/tier4_universe_launch/tier4_autoware_api_launch",
-)
-
-bazel_dep(name = "tier4_simulator_launch")
-local_path_override(
-    module_name = "tier4_simulator_launch",
-    path = "src/launcher/autoware_launch/tier4_universe_launch/tier4_simulator_launch",
-)
-
-bazel_dep(name = "tier4_system_launch")
-local_path_override(
-    module_name = "tier4_system_launch",
-    path = "src/launcher/autoware_launch/tier4_universe_launch/tier4_system_launch",
-)
-
-bazel_dep(name = "autoware_control_launch")
-local_path_override(
-    module_name = "autoware_control_launch",
-    path = "src/launcher/autoware_launch/autoware_universe_launch/autoware_control_launch",
-)
-
-bazel_dep(name = "autoware_planning_launch")
-local_path_override(
-    module_name = "autoware_planning_launch",
-    path = "src/launcher/autoware_launch/autoware_universe_launch/autoware_planning_launch",
-)
-
-bazel_dep(name = "autoware_perception_launch")
-local_path_override(
-    module_name = "autoware_perception_launch",
-    path = "src/launcher/autoware_launch/autoware_universe_launch/autoware_perception_launch",
-)
-
-bazel_dep(name = "autoware_launch")
-local_path_override(
-    module_name = "autoware_launch",
-    path = "src/launcher/autoware_launch/autoware_launch",
-)
-
-bazel_dep(name = "autoware_perception_rviz_plugin")
-local_path_override(
-    module_name = "autoware_perception_rviz_plugin",
-    path = "src/core/autoware_rviz_plugins/autoware_perception_rviz_plugin",
-)
-
-bazel_dep(name = "autoware_localization_rviz_plugin")
-local_path_override(
-    module_name = "autoware_localization_rviz_plugin",
-    path = "src/core/autoware_rviz_plugins/autoware_localization_rviz_plugin",
-)
-
-bazel_dep(name = "autoware_planning_rviz_plugin")
-local_path_override(
-    module_name = "autoware_planning_rviz_plugin",
-    path = "src/core/autoware_rviz_plugins/autoware_planning_rviz_plugin",
-)
-
-bazel_dep(name = "autoware_overlay_rviz_plugin")
-local_path_override(
-    module_name = "autoware_overlay_rviz_plugin",
-    path = "src/core/autoware_rviz_plugins/autoware_overlay_rviz_plugin/autoware_overlay_rviz_plugin",
-)
-
-bazel_dep(name = "autoware_mission_details_overlay_rviz_plugin")
-local_path_override(
-    module_name = "autoware_mission_details_overlay_rviz_plugin",
-    path = "src/core/autoware_rviz_plugins/autoware_overlay_rviz_plugin/autoware_mission_details_overlay_rviz_plugin",
-)
-
-bazel_dep(name = "autoware_string_stamped_rviz_plugin")
-local_path_override(
-    module_name = "autoware_string_stamped_rviz_plugin",
-    path = "src/core/autoware_rviz_plugins/autoware_overlay_rviz_plugin/autoware_string_stamped_overlay_rviz_plugin",
 )
 
 bazel_dep(name = "tier4_state_rviz_plugin")
@@ -1833,18 +1742,6 @@ bazel_dep(name = "tier4_dummy_object_rviz_plugin")
 local_path_override(
     module_name = "tier4_dummy_object_rviz_plugin",
     path = "src/universe/autoware_universe/simulator/tier4_dummy_object_rviz_plugin",
-)
-
-bazel_dep(name = "tier4_datetime_rviz_plugin")
-local_path_override(
-    module_name = "tier4_datetime_rviz_plugin",
-    path = "src/core/autoware_rviz_plugins/tier4_datetime_rviz_plugin",
-)
-
-bazel_dep(name = "autoware_polar_grid")
-local_path_override(
-    module_name = "autoware_polar_grid",
-    path = "src/core/autoware_rviz_plugins/autoware_polar_grid",
 )
 
 bazel_dep(name = "autoware_radar_tracks_noise_filter")
@@ -2171,12 +2068,6 @@ local_path_override(
     path = "src/universe/autoware_universe/localization/yabloc/yabloc_particle_filter",
 )
 
-bazel_dep(name = "autoware_yabloc_pose_initializer_models")
-local_path_override(
-    module_name = "autoware_yabloc_pose_initializer_models",
-    path = "src/models/yabloc_pose_initializer",
-)
-
 bazel_dep(name = "yabloc_pose_initializer")
 local_path_override(
     module_name = "yabloc_pose_initializer",
@@ -2272,3 +2163,115 @@ local_path_override(
     module_name = "autoware_behavior_path_external_request_lane_change_module",
     path = "src/universe/autoware_universe/planning/behavior_path_planner/autoware_behavior_path_external_request_lane_change_module",
 )
+
+# Launcher source modules.
+bazel_dep(name = "sample_vehicle_description")
+local_path_override(
+    module_name = "sample_vehicle_description",
+    path = "src/launcher/autoware_launch/vehicle/sample_vehicle_launch/sample_vehicle_description",
+)
+
+bazel_dep(name = "sample_sensor_kit_description")
+local_path_override(
+    module_name = "sample_sensor_kit_description",
+    path = "src/launcher/autoware_launch/sensor_kit/sample_sensor_kit_launch/sample_sensor_kit_description",
+)
+
+bazel_dep(name = "autoware_planning_config")
+local_path_override(
+    module_name = "autoware_planning_config",
+    path = "src/launcher/autoware_launch/autoware_universe_launch/autoware_planning_config",
+)
+
+bazel_dep(name = "autoware_control_config")
+local_path_override(
+    module_name = "autoware_control_config",
+    path = "src/launcher/autoware_launch/autoware_universe_launch/autoware_control_config",
+)
+
+bazel_dep(name = "autoware_perception_config")
+local_path_override(
+    module_name = "autoware_perception_config",
+    path = "src/launcher/autoware_launch/autoware_universe_launch/autoware_perception_config",
+)
+
+bazel_dep(name = "autoware_map_config")
+local_path_override(
+    module_name = "autoware_map_config",
+    path = "src/launcher/autoware_launch/autoware_universe_launch/autoware_map_config",
+)
+
+bazel_dep(name = "autoware_localization_config")
+local_path_override(
+    module_name = "autoware_localization_config",
+    path = "src/launcher/autoware_launch/autoware_universe_launch/autoware_localization_config",
+)
+
+bazel_dep(name = "sample_vehicle_launch")
+local_path_override(
+    module_name = "sample_vehicle_launch",
+    path = "src/launcher/autoware_launch/vehicle/sample_vehicle_launch/sample_vehicle_launch",
+)
+
+bazel_dep(name = "sample_sensor_kit_launch")
+local_path_override(
+    module_name = "sample_sensor_kit_launch",
+    path = "src/launcher/autoware_launch/sensor_kit/sample_sensor_kit_launch/sample_sensor_kit_launch",
+)
+
+bazel_dep(name = "autoware_map_launch")
+local_path_override(
+    module_name = "autoware_map_launch",
+    path = "src/launcher/autoware_launch/autoware_universe_launch/autoware_map_launch",
+)
+
+bazel_dep(name = "tier4_vehicle_launch")
+local_path_override(
+    module_name = "tier4_vehicle_launch",
+    path = "src/launcher/autoware_launch/tier4_universe_launch/tier4_vehicle_launch",
+)
+
+bazel_dep(name = "tier4_autoware_api_launch")
+local_path_override(
+    module_name = "tier4_autoware_api_launch",
+    path = "src/launcher/autoware_launch/tier4_universe_launch/tier4_autoware_api_launch",
+)
+
+bazel_dep(name = "tier4_simulator_launch")
+local_path_override(
+    module_name = "tier4_simulator_launch",
+    path = "src/launcher/autoware_launch/tier4_universe_launch/tier4_simulator_launch",
+)
+
+bazel_dep(name = "tier4_system_launch")
+local_path_override(
+    module_name = "tier4_system_launch",
+    path = "src/launcher/autoware_launch/tier4_universe_launch/tier4_system_launch",
+)
+
+bazel_dep(name = "autoware_control_launch")
+local_path_override(
+    module_name = "autoware_control_launch",
+    path = "src/launcher/autoware_launch/autoware_universe_launch/autoware_control_launch",
+)
+
+bazel_dep(name = "autoware_planning_launch")
+local_path_override(
+    module_name = "autoware_planning_launch",
+    path = "src/launcher/autoware_launch/autoware_universe_launch/autoware_planning_launch",
+)
+
+bazel_dep(name = "autoware_perception_launch")
+local_path_override(
+    module_name = "autoware_perception_launch",
+    path = "src/launcher/autoware_launch/autoware_universe_launch/autoware_perception_launch",
+)
+
+bazel_dep(name = "autoware_launch")
+local_path_override(
+    module_name = "autoware_launch",
+    path = "src/launcher/autoware_launch/autoware_launch",
+)
+
+# Bazel product and deployment composition.
+include("//bazel/deployments:deployments.MODULE.bazel")
