@@ -1,0 +1,55 @@
+load("@autoware_agnocast_wrapper//:defs.bzl", "autoware_agnocast_node")
+load("@rclcpp_components//:defs.bzl", "rclcpp_components_register_node")
+load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "autoware_localization_error_monitor_library",
+    srcs = ["src/localization_error_monitor.cpp"],
+    hdrs = ["src/diagnostics_helper.hpp", "src/localization_error_monitor.hpp"],
+    includes = ["src"],
+    deps = ["@autoware_agnocast_wrapper//:autoware_agnocast_wrapper_library", "@autoware_localization_util", "@autoware_utils_diagnostics", "@autoware_utils_logging", "@diagnostic_msgs//:cc", "@nav_msgs//:cc", "@rclcpp_components//:rclcpp_components_library", "@tf2_geometry_msgs//:tf2_geometry_msgs_library", "@visualization_msgs//:cc"],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = ["@autoware_agnocast_wrapper", "@diagnostic_msgs//:cc_shared", "@diagnostic_updater//:diagnostic_updater", "@geometry_msgs//:cc_shared", "@logging_demo//:cc_shared", "@nav_msgs//:cc_shared", "@rclcpp_components//:rclcpp_components", "@rcutils//:rcutils", "@tf2_geometry_msgs//:tf2_geometry_msgs", "@visualization_msgs//:cc_shared"],
+)
+
+cc_shared_library(
+    name = "autoware_localization_error_monitor",
+    shared_lib_name = "libautoware_localization_error_monitor.so",
+    deps = [":autoware_localization_error_monitor_library"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+)
+
+autoware_agnocast_node(
+    name = "autoware_localization_error_monitor_node",
+    component = ":autoware_localization_error_monitor",
+    plugin = "autoware::localization_error_monitor::LocalizationErrorMonitor",
+    package_name = "autoware_localization_error_monitor",
+)
+
+register_ament_files(
+    name = "executables",
+    files = [":autoware_localization_error_monitor_node"],
+    prefix = "lib/autoware_localization_error_monitor",
+    strip_prefix = "*",
+)
+
+ament_index(
+    package_xml = "package.xml",
+    libraries = [":autoware_localization_error_monitor"],
+    components = [":autoware_localization_error_monitor_node_components"],
+    data = glob(["launch/**", "config/**"]) + [":executables", ":autoware_localization_error_monitor_node_plugin"],
+)
+
+cc_test(
+    name = "test_diagnostics",
+    srcs = ["test/test_diagnostics.cpp"],
+    deps = [":autoware_localization_error_monitor_library", "@googletest//:gtest_main"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+)

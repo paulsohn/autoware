@@ -2111,3 +2111,9 @@ local_path_override(
     module_name = "autoware_pose_initialization_requester",
     path = "src/universe/autoware_universe/localization/autoware_pose_initialization_requester",
 )
+
+bazel_dep(name = "autoware_localization_error_monitor", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_localization_error_monitor",
+    path = "src/universe/autoware_universe/localization/autoware_localization_error_monitor",
+)

@@ -21,8 +21,8 @@ may contain multiple package commits and smaller execution batches. Update the
 ledger when a package closes or the source snapshot changes; this is a planning
 record, not a new build-time completeness validator.
 
-Current adoption progress, 2026-11-26: **146/244** packages have both definitions
-and root local overrides; **98** remain without definitions. The census table
+Current adoption progress, 2026-11-26: **147/244** packages have both definitions
+and root local overrides; **97** remain without definitions. The census table
 below preserves the initial 2026-11-23 baseline. Checked ledger items record
 completed module gates; Phase 9.7 is complete. See PLAN.md and the
 package journals for configuration and behavior evidence.
@@ -280,7 +280,7 @@ Adopt landmark support before its localizers, using point-cloud support from 9.4
 
 - [x] [autoware_geo_pose_projector](../../src/universe/autoware_universe/localization/autoware_geo_pose_projector/package.xml)
 - [x] [autoware_landmark_manager](../../src/universe/autoware_universe/localization/autoware_landmark_based_localizer/autoware_landmark_manager/package.xml)
-- [ ] [autoware_localization_error_monitor](../../src/universe/autoware_universe/localization/autoware_localization_error_monitor/package.xml)
+- [x] [autoware_localization_error_monitor](../../src/universe/autoware_universe/localization/autoware_localization_error_monitor/package.xml)
 - [x] [autoware_pose_covariance_modifier](../../src/universe/autoware_universe/localization/autoware_pose_covariance_modifier/package.xml)
 - [ ] [autoware_pose_estimator_arbiter](../../src/universe/autoware_universe/localization/autoware_pose_estimator_arbiter/package.xml)
 - [x] [autoware_pose_initialization_requester](../../src/universe/autoware_universe/localization/autoware_pose_initialization_requester/package.xml)

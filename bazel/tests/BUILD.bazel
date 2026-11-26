@@ -2612,3 +2612,12 @@ cc_test(
     data = [],
     tags = ["no-sandbox", "no-remote"],
 )
+
+cc_test(
+    name = "localization_error_monitor_transport_test",
+    srcs = ["autoware_localization_error_monitor/test_transport.cpp"],
+    deps = ["@autoware_localization_error_monitor//:autoware_localization_error_monitor_library", "@googletest//:gtest"],
+    dynamic_deps = ["@autoware_localization_error_monitor//:runtime_dynamic_deps"],
+    data = ["@agnocast_heaphook"],
+    tags = ["no-sandbox", "no-remote"],
+)

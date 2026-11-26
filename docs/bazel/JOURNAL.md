@@ -22388,3 +22388,39 @@ Results: all nine non-test module targets build and the state/service case passe
 zero failures/errors/skips, 11.0 s (test 3.5 s). Added-file formatting and diff
 checks pass. No wrapper, Fast DDS or expensive product gate is selected.
 Next: localization-error diagnostics and pose-instability monitoring.
+
+## 2026-11-26: Phase 9.8 — localization error ellipses and diagnostics
+
+Purpose: adopt the wrapper monitor while retaining both original diagnostics
+helper cases. Inspect CMake, covariance-ellipse utility, marker/diagnostics APIs,
+logger configuration and config/launch. Add three root peer cases for healthy,
+warning and error levels, selected for both RCLCPP and Agnocast-only transport.
+
+Pattern: one original compile/shared owner, switchable wrapper executable and
+indexed config/launch/component registration. Declare actual localization,
+logging/diagnostics and ROS SDK providers. Keep original tests package-local;
+new peers stay in bazel/tests. No source changes are needed.
+
+Use isotropic covariance with scale1, warning radius1 and error radius2.
+Input radii .5/1.5/2.5 must produce corresponding levels and exact long/lateral
+key values. Check the retained map header/position and marker diameters2r.
+The enabled peer uses only wrapper nodes and AgnocastOnlySingleThreadedExecutor,
+asserting RCLCPP is inactive. Prepare libagnocast_heaphook and matching kernel
+2.4.1 with /dev/agnocast accessible; this does not make the kernel a build input.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  @autoware_localization_error_monitor//... //bazel/tests:localization_error_monitor_transport_test
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --local_test_jobs=1 --strategy=TestRunner=local \
+  --run_under=//bazel/agnocast:with_heaphook \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  //bazel/tests:localization_error_monitor_transport_test
+```
+
+Results: both original and all three added cases pass, zero failures/errors/skips,
+29.4 s; the three enabled cases also pass in 5.5 s. All module non-test targets
+build. Added-file formatting and diff checks pass. No Fast DDS, vehicle accuracy
+or expensive product gate is selected. Next: pose-instability diagnostics.
