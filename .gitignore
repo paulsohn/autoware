@@ -1,0 +1,4 @@
+# Auto-generated TensorRT artifacts, built locally by Autoware from the model
+# files (see autoware_tensorrt_common). They are environment-specific
+# (GPU arch + TensorRT version) and must not be committed to this repo.
+*.engine
