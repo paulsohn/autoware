@@ -1,6 +1,7 @@
 #pragma once
 #include "events.hpp"
 
+#include <memory>
 #include <string>
 #include <thread>
 
@@ -19,15 +20,15 @@ struct Lease
 rmw_ret_t count_compatible(
   const rmw_node_t *, const std::string &, const std::string &, const rmw_qos_profile_t &,
   bool publisher, size_t *);
-struct MatchGraph
+struct GraphRecord;
+struct GraphCache
 {
   std::mutex mutex;
   int events = -1;
-  bool valid = false;
-  std::vector<Peer> peers;
-  ~MatchGraph();
+  std::shared_ptr<const std::vector<GraphRecord>> records;
+  ~GraphCache();
 };
-MatchGraph & match_graph(const rmw_node_t * node);
+GraphCache & graph_cache(const rmw_node_t * node);
 struct GraphWatch
 {
   int events = -1, stop = -1;

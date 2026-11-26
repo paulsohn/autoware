@@ -27,6 +27,22 @@
 #include <sstream>
 #include <vector>
 
+namespace standalone
+{
+struct Metadata
+{
+  char kind{};
+  rosidl_type_hash_t hash{};
+  uint8_t gid[RMW_GID_STORAGE_SIZE]{};
+  rmw_qos_profile_t qos{};
+};
+struct GraphRecord
+{
+  Metadata meta;
+  std::string node, ns, enclave, name, type;
+};
+}  // namespace standalone
+
 namespace
 {
 using namespace standalone;
@@ -38,21 +54,9 @@ std::string directory(const rmw_node_t * node)
   return "/dev/shm/rmw_agnocast_graph_v1_" + std::to_string(geteuid()) + "_" +
          std::to_string(ns.st_ino) + "_" + std::to_string(node->context->actual_domain_id);
 }
-struct Metadata
+std::vector<GraphRecord> snapshot(const rmw_node_t * node)
 {
-  char kind{};
-  rosidl_type_hash_t hash{};
-  uint8_t gid[RMW_GID_STORAGE_SIZE]{};
-  rmw_qos_profile_t qos{};
-};
-struct Record
-{
-  Metadata meta;
-  std::string node, ns, enclave, name, type;
-};
-std::vector<Record> snapshot(const rmw_node_t * node)
-{
-  std::vector<Record> out;
+  std::vector<GraphRecord> out;
   for (const auto & file : fs::directory_iterator(directory(node))) {
     if (file.path().extension() != ".live") continue;
     int fd = open(file.path().c_str(), O_RDONLY | O_CLOEXEC | O_NOFOLLOW | O_NONBLOCK);
@@ -86,7 +90,7 @@ std::vector<Record> snapshot(const rmw_node_t * node)
     auto n = pread(fd, bytes.data(), bytes.size(), 0);
     close(fd);
     if (n != st.st_size) continue;
-    Record r;
+    GraphRecord r;
     std::memcpy(&r.meta, bytes.data(), sizeof(Metadata));
     std::istringstream fields(bytes.substr(sizeof(Metadata)));
     if (
@@ -107,13 +111,55 @@ std::vector<Peer> endpoint_snapshot(const rmw_node_t * node)
          r.meta.qos});
   return peers;
 }
+std::shared_ptr<const std::vector<GraphRecord>> inventory(const rmw_node_t * node)
+{
+  auto & graph = graph_cache(node);
+  std::lock_guard lock(graph.mutex);
+  if (graph.events < 0) {
+    auto path = directory(node);
+    graph.events = inotify_init1(IN_NONBLOCK | IN_CLOEXEC);
+    if (
+      graph.events >= 0 &&
+      inotify_add_watch(
+        graph.events, path.c_str(),
+        IN_MOVED_TO | IN_DELETE | IN_CLOSE_WRITE | IN_MOVE_SELF | IN_DELETE_SELF) < 0) {
+      close(graph.events);
+      graph.events = -1;
+    }
+  }
+  // Register before scanning. Events arriving during the scan invalidate the next query.
+  // A killed process closes its writable lease even when the .live file survives.
+  alignas(inotify_event) char events[4096];
+  while (graph.events >= 0) {
+    auto n = read(graph.events, events, sizeof(events));
+    if (n < 0 && errno == EINTR) continue;
+    if (n < 0 && errno == EAGAIN) break;
+    graph.records.reset();  // Includes queue overflow.
+    bool lost_watch = n <= 0;
+    for (ssize_t offset = 0; offset < n;) {
+      auto * ev = reinterpret_cast<const inotify_event *>(events + offset);
+      lost_watch |= (ev->mask & (IN_IGNORED | IN_MOVE_SELF | IN_DELETE_SELF)) != 0;
+      offset += sizeof(inotify_event) + ev->len;
+    }
+    if (lost_watch) {
+      close(graph.events);
+      graph.events = -1;
+    }
+  }
+  if (!graph.records) {
+    auto records = std::make_shared<const std::vector<GraphRecord>>(snapshot(node));
+    if (graph.events >= 0) graph.records = records;
+    return records;
+  }
+  return graph.records;
+}
 template <class F>
 rmw_ret_t inspect(const rmw_node_t * node, F f)
 {
   if (!node) return RMW_RET_INVALID_ARGUMENT;
   if (node->implementation_identifier != id) return RMW_RET_INCORRECT_RMW_IMPLEMENTATION;
   try {
-    return f(snapshot(node));
+    return f(*inventory(node));
   } catch (const std::bad_alloc &) {
     return RMW_RET_BAD_ALLOC;
   } catch (const std::exception & e) {
@@ -488,7 +534,7 @@ rmw_ret_t rmw_get_subscriptions_info_by_topic(
   return endpoint_info(node, allocator, topic_name, 'S', subscriptions_info);
 }
 
-standalone::MatchGraph::~MatchGraph()
+standalone::GraphCache::~GraphCache()
 {
   if (events >= 0) close(events);
 }
@@ -499,58 +545,16 @@ rmw_ret_t standalone::count_compatible(
 {
   if (!node || !count) return RMW_RET_INVALID_ARGUMENT;
   if (node->implementation_identifier != id) return RMW_RET_INCORRECT_RMW_IMPLEMENTATION;
-  try {
-    auto & graph = match_graph(node);
-    std::lock_guard lock(graph.mutex);
-    if (graph.events < 0) {
-      auto path = directory(node);
-      graph.events = inotify_init1(IN_NONBLOCK | IN_CLOEXEC);
-      if (
-        graph.events >= 0 &&
-        inotify_add_watch(
-          graph.events, path.c_str(),
-          IN_MOVED_TO | IN_DELETE | IN_CLOSE_WRITE | IN_MOVE_SELF | IN_DELETE_SELF) < 0) {
-        close(graph.events);
-        graph.events = -1;
-      }
-    }
-    // Register before scanning. Events arriving during the scan invalidate the next query.
-    // A killed process closes its writable lease even when the .live file survives.
-    alignas(inotify_event) char events[4096];
-    while (graph.events >= 0) {
-      auto n = read(graph.events, events, sizeof(events));
-      if (n < 0 && errno == EINTR) continue;
-      if (n < 0 && errno == EAGAIN) break;
-      graph.valid = false;  // Includes queue overflow.
-      bool lost_watch = n <= 0;
-      for (ssize_t offset = 0; offset < n;) {
-        auto * ev = reinterpret_cast<const inotify_event *>(events + offset);
-        lost_watch |= (ev->mask & (IN_IGNORED | IN_MOVE_SELF | IN_DELETE_SELF)) != 0;
-        offset += sizeof(inotify_event) + ev->len;
-      }
-      if (lost_watch) {
-        close(graph.events);
-        graph.events = -1;
-      }
-    }
-    if (!graph.valid) {
-      graph.peers = endpoint_snapshot(node);
-      graph.valid = graph.events >= 0;
-    }
+  return inspect(node, [&](const auto & rows) -> rmw_ret_t {
     *count = 0;
-    for (const auto & row : graph.peers) {
-      if (row.name != topic || row.type != type || row.kind != (publisher ? 'S' : 'P')) continue;
+    for (const auto & row : rows) {
+      if (row.name != topic || row.type != type || row.meta.kind != (publisher ? 'S' : 'P')) continue;
       rmw_qos_compatibility_type_t compatible;
       auto ret = rmw_qos_profile_check_compatible(
-        publisher ? qos : row.qos, publisher ? row.qos : qos, &compatible, nullptr, 0);
+        publisher ? qos : row.meta.qos, publisher ? row.meta.qos : qos, &compatible, nullptr, 0);
       if (ret != RMW_RET_OK) return ret;
       if (compatible == RMW_QOS_COMPATIBILITY_OK) ++*count;
     }
     return RMW_RET_OK;
-  } catch (const std::bad_alloc &) {
-    return RMW_RET_BAD_ALLOC;
-  } catch (const std::exception & e) {
-    RMW_SET_ERROR_MSG(e.what());
-    return RMW_RET_ERROR;
-  }
+  });
 }

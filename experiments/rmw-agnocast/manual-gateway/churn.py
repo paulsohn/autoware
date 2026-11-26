@@ -82,7 +82,23 @@ while True:
         old = phase
     rclpy.spin_once(node, timeout_sec=.04)
 if role == "network":
-    assert not received, received
+    # Preserve the seven-second retirement gate while recording what stayed visible.
+    if received:
+        for name, values in received.items():
+            topic = "/churn/" + name
+            for info in node.get_publishers_info_by_topic(topic):
+                owner = info.node_name.rsplit("_",1)[-1]
+                emit(late=topic, node=info.node_name, count=len(values),
+                     worker_alive=owner.isdigit() and Path("/proc",owner).exists())
+        deadline = time.monotonic()+12
+        pending = set(received)
+        while pending and time.monotonic()<deadline:
+            rclpy.spin_once(node,timeout_sec=.1)
+            for name in list(pending):
+                if not node.count_publishers("/churn/"+name):
+                    emit(late_retirement=name)
+                    pending.remove(name)
+        raise AssertionError(f"publishers visible at retirement deadline: {sorted(received)}")
     assert retired == ({"active1", "active2"} if policy in ("discovered","configured-matched") else set()), retired
 node.destroy_node()
 rclpy.shutdown()

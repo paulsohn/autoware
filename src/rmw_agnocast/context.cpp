@@ -169,12 +169,12 @@ struct LocalNode
   std::string name, ns;
   std::unique_ptr<rmw_guard_condition_t, decltype(&rmw_destroy_guard_condition)> graph;
   Lease lease;
-  MatchGraph matches;
+  GraphCache cache;
   GraphWatch watch;
 };
-standalone::MatchGraph & standalone::match_graph(const rmw_node_t * node)
+standalone::GraphCache & standalone::graph_cache(const rmw_node_t * node)
 {
-  return static_cast<LocalNode *>(node->data)->matches;
+  return static_cast<LocalNode *>(node->data)->cache;
 }
 rmw_node_t * rmw_create_node(rmw_context_t * ctx, const char * name, const char * ns)
 {

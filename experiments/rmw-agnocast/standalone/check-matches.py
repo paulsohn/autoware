@@ -21,11 +21,23 @@ def check(pub, sub, expected):
 
 def remote(node, offered, requested):
     endpoints(node, String, '/match_in', '/match_out', offered, requested)
+    node.create_publisher(String, '/match_peer_marker', 1)
     print('peer ready', flush=True)
     input()
 
 
+def check_inventory(node, live):
+    topic = '/match_peer_marker'
+    assert ('match_peer' in node.get_node_names()) == live
+    assert (topic in dict(node.get_topic_names_and_types())) == live
+    assert [ep.node_name for ep in node.get_publishers_info_by_topic(topic)] == (
+        ['match_peer'] if live else [])
+    assert bool([ep for ep in node.get_subscriptions_info_by_topic('/match_out')
+                 if ep.node_name == 'match_peer']) == live
+
+
 def run(node, best, reliable):
+    check_inventory(node, False)
     pub, sub = endpoints(node, String, '/match_out', '/match_in', best, reliable)
     check(pub, sub, 0)
     endpoints(node, Int32, '/match_in', '/match_out', reliable, best)
@@ -40,6 +52,7 @@ def run(node, best, reliable):
                     break
             else:
                 raise RuntimeError('peer exited before discovery')
+            check_inventory(node, True)
             check(pub, sub, 1)
             extra_pub, extra_sub = endpoints(node, String, '/match_in', '/match_out', reliable, best)
             check(pub, sub, 2)
@@ -50,6 +63,7 @@ def run(node, best, reliable):
                 peer.kill()
             output, _ = peer.communicate('\n' if not kill else None, timeout=8)
             assert peer.returncode == (-9 if kill else 0), output
+            check_inventory(node, False)
             check(pub, sub, 0)
         finally:
             if peer.poll() is None:

@@ -1,0 +1,6 @@
+trial,native_cpu_12_pct,native_cpu_48_pct,native_cpu_churn_pct,gateway_cpu_48_pct,local_clouds,remote_clouds,steady_tracks,first_1_ms,first_2_ms,retire_1_ms,retire_2_ms,late_topics
+inventory1-cyclone-discovered,0.74,0.92,2.04,6.56,600,600,596,688.5,727.5,444.1,765.1,
+inventory1-zenoh-discovered,0.59,0.74,1.99,4.81,600,600,596,795.1,726.9,441.9,562.4,
+inventory2-cyclone-discovered,0.59,0.89,3.25,6.51,600,600,596,983.2,806.6,403.4,724.1,
+inventory2-zenoh-discovered,0.74,1.03,3.25,5.19,600,600,596,481.5,525.2,,362.3,active1
+inventory3-zenoh-discovered,0.59,0.77,2.15,4.95,600,600,596,672.2,726.6,322.2,442.9,

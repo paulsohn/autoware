@@ -4539,3 +4539,43 @@ The separate stable-graph fixture completed five consecutive matched-QoS pairs p
 | zenoh | discovered | 2.4 | 4.65 | 5.99 |
 
 Cold route discovery still delays the first sample. The earlier steady-state cloud-median penalty did not reproduce consistently across pairs. These 20-sample routes have limited tail resolution. Prioritize reducing native inventory scan CPU. [All 20 matched-QoS run summaries](../rmw-agnocast/manual-gateway/results/cloud-interleaved.csv).
+
+## Reuse the native graph inventory for discovery queries
+
+The preceding 48-offer experiment identified repeated full native registry reads during gateway discovery. The existing per-node matched-count cache already watched the correct user, IPC namespace and ROS domain directory. Extend it to retain the complete immutable graph record vector and share it with the standard names, types, endpoint-info and matched-count queries. Each query drains the watch before obtaining its inventory. The first query and the first query after an event re-read the registry. If no watch can be established the query reads a fresh inventory. Inotify queue overflow also invalidates it. Registration rename, unlink and closure of a killed process's writable lease cover creation, normal exit and crash. The cache mutex protects refresh, while each caller holds a shared pointer during its query, including any caller-supplied allocator callbacks. A sweep can observe an intervening membership change. No timer, gateway configuration, discovery message, kernel or heap-hook changes are needed.
+
+From the provisioned colcon worktree rebuild the Release RMW and run the workload serially. Each output prefix must be fresh.
+
+```bash
+export LYRICAL_ROOT="$(cat build/agnocast-lyrical/universe-root)"
+experiments/buffer/run-lyrical.sh bash experiments/rmw-agnocast/standalone/build-poll.sh
+sg docker -c 'bash experiments/rmw-agnocast/manual-gateway/churn-run.sh build/manual-gateway/inventory-replay cyclone discovered'
+sg docker -c 'bash experiments/rmw-agnocast/manual-gateway/churn-run.sh build/manual-gateway/inventory-replay zenoh discovered'
+python3 experiments/rmw-agnocast/manual-gateway/churn-report.py build/manual-gateway/inventory-replay-*
+```
+
+For functional reproduction run the following from the same worktree, with LYRICAL_ROOT set as above. Use fresh directories. The standalone --check mode sources the selected overlays, asserts the stripped distro has no Cyclone library, and invokes the extended check-matches.py along with the cloud and standalone API checks.
+
+```bash
+experiments/buffer/run-lyrical.sh bwrap --ro-bind / / --dev-bind /dev /dev --bind /ws /ws --bind /tmp /tmp --ro-bind /ws/build/standalone/distro /opt/ros/lyrical --chdir /ws bash experiments/rmw-agnocast/standalone/run-universe.sh --check
+sg docker -c 'ISLAND_DOMAINS=inherited ISLAND_DISCOVERY=1 experiments/buffer/run-limited.sh python3 experiments/rmw-agnocast/islands/control.py build/manual-gateway/inventory-auto-replay'
+sg docker -c 'ISLAND_DOMAINS=inherited-manual ISLAND_DISCOVERY=1 experiments/buffer/run-limited.sh python3 experiments/rmw-agnocast/islands/control.py build/manual-gateway/inventory-manual-replay'
+sg docker -c 'ISLAND_DOMAINS=writer-override ISLAND_DISCOVERY=1 experiments/buffer/run-limited.sh python3 experiments/rmw-agnocast/islands/control.py build/manual-gateway/inventory-writer-replay'
+sg docker -c 'ISLAND_DOMAINS=reader-override ISLAND_DISCOVERY=1 experiments/buffer/run-limited.sh python3 experiments/rmw-agnocast/islands/control.py build/manual-gateway/inventory-reader-replay'
+sg docker -c 'ISLAND_LIFECYCLE=1 ISLAND_DISCOVERY=1 experiments/buffer/run-limited.sh python3 experiments/rmw-agnocast/islands/control.py build/manual-gateway/inventory-lifecycle-replay'
+```
+
+The direct graph probe checked node names, topic names, publisher/subscription endpoint information and QoS-compatible counts across orderly exit, SIGKILL and restart. All eight domain/backend cells and both lifecycle runs passed, including peer partition/restore, receiver container kill/restart, retirement after last subscriber exit, and delivery over the surviving configured route.
+
+The Cyclone-stripped standalone suite passed including cloud, copied/loaned/batched topics, service clients, late rosout, graph, deadlines and the warmed allocation check. The ordered workload series was Cyclone, Zenoh, Zenoh, Cyclone, Zenoh. With 48 silent offers the native discovery process fell from 100.05% to 0.89–0.92% of one core on Cyclone, and from 97.51% to 0.74–1.03% on Zenoh. During the rotating eight-offer churn it used 1.99–3.25%. The entire gateway scope during the 48-offer phase used 4.81–6.56%. Each of the five runs verified 600 local and 600 remote clouds and 596 steady tracking outputs. First auxiliary payloads took 0.48–0.98 s from subscription creation (previous series 0.38–0.73 s). The short samples do not establish equal activation latency. [All five trials including the failed retirement](../rmw-agnocast/manual-gateway/results/graph-inventory.csv).
+
+One of ten auxiliary publisher retirements missed the original seven-second observation deadline, on the second Zenoh trial. The gateway scope dropped from 14 processes to its baseline eight by about 0.56 s after unsubscribe and both routes' data workers reported teardown statistics. The network observer still counted a publisher on /churn/active1. Its eventual disappearance time is unknown. Keep this trial as a lifecycle failure despite successful bag verification. The next Zenoh workload passed; it also logged a network RMW SubscriberCallback error at active2 unsubscribe. These observations do not identify a causal link. The probe now captures endpoint identity, worker PID liveness and a further bounded observation interval on future misses, while retaining the original failure.
+
+Stock Zenoh-only controls exercised pairs of live publishers with payload delivery before unsubscribe, alternating SIGINT and orderly shutdown. All 24 publishers retired within 0.227 s in private loopback and all 24 within 0.145 s with host applications using a container router on awpilot0. Neither control runs the complete Universe workload. Reproduce them with:
+
+```bash
+sg docker -c 'experiments/buffer/run-limited.sh bash experiments/rmw-agnocast/islands/zenoh-retirement.sh'
+sg docker -c 'bash experiments/rmw-agnocast/islands/zenoh-retirement.sh routed'
+```
+
+Retain the inventory optimization. Investigate the remaining Zenoh visibility issue with an independent simultaneous stock graph observer during repeated gateway retirements under load, comparing the advertised GIDs and the actual worker exit times. Physical-host qualification stays open.
