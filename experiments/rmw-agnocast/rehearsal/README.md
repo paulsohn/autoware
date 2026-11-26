@@ -32,9 +32,9 @@ A second machine and an independent developer following the tutorial remain sepa
 
 ## API support on the tested revision
 
-The original migration rehearsal reproduced all six scenarios from two fresh builds. After the API fixes, 125 of 138 upstream RMW cases passed, eight failed assertions and five skipped. All cases completed without an abort. Of 92 selected rclcpp cases, 88 passed and four failed assertions.
+The original migration rehearsal reproduced all six scenarios from two fresh builds. With the local test correction, 126 of 138 RMW cases passed, seven failed assertions and five skipped. All cases completed without an abort. Of 92 selected rclcpp cases, 88 passed and four failed assertions.
 
-The [case inventory](baseline.csv) records each outcome against rmw_implementation 3.1.6 and the patched Lyrical rclcpp. It covers all 16 upstream RMW GoogleTest programs and four selected rclcpp programs. The GoogleTest counts include bad-input, fault-injection and mocked client-library cases. Use the separate two-process migration as the application check.
+The [case inventory](baseline.csv) records each outcome against rmw_implementation 3.1.6 and the patched Lyrical rclcpp. The runner applies one [fixture correction](subscription-qos-direction.patch) to the extracted 3.1.6 sources. The subscription mismatch test now checks the best-effort publisher offer against the reliable subscriber request and expects zero matches. It covers all 16 upstream RMW GoogleTest programs and four selected rclcpp programs. The GoogleTest counts include bad-input, fault-injection and mocked client-library cases. Use the separate two-process migration as the application check.
 
 | Area | Verified behavior | Remaining limitation |
 |---|---|---|

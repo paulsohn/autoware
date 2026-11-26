@@ -4671,3 +4671,9 @@ sg docker -c 'experiments/buffer/run-limited.sh python3 experiments/rmw-agnocast
 All six live migration cases passed. Both manual gateway restart runs maintained 21 consecutive local listener samples, and the remote bag checks passed on Cyclone and Zenoh. Runtime minimum host MemAvailable was 11868 MiB.
 
 The eight remaining upstream failures split into four raw transport-name cases, three cases involving finite liveliness QoS, and one reliability mismatch-count case. The last fixture creates a best-effort publisher and reliable subscriber, but calls rmw_qos_profile_check_compatible with the subscriber profile first. In an independent copy of test_rmw_implementation 3.1.6, swap the two profile arguments in TestSubscriptionUse.count_mismatched_subscriptions, build the test_subscription target and run that case with the native RMW and released hook. The corrected direction passed on the same middleware. The original test and its failing status remain in the regression inventory.
+
+## Correct the subscription mismatch fixture in the rehearsal
+
+The runner extracts the pinned rmw_implementation 3.1.6 revision and applies a one-line test patch before building. The mismatch test now passes the best-effort publisher profile first and the reliable subscriber profile second to rmw_qos_profile_check_compatible. Its existing assertion checks for zero matched publishers. The unmodified suite result is preserved in commit e63b0eecf.
+
+Rerun rehearsal/conformance.sh from the guarded Lyrical environment described above with a fresh result directory. The api-direction-replay run completed all 230 cases. A row-for-row comparison against e63b0eecf showed exactly one change, TestSubscriptionUse.count_mismatched_subscriptions from failed to passed. The corrected RMW suite has 126 passes, seven failures and five skips. The selected rclcpp programs have 88 passes and four failures.

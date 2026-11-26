@@ -12,6 +12,8 @@ git -C "$repo" cat-file -e "$pinned^{commit}"
 mkdir -p "$out/upstream-src"
 set -o pipefail
 git -C "$repo" archive "$pinned" test_rmw_implementation | tar -x -C "$out/upstream-src"
+# The 3.1.6 subscription mismatch fixture supplies requested QoS before offered QoS.
+patch --batch --forward --fuzz=0 -p1 -d "$out/upstream-src" < "$(dirname "$0")/subscription-qos-direction.patch"
 source /opt/ros/lyrical/setup.bash
 source "$out/install/local_setup.bash"
 if [[ -n ${REHEARSAL_TEST_DEBS:-} ]]; then

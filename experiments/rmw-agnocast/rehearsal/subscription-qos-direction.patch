@@ -1,0 +1,7 @@
+--- a/test_rmw_implementation/test/test_subscription.cpp
++++ b/test_rmw_implementation/test/test_subscription.cpp
+@@ -505,3 +505,3 @@
+   rmw_ret_t rmw_ret =
+-    rmw_qos_profile_check_compatible(qos_profile, other_qos_profile, &compat, nullptr, 0);
++    rmw_qos_profile_check_compatible(other_qos_profile, qos_profile, &compat, nullptr, 0);
+   ASSERT_EQ(rmw_ret, RMW_RET_OK);
