@@ -24573,3 +24573,34 @@ failures or skips. No source implementation or original test modification is
 needed. Bazel parsing and whitespace checks pass. No Fast DDS, simulator or
 deployment gate is selected. Coverage is 179/244 (65 remaining); Phase 9.11
 is eleven of thirteen complete. Next: the two Agnocast-aware planners.
+
+## 2026-11-27 — Phase 9.11 prerequisite: In-lane stop trigger interface
+
+Purpose: supply the local InLaneStopTrigger type required by the current MRM
+planner. Compilation fails at tier4_system_msgs/msg/in_lane_stop_trigger.hpp.
+Inspect the existing local .msg: it contains a Time stamp, trigger flag and
+UNKNOWN/MODERATE/EMERGENCY profile constants. The source selection is already
+local; its handwritten Bazel declarations simply have not selected this type.
+
+Declare ros_message in the owning msg/BUILD.bazel with builtin_interfaces/Time,
+then add the label to the package root's default_generators list. Existing
+module/manifest dependencies suffice. The top-level interface collection already
+consumes this package's :cc/:cc_shared provider, so metadata, generated language
+providers and collector consumers gain the type without another package list.
+Keep the original message unchanged and preserve developer-owned registration.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  @tier4_system_msgs//... //bazel/interfaces:tier4_system_serialization_test \
+  //bazel/interfaces:descriptor_test //bazel/interfaces:python_interfaces_test
+```
+
+Results: all 38 module targets build and all three consumer gates pass without
+failures/skips. Serialization round-trips all 35 generated wire types; descriptor
+and Python/index consumers pass. The aggregate provider change also rebuilds
+affected existing consumers; retain that evidence rather than treating a new
+message as a source-only edit. The subsequent planner gate exercises profile
+constants and actual trigger transitions. Whitespace checks pass. No Fast DDS
+or deployment gate is selected. Universe coverage is unchanged.

@@ -167,3 +167,9 @@ ros_message(
     src = "TrajectorySourceStatus.msg",
     deps = ["@builtin_interfaces//msg:Time"],
 )
+
+ros_message(
+    name = "InLaneStopTrigger",
+    src = "InLaneStopTrigger.msg",
+    deps = ["@builtin_interfaces//msg:Time"],
+)

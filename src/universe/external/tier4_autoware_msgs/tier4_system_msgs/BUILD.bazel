@@ -29,6 +29,7 @@ default_generators(
         "//msg:DrivingModeMrmStateItem",
         "//msg:DrivingModeRequest",
         "//msg:EmergencyHoldingState",
+        "//msg:InLaneStopTrigger",
         "//msg:ModeChangeAvailable",
         "//msg:MrmBehaviorStatus",
         "//msg:OperationModeAvailability",
