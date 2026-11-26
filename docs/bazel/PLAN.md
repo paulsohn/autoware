@@ -112,6 +112,7 @@ only when your current target demonstrates the need.
   [evidence: official map](JOURNAL.md#2026-11-21-phase-733--official-tutorial-map-and-scenario-resources).
 - [ ] Preserve original suites' source-layout and tool prerequisites in declared fixtures.
   [Test adapter, ROS-context and unordered-output convention](DEVELOPING.md#original-test-source-layout);
+  [mode-aware original C++ driver evidence](JOURNAL.md#2026-11-26-phase-910--candidate-trajectory-concatenation-and-wrapper-clocks);
   [evidence: complete preprocessing suite](JOURNAL.md#2026-11-23-phase-94--cpu-point-cloud-preprocessor);
   [radar driver/body context evidence](JOURNAL.md#2026-11-23-phase-91--radar-track-crossing-noise-filter);
   [C++ bag-fixture evidence](JOURNAL.md#2026-11-22-phase-732--multi-object-tracking);
@@ -2461,14 +2462,18 @@ or deployment gate is selected. Coverage starts at 156/244.
 | autoware_path_distance_calculator | All three route/TF/timer cases on RCLCPP and Agnocast-only |
 | autoware_traffic_light_compliance_checker | All 23 original cases |
 
-The common group is complete; validated Universe coverage is161/244. Next:
-trajectory adaptation, concatenation and gating, before validator/ranker and
-modifier/selector. Preserve the remaining seven package boundaries and their
-complete original/behavior gates.
+| Trajectory assembly package | Passed gate |
+| --- | --- |
+| autoware_trajectory_adapter | Four selection/output/latency cases on RCLCPP and Agnocast-only |
+| autoware_trajectory_concatenator | All17 core and five original wrapper cases; all five wrapper cases also on Agnocast-only |
+| autoware_trajectory_gate | All eight original core cases and real service/routing/status/timeout behavior on both backends |
 
-autoware_trajectory_adapter: complete; all four public/wrapper cases pass on RCLCPP and Agnocast-only.
-
-autoware_trajectory_concatenator: complete; exact gates and evidence are in its Phase 9.10 journal.
+The five common and three assembly packages are complete (eight of twelve
+Phase 9.10 packages). The gate's required local system-message/service extension
+passes all generated wire types and collector consumers. Validated Universe
+coverage is164/244, leaving80 without definitions. Next: validator then ranker;
+complete modifier and selector afterward with their full plugin, solver,
+interface and behavior contracts. Phase 9.10 remains in progress.
 
 ### Execution order through complete Universe coverage
 

@@ -1,0 +1,54 @@
+load("@autoware_agnocast_wrapper//:defs.bzl", "autoware_agnocast_node")
+load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "autoware_trajectory_gate_library",
+    srcs = ["src/core/interface.cpp", "src/core/monitor.cpp", "src/core/publisher.cpp", "src/core/selector.cpp", "src/core/subscription.cpp", "src/trajectory_gate.cpp"],
+    hdrs = ["src/core/interface.hpp", "src/core/monitor.hpp", "src/core/publisher.hpp", "src/core/selector.hpp", "src/core/subscription.hpp", "src/trajectory_gate.hpp"],
+    includes = ["src"],
+    deps = ["@autoware_agnocast_wrapper//:autoware_agnocast_wrapper_library", "@autoware_planning_msgs//:cc", "@autoware_utils_diagnostics", "@diagnostic_updater//:diagnostic_updater_library", "@rclcpp_components//:rclcpp_components_library", "@tier4_system_msgs//:cc"],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = ["@autoware_agnocast_wrapper//:autoware_agnocast_wrapper", "@autoware_planning_msgs//:cc_shared", "@diagnostic_updater//:diagnostic_updater", "@tier4_system_msgs//:cc_shared", "@rclcpp_components//:rclcpp_components"],
+)
+
+cc_shared_library(
+    name = "autoware_trajectory_gate",
+    shared_lib_name = "libautoware_trajectory_gate.so",
+    deps = [":autoware_trajectory_gate_library"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+)
+
+autoware_agnocast_node(
+    name = "trajectory_gate_node",
+    component = ":autoware_trajectory_gate",
+    plugin = "autoware::trajectory_gate::TrajectoryGate",
+    package_name = "autoware_trajectory_gate",
+)
+
+register_ament_files(
+    name = "executables",
+    files = [":trajectory_gate_node"],
+    prefix = "lib/autoware_trajectory_gate",
+    strip_prefix = "*",
+)
+
+ament_index(
+    package_xml = "package.xml",
+    libraries = [":autoware_trajectory_gate"],
+    components = [":trajectory_gate_node_components"],
+    data = glob(["launch/**", "config/**"]) + [":executables", ":trajectory_gate_node_plugin"],
+)
+
+cc_test(
+    name = "test_core_logic",
+    srcs = ["test/test_core_logic.cpp"],
+    deps = [":autoware_trajectory_gate_library", "@googletest//:gtest_main"],
+    dynamic_deps = [":autoware_trajectory_gate", ":runtime_dynamic_deps"],
+)

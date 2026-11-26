@@ -2222,3 +2222,9 @@ local_path_override(
     module_name = "autoware_trajectory_concatenator",
     path = "src/universe/autoware_universe/planning/autoware_trajectory_concatenator",
 )
+
+bazel_dep(name = "autoware_trajectory_gate", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_trajectory_gate",
+    path = "src/universe/autoware_universe/planning/autoware_trajectory_gate",
+)

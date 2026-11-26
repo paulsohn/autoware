@@ -23340,3 +23340,46 @@ an extra cloned suite or a dependency-related skip. Added-file formatting,
 Bazel evaluation and diff checks pass. No source fix, field planning accuracy,
 Fast DDS or expensive product gate is selected. Next: source selection and
 communication through the trajectory gate.
+
+## 2026-11-26: Phase 9.10 — Trajectory source gating and timeout diagnostics
+
+Purpose: adopt all six original gate/core sources, component/executable,
+config/launch and the complete eight-case core suite. Inspect stream wiring,
+source selection/invalidation, change service, latched status and per-input
+TimeoutDiag updates. Add one root-owned end-to-end case on RCLCPP and
+Agnocast-only, including service and diagnostic behavior.
+
+Pattern: one original compile/shared owner with the src headers required by the
+node and core tests, unconditional wrapper support and CMake-matching
+AgnocastOnlyCallbackIsolatedExecutor registration. Preserve executable name
+trajectory_gate_node and indexed config/launch. Depend on the local system-message
+extension in the preceding prerequisite entry. Declare the canonical
+rclcpp_components shared SDK owner explicitly: omitting it leaves class_loader,
+composition interfaces and console_bridge linked but not exported to the generated
+launcher. Correct that build graph rather than copying SDK factory code. No
+original implementation/test change is required.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  @autoware_trajectory_gate//... //bazel/tests:trajectory_gate_transport_test
+```
+
+Results: every module target builds and all eight original core cases plus the
+added transport case pass, zero failures/errors/skips/disabled (2.9 s package
+invocation; transport .9 s). The added case also passes Agnocast-only with the
+built/preloaded heaphook, within the shared enabled gate documented in the
+trajectory-adapter entry. It asserts RCLCPP remains uninitialized in that mode;
+unchanged pure core evidence is reused.
+
+The peer requires initial latched source0, successfully selects101 then102 and
+observes only the selected stream with preserved stamp/points. An unknown999
+request must fail and publish source0; subsequent input must produce no output.
+Both streams first reach diagnostic OK while receiving data, then ERROR after
+publication stops. Bound waits and drain prior output before asserting invalid
+selection suppression. Atomic observations avoid callback/test-thread races.
+This qualifies actual pub/sub, request/reply, state and timeout behavior without
+private-method adapters. Added-file formatting and diff checks pass. No Fast
+DDS, simulator, deployment or field-planning qualification is claimed. Next:
+trajectory validation and ranking, then modification and final selection.

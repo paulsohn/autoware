@@ -1320,6 +1320,15 @@ initialization/shutdown; test bodies reuse an active context. If the original
 suite itself initializes an active context twice, reproduce the failure and
 correct the redundant call without dropping assertions or test files.
 
+If another backend needs a different test initializer, retain the original driver
+for its existing backend. Expose the unchanged test CPP through a test-only
+textual_hdrs provider and include it in an adapter under bazel/tests, renaming
+only its main. The adapter owns backend initialization/shutdown and runs every
+original fixture/assertion. Supply only the adapter as the compiled test source;
+the included CPP remains a textual input. The concatenator backend driver uses
+this pattern to run the original wrapper suite without initializing RCLCPP on
+Agnocast-only.
+
 For a C++ fixture-path macro, derive its value from a declared $(rootpath file)
 input and the expected parent directories. Keep quoted C++ strings intact
 through copts tokenization; do not embed checkout paths or canonical repository
@@ -2049,7 +2058,7 @@ test invokes the original image launch and validates exact pixels, frame and
 stamp. The payload test checks image/cloud device round trips and a separate
 process receiving the async publisher's image through the selected backend.
 
-## Common trajectory checks and goal distance
+## Common trajectory checks and distance nodes
 
 Use @autoware_boundary_departure_checker, @autoware_obstacle_proximity_checker
 and @autoware_traffic_light_compliance_checker as C++ library providers. Their
@@ -2064,3 +2073,26 @@ poses older than one second. Run @autoware_goal_distance_calculator//... with
 independent of node startup so construction can complete; refresh timestamps
 when checking live inputs. Pure geometry tests do not cover timer input transfer
 or freshness behavior.
+
+Path distance consumes the planned LaneletRoute segment IDs, indexed map input
+and map-to-base_link TF. Run @autoware_path_distance_calculator//... together with
+//bazel/tests:path_distance_test; qualify that transport target on both RCLCPP
+and Agnocast-only with the heap hook and compatible kernel device.
+
+## Trajectory assembly libraries and gate
+
+@autoware_trajectory_adapter and @autoware_trajectory_concatenator are reusable
+C++ providers with :runtime_dynamic_deps for SDK ownership. The concatenator
+owns generated parameters from param/parameter_struct.yaml. Run each changed
+module's complete //... suite and its root companion:
+//bazel/tests:trajectory_adapter_test or
+//bazel/tests:trajectory_concatenator_backend_test. The latter retains every
+original wrapper assertion while supplying mode-aware initialization.
+
+@autoware_trajectory_gate owns trajectory_gate_node, its component and indexed
+config/launch. Run its complete //... suite with
+//bazel/tests:trajectory_gate_transport_test for source changes, unknown-source
+invalidation, latched status and input timeout diagnostics. These three root
+companions also run with --run_under=//bazel/agnocast:with_heaphook and
+--test_env=ENABLE_AGNOCAST=1 after the runtime prerequisites are prepared. Use
+--config=no-agnocast for their RCLCPP gate; Fast DDS remains approval-only.
