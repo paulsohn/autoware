@@ -2044,3 +2044,9 @@ local_path_override(
     module_name = "autoware_traffic_light_selector",
     path = "src/universe/autoware_universe/perception/autoware_traffic_light_selector",
 )
+
+bazel_dep(name = "autoware_traffic_light_arbiter", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_traffic_light_arbiter",
+    path = "src/universe/autoware_universe/perception/autoware_traffic_light_arbiter",
+)

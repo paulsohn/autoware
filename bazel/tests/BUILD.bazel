@@ -2524,3 +2524,12 @@ cc_test(
     dynamic_deps = ["@autoware_traffic_light_selector//:runtime_dynamic_deps"],
     tags = ["no-sandbox", "no-remote"],
 )
+
+cc_test(
+    name = "traffic_light_arbiter_transport_test",
+    srcs = ["autoware_traffic_light_arbiter/test_transport.cpp"],
+    deps = ["@autoware_traffic_light_arbiter//:autoware_traffic_light_arbiter_node_library", "@googletest//:gtest"],
+    dynamic_deps = ["@autoware_traffic_light_arbiter//:runtime_dynamic_deps"],
+    data = ["@agnocast_heaphook"],
+    tags = ["no-sandbox", "no-remote"],
+)

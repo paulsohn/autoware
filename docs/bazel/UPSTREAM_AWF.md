@@ -2370,6 +2370,8 @@ executed here; no older ROS/CMake run or upstream submission is claimed.
 
 ### Traffic-light selector's four-stream Message Filters compatibility
 
+Local source fix: `bf9734dce`.
+
 - [ ] Associate with a matching upstream fix. Checked 2026-11-26: current
   [header](https://github.com/autowarefoundation/autoware_universe/blob/main/perception/autoware_traffic_light_selector/src/traffic_light_selector_node.hpp)
   retains .h aliases; the

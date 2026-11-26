@@ -1,0 +1,84 @@
+load("@autoware_agnocast_wrapper//:defs.bzl", "autoware_agnocast_node")
+load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "autoware_traffic_light_arbiter_library",
+    srcs = ["src/traffic_light_arbiter.cpp", "src/signal_match_validator.cpp"],
+    hdrs = ["include/autoware/traffic_light_arbiter/traffic_light_arbiter.hpp", "include/autoware/traffic_light_arbiter/signal_match_validator.hpp"],
+    includes = ["include"],
+    deps = ["@autoware_lanelet2_extension//:autoware_lanelet2_extension_lib_library", "@autoware_perception_msgs//:cc", "@lanelet2_core//:lanelet2_core_library", "@rclcpp//:rclcpp_library"],
+)
+
+collect_transitive_dynamic_deps(
+    name = "sdk_dynamic_deps",
+    dynamic_deps = ["@autoware_agnocast_wrapper", "@autoware_lanelet2_extension//:autoware_lanelet2_extension_lib", "@autoware_lanelet2_utils//:runtime_dynamic_deps", "@autoware_map_msgs//:cc_shared", "@autoware_perception_msgs//:cc_shared", "@rclcpp_components//:rclcpp_components"],
+)
+
+cc_shared_library(
+    name = "autoware_traffic_light_arbiter",
+    shared_lib_name = "libautoware_traffic_light_arbiter.so",
+    deps = [":autoware_traffic_light_arbiter_library"],
+    dynamic_deps = [":sdk_dynamic_deps"],
+)
+
+cc_library(
+    name = "autoware_traffic_light_arbiter_node_library",
+    srcs = ["src/traffic_light_arbiter_node.cpp"],
+    hdrs = ["include/autoware/traffic_light_arbiter/traffic_light_arbiter_node.hpp"],
+    includes = ["include"],
+    deps = [":autoware_traffic_light_arbiter_library", "@autoware_lanelet2_utils", "@autoware_agnocast_wrapper//:autoware_agnocast_wrapper_library", "@autoware_map_msgs//:cc", "@rclcpp_components//:rclcpp_components_library"],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = [":autoware_traffic_light_arbiter", ":sdk_dynamic_deps"],
+)
+
+cc_shared_library(
+    name = "autoware_traffic_light_arbiter_node",
+    shared_lib_name = "libautoware_traffic_light_arbiter_node.so",
+    deps = [":autoware_traffic_light_arbiter_node_library"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+)
+
+autoware_agnocast_node(
+    name = "traffic_light_arbiter_node",
+    component = ":autoware_traffic_light_arbiter_node",
+    package_name = "autoware_traffic_light_arbiter",
+    plugin = "autoware::traffic_light::TrafficLightArbiterNode",
+)
+
+register_ament_files(
+    name = "executables",
+    files = [":traffic_light_arbiter_node"],
+    prefix = "lib/autoware_traffic_light_arbiter",
+    strip_prefix = "*",
+)
+
+ament_index(
+    package_xml = "package.xml",
+    libraries = [":autoware_traffic_light_arbiter", ":autoware_traffic_light_arbiter_node"],
+    components = [":traffic_light_arbiter_node_components"],
+    data = glob(["launch/**", "config/**"]) + [":executables", ":traffic_light_arbiter_node_plugin"],
+)
+
+cc_test(
+    name = "autoware_traffic_light_arbiter_core_test",
+    srcs = ["test/test_traffic_light_arbiter.cpp"],
+    deps = [":autoware_traffic_light_arbiter_library", "@googletest//:gtest_main"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+    tags = ["no-sandbox", "no-remote"],
+)
+
+cc_test(
+    name = "autoware_traffic_light_arbiter_integration_test",
+    srcs = ["test/test_traffic_light_arbiter_integration.cpp"],
+    deps = [":autoware_traffic_light_arbiter_node_library", "@googletest//:gtest_main"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+    tags = ["no-sandbox", "no-remote"],
+)
+

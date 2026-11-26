@@ -21853,3 +21853,52 @@ Results: all twelve non-test targets and four test targets build; all 23 origina
 and one added case pass in 34.5 s, zero failures/errors/skips. Targeted formatting
 and diff checks pass. Older ROS constructors, GPU/Fast DDS and expensive product
 gates are not executed. Next: arbitration and enabled wrapper transport.
+
+## 2026-11-26: Phase 9.7 — traffic-light arbitration
+
+Purpose: expose confidence/source-priority arbitration and signal matching through
+the original wrapper-aware node. Inspect both core sources, node, all public
+headers, parameter YAML/launch and both original suites. Acceptance preserves all
+39 core and seven ROS integration cases, with two added wrapper transport cases
+in both RCLCPP and Agnocast-only execution. Use local lanelet utilities/extension,
+map/perception messages, existing wrapper and pinned ROS SDK; no source fix is
+needed. No Fast DDS, GPU or costly product gate is selected.
+
+Pattern: package module/root override, separate core and node compile/shared
+providers, original component name and wrapper executable/index resources.
+Core uses lanelet queries, rclcpp time and perception messages; node adds map
+conversion and wrapper subscriptions/publication. Link SDK shared owners once.
+Both original test files use gtest_main. Preserve all timing, map gating, stale
+input, prediction, pedestrian, priority and mismatch assertions; run their whole
+suites with no-agnocast as the original CMake contract requires.
+
+Added peers construct and serialize a road with one regulatory traffic-light
+ID, publish the latched map and both real input streams, and observe output.
+Use node-clock stamps: external-message admission compares against now(), so a
+fixed historic stamp would test rejection instead of arbitration. Bound exchange
+below the five-second admission tolerance. External RED at lower confidence
+must beat perception GREEN under external priority; matching mode must produce
+UNKNOWN for that mismatch. Check trigger stamp, mapped ID and exact retained
+external group payload. Wrapper peers and Agnocast-only executor assert RCLCPP
+remains off when enabled. Lanelet extension defines its own autoware namespace;
+qualify ::autoware for map conversion inside a lanelet-using fixture.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  @autoware_traffic_light_arbiter//... //bazel/tests:traffic_light_arbiter_transport_test
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --local_test_jobs=1 --strategy=TestRunner=local \
+  --run_under=//bazel/agnocast:with_heaphook \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  //bazel/tests:traffic_light_arbiter_transport_test
+```
+
+Results: all fourteen non-test targets and three test targets build. All 46
+original and two added cases pass with Cyclone/RCLCPP (13.3 s final gate, reusing
+unchanged original results). Both added cases pass Agnocast-only with built/
+preloaded heaphook and the loaded 2.4.1 kernel module (6.3 s). Zero failures,
+errors or skips; targeted format/diff checks pass. No source modifications.
+Synthetic mapped traffic states establish integration, not vehicle replay or
+end-to-end traffic-light recognition. Next: crosswalk inference and flashing.
