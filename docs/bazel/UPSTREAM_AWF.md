@@ -2674,3 +2674,19 @@ are separate from build definitions and generated-code ownership; see the
 [modifier journal](JOURNAL.md#2026-11-26-phase-910--trajectory-modification-and-temporal-mpc)
 for exact commands and limits. No upstream submission, exhaustive optimizer
 profile matrix or older ROS/colcon validation is claimed.
+
+### Trajectory selector: native expected compatibility
+
+- [x] Associate with merged
+  [PR #13622](https://github.com/autowarefoundation/autoware_universe/pull/13622).
+  Checked 2026-11-26: the actual selector diff changes its public include to
+  tl/expected.hpp and its manifest dependency to libexpected-dev, exactly matching
+  this independently exposed two-file correction.
+
+The complete selector gate first fails on the unavailable wrapper header.
+After correction, all ten original cases and the real-plugin pipeline pass
+with Cyclone/RCLCPP; the added pipeline also passes Agnocast-only with the
+heaphook. No original assertion or algorithm change is needed. The separate
+test-index manifest fix is build metadata, not an upstream source defect.
+See the [selector journal](JOURNAL.md#2026-11-26-phase-910--trajectory-selector-and-complete-selection-pipeline).
+No upstream submission or older ROS/colcon validation is claimed.

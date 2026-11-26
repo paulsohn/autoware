@@ -23651,3 +23651,72 @@ changes are a separate source commit; no algorithm or assertion change is made.
 The modifier definitions, indexed resources, root selection and developer solver
 convention are accepted with those complete gates. Coverage is 167/244 (77
 remaining); Phase 9.10 still requires the selector.
+
+## 2026-11-26: Phase 9.10 — Trajectory selector and complete selection pipeline
+
+Purpose: compose the supported concatenator, validator, ranker and adapter in
+the original selector component/executable. Inspect CMake, public node API,
+parameter schema, launch file, original dummy validator and all ten original
+simulated-time cases. Preserve their coverage of filtering/rejection, immediate
+versus backup-triggered processing, missing required context and fallback-timer
+period/reset behavior. Select the full suite on Cyclone/RCLCPP and an added
+real-plugin public-topic pipeline on both RCLCPP and Agnocast-only.
+
+Pattern: generate autoware_trajectory_selector_param from param/parameter_struct.yaml,
+compile the original source and register the CMake-matching component/executable
+with unconditional wrapper support and Agnocast-only executor registration.
+Consume the four local public library providers, the validator/ranker's shared
+owners and canonical ROS SDKs. Export the selector-owned adapter/concatenator
+implementations so consumers share their compiled owners. The production index
+owns launch/executable/component resources and includes the validator and ranker
+plugin indexes: those are real runtime inputs, not merely compile dependencies.
+No root labels enter the component module.
+
+Compilation exposes the unavailable tl_expected/expected.hpp in the selector
+header. Use tl/expected.hpp plus libexpected-dev in package.xml, exactly matching
+the actual two-file selector diff in merged AWF #13622, checked 2026-11-26.
+Keep this source compatibility change separate from Bazel definitions.
+
+Test-resource failure/cause/fix: initially the dummy plugin has XML/library
+resource records without a package manifest. Pluginlib walks to the enclosing
+package.xml to identify the provider; it gets an empty package name, loading is
+caught by the wrapper, and both candidates survive the rejection test. The other
+nine passing cases do not establish plugin readiness. Provide a test-specific
+ament_index view of the original selector package, including its existing
+package.xml, dummy plugin and required validator/ranker indexes. Select this
+view instead of the production view in the original test's data closure; do not
+merge two conflicting index views or invent a manifest-less package identity.
+Keep the dummy DSO as runtime data, without prelinking it into the loader test.
+The production view excludes the dummy. No original test/fixture change is needed.
+
+The added root-owned peer supplies an indexed real lanelet map, odometry,
+acceleration and objects, then two fresh named generative candidates. Load the
+real VehicleConstraintFilter: one 30 m/s candidate must disappear and the 5 m/s
+candidate must survive ranking with score 1 and its generator metadata intact.
+Require actual trajectory, scored-candidate and turn-indicator publications,
+including frame/stamp/points and left indication. This drives the actual
+concatenation/validation/ranking/adaptation chain, not a private-method adapter.
+The native executor path requires host-visible /dev/agnocast and the heaphook,
+and explicitly asserts RCLCPP is not initialized.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  @autoware_trajectory_selector//... //bazel/tests:trajectory_selector_transport_test
+
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --local_test_jobs=1 \
+  --run_under=//bazel/agnocast:with_heaphook --test_env=ENABLE_AGNOCAST=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  //bazel/tests:trajectory_selector_transport_test
+```
+
+Results: every module target and both primary test targets pass, all ten
+original cases and the added real-plugin pipeline case, zero failures/errors/
+skips/disabled. The added pipeline also passes Agnocast-only with the heaphook
+(1.0 s), with RCLCPP uninitialized. The ten original ROS-only fixtures are not
+counted as native results. Targeted formatting and diff checks pass. No Fast
+DDS, simulator, deployment or field planning/safety qualification is selected.
+This completes all twelve Phase 9.10 modules; next is Phase 9.11 additional
+planners and behavior plugins.
