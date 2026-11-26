@@ -2794,3 +2794,18 @@ cc_test(
     data = ["@autoware_trajectory_ranker//:ament_index", "@agnocast_heaphook"],
     tags = ["no-sandbox", "no-remote"],
 )
+
+cc_test(
+    name = "trajectory_modifier_transport_test",
+    srcs = ["autoware_trajectory_modifier/test_transport.cpp"],
+    deps = ["@autoware_trajectory_modifier//:autoware_trajectory_modifier_library", "@ament_index_cpp//:ament_index_cpp_library", "@googletest//:gtest"],
+    dynamic_deps = ["@autoware_trajectory_modifier", "@autoware_trajectory_modifier//:utils", "@autoware_trajectory_modifier//:runtime_dynamic_deps", "@ament_index_cpp//:ament_index_cpp"],
+    data = ["@autoware_trajectory_modifier//:ament_index", "@autoware_test_utils//:ament_index", "@agnocast_heaphook"],
+    tags = ["no-sandbox", "no-remote"],
+)
+
+cc_test(
+    name = "trajectory_modifier_solver_test",
+    srcs = ["autoware_trajectory_modifier/test_solver.cpp"],
+    deps = ["@autoware_trajectory_modifier//:acados_interface_temporal", "@googletest//:gtest_main"],
+)

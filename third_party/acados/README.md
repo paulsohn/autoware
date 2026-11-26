@@ -31,6 +31,27 @@ on `@acados`, adding the generated target's directory as an include root.
 Generated files must shadow source-tree IDE stubs. Python/CasADi are build tools;
 the native consumer does not acquire their runtime closure from this C library.
 
+For a package-specific public include namespace, select the rule's `sources`
+and `headers` output groups with filegroups. These are dynamically declared
+files; their paths are not separate implicit output labels.
+
+```starlark
+filegroup(name = "solver_sources", srcs = [":solver"], output_group = "sources")
+filegroup(name = "solver_headers", srcs = [":solver"], output_group = "headers")
+cc_library(
+    name = "solver_library",
+    srcs = [":solver_sources"],
+    hdrs = [":solver_headers"],
+    strip_include_prefix = "solver",
+    include_prefix = "my_package",
+    includes = ["solver/c_generated_code"],
+    deps = ["@acados"],
+)
+```
+
+Here `:solver` is an acados_codegen target with c_generated_code/... outputs.
+Its combined DefaultInfo remains available to existing flat-include consumers.
+
 Run the SDK gate before accepting a consumer:
 
 ```sh

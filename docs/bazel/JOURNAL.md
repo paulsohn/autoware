@@ -23647,3 +23647,7 @@ qualification is selected. Next: final trajectory selection.
 
 The UUID include correction is 8a4f7306d. The expected/TF2 header compatibility
 changes are a separate source commit; no algorithm or assertion change is made.
+
+The modifier definitions, indexed resources, root selection and developer solver
+convention are accepted with those complete gates. Coverage is 167/244 (77
+remaining); Phase 9.10 still requires the selector.

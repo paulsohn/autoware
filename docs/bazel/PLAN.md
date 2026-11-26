@@ -135,7 +135,8 @@ only when your current target demonstrates the need.
   [evidence: glog features and drivers](JOURNAL.md#2026-11-23-phase-93--local-glog-prerequisite).
 - [ ] Declare solver generation and its tool/runtime inputs in the build graph.
   [Developer convention](DEVELOPING.md#mpc-solver-generation);
-  [evidence](JOURNAL.md#2026-11-22-phase-732--acados-native-and-code-generation-provider).
+  [evidence](JOURNAL.md#2026-11-22-phase-732--acados-native-and-code-generation-provider);
+  [installed solver-header projection](JOURNAL.md#2026-11-26-phase-910--trajectory-modification-and-temporal-mpc).
 - [ ] Declare embedded-Python runtimes and preserve interpreter/object ownership
   through shutdown. [Embedding convention](DEVELOPING.md#embedded-python-and-plotting-tests);
   [evidence: model lifetime](JOURNAL.md#2026-11-21-phase-731--embedded-model-interpreter-lifetime).
@@ -2468,19 +2469,20 @@ or deployment gate is selected. Coverage starts at 156/244.
 | autoware_trajectory_concatenator | All17 core and five original wrapper cases; all five wrapper cases also on Agnocast-only |
 | autoware_trajectory_gate | All eight original core cases and real service/routing/status/timeout behavior on both backends |
 
-The five common and three assembly packages, validator and ranker are complete (ten of twelve
-Phase 9.10 packages). The gate's required local system-message/service extension
-passes all generated wire types and collector consumers. Validated Universe
-coverage is 166/244, leaving 78 without definitions. Next: modifier;
-complete modifier and selector afterward with their full plugin, solver,
-interface and behavior contracts. Phase 9.10 remains in progress.
+The five common and three assembly packages, validator, ranker and modifier
+are complete (eleven of twelve Phase 9.10 packages). Validated Universe coverage
+is 167/244, leaving 77 without definitions. Next: selector with its complete
+original suite and both backend behavior gates. Phase 9.10 remains in progress.
 
-The ranker passes all 40 original cases, loads all six metric classes and
-qualifies scoring/metadata/live parameter updates on both backends.
+| Trajectory processing package | Passed gate |
+| --- | --- |
+| autoware_trajectory_validator | All 73 original cases, four report wire types and collector consumers; all four indexed plugins and active/shadow filtering/report transport on both backends |
+| autoware_trajectory_ranker | All 40 original cases; six indexed metric classes and scoring/metadata/live parameter updates on both backends |
+| autoware_trajectory_modifier | All 216 original cases, temporal-model generation and actual MPC solve; all 14 indexed plugins and two-candidate stop/selection transport on both backends |
 
-The validator passes all 73 original cases, all four report wire types and
-collector consumers. All four plugins load; active/shadow filtering and report
-transport pass on both RCLCPP and Agnocast-only. See the validator journal.
+The modifier's solver-header projections are supported by the separately
+validated acados SDK extension. Exact commands, source compatibility associations
+and limitations are recorded in the respective module journals.
 
 ### Execution order through complete Universe coverage
 

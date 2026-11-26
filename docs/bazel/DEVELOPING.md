@@ -1931,6 +1931,11 @@ outputs into a package-owned library. Put the generated include root before any
 source-tree IDE stubs. Code generation belongs to the build graph; application
 startup must not invoke Python compilation or fetch solver dependencies.
 
+For installed-style include paths, project the rule's `headers` and `sources`
+output groups with filegroup targets, then pass them to cc_library hdrs/srcs.
+Use include_prefix/strip_include_prefix to expose the component's public header
+namespace. See the provider README for the concrete pattern.
+
 The [dependency provider](../../third_party/acados/README.md) documents native
 configuration, builder constraints, controlled GNU runtime and its full gate.
 Keep code-generation wheels/tools out of the native consumer's runtime closure.
