@@ -375,7 +375,10 @@ Trajectory MinimumRuleBasedPlannerNode::smooth_trajectory(
       path_smoother_->get_name(), *time_keeper_);
     path_smoother_->process(trajectory_points, optimizer_data);
     if (params_.debug.enable_optimizer_trajectory) {
-      publish_debug_trajectory(path_smoother_->get_name(), trajectory_points);
+      auto debug_trajectory = trajectory;
+      debug_trajectory.points = trajectory_points;
+      pub_debug_optimizer_module_trajectories_.at(path_smoother_->get_name())->publish(
+        debug_trajectory);
     }
   }
 

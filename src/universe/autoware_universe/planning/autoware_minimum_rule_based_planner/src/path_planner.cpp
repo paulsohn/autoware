@@ -30,7 +30,7 @@
 #include <autoware_utils/math/normalization.hpp>
 
 #include <lanelet2_core/geometry/Lanelet.h>
-#include <tf2/utils.h>
+#include <tf2/utils.hpp>
 
 #include <algorithm>
 #include <cmath>

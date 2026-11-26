@@ -2850,3 +2850,29 @@ Lyrical ros2bag parser; the actual recording/analyzer gate passes after that
 command update. The plotting import-order workaround is separately recorded
 in UPSTREAM_RCR.md.
 No upstream submission or older ROS/colcon validation is claimed.
+
+### Minimum-rule planner: current TF2 headers and optimizer debug publisher
+
+- [ ] Associate the TF2 header correction with an AWF PR. Reviewed 2026-11-27:
+  [path_planner.cpp](https://github.com/autowarefoundation/autoware_universe/blob/main/planning/autoware_minimum_rule_based_planner/src/path_planner.cpp)
+  uses utils.h; velocity_smoother.cpp uses LinearMath/Quaternion.h and convert.h.
+  All three are absent from the selected Lyrical SDK, which supplies .hpp.
+  Scoped minimum-rule/TF2 search finds no matching correction; the Lyrical
+  trackers #7404/#13620 provide context, not local validation.
+- [ ] Associate the debug publisher correction with an AWF PR. Reviewed
+  2026-11-27: [smooth_trajectory](https://github.com/autowarefoundation/autoware_universe/blob/main/planning/autoware_minimum_rule_based_planner/src/minimum_rule_based_planner.cpp)
+  still passes the optimizer name to publish_debug_trajectory, whose lookup
+  uses the modifier map. Scoped minimum-rule/debug PR search finds no match.
+
+With the original debug.enable_optimizer_trajectory=true configuration, the
+first live planning cycle aborts with std::out_of_range (map::at). A debugger
+stack identifies smooth_trajectory -> publish_debug_trajectory, after successful
+optimizer and two modifier initializations. eb_smoother is registered in the
+optimizer publisher map, so publish there and preserve the trajectory header.
+The original 17 path/velocity cases do not execute this node pipeline. The
+external regression requires real optimizer-topic output, candidate identity,
+obstacle stopping and recovery with default debugging enabled. See the
+[minimum-rule journal](JOURNAL.md#2026-11-27-phase-911--minimum-rule-based-planner)
+for full-suite and transport results: all 17 original cases and the same
+candidate/debug/stop/recovery scenario pass on RCLCPP and native Agnocast.
+No upstream submission or older ROS/colcon result is claimed.

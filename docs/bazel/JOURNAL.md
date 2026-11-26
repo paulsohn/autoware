@@ -24736,3 +24736,78 @@ solver. The same two behavior cases pass on native Agnocast with the heaphook.
 There are no failures or skips, and whitespace checks pass. No implementation
 changes or broad export-filter additions are needed. Universe coverage is
 unchanged. No Fast DDS, simulator or deployment gate is selected.
+
+## 2026-11-27 — Phase 9.11: Minimum-rule-based planner (in progress)
+
+Purpose: adopt the standalone minimum-rule planner and both of its modifier
+factories. Inspect three main-library sources, two plugin sources, public plugin
+interface and source headers, generated-parameter schema, launch/configuration
+and both original test files (17 cases). Its executable always loads the local
+trajectory-modifier EB optimizer and its own ObstacleStop/SurroundObstacleStop
+classes. Qualify the complete original path/velocity suite, then candidate
+publication, identity, obstacle stopping/recovery and plugin discovery on both
+RCLCPP/Cyclone DDS and native Agnocast with the prepared device/heaphook.
+
+Add package-local MODULE/BUILD definitions and an adjacent versionless root
+selection. Generate the original parameter header. Expose a header-only plugin
+interface independently from node implementation; compile the original three
+main sources and two plugin sources into separate DSOs with their original
+library and class identities. Consume the existing trajectory-modifier utility
+SDK and velocity-smoother algorithm provider, preserving canonical ROS/PCL/
+optimizer runtime ownership. The prerequisite above exposes the three public
+utility providers needed by this real consumer without broad export filters.
+Register the executable, component, plugin XML and original resources in the
+package-owned index. Keep all original tests in place; new fixture code belongs
+under bazel/tests/autoware_minimum_rule_based_planner.
+
+Current compile blockers are removed TF2 forwarding headers: path_planner.cpp
+uses utils.h, and velocity_smoother.cpp uses LinearMath/Quaternion.h and convert.h.
+The selected SDK contains only their .hpp forms. Change those includes without
+altering calculations/assertions and keep the source correction separate from
+Bazel definitions. Current AWF main and a scoped minimum-rule/TF2 PR search on
+2026-11-27 show no matching correction; the shared Lyrical tracker inspection
+and upstream associations remain recorded in UPSTREAM_AWF.md.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  @autoware_minimum_rule_based_planner//... \
+  //bazel/tests/autoware_minimum_rule_based_planner:all
+
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --local_test_jobs=1 \
+  --run_under=//bazel/agnocast:with_heaphook --test_env=ENABLE_AGNOCAST=1 \
+  --test_output=errors //bazel/tests/autoware_minimum_rule_based_planner:transport_test
+```
+
+The default live-node gate then aborts with map::at: key not found, despite all
+17 original cases passing. A GDB abort stack locates publish_debug_trajectory
+called from smooth_trajectory. That helper indexes modifier publishers, while
+load_optimizer_plugins registered eb_smoother in the optimizer publisher map.
+Publish the optimized trajectory through that existing optimizer map and retain
+its input header; do not disable default debug output or change optimization.
+The root regression requires actual optimizer-topic messages in addition to
+candidate output, so restoring the incorrect lookup aborts the scenario.
+
+The package index declares its internally loaded trajectory-modifier index and
+original core-planning resource dependency. The root fixture consumes the
+minimum-rule index without separately injecting those implementation resources.
+Load both modifier factories, publish the normal indexed map/route and empty
+perception, then require finite candidate geometry, generator identity and
+optimizer debug output. Insert a static obstacle on the observed path, require
+zero forward velocities from the ego position, then clear it and require motion
+recovery. Behind-ego path velocities are not a stop-command assertion. Preserve
+original configuration and its hold times; run the same scenario natively.
+
+Results: all module targets and both selected RCLCPP test targets pass. The
+complete original runner reports all 17 cases passing with no failures, errors,
+disabled cases or skips. The live factory/candidate/debug-topic/stop/recovery
+scenario also passes natively with the prepared Agnocast device and preloaded
+heaphook, while RCLCPP remains uninitialized. Both original modifier factories
+are instantiated from the indexed DSO. Source code and original assertions
+remain unchanged apart from the diagnosed TF2 and optimizer-debug corrections.
+New C++ formatting and whitespace checks pass. The source correction is ready
+for its separate commit; package adoption awaits its build-definition commit.
+No Fast DDS, simulator or deployment gate is selected. Coverage remains 180/244
+until that commit.

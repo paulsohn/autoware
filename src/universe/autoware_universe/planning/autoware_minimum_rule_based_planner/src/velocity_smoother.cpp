@@ -17,8 +17,8 @@
 #include <autoware/motion_utils/trajectory/trajectory.hpp>
 #include <autoware_utils_math/unit_conversion.hpp>
 
-#include <tf2/LinearMath/Quaternion.h>
-#include <tf2/convert.h>
+#include <tf2/LinearMath/Quaternion.hpp>
+#include <tf2/convert.hpp>
 
 #include <algorithm>
 #include <cmath>
