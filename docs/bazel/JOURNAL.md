@@ -23783,3 +23783,47 @@ reversing-maneuver qualification is selected. Next: dynamic obstacle avoidance.
 
 Source compatibility fix: 39e171e04. The module/root selection and added behavior
 gates are accepted separately; Universe coverage is 169/244 (75 remaining).
+
+## 2026-11-26: Phase 9.11 — Dynamic obstacle-avoidance scene plugin
+
+Purpose: adopt both original manager/scene sources, headers, plugin XML/config
+and the complete two-case suite. Inspect CMake, the node-interface fixtures and
+manager declarations/update callbacks. Select Cyclone/RCLCPP with original
+normal/empty-route and off-track cases, individual plugin startup/parameters and
+the joint behavior-path process. No source compatibility change is needed.
+
+Pattern: package-owned MODULE/BUILD, root local override, reusable C++ provider
+and separate CMake-named plugin DSO. Index package.xml, config and the original
+SceneModuleManagerInterface XML category. Declare the local planner-common,
+motion/object/signal utilities and ROS conversion providers, with canonical
+shared SDK owners. Keep the original tests unchanged, using the existing
+behavior-path test_utils, indexed planner/common/map/vehicle fixtures and their
+runtime provider. Isolate their ROS domain and preserve explicit shutdown.
+
+The config filename/package use dynamic_obstacle_avoidance, but the parameter
+namespace is dynamic_avoidance. Extend the root executable harness using the
+actual manager declarations: require the mapped plugin DSO and loaded factory,
+max_obstacle_vel=100 and min_obj_lat_offset_to_ego_path=0, then update the latter
+to .1 and read it back. Require clean shutdown. Load the plugin individually and
+with all eight previously accepted scene packages. The original route tests
+require actual path publication and exercise invalid input handling; a loaded
+library alone does not replace them. No root labels enter the source module.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  @autoware_behavior_path_dynamic_obstacle_avoidance_module//... \
+  //bazel/tests/autoware_behavior_path_planner:dynamic_obstacle_avoidance_runtime_test \
+  //bazel/tests/autoware_behavior_path_planner:selected_scenes_runtime_test
+```
+
+Results: all module targets and three test targets pass: both original cases,
+individual startup/update/shutdown and the nine-package composition, zero
+failures/errors/skips/disabled. The final ten-package composition also passes
+with external-request lane change. Targeted Python syntax, Bazel evaluation and
+diff checks pass. No native Agnocast, Fast DDS, simulator/deployment or field
+obstacle-avoidance qualification is selected. Next: external-request lane change.
+
+The module and root selection are accepted with those complete gates. Universe
+coverage is 170/244 (74 remaining); Phase 9.11 remains in progress.

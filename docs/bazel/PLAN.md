@@ -2507,9 +2507,10 @@ Coverage starts at 168/244. No simulator or deployment gate is selected.
 | Package | Passed gate |
 | --- | --- |
 | autoware_behavior_path_direction_change_module | Original placeholder plus finite-path/invalid-context behavior, individual startup/parameter update and eight-package joint composition |
+| autoware_behavior_path_dynamic_obstacle_avoidance_module | Both original cases, individual startup/update/shutdown and nine-package composition |
 
-Validated coverage is 169/244 (75 remaining). Phase 9.11 remains in progress;
-next are dynamic-obstacle and external-request lane-change managers.
+Validated coverage is 170/244 (74 remaining). Phase 9.11 remains in progress;
+next is the external-request lane-change manager.
 
 ### Execution order through complete Universe coverage
 

@@ -9,6 +9,7 @@ _SCENES = [
     "side_shift",
     "bidirectional_traffic",
     "direction_change",
+    "dynamic_obstacle_avoidance",
 ]
 
 [
