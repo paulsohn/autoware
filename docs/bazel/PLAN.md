@@ -2512,10 +2512,10 @@ Coverage starts at 168/244. No simulator or deployment gate is selected.
 | autoware_behavior_path_direction_change_module | Original placeholder plus finite-path/invalid-context behavior, individual startup/parameter update and eight-package joint composition |
 | autoware_behavior_path_dynamic_obstacle_avoidance_module | Both original cases, individual startup/update/shutdown and nine-package composition |
 | autoware_behavior_path_external_request_lane_change_module | Both original cases, both exported factory initializations/parameter update/shutdown and ten-package composition |
+| autoware_behavior_velocity_no_drivable_lane_module | Five trajectory/polygon cases, indexed parameters, individual and joint experimental factory unload/reload; both walkway profiles pass |
 
-The first three of thirteen packages are complete. Validated coverage is
-171/244 (73 remaining). Phase 9.11 remains in progress. Next: the five
-behavior-velocity plugins, then sampler/provider support and standalone planners.
+4 of thirteen packages are complete. Validated coverage is
+172/244 (72 remaining). Phase 9.11 remains in progress. Next: speed-bump and template experimental scenes, then occlusion-spot and roundabout.
 
 ### Execution order through complete Universe coverage
 

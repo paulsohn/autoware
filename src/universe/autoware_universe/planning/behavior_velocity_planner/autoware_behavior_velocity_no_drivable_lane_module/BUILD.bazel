@@ -1,0 +1,51 @@
+load("@rosdistro//ament:defs.bzl", "ament_index")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "autoware_behavior_velocity_no_drivable_lane_module",
+    srcs = glob(["src/**/*.cpp"]),
+    hdrs = glob(["src/**/*.hpp"]),
+    includes = ["src"],
+    deps = [
+        "@autoware_behavior_velocity_planner_common",
+        "@autoware_internal_planning_msgs//:cc",
+        "@autoware_lanelet2_extension//:autoware_lanelet2_extension_lib_library",
+        "@autoware_motion_utils",
+        "@autoware_planning_msgs//:cc",
+        "@autoware_route_handler",
+        "@autoware_trajectory",
+        "@autoware_utils",
+        "@autoware_utils_geometry",
+        "@geometry_msgs//:cc",
+        "@lanelet2_core//:lanelet2_core_library",
+        "@pluginlib//:pluginlib_library",
+        "@rclcpp//:rclcpp_library",
+        "@rosdistro//cc:boost.geometry",
+        "@visualization_msgs//:cc",
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = [
+        "@autoware_behavior_velocity_planner_common//:runtime_dynamic_deps",
+        "@pluginlib//:pluginlib",
+    ],
+)
+
+cc_shared_library(
+    name = "no_drivable_lane_plugin",
+    dynamic_deps = [":runtime_dynamic_deps"],
+    shared_lib_name = "libautoware_behavior_velocity_no_drivable_lane_module.so",
+    deps = [":autoware_behavior_velocity_no_drivable_lane_module"],
+)
+
+ament_index(
+    data = glob(["config/**"]),
+    libraries = [":no_drivable_lane_plugin"],
+    package_xml = "package.xml",
+    plugin_categories = {"plugins.xml": "autoware_behavior_velocity_planner"},
+)

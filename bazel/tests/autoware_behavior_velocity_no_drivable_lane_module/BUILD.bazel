@@ -1,0 +1,72 @@
+load("@rules_cc//cc:defs.bzl", "cc_test")
+load("@rules_python//python:defs.bzl", "py_test")
+
+cc_test(
+    name = "behavior_test",
+    srcs = ["test_behavior.cpp"],
+    dynamic_deps = [
+        "@autoware_behavior_velocity_no_drivable_lane_module//:runtime_dynamic_deps",
+    ],
+    env = {"ENABLE_AGNOCAST": "0", "LD_LIBRARY_PATH": "lib"},
+    deps = [
+        "@autoware_behavior_velocity_no_drivable_lane_module",
+        "@googletest//:gtest_main",
+    ],
+)
+
+py_test(
+    name = "experimental_runtime_test",
+    srcs = ["//bazel/tests/behavior_velocity_planner:test_runtime.py"],
+    args = [
+        "$(rootpath @autoware_behavior_velocity_planner//:experimental_autoware_behavior_velocity_planner_node)",
+        "1",
+        "no_drivable_lane",
+    ],
+    data = [
+        "@autoware_behavior_velocity_planner//:experimental_autoware_behavior_velocity_planner_node",
+        "@autoware_behavior_velocity_planner//:ament_index",
+        "@autoware_behavior_velocity_planner_common//:ament_index",
+        "@autoware_behavior_velocity_no_drivable_lane_module//:ament_index",
+        "@autoware_test_utils//:ament_index",
+        "@autoware_velocity_smoother//:ament_index",
+    ],
+    env = {"ENABLE_AGNOCAST": "0", "LD_LIBRARY_PATH": "lib"},
+    main = "//bazel/tests/behavior_velocity_planner:test_runtime.py",
+    precompile = "disabled",
+    tags = ["no-remote", "no-sandbox"],
+    deps = [
+        "@ament_index_python",
+        "@autoware_internal_planning_msgs//:py",
+        "@rcl_interfaces//:py",
+        "@rclpy",
+    ],
+)
+
+py_test(
+    name = "composition_runtime_test",
+    srcs = ["//bazel/tests/behavior_velocity_planner:test_runtime.py"],
+    args = [
+        "$(rootpath @autoware_behavior_velocity_planner//:experimental_autoware_behavior_velocity_planner_node)",
+        "1",
+        "no_drivable_lane,walkway",
+    ],
+    data = [
+        "@autoware_behavior_velocity_planner//:experimental_autoware_behavior_velocity_planner_node",
+        "@autoware_behavior_velocity_planner//:ament_index",
+        "@autoware_behavior_velocity_planner_common//:ament_index",
+        "@autoware_behavior_velocity_no_drivable_lane_module//:ament_index",
+        "@autoware_behavior_velocity_walkway_module//:ament_index",
+        "@autoware_test_utils//:ament_index",
+        "@autoware_velocity_smoother//:ament_index",
+    ],
+    env = {"ENABLE_AGNOCAST": "0", "LD_LIBRARY_PATH": "lib"},
+    main = "//bazel/tests/behavior_velocity_planner:test_runtime.py",
+    precompile = "disabled",
+    tags = ["no-remote", "no-sandbox"],
+    deps = [
+        "@ament_index_python",
+        "@autoware_internal_planning_msgs//:py",
+        "@rcl_interfaces//:py",
+        "@rclpy",
+    ],
+)

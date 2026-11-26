@@ -24012,3 +24012,56 @@ and the final deployment include. All pass. No failure or source fix occurs.
 No compilation, runtime suite, image build or OCI export is run for this
 manifest-order change. Existing module acceptance evidence still applies.
 Phase 9.11 remains in progress at 171/244 packages.
+
+## 2026-11-27: Phase 9.11 — No-drivable-lane velocity plugin
+
+Purpose: adopt the no-drivable-lane scene and its experimental planner factory.
+Inspect CMake, package dependencies, all three implementation sources, plugin
+XML, parameter YAML and polygon-intersection behavior. CMake declares no
+compiled test suite. Select the complete module build, five added geometry
+cases, individual and joint executable lifecycle checks with Cyclone/RCLCPP,
+and both existing walkway profiles to qualify the shared runtime test helper.
+
+Pattern: add package-local MODULE/BUILD and an adjacent versionless root local
+pair in the Universe group. Build the reusable C++ provider and the original
+CMake-named plugin DSO. Index package.xml, config and the original plugins.xml
+under autoware_behavior_velocity_planner. Use the already accepted planner-common,
+trajectory, motion, route, geometry and ROS providers. Keep shared SDK ownership
+with planner-common's runtime provider and pluginlib. No new dependency version,
+implementation change or package-local test is needed.
+
+The exported NoDrivableLaneModulePlugin class has no experimental namespace,
+although its base is experimental::PluginInterface. Select the class from the
+indexed XML by its actual base interface instead of guessing a namespace from
+the executable name. Extend the root helper to accept a list of scene names,
+load each indexed YAML and check every DSO/factory in one process. Load this
+scene alone and together with the existing experimental walkway scene. Require
+stop_margin=1.5, successful observed unload/reload and clean shutdown.
+
+The planner service callbacks leave response.success unset. Treating that
+default false value as an operation result rejects working load/unload calls.
+Verify their actual side effects through loaded/unloaded records and repeated
+factory initialization. Do not change the source service implementation for
+this gate. Keep the original library-map and shutdown checks.
+
+Put five C++ cases under bazel/tests/autoware_behavior_velocity_no_drivable_lane_module.
+Build real trajectories and check polygon entry/exit distances, entering-only,
+exiting-only, fully contained and disjoint paths. The tests exercise exported
+geometry behavior without placing new fixtures inside the source package.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  @autoware_behavior_velocity_no_drivable_lane_module//... \
+  //bazel/tests/autoware_behavior_velocity_no_drivable_lane_module:all \
+  //bazel/tests/autoware_behavior_velocity_walkway_module:all
+```
+
+Results: all module targets build and all five test targets pass. GTest XML
+contains five geometry cases. The four runtime cases pass with no failures,
+errors or skips. Python/Bazel syntax, changed C++ clang-format and whitespace
+checks pass. No native Agnocast, Fast DDS or simulator/deployment gate is
+selected. These checks qualify integration and the tested geometry contracts,
+not on-road stopping safety. Coverage is 172/244, with 72 packages remaining.
+Phase 9.11 remains in progress. Next: speed-bump and template experimental scenes.
