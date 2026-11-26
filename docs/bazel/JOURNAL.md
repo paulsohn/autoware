@@ -22424,3 +22424,38 @@ Results: both original and all three added cases pass, zero failures/errors/skip
 29.4 s; the three enabled cases also pass in 5.5 s. All module non-test targets
 build. Added-file formatting and diff checks pass. No Fast DDS, vehicle accuracy
 or expensive product gate is selected. Next: pose-instability diagnostics.
+
+## 2026-11-26: Phase 9.8 — pose instability monitoring
+
+Purpose: integrate the wrapper detector and all three original cases, including
+abnormal odometry handling. Inspect timer/dead-reckoning thresholds, original
+YAML-loading helper, diagnostic keys and debug pose. Add two root-owned peers
+for consistent motion and a four-metre pose jump, selected for RCLCPP and
+Agnocast-only transport.
+
+Pattern: original compile/shared owner with include prefix, wrapper executable
+and config/launch index. Expose the original test with its own main and helper
+header in srcs, indexed YAML, ament_index_cpp and rcl_yaml_param_parser. Keep
+original tests intact. The added peer uses normalized identity quaternions and
+explicit parameters; establish odometry at stamp100/x10 before the first timer,
+then provide speed1 and stamp101/x11 (healthy) or x15 (error). Assert diagnostic
+level/name and the base_link difference magnitude, not just message receipt.
+The enabled peer asserts RCLCPP is inactive and uses the prepared heaphook and
+Agnocast 2.4.1 kernel/device. No source changes are needed.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  @autoware_pose_instability_detector//... //bazel/tests:pose_instability_transport_test
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --local_test_jobs=1 --strategy=TestRunner=local \
+  --run_under=//bazel/agnocast:with_heaphook \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  //bazel/tests:pose_instability_transport_test
+```
+
+Results: eleven module non-test targets build; three original and two added
+cases pass, zero failures/errors/skips, 40.2 s. Both enabled cases also pass in
+5.5 s. Added-file formatting and diff checks pass. No Fast DDS, physical accuracy
+or expensive product gate is selected. Next: complete arbiter/example suites.
