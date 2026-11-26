@@ -1,0 +1,11 @@
+load("@pip_ros//:requirements.bzl", "requirement")
+load("@rules_python//python:defs.bzl", "py_library")
+
+py_library(
+    name = "imageio",
+    srcs = glob(["imageio/**/*.py"]),
+    data = glob(["imageio/**", "imageio-*.dist-info/**"], exclude = ["**/*.py"]),
+    imports = ["."],
+    visibility = ["//visibility:public"],
+    deps = [requirement("numpy"), requirement("pillow")],
+)

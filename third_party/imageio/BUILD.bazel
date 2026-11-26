@@ -1,0 +1,15 @@
+load("@rules_python//python:defs.bzl", "py_test")
+
+package(default_visibility = ["//visibility:public"])
+
+exports_files(["BUILD.wheel.bazel"])
+
+alias(name = "imageio", actual = "@imageio_wheel//:imageio")
+
+py_test(
+    name = "gif_roundtrip_test",
+    srcs = ["test_imageio.py"],
+    main = "test_imageio.py",
+    precompile = "disabled",
+    deps = [":imageio"],
+)

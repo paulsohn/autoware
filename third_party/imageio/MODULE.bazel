@@ -1,0 +1,16 @@
+module(name = "imageio", version = "0.0.0")
+
+bazel_dep(name = "rosdistro", version = "0.0.0")
+bazel_dep(name = "rules_python", version = "2.4.5")
+
+pip_ros = use_extension("@rosdistro//python:defs.bzl", "pip_ros")
+use_repo(pip_ros, "pip_ros")
+
+http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+http_archive(
+    name = "imageio_wheel",
+    build_file = "//:BUILD.wheel.bazel",
+    sha256 = "d71174e7af8369a4f73525c5b1c0d2621eb2827ed3cfd7327560be02ac1b4084",
+    type = "zip",
+    urls = ["https://files.pythonhosted.org/packages/30/34/7fb055831d4dd5aa9994cc296b61e341f4cd5221c8119b15b0617c721c61/imageio-2.38.2-py3-none-any.whl"],
+)

@@ -229,6 +229,12 @@ local_path_override(
     path = "third_party/spconv",
 )
 
+bazel_dep(name = "imageio")
+local_path_override(
+    module_name = "imageio",
+    path = "third_party/imageio",
+)
+
 # Asset, model and sensor resource providers.
 bazel_dep(name = "velodyne_description")
 local_path_override(

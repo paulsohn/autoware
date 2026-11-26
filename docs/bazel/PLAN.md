@@ -2507,6 +2507,11 @@ sampler provider before its behavior plugin, and finish the standalone planners.
 Use the existing 13-package ledger, module-sized commits and complete suites.
 Coverage starts at 168/244. No simulator or deployment gate is selected.
 
+Roundabout's installed TTC plotting tool requires ImageIO. Select its 2.38.2
+universal wheel through third_party/imageio with a pinned URL/SHA-256 and reuse
+the RCR NumPy/Pillow providers. The GIF roundtrip gate validates this dependency
+before qualifying the complete plotting entrypoint with the roundabout module.
+
 | Package | Passed gate |
 | --- | --- |
 | autoware_behavior_path_direction_change_module | Original placeholder plus finite-path/invalid-context behavior, individual startup/parameter update and eight-package joint composition |

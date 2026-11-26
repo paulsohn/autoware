@@ -3,5 +3,6 @@ src
 third_party/acados
 third_party/cgal
 third_party/grid_map
+third_party/imageio
 third_party/spconv
 third_party/tensorrt

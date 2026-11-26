@@ -24208,3 +24208,39 @@ syntax and whitespace checks pass. No simulator/deployment gate is selected.
 The source correction is separate commit 19a068e08. The module definitions and
 root selection are accepted with the complete gate above. Coverage is 175/244,
 with 69 packages remaining. Phase 9.11 remains in progress. Next: roundabout.
+
+## 2026-11-27: Phase 9.11 — ImageIO provider for the TTC plotting tool
+
+Purpose: supply the missing Python dependency of roundabout's installed ttc.py
+entrypoint. Inspect its imports and the pinned RCR Python requirements. NumPy,
+Pillow and Matplotlib are available, but ImageIO is absent. Official PyPI 2.38.2
+metadata identifies a universal Python wheel published 2026-11-16, depending on
+NumPy and Pillow. The selected Python 3.14 runtime also imports Tk 9.0 without
+a host Python installation change.
+
+Create a generic imageio module under third_party, with a versionless root
+dependency/local override in that group and a .bazelignore entry. Fetch the
+upstream wheel as a zip through http_archive with its immutable URL/SHA-256.
+Expose its Python files, resource files and dist-info metadata through the
+public @imageio//:imageio provider. Import the existing pip_ros proxy inside
+the module so both dependencies retain the same selected NumPy/Pillow providers.
+No host pip invocation or duplicate numerical-wheel environment is needed.
+
+Use [official release metadata](https://pypi.org/pypi/imageio/2.38.2/json) to
+verify the wheel filename and hash. Add a generic dependency test alongside the
+provider: write two distinct RGB frames to an in-memory GIF, read both back and
+require identical pixels. Optional ImageIO plugins are outside the selected
+core GIF provider and need declarations when a consumer requires them.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --local_test_jobs=1 --test_output=errors @imageio//...
+git diff --check
+```
+
+Results: all provider targets build and the one GIF roundtrip case passes,
+with no failures, errors or skips. Targeted Bazel/Python syntax and whitespace
+checks pass. No compatibility patch or new registry version is needed. No ROS
+communication, Fast DDS, simulator or deployment gate is selected for this
+dependency task. Universe coverage remains 175/244. Next: the roundabout C++
+factories, behavior checks and complete TTC entrypoint gate.
