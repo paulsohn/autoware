@@ -26,3 +26,9 @@ ros_service(
         "@autoware_common_msgs//msg:ResponseStatus",
     ],
 )
+
+ros_service(
+    name = "ChangeTrajectorySource",
+    src = "ChangeTrajectorySource.srv",
+    deps = ["@autoware_common_msgs//msg:ResponseStatus"],
+)

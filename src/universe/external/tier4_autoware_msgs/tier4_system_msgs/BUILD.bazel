@@ -32,6 +32,8 @@ default_generators(
         "//msg:ModeChangeAvailable",
         "//msg:MrmBehaviorStatus",
         "//msg:OperationModeAvailability",
+        "//msg:TrajectorySourceStatus",
+        "//srv:ChangeTrajectorySource",
         "//srv:OperateMrm",
         "//srv:ResetDiagGraph",
         "//srv:SetDiagGraphOverride",

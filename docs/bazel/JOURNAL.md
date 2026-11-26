@@ -23211,3 +23211,40 @@ runtime prerequisite. This convention is linked from the adoption checklist.
 Both selected backend gates are complete, so this module can be committed.
 No Fast DDS or expensive system/deployment gate is selected. Next: trajectory
 adaptation, concatenation and gating with their complete original suites.
+
+## 2026-11-26: Phase 9.10 prerequisite — Trajectory source-control interfaces
+
+Purpose: provide the local message/service required by trajectory_gate. Its
+compile cannot find tier4_system_msgs/msg/trajectory_source_status.hpp: the
+sources are present, but the package's handwritten declarations do not select
+them. Inspect TrajectorySourceStatus.msg (Time/source) and
+ChangeTrajectorySource.srv (source/ResponseStatus). Keep the existing local
+source selection and pinning; do not substitute a registry package.
+
+Pattern: add ros_message/ros_service declarations in the owning msg/srv BUILD
+files with builtin_interfaces/Time and autoware_common_msgs/ResponseStatus
+respectively, then add both labels to default_generators in the package root.
+Existing manifest/module dependencies already cover these inputs. The product
+already selects the package's :cc/:cc_shared pair, so both new types flow into
+the metadata, C++ and Python/index collectors without another package-list entry.
+Extend the existing descriptor consumer checks and add one complete-package
+serialization gate; do not enforce source-directory completeness.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  @tier4_system_msgs//... //bazel/interfaces:tier4_system_serialization_test \
+  //bazel/interfaces:descriptor_test //bazel/interfaces:python_interfaces_test
+```
+
+Results: all 37 non-test targets build and all three test targets pass,344.8 s.
+Serialization round-trips all34 generated wire types, including service request,
+response and event. Descriptor and Python/index consumer checks pass without
+failures/errors/skips/disabled. The full target selection also generates the
+package's protobuf providers; collector index dependencies build their declared
+component resources. The subsequent gate consumer compiles and its RCLCPP
+source-selection service/status behavior passes with the new types. No interface
+sources or original implementations are modified. No Fast DDS runtime check or
+new source-completeness validator is introduced. Next: the gate's enabled
+transport qualification and its own module commit.

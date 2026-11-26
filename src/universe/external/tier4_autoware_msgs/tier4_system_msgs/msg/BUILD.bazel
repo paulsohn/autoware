@@ -161,3 +161,9 @@ ros_message(
         "@builtin_interfaces//msg:Time",
     ],
 )
+
+ros_message(
+    name = "TrajectorySourceStatus",
+    src = "TrajectorySourceStatus.msg",
+    deps = ["@builtin_interfaces//msg:Time"],
+)
