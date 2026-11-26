@@ -2568,3 +2568,21 @@ module gate in the Phase 9.10 journal. Bazel uses the existing native
 @rosdistro//cc:tl_expected provider, not a host-installed package. No older ROS
 or colcon validation is claimed; unrelated expected users are left for their
 own exposed consumer tasks.
+
+### Goal-distance node loses inputs and reverses the pose age
+
+- [ ] Associate with a matching upstream fix. Checked 2026-11-26: current
+  [node implementation](https://github.com/autowarefoundation/autoware_universe/blob/main/common/autoware_goal_distance_calculator/src/goal_distance_calculator_node.cpp)
+  still takes both shared-pointer output arguments by value and computes
+  stamp-minus-now for its age guard. A scoped goal_distance_calculator PR
+  search finds eleven related results, without a matching correction.
+
+Reproduce using the complete goal-distance gate in the Phase 9.10 journal.
+A valid route and independently broadcast TF reach the timer, but the caller's
+Input remains null and the node crashes. Passing both private output pointers
+by reference fixes normal publication. The stale-input case then reveals that
+an old pose produces negative age and bypasses the timeout. Use now-minus-stamp,
+retaining the one-second threshold. All three rotated-frame/live/stale cases
+pass after the fixes with Cyclone/RCLCPP, without altering original tests.
+This is an implementation correctness finding, not a Lyrical-only workaround;
+no upstream submission, old ROS/CMake validation or field qualification is claimed.

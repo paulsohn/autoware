@@ -51,7 +51,7 @@ GoalDistanceCalculatorNode::GoalDistanceCalculatorNode(const rclcpp::NodeOptions
 }
 
 bool GoalDistanceCalculatorNode::tryGetCurrentPose(
-  geometry_msgs::msg::PoseStamped::ConstSharedPtr current_pose)
+  geometry_msgs::msg::PoseStamped::ConstSharedPtr & current_pose)
 {
   auto current_pose_tmp = self_pose_listener_.get_current_pose();
   if (!current_pose_tmp) return false;
@@ -60,7 +60,7 @@ bool GoalDistanceCalculatorNode::tryGetCurrentPose(
 }
 
 bool GoalDistanceCalculatorNode::tryGetRoute(
-  autoware_planning_msgs::msg::LaneletRoute::ConstSharedPtr route)
+  autoware_planning_msgs::msg::LaneletRoute::ConstSharedPtr & route)
 {
   auto route_tmp = sub_route_.take_data();
   if (!route_tmp) return false;
@@ -86,7 +86,7 @@ void GoalDistanceCalculatorNode::onTimer()
   // Check pose timeout
   {
     constexpr double th_pose_timeout = 1.0;
-    const auto pose_time_diff = rclcpp::Time(input.current_pose->header.stamp) - now();
+    const auto pose_time_diff = now() - rclcpp::Time(input.current_pose->header.stamp);
     if (pose_time_diff.seconds() > th_pose_timeout) {
       RCLCPP_WARN_THROTTLE(this->get_logger(), *this->get_clock(), 1000, "pose is timeout...");
       return;

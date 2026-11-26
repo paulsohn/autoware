@@ -23109,3 +23109,44 @@ index, with local Lanelet2/trajectory/motion/traffic-light providers and their
 canonical shared SDK owners. Expose the original two-file suite as one test
 target, matching CMake. No new fixtures are needed. The source fix is 21786f438;
 the Bazel definitions are committed at this separate validated boundary.
+
+## 2026-11-26: Phase 9.10 — Goal distance and live input ownership
+
+Purpose: adopt both original goal-distance sources, the component/executable,
+config and launch. CMake declares no functional tests. Inspect the pure rotated
+pose-deviation calculation, polling route input, TF pose listener, timer and
+freshness guard. Add three root-owned cases: rotated goal frame, actual live
+route/TF publication and stale-pose suppression. Select plain RCLCPP/Cyclone.
+
+The initial live-node case crashes after route/TF readiness even though the pure
+calculation passes. tryGetCurrentPose and tryGetRoute take shared pointers by
+value: their successful assignments never fill the timer's Input, which remains
+null. Change these private output arguments to references in declaration and
+definition; retain their boolean readiness contract. The live case then passes,
+but the stale case publishes deviations from a pose three seconds old. The
+existing timeout subtracts now from the stamp, so old data has negative age.
+Compute now minus stamp, preserving the existing one-second threshold. Do not
+replace the production node with a private-method adapter or change assertions
+to admit either failure. Commit these two demonstrated correctness fixes
+separately from Bazel definitions; current upstream checks are in UPSTREAM_AWF.md.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  @autoware_goal_distance_calculator//... //bazel/tests:goal_distance_test
+```
+
+Results: all nine non-test targets build and all three cases pass, zero
+failures/errors/skips/disabled. The final distance-group run takes21.2 s; the
+package-specific invocation reuses that passing result (1.3 s, cached test
+11.1 s). Source-range and added-file clang-format, plus diff checks, pass.
+
+Fixture know-how: the node waits for its first pose in its constructor. Publish
+TF from an independent thread before constructing it and keep refreshing the
+stamp; a static pose is unsuitable for a freshness test. Supply real route
+messages and inspect lateral/longitudinal/yaw debug outputs. The rotated-frame
+case requires longitudinal3/lateral-2/yaw-minus-pi-over-two; the live node must
+publish longitudinal3/lateral2/yaw0, while stale TF must publish nothing. This
+exposes integration defects that a pure library-only gate would miss. No real
+vehicle accuracy, older ROS/CMake or full communication matrix is claimed.

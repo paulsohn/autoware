@@ -55,8 +55,8 @@ private:
   // Timer
   rclcpp::TimerBase::SharedPtr timer_;
 
-  bool tryGetCurrentPose(geometry_msgs::msg::PoseStamped::ConstSharedPtr current_pose);
-  bool tryGetRoute(autoware_planning_msgs::msg::LaneletRoute::ConstSharedPtr route);
+  bool tryGetCurrentPose(geometry_msgs::msg::PoseStamped::ConstSharedPtr & current_pose);
+  bool tryGetRoute(autoware_planning_msgs::msg::LaneletRoute::ConstSharedPtr & route);
   void onTimer();
 
   // Parameter
