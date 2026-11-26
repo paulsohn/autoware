@@ -23248,3 +23248,45 @@ source-selection service/status behavior passes with the new types. No interface
 sources or original implementations are modified. No Fast DDS runtime check or
 new source-completeness validator is introduced. Next: the gate's enabled
 transport qualification and its own module commit.
+
+## 2026-11-26: Phase 9.10 — Trajectory adaptation and latency
+
+Purpose: adopt both adapter/wrapper sources and their public headers. CMake has
+no functional tests or standalone node. Inspect highest-score selection,
+generator metadata lookup, output preservation and latency publication. Add four
+root-owned cases: empty rejection, selected trajectory/indicator preservation,
+stable tie/unknown generator behavior and the real wrapper's result/debug topic.
+Select Cyclone/RCLCPP and Agnocast-only for the wrapper path.
+
+The first compile exposes tl_expected/expected.hpp. Inspect merged AWF PR #13622's
+actual adapter header/manifest diff and apply only those two changes: native
+tl/expected.hpp and libexpected-dev in the manifest. Bazel uses the existing
+pinned native provider through @rosdistro//cc:tl_expected, without a host package
+install. Preserve all implementation behavior. Commit this compatibility fix
+separately from build definitions; the matching PR is recorded in UPSTREAM_AWF.md.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  @autoware_trajectory_adapter//... //bazel/tests:trajectory_adapter_test
+# Shared enabled gate for this three-package group:
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --local_test_jobs=1 \
+  --run_under=//bazel/agnocast:with_heaphook --test_env=ENABLE_AGNOCAST=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  //bazel/tests:trajectory_adapter_test \
+  //bazel/tests:trajectory_concatenator_backend_test \
+  //bazel/tests:trajectory_gate_transport_test
+```
+
+Results: all three adapter non-test targets and all four cases pass on RCLCPP
+(6.2 s package invocation, test .2 s). All four also pass on Agnocast-only with
+the built/preloaded heaphook and active kernel module (test .3 s); the complete
+shared enabled gate passes ten cases across three targets in11.2 s. JUnit shows
+zero failures/errors/skips/disabled. The native path asserts that RCLCPP is not
+initialized. Tests preserve the selected stamp/frame/points/indicators and
+metadata, require missing TimeKeeper rejection, and observe actual latency
+publication from a trajectory stamped .2 s earlier. No original test/algorithm
+changes, field planning accuracy or full system communication matrix are claimed.
+Added-file/source-range formatting, manifest parsing and diff checks pass.

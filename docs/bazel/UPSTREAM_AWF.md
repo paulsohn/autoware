@@ -2588,3 +2588,16 @@ retaining the one-second threshold. All three rotated-frame/live/stale cases
 pass after the fixes with Cyclone/RCLCPP, without altering original tests.
 This is an implementation correctness finding, not a Lyrical-only workaround;
 no upstream submission, old ROS/CMake validation or field qualification is claimed.
+
+### Trajectory adapter: native expected compatibility
+
+- [x] Associate with merged
+  [PR #13622](https://github.com/autowarefoundation/autoware_universe/pull/13622).
+  Checked 2026-11-26: the actual trajectory-adapter diff uses tl/expected.hpp and
+  libexpected-dev, exactly matching this newly exposed header/manifest fix.
+
+The Phase 9.10 adapter gate first fails on the unavailable ROS wrapper header.
+The package-scoped correction passes all four selection/output/wrapper-latency
+cases on both Cyclone/RCLCPP and Agnocast-only with the heaphook. The native
+Bazel SDK provider remains pinned; no host apt installation, original algorithm
+change or older ROS/CMake validation is claimed. See its journal for commands.
