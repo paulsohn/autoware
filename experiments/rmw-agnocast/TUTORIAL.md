@@ -216,7 +216,7 @@ cp "$(ros2 pkg prefix --share agnocast_cyclone_gateway)/config/cyclonedds.json" 
 export RMW_AGNOCAST_GATEWAY_CONFIG="$PWD/gateway.json"
 ```
 
-An entry such as `"/commands"` keeps the same topic name on both sides. The gateway waits for exactly one distinct source publisher type before activating that route. Specify `{"topic":"/status","remap":"/robot/status","type":"std_msgs/msg/String"}` to rename it and advertise the destination before the source starts. Volatile samples sent during discovery can be missed.
+An entry such as `{"topic": "/commands"}` keeps the same topic name on both sides. The gateway waits for exactly one distinct source publisher type before activating that route. Specify `{"topic":"/status","remap":"/robot/status","type":"std_msgs/msg/String"}` to rename it and advertise the destination before the source starts. Volatile samples sent during discovery can be missed.
 
 For manual startup, run the following command in the gateway terminal. For automatic startup, export the configuration path in the native application's terminal and launch the application normally with the gateway executable available as described in the [startup instructions](manual-gateway/README.md#opt-in-to-startup-from-an-rmw-context).
 

@@ -1,6 +1,6 @@
 # Manual topic gateway on the standalone RMW
 
-Use [migration tutorial step 7](../TUTORIAL.md#7-record-the-native-talker-from-a-cyclone-peer) for the build and operator commands. Each invocation owns one directed route. The supervisor runs two endpoints with a private framed Unix socket between them. Only the native endpoint requires the allocator hook and device. The forwarding path uses the installed ROS message class and serialized samples. This incurs encoding, copying and network cost. No type-specific gateway plugin was needed for either tested type.
+Use [migration tutorial step 7](../TUTORIAL.md#7-record-the-native-talker-from-a-cyclone-peer) for the build and operator commands. A configuration can group several directed routes. For each route the supervisor runs two endpoints with a private framed Unix socket between them. Only the native endpoint requires the allocator hook and device. The forwarding path uses the installed ROS message class and serialized samples. This incurs encoding, copying and network cost. No type-specific gateway plugin was needed for either tested type.
 
 ## Replay on the provisioned laptop
 
@@ -75,17 +75,17 @@ The writer-stall case stops only the export DDS worker for roughly four seconds.
 
 ## Opt in to startup from an RMW context
 
-One file describes the topics a participating context should bridge. Set `RMW_AGNOCAST_GATEWAY_CONFIG` to its path. Put native-to-network routes in `exports` and network-to-native routes in `imports`. Either list can be omitted. Use an absolute topic name alone to keep the same name on both sides. Use an object with `topic` and optional `remap` to give the destination another name. In both directions, `topic` names the source.
+One file describes the topics a participating context should bridge. Set `RMW_AGNOCAST_GATEWAY_CONFIG` to its path. Put native-to-network routes in `exports` and network-to-native routes in `imports`. Either list can be omitted. Every entry is an object with a `topic` field. Omit `remap` to keep the same name on both sides. In both directions, `topic` names the source.
 
 ```json
 {
   "network_rmw": "rmw_zenoh_cpp",
   "heaphook": "/opt/ros/jazzy/lib/libagnocast_heaphook.so",
   "exports": [
-    "/lidar/points",
+    {"topic": "/lidar/points"},
     {"topic": "/status", "remap": "/robot/status", "type": "std_msgs/msg/String"}
   ],
-  "imports": ["/commands"]
+  "imports": [{"topic": "/commands"}]
 }
 ```
 

@@ -55,11 +55,9 @@ def configured_routes(config):
         entries = config.get(direction+"s", [])
         if not isinstance(entries, list):
             raise ValueError(f"{direction}s must be an array of topics")
-        for entry in entries:
-            if isinstance(entry, str):
-                entry = {"topic": entry}
+        for index, entry in enumerate(entries):
             if not isinstance(entry, dict) or "topic" not in entry:
-                raise ValueError(f"{direction} requires a topic")
+                raise ValueError(f"{direction}s[{index}] must be an object with a topic field")
             unknown = entry.keys() - {"topic", "remap", "type", "always_on", "qos"}
             if unknown:
                 raise ValueError(f"unknown {direction} fields: {sorted(unknown)}")

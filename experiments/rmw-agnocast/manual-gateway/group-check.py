@@ -81,7 +81,7 @@ for backend in ("rmw_cyclonedds_cpp","rmw_zenoh_cpp"):
         peer_env=dict(os.environ,RMW_IMPLEMENTATION=backend)
         peer_env.pop("RMW_AGNOCAST_GATEWAY_CONFIG",None)
         hook=os.environ["TEST_HEAPHOOK"]
-        config=dict(network_rmw=backend, heaphook=hook, exports=["/data",dict(topic="/status",remap="/robot/status",type="std_msgs/msg/String")],imports=["/cmd"])
+        config=dict(network_rmw=backend, heaphook=hook, exports=[dict(topic="/data"),dict(topic="/status",remap="/robot/status",type="std_msgs/msg/String")],imports=[dict(topic="/cmd")])
         path=root/"route.json"
         path.write_text(json.dumps(config))
         with ExitStack() as stack:
@@ -114,7 +114,7 @@ for backend in ("rmw_cyclonedds_cpp","rmw_zenoh_cpp"):
                                    env=peer_env,capture_output=True,text=True,timeout=8)
             assert reverse.returncode and "conflicting route" in reverse.stderr,reverse.stderr
             bad=root/"cycle.json"
-            bad.write_text(json.dumps(dict(config,imports=["/data"])))
+            bad.write_text(json.dumps(dict(config,imports=[dict(topic="/data")])))
             cycle=subprocess.run([exe,"--config",str(bad)],env=peer_env,capture_output=True,text=True,timeout=8)
             assert cycle.returncode and "destination must be unique" in cycle.stderr,cycle.stderr
             (root/"resolve").touch()
