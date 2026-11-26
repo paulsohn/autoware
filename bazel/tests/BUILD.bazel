@@ -2809,3 +2809,12 @@ cc_test(
     srcs = ["autoware_trajectory_modifier/test_solver.cpp"],
     deps = ["@autoware_trajectory_modifier//:acados_interface_temporal", "@googletest//:gtest_main"],
 )
+
+cc_test(
+    name = "trajectory_selector_transport_test",
+    srcs = ["autoware_trajectory_selector/test_transport.cpp"],
+    deps = ["@autoware_trajectory_selector//:autoware_trajectory_selector_library", "@autoware_test_utils", "@ament_index_cpp//:ament_index_cpp_library", "@googletest//:gtest"],
+    dynamic_deps = ["@autoware_trajectory_selector", "@autoware_trajectory_selector//:test_dynamic_deps"],
+    data = ["@autoware_trajectory_selector//:ament_index", "@autoware_test_utils//:ament_index", "@agnocast_heaphook"],
+    tags = ["no-sandbox", "no-remote"],
+)

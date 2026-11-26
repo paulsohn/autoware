@@ -91,6 +91,8 @@ only when your current target demonstrates the need.
   [multi-package dependency identity and link closure](../../third_party/grid_map/README.md);
   [evidence: stop-line plugin](JOURNAL.md#2026-11-17-phase-525--stop-line-plugin).
 - [ ] Preserve executable contracts and unique library identities in composed indexes.
+  [Plugin discovery and manifest-backed index views](DEVELOPING.md#native-plugin-libraries);
+  [selector test-index evidence](JOURNAL.md#2026-11-26-phase-910--trajectory-selector-and-complete-selection-pipeline).
   [Runtime resource convention](DEVELOPING.md#launch-resource-composition);
   [Python entrypoint evidence](JOURNAL.md#2026-11-22-phase-732--registered-python-executable-closure);
   [suffixless installed scripts](JOURNAL.md#2026-11-22-phase-733--installed-map-hash-and-xml-service);
@@ -2443,7 +2445,7 @@ packages without definitions. No field accuracy, Fast DDS, GUI, simulator or
 deployment gate is claimed. Next: Phase 9.10 trajectory contracts and common
 motion checks.
 
-### Phase 9.10: Trajectory contracts and common motion checks (in progress)
+### Phase 9.10: Trajectory contracts and common motion checks (complete)
 
 Adopt the five common checkers first, then adapters/concatenation/gating,
 validator and ranking, and modifier/selector with their complete local closure.
@@ -2469,16 +2471,19 @@ or deployment gate is selected. Coverage starts at 156/244.
 | autoware_trajectory_concatenator | All17 core and five original wrapper cases; all five wrapper cases also on Agnocast-only |
 | autoware_trajectory_gate | All eight original core cases and real service/routing/status/timeout behavior on both backends |
 
-The five common and three assembly packages, validator, ranker and modifier
-are complete (eleven of twelve Phase 9.10 packages). Validated Universe coverage
-is 167/244, leaving 77 without definitions. Next: selector with its complete
-original suite and both backend behavior gates. Phase 9.10 remains in progress.
+All twelve Phase 9.10 packages are complete: five common checkers, three
+trajectory-assembly packages and the validator, ranker, modifier and selector.
+Validated Universe coverage is 168/244, leaving 76 without definitions. The
+required Cyclone/RCLCPP suites and selected Agnocast-only behavior gates pass.
+No Fast DDS, simulator or deployment gate was selected. Next: Phase 9.11,
+additional planners and behavior plugins, following the existing ledger order.
 
 | Trajectory processing package | Passed gate |
 | --- | --- |
 | autoware_trajectory_validator | All 73 original cases, four report wire types and collector consumers; all four indexed plugins and active/shadow filtering/report transport on both backends |
 | autoware_trajectory_ranker | All 40 original cases; six indexed metric classes and scoring/metadata/live parameter updates on both backends |
 | autoware_trajectory_modifier | All 216 original cases, temporal-model generation and actual MPC solve; all 14 indexed plugins and two-candidate stop/selection transport on both backends |
+| autoware_trajectory_selector | All ten original cases; actual concatenation/validation/ranking/adaptation and trajectory/score/indicator publications on both backends |
 
 The modifier's solver-header projections are supported by the separately
 validated acados SDK extension. Exact commands, source compatibility associations

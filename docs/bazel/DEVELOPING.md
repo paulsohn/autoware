@@ -886,6 +886,13 @@ to pluginlib::ClassLoader. Consumers declare the plugin package's :ament_index
 as data so the XML, resource record and library are available in runfiles.
 Do not add a component-to-root label or scan the host ament environment.
 
+Provide package_xml: pluginlib reads the enclosing manifest to identify the
+provider even when its XML/resource record is present. For test-only plugins,
+expose a test-specific ament_index view with the original package.xml and required
+runtime indexes. A test selects that view instead of the production view for
+that package. Keep test plugin DSOs in data; prelinking them into a loader
+executable changes factory ownership and does not prove runtime discovery.
+
 Validate each factory through a real consumer, including discovery and clean
 shutdown. For behavior planners, loading uses the fully-qualified plugin class;
 unloading uses the module name (stop_line). Run
