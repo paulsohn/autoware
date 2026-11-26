@@ -24852,3 +24852,32 @@ Results: every module target builds; all four original cases and the live DDS
 collision/recovery scenario pass with no skips. Python syntax and git whitespace
 checks pass. Coverage is 182/244; Phase 9.12 remains in progress. No Fast DDS,
 simulator or deployment gate is selected. Next: spheric and predicted-path checks.
+
+## 2026-11-27 — Phase 9.12: Spheric collision detector
+
+Purpose: adopt all three spheric detector sources, its original component and
+executable, public geometry APIs and indexed config/launch resources. Inspect the
+original CMake/gtest runner: its only test source includes the implementation
+but declares zero cases. Preserve that compile runner and require actual node
+behavior to establish a meaningful software gate.
+
+The first build fails because spheric_collision_detector.cpp includes the
+removed tf2/utils.h. The selected Lyrical SDK provides tf2/utils.hpp. Change only
+that include. On 2026-11-27 AWF main still uses .h; the scoped spheric/Lyrical PR
+search finds no match, and tracker #13620 supplies broader context. Record this
+source fix independently from the Bazel definitions.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  @autoware_spheric_collision_detector//... \
+  //bazel/tests/collision_checkers:spheric_runtime_test
+```
+
+With the include corrected all module targets and the original zero-case runner
+build/pass. The real executable passes clear/collision, vertical separation,
+collision again and lateral recovery over Cyclone DDS, with clean shutdown.
+No algorithm changes or original assertions are introduced. The next commit
+records and adopts the package build/index pattern; no colcon/older-ROS, Fast DDS,
+simulator or deployment result is claimed.

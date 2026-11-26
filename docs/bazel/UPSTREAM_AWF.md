@@ -2878,3 +2878,20 @@ obstacle stopping and recovery with default debugging enabled. See the
 for full-suite and transport results: all 17 original cases and the same
 candidate/debug/stop/recovery scenario pass on RCLCPP and native Agnocast.
 No upstream submission or older ROS/colcon result is claimed.
+
+### Spheric collision detector: Lyrical TF2 header
+
+- [ ] Associate with a matching AWF correction. Checked 2026-11-27:
+  [current implementation](https://github.com/autowarefoundation/autoware_universe/blob/main/control/autoware_spheric_collision_detector/src/spheric_collision_detector_node/spheric_collision_detector.cpp)
+  still includes tf2/utils.h. Scoped spheric/Lyrical PR search finds no match;
+  [Lyrical tracker #13620](https://github.com/autowarefoundation/autoware_universe/issues/13620)
+  describes the wider transition.
+
+The selected SDK rejects the removed .h forwarder. Use tf2/utils.hpp with no
+algorithm changes. The complete package builds after the correction, its original
+runner contains zero cases, and the root live-node gate independently proves
+clear/collision, height separation and recovery using Cyclone DDS. See the
+[spheric journal](JOURNAL.md#2026-11-27-phase-912--spheric-collision-detector)
+for the reproducible command. Source compatibility correction is committed
+separately from build rules; no upstream submission or older ROS/colcon result
+is claimed.
