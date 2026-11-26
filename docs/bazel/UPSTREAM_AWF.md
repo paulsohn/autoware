@@ -2367,3 +2367,20 @@ versions. Keep reliable depth-one input queues, sync queue ten and output policy
 All five original merge cases and both original synchronized node cases pass;
 no test assertions or merge semantics change. Only the Lyrical branch is
 executed here; no older ROS/CMake run or upstream submission is claimed.
+
+### Traffic-light selector's four-stream Message Filters compatibility
+
+- [ ] Associate with a matching upstream fix. Checked 2026-11-26: current
+  [header](https://github.com/autowarefoundation/autoware_universe/blob/main/perception/autoware_traffic_light_selector/src/traffic_light_selector_node.hpp)
+  retains .h aliases; the
+  [node constructor](https://github.com/autowarefoundation/autoware_universe/blob/main/perception/autoware_traffic_light_selector/src/traffic_light_selector_node.cpp)
+  passes raw QoS profiles. The repository-scoped Lyrical/message_filters PR
+  search recorded for the category merger finds no matching change.
+
+The complete selector gate in JOURNAL.md fails to compile every node consumer
+at subscriber.h. Apply the same .hpp / rclcpp-major-32+ QoS-object pattern as the
+category merger, preserving the older constructor branch. Three ROI streams
+remain reliable depth one; camera info remains SensorDataQoS best effort.
+All 23 original cases and a new nonempty four-stream pub/sub case pass with
+Cyclone/RCLCPP, with no assertion changes. Only Lyrical is executed; no older
+ROS/CMake run or upstream submission is claimed.

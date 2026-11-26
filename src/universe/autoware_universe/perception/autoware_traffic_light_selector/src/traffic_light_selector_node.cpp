@@ -14,6 +14,8 @@
 
 #include "traffic_light_selector_node.hpp"
 
+#include <rclcpp/version.h>
+
 #include <memory>
 
 namespace autoware::traffic_light
@@ -21,10 +23,17 @@ namespace autoware::traffic_light
 
 TrafficLightSelectorNode::TrafficLightSelectorNode(const rclcpp::NodeOptions & node_options)
 : rclcpp::Node("traffic_light_selector_node", node_options),
+#if RCLCPP_VERSION_MAJOR >= 32
+  detected_rois_sub_(this, "input/detected_rois", rclcpp::QoS{1}),
+  rough_rois_sub_(this, "input/rough_rois", rclcpp::QoS{1}),
+  expected_rois_sub_(this, "input/expect_rois", rclcpp::QoS{1}),
+  camera_info_sub_(this, "input/camera_info", rclcpp::SensorDataQoS()),
+#else
   detected_rois_sub_(this, "input/detected_rois", rclcpp::QoS{1}.get_rmw_qos_profile()),
   rough_rois_sub_(this, "input/rough_rois", rclcpp::QoS{1}.get_rmw_qos_profile()),
   expected_rois_sub_(this, "input/expect_rois", rclcpp::QoS{1}.get_rmw_qos_profile()),
   camera_info_sub_(this, "input/camera_info", rclcpp::SensorDataQoS().get_rmw_qos_profile()),
+#endif
   sync_(SyncPolicy(10), detected_rois_sub_, rough_rois_sub_, expected_rois_sub_, camera_info_sub_)
 {
   {

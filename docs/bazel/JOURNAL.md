@@ -21809,3 +21809,47 @@ The first corrected gate takes 13.8 s; final declaration/include-order check
 11.1 s reuses unchanged passing test results. Targeted formatting/diff checks
 pass. Only Lyrical is executed, not the preserved older constructor branch.
 Next: selector geometry and nonempty four-stream publication.
+
+## 2026-11-26: Phase 9.7 — traffic-light ROI selector
+
+Purpose: integrate ROI selection without model execution. Inspect both core
+implementation files, the node, public/private headers, launch and all three
+original tests. Acceptance preserves fourteen geometry utilities, eight selection
+cases and the original empty four-stream node case. Add one nonempty synchronized
+node case under bazel/tests to check actual ROI, identity/type and header output.
+Use Cyclone/RCLCPP; this plain ROS node has no Agnocast-only profile.
+
+Pattern: a package module/root override, separate geometry and node shared owners,
+explicit sensor/tier4 messages and Message Filters/rclcpp runtime providers.
+Keep geometry's compile API free of node/debug utilities. Declare the private
+traffic_light_selector_utils.hpp used by both implementation and original tests.
+Preserve the three CMake test targets and their own mains (gtest, not gtest_main).
+Register/index the component, standalone executable and original launch.
+
+Observed compatibility blocker: all node consumers fail compilation on the
+removed message_filters/subscriber.h. Use the three .hpp headers and QoS-object
+construction on rclcpp-major-32+, preserving the older raw-profile branch.
+Keep reliable depth-one detected/rough/expected ROI queues, SensorDataQoS for
+camera info and ApproximateTime queue ten. Current upstream retains these old
+APIs on 2026-11-26; the shared Message Filters/Lyrical PR search finds no matching
+fix. Record the scoped change in UPSTREAM_AWF.md and commit source separately.
+
+The added peer publishes two detections, corresponding rough/expected ROIs and
+camera info with a common stamp. Both expected ROIs share a known (+10,+5) offset
+from the detections. Verify selected regions exactly, CAR/PEDESTRIAN types, IDs
+and the detected-array stamped frame. Use SensorDataQoS on camera input so the
+existing best-effort subscription matches; do not change production QoS to make
+a test connect. The original core suite retains boundary/clamp/default/overlap
+coverage, and the original empty-node case remains unchanged.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  @autoware_traffic_light_selector//... //bazel/tests:traffic_light_selector_transport_test
+```
+
+Results: all twelve non-test targets and four test targets build; all 23 original
+and one added case pass in 34.5 s, zero failures/errors/skips. Targeted formatting
+and diff checks pass. Older ROS constructors, GPU/Fast DDS and expensive product
+gates are not executed. Next: arbitration and enabled wrapper transport.
