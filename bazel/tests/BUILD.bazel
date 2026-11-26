@@ -2758,3 +2758,12 @@ cc_test(
     data = ["@agnocast_heaphook"],
     tags = ["no-sandbox", "no-remote"],
 )
+
+cc_test(
+    name = "trajectory_concatenator_backend_test",
+    srcs = ["autoware_trajectory_concatenator/backend_driver.cpp"],
+    deps = ["@autoware_trajectory_concatenator//:wrapper_test_source", "@googletest//:gtest"],
+    dynamic_deps = ["@autoware_trajectory_concatenator//:runtime_dynamic_deps"],
+    data = ["@agnocast_heaphook"],
+    tags = ["no-sandbox", "no-remote"],
+)

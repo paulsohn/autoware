@@ -2468,6 +2468,8 @@ complete original/behavior gates.
 
 autoware_trajectory_adapter: complete; all four public/wrapper cases pass on RCLCPP and Agnocast-only.
 
+autoware_trajectory_concatenator: complete; exact gates and evidence are in its Phase 9.10 journal.
+
 ### Execution order through complete Universe coverage
 
 The following groups are the initial route through every remaining package.

@@ -21,8 +21,8 @@ may contain multiple package commits and smaller execution batches. Update the
 ledger when a package closes or the source snapshot changes; this is a planning
 record, not a new build-time completeness validator.
 
-Current adoption progress, 2026-11-26: **162/244** packages have both definitions
-and root local overrides; **82** remain without definitions. The census table
+Current adoption progress, 2026-11-26: **163/244** packages have both definitions
+and root local overrides; **81** remain without definitions. The census table
 below preserves the initial 2026-11-23 baseline. Checked ledger items record
 completed module gates; Phase 9.8 is complete. See PLAN.md and the
 package journals for configuration and behavior evidence.
@@ -308,7 +308,7 @@ Integrate common checkers before validator/modifier; ranker follows validator an
 - [x] [autoware_path_distance_calculator](../../src/universe/autoware_universe/common/autoware_path_distance_calculator/package.xml)
 - [x] [autoware_traffic_light_compliance_checker](../../src/universe/autoware_universe/common/autoware_traffic_light_compliance_checker/package.xml)
 - [x] [autoware_trajectory_adapter](../../src/universe/autoware_universe/planning/autoware_trajectory_adapter/package.xml)
-- [ ] [autoware_trajectory_concatenator](../../src/universe/autoware_universe/planning/autoware_trajectory_concatenator/package.xml)
+- [x] [autoware_trajectory_concatenator](../../src/universe/autoware_universe/planning/autoware_trajectory_concatenator/package.xml)
 - [ ] [autoware_trajectory_gate](../../src/universe/autoware_universe/planning/autoware_trajectory_gate/package.xml)
 - [ ] [autoware_trajectory_modifier](../../src/universe/autoware_universe/planning/autoware_trajectory_modifier/package.xml)
 - [ ] [autoware_trajectory_validator](../../src/universe/autoware_universe/planning/autoware_trajectory_validator/package.xml)

@@ -23297,3 +23297,46 @@ this library-only CMake contract. Depend on local planning/debug/vehicle message
 providers and unconditional wrapper support. Root tests own the real-node peer
 and mode-aware driver. Native expected source fix:2004c0c48. Next: original
 concatenation/clock/threading suites and trajectory source gating.
+
+## 2026-11-26: Phase 9.10 — Candidate trajectory concatenation and wrapper clocks
+
+Purpose: adopt the original concatenation source, public wrapper and parameter
+schema. Inventory all17 core cases and all five original wrapper cases. CMake
+runs its wrapper driver only with RCLCPP; its assertions cover node-clock age,
+concurrent add/get, deadlock avoidance and generator delegation. Select the full
+RCLCPP suite and all five wrapper assertions on Agnocast-only.
+
+Pattern: keep one reusable C++ library provider and SDK runtime aggregation.
+Generate autoware_trajectory_concatenator_param from param/parameter_struct.yaml
+with the existing RCR rule; its module-owned output path matches the public
+include and concatenator namespace. Retain the package index and original
+source/tests unchanged.
+
+The original wrapper test's main calls rclcpp::init, so it cannot establish an
+Agnocast-only context. Expose that existing CPP as test-only textual_hdrs with
+its own component-local include root. A small driver under bazel/tests renames
+only that main before textual inclusion, then calls wrapper::init(..., true),
+RUN_ALL_TESTS and shutdown. This preserves every original fixture/assertion,
+including its thread tests, while asserting RCLCPP remains uninitialized on the
+native path. The original RCLCPP test target remains available; do not rewrite
+or skip its five bodies.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  @autoware_trajectory_concatenator//... \
+  //bazel/tests:trajectory_concatenator_backend_test
+```
+
+Results: the complete module builds; both original targets pass all17 core and
+five wrapper cases, zero failures/errors/skips/disabled. The mode-aware driver
+also passes all five bodies on RCLCPP and Agnocast-only (native test .2 s).
+The exact shared enabled command and kernel/heaphook prerequisites are recorded
+in the preceding trajectory-adapter entry; it selects this backend-driver target.
+Unchanged pure core results are reused. This is all22 distinct original cases,
+with the five wrapper cases qualified through both initialization paths, not
+an extra cloned suite or a dependency-related skip. Added-file formatting,
+Bazel evaluation and diff checks pass. No source fix, field planning accuracy,
+Fast DDS or expensive product gate is selected. Next: source selection and
+communication through the trajectory gate.
