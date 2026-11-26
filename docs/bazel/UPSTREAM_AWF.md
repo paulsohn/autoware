@@ -2693,6 +2693,8 @@ No upstream submission or older ROS/colcon validation is claimed.
 
 ### Occlusion-spot grid test: neighbor reads outside the matrix
 
+Local source fix: `19a068e08`.
+
 - [ ] Associate with a matching AWF change. Reviewed 2026-11-27: current
   [test_grid_utils.cpp](https://github.com/autowarefoundation/autoware_universe/blob/main/planning/behavior_velocity_planner/autoware_behavior_velocity_occlusion_spot_module/test/src/test_grid_utils.cpp)
   still reads grid_data(index.x()+i, index.y()+j) without clipping neighbors.

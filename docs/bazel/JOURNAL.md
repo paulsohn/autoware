@@ -24205,6 +24205,6 @@ with no failures, errors or skips. The original suite includes collision
 slowdown, signed offsets, predictive braking and grid/image operations. Its
 iterator timing output is not a performance qualification. Targeted Bazel/Python
 syntax and whitespace checks pass. No simulator/deployment gate is selected.
-The source correction is committed separately before the Bazel definitions.
-The gate uses the complete working-tree definitions described above; their
-root selection and adoption ledger follow in the module integration commit.
+The source correction is separate commit 19a068e08. The module definitions and
+root selection are accepted with the complete gate above. Coverage is 175/244,
+with 69 packages remaining. Phase 9.11 remains in progress. Next: roundabout.
