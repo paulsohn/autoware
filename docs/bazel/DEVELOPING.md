@@ -329,6 +329,13 @@ overrides declared by dependency modules and does not discover local checkouts.
 See [Bazel's non-registry overrides](https://bazel.build/external/module#non-registry-overrides)
 and [the documented versionless pair](https://bazel.build/external/migration#introduce-local-repositories).
 
+Place other module overrides immediately below their matching `bazel_dep`,
+with any rationale comment attached to the override. This includes registry
+version and patch overrides. Keep overrides for transitive-only modules in a
+separate labeled block. Do not add a direct dependency just to place an
+override. Repository overrides through `override_repo` stay with their module
+extension configuration.
+
 Use the local source snapshot for every supported package present under src/.
 Use the ROS Central Registry for dependencies absent from the source checkout.
 A local Autoware package owns a package-local Bazel module. The root module

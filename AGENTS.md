@@ -103,8 +103,9 @@ experiments, and milestones belong in PLAN.md and JOURNAL.md.
   locally. Missing Bazel definitions are integration work: add package-local
   MODULE/BUILD declarations transitively for required local dependencies,
   including message packages, and select them with root local_path_override.
-  Omit the version in each locally overridden root bazel_dep and place its
-  matching local_path_override immediately after it. See
+  Omit the version in each locally overridden root bazel_dep. Place each direct
+  dependency's module override immediately after its bazel_dep. Keep
+  transitive-only overrides in a separate labeled block. See
   [dependency declarations](docs/bazel/DEVELOPING.md#dependency-declarations).
   Do not substitute an older registry source because it already has Bazel
   support. Use registry sources for dependencies absent locally; use a registry

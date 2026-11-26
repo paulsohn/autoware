@@ -23935,3 +23935,36 @@ No compilation or runtime suite is rerun. The dependency sources and targets
 remain unchanged, so their existing module acceptance results still apply.
 No Fast DDS, simulator or deployment gate is selected. Phase 9.11 remains in
 progress at 171/244 packages. Continue with its behavior-velocity plugins.
+
+## 2026-11-26: Root override placement
+
+Purpose: keep source, version and patch selection beside each root dependency.
+Inspect the root MODULE and its included fragments. Six single_version_override
+blocks are separate from their direct bazel_dep declarations. The 345 local
+pairs are already adjacent. OSQP has a multiple_version_override but no direct
+root dependency. The CUDA fragment uses override_repo for an extension-created
+repository, rather than a module override.
+
+Move each of the six blocks, including its rationale comments, immediately
+below the matching bazel_dep. Preserve every argument and dependency order.
+Keep OSQP in a labeled transitive-only override block without introducing an
+unused direct dependency. Keep override_repo with its extension configuration.
+Apply this convention in AGENTS.md and DEVELOPING.md. The adoption checklist
+links to the dependency and override layout.
+
+```sh
+bazel query --lockfile_mode=error --output=location \
+  'set(@autoware_vehicle_msgs//... @autoware_trajectory_ranker//... @autoware_map_asset//... @rclcpp//:rclcpp)' \
+  > /tmp/autoware-adjacent-overrides.locations
+git diff --exit-code -- MODULE.bazel.lock
+git diff --check
+```
+
+Results: the query and whitespace checks pass. All 59 target locations match
+the preceding task's results, and the lockfile is unchanged. A one-time Python
+AST comparison verifies identical declaration contents and unchanged order for
+all non-override statements. All 351 overrides of direct dependencies follow
+their matching bazel_dep. OSQP remains the only transitive-only module override.
+No new validator, dependency, version or patch is introduced. No compilation or
+runtime gate is rerun for this declaration-order change. Existing module
+acceptance evidence still applies. Phase 9.11 remains in progress.
