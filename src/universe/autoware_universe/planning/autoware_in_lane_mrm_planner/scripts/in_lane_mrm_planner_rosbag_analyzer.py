@@ -33,6 +33,8 @@ from typing import Optional
 from typing import Sequence
 from typing import Tuple
 
+import matplotlib.pyplot as plt
+
 from autoware_control_msgs.msg import Control
 from autoware_internal_debug_msgs.msg import Float32MultiArrayStamped
 from autoware_planning_msgs.msg import Trajectory
@@ -84,7 +86,6 @@ from in_lane_mrm_rosbag_common import summarize_trajectory
 from in_lane_mrm_rosbag_common import write_anomalies_csv
 from in_lane_mrm_rosbag_common import write_planner_status_csv
 from in_lane_mrm_rosbag_common import write_timeline_csv
-import matplotlib.pyplot as plt
 from nav_msgs.msg import Odometry
 from std_msgs.msg import Bool
 

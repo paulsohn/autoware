@@ -24604,3 +24604,93 @@ affected existing consumers; retain that evidence rather than treating a new
 message as a source-only edit. The subsequent planner gate exercises profile
 constants and actual trigger transitions. Whitespace checks pass. No Fast DDS
 or deployment gate is selected. Universe coverage is unchanged.
+
+## 2026-11-27 — Phase 9.11: In-lane MRM planner (in progress)
+
+Purpose: adopt the in-lane stopping planner, both executable factories and its
+record/analyze tools. Inspect fourteen production C++ sources, eight original
+test files (71 cases), parameter schema, two configuration files, launch/schema
+resources and three Python scripts. The trigger prerequisite above is required;
+keep its local message provider. Select the complete original algorithm and
+parameter-validation suite with RCLCPP, plus real planner/auxiliary behavior on
+both RCLCPP and native Agnocast. Probe /dev/agnocast in the same host execution
+environment; preload the built heaphook for the native gate.
+
+Add package-local MODULE/BUILD definitions and the adjacent root local selection.
+Generate in_lane_mrm_planner_parameters from the original YAML. The CMake source
+uses a bare header include, so add the generated package include directory to
+the C++ library rather than rewriting source includes. Compile the original
+fourteen sources with local path-smoother, trajectory, geometry, Lanelet and
+vehicle providers, canonical shared ROS/PCL/OpenCV runtimes, and the existing
+RCR range-v3/magic_enum providers. Preserve both original executable/factory
+names with autoware_agnocast_node and the isolated native executor selection.
+Register those binaries, Python tools, configurations, schema and component
+records through the package's ament index. Typed parameters and their lifecycle
+runtime come from generate_parameter_library.
+
+The first complete compile exposes two compatibility defects: path_planner.cpp
+and in_lane_mrm_trajectory_planner.cpp include the removed tf2/utils.h; use
+utils.hpp. obstacle_stop_utils.hpp instantiates boost::hash<uuid> but includes
+only UUID headers; with Boost 1.90/libc++ the hash template remains incomplete.
+Add boost/functional/hash.hpp, preserving the map type and identity semantics.
+AWF main retains these expressions on 2026-11-27. Merged PR #13593 supplies the
+same include correction in trajectory_modifier, which is related code rather
+than a matching MRM-package fix. Keep these source edits in a separate commit
+and record the comparison in UPSTREAM_AWF.md.
+
+Keep all original tests in their package. New integration checks live under
+bazel/tests/autoware_in_lane_mrm_planner. A transport peer loads both concrete
+factories from the actual component DSO, publishes the indexed test map/route,
+odometry, acceleration, perception and trigger messages, then checks finite
+standby stopping output, trigger latch, emergency-profile re-latch and release.
+It also observes DRIVE and hazard-enabled auxiliary commands. Select the ROS or
+native-only executor with the existing wrapper API; native mode must leave
+RCLCPP uninitialized. Load the component opaquely rather than statically linking
+its implementation into the pluginlib test process. This avoids conflicting
+ownership of internal geometry/math libraries and duplicate component factories.
+
+The original rosbag scripts share an installed helper module. Preserve them as
+a reusable Python library plus two indexed executables, using pinned ROS bag,
+message and plotting providers. The recorder expects a ros2 command in its
+runtime environment, as it does with colcon. The root test supplies that command
+from the declared ros2cli/ros2bag libraries, without a host ROS installation.
+Record actual repeated trajectory/odometry DDS messages, require recorder
+validation, then invoke the installed analyzer headlessly and inspect its CSV
+and PNG artifacts. Check both --help entrypoints. Concrete CLI availability is
+a product/development-environment responsibility, not an absolute source path.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  @autoware_in_lane_mrm_planner//... \
+  //bazel/tests/autoware_in_lane_mrm_planner:all
+
+# Native transport gate, after probing the device in this same environment:
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --local_test_jobs=1 \
+  --run_under=//bazel/agnocast:with_heaphook --test_env=ENABLE_AGNOCAST=1 \
+  --test_output=errors //bazel/tests/autoware_in_lane_mrm_planner:transport_test
+```
+
+The fresh-cache analyzer --help gate initially aborts in the pinned native
+runtime during Matplotlib's font scan (uncaught std::runtime_error, cannot load
+face). Initializing plotting before native ROS imports resolves startup and
+actual report generation; keep that small compatibility change with the source
+fixes. This establishes a load-order-sensitive workaround, not a general mixed
+C++ ABI guarantee. The recorder then fails because Lyrical ros2 bag record
+requires --topics instead of trailing positional topics. Inspect the selected
+ros2bag parser, add that flag, and preserve the rest of the original command.
+UPSTREAM_RCR.md records the plotting evidence; UPSTREAM_AWF.md records the
+source compatibility scope, with older ROS behavior explicitly unverified.
+
+Results: all module targets and all three RCLCPP test targets pass. The complete
+original suite reports 71 cases with zero failures, errors, disabled cases or
+skips. Native Agnocast transport also passes with the built/preloaded heaphook
+and uninitialized RCLCPP. Recorder/analyzer help, real three-second recording,
+recorded-topic validation and generated nonempty CSV/PNG reports pass with a
+fresh plotting cache. Unchanged C++ native evidence is reused after Python-only
+corrections. New C++ formatting, Python syntax and whitespace checks pass.
+The compatibility source edits are ready for their separate commit; package
+adoption awaits its build-definition commit. No Fast DDS, simulator or
+deployment gate is selected. Coverage remains 179/244 until that commit.

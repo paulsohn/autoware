@@ -2821,3 +2821,30 @@ the Cyclone DDS gate also checks actual sampler output and fallback. See the
 [path-sampler journal](JOURNAL.md#2026-11-27-phase-911--path-sampler-provider-and-node)
 for the complete command and results. This is an implementation correctness fix;
 no upstream submission or colcon validation is claimed.
+
+### In-lane MRM planner: Lyrical TF2 and complete Boost hash headers
+
+- [ ] Associate with a matching AWF correction. Checked 2026-11-27:
+  [path_planner.cpp](https://github.com/autowarefoundation/autoware_universe/blob/main/planning/autoware_in_lane_mrm_planner/src/path_planner.cpp)
+  and in_lane_mrm_trajectory_planner.cpp use the removed tf2/utils.h, and
+  [obstacle_stop_utils.hpp](https://github.com/autowarefoundation/autoware_universe/blob/main/planning/autoware_in_lane_mrm_planner/src/obstacle_stop_utils.hpp)
+  omits boost/functional/hash.hpp. Scoped MRM/TF2 and MRM/hash PR searches find
+  no matching correction. The Lyrical trackers #7404 and #13620 are also
+  reviewed; their broader toolchain work does not establish this module gate.
+  Related merged
+  [PR #13593](https://github.com/autowarefoundation/autoware_universe/pull/13593)
+  adds that hash header to trajectory_modifier's corresponding utility; its
+  actual one-file diff matches the required include pattern, not this package.
+
+The complete module compile fails on both TF2 includes and incomplete
+boost::hash<boost::uuids::uuid> in persistent-object/point maps under
+Lyrical, Boost 1.90 and LLVM/libc++ 21.1.8. Use tf2/utils.hpp and explicitly
+include boost/functional/hash.hpp. Keep algorithms, map identity and original
+assertions unchanged; commit the source correction separately from Bazel rules.
+The [MRM journal](JOURNAL.md#2026-11-27-phase-911--in-lane-mrm-planner) records
+whole-suite and transport verification: all 71 original cases and both selected
+transport profiles pass. The recorder also needs --topics with the selected
+Lyrical ros2bag parser; the actual recording/analyzer gate passes after that
+command update. The plotting import-order workaround is separately recorded
+in UPSTREAM_RCR.md.
+No upstream submission or older ROS/colcon validation is claimed.

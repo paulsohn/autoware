@@ -830,7 +830,7 @@ def export_trajectory_profile(
 
 
 def record_rosbag(output_path: Path, topics: Sequence[str]) -> subprocess.Popen:
-    command = ["ros2", "bag", "record", "-o", str(output_path), *topics]
+    command = ["ros2", "bag", "record", "-o", str(output_path), "--topics", *topics]
     return subprocess.Popen(command, stdin=subprocess.PIPE)
 
 

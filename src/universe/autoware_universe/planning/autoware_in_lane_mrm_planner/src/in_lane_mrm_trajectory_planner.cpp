@@ -17,7 +17,7 @@
 #include <autoware/motion_utils/trajectory/trajectory.hpp>
 #include <autoware_utils/geometry/geometry.hpp>
 
-#include <tf2/utils.h>
+#include <tf2/utils.hpp>
 
 namespace autoware::in_lane_mrm_planner
 {

@@ -240,3 +240,26 @@ regression. This extends the selected published SDK's existing path adaptation;
 no matching upstream association is recorded for that version.
 
 [Reproducible commands and diagnosis](JOURNAL.md#2026-11-23-phase-76--leading-package-interface-resource-paths).
+
+## 2026-11-27: Native ROS imports before Matplotlib can abort fresh font discovery
+
+The pinned MRM analyzer imports native ROS/rosbag helpers before pyplot. With a
+fresh MPLCONFIGDIR its --help process aborts with libc++abi reporting an uncaught
+std::runtime_error: "Can not load face (unknown file format; error code 0x2)".
+Moving the existing pyplot import before ROS imports lets both fresh-cache help
+and actual headless CSV/PNG report generation pass. The separate roundabout tool
+already initializes plotting first; its accepted entrypoint remains unchanged.
+
+Reproduce through the
+[MRM tools gate](JOURNAL.md#2026-11-27-phase-911--in-lane-mrm-planner): restore the
+analyzer's original plotting-after-ROS order, retain the fresh-cache test and run
+//bazel/tests/autoware_in_lane_mrm_planner:rosbag_tools_test with runtime,
+no-agnocast and Cyclone DDS. The initial analyzer --help subprocess aborts before
+recording. Restore plotting-first order and the complete record/analyze scenario
+passes, using the same selected SDK/wheels and no host Python packages.
+
+This demonstrates native-library load-order sensitivity. Mixed C++ runtime
+bindings are a diagnosis to investigate, not an isolated proof of the exact
+exception-runtime defect or a general guarantee that reordering makes every
+native combination safe. The local change is a verified startup workaround for
+this tool. No RCR submission or SDK-wide ABI fix is claimed.
