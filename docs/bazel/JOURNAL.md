@@ -24893,3 +24893,43 @@ TF and trajectory/odometry; raising the object to z=10 m must clear the collisio
 without changing its x/y position. Both selected targets pass with no skips;
 the zero-case runner alone is explicitly insufficient. Coverage is 183/244,
 with two of nine Phase 9.12 package gates complete. Next: predicted-path checker.
+
+## 2026-11-27 — Phase 9.12: Predicted-path checker
+
+Purpose: expose the four-source predicted-path component, collision utility APIs,
+standalone executable and original launch/configuration. CMake declares no
+functional tests. Qualify the actual node using its normal default configuration,
+including its stop-service contract, rather than accepting a startup-only check.
+
+Declare package-local MODULE/BUILD rules and root versionless local selection.
+Use local motion/interface/vehicle providers and the pinned ROS SDK; export the
+public headers and retain library/component/executable identities. Register the
+resources and executable in its own ament index. The first compile reports a
+missing boost/assign/list_of.hpp from public debug headers. Add the direct
+Boost.Assign provider alongside Geometry/Format and Eigen: broad CMake include
+paths are not a substitute for the actual header dependency. No source changes
+are required.
+
+Extend the external collision peer for private node input topics, PredictedObjects,
+current acceleration and the transient-local IsStopped contract. Serve the actual
+/control/vehicle_cmd_gate/set_stop endpoint and return/publish its requested state.
+Send trajectory, odometry and startup TF as for the earlier checkers. Require an
+ERROR diagnostic and a stop=true request carrying predicted_path_checker when a
+box enters the braking corridor. After lateral clearance and the configured
+history timeout, require OK and stop=false from the same requester. This tests
+service traffic and state feedback in addition to collision geometry. No vehicle
+or full simulator is needed for this software gate.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  @autoware_predicted_path_checker//... //bazel/tests/collision_checkers:all
+```
+
+Results: all module targets build and all three affected live collision fixtures
+pass on Cyclone DDS, including the earlier obstacle and spheric scenarios after
+the shared peer changes. No tests are skipped; the package has no original
+functional cases to omit. Python syntax and whitespace checks pass. Coverage is
+184/244, with three of nine package gates complete. Next: stop-mode operator and
+control-command gate. No Fast DDS, simulator or deployment gate is selected.

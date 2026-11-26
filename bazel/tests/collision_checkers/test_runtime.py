@@ -13,9 +13,11 @@ import unittest
 
 from ament_index_python.packages import get_package_share_directory
 from autoware_planning_msgs.msg import Trajectory, TrajectoryPoint
-from autoware_perception_msgs.msg import DetectedObjects, DetectedObject, ObjectClassification, Shape
+from autoware_perception_msgs.msg import DetectedObjects, DetectedObject, ObjectClassification, Shape, PredictedObjects, PredictedObject
 from diagnostic_msgs.msg import DiagnosticArray
-from geometry_msgs.msg import TransformStamped
+from geometry_msgs.msg import TransformStamped, AccelWithCovarianceStamped
+from tier4_control_msgs.msg import IsStopped
+from tier4_control_msgs.srv import SetStop
 from nav_msgs.msg import Odometry
 from sensor_msgs.msg import PointCloud2, PointField
 from tf2_msgs.msg import TFMessage
@@ -32,17 +34,32 @@ class CollisionRuntime(unittest.TestCase):
         rclpy.init()
         peer = rclpy.create_node('collision_peer')
         namespace = f'/bazel_collision_{os.getpid()}'
+        predicted = SHORT == 'predicted_path_checker'
+        input_prefix = namespace + ('/predicted_path_checker_node' if predicted else '')
+        requests = []
+        stopped = IsStopped()
+        stop_pub = peer.create_publisher(IsStopped, '/control/vehicle_cmd_gate/is_stopped', QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL))
+
+        def set_stop(request, response):
+            requests.append((request.stop, request.request_source))
+            stopped.data = request.stop
+            stopped.requested_sources = [request.request_source] if request.stop else []
+            response.status.success = True
+            return response
+
+        stop_service = peer.create_service(SetStop, '/control/vehicle_cmd_gate/set_stop', set_stop) if predicted else None
+        accel_pub = peer.create_publisher(AccelWithCovarianceStamped, input_prefix + '/input/current_accel', 1) if predicted else None
         levels = []
         observed = set()
         diagnostics = peer.create_subscription(DiagnosticArray, '/diagnostics',
             lambda msg: (observed.update((s.hardware_id, s.name, s.level) for s in msg.status), levels.extend(s.level for s in msg.status if s.hardware_id == SHORT)), 10)
         tf_pub = peer.create_publisher(TFMessage, '/tf_static', QoSProfile(depth=1, durability=DurabilityPolicy.TRANSIENT_LOCAL))
-        trajectory_pub = peer.create_publisher(Trajectory, namespace + '/input/predicted_trajectory', 1)
-        reference_pub = peer.create_publisher(Trajectory, namespace + '/input/reference_trajectory', 1)
-        odom_pub = peer.create_publisher(Odometry, namespace + '/input/odometry', 1)
+        trajectory_pub = peer.create_publisher(Trajectory, input_prefix + '/input/predicted_trajectory', 1)
+        reference_pub = peer.create_publisher(Trajectory, input_prefix + '/input/reference_trajectory', 1)
+        odom_pub = peer.create_publisher(Odometry, input_prefix + '/input/odometry', 1)
         spheres = SHORT == 'spheric_collision_detector'
-        obstacle_pub = peer.create_publisher(DetectedObjects if spheres else PointCloud2,
-            namespace + ('/input/object_recognition' if spheres else '/input/obstacle_pointcloud'),
+        obstacle_pub = peer.create_publisher(PredictedObjects if predicted else DetectedObjects if spheres else PointCloud2,
+            input_prefix + ('/input/objects' if predicted else '/input/object_recognition' if spheres else '/input/obstacle_pointcloud'),
             1 if spheres else qos_profile_sensor_data)
         trajectory = Trajectory()
         trajectory.header.frame_id = 'map'
@@ -70,16 +87,17 @@ class CollisionRuntime(unittest.TestCase):
             reference_pub.publish(trajectory)
             odom.header.stamp = stamp
             odom_pub.publish(odom)
-            if spheres:
-                msg = DetectedObjects()
-                obj = DetectedObject()
+            if predicted or spheres:
+                msg = PredictedObjects() if predicted else DetectedObjects()
+                obj = PredictedObject() if predicted else DetectedObject()
                 obj.existence_probability = 1.0
+                pose = (obj.kinematics.initial_pose_with_covariance if predicted else obj.kinematics.pose_with_covariance).pose
                 obj.shape.type = Shape.BOUNDING_BOX
                 obj.shape.dimensions.x = obj.shape.dimensions.y = obj.shape.dimensions.z = 2.0
-                obj.kinematics.pose_with_covariance.pose.position.x = coordinates[0]
-                obj.kinematics.pose_with_covariance.pose.position.y = coordinates[1]
-                obj.kinematics.pose_with_covariance.pose.position.z = coordinates[2]
-                obj.kinematics.pose_with_covariance.pose.orientation.w = 1.0
+                pose.position.x = coordinates[0]
+                pose.position.y = coordinates[1]
+                pose.position.z = coordinates[2]
+                pose.orientation.w = 1.0
                 obj.classification = [ObjectClassification(label=ObjectClassification.CAR, probability=1.0)]
                 msg.objects = [obj]
             else:
@@ -89,6 +107,12 @@ class CollisionRuntime(unittest.TestCase):
             msg.header.frame_id = 'map'
             msg.header.stamp = stamp
             obstacle_pub.publish(msg)
+            if predicted:
+                accel = AccelWithCovarianceStamped()
+                accel.header.stamp = stamp
+                accel_pub.publish(accel)
+                stopped.stamp = stamp
+                stop_pub.publish(stopped)
 
         args = [EXECUTABLE, '--ros-args', '-r', '__ns:=' + namespace]
         for package, config in [(PACKAGE, SHORT + '.param.yaml'), ('autoware_test_utils', 'test_vehicle_info.param.yaml')]:
@@ -112,10 +136,21 @@ class CollisionRuntime(unittest.TestCase):
                             return
                     self.fail(f'Diagnostic level {level} absent; observed={observed}; nodes={peer.get_node_names_and_namespaces()}; topics={peer.get_topic_names_and_types()}: {output()}')
 
+                def wait_request(stop):
+                    deadline = time.monotonic() + 5
+                    while time.monotonic() < deadline:
+                        publish()
+                        rclpy.spin_once(peer, timeout_sec=0.05)
+                        if (stop, 'predicted_path_checker') in requests:
+                            return
+                    self.fail(f'Stop request {stop} absent: {requests}; {output()}')
+
                 try:
                     wait_level(0)
                     coordinates[1] = 0.0
                     wait_level(2)
+                    if predicted:
+                        wait_request(True)
                     if spheres:
                         coordinates[2] = 10.0
                         wait_level(0)
@@ -123,6 +158,8 @@ class CollisionRuntime(unittest.TestCase):
                         wait_level(2)
                     coordinates[1] = 20.0
                     wait_level(0)
+                    if predicted:
+                        wait_request(False)
                 finally:
                     if process.poll() is None:
                         process.send_signal(signal.SIGINT)

@@ -1,0 +1,95 @@
+load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
+load("@rclcpp_components//:defs.bzl", "rclcpp_components_register_node")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "autoware_predicted_path_checker",
+    srcs = glob(["src/**/*.cpp"]),
+    hdrs = glob(['include/**/*.hpp']),
+    includes = ["include", "src"],
+    deps = [
+        "@autoware_component_interface_specs_universe",
+        "@autoware_component_interface_utils",
+        "@autoware_motion_utils",
+        "@autoware_perception_msgs//:cc",
+        "@autoware_planning_msgs//:cc",
+        "@autoware_utils",
+        "@autoware_vehicle_info_utils",
+        "@diagnostic_updater//:diagnostic_updater_library",
+        "@geometry_msgs//:cc",
+        "@nav_msgs//:cc",
+        "@rclcpp//:rclcpp_library",
+        "@rclcpp_components//:rclcpp_components_library",
+        "@sensor_msgs//:cc",
+        "@std_msgs//:cc",
+        "@tf2//:tf2_library",
+        "@tf2_eigen//:tf2_eigen_library",
+        "@tf2_geometry_msgs//:tf2_geometry_msgs_library",
+        "@tf2_ros//:tf2_ros_library",
+        "@tier4_control_msgs//:cc",
+        "@tier4_external_api_msgs//:cc",
+        "@tier4_planning_msgs//:cc",
+        "@visualization_msgs//:cc",
+        "@rosdistro//cc:boost.geometry",
+        "@rosdistro//cc:boost.assign",
+        "@rosdistro//cc:boost.format",
+        "@rosdistro//cc:eigen",
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = [
+        "@autoware_component_interface_specs_universe//:runtime_dynamic_deps",
+        "@autoware_component_interface_utils//:runtime_dynamic_deps",
+        "@autoware_motion_utils//:runtime_dynamic_deps",
+        "@autoware_perception_msgs//:cc_shared",
+        "@autoware_planning_msgs//:cc_shared",
+        "@autoware_utils//:runtime_dynamic_deps",
+        "@diagnostic_updater//:diagnostic_updater",
+        "@geometry_msgs//:cc_shared",
+        "@nav_msgs//:cc_shared",
+        "@rclcpp//:rclcpp",
+        "@rclcpp_components//:rclcpp_components",
+        "@sensor_msgs//:cc_shared",
+        "@std_msgs//:cc_shared",
+        "@tf2//:tf2",
+        "@tf2_eigen//:tf2_eigen",
+        "@tf2_geometry_msgs//:tf2_geometry_msgs",
+        "@tf2_ros//:tf2_ros",
+        "@tier4_control_msgs//:cc_shared",
+        "@tier4_external_api_msgs//:cc_shared",
+        "@tier4_planning_msgs//:cc_shared",
+        "@visualization_msgs//:cc_shared",
+    ],
+)
+
+cc_shared_library(
+    name = "component",
+    shared_lib_name = "libautoware_predicted_path_checker.so",
+    deps = [":autoware_predicted_path_checker"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+)
+
+rclcpp_components_register_node(
+    name = "autoware_predicted_path_checker_node",
+    component = ":component",
+    node_name = "autoware_predicted_path_checker_node",
+    plugin = "autoware::predicted_path_checker::PredictedPathCheckerNode",
+)
+
+register_ament_files(
+    name = "executables",
+    files = [":autoware_predicted_path_checker_node"],
+    prefix = "lib/autoware_predicted_path_checker",
+    strip_prefix = "*",
+)
+
+ament_index(
+    package_xml = "package.xml",
+    components = [":autoware_predicted_path_checker_node_record"],
+    data = glob(["config/**", "launch/**"]) + [":executables"],
+)
