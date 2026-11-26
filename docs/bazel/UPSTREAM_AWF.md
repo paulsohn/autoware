@@ -2443,3 +2443,20 @@ cached poses when receiving a replacement map. All three new ROS cases pass,
 including no-map suppression, exact marker payload and map replacement. The
 package has no original functional suite. This is message/map correctness,
 independent of Lyrical; no upstream submission is claimed.
+
+### ROI visualization needs current Message Filters subscription APIs
+
+- [ ] Associate with a matching upstream fix. Checked 2026-11-26: current
+  [ROI node header](https://github.com/autowarefoundation/autoware_universe/blob/main/perception/autoware_traffic_light_visualization/src/traffic_light_roi_visualizer/roi_visualizer_node.hpp)
+  retains .h aliases; the
+  [implementation](https://github.com/autowarefoundation/autoware_universe/blob/main/perception/autoware_traffic_light_visualization/src/traffic_light_roi_visualizer/roi_visualizer_node.cpp)
+  passes raw QoS profiles to Message Filters. A scoped traffic_light_visualization/
+  Lyrical PR search finds no matching correction; AWF #7404 is the general tracker.
+
+The complete Phase 9.7 visualization gate fails to compile at subscriber.h.
+Use .hpp headers and reliable depth-one QoS objects on rclcpp major 32+, retaining
+raw profiles on older versions. Preserve image-transport calls, which remain
+supported, lazy subscription, sensor-data image QoS and synchronization. All 63
+original cases pass without assertion changes, including both image publication
+modes and map-node behavior; a new map peer also passes on RCLCPP and Agnocast-only.
+Only Lyrical is executed. No upstream submission is claimed.

@@ -16,6 +16,7 @@
 
 #include <ament_index_cpp/get_package_share_directory.hpp>
 #include <rclcpp/rclcpp.hpp>
+#include <rclcpp/version.h>
 
 #if __has_include(<cv_bridge/cv_bridge.hpp>)
 #include <cv_bridge/cv_bridge.hpp>  // for ROS 2 Jazzy or newer
@@ -82,11 +83,15 @@ void TrafficLightRoiVisualizerNode::connect_cb()
     }
   } else if (!image_sub_.getSubscriber()) {
     image_sub_.subscribe(this, "~/input/image", "raw", rmw_qos_profile_sensor_data);
-    roi_sub_.subscribe(this, "~/input/rois", rclcpp::QoS{1}.get_rmw_qos_profile());
-    traffic_signals_sub_.subscribe(
-      this, "~/input/traffic_signals", rclcpp::QoS{1}.get_rmw_qos_profile());
+#if RCLCPP_VERSION_MAJOR >= 32
+    const auto reliable_qos = rclcpp::QoS{1};
+#else
+    const auto reliable_qos = rclcpp::QoS{1}.get_rmw_qos_profile();
+#endif
+    roi_sub_.subscribe(this, "~/input/rois", reliable_qos);
+    traffic_signals_sub_.subscribe(this, "~/input/traffic_signals", reliable_qos);
     if (use_high_accuracy_detection_) {
-      rough_roi_sub_.subscribe(this, "~/input/rough/rois", rclcpp::QoS{1}.get_rmw_qos_profile());
+      rough_roi_sub_.subscribe(this, "~/input/rough/rois", reliable_qos);
     }
   }
 }

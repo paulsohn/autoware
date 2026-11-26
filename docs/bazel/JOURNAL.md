@@ -22177,3 +22177,38 @@ all three cases pass in 21.8 s, zero failures/errors/skips. Changed source-range
 and full added-file formatting plus diff checks pass. No original functional
 test was omitted; no Fast DDS, GPU, GUI or expensive product gate was selected.
 Next: the existing image and map visualization components and full suites.
+
+## 2026-11-26: Phase 9.7 — traffic-light image and map visualization
+
+Purpose: adopt both original components and executables. Inspect CMake, manifests,
+all five original test sources, image assets, lazy subscription, image transport,
+bulb extraction and wrapper map-node topics. Acceptance keeps all 63 original
+cases (31 image drawing, eleven image-node, ten map drawing, nine extraction,
+two map-node), plus one root-owned nonempty map-marker peer in RCLCPP and
+Agnocast-only modes. Image/marker payload checks need no display or GPU.
+
+Compilation first fails at message_filters/subscriber.h. Update subscriber,
+synchronizer and ApproximateTime includes to .hpp. Select a reliable depth-one
+rclcpp::QoS for the three Message Filters subscriptions on rclcpp major 32+,
+retaining raw profiles for older releases. Image-transport's existing raw APIs
+remain available (deprecated), so keep that code unchanged. Preserve lazy
+connect/disconnect, synchronization, image sensor QoS and drawing semantics.
+No original test assertion changes. Commit this compatibility correction
+separately; upstream status is in UPSTREAM_AWF.md.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  @autoware_traffic_light_visualization//... \
+  //bazel/tests:traffic_light_map_visualization_transport_test
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --local_test_jobs=1 --strategy=TestRunner=local \
+  --run_under=//bazel/agnocast:with_heaphook \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  //bazel/tests:traffic_light_map_visualization_transport_test
+```
+
+With the build/resource pattern below, the full original suite and added peer
+pass; the enabled peer also passes with RCLCPP inactive. Older ROS/CMake builds
+are not executed here.
