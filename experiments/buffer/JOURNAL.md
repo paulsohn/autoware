@@ -4501,3 +4501,30 @@ Median of five run summaries for each matched-QoS cell. Each run delivered 20/20
 | zenoh | Int32 | discovered | 2355.64 | 711.79 | 1377.56 | 1.25 | 295.6 |
 | zenoh | 640KiB | configured | 799.82 | 5659.49 | 7133.68 | 1.56 | 342.0 |
 | zenoh | 640KiB | discovered | 2396.15 | 6308.02 | 7918.52 | 1.56 | 295.8 |
+
+## Measure Universe graph churn and interleave matched-QoS cloud controls
+
+Use the existing Lyrical Release colcon overlays, packaged hook, 600-frame standalone CIE three-LiDAR fixture, prepared awpilot0 Docker network/profiles and local migration image with Cyclone and Zenoh. Start from the colcon worktree. The runner starts a disposable stock ROS peer on awpilot0 with private IPC, no native device and a 512 MiB cap. It mounts the distro read-only; the peer never sources a workspace overlay. For Zenoh it starts a router in that container. Host scopes retain the memory guard. Only the gateway scope uses the 1200 MiB limit to accommodate extra route workers. Run each command separately and reuse a fresh result prefix for each batch.
+
+```bash
+sg docker -c 'bash experiments/rmw-agnocast/manual-gateway/churn-run.sh build/manual-gateway/churn-replay cyclone native'
+sg docker -c 'bash experiments/rmw-agnocast/manual-gateway/churn-run.sh build/manual-gateway/churn-replay cyclone configured'
+sg docker -c 'bash experiments/rmw-agnocast/manual-gateway/churn-run.sh build/manual-gateway/churn-replay cyclone discovered'
+sg docker -c 'bash experiments/rmw-agnocast/manual-gateway/churn-run.sh build/manual-gateway/churn-replay cyclone configured-matched'
+sg docker -c 'bash experiments/rmw-agnocast/manual-gateway/churn-run.sh build/manual-gateway/churn-replay zenoh configured'
+sg docker -c 'bash experiments/rmw-agnocast/manual-gateway/churn-run.sh build/manual-gateway/churn-replay zenoh discovered'
+sg docker -c 'bash experiments/rmw-agnocast/manual-gateway/churn-run.sh build/manual-gateway/churn-replay zenoh configured-matched'
+python3 experiments/rmw-agnocast/manual-gateway/churn-report.py build/manual-gateway/churn-replay-*
+sg docker -c 'bash experiments/rmw-agnocast/islands/paired.sh build/manual-gateway/interleaved 1 5 cloud'
+python3 experiments/rmw-agnocast/islands/paired-report.py build/manual-gateway/interleaved
+```
+
+The timed phases start with two auxiliary native publishers at 10 Hz and zero auxiliary network readers. Add 12 then 48 silent offers with the active route count held fixed. For ten seconds replace a group of eight offers once per second. Then create one and two typed network readers, remove them together, and leave the 48 silent offers up. The network graph witness runs on the laptop. The stock recorder runs on the isolated peer and always uses a configured /output export. The native-only control records locally. The configured-only control exports just the cloud; configured-matched predeclares both auxiliary exports with reliable input and output. The discovered case creates and retires the auxiliary exports on demand.
+
+Correlate native phase transitions with source stamps. Report full three-sensor outputs (even sequences after startup) separately from the alternating partial groups. Check every sequence, all 596 steady tracking outputs, and compare every remotely recorded cloud to the local bag by stamp and full message equality. On discovered routes, measure subscription creation to first payload and removal to the disappearance of the network publisher. CPU is percent of one logical core from the gateway scope, with worker tick deltas where sampled. RSS sums resident pages across processes and may double-count shared pages. Only the two-island timing fixture uses the repeated five-pair design. The phase comparison is a workload diagnostic on a shared laptop.
+
+All eight Universe runs verified 600/600 local clouds and 596/596 steady tracker outputs. All seven bridged runs verified 600/600 remote clouds, including both Zenoh discovery repetitions. The native-only run had no gateway or remote recorder. Seven runs logged ten batches of changing offers; the initial Zenoh discovery run used the same schedule before batch logging and per-worker counters were added. Under each configured-matched policy, the two auxiliary routes delivered data and stayed advertised after reader exit. All discovered auxiliary routes delivered and retired. Across the three discovery runs, both routes delivered their first samples within 0.38–0.73 seconds and both network publishers disappeared within 0.57 seconds of unsubscribe. Minimum available host memory across the guarded Universe jobs was 14246 MiB.
+
+In the native-only control the local full-cloud p95 rose from 4.31 ms in the stable phase to 10.16 ms under endpoint churn. Churn-phase p95 ranged from 9.11 to 11.51 ms across all eight runs. This shows that the tail can move in the absence of a gateway; a short phase with 30–50 full groups does not isolate OS scheduling or establish equivalent tail behavior across modes. With 12 unmatched offers, the native discovery process used 58% of a core on Cyclone and 54% on Zenoh. With 48 it used 100% and 98%, respectively, while the network discovery processes remained below 1% each. The extra CPU cost appeared before adding any matched auxiliary route. See [phase results including activation, RSS and delivery](../rmw-agnocast/manual-gateway/results/universe-churn.csv).
+
+The native gateway scan calls both endpoint-info APIs for each visible permitted topic. In rmw_agnocast/graph.cpp both calls reach inspect(), which constructs a complete snapshot by opening live graph records. The process measurements and this code path make repeated native registry reads the first optimization candidate. A follow-up should reuse a consistent inventory while graph membership is unchanged and retain timely invalidation for endpoint exit, process crash and domain isolation. Verify that CPU stops growing at the observed rate without delaying route creation or retirement.

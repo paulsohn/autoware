@@ -13,13 +13,15 @@ import threading
 parser = argparse.ArgumentParser()
 parser.add_argument("output", type=Path)
 parser.add_argument("cases", nargs="+", choices=["absent","idle","active","restart","crash","late","conflict","ingress","stall","partition","writer-stall","sustained","sustained-control","dual-active","dual-writer-stall","dual-restart"])
+parser.add_argument("--churn", choices=["native", "configured", "configured-matched", "discovered"],
+                    help="apply the same endpoint workload to a sustained-control run")
 parser.add_argument("--discovery-control", action="store_true",
                     help="advertise the recorder export with dynamic discovery running")
 args = parser.parse_args()
-if args.discovery_control and args.cases != ["sustained-control"]:
-    parser.error("--discovery-control requires the sustained-control case")
+if (args.churn or args.discovery_control) and args.cases != ["sustained-control"]:
+    parser.error("discovery and churn controls require the sustained-control case")
 args.output.mkdir()
-peer = "awpilot0-stock"
+peer = os.getenv("GATEWAY_BENCH_PEER", "awpilot0-stock")
 env = dict(os.environ, LYRICAL_ROOT=Path("build/agnocast-lyrical/universe-root").read_text().strip(),
            BUFFER_RUNTIME_ONLY="1")
 host = ["experiments/buffer/run-lyrical.sh", "timeout","-k","5","100","bash",
@@ -27,6 +29,12 @@ host = ["experiments/buffer/run-lyrical.sh", "timeout","-k","5","100","bash",
 remote = ["docker","exec","-e","ROS_DOMAIN_ID=173",peer,"bash","-ec",
           'source /opt/ros/lyrical/setup.bash; exec "$@"',"bash"]
 sp.run(remote+["bash","-ec",'test ! -e /dev/agnocast; test -z "${LD_PRELOAD:-}"'],check=True)
+
+if args.churn:
+    network = env["GATEWAY_BENCH_RMW"]
+    remote[2:2] = ["-e", "RMW_IMPLEMENTATION=" + network,
+                    "-e", "CYCLONEDDS_URI=" + env["GATEWAY_PEER_PROFILE"],
+                    "-e", "ZENOH_CONFIG_OVERRIDE=" + env["ZENOH_CONFIG_OVERRIDE"]]
 
 for index, mode in enumerate(args.cases):
     case = args.output / f"{index}-{mode}"
@@ -71,9 +79,33 @@ for index, mode in enumerate(args.cases):
                 writer.writerow((time.time_ns(),sum(int(m[1]) for m in readings)))
                 stop.wait(.05)
 
+    def monitor_gateway(pid, stop):
+        group = Path("/sys/fs/cgroup") / Path(f"/proc/{pid}/cgroup").read_text().strip().split("::")[1].lstrip("/")
+        with (case/"gateway-usage.csv").open("w", buffering=1) as stream:
+            writer=csv.writer(stream)
+            writer.writerow(("ns","cpu_usec","rss_kib","processes","native_scan_ticks","network_scan_ticks"))
+            while not stop.is_set():
+                cpu=int(dict(line.split() for line in (group/"cpu.stat").read_text().splitlines())["usage_usec"])
+                rss=[]
+                scan_ticks={"native":0, "network":0}
+                for item in (group/"cgroup.procs").read_text().split():
+                    try:
+                        proc=Path("/proc",item)
+                        argv=(proc/"cmdline").read_bytes().split(b"\0")
+                        if len(argv)>2 and argv[1].endswith(b"/gateway_discovery.py"):
+                            role=argv[2].decode()
+                            stat=(proc/"stat").read_text().rsplit(")",1)[1].split()
+                            scan_ticks[role] += int(stat[11])+int(stat[12])
+                        m=re.search(r"^VmRSS:\s+(\d+)",Path("/proc",item,"status").read_text(),re.M)
+                    except (FileNotFoundError,ProcessLookupError):
+                        continue
+                    if m: rss.append(int(m[1]))
+                writer.writerow((time.time_ns(),cpu,sum(rss),len(rss),scan_ticks["native"],scan_ticks["network"]))
+                stop.wait(.25)
+
     def start(name, cmd):
         with (case/(name+".log")).open("x") as log:
-            p = sp.Popen(cmd, env=run_env, stdout=log, stderr=sp.STDOUT)
+            p = sp.Popen(cmd, env=(dict(run_env, BUFFER_RUNTIME_ONLY="0") if args.churn and name=="gateway" else run_env), stdout=log, stderr=sp.STDOUT)
         children.append(p)
         return p
 
@@ -94,11 +126,16 @@ for index, mode in enumerate(args.cases):
     def gateway(name):
         route = (["import","geometry_msgs/msg/PoseArray","/peer/poses","/manual/local_poses"]
                  if mode == "ingress" or name == "import" else ["export","sensor_msgs/msg/PointCloud2","/output","/manual/cloud"])
-        if args.discovery_control:
+        if args.discovery_control or args.churn:
             config = case/"gateway.json"
-            config.write_text(json.dumps(dict(dynamic_discovery=True,
+            exports=[dict(topic="/output", remap_to="/manual/cloud", type="sensor_msgs/msg/PointCloud2")]
+            if args.churn == "configured-matched":
+                exports.extend(dict(topic="/churn/active"+str(i), type="std_msgs/msg/Int32",
+                    qos=dict(input_reliability="reliable", output_reliability="reliable")) for i in (1,2))
+            config.write_text(json.dumps(dict(dynamic_discovery=args.churn in (None,"discovered"),
+                network_rmw=env.get("GATEWAY_BENCH_RMW","rmw_cyclonedds_cpp"),
                 heaphook="/ws/build/migration-guide/packaged-hook-check/libagnocast_heaphook.so",
-                exports=[dict(topic="/output", remap_to="/manual/cloud", type="sensor_msgs/msg/PointCloud2")])))
+                exports=exports)))
             route = ["--config", str(config)]
         p = start(name,host+["gateway",str(case/(name+".pid")),*route])
         owned_gateways[name] = p
@@ -116,7 +153,28 @@ for index, mode in enumerate(args.cases):
         os.kill(pid,signal.SIGINT)
         done(p)
 
+    def start_churn_clock(graph):
+        wait(lambda:(case/"pipeline"/"sink-ready").exists(),graph,30)
+        tmp = case/"clock.tmp"
+        tmp.write_text(str(time.time_ns()))
+        tmp.rename(case/"churn-start")
+
     try:
+        if args.churn:
+            churn_workers=[]
+            for role in ("native","network"):
+                proc=start("churn-"+role,host+["churn",str(case),role,args.churn])
+                churn_workers.append(proc)
+                wait(lambda:(case/("ready-"+role)).exists(),proc)
+            if args.churn == "native":
+                graph=start("graph",host+["sustained",str(case/"pipeline")])
+                start_churn_clock(graph)
+                assert graph.wait(timeout=90)==0
+                assert contains("graph","bag=600/600")
+                assert contains("graph","steady_tracks=596/596")
+                for worker in churn_workers:
+                    done(worker)
+                continue
         if mode == "conflict":
             relay=gateway("gateway")
             for label, route in (("duplicate",["export","/output","/manual/cloud"]),
@@ -161,13 +219,20 @@ for index, mode in enumerate(args.cases):
         stop_monitor = threading.Event()
         if pressure:
             pids = re.findall(r"ready role=.* pid=(\d+)",(case/"gateway.log").read_text())
-            assert len(pids) == 2
+            if not args.churn:
+                assert len(pids) == 2
             pids.append((case/"gateway.pid").read_text().strip())
-            monitor = threading.Thread(target=monitor_rss,args=(pids,stop_monitor),daemon=True)
+            if args.churn:
+                monitor = threading.Thread(target=monitor_gateway,args=(pids[-1],stop_monitor),daemon=True)
+            else:
+                monitor = threading.Thread(target=monitor_rss,args=(pids,stop_monitor),daemon=True)
             monitor.start()
         if sustained:
             graph=start("graph",host+["sustained",str(case/"pipeline")])
-            wait(lambda:(case/"pipeline"/"sink-ready").exists(),graph,30)
+            if args.churn:
+                start_churn_clock(graph)
+            else:
+                wait(lambda:(case/"pipeline"/"sink-ready").exists(),graph,30)
             time.sleep(12)
             if mode != "sustained-control":
                 interrupt_recorder("STOP")
@@ -233,7 +298,7 @@ for index, mode in enumerate(args.cases):
         if pressure:
             stop_monitor.set()
             monitor.join()
-            assert len((case/"rss.csv").read_text().splitlines()) > 40
+            assert len((case/("gateway-usage.csv" if args.churn else "rss.csv")).read_text().splitlines()) > 40
         if mode in ("active","restart","crash","late") or pressure:
             interrupt_recorder("INT")
             done(rec)
@@ -255,6 +320,10 @@ for index, mode in enumerate(args.cases):
             print("import verified 240/240",flush=True)
         done(start("verify",host+["verify",str(case)]))
         if sustained:
+            if args.churn:
+                for worker in churn_workers:
+                    done(worker)
+                assert len((case/"peer-sequences").read_text().split())==600
             print(mode,(case/"verify.log").read_text().splitlines()[0],flush=True)
             continue
         with (case/"delivery.csv").open() as f:
