@@ -322,22 +322,24 @@ void PathSampler::copyZ(
 {
   if (from_traj.empty() || to_traj.empty()) return;
   to_traj.front().pose.position.z = from_traj.front().pose.position.z;
-  if (from_traj.size() < 2 || to_traj.size() < 2) return;
-  auto from = from_traj.begin() + 1;
-  auto s_from = autoware_utils::calc_distance2d(from->pose, std::next(from)->pose);
+  if (from_traj.size() == 1) {
+    for (auto & point : to_traj) point.pose.position.z = from_traj.front().pose.position.z;
+    return;
+  }
+  auto from = std::next(from_traj.begin());
+  auto s_from = autoware_utils::calc_distance2d(std::prev(from)->pose, from->pose);
   auto s_to = 0.0;
   auto s_from_prev = 0.0;
-  for (auto to = to_traj.begin() + 1; to + 1 != to_traj.end(); ++to) {
+  for (auto to = std::next(to_traj.begin()); to != to_traj.end(); ++to) {
     s_to += autoware_utils::calc_distance2d(std::prev(to)->pose, to->pose);
-    for (; s_from < s_to && from + 1 != from_traj.end(); ++from) {
+    for (; s_from < s_to && std::next(from) != from_traj.end(); ++from) {
       s_from_prev = s_from;
       s_from += autoware_utils::calc_distance2d(from->pose, std::next(from)->pose);
     }
-    const auto ratio = (s_to - s_from_prev) / (s_from - s_from_prev);
+    const auto ratio = std::clamp((s_to - s_from_prev) / (s_from - s_from_prev), 0.0, 1.0);
     to->pose.position.z = std::prev(from)->pose.position.z +
                           ratio * (from->pose.position.z - std::prev(from)->pose.position.z);
   }
-  to_traj.back().pose.position.z = from->pose.position.z;
 }
 
 void PathSampler::copyVelocity(
@@ -345,6 +347,12 @@ void PathSampler::copyVelocity(
   const geometry_msgs::msg::Pose & ego_pose)
 {
   if (to_traj.empty() || from_traj.empty()) return;
+
+  if (from_traj.size() == 1) {
+    for (auto & point : to_traj)
+      point.longitudinal_velocity_mps = from_traj.front().longitudinal_velocity_mps;
+    return;
+  }
 
   const auto closest_fn = [&](const auto & p1, const auto & p2) {
     return autoware_utils::calc_distance2d(p1.pose, ego_pose) <=
@@ -357,12 +365,11 @@ void PathSampler::copyVelocity(
   for (; to != first_to; ++to)
     to->longitudinal_velocity_mps = first_from->longitudinal_velocity_mps;
 
-  auto from = first_from;
-  auto s_from = autoware_utils::calc_distance2d(from->pose, std::next(from)->pose);
+  auto from = std::next(first_from);
+  auto s_from = autoware_utils::calc_distance2d(first_from->pose, from->pose);
   auto s_to = 0.0;
   auto s_from_prev = 0.0;
-  for (; to + 1 != to_traj.end(); ++to) {
-    s_to += autoware_utils::calc_distance2d(to->pose, std::next(to)->pose);
+  for (; to != to_traj.end(); ++to) {
     for (; s_from < s_to && from + 1 != from_traj.end(); ++from) {
       s_from_prev = s_from;
       s_from += autoware_utils::calc_distance2d(from->pose, std::next(from)->pose);
@@ -371,13 +378,14 @@ void PathSampler::copyVelocity(
       from->longitudinal_velocity_mps == 0.0 || std::prev(from)->longitudinal_velocity_mps == 0.0) {
       to->longitudinal_velocity_mps = 0.0;
     } else {
-      const auto ratio = (s_to - s_from_prev) / (s_from - s_from_prev);
+      const auto ratio = std::clamp((s_to - s_from_prev) / (s_from - s_from_prev), 0.0, 1.0);
       to->longitudinal_velocity_mps =
         std::prev(from)->longitudinal_velocity_mps +
         ratio * (from->longitudinal_velocity_mps - std::prev(from)->longitudinal_velocity_mps);
     }
+    if (std::next(to) != to_traj.end())
+      s_to += autoware_utils::calc_distance2d(to->pose, std::next(to)->pose);
   }
-  to_traj.back().longitudinal_velocity_mps = from->longitudinal_velocity_mps;
 }
 
 std::vector<TrajectoryPoint> PathSampler::generateTrajectory(const PlannerData & planner_data)

@@ -24410,3 +24410,70 @@ passing; there are no failures or dependency-related skips. Targeted new C++
 formatting and whitespace checks pass. The separate path-sampler task remains
 open for its newly exposed velocity-copy boundary defect. No simulator,
 deployment, Fast DDS or native Agnocast gate is selected.
+
+## 2026-11-27 — Phase 9.11: Path-sampler provider and node (in progress)
+
+Purpose: expose the local autoware_path_sampler algorithms, component and native
+executable before qualifying sampling-based behavior planning. Inspect its
+CMakeLists.txt, package.xml, public headers, four C++ sources, indexed parameter
+file and the already supported sampler_common, Frenet and Bézier providers.
+CMake declares no compiled tests and the package contains no original test files;
+new behavior checks therefore belong under bazel/tests/autoware_path_sampler.
+
+Add a package-local MODULE.bazel with logical dependencies and a versionless
+root bazel_dep/local_path_override pair. Split the three algorithm/utility
+translation units into public :path_generation and keep node.cpp in the default
+library. The node library consumes that provider. Preserve the component factory
+autoware::path_sampler::PathSampler, libautoware_path_sampler.so and
+path_sampler_exe. Use rclcpp_components_register_node, register_ament_files and
+ament_index to publish the factory, executable and original YAML. Collect
+canonical SDK/message shared libraries through :runtime_dynamic_deps; do not
+link another ROS/DDS runtime into the component. Qualify the sampler-common
+origin-derivative correction above (source commit 8c229bccc) before this gate.
+
+The C++ gate covers Frenet lateral endpoints, finite and ordered candidate
+geometry, Bézier candidates, combined/disabled selection, reuse length and
+vehicle-width-adjusted targets inside a supplied drivable area. The runtime gate
+runs the actual executable with indexed vehicle/nearest-search and sampler
+parameters. Publish a straight bounded reference, odometry and empty perception
+over Cyclone DDS, check missing-input behavior, exercise combined/Frenet/Bézier
+selection and dynamic parameter updates, then invalidate the prior path and
+disable both samplers to require a stopped fallback. Match input/output stamps
+to exclude queued results. Check finite trajectory geometry, inherited velocity
+and elevation, component mapping and SIGINT shutdown. The implemented trajectory
+topic is ~/output/path, despite the README naming ~/output/trajectory. These
+checks use RCLCPP; no native Agnocast configuration is selected.
+
+After fixing spline derivatives, the real node still produces an unexpected
+velocity of 1.6965874 from a uniformly 2.0 m/s input. copyVelocity initializes its
+right-hand reference iterator at the first point, then reads prev(begin). It also
+advances output arc length before assigning the current point and overwrites the
+last interpolated value. The parallel copyZ code initializes segment length from
+the second/third points (out of bounds for a two-point reference) and similarly
+forces an uninterpolated final value. Start with the actual first reference
+segment, interpolate the current output distance including the final point,
+clamp the existing arc-length interpolation ratio and handle singleton references.
+Preserve the conservative zero-speed rule when either segment endpoint is zero.
+
+Add three direct node regression cases via a test-only subclass under bazel/:
+two-point references with ego at the start, nonuniform spacing with an output
+ending inside a source segment, and empty/singleton/stopping cases. Use the
+original node options and indexed vehicle/nearest-search/YAML providers. The
+source correction is committed separately from build definitions. AWF main
+retains the old code on 2026-11-27; merged historical PR #4303 introduced these
+copying functions and is related provenance, not a current matching correction.
+UPSTREAM_AWF.md records the scope and comparison.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  @autoware_path_sampler//... //bazel/tests/autoware_path_sampler:all
+```
+
+Result: all three package test targets pass: two candidate/target-selection
+cases, three direct node interpolation cases and the real DDS executable
+scenario. All module targets build, with no failures or skips. New C++ format,
+Python syntax and whitespace checks pass. The source correction is ready for
+its separate commit; package adoption remains pending its build-definition
+commit. No Fast DDS, simulator or deployment check is selected.

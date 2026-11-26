@@ -2791,3 +2791,29 @@ projection skips. See the
 [spline-boundary journal](JOURNAL.md#2026-11-27-phase-911--sampler-spline-derivatives-at-the-first-knot)
 for commands and results. This is a source correctness issue; no upstream
 submission or colcon validation is claimed.
+
+### Path sampler: unsafe and shifted velocity/elevation interpolation
+
+- [ ] Associate with a matching AWF correction. Checked 2026-11-27:
+  [current node.cpp](https://github.com/autowarefoundation/autoware_universe/blob/main/planning/sampling_based_planner/autoware_path_sampler/src/node.cpp)
+  retains the first-point predecessor read in copyVelocity and the second/third
+  point initialization in copyZ. Merged historical
+  [PR #4303](https://github.com/autowarefoundation/autoware_universe/pull/4303)
+  introduced these copying functions; it is provenance, not a correction for
+  the boundary failures observed here. Scoped path_sampler/velocity PR search
+  finds no current matching correction.
+
+The actual sampler executable, with ego at the reference start, emits 1.6965874
+m/s from a uniform 2.0 m/s input after the spline-origin defect is corrected.
+copyVelocity reads prev(begin), advances the output distance before assigning
+that point and bypasses interpolation for the final point. copyZ initializes
+its segment length from reference points one/two, which dereferences end for a
+two-point reference, then similarly replaces its final result. Correct segment
+initialization and distance order, interpolate every output including the final
+point, and handle singleton references. Preserve the existing conservative
+zero-speed segment policy. External regression cases cover two-point and
+nonuniform references, interior final outputs, empty/singleton inputs and stops;
+the Cyclone DDS gate also checks actual sampler output and fallback. See the
+[path-sampler journal](JOURNAL.md#2026-11-27-phase-911--path-sampler-provider-and-node)
+for the complete command and results. This is an implementation correctness fix;
+no upstream submission or colcon validation is claimed.
