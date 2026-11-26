@@ -45,6 +45,7 @@ bazel_dep(name = "lifecycle_msgs", version = "0.0.0")
 bazel_dep(name = "sensor_msgs", version = "5.9.3-1.rcr.0")
 bazel_dep(name = "sensor_msgs_py", version = "5.9.3-1.rcr.0")
 bazel_dep(name = "radar_msgs", version = "0.2.2-5.rcr.2")
+bazel_dep(name = "sophus", version = "1.22.9102-4.rcr.2")
 bazel_dep(name = "cv_bridge", version = "4.1.0-3.rcr.2")
 bazel_dep(name = "aruco", version = "5.0.5-3.rcr.2")
 bazel_dep(name = "image_geometry", version = "4.1.0-3.rcr.2")
@@ -2141,4 +2142,10 @@ bazel_dep(name = "autoware_lidar_marker_localizer", version = "0.0.0")
 local_path_override(
     module_name = "autoware_lidar_marker_localizer",
     path = "src/universe/autoware_universe/localization/autoware_landmark_based_localizer/autoware_lidar_marker_localizer",
+)
+
+bazel_dep(name = "yabloc_common", version = "0.0.0")
+local_path_override(
+    module_name = "yabloc_common",
+    path = "src/universe/autoware_universe/localization/yabloc/yabloc_common",
 )

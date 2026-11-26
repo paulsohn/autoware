@@ -2483,6 +2483,8 @@ ROS/CMake validation claim. No upstream submission is claimed.
 
 ### YabLoc common OpenCV layout and message-buffer compatibility
 
+Local source fix: `3c15e0dd8`.
+
 - [ ] Associate with a matching upstream fix. Checked 2026-11-26: current
   [color header](https://github.com/autowarefoundation/autoware_universe/blob/main/localization/yabloc/yabloc_common/include/yabloc_common/color.hpp)
   and [decoder header](https://github.com/autowarefoundation/autoware_universe/blob/main/localization/yabloc/yabloc_common/include/yabloc_common/cv_decompress.hpp)

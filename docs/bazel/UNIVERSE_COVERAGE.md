@@ -21,8 +21,8 @@ may contain multiple package commits and smaller execution batches. Update the
 ledger when a package closes or the source snapshot changes; this is a planning
 record, not a new build-time completeness validator.
 
-Current adoption progress, 2026-11-26: **151/244** packages have both definitions
-and root local overrides; **93** remain without definitions. The census table
+Current adoption progress, 2026-11-26: **152/244** packages have both definitions
+and root local overrides; **92** remain without definitions. The census table
 below preserves the initial 2026-11-23 baseline. Checked ledger items record
 completed module gates; Phase 9.8 is complete. See PLAN.md and the
 package journals for configuration and behavior evidence.
@@ -292,7 +292,7 @@ Adopt landmark support before its localizers, using point-cloud support from 9.4
 
 Start with yabloc_common, then its declared consumers. Declare map/image/camera-model inputs and any new third-party providers when exposed. Run complete image-processing/filter suites, deterministic seeded/replay checks where supported, initialization and monitor behavior; do not equate a build with localization accuracy.
 
-- [ ] [yabloc_common](../../src/universe/autoware_universe/localization/yabloc/yabloc_common/package.xml)
+- [x] [yabloc_common](../../src/universe/autoware_universe/localization/yabloc/yabloc_common/package.xml)
 - [ ] [yabloc_monitor](../../src/universe/autoware_universe/localization/yabloc/yabloc_monitor/package.xml)
 - [ ] [yabloc_image_processing](../../src/universe/autoware_universe/localization/yabloc/yabloc_image_processing/package.xml)
 - [ ] [yabloc_particle_filter](../../src/universe/autoware_universe/localization/yabloc/yabloc_particle_filter/package.xml)

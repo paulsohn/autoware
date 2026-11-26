@@ -2415,6 +2415,23 @@ qualify module behavior, not physical sensor/vehicle accuracy. No Fast DDS, GPU,
 GUI, simulator or deployment gate is claimed. Next: Phase 9.9 YabLoc visual
 localization.
 
+### Phase 9.9: YabLoc visual localization (in progress)
+
+Integrate yabloc_common first, then monitor/image processing, particle filtering
+and pose initialization. Inventory all original registrations/resources and
+retain the complete three-case resampler suite. Add root-owned library/node
+gates for map decomposition and ground, image processing/projection, diagnostic
+freshness, particle prediction/correction and initialization/service readiness.
+Prepare the actual semantic model and indexed provider when the initializer
+requires it; validate inference separately from its explicit missing-model
+fallback. Select Cyclone/RCLCPP for these plain-rclcpp packages, headless synthetic
+map/image/particle fixtures and reproducible seeded or invariant-based checks.
+No Fast DDS, GUI, vehicle accuracy or expensive product gate is selected.
+Coverage starts at 151/244; keep validated package/provider commits separate.
+
+yabloc_common: complete; four geometry, codec and map/ground cases pass. Root
+retains Sophus 1.22.9102-4.rcr.2 for these consumers.
+
 ### Execution order through complete Universe coverage
 
 The following groups are the initial route through every remaining package.

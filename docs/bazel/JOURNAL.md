@@ -22713,3 +22713,20 @@ env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
 
 The full declared common gate passes after these corrections. No older ROS/CMake
 run is claimed; uninstantiated legacy helper templates are not qualified here.
+
+Build pattern: one original shared owner with explicit public headers and local
+lanelet/signal/visualization dependencies, canonical PCL/OpenCV/GeographicLib/TF
+SDK owners and two plain component registrations/executables. Export the compiled
+signal/visualization/fmt roots that public consumers reuse. Root explicitly pins
+the already-qualified Sophus1.22.9102-4.rcr.2; source is absent locally. Keep
+original config/launch in the package index and all added tests in bazel/tests.
+
+The map fixture supplies eleven planar road lines at z2. Map decomposition must
+emit eleven endpoint-pair segments with map frame/input stamp; ground estimation
+must return height2 and upward normal after an actual map/pose exchange. Other
+cases retain labeled segment endpoints under translation, validate slope-aligned
+rotation/message conversion, and decode PNG/Bayer bytes. Results: all module
+targets and four cases pass, zero failures/errors/skips, 19.0 s. Changed-range /
+added-file formatting and diff checks pass. This does not qualify real ground
+accuracy, unused synchronization helpers or graphical/product behavior. No Fast
+DDS or expensive gate is selected. Next: monitor and image-processing consumers.

@@ -2658,3 +2658,12 @@ cc_test(
     data = [],
     tags = ["no-sandbox", "no-remote"],
 )
+
+cc_test(
+    name = "yabloc_common_test",
+    srcs = ["yabloc_common/test_common.cpp"],
+    deps = ["@yabloc_common//:yabloc_common_library", "@googletest//:gtest_main"],
+    dynamic_deps = ["@yabloc_common", "@yabloc_common//:runtime_dynamic_deps"],
+    data = [],
+    tags = ["no-sandbox", "no-remote"],
+)

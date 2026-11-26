@@ -1,0 +1,54 @@
+load("@rclcpp_components//:defs.bzl", "rclcpp_components_register_node")
+load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "yabloc_common_library",
+    srcs = ["src/camera_info_subscriber.cpp", "src/color.cpp", "src/cv_decompress.cpp", "src/extract_line_segments.cpp", "src/ground_server/ground_server_core.cpp", "src/ground_server/polygon_operation.cpp", "src/ll2_decomposer/ll2_decomposer_core.cpp", "src/pose_conversions.cpp", "src/pub_sub.cpp", "src/static_tf_subscriber.cpp", "src/transform_line_segments.cpp"],
+    hdrs = ["include/yabloc_common/camera_info_subscriber.hpp", "include/yabloc_common/color.hpp", "include/yabloc_common/cv_decompress.hpp", "include/yabloc_common/extract_line_segments.hpp", "include/yabloc_common/gamma_converter.hpp", "include/yabloc_common/ground_plane.hpp", "include/yabloc_common/ground_server/filter/moving_averaging.hpp", "include/yabloc_common/ground_server/ground_server.hpp", "include/yabloc_common/ground_server/polygon_operation.hpp", "include/yabloc_common/ground_server/util.hpp", "include/yabloc_common/ll2_decomposer/ll2_decomposer.hpp", "include/yabloc_common/pcl_filter.hpp", "include/yabloc_common/pose_conversions.hpp", "include/yabloc_common/pub_sub.hpp", "include/yabloc_common/static_tf_subscriber.hpp", "include/yabloc_common/synchro_subscriber.hpp", "include/yabloc_common/transform_line_segments.hpp"],
+    includes = ["include"],
+    deps = ["@autoware_lanelet2_utils", "@autoware_map_msgs//:cc", "@autoware_signal_processing", "@autoware_utils_visualization", "@cv_bridge//:cv_bridge_library", "@geometry_msgs//:cc", "@lanelet2_core//:lanelet2_core_library", "@message_filters//:message_filters_library", "@pcl_conversions//:pcl_conversions_library", "@rclcpp_components//:rclcpp_components_library", "@sensor_msgs//:cc", "@sophus//:sophus", "@std_msgs//:cc", "@tf2_ros//:tf2_ros_library", "@visualization_msgs//:cc", "@rosdistro//cc:boost.circular_buffer", "@rosdistro//cc:geographiclib_library", "@rosdistro//cc:opencv_library", "@rosdistro//cc:pcl_common", "@rosdistro//cc:pcl_features", "@rosdistro//cc:pcl_filters", "@rosdistro//cc:pcl_kdtree", "@rosdistro//cc:pcl_segmentation"],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = ["@autoware_lanelet2_utils//:runtime_dynamic_deps", "@autoware_map_msgs//:cc_shared", "@cv_bridge//:cv_bridge", "@geometry_msgs//:cc_shared", "@message_filters//:message_filters", "@pcl_conversions//:pcl_conversions", "@rclcpp_components//:rclcpp_components", "@sensor_msgs//:cc_shared", "@std_msgs//:cc_shared", "@tf2_ros//:tf2_ros", "@visualization_msgs//:cc_shared", "@rosdistro//cc:geographiclib", "@rosdistro//cc:opencv", "@rosdistro//cc:pcl"],
+)
+
+cc_shared_library(
+    name = "yabloc_common",
+    shared_lib_name = "libyabloc_common.so",
+    deps = [":yabloc_common_library", "@autoware_signal_processing", "@autoware_utils_visualization", "@rosdistro//cc:fmt"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+)
+
+rclcpp_components_register_node(
+    name = "yabloc_ground_server_node",
+    node_name = "yabloc_ground_server_node",
+    component = ":yabloc_common",
+    plugin = "yabloc::ground_server::GroundServer",
+)
+
+rclcpp_components_register_node(
+    name = "yabloc_ll2_decomposer_node",
+    node_name = "yabloc_ll2_decomposer_node",
+    component = ":yabloc_common",
+    plugin = "yabloc::ll2_decomposer::Ll2Decomposer",
+)
+
+register_ament_files(
+    name = "executables",
+    files = [":yabloc_ground_server_node", ":yabloc_ll2_decomposer_node"],
+    prefix = "lib/yabloc_common",
+    strip_prefix = "*",
+)
+
+ament_index(
+    package_xml = "package.xml",
+    libraries = [":yabloc_common"],
+    components = [":yabloc_ground_server_node_record", ":yabloc_ll2_decomposer_node_record"],
+    data = glob(["launch/**", "config/**"]) + [":executables"],
+)
