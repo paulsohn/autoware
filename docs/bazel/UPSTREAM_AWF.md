@@ -2386,3 +2386,21 @@ remain reliable depth one; camera info remains SensorDataQoS best effort.
 All 23 original cases and a new nonempty four-stream pub/sub case pass with
 Cyclone/RCLCPP, with no assertion changes. Only Lyrical is executed; no older
 ROS/CMake run or upstream submission is claimed.
+
+### Map-based traffic-light detector retains removed TF2 aliases
+
+- [ ] Associate with a matching upstream fix. Checked 2026-11-26: current
+  [public header](https://github.com/autowarefoundation/autoware_universe/blob/main/perception/autoware_traffic_light_map_based_detector/include/autoware/traffic_light_map_based_detector/traffic_light_map_based_detector.hpp)
+  and [core test](https://github.com/autowarefoundation/autoware_universe/blob/main/perception/autoware_traffic_light_map_based_detector/test/test_traffic_light_map_based_detector.cpp)
+  include buffer_core.h; the
+  [implementation](https://github.com/autowarefoundation/autoware_universe/blob/main/perception/autoware_traffic_light_map_based_detector/src/traffic_light_map_based_detector.cpp)
+  includes exceptions.h. Scoped map-based-detector/Lyrical and literal
+  buffer_core.h PR searches find no matching correction. AWF #7404 remains
+  the general transition tracker.
+
+The complete Phase 9.7 map-detector gate in JOURNAL.md fails compilation on both
+removed TF2 aliases with the pinned Lyrical SDK. Use buffer_core.hpp in the public
+header and original test, and exceptions.hpp in the implementation. No assertions,
+geometry, time-window or exception-handling behavior changes. All 24 original
+cases pass, including real map/camera publication with delayed TF interpolation.
+No older ROS/CMake execution or upstream submission is claimed.

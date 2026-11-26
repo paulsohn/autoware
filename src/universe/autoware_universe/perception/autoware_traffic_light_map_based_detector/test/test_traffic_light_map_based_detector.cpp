@@ -30,7 +30,7 @@
 #include <tier4_perception_msgs/msg/traffic_light_roi.hpp>
 
 #include <gtest/gtest.h>
-#include <tf2/buffer_core.h>
+#include <tf2/buffer_core.hpp>
 
 #include <cmath>
 #include <memory>

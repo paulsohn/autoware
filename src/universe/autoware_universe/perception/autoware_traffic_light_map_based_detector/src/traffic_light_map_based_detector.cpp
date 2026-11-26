@@ -27,7 +27,7 @@
 #include <lanelet2_core/Exceptions.h>
 #include <lanelet2_core/geometry/Point.h>
 #include <lanelet2_routing/RoutingGraphContainer.h>
-#include <tf2/exceptions.h>
+#include <tf2/exceptions.hpp>
 
 #include <algorithm>
 #include <chrono>

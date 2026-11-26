@@ -29,7 +29,7 @@
 #include <lanelet2_routing/RoutingGraph.h>
 #include <lanelet2_routing/RoutingGraphContainer.h>
 #include <lanelet2_traffic_rules/TrafficRulesFactory.h>
-#include <tf2/buffer_core.h>
+#include <tf2/buffer_core.hpp>
 
 #include <memory>
 #include <optional>

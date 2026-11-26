@@ -21948,3 +21948,55 @@ results after the 57.6 s module build). The enabled case passes in 12.1 s with
 loaded kernel module/heaphook. Zero failures/errors/skips; targeted format/diff
 checks pass. These synthetic map/state checks do not establish road-scene replay
 accuracy. Next: map-based ROI geometry and cloud occlusion.
+
+## 2026-11-26: Phase 9.7 — map-based traffic-light ROI projection
+
+Purpose: expose map/route/camera projection, visibility filtering and rough/expected
+ROI publication without model execution. Inspect the two core sources, node,
+public/private headers, configuration/launch and all three original suites.
+Acceptance preserves eleven geometry utilities, twelve detector cases and the
+original real-topic node/TF case; no added duplicate test is needed. Use Cyclone/
+RCLCPP; this plain ROS node has no wrapper-enabled profile.
+
+Prerequisite/source selection: no image_geometry implementation is present in
+src/. A child 0.0.0 declaration alone selects its registry stub, which has no
+BUILD file. Inspect registry metadata and select image_geometry 4.1.0-3.rcr.2 in
+the root registry section, next to cv_bridge from the same release family. The
+release source is vision_opencv-release's immutable release/lyrical/image_geometry/
+4.1.0-3 archive, integrity sha256-AYMuNUOFBMlvS/xFewcdi/BN+wanVOyLJIGS45/v+ZM=;
+lock registry/module/overlay inputs. Validate its actual C++ API through both
+native SDK suites and the complete consumer, rather than treating version metadata
+as support. Its manually marked Python xfail is outside this C++ profile and is
+not counted as passing SDK coverage.
+
+Pattern: package module/root override, original two-source core and separate node
+shared providers. Declare actual planning/map/visualization messages in addition
+to manifest dependencies. Link image geometry and lanelet/traffic/TF providers,
+register/index executable, component, original launch/config. Export compiled
+lanelet/traffic-light utilities and the facade's six compiled utility owners from
+the core DSO so the node reuses them. Keep all three original test targets/mains
+(gtest, not gtest_main), including the private process header.
+
+Observed source blocker: Lyrical removes tf2/buffer_core.h in the public header
+and core test, plus tf2/exceptions.h in the implementation. Use their .hpp forms
+only; keep all assertions, time windows, exceptions and geometry unchanged.
+Current upstream retains all three aliases on 2026-11-26; scoped PR searches find
+no matching fix (UPSTREAM_AWF.md). Commit source compatibility separately.
+The node test deliberately publishes a delayed yawed TF sample and checks that
+interpolation widens the real published ROI, so a simple compile or empty-output
+check cannot satisfy this gate.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  @autoware_traffic_light_map_based_detector//... \
+  @image_geometry//test:image_geometry-utest @image_geometry//test:image_geometry-utest-equi
+```
+
+Results: all twelve consumer non-test targets and all five test targets build.
+All 24 original consumer and eighteen native SDK cases pass in 24.9 s, zero
+failures/errors/skips. Targeted changed-range formatting (without reordering
+unrelated includes) and diff checks pass. No Fast DDS, GPU, Python camera API,
+older ROS/CMake or expensive product check is claimed. Next: cloud occlusion,
+using the now-qualified camera geometry provider.
