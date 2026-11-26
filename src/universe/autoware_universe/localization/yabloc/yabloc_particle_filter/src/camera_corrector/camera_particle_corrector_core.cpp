@@ -17,7 +17,7 @@
 
 #include <autoware_utils_math/trigonometry.hpp>
 #include <autoware_utils_system/stop_watch.hpp>
-#include <opencv4/opencv2/imgproc.hpp>
+#include <opencv2/imgproc.hpp>
 #include <yabloc_common/color.hpp>
 #include <yabloc_common/pose_conversions.hpp>
 #include <yabloc_common/pub_sub.hpp>

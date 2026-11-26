@@ -14,8 +14,8 @@
 
 #include "yabloc_particle_filter/camera_corrector/camera_particle_corrector.hpp"
 
-#include <opencv4/opencv2/highgui.hpp>
-#include <opencv4/opencv2/imgproc.hpp>
+#include <opencv2/highgui.hpp>
+#include <opencv2/imgproc.hpp>
 #include <yabloc_common/color.hpp>
 #include <yabloc_common/pose_conversions.hpp>
 #include <yabloc_common/pub_sub.hpp>

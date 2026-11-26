@@ -14,7 +14,7 @@
 
 #ifndef YABLOC_COMMON__GAMMA_CONVERTER_HPP_
 #define YABLOC_COMMON__GAMMA_CONVERTER_HPP_
-#include <opencv4/opencv2/core.hpp>
+#include <opencv2/core.hpp>
 
 namespace yabloc::common
 {

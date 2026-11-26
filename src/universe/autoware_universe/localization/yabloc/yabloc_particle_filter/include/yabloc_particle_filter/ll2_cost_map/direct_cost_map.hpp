@@ -15,7 +15,7 @@
 #ifndef YABLOC_PARTICLE_FILTER__LL2_COST_MAP__DIRECT_COST_MAP_HPP_
 #define YABLOC_PARTICLE_FILTER__LL2_COST_MAP__DIRECT_COST_MAP_HPP_
 
-#include <opencv4/opencv2/imgproc.hpp>
+#include <opencv2/imgproc.hpp>
 
 namespace yabloc
 {

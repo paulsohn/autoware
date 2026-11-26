@@ -17,8 +17,8 @@
 #include "yabloc_particle_filter/ll2_cost_map/direct_cost_map.hpp"
 
 #include <autoware_utils_visualization/marker_helper.hpp>
-#include <opencv4/opencv2/highgui.hpp>
-#include <opencv4/opencv2/imgproc.hpp>
+#include <opencv2/highgui.hpp>
+#include <opencv2/imgproc.hpp>
 
 #include <boost/geometry/geometry.hpp>
 

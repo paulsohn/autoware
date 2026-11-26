@@ -2524,3 +2524,13 @@ before reading its four scalar endpoints. All four image cases and four common
 cases pass with the pinned SDK, including detected lines, graph masks, raw/PNG
 undistortion, ground endpoints and the expected map-overlay pixel. Queue80 and
 reliable depth-ten input QoS are retained. No upstream submission is claimed.
+
+The Phase 9.9 particle consumer additionally exposes installation-prefixed
+includes in its camera/cost-map sources and the common gamma helper. Checked
+2026-11-26: current
+[cost-map header](https://github.com/autowarefoundation/autoware_universe/blob/main/localization/yabloc/yabloc_particle_filter/include/yabloc_particle_filter/ll2_cost_map/hierarchical_cost_map.hpp)
+and [gamma helper](https://github.com/autowarefoundation/autoware_universe/blob/main/localization/yabloc/yabloc_common/include/yabloc_common/gamma_converter.hpp)
+retain these paths. The same public-header correction passes the full original
+three-case resampler suite, three prediction/correction cases and both generated
+message wire types, alongside unchanged common/image gates. This extends the
+OpenCV-layout finding above; no independent Lyrical algorithm change is needed.

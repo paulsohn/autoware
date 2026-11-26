@@ -15,7 +15,7 @@
 #ifndef YABLOC_PARTICLE_FILTER__CAMERA_CORRECTOR__CAMERA_PARTICLE_CORRECTOR_HPP_
 #define YABLOC_PARTICLE_FILTER__CAMERA_CORRECTOR__CAMERA_PARTICLE_CORRECTOR_HPP_
 
-#include <opencv4/opencv2/core.hpp>
+#include <opencv2/core.hpp>
 #include <yabloc_particle_filter/correction/abstract_corrector.hpp>
 #include <yabloc_particle_filter/ll2_cost_map/hierarchical_cost_map.hpp>
 

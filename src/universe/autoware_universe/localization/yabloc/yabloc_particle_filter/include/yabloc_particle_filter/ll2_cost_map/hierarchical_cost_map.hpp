@@ -16,7 +16,7 @@
 #define YABLOC_PARTICLE_FILTER__LL2_COST_MAP__HIERARCHICAL_COST_MAP_HPP_
 
 #include <Eigen/StdVector>
-#include <opencv4/opencv2/core.hpp>
+#include <opencv2/core.hpp>
 #include <rclcpp/node.hpp>
 #include <yabloc_common/gamma_converter.hpp>
 

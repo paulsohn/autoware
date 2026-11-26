@@ -22808,3 +22808,38 @@ accessors. Raw/PNG cases check size, stamp, frame and pixels; the other cases
 require detected lines, nonempty road masks, label-colored overlays, known
 ground endpoints/labels and map markers/pixels. Next: the particle filter's
 original resampler suite, mixed interface/node providers and correction gates.
+
+## 2026-11-26: Phase 9.9 — YabLoc particle filtering and correction
+
+Purpose: adopt both original messages, all CMake-selected implementation sources,
+three components/executables and indexed config/launch. Inspect the complete
+three-case test_resampler suite and retain its assertions unchanged. Add three
+root-owned Cyclone/RCLCPP cases for prediction/activation, GNSS weighting and
+rejection, and camera/map weighting with its enable switch. The unused standalone
+particle_visualize_node.cpp is not part of CMake's source inventory.
+
+The first compile exposes installation-prefixed OpenCV includes in the cost-map
+and camera corrector, then in the common GammaConverter header instantiated by
+that consumer. Use public opencv2 paths only in the required active includes;
+commit this compatibility correction separately. Current upstream retains the
+same paths; extend the existing YabLoc upstream finding rather than creating a
+new claim for each include. The deprecated TF broadcaster alias still compiles
+and does not need a speculative source patch.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  @yabloc_common//... //bazel/tests:yabloc_common_test \
+  @yabloc_image_processing//... //bazel/tests:yabloc_image_processing_test \
+  @yabloc_particle_filter//... //bazel/tests:yabloc_particle_filter_test \
+  //bazel/interfaces:yabloc_particle_serialization_test
+```
+
+Results: all 79 non-test targets and five test targets pass in the combined gate,
+138.0 s. The original resampler suite has three passing cases; the added particle
+suite has three; common/image retain all eight; Python serialization reports
+both generated message wire types. JUnit inspection confirms zero failures,
+errors, skips or disabled cases. Changed-source ranges and added tests pass
+clang-format; diff checks pass. No older ROS/CMake run, real localization accuracy,
+Fast DDS or full system communication matrix is claimed.
