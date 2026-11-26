@@ -1,0 +1,92 @@
+load("@rclcpp_components//:defs.bzl", "rclcpp_components_register_node")
+load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "autoware_traffic_light_selector_library",
+    srcs = ["src/traffic_light_selector.cpp", "src/traffic_light_selector_utils.cpp"],
+    hdrs = ["include/autoware/traffic_light_selector/traffic_light_selector.hpp", "src/traffic_light_selector_utils.hpp"],
+    includes = ["include", "src"],
+    deps = ["@sensor_msgs//:cc", "@tier4_perception_msgs//:cc"],
+)
+
+collect_transitive_dynamic_deps(
+    name = "sdk_dynamic_deps",
+    dynamic_deps = ["@autoware_utils//:runtime_dynamic_deps", "@message_filters//:message_filters", "@rclcpp_components//:rclcpp_components", "@sensor_msgs//:cc_shared", "@tier4_perception_msgs//:cc_shared"],
+)
+
+cc_shared_library(
+    name = "autoware_traffic_light_selector",
+    shared_lib_name = "libautoware_traffic_light_selector.so",
+    deps = [":autoware_traffic_light_selector_library"],
+    dynamic_deps = [":sdk_dynamic_deps"],
+)
+
+cc_library(
+    name = "autoware_traffic_light_selector_node_library",
+    srcs = ["src/traffic_light_selector_node.cpp"],
+    hdrs = ["src/traffic_light_selector_node.hpp"],
+    includes = ["src"],
+    deps = [":autoware_traffic_light_selector_library", "@autoware_utils", "@message_filters//:message_filters_library", "@rclcpp_components//:rclcpp_components_library"],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = [":autoware_traffic_light_selector", ":sdk_dynamic_deps"],
+)
+
+cc_shared_library(
+    name = "autoware_traffic_light_selector_node",
+    shared_lib_name = "libautoware_traffic_light_selector_node.so",
+    deps = [":autoware_traffic_light_selector_node_library"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+)
+
+rclcpp_components_register_node(
+    name = "traffic_light_selector_node",
+    node_name = "traffic_light_selector_node",
+    component = ":autoware_traffic_light_selector_node",
+    plugin = "autoware::traffic_light::TrafficLightSelectorNode",
+)
+
+register_ament_files(
+    name = "executables",
+    files = [":traffic_light_selector_node"],
+    prefix = "lib/autoware_traffic_light_selector",
+    strip_prefix = "*",
+)
+
+ament_index(
+    package_xml = "package.xml",
+    libraries = [":autoware_traffic_light_selector", ":autoware_traffic_light_selector_node"],
+    components = [":traffic_light_selector_node_record"],
+    data = glob(["launch/**"]) + [":executables"],
+)
+
+cc_test(
+    name = "autoware_traffic_light_selector_test",
+    srcs = ["test/test_utils.cpp"],
+    deps = [":autoware_traffic_light_selector_library", "@googletest//:gtest"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+    tags = ["no-sandbox", "no-remote"],
+)
+
+cc_test(
+    name = "autoware_traffic_light_selector_selector_test",
+    srcs = ["test/test_traffic_light_selector.cpp"],
+    deps = [":autoware_traffic_light_selector_library", "@googletest//:gtest"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+    tags = ["no-sandbox", "no-remote"],
+)
+
+cc_test(
+    name = "autoware_traffic_light_selector_node_test",
+    srcs = ["test/test_traffic_light_selector_node.cpp"],
+    deps = [":autoware_traffic_light_selector_node_library", "@googletest//:gtest"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+    tags = ["no-sandbox", "no-remote"],
+)
+

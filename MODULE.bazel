@@ -2038,3 +2038,9 @@ local_path_override(
     module_name = "autoware_traffic_light_category_merger",
     path = "src/universe/autoware_universe/perception/autoware_traffic_light_category_merger",
 )
+
+bazel_dep(name = "autoware_traffic_light_selector", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_traffic_light_selector",
+    path = "src/universe/autoware_universe/perception/autoware_traffic_light_selector",
+)

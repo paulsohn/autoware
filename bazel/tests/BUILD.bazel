@@ -2516,3 +2516,11 @@ cc_test(
     deps = ["@autoware_detection_by_tracker//:autoware_detection_by_tracker_library", "@ament_index_cpp//:ament_index_cpp_library", "@googletest//:gtest"],
     tags = ["no-sandbox", "no-remote"],
 )
+
+cc_test(
+    name = "traffic_light_selector_transport_test",
+    srcs = ["autoware_traffic_light_selector/test_transport.cpp"],
+    deps = ["@autoware_traffic_light_selector//:autoware_traffic_light_selector_node_library", "@googletest//:gtest"],
+    dynamic_deps = ["@autoware_traffic_light_selector//:runtime_dynamic_deps"],
+    tags = ["no-sandbox", "no-remote"],
+)

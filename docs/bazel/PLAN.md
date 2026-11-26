@@ -2354,7 +2354,8 @@ with original suites in no-agnocast mode, and prepare heaphook/device prerequisi
 for enabled peers. No Fast DDS, GPU, simulator or deployment gate is selected.
 
 Category merger is complete: twelve non-test targets and all seven original
-cases pass. Coverage is 134/244; eight Phase 9.7 packages remain.
+cases pass. Selector is also complete: all 23 original and one nonempty four-
+stream case pass. Coverage is 135/244; seven Phase 9.7 packages remain.
 
 ### Execution order through complete Universe coverage
 
