@@ -950,6 +950,13 @@ consumers use :roi_runtime_dynamic_deps for the image component and
 :map_runtime_dynamic_deps for the map component. This keeps each consumer's
 shared libraries and runtime metadata aligned with its actual inputs.
 
+Expose reusable plugin-package algorithms through a package-owned `cc_library`.
+Have the plugin implementation and other components depend on that provider,
+with shared SDK libraries supplied by the existing runtime dependency aggregate.
+For example, `@autoware_behavior_velocity_intersection_module//:utils` owns
+`src/util.cpp`; both the intersection plugin and roundabout consume it.
+Factory registration remains in each package's plugin implementation.
+
 CPU filter consumers compile against
 @autoware_pointcloud_preprocessor//:pointcloud_preprocessor_filter_base and link
 through its :filter_base_runtime_dynamic_deps provider. Header-only consumers

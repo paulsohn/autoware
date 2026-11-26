@@ -37,8 +37,10 @@ class PlannerRuntime(unittest.TestCase):
         for module in MODULES:
             share = Path(get_package_share_directory(
                 'autoware_behavior_velocity_' + module + '_module'))
+            factory = ''.join(part.capitalize() for part in module.split('_')) + 'ModulePlugin'
             classes = [c.attrib['type'] for c in ET.parse(share / 'plugins.xml').iter('class')
-                       if c.attrib['base_class_type'] == base]
+                       if c.attrib['base_class_type'] == base and
+                       c.attrib['type'].endswith('::' + factory)]
             self.assertEqual(len(classes), 1, (module, base, classes))
             plugins.append(classes[0])
             args += ['--params-file', str(share / 'config' / (module + '.param.yaml'))]
@@ -101,6 +103,7 @@ class PlannerRuntime(unittest.TestCase):
                         'speed_bump': ('speed_bump.slow_start_margin', 1.0),
                         'template': ('template.dummy', 1.2),
                         'occlusion_spot': ('occlusion_spot.pedestrian_vel', 1.5),
+                        'roundabout': ('roundabout.common.attention_area_margin', 0.75),
                     }
                     for module in MODULES:
                         if module in expected:

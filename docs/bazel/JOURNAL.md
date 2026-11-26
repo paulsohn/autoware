@@ -24244,3 +24244,46 @@ checks pass. No compatibility patch or new registry version is needed. No ROS
 communication, Fast DDS, simulator or deployment gate is selected for this
 dependency task. Universe coverage remains 175/244. Next: the roundabout C++
 factories, behavior checks and complete TTC entrypoint gate.
+
+## 2026-11-27: Phase 9.11 prerequisite — Intersection utility provider
+
+Purpose: expose the intersection algorithms needed by roundabout without
+coupling its build to the complete intersection plugin DSO. Inspect roundabout's
+intersection includes, intersection's public utility API, util.cpp and its SDK
+aggregate. Selecting intersection_plugin as a dynamic dependency fails Bazel
+analysis because it statically contains planner/common utility libraries that
+are not exported as shared-library dependency roots.
+
+Expose package-local :utils as a reusable cc_library owning util.cpp and the
+existing public headers. Make the original intersection implementation depend
+on it and remove util.cpp from that implementation's source glob. Keep one
+dependency list for both providers and preserve the existing plugin name,
+XML/config index, SDK ownership and original tests. Roundabout consumes :utils
+and the existing SDK runtime aggregate. No implementation source or original
+assertion changes are required. DEVELOPING.md records this provider convention;
+the adoption checklist links to this evidence.
+
+The full intersection gate catches a shared test-helper regression: its XML
+exports IntersectionModulePlugin and MergeFromPrivateModulePlugin for each base
+interface. Selecting by base alone wrongly assumes one class. Match the requested
+factory basename and base interface together, while retaining the actual XML
+namespace. Rerun every already-integrated helper consumer, plus the complete
+intersection suite and UUID lookup regression. Roundabout remains a separate
+pending consumer task.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  @autoware_behavior_velocity_intersection_module//... \
+  //bazel/tests/autoware_behavior_velocity_{blind_spot,crosswalk,detection_area,intersection,no_drivable_lane,no_stopping_area,occlusion_spot,speed_bump,template,traffic_light,virtual_traffic_light,walkway}_module:all \
+  //bazel/tests:behavior_velocity_planner_standard_runtime_test \
+  //bazel/tests:behavior_velocity_planner_experimental_runtime_test
+```
+
+Results: all 33 selected test targets pass with no failures, errors or skips.
+They include all five original intersection cases, its UUID lookup regression
+and every existing standard/experimental runtime-helper consumer. Changed
+Bazel/Python syntax and whitespace checks pass. The provider task is complete;
+roundabout remains pending its own full gate. No source implementation changes,
+Fast DDS, simulator or deployment checks are included. Coverage stays 175/244.
