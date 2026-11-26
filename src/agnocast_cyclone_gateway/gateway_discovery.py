@@ -8,7 +8,7 @@ import subprocess
 import sys
 import time
 
-CONTROL = "/_rmw_agnocast/discovery_v1"
+CONTROL = "/_rmw_agnocast/discovery_v2"
 INTERVAL = .5
 LEASE = 3.
 MAX_PACKET = 65536
@@ -30,21 +30,36 @@ def start_workers(children, ends, config, ready, gateway):
 
 def snapshot(node, prefix):
     from rclpy.qos import ReliabilityPolicy, DurabilityPolicy
+    from rmw_agnocast_discovery_msgs.msg import DiscoveryEndpoint
+    from rosgraph_msgs.msg import TypeHash
     rows = set()
     for topic, _ in node.get_topic_names_and_types():
         if (not topic.startswith(prefix) or topic in ("/rosout", "/parameter_events", CONTROL)
                 or any(part.startswith("_") for part in topic.split("/"))):
             continue
-        for role, lookup in (("pub", node.get_publishers_info_by_topic),
-                             ("sub", node.get_subscriptions_info_by_topic)):
+        for role, lookup in ((DiscoveryEndpoint.PUBLISHER, node.get_publishers_info_by_topic),
+                             (DiscoveryEndpoint.SUBSCRIPTION, node.get_subscriptions_info_by_topic)):
             for info in lookup(topic):
                 qos = info.qos_profile
                 if (info.node_name.startswith(("manual_gateway_", "gateway_discovery_"))
                         or qos.durability != DurabilityPolicy.VOLATILE
                         or qos.reliability not in (ReliabilityPolicy.RELIABLE, ReliabilityPolicy.BEST_EFFORT)):
                     continue
-                rows.add((topic, info.topic_type, str(info.topic_type_hash), role, qos.reliability.name.lower()))
-    return sorted(rows)
+                digest = info.topic_type_hash
+                reliability = (DiscoveryEndpoint.RELIABLE if qos.reliability == ReliabilityPolicy.RELIABLE
+                               else DiscoveryEndpoint.BEST_EFFORT)
+                rows.add((topic, info.topic_type, max(0, digest.version), digest.value, role, reliability))
+    return [DiscoveryEndpoint(topic_name=topic, type_name=cls,
+                type_hash=TypeHash(version=version, value=list(value)), role=role, reliability=qos)
+            for topic, cls, version, value, role, qos in sorted(rows)]
+
+
+def endpoint_rows(message):
+    from rmw_agnocast_discovery_msgs.msg import DiscoveryEndpoint
+    roles = {DiscoveryEndpoint.PUBLISHER: "pub", DiscoveryEndpoint.SUBSCRIPTION: "sub"}
+    policies = {DiscoveryEndpoint.RELIABLE: "reliable", DiscoveryEndpoint.BEST_EFFORT: "best_effort"}
+    return [(ep.topic_name, ep.type_name, (ep.type_hash.version, bytes(ep.type_hash.value)),
+             roles[ep.role], policies[ep.reliability]) for ep in message.endpoints]
 
 
 def wanted_routes(local, peers, fixed):
@@ -69,34 +84,41 @@ def wanted_routes(local, peers, fixed):
 
 def network_loop(node, channel, config, gateway, ready):
     import rclpy
-    from std_msgs.msg import String
-    island = Path("/proc/sys/kernel/random/boot_id").read_text().strip()+":"+str(os.stat("/proc/self/ns/ipc").st_ino)
-    generation = time.monotonic_ns()
-    pub = node.create_publisher(String, CONTROL, 10)
+    from rclpy.serialization import deserialize_message
+    from rmw_agnocast_discovery_msgs.msg import IslandSnapshot
+    island = (Path("/proc/sys/kernel/random/boot_id").read_text().strip(), os.stat("/proc/self/ns/ipc").st_ino)
+    pub = node.create_publisher(IslandSnapshot, CONTROL, 10)
     peers, active, retry = {}, {}, {}
-    def receive(msg):
-        if len(msg.data)>MAX_PACKET:
+    def receive(payload):
+        if len(payload) > MAX_PACKET:
             return
         try:
-            origin, epoch, rows = json.loads(msg.data)
-            if (isinstance(origin, str) and origin != island and isinstance(rows, list)
-                    and type(epoch) is int and epoch >= peers.get(origin,(0,0,()))[1]
-                    and all(isinstance(row, list) and len(row)==5 and all(isinstance(v,str) for v in row)
-                            and row[3] in ("pub","sub") and row[4] in ("reliable","best_effort") for row in rows)):
-                peers[origin] = (time.monotonic(), epoch, rows)
-        except (ValueError, TypeError):
+            message = deserialize_message(payload, IslandSnapshot)
+        except RuntimeError:
+            return  # An unreadable announcement must not end discovery for other islands.
+        origin = (message.host_uuid, message.ipc_ns_inode)
+        if origin == island or message.generation < peers.get(origin, (0, 0, ()))[1]:
             return
-    node.create_subscription(String, CONTROL, receive, 10)
+        try:
+            rows = endpoint_rows(message)
+        except KeyError:
+            return  # Unknown role or reliability in this protocol version.
+        peers[origin] = (time.monotonic(), message.generation, rows)
+    node.create_subscription(IslandSnapshot, CONTROL, receive, 10, raw=True)
     local = []
+    announcement = None
     def reconcile():
-        nonlocal local
+        nonlocal local, announcement
         while True:
             try:
-                local = json.loads(channel.recv(MAX_PACKET))
+                payload = channel.recv(MAX_PACKET)
             except BlockingIOError:
                 break
+            announcement = deserialize_message(payload, IslandSnapshot)
+            local = endpoint_rows(announcement)
         now = time.monotonic()
-        pub.publish(String(data=json.dumps([island,generation,local],separators=(",",":"))))
+        if announcement is not None:
+            pub.publish(announcement)
         for key in list(peers):
             if now-peers[key][0]>LEASE:
                 del peers[key]
@@ -144,9 +166,15 @@ if __name__ == "__main__":
     try:
         if role=="native":
             prefix=config.get("discovery_namespace","/").rstrip("/")+"/"
+            from rclpy.serialization import serialize_message
+            from rmw_agnocast_discovery_msgs.msg import IslandSnapshot
+            message = IslandSnapshot(host_uuid=Path("/proc/sys/kernel/random/boot_id").read_text().strip(),
+                                     ipc_ns_inode=os.stat("/proc/self/ns/ipc").st_ino,
+                                     generation=time.monotonic_ns())
             def scan():
-                data=json.dumps(snapshot(node,prefix),separators=(",",":")).encode()
-                if len(data)>MAX_PACKET-256:
+                message.endpoints = snapshot(node, prefix)
+                data = serialize_message(message)
+                if len(data)>MAX_PACKET:
                     raise RuntimeError("native discovery snapshot exceeds size limit")
                 try:
                     channel.send(data)

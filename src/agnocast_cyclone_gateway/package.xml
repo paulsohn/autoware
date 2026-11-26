@@ -6,6 +6,7 @@
   <maintainer email="paulsohn@users.noreply.github.com">Paul Sohn</maintainer>
   <license>Apache-2.0</license>
   <buildtool_depend>ament_cmake</buildtool_depend>
+  <exec_depend>rmw_agnocast_discovery_msgs</exec_depend>
   <exec_depend>rclpy</exec_depend>
   <exec_depend>rosidl_runtime_py</exec_depend>
   <exec_depend>rmw_agnocast</exec_depend>

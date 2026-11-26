@@ -8,7 +8,7 @@ Use the existing Release three-LiDAR standalone CIE graph, packaged hook, export
 
 ```bash
 export LYRICAL_ROOT="$(cat build/agnocast-lyrical/universe-root)"
-experiments/buffer/run-lyrical.sh colcon --log-base build/manual-gateway/log build --paths src/agnocast_cyclone_gateway --build-base build/manual-gateway/obj --install-base build/manual-gateway/install --executor sequential
+experiments/buffer/run-lyrical.sh colcon --log-base build/manual-gateway/log build --paths src/rmw_agnocast_discovery_msgs src/agnocast_cyclone_gateway --build-base build/manual-gateway/obj --install-base build/manual-gateway/install --executor sequential
 ```
 
 On a fresh peer setup, prepare the image and persistent network once:
@@ -119,7 +119,15 @@ For example, use the following discovery-only file on both sides after setting t
 
 The optional namespace bounds matching to topics below that namespace. It defaults to the root namespace. Explicitly configured route names take precedence in the same file. Use explicit routes for remapping, stock peer recorders and QoS outside the tested volatile profiles. The pilot sends native endpoint snapshots over the selected network every half second, filters gateway nodes, and expires silent peers after three seconds. Both workers need installed message types. Route startup and graph convergence can lose early volatile samples. Two isolated containers on one laptop have exercised this path.
 
-The discovery topic is `/_rmw_agnocast/discovery_v1` with ROS type `std_msgs/msg/String`. Its `data` field carries JSON of the form `[island_id, generation, rows]`. The island ID combines the boot ID and IPC namespace inode. The generation is the worker's monotonic start time in nanoseconds. Each inventory row is `[absolute_topic, ros_type_name, type_hash_string, role, reliability]`, where role is `pub` or `sub` and reliability is `reliable` or `best_effort`. The local observer sends the rows to its network worker over a Unix datagram socket. The application data route publishes the discovered ROS message type on its own topic.
+The discovery topic is `/_rmw_agnocast/discovery_v2` with type `rmw_agnocast_discovery_msgs/msg/IslandSnapshot`. Each snapshot carries the AWF island identity (boot ID in `host_uuid` and IPC namespace inode in `ipc_ns_inode`), the observer generation, and endpoint profiles. A profile contains the absolute topic name, ROS type name, RIHS type hash, endpoint role and reliability. Only volatile endpoints participate. The generation is a monotonic timestamp comparable within the same island. Both islands must run the typed protocol; upgrade peers together when migrating from the String/JSON v1 pilot. The AWF daemon uses a separate ROS message type. Application topics retain their own message types.
+
+To inspect snapshots from a network-side ROS shell, source the overlay containing `rmw_agnocast_discovery_msgs`, select the gateway's network RMW and ROS domain, then run:
+
+```bash
+ros2 interface show rmw_agnocast_discovery_msgs/msg/IslandSnapshot
+ros2 topic echo /_rmw_agnocast/discovery_v2 rmw_agnocast_discovery_msgs/msg/IslandSnapshot --once
+```
+
 
 ### Select the gateway network
 

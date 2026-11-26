@@ -88,6 +88,11 @@ for path in glob.glob('/proc/[0-9]*/cmdline'):
     start("pinned_writer")
     start("pinned_first")
     batch(100,"pinned_first",writer="pinned_writer")
+    inodes = [docker("exec", c, "stat", "-Lc", "%i", "/proc/self/ns/ipc") for c in islands]
+    rmw = "rmw_cyclonedds_cpp" if backend == "cyclone" else "rmw_zenoh_cpp"
+    probe = "python3 /ws/experiments/rmw-agnocast/islands/observe-snapshot.py"
+    observer = run(0, "wire", " ".join([probe, *inodes]), environment=("-e", "RMW_IMPLEMENTATION="+rmw))
+    assert observer.wait(timeout=15) == 0, "see wire observer log"
     # Join the running discovery owner from an independent native RMW context.
     exe="/ws/build/manual-gateway/install/agnocast_cyclone_gateway/lib/agnocast_cyclone_gateway/topic_gateway"
     joiner=run(0,"joiner","python3 -c 'import rclpy; rclpy.init(); rclpy.shutdown()'",True,

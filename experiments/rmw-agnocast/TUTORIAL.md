@@ -177,7 +177,7 @@ source /opt/ros/lyrical/setup.bash
 source "$HOME/rmw-agnocast-pilot/build/migration-guide/install/local_setup.bash"
 cd "$HOME/rmw-agnocast-pilot"
 unset LD_PRELOAD
-colcon build --paths src/agnocast_cyclone_gateway --executor sequential --build-base build/manual-gateway/obj --install-base build/manual-gateway/install
+colcon build --paths src/rmw_agnocast_discovery_msgs src/agnocast_cyclone_gateway --executor sequential --build-base build/manual-gateway/obj --install-base build/manual-gateway/install
 source build/manual-gateway/install/local_setup.bash
 ros2 run agnocast_cyclone_gateway topic_gateway export std_msgs/msg/String /topic /from_robot/topic --heaphook /opt/ros/jazzy/lib/libagnocast_heaphook.so
 ```
