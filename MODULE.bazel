@@ -2192,3 +2192,9 @@ local_path_override(
     module_name = "autoware_obstacle_proximity_checker",
     path = "src/universe/autoware_universe/common/autoware_obstacle_proximity_checker",
 )
+
+bazel_dep(name = "autoware_traffic_light_compliance_checker", version = "0.0.0")
+local_path_override(
+    module_name = "autoware_traffic_light_compliance_checker",
+    path = "src/universe/autoware_universe/common/autoware_traffic_light_compliance_checker",
+)

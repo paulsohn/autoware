@@ -2455,6 +2455,8 @@ autoware_boundary_departure_checker: complete; exact gates and evidence are in i
 
 autoware_obstacle_proximity_checker: complete; exact gates and evidence are in its Phase 9.10 journal.
 
+autoware_traffic_light_compliance_checker: complete; all 23 original cases pass.
+
 ### Execution order through complete Universe coverage
 
 The following groups are the initial route through every remaining package.

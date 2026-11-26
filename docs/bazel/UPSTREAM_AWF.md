@@ -2554,6 +2554,8 @@ No local TensorFlow failure reproduction or field-accuracy claim is made.
 
 ### Traffic-light compliance checker: native expected compatibility
 
+Local source fix: `21786f438`.
+
 - [x] Associate with merged
   [PR #13622](https://github.com/autowarefoundation/autoware_universe/pull/13622).
   Checked 2026-11-26: its actual compliance-checker header/manifest diff matches

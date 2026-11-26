@@ -23103,3 +23103,9 @@ reuses the passing joint result (.9 s invocation, cached test .2 s). The origina
 traffic-light fixtures exercise real Lanelet2 regulatory elements and crossing
 rules. No older ROS/colcon, real signal timing or full system communication gate
 is claimed. Source-range formatting and diff checks pass.
+
+Build pattern: one module-local C++ provider, public headers and an ament package
+index, with local Lanelet2/trajectory/motion/traffic-light providers and their
+canonical shared SDK owners. Expose the original two-file suite as one test
+target, matching CMake. No new fixtures are needed. The source fix is 21786f438;
+the Bazel definitions are committed at this separate validated boundary.
