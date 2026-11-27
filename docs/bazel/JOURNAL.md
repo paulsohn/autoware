@@ -27671,3 +27671,85 @@ weights and both variant parameter sets exist inside the share. Both source
 and parent manifests declare the runtime dependency. This does not claim a
 colcon build of the native consumer. XML/manifest parsing, targeted Buildifier
 and whitespace checks pass. Next: the complete BEVFusion native GPU module gate.
+
+<a id="phase-915-point2voxel-abi"></a>
+
+## 2026-11-28 — Phase 9.15: sparse voxelization ABI boundary
+
+Purpose: let the libc++ application call the pinned GNU spconv SDK's 3D
+Point2Voxel operation without exchanging C++ containers or TensorView ownership.
+The exposing BEVFusion link requests std::__1::array parameters; nm -D -C on
+spconv 2.3.8/cumm 0.5.3 cu130-rev1 exports std::array. The existing TensorRT plugin
+GNU transition does not cover this separate direct caller. Inspect its seven
+TensorView arguments, shape/stride/dtype/device metadata and scalar grid options,
+and the pinned SDK header. Compare the v2.3.8 upstream
+[pointops implementation](https://github.com/traveller59/spconv/blob/v2.3.8/spconv/csrc/sparse/pointops.py):
+it returns three views sliced to the occupied voxel count. Keep that behavior.
+
+Own the adapter in third_party/spconv. Define a C header with seven borrowed
+buffer descriptions and voxel/grid/range/stream settings. Compile the C entrypoint
+through spconv_cc_shared_library on GNU 13.3.0. Recreate non-owning GNU TensorView
+objects, call the original operation, return its occupied count, and convert all
+exceptions to status/error text before crossing C. The libc++ compatibility
+header recreates the original three sliced views and raises a local exception
+on error. No C++ allocation/control block or exception crosses the boundary.
+Keep the existing Autoware implementation unchanged: preinclude this header for
+its voxelization CUDA translation unit, and expose that archive as an explicit
+root of the existing CUDA shared library. A mere dependency does not force an
+otherwise unreferenced archive's public functions into that DSO.
+
+Two additional ABI requirements emerged. First, a mixed-ABI top-level link cannot
+resolve the GNU adapter's ostream/exception symbols until that DSO explicitly
+links the pinned GNU runtime. Import :gnu_runtime as a cc_import dependency;
+readelf -d must show libstdc++.so.6. Caller-side preloading alone does not satisfy
+link-time ownership. Second, TensorView inline methods share symbol names across
+standard libraries. The initial direct libc++ test returns the full four-voxel
+buffer instead of the two occupied voxels while nm shows exported Tensor
+constructors/destructors in both ABIs. Compile the GNU adapter and every libc++
+translation unit that instantiates TensorView with -fvisibility-inlines-hidden;
+for nvcc pass it to the host compiler with -Xcompiler. Repeated voxelization then
+returns the correct two views and all affected DSOs export no Tensor constructor/
+destructor symbols. Hiding entire included headers instead also hides CUDA's
+external C declarations and breaks linking; isolate inline implementations only.
+
+Mark the raw :spconv C++ provider target_compatible_with GNU 13.3.0. This prevents
+a future unconfigured libc++ consumer from reaching a late linker failure. The
+C-compatible adapter and header-only compatibility view remain available to
+libc++ consumers. Compiling the original PreprocessCuda class with GNU alone
+would leave its TensorView members and string/vector configuration crossing an
+ABI boundary. Keep the component's C++ implementation on its existing toolchain.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel build --config=runtime --config=no-agnocast --nobuild @spconv//:spconv
+# Expected failure: the default libc++ platform does not satisfy libstdcxx.13.3.0.
+
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast \
+  --local_test_jobs=1 --test_output=errors @spconv//:abi_test \
+  @spconv//:point2voxel_compat_test @autoware_tensorrt_plugins//... \
+  //bazel/tests:tensorrt_plugins_test @autoware_bevfusion//... \
+  //bazel/tests/autoware_bevfusion:gpu_test
+```
+
+The negative guard fails during analysis with the explicit GNU constraint and
+zero build actions. The positive gate passes all 28 selected targets: 23 non-test
+and five test targets. The original SDK program passes its CPU/conversion/GPU
+sort checks. Both new libc++ cases pass: repeated borrowed-view voxelization,
+GNU error conversion/local exception handling, and invalid-descriptor status.
+All 18 original plugin kernel cases and both existing runtime interop cases
+pass, with four actual BEVFusion CUDA cases for sweep coordinates/intensity/time,
+sparse voxel counts/coordinates/cropping/reuse, camera remap/planar crop and
+circle suppression. Inspect XML: no failures/errors/skips or empty suites.
+Reuse unchanged passing results. The suppression fixture must give valid nonzero
+scores: the original kernel intentionally rejects zero-score proposals.
+
+Inspect nm -D --defined-only -C on the GNU bridge and all three BEVFusion DSOs:
+zero exported Tensor constructors/destructors remain. The bridge exports the
+unmangled spconv_point2voxel3d C entrypoint and owns its GNU runtime dependency.
+Targeted Buildifier/clang-format and whitespace checks pass. The SDK payload,
+CUDA/TensorRT/toolchain/driver selections are unchanged. The compatibility header
+qualifies only this static 3D voxel operation with caller-owned preallocated views;
+other raw SDK C++ APIs still require the GNU boundary. BEVFusion's complete model/
+ROS gate remains in progress. No source compatibility patch, upstream CMake,
+Fast DDS, simulator or deployment gate is claimed by this SDK prerequisite.

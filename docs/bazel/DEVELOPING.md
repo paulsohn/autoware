@@ -2021,10 +2021,30 @@ Run the full original module/consumer suites and added cache gate from the
 
 The pinned spconv 2.3.8/cumm 0.5.3 SDK exposes GNU C++ containers. Use
 @spconv//:defs.bzl's spconv_cc_shared_library or spconv_cc_test at its consumer
-boundary to compile that closure with the pinned GNU 13.3.0 platform; do not mix
-its C++ headers/container API into libc++ code. Keep ordinary implementation
+boundary to compile that closure with the pinned GNU 13.3.0 platform. The raw
+:spconv target rejects other standard-library configurations during analysis.
+Keep its C++ container calls within that GNU boundary. Keep ordinary implementation
 cc_library targets beneath the configured shared target, with dynamic C++
 runtimes and explicit dynamic_deps for separately exported libraries.
+
+For the static 3D Point2Voxel operation, libc++ code can use
+`@spconv//:point2voxel_compat` and include `spconv/point2voxel_compat.hpp`.
+Put `@spconv//:point2voxel_bridge` in the owning DSO's `dynamic_deps`. This GNU
+adapter owns its pinned runtime and exchanges borrowed buffer descriptions,
+scalar options, a count and bounded error text through C. Each standard library
+keeps its own TensorView objects and exceptions. Other SDK C++ APIs require the
+GNU provider above.
+
+Compile every translation unit that instantiates TensorView with
+`-fvisibility-inlines-hidden`, including the GNU adapter and libc++ consumers.
+For nvcc use `-Xcompiler=-fvisibility-inlines-hidden`. This prevents same-named
+inline implementations from binding across ABIs. When preserving an existing
+source's SDK include, preinclude the compatibility header with `-include
+spconv/point2voxel_compat.hpp` in that operation's build rule. Keep native CUDA
+behavior tests as `cc_test`; the adapter's declared GNU runtime supplies their
+link/runtime dependency without a TensorRT builder launcher. Run
+`@spconv//:point2voxel_compat_test` and inspect the owning DSOs' exports after
+changing this boundary.
 
 Native libc++ consumers load @autoware_tensorrt_plugins//:plugins as runtime data
 through dlopen, as TrtCommon does, and exchange only TensorRT's versioned opaque

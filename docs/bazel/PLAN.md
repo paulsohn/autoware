@@ -131,6 +131,7 @@ only when your current target demonstrates the need.
   [concrete preparation profile](DEVELOPING.md#composed-traffic-light-recognition);
   [pipeline evidence](JOURNAL.md#phase-913-pipeline).
   [Vendor C++ ABI boundaries](DEVELOPING.md#sparse-sdk-and-tensorrt-plugins);
+  [explicit ABI constraints and C adapter evidence](JOURNAL.md#phase-915-point2voxel-abi);
   [evidence: sparse SDK](JOURNAL.md#2026-11-19-phase-641--sparse-convolution-sdk-compatibility).
 - [ ] Declare caller-owned resources for dynamic runtime package selection.
   [Launch resource convention](DEVELOPING.md#launch-resource-composition);

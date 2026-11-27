@@ -1,11 +1,12 @@
-load("@rules_cc//cc:defs.bzl", "cc_library")
-load(":defs.bzl", "spconv_cc_test", "spconv_filegroup")
+load("@rules_cc//cc:defs.bzl", "cc_import", "cc_library", "cc_test")
+load(":defs.bzl", "spconv_cc_shared_library", "spconv_cc_test", "spconv_filegroup")
 
 package(default_visibility = ["//visibility:public"])
 
 cc_library(
     name = "spconv",
     defines = ["TV_CUDA"],
+    target_compatible_with = ["@llvm//constraints/cxxstdlib:libstdcxx.13.3.0"],
     deps = [
         "@cuda//:cublas",
         "@cuda//:cuda_runtime",
@@ -51,4 +52,68 @@ spconv_filegroup(
 filegroup(
     name = "runtime_library",
     srcs = ["@spconv_artifacts//:usr/local/lib/libspconv.so"],
+)
+
+cc_library(
+    name = "point2voxel_api",
+    hdrs = ["include/spconv/point2voxel_bridge.h"],
+    strip_include_prefix = "include",
+)
+
+cc_library(
+    name = "point2voxel_library",
+    srcs = ["point2voxel_bridge.cpp"],
+    copts = ["-fvisibility-inlines-hidden"],
+    deps = [
+        ":gnu_runtime_library",
+        ":point2voxel_api",
+        ":spconv",
+    ],
+)
+
+spconv_cc_shared_library(
+    name = "point2voxel_bridge",
+    features = ["-static_link_cpp_runtimes"],
+    shared_lib_name = "libspconv_point2voxel_bridge.so",
+    deps = [":point2voxel_library"],
+)
+
+cc_library(
+    name = "point2voxel_compat",
+    hdrs = ["include/spconv/point2voxel_compat.hpp"],
+    defines = ["TV_CUDA"],
+    strip_include_prefix = "include",
+    deps = [
+        ":point2voxel_api",
+        "@cuda//:cublas",
+        "@cuda//:cuda_runtime",
+        "@cuda//:curand",
+        "@cuda//:nvrtc",
+        "@spconv_artifacts//:headers",
+    ],
+)
+
+cc_import(
+    name = "gnu_runtime_library",
+    shared_library = ":gnu_runtime",
+)
+
+cc_test(
+    name = "point2voxel_compat_test",
+    srcs = ["test_point2voxel_compat.cpp"],
+    copts = ["-fvisibility-inlines-hidden"],
+    data = [
+        ":gnu_runtime",
+        ":runtime_library",
+    ],
+    dynamic_deps = [":point2voxel_bridge"],
+    tags = [
+        "no-remote",
+        "no-sandbox",
+        "requires-gpu",
+    ],
+    deps = [
+        ":point2voxel_compat",
+        "@googletest//:gtest_main",
+    ],
 )
