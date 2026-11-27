@@ -1,0 +1,96 @@
+load("@rclcpp_components//:defs.bzl", "rclcpp_components_register_node")
+load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library")
+load("@tensorrt//:defs.bzl", "tensorrt_cc_binary")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "library",
+    srcs = glob(["src/*.cpp"]),
+    hdrs = glob(["include/**/*.hpp"]),
+    includes = ["include"],
+    deps = [
+        "@autoware_perception_msgs//:cc",
+        "@bevdet_vendor//:library",
+        "@cv_bridge//:cv_bridge_library",
+        "@eigen",
+        "@geometry_msgs//:cc",
+        "@message_filters//:message_filters_library",
+        "@rclcpp_components//:rclcpp_components_library",
+        "@rosdistro//cc:opencv_library",
+        "@sensor_msgs//:cc",
+        "@tf2_geometry_msgs//:tf2_geometry_msgs_library",
+        "@tf2_ros//:tf2_ros_library",
+        "@visualization_msgs//:cc",
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = [
+        "@autoware_perception_msgs//:cc_shared",
+        "@bevdet_vendor",
+        "@rosdistro//cc:libjpeg",
+        "@rosdistro//cc:yaml-cpp",
+        "@cv_bridge//:cv_bridge",
+        "@cv_bridge//:transitive_dynamic_deps",
+        "@geometry_msgs//:cc_shared",
+        "@message_filters",
+        "@message_filters//:transitive_dynamic_deps",
+        "@rclcpp_components//:rclcpp_components",
+        "@rosdistro//cc:opencv",
+        "@sensor_msgs//:cc_shared",
+        "@tf2_geometry_msgs//:tf2_geometry_msgs",
+        "@tf2_ros//:tf2_ros",
+        "@visualization_msgs//:cc_shared",
+    ],
+)
+
+cc_shared_library(
+    name = "autoware_tensorrt_bevdet_component",
+    dynamic_deps = [":runtime_dynamic_deps"],
+    shared_lib_name = "libautoware_tensorrt_bevdet_component.so",
+    deps = [":library"],
+)
+
+rclcpp_components_register_node(
+    name = "bevdet_native",
+    component = ":autoware_tensorrt_bevdet_component",
+    node_name = "autoware_tensorrt_bevdet_node",
+    plugin = "autoware::tensorrt_bevdet::TRTBEVDetNode",
+)
+
+tensorrt_cc_binary(
+    name = "autoware_tensorrt_bevdet_node",
+    srcs = [":bevdet_native_main.cpp"],
+    dynamic_deps = [
+        ":autoware_tensorrt_bevdet_component",
+        ":runtime_dynamic_deps",
+    ],
+    deps = ["@rclcpp_components//:rclcpp_components_library"],
+)
+
+register_ament_files(
+    name = "executables",
+    files = [":autoware_tensorrt_bevdet_node"],
+    prefix = "lib/autoware_tensorrt_bevdet",
+    strip_prefix = "*",
+)
+
+ament_index(
+    components = [":bevdet_native_record"],
+    data = glob([
+        "config/**",
+        "launch/**",
+    ]) + [":executables"],
+    libraries = [":autoware_tensorrt_bevdet_component"],
+    package_xml = "package.xml",
+    deps = ["@autoware_tensorrt_bevdet_models//:ament_index"],
+)
+
+exports_files(glob([
+    "config/*",
+    "launch/*",
+]) + ["package.xml"])

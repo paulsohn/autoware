@@ -3292,6 +3292,8 @@ history regression patches with the source corrections.
   proposes removing the example and distributing complete parameters with models.
   It does not supply the missing options in the immutable provider tested here.
 
+Local source fix: 682f4613a.
+
 Package: autoware_camera_streampetr in the imported Universe snapshot, with model
 AutowareFoundation/camera_streampetr v1.0 at
 90f37d64186686ebc458509d69d3d4ca16d185c7. Environment: RCR Lyrical,
@@ -3328,6 +3330,8 @@ model policy when proposing it upstream.
   [vendor data.h](https://github.com/autowarefoundation/bevdet_vendor/blob/main/include/data.h)
   retains the constructor that only initializes calibration vectors. Scoped
   initialization/pose PR search found no matching correction.
+
+Local source fix: 580abd4be.
 
 Package: local bevdet_vendor 0.2.1, consumed by autoware_tensorrt_bevdet 0.53.0.
 The ROS node's initModel creates camParams from three calibration vectors.
@@ -3366,6 +3370,8 @@ result is claimed by this focused correction.
   [bevdet_node.cpp](https://github.com/autowarefoundation/autoware_universe/blob/main/perception/autoware_tensorrt_bevdet/src/bevdet_node.cpp)
   still deletes imgs_dev_ with the C++ allocator. A scoped CUDA/destructor search
   finds vendor-version updates and unrelated changes, not a matching correction.
+
+Local source fix: 118130ff3.
 
 Package: autoware_tensorrt_bevdet 0.53.0 with local bevdet_vendor 0.2.1,
 indexed model v1.0, RCR Lyrical, LLVM/libc++ 21.1.8,

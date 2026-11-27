@@ -137,6 +137,8 @@ only when your current target demonstrates the need.
   [Launch resource convention](DEVELOPING.md#launch-resource-composition);
   [model/runtime parameter composition](DEVELOPING.md#streampetr-model-resources),
   [native default-contract evidence](JOURNAL.md#phase-915-streampetr);
+  [calibrated camera/engine-profile contract](DEVELOPING.md#bevdet-model-resources),
+  [native profile evidence](JOURNAL.md#phase-915-bevdet);
   [evidence: global loader](JOURNAL.md#2026-11-18-phase-532--global-parameter-loader).
   [Indexed tutorial resources](DEVELOPING.md#tutorial-vehicle-and-map-resources);
   [evidence: official map](JOURNAL.md#2026-11-21-phase-733--official-tutorial-map-and-scenario-resources).
@@ -2693,7 +2695,8 @@ simulator or deployment export gate is selected.
 
 ### Phase 9.15: BEV and multimodal perception fusion (in progress)
 
-Progress: 3/5 module gates complete; coverage is 205/244 with 39 remaining.
+Progress: 4/5 module gates complete; coverage is 206/244 with 38 remaining.
+The four available-model consumers are accepted; BEVFormer remains deferred.
 Image-projection/PointPainting passes all 15 original and 10 companion cases,
 plus the selected enabled Agnocast camera-association gate. See its
 [module experiment](JOURNAL.md#phase-915-projection-fusion).
@@ -2704,6 +2707,10 @@ See the [BEVFusion gate](JOURNAL.md#phase-915-bevfusion).
 StreamPETR passes all four GPU and two Python cases, including its three native
 FP16 stages, five-camera readiness, temporal updates and desynchronization
 recovery. See the [StreamPETR gate](JOURNAL.md#phase-915-streampetr).
+BEVDet passes three helper and two Python cases, including calibrated six-camera
+FP16 cold/warm inference, markers, current headers and clean shutdown. Its local
+vendor passes all six cases. See the [BEVDet gate](JOURNAL.md#phase-915-bevdet).
+Moving-vehicle temporal accuracy is not qualified by the stationary fixture.
 
 Start with image-projection fusion and its PointPainting provider. Preserve all
 four enabled original suites, four CPU fusion components and the CUDA PointPainting
@@ -2736,7 +2743,7 @@ BEVFusion model v2.0 selects immutable revision
 e1bf164b909d3c6c2642012f9b5ee4d827753220. All three weights and both ML parameter
 sets pass materialization, isolated-index and colcon symlink/default-path checks.
 See the [provider experiment](JOURNAL.md#phase-915-bevfusion-models). Native
-camera/LiDAR and LiDAR-only execution remain the module acceptance gate.
+camera/LiDAR and LiDAR-only execution have passed the module acceptance gate.
 
 StreamPETR model v1.0 selects immutable revision
 90f37d64186686ebc458509d69d3d4ca16d185c7, with three verified ONNX stages,
@@ -2748,7 +2755,8 @@ BEVDet model v1.0 selects immutable revision
 391466349a1b39c93b9865364a8088110ca8d97b. Its single materialized weight,
 independent index, colcon symlink and standalone/parent path checks pass.
 See the [provider experiment](JOURNAL.md#phase-915-tensorrt_bevdet-models).
-The local vendor and native six-camera consumer remain the acceptance gate.
+The local vendor and native six-camera consumer pass their complete gates;
+see the [consumer experiment](JOURNAL.md#phase-915-bevdet).
 
 ### Execution order through complete Universe coverage
 

@@ -28234,9 +28234,31 @@ error. This is stationary synthetic inference, not a sensor-accuracy, moving-
 vehicle temporal or performance qualification. The adapter supplies no per-frame
 odometry; its calibration-only sample now has valid stationary defaults.
 
-Source corrections are committed separately from Bazel definitions. The next
-boundary owns package-local MODULE/BUILD, the adjacent versionless source override
-and root companions. Targeted formatting, Python syntax and whitespace checks
+Source corrections are 118130ff3. The following build-definition boundary owns
+package-local MODULE/BUILD, the adjacent versionless source override and root
+companions. Targeted formatting, Python syntax and whitespace checks
 pass. Reuse unchanged model provider/index/colcon and full vendor evidence.
 No upstream CMake implementation build, Fast DDS, simulator, OCI or deployment
 export is claimed. BEVFormer remains explicitly deferred.
+
+
+Minimum build pattern: compile the node, ROS conversion and marker sources in
+one cc_library and preserve libautoware_tensorrt_bevdet_component.so. Import the
+existing shared vendor/YAML/JPEG, message-filter, OpenCV/cv_bridge, ROS message,
+TF2 and component owners through the transitive dynamic dependency collection.
+Use the original component record and single-threaded native main, with the
+TensorRT command factory only for declared SDK runtime/builder resources. Index
+the component, native command, config/launch files and independent model index.
+The component depends only on logical source/SDK/model providers, never root
+labels. Root companions own all synthetic sensor and concrete precision policy.
+
+Final validation reuses the unchanged model/provider/colcon and full six-case
+vendor results; the changed consumer's whole 14-target gate passes after the
+vendor input initialization as well. Targeted Buildifier on component/test
+BUILD/MODULE, clang-format on changed native files, Python syntax, whitespace
+and a source/override census pass. The census reads every Universe package.xml,
+counts siblings with both MODULE.bazel and BUILD.bazel, and checks the adjacent
+versionless root bazel_dep/local_path_override against each actual path. It finds
+206/244 with 38 remaining. Mark BEVDet accepted in the existing ledger. Phase 9.15
+has four accepted modules and the explicitly deferred BEVFormer item, which
+remains among those 38. No Phase 9.16 work is started by this boundary.

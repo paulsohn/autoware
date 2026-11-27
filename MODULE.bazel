@@ -2467,6 +2467,12 @@ local_path_override(
     path = "src/universe/autoware_universe/perception/autoware_camera_streampetr",
 )
 
+bazel_dep(name = "autoware_tensorrt_bevdet")
+local_path_override(
+    module_name = "autoware_tensorrt_bevdet",
+    path = "src/universe/autoware_universe/perception/autoware_tensorrt_bevdet",
+)
+
 # Launcher source modules.
 bazel_dep(name = "sample_vehicle_description")
 local_path_override(
