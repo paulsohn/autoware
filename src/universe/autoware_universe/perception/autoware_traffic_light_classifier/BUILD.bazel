@@ -1,0 +1,125 @@
+load("@rclcpp_components//:defs.bzl", "rclcpp_components_register_node")
+load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
+load("@tensorrt//:defs.bzl", "tensorrt_cc_binary")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "classifier_library",
+    srcs = ["src/classifier/color_classifier.cpp", "src/classifier/cnn_classifier.cpp", "src/classifier/cnn_lamp_recognizer.cpp", "src/traffic_light_classifier.cpp", "src/traffic_light_classifier_process.cpp"],
+    hdrs = glob(["include/**/*.hpp", "src/classifier/*.hpp"]) + ["src/traffic_light_classifier_process.hpp"],
+    includes = ["include", "src"],
+    defines = ["ENABLE_GPU"],
+    deps = ["@autoware_tensorrt_classifier//:autoware_tensorrt_classifier_library", "@autoware_traffic_light_utils", "@autoware_utils", "@cv_bridge//:cv_bridge_library", "@rclcpp//:rclcpp_library", "@rosdistro//cc:boost.algorithm", "@rosdistro//cc:opencv_library", "@tier4_perception_msgs//:cc"],
+)
+
+collect_transitive_dynamic_deps(
+    name = "sdk_dynamic_deps",
+    dynamic_deps = ["@ament_index_cpp//:ament_index_cpp", "@autoware_tensorrt_classifier", "@autoware_tensorrt_classifier//:gpu_preprocess", "@autoware_tensorrt_common", "@autoware_traffic_light_utils//:runtime_dynamic_deps", "@autoware_utils//:runtime_dynamic_deps", "@cv_bridge//:cv_bridge", "@diagnostic_msgs//:cc_shared", "@image_transport//:image_transport", "@message_filters//:message_filters", "@rclcpp_components//:rclcpp_components", "@rosdistro//cc:opencv", "@sensor_msgs//:cc_shared", "@tier4_perception_msgs//:cc_shared"],
+)
+
+cc_shared_library(
+    name = "autoware_traffic_light_classifier",
+    shared_lib_name = "libautoware_traffic_light_classifier.so",
+    deps = [":classifier_library"],
+    dynamic_deps = [":sdk_dynamic_deps"],
+)
+
+cc_library(
+    name = "node_library",
+    srcs = ["src/classifier_params.cpp", "src/traffic_light_classifier_node.cpp"],
+    hdrs = ["src/classifier_params.hpp", "src/traffic_light_classifier_node.hpp"],
+    includes = ["src"],
+    deps = [":classifier_library", "@diagnostic_msgs//:cc", "@image_transport//:image_transport_library", "@message_filters//:message_filters_library", "@rclcpp_components//:rclcpp_components_library"],
+)
+
+cc_shared_library(
+    name = "autoware_traffic_light_classifier_node",
+    shared_lib_name = "libautoware_traffic_light_classifier_node.so",
+    deps = [":node_library"],
+    dynamic_deps = [":autoware_traffic_light_classifier", ":sdk_dynamic_deps"],
+)
+
+cc_library(
+    name = "debug_node_library",
+    srcs = ["src/single_image_debug_inference_node.cpp"],
+    deps = [":node_library"],
+)
+
+cc_shared_library(
+    name = "single_image_debug_inference_node",
+    shared_lib_name = "libsingle_image_debug_inference_node.so",
+    deps = [":debug_node_library"],
+    dynamic_deps = [":autoware_traffic_light_classifier_node", ":autoware_traffic_light_classifier", ":sdk_dynamic_deps"],
+)
+
+[
+    rclcpp_components_register_node(
+        name = name + "_native",
+        node_name = name,
+        component = component,
+        plugin = plugin,
+    )
+    for name, component, plugin in [
+        ("traffic_light_classifier_node", ":autoware_traffic_light_classifier_node", "autoware::traffic_light::TrafficLightClassifierNode"),
+        ("single_image_debug_inference", ":single_image_debug_inference_node", "autoware::traffic_light::SingleImageDebugInferenceNode"),
+    ]
+]
+
+[
+    tensorrt_cc_binary(
+        name = name,
+        srcs = [":" + name + "_native_main.cpp"],
+        deps = ["@rclcpp_components//:rclcpp_components_library"],
+        dynamic_deps = [component, ":autoware_traffic_light_classifier", ":sdk_dynamic_deps"],
+    )
+    for name, component in [
+        ("traffic_light_classifier_node", ":autoware_traffic_light_classifier_node"),
+        ("single_image_debug_inference", ":single_image_debug_inference_node"),
+    ]
+]
+
+register_ament_files(
+    name = "executables",
+    files = [":traffic_light_classifier_node", ":single_image_debug_inference"],
+    prefix = "lib/autoware_traffic_light_classifier",
+    strip_prefix = "*",
+)
+
+register_ament_files(
+    name = "test_images",
+    files = glob(["test/test_data/**"]),
+    prefix = "share/autoware_traffic_light_classifier/test_data",
+    strip_prefix = "test/test_data",
+)
+
+ament_index(
+    name = "test_resources",
+    package_xml = "package.xml",
+    data = [":test_images", "@image_transport//:ament_index_plugin"],
+)
+
+ament_index(
+    package_xml = "package.xml",
+    libraries = [":autoware_traffic_light_classifier", ":autoware_traffic_light_classifier_node", ":single_image_debug_inference_node"],
+    components = [":traffic_light_classifier_node_native_record", ":single_image_debug_inference_native_record"],
+    data = glob(["launch/**", "config/**"]) + [":executables", ":test_images", "@image_transport//:ament_index_plugin"],
+    deps = ["@autoware_traffic_light_classifier_models//:ament_index"],
+)
+
+[
+    cc_test(
+        name = "test_" + suite,
+        srcs = ["test/test_" + suite + ".cpp"],
+        deps = [":node_library", "@ament_index_cpp//:ament_index_cpp_library", "@googletest//:gtest"],
+        dynamic_deps = [":autoware_traffic_light_classifier_node", ":autoware_traffic_light_classifier", ":sdk_dynamic_deps"],
+        data = [":ament_index"],
+        tags = ["no-sandbox", "no-remote"],
+        timeout = "long",
+    )
+    for suite in ["utils", "traffic_light_classifier", "color_classifier", "traffic_light_classifier_integration"]
+]
+
+exports_files(["test/test_cnn_classifier.cpp", "test/test_cnn_lamp_recognizer.cpp", "launch/car_traffic_light_classifier.launch.xml", "launch/pedestrian_traffic_light_classifier.launch.xml"])

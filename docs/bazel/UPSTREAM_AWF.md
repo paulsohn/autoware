@@ -3021,6 +3021,8 @@ or hardware calibration accuracy is claimed.
 
 ### Traffic-light classifier: Lyrical message filters and HSV launch defaults
 
+Local source corrections: `f1d509054` (headers/QoS), `bef522f0a` (HSV launch).
+
 - [ ] Associate the message-filter correction with a matching AWF PR. Checked
   2026-11-27: [the node header](https://github.com/autowarefoundation/autoware_universe/blob/main/perception/autoware_traffic_light_classifier/src/traffic_light_classifier_node.hpp)
   still includes subscriber.h, approximate_time.h, synchronizer.h and

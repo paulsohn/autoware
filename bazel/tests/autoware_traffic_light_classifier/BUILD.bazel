@@ -1,0 +1,59 @@
+load("@launch_ros//:defs.bzl", "launch_ros_binary")
+load("@rules_python//python:defs.bzl", "py_binary", "py_test")
+load("@tensorrt//:defs.bzl", "tensorrt_cc_test")
+
+py_binary(
+    name = "with_models",
+    testonly = True,
+    srcs = ["with_models.py"],
+    main = "with_models.py",
+    deps = ["@ament_index_python"],
+    data = ["@autoware_traffic_light_classifier//:test_resources", "@autoware_traffic_light_classifier_models//:ament_index"],
+    precompile = "disabled",
+)
+
+[
+    tensorrt_cc_test(
+        name = "test_" + suite,
+        srcs = ["@autoware_traffic_light_classifier//:test/test_" + suite + ".cpp"],
+        deps = ["@autoware_traffic_light_classifier//:classifier_library", "@ament_index_cpp//:ament_index_cpp_library", "@googletest//:gtest"],
+        dynamic_deps = ["@autoware_traffic_light_classifier", "@autoware_traffic_light_classifier//:sdk_dynamic_deps"],
+        data = ["@autoware_traffic_light_classifier//:test_resources"],
+        run_under = ":with_models",
+        timeout = "long",
+    )
+    for suite in ["cnn_classifier", "cnn_lamp_recognizer"]
+]
+
+py_test(
+    name = "runtime_test",
+    srcs = ["test_runtime.py"],
+    main = "test_runtime.py",
+    deps = ["@ament_index_python", "@rclpy", "@sensor_msgs//:py", "@tier4_perception_msgs//:py"],
+    data = ["@autoware_traffic_light_classifier//:ament_index"],
+    env = {"LD_LIBRARY_PATH": "lib", "ROS_DOMAIN_ID": "90"},
+    precompile = "disabled",
+    tags = ["no-sandbox", "no-remote", "requires-gpu"],
+    timeout = "long",
+)
+
+launch_ros_binary(
+    name = "launch_probe",
+    testonly = True,
+    src = "@autoware_traffic_light_classifier//:launch/car_traffic_light_classifier.launch.xml",
+    data = ["@autoware_traffic_light_classifier//:ament_index"],
+    precompile = "disabled",
+)
+
+py_test(
+    name = "launch_test",
+    srcs = ["test_launch.py"],
+    main = "test_launch.py",
+    args = ["$(rootpath :launch_probe)"],
+    deps = ["@ament_index_python", "@rclpy", "@sensor_msgs//:py", "@tier4_perception_msgs//:py"],
+    data = [":launch_probe", "@autoware_traffic_light_classifier//:ament_index"],
+    env = {"LD_LIBRARY_PATH": "lib", "ROS_DOMAIN_ID": "91"},
+    precompile = "disabled",
+    tags = ["no-sandbox", "no-remote"],
+    timeout = "long",
+)

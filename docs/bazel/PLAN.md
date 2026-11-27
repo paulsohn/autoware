@@ -110,6 +110,7 @@ only when your current target demonstrates the need.
   [published container providers](JOURNAL.md#2026-11-18-phase-531--default-ad-api);
   [evidence: original core launches](JOURNAL.md#2026-11-17-phase-525--core-planning-launch-composition).
   [Runtime-only dlopen resources and ABI closure](DEVELOPING.md#tensorrt-sdk-and-native-tests);
+  [node-free publisher metadata evidence](JOURNAL.md#phase-913-traffic-classifier);
   [evidence: TensorRT SDK](JOURNAL.md#2026-11-18-phase-62--tensorrt-binary-sdk);
   [vendor RTTI and exception binding](JOURNAL.md#2026-11-23-phase-652--tensorrt-calibration-and-c-runtime-compatibility).
   [Writable engine caches and caller-owned identity](DEVELOPING.md#common-library-engine-cache);
@@ -2580,7 +2581,7 @@ this phase. Next: Phase 9.13, traffic-light model execution and image tracking.
 
 ### Phase 9.13: Traffic-light model execution and image tracking (in progress)
 
-Progress: 2/5 module gates complete; coverage 192/244 (52 remaining).
+Progress: 3/5 module gates complete; coverage 193/244 (51 remaining).
 
 Start at 190/244 packages. Adopt ByteTrack first, preserving its tracker/wrapper,
 node and visualizer libraries, both components/executables and indexed Kalman

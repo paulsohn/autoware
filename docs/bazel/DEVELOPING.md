@@ -2324,3 +2324,31 @@ its ONNX/parameters through its own ament share directory. Run
 //bazel/tests:calibration_model_resources_test after changing weights/index
 metadata, and update SHA256SUMS with model edits. Colcon users obtain the augmented
 model package, build with --symlink-install and source the install environment.
+
+## Traffic-light classification
+
+Run the complete package and its root companions with Cyclone DDS and GPU access:
+
+```sh
+bazel test --keep_going --config=runtime --config=no-agnocast \
+  --local_test_jobs=1 --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp \
+  --test_output=errors @autoware_traffic_light_classifier//... \
+  //bazel/tests/autoware_traffic_light_classifier:all
+```
+
+This includes all six original runners, actual CNN/lamp inference, car/pedestrian
+node profiles and both original XML launchers on HSV. For direct executable
+invocation supply build_only=false and the required model/configuration inputs;
+XML supplies them normally. Keep mutable JIT engines in writable caller-owned
+ONNX/cache copies. Use :test_resources plus the independent model provider for
+GPU core fixtures; the consumer-facing :ament_index owns the full install.
+The focused view still needs image_transport plugin metadata because backend
+publisher initialization invokes its class loader without a ROS node.
+
+@autoware_traffic_light_classifier_models owns the indexed weights, labels and
+recognizer parameters. Run //bazel/tests:traffic_classifier_model_resources_test
+and :traffic_classifier_launch_paths_test after changing their resources or
+launcher defaults. The shared path helper also serves :yolox_launch_paths_test;
+run it when changing that helper or shared launch files. Colcon users build and
+source the augmented model package with --symlink-install. Interactive debug
+windows and field recognition accuracy require separate qualification.

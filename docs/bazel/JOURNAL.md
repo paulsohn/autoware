@@ -25824,3 +25824,20 @@ original XML files with classifier_type:=0 and real ROS image/ROI traffic, while
 the separate four-profile node companion covers both GPU backends/types. Reuse
 those passing results for this source-only commit; no additional transport or
 product distribution gate is needed.
+
+Final fixture result: the resource-only view must also include image_transport's
+plugin index. Omitting it aborts even node-free backend tests during publisher
+class-loader initialization (package 'image_transport' not found). Add that
+actual runtime metadata without bringing the full node/launcher index back into
+the GPU core fixture. The exact full-module command above passes all eight
+selected test targets: 60 original cases, four live GPU backend/type subprofiles
+and both real HSV XML launch subprofiles. The final rerun executes both changed
+GPU fixtures and reuses unchanged passing live/CPU evidence; there are no
+failures or skips. Python AST, XML, changed C++ formatting and whitespace checks
+pass. Header/QoS source fix: f1d509054; HSV launch fix: bef522f0a. The debug
+component/executable builds; its interactive window remains unqualified.
+
+Coverage is 193/244 (51 remaining), three of five Phase 9.13 modules complete.
+Next: indexed fine-detector models, its complete suite/GPU behavior, then the
+composed recognition pipeline. No broader communication, simulator or deployment
+check is required by this module task.
