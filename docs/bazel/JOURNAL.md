@@ -25817,3 +25817,10 @@ should not invalidate cold GPU core suites. The complete consumer-facing index
 still owns every component/executable/resource. This uses one ROS package
 identity, following the established indexed-resource convention. Final fixture
 validation is recorded with the module build commit below.
+
+The HSV launch correction is only a default for an unused input; GPU conditional
+model selection is unchanged. The full module command above exercises both
+original XML files with classifier_type:=0 and real ROS image/ROI traffic, while
+the separate four-profile node companion covers both GPU backends/types. Reuse
+those passing results for this source-only commit; no additional transport or
+product distribution gate is needed.
