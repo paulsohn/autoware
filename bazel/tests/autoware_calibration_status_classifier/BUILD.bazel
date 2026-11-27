@@ -1,0 +1,37 @@
+load("@rules_python//python:defs.bzl", "py_binary", "py_test")
+load("@tensorrt//:defs.bzl", "tensorrt_cc_test")
+
+py_binary(
+    name = "with_model",
+    testonly = True,
+    srcs = ["with_model.py"],
+    main = "with_model.py",
+    deps = ["@ament_index_python"],
+    data = ["@autoware_calibration_status_classifier//:ament_index", "@autoware_calibration_status_classifier_models//:ament_index"],
+    precompile = "disabled",
+)
+
+[
+    tensorrt_cc_test(
+        name = "test_" + suite,
+        srcs = ["@autoware_calibration_status_classifier//:test/test_" + suite + ".cpp"],
+        deps = ["@autoware_calibration_status_classifier//:original_gpu_test_support", "@googletest//:gtest"],
+        dynamic_deps = ["@autoware_calibration_status_classifier//:autoware_calibration_status_classifier_lib", "@autoware_calibration_status_classifier//:autoware_calibration_status_classifier_cuda_lib", "@autoware_calibration_status_classifier//:sdk_dynamic_deps"],
+        data = ["@autoware_calibration_status_classifier//:ament_index"],
+        run_under = ":with_model",
+        timeout = "long",
+    )
+    for suite in ["preprocessing", "model_inference", "calibration_status_classifier"]
+]
+
+py_test(
+    name = "runtime_test",
+    srcs = ["test_runtime.py"],
+    main = "test_runtime.py",
+    deps = ["@ament_index_python", "@diagnostic_msgs//:py", "@rclpy", "@sensor_msgs//:py", "@std_srvs//:py"],
+    data = ["@autoware_calibration_status_classifier//:ament_index"],
+    env = {"LD_LIBRARY_PATH": "lib", "ROS_DOMAIN_ID": "89"},
+    precompile = "disabled",
+    tags = ["no-sandbox", "no-remote", "requires-gpu"],
+    timeout = "long",
+)

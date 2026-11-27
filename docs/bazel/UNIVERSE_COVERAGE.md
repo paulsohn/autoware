@@ -21,8 +21,8 @@ may contain multiple package commits and smaller execution batches. Update the
 ledger when a package closes or the source snapshot changes; this is a planning
 record, not a new build-time completeness validator.
 
-Current adoption progress, 2026-11-27: **191/244** packages have both definitions
-and root local overrides; **53** remain without definitions. The census table
+Current adoption progress, 2026-11-27: **192/244** packages have both definitions
+and root local overrides; **52** remain without definitions. The census table
 below preserves the initial 2026-11-23 baseline. Checked ledger items record
 completed module gates. See PLAN.md and the
 package journals for configuration and behavior evidence.
@@ -352,7 +352,7 @@ Use command-mode types from 9.3 and the relevant motion providers. Validate gati
 Compose the CPU traffic-light stages from 9.7 with the existing YOLOX/classifier SDK support. Supply the selected model repositories and metadata, then run complete GPU/model and ROS suites, including composed pipeline tests. Add one explicit product-owned preparation profile when a concrete consumer first needs it; preserve current generation APIs until a qualified replacement exists.
 
 - [x] [autoware_bytetrack](../../src/universe/autoware_universe/perception/autoware_bytetrack/package.xml)
-- [ ] [autoware_calibration_status_classifier](../../src/universe/autoware_universe/sensing/autoware_calibration_status_classifier/package.xml)
+- [x] [autoware_calibration_status_classifier](../../src/universe/autoware_universe/sensing/autoware_calibration_status_classifier/package.xml)
 - [ ] [autoware_traffic_light_classifier](../../src/universe/autoware_universe/perception/autoware_traffic_light_classifier/package.xml)
 - [ ] [autoware_traffic_light_fine_detector](../../src/universe/autoware_universe/perception/autoware_traffic_light_fine_detector/package.xml)
 - [ ] [autoware_traffic_light_pipeline](../../src/universe/autoware_universe/perception/autoware_traffic_light_pipeline/package.xml)

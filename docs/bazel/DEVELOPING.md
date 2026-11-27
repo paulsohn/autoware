@@ -2298,3 +2298,29 @@ and clean shutdown. The package index includes the compressed transport plugin
 needed by the original default use_raw=false. Keep its indexed Kalman YAML in
 the declared runtime closure. This tracker consumes CPU detections and does not
 require TensorRT/GPU execution.
+
+## Calibration-status classification
+
+Run the complete module and its root companions with working GPU access:
+
+```sh
+bazel test --keep_going --config=runtime --config=no-agnocast \
+  --local_test_jobs=1 --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp \
+  --test_output=errors @autoware_calibration_status_classifier//... \
+  //bazel/tests/autoware_calibration_status_classifier:all
+```
+
+The gate includes all five original runners and a real manual-service/GPU-preview
+check. The GPU fixture supplies declared models and writable copies for legacy
+sample lookup/output and rejects skipped native cases. Keep these product/test
+choices outside the component. Engines and diagnostic sample images must not
+be written into indexed model/source inputs; callers of the current JIT API
+use a writable ONNX/cache copy. Preserve distinct min/opt/max bounds when the
+core expects a dynamic TensorRT input. This model emits logits: confidence
+names do not imply probabilities in [0,1].
+
+The model provider is @autoware_calibration_status_classifier_models. Resolve
+its ONNX/parameters through its own ament share directory. Run
+//bazel/tests:calibration_model_resources_test after changing weights/index
+metadata, and update SHA256SUMS with model edits. Colcon users obtain the augmented
+model package, build with --symlink-install and source the install environment.

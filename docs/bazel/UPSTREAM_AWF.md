@@ -2997,6 +2997,8 @@ submission, colcon result or camera accuracy qualification is claimed.
 
 ### Calibration-status classifier: Lyrical headers/QoS and sequential test portability
 
+Local source compatibility correction: `9e4cb8df6`.
+
 - [ ] Associate with matching AWF corrections. Checked 2026-11-27:
   [node header](https://github.com/autowarefoundation/autoware_universe/blob/main/sensing/autoware_calibration_status_classifier/include/autoware/calibration_status_classifier/calibration_status_classifier_node.hpp)
   and camera_lidar_info_collector.hpp still use removed .h forwarders;

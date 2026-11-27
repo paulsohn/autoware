@@ -25609,3 +25609,45 @@ then rejects another request after its buffered pair is consumed. It shuts down
 cleanly. No failures or skips remain; unchanged original suites are reused in
 the final live rerun. Changed C++ formatting, Python AST and whitespace checks
 pass. No colcon/real-vehicle accuracy or performance qualification is claimed.
+
+Add package-local MODULE/BUILD and adjacent versionless root selection. Preserve
+the filters, CUDA preprocessing, classifier and component shared-library names.
+Consume the existing rules_cuda toolchain extension (cuda is its generated
+repository, not a registry module), pinned TensorRT SDK and native ROS/OpenCV/
+zlib providers. CcInfo uses zlib_library; its shared owner is the zlib dynamic
+dependency. Register the original sample hierarchy as share/<package>/data,
+matching the original ament lookups. The index owns model and decompressor
+runtime dependencies as well as original config/launch and the executable.
+
+Use RCR's generated component main/record and the existing TensorRT executable
+wrapper for the indexed command. This supplies declared builder/GNU runtime
+discovery during JIT construction without depending on host SDK installation.
+There is no dependency-meta facade or component-to-root label.
+
+Expose unchanged original GPU runner files and their package-local data/header
+support. Assemble their model-dependent test executions under bazel/tests with
+the existing TensorRT test helper and a root-owned fixture. That fixture copies
+declared ONNX and sample data into writable temporary locations, provides the
+original tests' legacy HOME lookup only inside their process, and overlays a
+private ament index for writable sample images. It checks the native XML for
+executed cases and rejects skips. No test output reaches indexed input files.
+The two independent original CPU runners remain package-local Bazel tests.
+
+The live Python peer invokes the indexed SDK-wrapped executable with the original
+parameter YAML plus a temporary ONNX cache copy. It supplies synthetic optical-
+frame image/cloud/camera metadata, with prerequisite filters/vehicle occlusion
+mask disabled for that synthetic geometry. Its small profile uses distinct
+min/opt/max dimensions: equal bounds let TensorRT specialize the supposedly
+dynamic input to a static tensor, which the existing core correctly rejects.
+The model's confidence outputs are finite logits, not bounded probabilities;
+check diagnostic classification against their ordering rather than imposing
+[0,1]. Original large sample assertions remain the accuracy-related software
+evidence. Require a nonempty writable engine, projected points, preview image,
+manual response and consumed-input rejection. This does not test a vehicle.
+
+Source compatibility commit: 9e4cb8df6. The exact complete-module command above
+passes all six test targets (22 original cases plus the live scenario), reusing
+unchanged passing evidence in the final rerun. Coverage is 192/244 (52 remaining),
+two of five Phase 9.13 modules complete. Next: indexed traffic-light models,
+classification, fine detection and composed recognition. No Fast DDS, simulator
+or deployment export gate is selected.

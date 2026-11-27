@@ -1,0 +1,141 @@
+load("@rclcpp_components//:defs.bzl", "rclcpp_components_register_node")
+load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
+load("@rules_cuda//cuda:defs.bzl", "cuda_library")
+load("@tensorrt//:defs.bzl", "tensorrt_cc_binary")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "types",
+    hdrs = glob(["include/**/*.hpp"], exclude = ["include/**/calibration_status_classifier.hpp", "include/**/calibration_status_classifier_node.hpp", "include/**/camera_lidar_info_collector.hpp", "include/**/preprocess_cuda.hpp"]),
+    includes = ["include"],
+    deps = ["@rosdistro//cc:eigen"],
+)
+
+cuda_library(
+    name = "preprocess_library",
+    srcs = ["lib/preprocess/preprocess_cuda.cu"],
+    hdrs = ["include/autoware/calibration_status_classifier/preprocess_cuda.hpp"],
+    includes = ["include"],
+    copts = ["-std=c++17", "--expt-relaxed-constexpr"],
+    deps = [":types", "@autoware_cuda_utils"],
+)
+
+cc_shared_library(
+    name = "autoware_calibration_status_classifier_cuda_lib",
+    shared_lib_name = "libautoware_calibration_status_classifier_cuda_lib.so",
+    deps = [":preprocess_library"],
+)
+
+cc_library(
+    name = "filters_library",
+    srcs = ["lib/filter.cpp", "lib/calibration_status_classifier_filters.cpp"],
+    deps = [":types"],
+)
+
+cc_shared_library(
+    name = "autoware_calibration_status_classifier_filters_lib",
+    shared_lib_name = "libautoware_calibration_status_classifier_filters_lib.so",
+    deps = [":filters_library"],
+)
+
+cc_library(
+    name = "classifier_library",
+    srcs = ["lib/calibration_status_classifier.cpp"],
+    hdrs = ["include/autoware/calibration_status_classifier/calibration_status_classifier.hpp"],
+    includes = ["include"],
+    deps = [":preprocess_library", "@autoware_tensorrt_common//:autoware_tensorrt_common_library", "@sensor_msgs//:cc"],
+)
+
+collect_transitive_dynamic_deps(
+    name = "sdk_dynamic_deps",
+    dynamic_deps = ["@ament_index_cpp//:ament_index_cpp", "@autoware_tensorrt_common", "@sensor_msgs//:cc_shared", "@rosdistro//cc:opencv", "@rosdistro//cc:zlib"],
+)
+
+cc_shared_library(
+    name = "autoware_calibration_status_classifier_lib",
+    shared_lib_name = "libautoware_calibration_status_classifier_lib.so",
+    deps = [":classifier_library"],
+    dynamic_deps = [":autoware_calibration_status_classifier_cuda_lib", ":sdk_dynamic_deps"],
+)
+
+cc_library(
+    name = "node_library",
+    srcs = ["src/calibration_status_classifier_node.cpp"],
+    hdrs = ["include/autoware/calibration_status_classifier/calibration_status_classifier_node.hpp", "include/autoware/calibration_status_classifier/camera_lidar_info_collector.hpp"],
+    includes = ["include"],
+    deps = [":classifier_library", ":filters_library", "@autoware_perception_msgs//:cc", "@autoware_utils", "@diagnostic_msgs//:cc", "@geometry_msgs//:cc", "@message_filters//:message_filters_library", "@nav_msgs//:cc", "@rclcpp_components//:rclcpp_components_library", "@std_srvs//:cc", "@tf2_eigen//:tf2_eigen_library", "@tf2_ros//:tf2_ros_library"],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = [":sdk_dynamic_deps", ":autoware_calibration_status_classifier_lib", ":autoware_calibration_status_classifier_cuda_lib", ":autoware_calibration_status_classifier_filters_lib", "@autoware_perception_msgs//:cc_shared", "@autoware_utils//:runtime_dynamic_deps", "@diagnostic_msgs//:cc_shared", "@geometry_msgs//:cc_shared", "@message_filters//:message_filters", "@nav_msgs//:cc_shared", "@rclcpp_components//:rclcpp_components", "@std_srvs//:cc_shared", "@tf2_eigen//:tf2_eigen", "@tf2_ros//:tf2_ros"],
+)
+
+cc_shared_library(
+    name = "autoware_calibration_status_classifier_component",
+    shared_lib_name = "libautoware_calibration_status_classifier_component.so",
+    deps = [":node_library"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+)
+
+rclcpp_components_register_node(
+    name = "calibration_status_classifier_native",
+    node_name = "calibration_status_classifier_node",
+    component = ":autoware_calibration_status_classifier_component",
+    plugin = "autoware::calibration_status_classifier::CalibrationStatusClassifierNode",
+)
+
+tensorrt_cc_binary(
+    name = "calibration_status_classifier_node",
+    srcs = [":calibration_status_classifier_native_main.cpp"],
+    deps = ["@rclcpp_components//:rclcpp_components_library"],
+    dynamic_deps = [":autoware_calibration_status_classifier_component", ":runtime_dynamic_deps"],
+)
+
+register_ament_files(
+    name = "executables",
+    files = [":calibration_status_classifier_node"],
+    prefix = "lib/autoware_calibration_status_classifier",
+    strip_prefix = "*",
+)
+
+register_ament_files(
+    name = "samples",
+    files = glob(["test/data/**"]),
+    prefix = "share/autoware_calibration_status_classifier/data",
+    strip_prefix = "test/data",
+)
+
+ament_index(
+    package_xml = "package.xml",
+    libraries = [":autoware_calibration_status_classifier_lib", ":autoware_calibration_status_classifier_cuda_lib", ":autoware_calibration_status_classifier_filters_lib", ":autoware_calibration_status_classifier_component"],
+    components = [":calibration_status_classifier_native_record"],
+    data = glob(["config/**", "launch/**"]) + [":executables", ":samples"],
+    deps = ["@autoware_calibration_status_classifier_models//:ament_index", "@autoware_image_transport_decompressor//:ament_index"],
+)
+
+cc_test(
+    name = "test_filters",
+    srcs = ["test/test_filters.cpp"],
+    deps = [":filters_library", "@googletest//:gtest_main"],
+    dynamic_deps = [":autoware_calibration_status_classifier_filters_lib"],
+)
+
+cc_test(
+    name = "test_ros_utils",
+    srcs = ["test/test_ros_utils.cpp"],
+    deps = [":types", "@googletest//:gtest_main"],
+)
+
+cc_library(
+    name = "original_gpu_test_support",
+    testonly = True,
+    hdrs = ["test/data_utils.hpp"],
+    includes = ["test"],
+    deps = [":classifier_library", "@ament_index_cpp//:ament_index_cpp_library", "@autoware_point_types", "@point_cloud_msg_wrapper", "@rosdistro//cc:opencv_library", "@rosdistro//cc:zlib_library"],
+)
+
+exports_files(["test/test_preprocessing.cpp", "test/test_model_inference.cpp", "test/test_calibration_status_classifier.cpp"])
