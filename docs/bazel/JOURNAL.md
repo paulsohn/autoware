@@ -27505,3 +27505,112 @@ attempt failed with shm_open/File exists because sandbox PID namespaces share
 host shared memory. The documented local TestRunner strategy and native-only
 preload resolve both setup failures without source changes or shared-memory
 cleanup. Reuse unchanged passing results. No Fast DDS or deployment gate.
+
+<a id="phase-915-projection-fusion"></a>
+
+## 2026-11-28 — Phase 9.15: image-projection and PointPainting fusion
+
+Purpose: integrate four CPU camera/LiDAR fusion components and the CUDA
+PointPainting detector, preserving the three original DSOs, five commands,
+component/plugin records and config/launch resources. Inspect CMake, manifests,
+all four enabled original suites and the current base/derived fusion APIs.
+All 15 original cases are mandatory, including the CUDA-conditional four
+PointPainting cases. Use the selected v5.0 indexed model provider for actual
+encoder/backbone execution, not just header-only bbox tests.
+
+Keep the CPU SDK independent of CUDA/TensorRT. Declare OpenMP through pinned
+LLVM providers, canonical ROS/PCL/OpenCV/utility dynamic owners and the existing
+CenterPoint SDK for the derived detector. Add an optional binary_rule to the
+existing Agnocast command macro so PointPainting can retain the exact generated
+main/records while using the declared TensorRT native launcher. Default command
+construction remains unchanged; verify the complete wrapper suite with that
+prerequisite. Root companions will qualify camera calibration/projection,
+association/synchronization/history and actual GPU cold/warm model outputs.
+Precision, synthetic calibration/profile and writable cache policy stay at root.
+The current targets exposed four source blockers/defects: removed message_filters
+.h headers, detection-class count used as painted-channel width, arithmetic
+addition of overlapping class bits, and an output-history timestamp that never
+updates. The native two-record regression first throws std::out_of_range. The
+real two-camera PointPainting run first produces flag 2 for all 2,048 CAR points;
+the corrected union retains flag 1. The history run first publishes frame 41
+after frame 42 despite disabled late output. Correct the source independently
+of build declarations; preserve original tests. See UPSTREAM_AWF.md for the
+scoped upstream review. All source corrections now pass the full module gate;
+source changes and Bazel declarations are delivered as separate commits.
+
+The CPU library uses the narrow clustering :utils_library/:utils_shared, the
+existing shared perception utility owner, PCL/ROS/OpenCV owners and preprocessing
+concatenation headers. It does not require the clustering/shape implementation.
+The PointPainting library derives from the existing CenterPoint SDK. Keep the
+three CMake DSO names and all five component/command records. The first three
+original test sources define main; link gtest rather than a second gtest_main.
+The fourth suite needs gtest_main and remains enabled with the CUDA component.
+
+Declare the pinned LLVM OpenMP provider for omp.h and own its always-linked
+archive as an explicit CPU cc_shared_library root. PointPainting imports that
+owner. Linking the archive only through a static dependency initially left
+omp_get_thread_num/omp_set_num_threads undefined; dropping its CPU header provider
+instead left Eigen without omp.h. The explicit shared root supplies one owner.
+nm -D --defined-only confirms one omp_get_thread_num definition in the CPU DSO
+and none in PointPainting. readelf -d finds no CUDA/TensorRT/CenterPoint dependency
+in the CPU DSO.
+
+Root fixtures use two 64x48 cameras with distinct intrinsics, an identity
+base_link transform and naive matching with zero timestamp offsets. These are
+synthetic product/test choices, not source defaults. Preserve source parameters
+by writing root-owned YAML copies. Wait for projector initialization as DDS
+subscription discovery alone can precede calibration; an early partial frame
+otherwise has unpainted flags. For ROI pointcloud fusion, the shipped XML loads
+an existing container. Supply that container in a root companion launch and
+carry @rclcpp_components//:ament_package, which owns its executable. An index-only
+provider cannot launch it. Use representable probabilities for exact serialized
+message comparisons. Semantic Image payloads use the inspected uint8/int32 RLE
+format, not an uncompressed image buffer.
+
+The PointPainting fixture stages both indexed ONNX files in a temporary writable
+cache, selects FP16 and one-frame densification, and fills all 2,048 input points.
+Both calibrated cameras observe a full-frame CAR ROI. Require every painted flag
+to stay 1, run the actual encoder/backbone/postprocessing, check headers/layout
+and finite detection probabilities, and repeat with warm engines. Both engine
+hashes/mtimes remain unchanged on the warm run; indexed ONNX identities remain
+unchanged. Empty synthetic detections do not establish model accuracy.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast \
+  --local_test_jobs=1 --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp \
+  --test_output=errors @autoware_image_projection_based_fusion//... \
+  //bazel/tests/autoware_image_projection_based_fusion:all
+
+stat /dev/agnocast
+cat /sys/module/agnocast/version
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --local_test_jobs=1 --strategy=TestRunner=local \
+  --test_env=ENABLE_AGNOCAST=1 --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp \
+  --run_under=//bazel/agnocast:with_heaphook --test_output=errors \
+  //bazel/tests/autoware_image_projection_based_fusion:transport_test
+```
+
+All 53 selected routine targets pass: 45 non-test targets and eight runners.
+Inspect XML and inner logs: all 15 original cases pass, alongside three camera/
+CUDA cases, the two-record painted-feature regression, one native camera/ROI
+transport case and five shipped-launch cases. No failures/errors/skips or empty
+runners remain. The five live cases cover object association, two-camera waiting,
+late-frame suppression and rosbag-loop reset, cluster labeling and original
+point bytes, ROI-based point clustering, semantic masking with frame reset, and
+cold/warm native GPU inference. Reuse unchanged passing cases in the final gate.
+
+The native camera association also passes with ENABLE_AGNOCAST=1, accessible
+/dev/agnocast mode 666/module 2.4.1 and the declared heap hook. Put the hook in the
+fixture data as well as selecting the run-under wrapper. Keep host PID semantics
+through the local TestRunner and leave the Python driver unpreloaded. The test
+uses the selected backend's executor and verifies the fused object/header. The
+complete wrapper prerequisite's 37 native/66 Python cases in both modes remain
+passing evidence. PointPainting inference is qualified in RCLCPP/Cyclone, not
+claimed as an enabled Agnocast inference gate.
+
+The GPU environment remains CUDA 13.2.2/TensorRT 10.16.1.11, LLVM/libc++ 21.1.8,
+RTX 5070 Laptop and driver 595.99.02. Targeted Buildifier/clang-format, Python AST
+and whitespace checks pass. No upstream CMake build, sensor accuracy/performance,
+Fast DDS, simulator or deployment-export result is claimed. Next: BEVFusion and
+its independently indexed model provider. BEVFormer remains explicitly deferred.

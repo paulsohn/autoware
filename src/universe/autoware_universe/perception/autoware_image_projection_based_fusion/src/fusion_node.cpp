@@ -344,6 +344,7 @@ void FusionNode<Msg3D, Msg2D, ExportObj>::export_process(
 
   if (publish_output_msg_) {
     publish(output_msg);
+    latest_output_msg_timestamp_ = current_output_msg_timestamp_;
   }
 
   diagnostic_collector_info_ = std::move(collector_info);

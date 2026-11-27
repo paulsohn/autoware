@@ -487,8 +487,9 @@ dc   | dc dc dc  dc ||zc|
             // cppcheck-suppress invalidPointerCast
             auto p_class = reinterpret_cast<float *>(&output[stride + class_offset]);
             for (const auto & cls : isClassTable_) {
-              // add up the class values if the point belongs to multiple classes
-              *p_class = cls.second(label2d) ? (class_index_[cls.first] + *p_class) : *p_class;
+              if (cls.second(label2d)) {
+                *p_class = static_cast<int>(*p_class) | static_cast<int>(class_index_[cls.first]);
+              }
             }
           }
           if (debugger_) {

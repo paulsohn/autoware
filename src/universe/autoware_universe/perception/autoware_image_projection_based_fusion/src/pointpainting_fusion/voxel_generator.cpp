@@ -71,15 +71,10 @@ size_t VoxelGenerator::generateSweepPoints(std::vector<float> & points)
       points.at(point_counter * config_.point_feature_size_ + 2) = point_current.z();
       points.at(point_counter * config_.point_feature_size_ + 3) = time_lag;
       // decode the class value back to one-hot binary and assign it to point
-      for (size_t i = 0; i < config_.class_size_; ++i) {
-        points.at(point_counter * config_.point_feature_size_ + 4 + i) = 0.f;
-      }
       auto class_value = static_cast<int>(*class_iter);
-      auto iter = points.begin() + point_counter * config_.point_feature_size_ + 4;
-      while (class_value > 0) {
-        *iter = class_value % 2;
+      for (size_t i = 0; i < config_.point_feature_size_ - 4; ++i) {
+        points.at(point_counter * config_.point_feature_size_ + 4 + i) = class_value % 2;
         class_value /= 2;
-        ++iter;
       }
       ++point_counter;
     }

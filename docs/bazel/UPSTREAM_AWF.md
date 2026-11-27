@@ -3228,3 +3228,52 @@ No upstream submission or perception-accuracy claim is made.
   XML inspection finds no failures/errors/skips. The enabled transport uses the
   current ROS/negotiated input and Agnocast compatible output contract; it does
   not claim Agnocast input subscription support.
+
+## Image-projection fusion headers, painted channels and output history
+
+- [ ] Associate with an upstream issue or PR. Reviewed 2026-11-28: current
+  Universe main retains all four paths below. Scoped Lyrical, PointPainting
+  channel/painting and late-timestamp searches found no matching correction.
+  [PR #9865](https://github.com/autowarefoundation/autoware_universe/pull/9865)
+  changes publishers/debug topics, not output-history tracking. Its actual diff
+  was checked. [PR #7169](https://github.com/autowarefoundation/autoware_universe/pull/7169)
+  adds the existing four bbox cases, not painted-feature decoding or camera
+  overlap coverage. AWF's [Lyrical tracker](https://github.com/autowarefoundation/autoware/issues/7404)
+  is transition context only.
+
+Package: autoware_image_projection_based_fusion 0.53.0, source inputs at
+5354db106 before the local corrections. Environment: Ubuntu 24.04 x86_64,
+RCR Lyrical, LLVM/libc++ 21.1.8, CUDA 13.2.2/TensorRT 10.16.1.11 and RTX 5070.
+The source changes are independent of Bazel ownership rules:
+
+1. fusion_node.hpp includes four removed message_filters/*.h paths. Compilation
+   stops at pass_through.h. Use the corresponding .hpp headers, without changing
+   message-filter behavior or unrelated deprecated TF2 forwarders.
+2. [VoxelGenerator::generateSweepPoints](https://github.com/autowarefoundation/autoware_universe/blob/main/perception/autoware_image_projection_based_fusion/src/pointpainting_fusion/voxel_generator.cpp)
+   initializes painted features with the detector's class_size. The selected
+   v5.0 model has five detection classes but three paint channels in each
+   seven-feature record. Two records in an exactly sized vector throw
+   std::out_of_range on the second record. Decode exactly point_feature_size - 4
+   channels, writing both zero and one bits within each record. The root native
+   regression reproduces the exception before the fix and checks both records.
+3. [PointPaintingFusionNode::fuse_on_single_image](https://github.com/autowarefoundation/autoware_universe/blob/main/perception/autoware_image_projection_based_fusion/src/pointpainting_fusion/node.cpp)
+   adds class bits for overlapping ROIs/cameras. Two CAR observations produce
+   1 + 1 = 2, which decodes as BICYCLE. The two-camera native-node experiment
+   reproduces flag 2 on every one of 2,048 points. Use bitwise union of the
+   integer-encoded flags so repeated observations preserve the semantic class.
+4. [FusionNode::export_process](https://github.com/autowarefoundation/autoware_universe/blob/main/perception/autoware_image_projection_based_fusion/src/fusion_node.cpp)
+   compares against latest_output_msg_timestamp_ but never updates it. Publishing
+   frame 42 followed by frame 41 still publishes 41 with late output disabled.
+   Update the latest timestamp when publishing. Keep the configured rosbag-loop
+   exception: a jump beyond rosbag_length resets the published timeline, and a
+   smaller backward jump on that new timeline is still rejected.
+
+Reproducers and final module verification are recorded in the
+[image-projection experiment](JOURNAL.md#phase-915-projection-fusion).
+All 15 original and 10 added cases pass in the complete Cyclone/RCLCPP module
+gate. The native camera-association case also passes with enabled Agnocast and
+its declared device/heaphook. The added fixtures stay under
+bazel/tests/autoware_image_projection_based_fusion.
+These findings do not claim sensor/detection accuracy or validation through
+upstream CMake/colcon. Offer focused include, feature-decoding, overlap and
+history regression patches with the source corrections.
