@@ -27620,3 +27620,54 @@ component MODULE/BUILD, adjacent root source override and root companions.
 A fresh source census finds 203/244 MODULE/BUILD pairs, each with a matching
 versionless root dependency/local override. Coverage is 203/244 with 41 pending;
 Phase 9.15 has one accepted module and one explicitly deferred BEVFormer item.
+
+<a id="phase-915-bevfusion-models"></a>
+
+## 2026-11-28 — Phase 9.15: BEVFusion model provider
+
+Purpose: supply the bevfusion model bundles and matching deployment parameters
+through one repository-owned module and ament package. Inspect the component's
+launch/YAML/manifests, every enclosing model-path default, the reference artifact
+role's v2.0 selection and HF immutable revision e1bf164b909d3c6c2642012f9b5ee4d827753220.
+The model card declares Apache-2.0. Clone that tag with LFS smudging disabled,
+assert the revision, fetch immutable resolve URLs, stream-check each LFS size/
+SHA-256 against the blobs API and seed both checkout/parent object stores before
+the squashed subtree import under src/models/bevfusion.
+
+Follow the [indexed model pattern](#phase-915-pointpainting-models): own MODULE/
+BUILD, :models/:ament_index, hashes/provenance and minimal colcon/ament_cmake
+support inside the model repository. Root selects the adjacent versionless local
+override before source consumers. Replace the standalone HOME/data_path default
+and all 6 enclosing model-path defaults with find-pkg-share; add source
+and parent runtime manifest dependencies. Preserve unrelated model families'
+arguments. Acceptance: all 3 materialized payload identities, provider and
+isolated-index tests, colcon --symlink-install leaf links, and actual default
+parameter/metadata resolution. Native GPU execution is the following module gate.
+The provider gate passes:
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_output=errors @autoware_bevfusion_models//... \
+  //bazel/tests:bevfusion_model_resources_test
+
+source /opt/ros/jazzy/setup.bash
+colcon build --base-paths src/models/bevfusion --symlink-install \
+  --build-base /tmp/bevfusion-model-build --install-base /tmp/bevfusion-model-install
+source /tmp/bevfusion-model-install/setup.bash
+```
+
+All four selected targets pass: three non-test providers and both inner resource
+cases. The latter verifies every payload and an isolated relocated prefix.
+Colcon finishes one data package. Require all three installed ONNX leaves to be
+symlinks, and stream their hashes against SHA256SUMS: camera/LiDAR 44,005,211 bytes,
+image backbone 136,518,191 bytes and LiDAR-only 33,739,070 bytes. All match.
+Resolve the standalone model_path and each of the six parent defaults with
+LaunchContext/parse_substitution/perform_substitutions; every path selects this
+model share. Read each consumer YAML from source for this provider-only gate,
+set model_name to each shipped choice and model_path to the resolved share,
+and resolve all ONNX, ML-package and class-remapper expressions. All three
+weights and both variant parameter sets exist inside the share. Both source
+and parent manifests declare the runtime dependency. This does not claim a
+colcon build of the native consumer. XML/manifest parsing, targeted Buildifier
+and whitespace checks pass. Next: the complete BEVFusion native GPU module gate.

@@ -2722,6 +2722,12 @@ PointPainting model v5.0 selects immutable revision
 artifact policy; verify materialized hashes and indexed/colcon paths before
 native inference. See the [model experiment](JOURNAL.md#phase-915-pointpainting-models).
 
+BEVFusion model v2.0 selects immutable revision
+e1bf164b909d3c6c2642012f9b5ee4d827753220. All three weights and both ML parameter
+sets pass materialization, isolated-index and colcon symlink/default-path checks.
+See the [provider experiment](JOURNAL.md#phase-915-bevfusion-models). Native
+camera/LiDAR and LiDAR-only execution remain the module acceptance gate.
+
 ### Execution order through complete Universe coverage
 
 The following groups are the initial route through every remaining package.

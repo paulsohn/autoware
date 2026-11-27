@@ -2682,6 +2682,11 @@ second copy of these compiled facade dependencies in another DSO in that graph.
 Carry canonical ROS message and diagnostic-updater owners with the SDK. Keep
 static header providers separate from shared symbol ownership.
 
+BEVFusion uses `@autoware_bevfusion_models//:ament_index` from
+`src/models/bevfusion`. It owns the LiDAR-only model, camera/LiDAR model and image
+backbone together with both ML parameter sets and class remapping. Use the same
+indexed-resource, colcon and writable-cache workflow described above.
+
 ## Image-projection fusion SDKs
 
 CPU consumers use `@autoware_image_projection_based_fusion//:fusion_library`

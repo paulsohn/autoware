@@ -329,6 +329,12 @@ local_path_override(
     path = "src/models/image_projection_based_fusion",
 )
 
+bazel_dep(name = "autoware_bevfusion_models")
+local_path_override(
+    module_name = "autoware_bevfusion_models",
+    path = "src/models/bevfusion",
+)
+
 # Core source modules.
 bazel_dep(name = "agnocast_cie_config_msgs")
 local_path_override(

@@ -1,0 +1,33 @@
+load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
+
+package(default_visibility = ["//visibility:public"])
+
+MODEL_FILES = [
+    "README.md",
+    "bevfusion_camera_lidar.onnx",
+    "bevfusion_image_backbone.onnx",
+    "bevfusion_lidar.onnx",
+    "deploy_metadata.yaml",
+    "detection_class_remapper.param.yaml",
+    "ml_package_bevfusion_camera_lidar.param.yaml",
+    "ml_package_bevfusion_lidar.param.yaml",
+]
+
+filegroup(
+    name = "models",
+    srcs = MODEL_FILES,
+)
+
+register_ament_files(
+    name = "model_files",
+    files = MODEL_FILES + [
+        "MODEL_PROVENANCE.md",
+        "SHA256SUMS",
+    ],
+    prefix = "share/autoware_bevfusion_models",
+)
+
+ament_index(
+    data = [":model_files"],
+    package_xml = "package.xml",
+)

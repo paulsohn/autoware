@@ -69,6 +69,8 @@
 
   <exec_depend>autoware_image_projection_based_fusion_models</exec_depend>
 
+  <exec_depend>autoware_bevfusion_models</exec_depend>
+
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>autoware_lint_common</test_depend>
 

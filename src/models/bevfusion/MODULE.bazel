@@ -1,0 +1,6 @@
+module(
+    name = "autoware_bevfusion_models",
+    version = "1.0.0",
+)
+
+bazel_dep(name = "rosdistro", version = "0.0.0")

@@ -13,7 +13,7 @@
   <arg name="lidar_model_param_path" description="directory of lidar model param files"/>
 
   <!-- Lidar detector parameters -->
-  <arg name="bevfusion_model_path" default="$(var data_path)/bevfusion"/>
+  <arg name="bevfusion_model_path" default="$(find-pkg-share autoware_bevfusion_models)"/>
   <arg name="centerpoint_model_path" default="$(find-pkg-share autoware_lidar_centerpoint_models)"/>
   <arg name="centerpoint_common_param_path" default="$(find-pkg-share autoware_lidar_centerpoint)/config/centerpoint_common.param.yaml"/>
   <arg name="transfusion_model_path" default="$(find-pkg-share autoware_lidar_transfusion_models)"/>
