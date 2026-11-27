@@ -21,8 +21,8 @@ may contain multiple package commits and smaller execution batches. Update the
 ledger when a package closes or the source snapshot changes; this is a planning
 record, not a new build-time completeness validator.
 
-Current adoption progress, 2026-11-27: **199/244** packages have both definitions
-and root local overrides; **45** remain without definitions. The census table
+Current adoption progress, 2026-11-27: **200/244** packages have both definitions
+and root local overrides; **44** remain without definitions. The census table
 below preserves the initial 2026-11-23 baseline. Checked ledger items record
 completed module gates. See PLAN.md and the
 package journals for configuration and behavior evidence.
@@ -365,7 +365,7 @@ Use 9.4 preprocessing and inspect actual CUDA-blackboard/SDK dependencies. Quali
 - [x] [autoware_lidar_apollo_instance_segmentation](../../src/universe/autoware_universe/perception/autoware_lidar_apollo_instance_segmentation/package.xml)
 - [x] [autoware_lidar_centerpoint](../../src/universe/autoware_universe/perception/autoware_lidar_centerpoint/package.xml)
 - [x] [autoware_lidar_frnet](../../src/universe/autoware_universe/perception/autoware_lidar_frnet/package.xml)
-- [ ] [autoware_lidar_transfusion](../../src/universe/autoware_universe/perception/autoware_lidar_transfusion/package.xml)
+- [x] [autoware_lidar_transfusion](../../src/universe/autoware_universe/perception/autoware_lidar_transfusion/package.xml)
 - [ ] [autoware_ptv3](../../src/universe/autoware_universe/perception/autoware_ptv3/package.xml)
 - [ ] [autoware_ground_segmentation_cuda](../../src/universe/autoware_universe/perception/autoware_ground_segmentation_cuda/package.xml)
 

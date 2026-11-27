@@ -3163,6 +3163,8 @@ compiler/platform support claim is made.
 
 ### TransFusion preprocessing: preserve valid points in padded shuffles
 
+Local source correction: `ed20db24d`.
+
 - [x] Associate the source-index correction with
   [AWF PR #11712](https://github.com/autowarefoundation/autoware_universe/pull/11712).
   Checked 2026-11-27: that PR is closed and unmerged; its actual diff changes

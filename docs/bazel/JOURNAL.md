@@ -26982,7 +26982,7 @@ Universe acceptance remains 199/244, Phase 9.14 4/7; native TransFusion is next.
 
 <a id="phase-914-transfusion"></a>
 
-## 2026-11-27 — Phase 9.14: TransFusion inference (in progress)
+## 2026-11-27 — Phase 9.14: TransFusion inference
 
 Purpose: adopt three CUDA translation units, five native library sources, the
 node, all three original DSOs, component/command and original launch/configuration
@@ -27002,7 +27002,8 @@ providers and canonical shared ROS/PCL/TensorRT/perception SDK owners. Reuse the
 validated perception SDK exports and TensorRT ABI command wrapper. Root selects
 precision/cache and stages immutable indexed inputs into writable storage.
 No anticipated source patch, Fast DDS, simulator or deployment gate is selected.
-The complete native build and both original suites pass. A deterministic GPU
+Source correction: ed20db24d. The complete native build and both original suites
+pass. A deterministic GPU
 shuffle case then exposes two current implementation defects: with two valid
 points and 513 output slots, a permutation puts one valid record beyond the
 first CUDA block; it remains at the output sentinel, and 1285 padded features
@@ -27017,7 +27018,51 @@ does not change launch extent. Current main retains both faulty expressions on
 2026-11-27. Record these associations separately in UPSTREAM_AWF.md. This is a
 data-integrity fix independent of Lyrical, not a build-only workaround.
 
-Source-fix gate: all enabled original cases and current-API GPU cases pass;
-the complete indexed-model/FP16 cold-warm/ROS gate also passes without failures,
-errors or skips. Build/index/test declarations and complete final evidence are
-recorded at the module integration boundary.
+The four root device cases check sweep xyz/intensity/time, padded shuffle across
+a 256-thread boundary, voxel range/feature preservation, and known/empty proposal
+decoding. Keep this regression strict: every valid record appears in its permuted
+slot and every invalid source produces infinity across all five features.
+
+The root runtime companion checks actual source/parent model defaults, metadata/
+remapper paths and both runtime manifests. It selects FP16 and copies the indexed
+bundle into writable temporary storage. Use a 9216-point grid with more than
+5000 distinct voxels, retaining the selected metadata's minimum profile. Choose
+single-frame base_link densification and a 12000-point input capacity explicitly
+in the root fixture. Require real XML-launched GPU output headers, finite object
+fields, positive processing timing and clean child shutdown. The actual timing
+topic is debug/processing_time/total_ms; use that declared interface in the peer.
+Run cold and warm, requiring a nonempty engine, unchanged warm SHA-256/mtime and
+unchanged indexed ONNX SHA-256/mtime. Precision/cache remain product-owned.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  @autoware_lidar_transfusion//... @autoware_lidar_transfusion_models//... \
+  //bazel/tests:transfusion_model_resources_test \
+  //bazel/tests/autoware_lidar_transfusion:all
+
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel aquery --config=runtime --config=no-agnocast --output=jsonproto \
+  '@autoware_lidar_transfusion//:kernels + @autoware_lidar_transfusion//:library + @autoware_lidar_transfusion//:node_library + @autoware_lidar_transfusion//:autoware_lidar_transfusion_cuda_lib + @autoware_lidar_transfusion//:autoware_lidar_transfusion_lib + @autoware_lidar_transfusion//:autoware_lidar_transfusion_component' \
+  > /tmp/transfusion-actions.json
+```
+
+Results: all 27 selected targets pass (22 non-test, five test targets), with no
+failures/errors/skips or empty suites. All three enabled original cases across
+two runners, four device cases, two model-resource cases and two runtime/default-
+path cases pass. Both real XML executions finish cleanly. The model companion
+takes 27.0 s and the final aggregate takes 28.7 s, reusing unchanged passing
+original/kernel/resource results; these durations are not an inference benchmark.
+Six CUDA compile actions, six native compile actions and three DSO links have
+no -flto/bitcode inputs. Together with the complete consumer gate, this validates
+direct SDK providers for the inspected CMake-only CUDA shim's non-LTO effect.
+
+Python AST, changed C++ formatting, XML/manifest and whitespace checks pass.
+The census reaches 200/244 definitions with corresponding root overrides:
+Phase 9.14 is 5/7 complete and 44 Universe packages remain. The three inactive
+legacy GPU drivers are not claimed as passing. The selected native FP16,
+single-frame profile qualifies software flow and data preservation, not sensor
+calibration, recognition accuracy, other precision/profile limits, temporal TF,
+composable-container/build_only or Agnocast-enabled execution. No Fast DDS,
+simulator or deployment export gate is selected. Next: PTV3.

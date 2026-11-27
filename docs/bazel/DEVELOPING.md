@@ -2582,3 +2582,24 @@ execution. Subscribe to compatible PointCloud2 outputs with SensorDataQoS.
 Require all three channels, immutable indexed weights, unchanged warm engines
 and clean node shutdown. Recognition accuracy and other runtime/profile variants
 need separate selected evidence.
+
+## TransFusion LiDAR inference
+
+@autoware_lidar_transfusion owns the original CUDA/native/component libraries,
+indexed command and XML/configuration resources. Its index carries the model
+provider. Keep model_path, ML parameters and class-remapper parameters from the
+same bundle; stage writable engine outputs separately. Product composition
+chooses precision, profile, cache identity and temporal/TF settings. The command
+uses the TensorRT SDK/ABI runtime launcher.
+
+Run all module targets plus //bazel/tests/autoware_lidar_transfusion:all and
+//bazel/tests:transfusion_model_resources_test with --config=runtime
+--config=no-agnocast and Cyclone DDS. Keep both enabled original suites; three
+legacy GPU drivers remain inactive in original CMake and are not passing
+evidence. Current root device cases cover sweep, padded shuffle, voxel features
+and proposal decoding. Preserve the shuffle's valid-source bound and full
+max_size launch extent when modifying it. The runtime fixture uses enough unique
+voxels for the model's minimum shape, then checks indexed defaults, cold/warm
+FP16 inference, immutable inputs and clean node shutdown. Its timing peer listens
+to debug/processing_time/total_ms. Synthetic flow does not qualify recognition
+accuracy or other precision/temporal/container profiles.

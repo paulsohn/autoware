@@ -2618,7 +2618,7 @@ Next: Phase 9.14, CUDA sensing and LiDAR model inference.
 
 ### Phase 9.14: CUDA sensing and LiDAR model inference (in progress)
 
-Progress: 4/7 module gates complete; coverage 199/244 (45 remaining).
+Progress: 5/7 module gates complete; coverage 200/244 (44 remaining).
 
 CUDA preprocessing is accepted: all 15 original CUDA cases, five live original
 XML profiles, three native transport/numerical cases in both selected runtime
@@ -2643,9 +2643,12 @@ plus complete CPU/layout and device-kernel companions. Its demonstrated M_PIf
 compile failure is corrected with CUDA's single-precision constant. See its
 [model gate](JOURNAL.md#phase-914-frnet-models) and
 [module gate](JOURNAL.md#phase-914-frnet). Next: TransFusion.
-TransFusion v2.1 revision 8f07eb93038bfd62e35d1f78e56a6b3fb76b12aa has
-validated LFS/index/colcon and launcher-input providers; see its
-[model gate](JOURNAL.md#phase-914-transfusion-models). Native acceptance is pending.
+TransFusion v2.1 revision 8f07eb93038bfd62e35d1f78e56a6b3fb76b12aa passes
+LFS/index/colcon, all enabled originals, four current-API GPU cases and cold/warm
+native FP16 execution. The reproduced padded-shuffle data-loss correction is
+associated partly with closed/unmerged AWF PR #11712; launch extent is a separate
+fix. See its [model gate](JOURNAL.md#phase-914-transfusion-models) and
+[module gate](JOURNAL.md#phase-914-transfusion). Next: PTV3.
 
 Accepted SDK input: keep Eigen 5.0.1.bcr.1 and select the narrowly guarded
 nvcc 13.2/libc++ 21 invocation-trait patch after the independent host/device

@@ -2395,6 +2395,12 @@ local_path_override(
     path = "src/universe/autoware_universe/perception/autoware_lidar_frnet",
 )
 
+bazel_dep(name = "autoware_lidar_transfusion")
+local_path_override(
+    module_name = "autoware_lidar_transfusion",
+    path = "src/universe/autoware_universe/perception/autoware_lidar_transfusion",
+)
+
 # Launcher source modules.
 bazel_dep(name = "sample_vehicle_description")
 local_path_override(
