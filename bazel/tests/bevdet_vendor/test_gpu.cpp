@@ -111,6 +111,20 @@ TEST(BevDetVendor, TemporalRingPoseAndReset)
     download(static_cast<const float *>(history.getFrameBuffer(1)), 2), (std::vector<float>{1, 2}));
 }
 
+TEST(BevDetVendor, CalibrationOnlySampleHasValidStationaryPose)
+{
+  camParams sample(
+    std::vector<Eigen::Matrix3f>(2, Eigen::Matrix3f::Identity()),
+    std::vector<Eigen::Quaternion<float>>(2, Eigen::Quaternion<float>::Identity()),
+    std::vector<Eigen::Translation3f>(2, Eigen::Translation3f(0, 0, 0)));
+  EXPECT_EQ(sample.N_img, 2);
+  EXPECT_TRUE(sample.ego2global_rot.isApprox(Eigen::Quaternion<float>::Identity()));
+  EXPECT_TRUE(sample.ego2global_trans.vector().isZero());
+  EXPECT_TRUE(sample.lidar2ego_rot.isApprox(Eigen::Quaternion<float>::Identity()));
+  EXPECT_TRUE(sample.lidar2ego_trans.vector().isZero());
+  EXPECT_EQ(sample.timestamp, 0U);
+}
+
 TEST(BevDetVendor, RotatedSuppression)
 {
   Iou3dNmsCuda nms(3, 1, .2F);

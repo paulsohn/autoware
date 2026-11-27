@@ -3320,3 +3320,33 @@ readiness, temporal update/desync recovery, native FP16 cold/warm inference and
 unchanged model/engine identities. No upstream CMake or real sensor accuracy
 result is claimed. Keep the parser fix independent of deployment precision or
 model policy when proposing it upstream.
+
+
+## BEVDet calibration-only sample metadata
+
+- [ ] Associate with an upstream issue or PR. Checked 2026-11-28: current
+  [vendor data.h](https://github.com/autowarefoundation/bevdet_vendor/blob/main/include/data.h)
+  retains the constructor that only initializes calibration vectors. Scoped
+  initialization/pose PR search found no matching correction.
+
+Package: local bevdet_vendor 0.2.1, consumed by autoware_tensorrt_bevdet 0.53.0.
+The ROS node's initModel creates camParams from three calibration vectors.
+DoInfer reads its ego2global pose and timestamp without the node populating them.
+That constructor also leaves N_img and lidar2ego pose indeterminate. The native
+regression observes a non-identity pose, N_img=2517481 and timestamp=804266768 for
+a two-camera calibration-only sample. These observed values are not stable
+identifiers; the defect is reading members the constructor never initializes.
+
+Initialize this overload with its calibration camera count, identity ego/lidar
+poses, zero translations and zero timestamp. Preserve the YAML/dataset path,
+which obtains real pose metadata. Stationary defaults do not implement odometry;
+a moving-vehicle caller must update its actual pose. The existing ROS adapter
+has no such input and is qualified here only for the stationary synthetic rig.
+
+The [vendor experiment](JOURNAL.md#phase-915-bevdet-vendor) records the command.
+All six root companion cases pass with the complete original library build on
+LLVM/libc++ 21.1.8 and CUDA 13.2.2/TensorRT 10.16.1.11. The five unchanged cases
+cover actual GPU image layout/JPEG decoding, rotated suppression, temporal ring
+storage/reset and four plugin creators. The subsequent consumer gate validates
+native cold/warm inference separately. No upstream CMake or sensor accuracy
+result is claimed by this focused correction.

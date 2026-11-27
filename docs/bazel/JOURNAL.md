@@ -28099,7 +28099,8 @@ CPU Eigen/YAML/JPEG ownership stays explicit. The CMake-only TensorRT discovery
 shim and CCCL search logic are replaced by actual TensorRT/CCCL providers;
 compiling every source verifies those exported header/library effects. Link the
 registry-selected YAML/JPEG shared owners, register the original package index,
-and use no component-to-root label. No source or SDK patch is needed.
+and use no component-to-root label. The initial build needs no SDK or source compatibility patch. The subsequent
+calibration-only constructor correction below prepares valid inference inputs.
 
 ```sh
 env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
@@ -28109,7 +28110,7 @@ env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
 ```
 
 All five selected targets pass: four vendor targets and one native runner with
-five cases, zero failures/errors/skips. The CPU JPEG test encodes a small known
+six cases, zero failures/errors/skips. The CPU JPEG test encodes a small known
 RGB image with the pinned library and decodes it through the original CPU path
 into device BGR planes, allowing bounded JPEG loss. A separate exact-byte case
 checks interleaved-to-planar conversion. Temporal history checks initial priming,
@@ -28127,3 +28128,20 @@ gate is selected. This vendor gate does not claim a model inference result;
 execute the six-camera native model in the following consumer task. Reuse these
 unchanged checks when composing that consumer. This external vendor prerequisite
 does not change the 244-package Universe coverage count.
+
+The actual ROS caller creates camParams from calibration vectors and then calls
+DoInfer without filling ego pose/time. The calibration-only constructor originally
+leaves those fields, camera count and lidar pose indeterminate. A new case records
+N_img=2517481, timestamp=804266768 and non-identity quaternions for a two-camera
+sample. Initialize that overload with the vector's camera count, identity poses,
+zero translations and zero timestamp. Keep the YAML/dataset constructor unchanged.
+The complete command above now passes all six cases, including this regression.
+The model's native cold/warm gate is rerun in the consumer task after this change.
+
+Current autowarefoundation/bevdet_vendor main retains the same constructor;
+scoped pose/initialization PR search finds no matching correction on 2026-11-28.
+See UPSTREAM_AWF.md. These stationary defaults make calibration-only input valid;
+they do not supply vehicle odometry. A caller with motion must populate and update
+that pose explicitly. The ROS adapter currently exposes no per-frame odometry
+input, so moving-vehicle temporal accuracy remains unqualified. No source test is
+moved or modified; the regression stays in the existing root vendor companion.
