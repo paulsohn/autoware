@@ -1,0 +1,5 @@
+cmake_minimum_required(VERSION 3.16)
+project(autoware_lidar_frnet_models NONE)
+find_package(ament_cmake REQUIRED)
+install(FILES README.md deploy_metadata.yaml frnet_ot128.onnx frnet_qt128.onnx ml_package_frnet_ot128.param.yaml ml_package_frnet_qt128.param.yaml SHA256SUMS MODEL_PROVENANCE.md DESTINATION share/${PROJECT_NAME})
+ament_package()

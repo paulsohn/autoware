@@ -26793,3 +26793,56 @@ This qualifies native single-frame FP16 software flow for all four bundles, not
 recognition accuracy, physical calibration, multiple-frame TF/densification,
 FP32/INT8, composable-container/build_only or Agnocast-enabled execution. No
 Fast DDS, simulator or deployment export gate is selected. Next: FRNet.
+
+<a id="phase-914-frnet-models"></a>
+
+## 2026-11-27 — Phase 9.14: FRNet model resources
+
+Purpose: expose OT128/QT128 ONNX weights and sensor-specific metadata through
+one repository-owned model package. Inspect the reference artifact role, HF
+v2.0 immutable revision a53a1c11b0b28d31fd50a03abef5db0e830a5b3c, both LFS
+hashes/sizes and the source launch/YAML substitutions. Each ONNX is 42,394,660
+bytes. Follow the preceding isolated-checkout/hash/object-mirroring/squashed-
+subtree pattern at src/models/lidar_frnet. Preserve source metadata and LFS
+attributes; record immutable provenance and SHA256SUMS in that repository.
+
+The repository owns autoware_lidar_frnet_models, :models/:ament_index and minimal
+colcon/ament_cmake support. Root selects its adjacent override before consumers.
+Remove the standalone launcher's common data_path/HOME default and resolve
+model_path through this index; existing model_name/sensor_model substitutions
+continue to select matching ONNX and ML parameters. Add the source package's
+runtime dependency. No actual autoware_launch FRNet model-path consumer exists
+in this snapshot, so no parent path update is required. Keep reference Ansible/
+repositories and system-designer files unchanged.
+
+Acceptance: all provider targets, two materialized payload hashes/isolated index,
+colcon --symlink-install with both installed model symlinks, and actual XML/YAML
+resolution for both sensor choices. Concrete precision/cache policy and native
+GPU inference belong to the next component gate.
+
+```sh
+(cd src/models/lidar_frnet && sha256sum -c SHA256SUMS)
+git lfs ls-files -l -I 'src/models/lidar_frnet/**'
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_output=errors @autoware_lidar_frnet_models//... \
+  //bazel/tests:frnet_model_resources_test
+# In existing sourced ROS, with isolated build/install prefixes:
+colcon build --base-paths <checkout>/src/models/lidar_frnet \
+  --build-base <temporary>/build --install-base <temporary>/install --symlink-install
+. <temporary>/install/setup.bash
+```
+
+Results: all three provider targets and both inner resource cases pass, zero
+failures/errors/skips. Both materialized ONNX hashes/sizes match immutable HF
+metadata. Existing Jazzy/colcon builds the augmented package; both installed
+weights are symlinks with matching SHA-256 values. Repeat the preceding model
+entries' installed-share SHA256SUMS/is_symlink checks for this package. Parse
+model_path from the actual XML and resolve it with LaunchContext: it equals the
+installed model share. For each sensor_model (ot128, qt128), set model_name=frnet
+and model_path to that share, then resolve onnx_path from the actual source
+frnet.param.yaml and ml_package_param_path from XML using perform_substitutions.
+All four selected weight/metadata paths resolve to existing indexed files.
+The source manifest declares the model runtime dependency. XML/package metadata,
+Python AST and whitespace checks pass. Universe acceptance remains 198/244,
+Phase 9.14 3/7; the native FRNet gate is next.

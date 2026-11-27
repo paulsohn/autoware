@@ -2499,6 +2499,14 @@ its resource check, since this repository has no deploy_metadata.yaml. Colcon
 --symlink-install installs each declared bundle file as a symlink. Keep generated
 engines in caller-owned writable caches.
 
+FRNet's @autoware_lidar_frnet_models index provides OT128/QT128 weights and
+sensor-specific ML metadata. The standalone model_path default uses that index;
+sensor_model selects matching ONNX and metadata. Run
+//bazel/tests:frnet_model_resources_test after editing them. Colcon users build
+the augmented package with --symlink-install and source its environment.
+Keep generated engines in caller-owned storage; precision/profile/cache policy
+belongs to product composition.
+
 ## Apollo LiDAR inference
 
 @autoware_lidar_apollo_instance_segmentation owns the original shared component,

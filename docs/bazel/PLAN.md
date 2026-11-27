@@ -2637,6 +2637,9 @@ four bundles. All nine enabled original cases, eight perception SDK cases and
 four new GPU kernel cases pass; inactive legacy drivers are inventoried
 explicitly. See its [model gate](JOURNAL.md#phase-914-centerpoint-models) and
 [module gate](JOURNAL.md#phase-914-centerpoint). Next: FRNet.
+FRNet model v2.0 revision a53a1c11b0b28d31fd50a03abef5db0e830a5b3c has
+validated OT128/QT128 LFS/index/colcon providers; see its
+[model gate](JOURNAL.md#phase-914-frnet-models). Native acceptance is pending.
 
 Accepted SDK input: keep Eigen 5.0.1.bcr.1 and select the narrowly guarded
 nvcc 13.2/libc++ 21 invocation-trait patch after the independent host/device
