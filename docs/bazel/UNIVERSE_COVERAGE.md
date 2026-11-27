@@ -21,8 +21,8 @@ may contain multiple package commits and smaller execution batches. Update the
 ledger when a package closes or the source snapshot changes; this is a planning
 record, not a new build-time completeness validator.
 
-Current adoption progress, 2026-11-27: **188/244** packages have both definitions
-and root local overrides; **56** remain without definitions. The census table
+Current adoption progress, 2026-11-27: **189/244** packages have both definitions
+and root local overrides; **55** remain without definitions. The census table
 below preserves the initial 2026-11-23 baseline. Checked ledger items record
 completed module gates. See PLAN.md and the
 package journals for configuration and behavior evidence.
@@ -344,7 +344,7 @@ Use command-mode types from 9.3 and the relevant motion providers. Validate gati
 - [x] [autoware_obstacle_collision_checker](../../src/universe/autoware_universe/control/autoware_obstacle_collision_checker/package.xml)
 - [x] [autoware_predicted_path_checker](../../src/universe/autoware_universe/control/autoware_predicted_path_checker/package.xml)
 - [x] [autoware_spheric_collision_detector](../../src/universe/autoware_universe/control/autoware_spheric_collision_detector/package.xml)
-- [ ] [autoware_steer_offset_estimator](../../src/universe/autoware_universe/vehicle/autoware_steer_offset_estimator/package.xml)
+- [x] [autoware_steer_offset_estimator](../../src/universe/autoware_universe/vehicle/autoware_steer_offset_estimator/package.xml)
 - [x] [autoware_stop_mode_operator](../../src/universe/autoware_universe/control/autoware_stop_mode_operator/package.xml)
 
 ### Phase 9.13: Traffic-light model execution and image tracking

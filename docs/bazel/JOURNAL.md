@@ -25212,3 +25212,27 @@ three-mode persistence scenario pass on Cyclone DDS with no skips. Changed C++
 formatting and whitespace checks pass. Commit the matching source correction
 separately from its Bazel declarations; the following package commit records
 the build/index and reproducible synthetic-feedback pattern.
+
+Add the local MODULE/BUILD pair and adjacent versionless root selection. Build
+the original library/component/executable and expose the unchanged original test
+files through cc_test. Use native SDK fmt, expected and yaml-cpp providers instead
+of empty ROS dependency shims; preserve yaml-cpp shared runtime ownership.
+autoware_utils_rclcpp is header-only and needs the actual rclcpp runtime provider,
+not an invented runtime_dynamic_deps target. The package-owned index includes
+its resources and the local global-parameter loader required by its launcher.
+
+Keep added tests outside the source package. Feed constant 5 m/s straight motion
+and a 0.01 rad steering bias; require an estimate near -0.01 rad, reduced
+covariance and writable estimate-log output. Use temporary YAML files for logs
+and accumulated calibration, and shorten only the fixture's reliability/timing
+thresholds. Before reliable data, calibration requests fail. Off mode continues
+to reject requests without changing calibration; manual mode accepts and
+accumulates two updates; auto mode writes without a request. Quote the CLI string
+"off" explicitly so ROS's YAML parser does not interpret it as a boolean.
+
+The exact complete-package command above passes both original and live suites,
+including all three modes, with clean shutdown. No source changes beyond the
+matching upstream compatibility fix are needed. Python syntax and whitespace
+checks pass. Coverage is 189/244, eight of nine Phase 9.12 packages. Next:
+accel/brake map calibration and tools. No Fast DDS, simulator or deployment gate
+is selected.

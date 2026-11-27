@@ -2236,3 +2236,10 @@ DDS. The mixed package has separate core/node C++ providers and generated
 selection also run //bazel/interfaces:descriptor_test, :python_interfaces_test
 and :control_performance_serialization_test. The software fixture checks known
 tracking errors and recovery; vehicle accuracy requires separate measurements.
+
+For steering estimation, run @autoware_steer_offset_estimator//... and
+//bazel/tests/autoware_steer_offset_estimator:runtime_test with Cyclone DDS.
+Keep steer_offset_param_path and calibration_file_path writable and distinct
+from indexed source resources. The fixture uses temporary YAML files for
+estimate logs and accumulated off/manual/auto calibration. Its shortened timing
+thresholds qualify software behavior; use vehicle-qualified settings on hardware.

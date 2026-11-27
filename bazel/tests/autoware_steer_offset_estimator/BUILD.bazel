@@ -1,0 +1,27 @@
+load("@pip_ros//:requirements.bzl", "requirement")
+load("@rules_python//python:defs.bzl", "py_test")
+
+py_test(
+    name = "runtime_test",
+    timeout = "long",
+    srcs = ["test_runtime.py"],
+    main = "test_runtime.py",
+    args = ["$(rootpath @autoware_steer_offset_estimator//:steer_offset_estimator_node)"],
+    data = [
+        "@autoware_steer_offset_estimator//:ament_index",
+        "@autoware_steer_offset_estimator//:steer_offset_estimator_node",
+        "@autoware_test_utils//:ament_index",
+    ],
+    deps = [
+        "@ament_index_python",
+        "@autoware_internal_debug_msgs//:py",
+        "@autoware_vehicle_msgs//:py",
+        "@geometry_msgs//:py",
+        "@rclpy",
+        "@std_srvs//:py",
+        requirement("pyyaml"),
+    ],
+    env = {"LD_LIBRARY_PATH": "lib", "ROS_DOMAIN_ID": "85"},
+    precompile = "disabled",
+    tags = ["no-sandbox", "no-remote"],
+)

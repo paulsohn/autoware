@@ -1,0 +1,82 @@
+load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
+load("@rclcpp_components//:defs.bzl", "rclcpp_components_register_node")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "autoware_steer_offset_estimator",
+    srcs = glob(["src/**/*.cpp"]),
+    hdrs = glob(['include/**/*.hpp', 'src/**/*.hpp']),
+    includes = ["include", "src"],
+    deps = [
+        "@autoware_internal_debug_msgs//:cc",
+        "@autoware_utils_rclcpp",
+        "@autoware_vehicle_info_utils",
+        "@autoware_vehicle_msgs//:cc",
+        "@geometry_msgs//:cc",
+        "@rclcpp//:rclcpp_library",
+        "@rclcpp_components//:rclcpp_components_library",
+        "@std_msgs//:cc",
+        "@std_srvs//:cc",
+        "@tf2//:tf2_library",
+        "@tf2_geometry_msgs//:tf2_geometry_msgs_library",
+        "@rosdistro//cc:fmt",
+        "@rosdistro//cc:tl_expected",
+        "@rosdistro//cc:yaml-cpp_library",
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = [
+        "@rosdistro//cc:yaml-cpp",
+        "@autoware_internal_debug_msgs//:cc_shared",
+        "@autoware_vehicle_msgs//:cc_shared",
+        "@geometry_msgs//:cc_shared",
+        "@rclcpp//:rclcpp",
+        "@rclcpp_components//:rclcpp_components",
+        "@std_msgs//:cc_shared",
+        "@std_srvs//:cc_shared",
+        "@tf2//:tf2",
+        "@tf2_geometry_msgs//:tf2_geometry_msgs",
+    ],
+)
+
+cc_shared_library(
+    name = "component",
+    shared_lib_name = "libautoware_steer_offset_estimator.so",
+    deps = [":autoware_steer_offset_estimator"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+)
+
+rclcpp_components_register_node(
+    name = "steer_offset_estimator_node",
+    component = ":component",
+    node_name = "steer_offset_estimator_node",
+    plugin = "autoware::steer_offset_estimator::SteerOffsetEstimatorNode",
+)
+
+register_ament_files(
+    name = "executables",
+    files = [":steer_offset_estimator_node"],
+    prefix = "lib/autoware_steer_offset_estimator",
+    strip_prefix = "*",
+)
+
+ament_index(
+    package_xml = "package.xml",
+    deps = ["@autoware_global_parameter_loader//:ament_index"],
+    components = [":steer_offset_estimator_node_record"],
+    data = glob(["config/**", "launch/**"]) + [":executables"],
+)
+
+cc_test(
+    name = "test_autoware_steer_offset_estimator",
+    timeout = "long",
+    srcs = glob(["test/*.cpp"]),
+    deps = [":autoware_steer_offset_estimator", "@googletest//:gtest_main"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+    env = {"LD_LIBRARY_PATH": "lib", "ROS_DOMAIN_ID": "80"},
+)
