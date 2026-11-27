@@ -30,7 +30,6 @@
 #include <zlib.h>
 
 #include <algorithm>
-#include <execution>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -155,7 +154,7 @@ Image::SharedPtr get_image(
   if (encoding == "bgr8") {
     std::vector<size_t> indices(image_data.size() / 3);
     std::iota(indices.begin(), indices.end(), 0);
-    std::for_each(std::execution::seq, indices.begin(), indices.end(), [&image_data](size_t i) {
+    std::for_each(indices.begin(), indices.end(), [&image_data](size_t i) {
       std::swap(image_data[i * 3], image_data[i * 3 + 2]);
     });
   }

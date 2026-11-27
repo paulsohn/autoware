@@ -293,9 +293,9 @@ void CalibrationStatusClassifierNode::setup_input_synchronization()
   for (size_t i = 0; i < num_pairs; ++i) {
     cloud_subs_.at(i) =
       std::make_shared<message_filters::Subscriber<sensor_msgs::msg::PointCloud2>>(
-        this, camera_lidar_in_out_info_.at(i).lidar_topic, rmw_qos_profile_sensor_data);
+        this, camera_lidar_in_out_info_.at(i).lidar_topic, rclcpp::SensorDataQoS());
     image_subs_.at(i) = std::make_shared<message_filters::Subscriber<sensor_msgs::msg::Image>>(
-      this, camera_lidar_in_out_info_.at(i).camera_topic, rmw_qos_profile_sensor_data);
+      this, camera_lidar_in_out_info_.at(i).camera_topic, rclcpp::SensorDataQoS());
     preview_image_pubs_.at(i) = this->create_publisher<sensor_msgs::msg::Image>(
       camera_lidar_in_out_info_.at(i).projected_points_topic, rclcpp::SensorDataQoS());
 

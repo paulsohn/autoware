@@ -22,7 +22,12 @@
 #include "autoware/calibration_status_classifier/ros_utils.hpp"
 
 #include <autoware_utils/ros/diagnostics_interface.hpp>
+#include <message_filters/subscriber.hpp>
+#include <message_filters/sync_policies/approximate_time.hpp>
+#include <message_filters/synchronizer.hpp>
 #include <rclcpp/rclcpp.hpp>
+#include <tf2_ros/buffer.hpp>
+#include <tf2_ros/transform_listener.hpp>
 
 #include <autoware_perception_msgs/msg/detected_objects.hpp>
 #include <autoware_perception_msgs/msg/predicted_objects.hpp>
@@ -33,12 +38,6 @@
 #include <sensor_msgs/msg/image.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
 #include <std_srvs/srv/trigger.hpp>
-
-#include <message_filters/subscriber.h>
-#include <message_filters/sync_policies/approximate_time.h>
-#include <message_filters/synchronizer.h>
-#include <tf2_ros/buffer.h>
-#include <tf2_ros/transform_listener.h>
 
 #include <memory>
 #include <mutex>

@@ -2994,3 +2994,25 @@ module, five core cases and real raw/compressed tracking/UUID/annotated-image
 checks, including clean shutdown, pass on Cyclone DDS; see the
 [ByteTrack journal](JOURNAL.md#phase-913-bytetrack) for the exact gate. No upstream
 submission, colcon result or camera accuracy qualification is claimed.
+
+### Calibration-status classifier: Lyrical headers/QoS and sequential test portability
+
+- [ ] Associate with matching AWF corrections. Checked 2026-11-27:
+  [node header](https://github.com/autowarefoundation/autoware_universe/blob/main/sensing/autoware_calibration_status_classifier/include/autoware/calibration_status_classifier/calibration_status_classifier_node.hpp)
+  and camera_lidar_info_collector.hpp still use removed .h forwarders;
+  [synchronization setup](https://github.com/autowarefoundation/autoware_universe/blob/main/sensing/autoware_calibration_status_classifier/src/calibration_status_classifier_node.cpp)
+  passes rmw profiles to the current rclcpp::QoS subscriber API; and
+  [sample helper](https://github.com/autowarefoundation/autoware_universe/blob/main/sensing/autoware_calibration_status_classifier/test/data_utils.hpp)
+  uses std::execution::seq unavailable in the selected libc++. Scoped
+  calibration-status/Lyrical and calibration-status/execution PR searches find
+  no matching correction. The wider Lyrical trackers remain related context.
+
+Use message_filters and tf2_ros .hpp paths, and rclcpp::SensorDataQoS() for the
+same best-effort subscriptions. The sample channel-swap loop is already
+sequential: use the ordinary for_each overload and remove its execution header.
+No algorithm, sample data or assertion changes are required. All 22 original
+cases, including actual CUDA preprocessing and TensorRT calibrated/miscalibrated
+inference, plus a real manual-service/diagnostic/preview node check pass on
+Cyclone DDS. See the [calibration classifier journal](JOURNAL.md#phase-913-calibration-classifier)
+for the full command and no-skip fixtures. No upstream submission, colcon result
+or hardware calibration accuracy is claimed.

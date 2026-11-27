@@ -25567,3 +25567,45 @@ size. No host dependencies are installed or used as Bazel SDK inputs. XML and
 package metadata parse and whitespace checks pass. Model inference and actual
 consumer launch remain the following module's gate; no accuracy claim follows
 from file/index checks. Universe coverage remains 191/244.
+
+<a id="phase-913-calibration-classifier"></a>
+
+## 2026-11-27 — Phase 9.13: Calibration-status classifier
+
+Purpose: adopt all filter, CUDA preprocessing, inference and component libraries,
+the native executable and original config/launch/sample resources. Inventory the
+five original runners before implementation: 14 filter cases, three ROS-helper
+cases, one GPU preprocessing case, two GPU model cases and two full-classifier
+cases. Require all 22 without skips, plus real manual-service/diagnostic/preview
+behavior. The preceding indexed v2.0 model is required; probe CUDA from the same
+host environment used by Bazel tests. Use Cyclone DDS; this node is ordinary
+rclcpp. GPU execution, not compilation alone, is its completion gate.
+
+The build rejects removed message_filters/TF2 .h forwarders and the old
+message_filters rmw-profile constructor arguments. Use current .hpp headers and
+rclcpp::SensorDataQoS(), preserving best-effort sensor semantics. Its original
+sample helper also fails because the selected libc++ does not expose
+std::execution::seq. Remove that policy argument and unused execution header
+from its existing sequential for_each; preserve channel swapping, sample bytes
+and every original assertion. Inspect current AWF main and scoped Lyrical and
+execution-policy PR searches: both header/API and helper issues remain unmatched.
+Commit these demonstrated compatibility fixes separately from build definitions.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  @autoware_calibration_status_classifier//... \
+  //bazel/tests/autoware_calibration_status_classifier:all
+```
+
+Results: all module targets, all five original runners (22 cases) and the added
+live node target pass. CUDA sample preprocessing matches the original tolerances;
+real TensorRT FP16 inference and full sensor preprocessing distinguish calibrated
+and miscalibrated original samples. Root fixtures reject any skipped/empty native
+suite. The live scenario builds a real small dynamic-profile engine, receives
+manual service success, finite diagnostic logits, projected points and an image,
+then rejects another request after its buffered pair is consumed. It shuts down
+cleanly. No failures or skips remain; unchanged original suites are reused in
+the final live rerun. Changed C++ formatting, Python AST and whitespace checks
+pass. No colcon/real-vehicle accuracy or performance qualification is claimed.
