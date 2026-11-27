@@ -118,7 +118,9 @@ only when your current target demonstrates the need.
   [Writable engine caches and caller-owned identity](DEVELOPING.md#common-library-engine-cache);
   [cache failure/invalidation evidence](JOURNAL.md#2026-11-23-phase-652--preserve-the-tensorrt-engine-output-identity);
   [immutable supplied tables and separate engine preparation/inference](DEVELOPING.md#yolox-model-inputs-and-engine-caches);
-  [component mechanisms and product-owned compiler policy](DEVELOPING.md#engine-compilation-policy).
+  [component mechanisms and product-owned compiler policy](DEVELOPING.md#engine-compilation-policy);
+  [concrete preparation profile](DEVELOPING.md#composed-traffic-light-recognition);
+  [pipeline evidence](JOURNAL.md#phase-913-pipeline).
   [Vendor C++ ABI boundaries](DEVELOPING.md#sparse-sdk-and-tensorrt-plugins);
   [evidence: sparse SDK](JOURNAL.md#2026-11-19-phase-641--sparse-convolution-sdk-compatibility).
 - [ ] Declare caller-owned resources for dynamic runtime package selection.
@@ -2581,9 +2583,9 @@ for full commands and the Python entrypoint/index pattern. No selected gate is
 skipped; hardware accuracy, Fast DDS, simulator and deployment checks are outside
 this phase. Next: Phase 9.13, traffic-light model execution and image tracking.
 
-### Phase 9.13: Traffic-light model execution and image tracking (in progress)
+### Phase 9.13: Traffic-light model execution and image tracking (complete)
 
-Progress: 4/5 module gates complete; coverage 194/244 (50 remaining).
+Progress: 5/5 module gates complete; coverage 195/244 (49 remaining).
 
 Start at 190/244 packages. Adopt ByteTrack first, preserving its tracker/wrapper,
 node and visualizer libraries, both components/executables and indexed Kalman
@@ -2601,6 +2603,15 @@ DDS and the actual nodes' backend contracts; no Fast DDS, simulator or deploymen
 export gate is selected. Missing runtime/model prerequisites leave the affected
 module incomplete rather than skipping tests. Commit each accepted module and
 source compatibility fix separately.
+
+Results: all five module gates pass, including their complete original suites
+and live tracking/GPU behavior. The composed pipeline runs whole-image detection,
+map selection and car/pedestrian classifiers on real weights. Its root-owned
+FP16 profile qualifies cold preparation, unchanged warm caches, active execution
+and clean shutdown. Canonical utility/vision owners and package-specific CUDA
+helper SONAMEs permit composition without source algorithm changes. See the
+[pipeline journal](JOURNAL.md#phase-913-pipeline) for commands and limitations.
+Next: Phase 9.14, CUDA sensing and LiDAR model inference.
 
 ### Execution order through complete Universe coverage
 

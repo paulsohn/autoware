@@ -2,8 +2,8 @@
   ros__parameters:
     build_only: false
 
-    # Directory holding the ML artifacts named below. Supplied by the launch file (or `-p`), so
-    # this file names no user-specific path and therefore needs no launch substitution.
+    # Optional prefix for caller-supplied relative artifact names. The indexed
+    # launch overrides each model/label path independently.
     ml_model_path: ""
 
     whole_image_detector:

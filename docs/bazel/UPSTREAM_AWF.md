@@ -3070,7 +3070,7 @@ No upstream submission, older ROS/colcon or recognition-accuracy claim is made.
 
 ### Traffic-light pipeline: expected package and Lyrical subscriptions
 
-Local source correction: see the [pipeline journal](JOURNAL.md#phase-913-pipeline).
+Local source correction: `fe856e36a`; see the [pipeline journal](JOURNAL.md#phase-913-pipeline).
 
 - [x] Associate the expected header/manifest correction with merged
   [AWF PR #13622](https://github.com/autowarefoundation/autoware_universe/pull/13622),

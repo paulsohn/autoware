@@ -2896,3 +2896,28 @@ py_test(
     deps = ["@ament_index_python", "@launch", "@launch_ros", "@launch_xml", "@rules_python//python/runfiles"],
     precompile = "disabled",
 )
+
+filegroup(
+    name = "pipeline_launch_inputs",
+    testonly = True,
+    srcs = [
+        "@autoware_traffic_light_pipeline//:launch/traffic_light_recognition.launch.xml",
+        "@autoware_traffic_light_pipeline//:package.xml",
+    ],
+)
+
+[
+    py_test(
+        name = "pipeline_" + family + "_launch_paths_test",
+        srcs = ["models/test_launch_paths.py"],
+        main = "models/test_launch_paths.py",
+        args = [provider, "$(rlocationpaths :pipeline_launch_inputs)"],
+        data = [":pipeline_launch_inputs", "@" + provider + "//:ament_index"],
+        deps = ["@ament_index_python", "@launch", "@launch_ros", "@launch_xml", "@rules_python//python/runfiles"],
+        precompile = "disabled",
+    )
+    for family, provider in [
+        ("yolox", "autoware_tensorrt_yolox_models"),
+        ("classifier", "autoware_traffic_light_classifier_models"),
+    ]
+]

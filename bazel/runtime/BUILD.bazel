@@ -1,4 +1,5 @@
 load("@tensorrt//:defs.bzl", "tensorrt_cc_binary")
+load("@tensorrt//:pins.bzl", "TENSORRT_VERSION")
 load(":defs.bzl", "executable_template")
 load(":cyclonedds.bzl", "PLANNING_SIMULATOR_CYCLONEDDS_URI")
 load("@launch_ros//:defs.bzl", "launch_ros_binary")
@@ -153,4 +154,21 @@ tensorrt_cc_binary(
     deps = ["@autoware_tensorrt_yolox//:prepare_engine_main"],
     dynamic_deps = ["@autoware_tensorrt_yolox//:preparation_runtime"],
     data = ["@autoware_tensorrt_yolox_models//:ament_index"],
+)
+
+
+expand_template(
+    name = "traffic_light_profile",
+    template = "traffic_light_fp16.json.in",
+    out = "traffic_light_fp16.json",
+    substitutions = {"@TENSORRT_VERSION@": TENSORRT_VERSION},
+)
+
+py_binary(
+    name = "traffic_light_recognition",
+    srcs = ["traffic_light_recognition.py"],
+    main = "traffic_light_recognition.py",
+    data = [":traffic_light_profile", "@autoware_traffic_light_pipeline//:ament_index"],
+    deps = ["@ament_index_python", "@rules_python//python/runfiles"],
+    precompile = "disabled",
 )

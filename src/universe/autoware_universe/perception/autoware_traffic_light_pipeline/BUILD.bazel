@@ -1,0 +1,118 @@
+load("@rclcpp_components//:defs.bzl", "rclcpp_components_register_node")
+load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library")
+load("@tensorrt//:defs.bzl", "tensorrt_cc_binary")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "recognition_library",
+    srcs = ["src/traffic_light_recognition/traffic_light_recognition.cpp"],
+    hdrs = ["src/traffic_light_recognition/traffic_light_recognition.hpp"],
+    includes = ["src"],
+    deps = [
+        "@autoware_tensorrt_yolox//:autoware_tensorrt_yolox_library",
+        "@autoware_traffic_light_category_merger//:autoware_traffic_light_category_merger_library",
+        "@autoware_traffic_light_classifier//:classifier_library",
+        "@autoware_traffic_light_map_based_detector//:autoware_traffic_light_map_based_detector_library",
+        "@autoware_traffic_light_selector//:autoware_traffic_light_selector_library",
+        "@autoware_map_msgs//:cc",
+        "@autoware_planning_msgs//:cc",
+        "@diagnostic_msgs//:cc",
+        "@rosdistro//cc:tl_expected",
+        "@tf2//:tf2_library",
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "sdk_dynamic_deps",
+    dynamic_deps = [
+        "@autoware_tensorrt_yolox",
+        "@autoware_tensorrt_yolox//:gpu_preprocess",
+        "@autoware_tensorrt_yolox//:runtime_dynamic_deps",
+        "@autoware_traffic_light_category_merger//:autoware_traffic_light_category_merger",
+        "@autoware_traffic_light_classifier",
+        "@autoware_traffic_light_classifier//:sdk_dynamic_deps",
+        "@autoware_traffic_light_map_based_detector//:autoware_traffic_light_map_based_detector",
+        "@autoware_traffic_light_map_based_detector//:sdk_dynamic_deps",
+        "@autoware_traffic_light_selector//:autoware_traffic_light_selector",
+        "@autoware_traffic_light_selector//:sdk_dynamic_deps",
+        "@autoware_map_msgs//:cc_shared",
+        "@autoware_planning_msgs//:cc_shared",
+        "@diagnostic_msgs//:cc_shared",
+        "@message_filters//:message_filters",
+        "@rclcpp_components//:rclcpp_components",
+        "@sensor_msgs//:cc_shared",
+        "@tf2//:tf2",
+        "@tf2_ros//:tf2_ros",
+        "@tier4_perception_msgs//:cc_shared",
+    ],
+)
+
+cc_shared_library(
+    name = "autoware_traffic_light_recognition",
+    shared_lib_name = "libautoware_traffic_light_recognition.so",
+    deps = [":recognition_library"],
+    dynamic_deps = [":sdk_dynamic_deps"],
+)
+
+cc_library(
+    name = "node_library",
+    srcs = ["src/traffic_light_recognition/traffic_light_recognition_node.cpp"],
+    hdrs = ["src/traffic_light_recognition/traffic_light_recognition_node.hpp"],
+    includes = ["src"],
+    deps = [
+        ":recognition_library",
+        "@message_filters//:message_filters_library",
+        "@rclcpp_components//:rclcpp_components_library",
+        "@tf2_ros//:tf2_ros_library",
+    ],
+)
+
+cc_shared_library(
+    name = "autoware_traffic_light_recognition_node",
+    shared_lib_name = "libautoware_traffic_light_recognition_node.so",
+    deps = [":node_library"],
+    dynamic_deps = [":autoware_traffic_light_recognition", ":sdk_dynamic_deps"],
+)
+
+rclcpp_components_register_node(
+    name = "traffic_light_recognition_native",
+    node_name = "traffic_light_recognition_node",
+    component = ":autoware_traffic_light_recognition_node",
+    plugin = "autoware::traffic_light::TrafficLightRecognitionNode",
+)
+
+tensorrt_cc_binary(
+    name = "traffic_light_recognition_node",
+    srcs = [":traffic_light_recognition_native_main.cpp"],
+    deps = ["@rclcpp_components//:rclcpp_components_library"],
+    dynamic_deps = [
+        ":autoware_traffic_light_recognition_node",
+        ":autoware_traffic_light_recognition",
+        ":sdk_dynamic_deps",
+    ],
+)
+
+register_ament_files(
+    name = "executables",
+    files = [":traffic_light_recognition_node"],
+    prefix = "lib/autoware_traffic_light_pipeline",
+    strip_prefix = "*",
+)
+
+ament_index(
+    package_xml = "package.xml",
+    libraries = [":autoware_traffic_light_recognition", ":autoware_traffic_light_recognition_node"],
+    components = [":traffic_light_recognition_native_record"],
+    data = glob(["config/**", "launch/**"]) + [":executables"],
+    deps = [
+        "@autoware_tensorrt_yolox//:ament_index",
+        "@autoware_traffic_light_classifier//:ament_index",
+        "@autoware_tensorrt_yolox_models//:ament_index",
+        "@autoware_traffic_light_classifier_models//:ament_index",
+    ],
+)
+
+exports_files(["test/test_traffic_light_recognition_node.cpp", "launch/traffic_light_recognition.launch.xml"])

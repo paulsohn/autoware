@@ -26194,7 +26194,7 @@ env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
   //bazel/tests/autoware_traffic_light_fine_detector:all
 ```
 
-Results: all 73 package/product targets and all 13 selected test targets pass.
+Results: all 74 selected build/test targets pass, including all 13 test targets.
 The final aggregate invocation reuses unchanged passing artifacts: classifier
 60 original cases plus four live GPU profiles and two HSV XML launches;
 fine detector six original cases plus both exact/approximate GPU XML profiles;
@@ -26225,3 +26225,9 @@ The census finds 244 packages, 195 MODULE/BUILD pairs and 195 corresponding root
 overrides. All five Phase 9.13 gates are complete, with 49 Universe packages
 remaining. No Fast DDS, simulator or deployment export check is selected.
 The next phase is 9.14, CUDA sensing and LiDAR model inference.
+
+Source compatibility commit: fe856e36a. The following integration commit records
+the package-local MODULE/BUILD, adjacent root override, indexed model launcher,
+root-owned FP16 profile and root-only verification companions. PLAN.md and the
+coverage ledger close Phase 9.13 at 195/244; developer instructions describe
+steady-state preparation/run commands and the SDK/Python process boundary.

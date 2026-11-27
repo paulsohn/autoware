@@ -1817,6 +1817,13 @@ under bazel/tests/, and set timeout="long" for genuine multi-minute model builds
 The wrapper must preserve native exit/XML results and keep engine-cache outputs
 in writable temporary storage.
 
+Do not import libc++-built Python ROS bindings into that vendor-preloaded fixture
+process. Run a ROS probe as a separate declared Python binary with LD_PRELOAD
+removed, while retaining SDK setup for native children. The traffic-light
+pipeline companion demonstrates this boundary: its in-process rclpy probe
+aborted with InvalidHandle under the GNU preload, while the isolated probe
+verifies service responses and clean shutdown in the normal ROS environment.
+
 Use tensorrt_cc_binary from the same defs.bzl for a standalone native preparation
 tool needing that SDK/ABI runtime environment. It forwards command-line arguments
 and exit status without assuming GTest XML is present. Declare model/provider
@@ -1849,7 +1856,8 @@ profiles, precision, optimization shapes, plugins and calibration settings/input
 The current loader checks its SDK header and declared IO/shape profiles; it does
 not compare model contents or every builder option. Reusing a path for a changed,
 same-shaped model can silently reuse the old engine. Product configuration owns
-that identity; automatic content-addressed cache selection is not implemented.
+that identity; the common library does not choose a content-addressed cache
+automatically. Concrete product profiles may provide that selection.
 
 By default TrtCommon retains build-on-miss behavior: a short version header
 triggers rebuilding, while a matching header with an invalid serialized body is
@@ -2377,3 +2385,55 @@ inputs. Run //bazel/tests:fine_detector_model_resources_test and
 launcher edits also run :traffic_classifier_launch_paths_test and
 :yolox_launch_paths_test. The traffic-light launch graph uses each model
 repository's index and has no common data_path argument.
+
+## Composed traffic-light recognition
+
+Use @autoware_traffic_light_pipeline for the reusable recognition API and
+indexed component/native executable. Its configuration accepts separate model,
+label and precision inputs; source packages do not select a product profile.
+The original XML resolves each model repository independently through ament.
+As with other model-adjacent JIT entrypoints, use writable model copies when
+invoking that XML; indexed inputs are immutable.
+
+The root-owned traffic_light_recognition product selects the whole-image YOLOX
+model and the car/pedestrian batch-six classifiers with explicit FP16 settings.
+Prepare engines before activation, then run the same selected profile:
+
+```sh
+bazel run --config=runtime --config=no-agnocast \
+  //bazel/runtime:traffic_light_recognition -- \
+  --cache-dir /tmp/traffic-light-cache --prepare-only
+bazel run --config=runtime --config=no-agnocast \
+  //bazel/runtime:traffic_light_recognition -- --cache-dir /tmp/traffic-light-cache
+```
+
+Choose a writable cache root dedicated to the target GPU and SDK and permit
+only one writer per cache. Within it, the product fingerprints the declared
+TensorRT version, parameter file, ROI label remap and all selected ONNX/label
+contents. It stages inputs under that profile identity, leaving model indexes
+unchanged. GPU/driver compatibility and cache-root selection remain the caller's
+responsibility; the fingerprint does not discover or qualify hardware. The
+backend retains JIT generation on cache miss. This is a runnable preparation
+profile, not an engine-producing Bazel action or an inference-only distribution.
+The active process exposes the component's private input/output topics; connect
+image, camera info, vector map and TF before expecting recognition output.
+
+Validate all module targets and its root companion with Cyclone DDS:
+
+```sh
+bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  @autoware_traffic_light_pipeline//... \
+  //bazel/tests/autoware_traffic_light_pipeline:all \
+  //bazel/tests:pipeline_yolox_launch_paths_test \
+  //bazel/tests:pipeline_classifier_launch_paths_test
+```
+
+Keep shared traffic-light utilities in
+@autoware_traffic_light_utils//:shared when composing classifiers and map
+recognition. For a legacy math-constant include, use
+@autoware_utils//:math_constants (or @autoware_utils_math//:constants for the
+current include). The broad utility facade includes compiled implementations;
+adding it solely for a header can give independent component DSOs duplicate
+static ownership. Keep the broader diagnostic dependency on the node that uses
+it, rather than importing it into the model-classifier core.

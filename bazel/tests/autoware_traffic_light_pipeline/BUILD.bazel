@@ -1,0 +1,47 @@
+load("@rules_python//python:defs.bzl", "py_binary")
+load("@tensorrt//:defs.bzl", "tensorrt_cc_test")
+
+py_binary(
+    name = "with_models",
+    testonly = True,
+    srcs = ["with_models.py"],
+    main = "with_models.py",
+    deps = ["@rules_python//python/runfiles"],
+    data = [":check_product", "//bazel/runtime:traffic_light_recognition"],
+    precompile = "disabled",
+)
+
+py_binary(
+    name = "check_product",
+    testonly = True,
+    srcs = ["check_product.py"],
+    main = "check_product.py",
+    deps = ["@rclpy", "@rcl_interfaces//:py"],
+    precompile = "disabled",
+)
+
+tensorrt_cc_test(
+    name = "pipeline_test",
+    srcs = [
+        "test_pipeline.cpp",
+        "@autoware_traffic_light_pipeline//:test/test_traffic_light_recognition_node.cpp",
+    ],
+    deps = [
+        "@autoware_traffic_light_pipeline//:node_library",
+        "@ament_index_cpp//:ament_index_cpp_library",
+        "@autoware_cuda_utils",
+        "@autoware_lanelet2_utils",
+        "@autoware_lanelet2_extension//:autoware_lanelet2_extension_lib_library",
+        "@cv_bridge//:cv_bridge_library",
+        "@geometry_msgs//:cc",
+        "@googletest//:gtest",
+    ],
+    dynamic_deps = [
+        "@autoware_traffic_light_pipeline//:autoware_traffic_light_recognition_node",
+        "@autoware_traffic_light_pipeline//:autoware_traffic_light_recognition",
+        "@autoware_traffic_light_pipeline//:sdk_dynamic_deps",
+    ],
+    data = ["@autoware_traffic_light_pipeline//:ament_index"],
+    run_under = ":with_models",
+    timeout = "long",
+)

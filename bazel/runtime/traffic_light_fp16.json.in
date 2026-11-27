@@ -1,0 +1,5 @@
+{
+  "profile": "traffic-light-fp16",
+  "precision": "fp16",
+  "tensorrt": "@TENSORRT_VERSION@"
+}

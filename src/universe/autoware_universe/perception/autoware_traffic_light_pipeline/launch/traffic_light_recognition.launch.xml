@@ -6,7 +6,12 @@
        Composition into tier4_perception_launch's traffic_light_node_container.launch.py is out of
        scope for this package. -->
 
-  <arg name="data_path" default="$(env HOME)/autoware_data" description="packages data and artifacts directory path"/>
+  <arg name="whole_image_detector/model_path" default="$(find-pkg-share autoware_tensorrt_yolox_models)/yolox_s_car_ped_tl_detector_960_960_batch_1.onnx"/>
+  <arg name="whole_image_detector/label_path" default="$(find-pkg-share autoware_tensorrt_yolox_models)/car_ped_tl_detector_labels.txt"/>
+  <arg name="car_classifier/model_path" default="$(find-pkg-share autoware_traffic_light_classifier_models)/traffic_light_classifier_mobilenetv2_batch_6.onnx"/>
+  <arg name="car_classifier/label_path" default="$(find-pkg-share autoware_traffic_light_classifier_models)/lamp_labels.txt"/>
+  <arg name="pedestrian_classifier/model_path" default="$(find-pkg-share autoware_traffic_light_classifier_models)/ped_traffic_light_classifier_mobilenetv2_batch_6.onnx"/>
+  <arg name="pedestrian_classifier/label_path" default="$(find-pkg-share autoware_traffic_light_classifier_models)/lamp_labels_ped.txt"/>
 
   <!-- Which camera this instance runs on. Only the four camera-specific topic defaults below
        depend on it, so a second instance is `camera_name:=camera7`. The output names are the ones
@@ -33,8 +38,13 @@
     <param from="$(var config_path)"/>
     <param name="build_only" value="$(var build_only)"/>
 
-    <!-- The model / label file names themselves live in the config file, relative to this. -->
-    <param name="ml_model_path" value="$(var data_path)"/>
+    <!-- Each model repository supplies its own indexed inputs. -->
+    <param name="whole_image_detector.model_path" value="$(var whole_image_detector/model_path)"/>
+    <param name="whole_image_detector.label_path" value="$(var whole_image_detector/label_path)"/>
+    <param name="car_classifier.model_path" value="$(var car_classifier/model_path)"/>
+    <param name="car_classifier.label_path" value="$(var car_classifier/label_path)"/>
+    <param name="pedestrian_classifier.model_path" value="$(var pedestrian_classifier/model_path)"/>
+    <param name="pedestrian_classifier.label_path" value="$(var pedestrian_classifier/label_path)"/>
     <param name="whole_image_detector.roi_remap_path" value="$(var whole_image_detector/roi_remap_path)"/>
 
     <remap from="~/input/image" to="$(var input/image)"/>

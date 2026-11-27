@@ -40,6 +40,9 @@
   <test_depend>geometry_msgs</test_depend>
   <test_depend>lanelet2_core</test_depend>
 
+  <exec_depend>autoware_tensorrt_yolox_models</exec_depend>
+  <exec_depend>autoware_traffic_light_classifier_models</exec_depend>
+
   <export>
     <build_type>ament_cmake</build_type>
   </export>
