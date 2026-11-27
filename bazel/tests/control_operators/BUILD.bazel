@@ -1,4 +1,5 @@
 load("@rules_python//python:defs.bzl", "py_test")
+load("@rules_cc//cc:defs.bzl", "cc_test")
 
 py_test(
     name = "stop_runtime_test",
@@ -20,4 +21,44 @@ py_test(
     env = {"LD_LIBRARY_PATH": "lib", "ROS_DOMAIN_ID": "81"},
     precompile = "disabled",
     tags = ["no-sandbox", "no-remote"],
+)
+
+py_test(
+    name = "gate_runtime_test",
+    timeout = "long",
+    srcs = ["test_gate.py"],
+    main = "test_gate.py",
+    args = [
+        "$(rootpath @autoware_control_command_gate//:control_command_gate_node)",
+        "$(rootpath @agnocast_heaphook)",
+    ],
+    data = [
+        "@autoware_control_command_gate//:ament_index",
+        "@autoware_control_command_gate//:control_command_gate_node",
+        "@autoware_test_utils//:ament_index",
+        "@agnocast_heaphook",
+    ],
+    deps = [
+        "@ament_index_python",
+        "@autoware_control_msgs//:py",
+        "@autoware_vehicle_msgs//:py",
+        "@diagnostic_msgs//:py",
+        "@geometry_msgs//:py",
+        "@nav_msgs//:py",
+        "@rclpy",
+        "@tier4_control_msgs//:py",
+        "@tier4_external_api_msgs//:py",
+        "@tier4_system_msgs//:py",
+    ],
+    env = {"LD_LIBRARY_PATH": "lib", "ROS_DOMAIN_ID": "82"},
+    precompile = "disabled",
+    tags = ["no-sandbox", "no-remote"],
+)
+
+cc_test(
+    name = "gate_filter_test",
+    srcs = ["test_gate_filter.cpp"],
+    deps = ["@autoware_control_command_gate", "@googletest//:gtest_main"],
+    dynamic_deps = ["@autoware_control_command_gate//:runtime_dynamic_deps"],
+    env = {"LD_LIBRARY_PATH": "lib"},
 )

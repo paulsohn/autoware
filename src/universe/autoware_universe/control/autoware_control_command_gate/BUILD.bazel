@@ -1,0 +1,81 @@
+load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
+load("@autoware_agnocast_wrapper//:defs.bzl", "autoware_agnocast_node")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "autoware_control_command_gate",
+    srcs = glob(["src/**/*.cpp"]),
+    hdrs = glob(['src/**/*.hpp']),
+    includes = ["include", "src"],
+    deps = [
+        "@autoware_agnocast_wrapper//:autoware_agnocast_wrapper_library",
+        "@autoware_command_mode_types",
+        "@autoware_component_interface_specs_universe",
+        "@autoware_component_interface_utils",
+        "@autoware_control_msgs//:cc",
+        "@autoware_motion_utils",
+        "@autoware_vehicle_cmd_gate//:cc",
+        "@autoware_vehicle_info_utils",
+        "@autoware_vehicle_msgs//:cc",
+        "@diagnostic_updater//:diagnostic_updater_library",
+        "@geometry_msgs//:cc",
+        "@nav_msgs//:cc",
+        "@rclcpp//:rclcpp_library",
+        "@rclcpp_components//:rclcpp_components_library",
+        "@tier4_control_msgs//:cc",
+        "@tier4_external_api_msgs//:cc",
+        "@tier4_system_msgs//:cc",
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = [
+        "@autoware_agnocast_wrapper//:autoware_agnocast_wrapper",
+        "@autoware_component_interface_specs_universe//:runtime_dynamic_deps",
+        "@autoware_component_interface_utils//:runtime_dynamic_deps",
+        "@autoware_control_msgs//:cc_shared",
+        "@autoware_motion_utils//:runtime_dynamic_deps",
+        "@autoware_vehicle_cmd_gate//:cc_shared",
+        "@autoware_vehicle_msgs//:cc_shared",
+        "@diagnostic_updater//:diagnostic_updater",
+        "@geometry_msgs//:cc_shared",
+        "@nav_msgs//:cc_shared",
+        "@rclcpp//:rclcpp",
+        "@rclcpp_components//:rclcpp_components",
+        "@tier4_control_msgs//:cc_shared",
+        "@tier4_external_api_msgs//:cc_shared",
+        "@tier4_system_msgs//:cc_shared",
+    ],
+)
+
+cc_shared_library(
+    name = "component",
+    shared_lib_name = "libautoware_control_command_gate.so",
+    deps = [":autoware_control_command_gate"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+)
+
+autoware_agnocast_node(
+    name = "control_command_gate_node",
+    component = ":component",
+    plugin = "autoware::control_command_gate::ControlCmdGate",
+    package_name = "autoware_control_command_gate",
+    agnocast_only = False,
+)
+
+register_ament_files(
+    name = "executables",
+    files = [":control_command_gate_node"],
+    prefix = "lib/autoware_control_command_gate",
+    strip_prefix = "*",
+)
+
+ament_index(
+    package_xml = "package.xml",
+    components = [":control_command_gate_node_components"],
+    data = glob(["config/**", "launch/**"]) + [":executables", ":control_command_gate_node_plugin"],
+)

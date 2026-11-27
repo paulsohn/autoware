@@ -2198,3 +2198,28 @@ package/companion gates. Qualify either planner's :transport_test again on nativ
 Agnocast with --config=runtime --run_under=//bazel/agnocast:with_heaphook and
 --test_env=ENABLE_AGNOCAST=1 after preparing its runtime prerequisites. These
 focused gates do not require simulator or deployment exports.
+
+## Collision checkers and control operators
+
+After changes, run the affected package's complete @module//... targets with
+--config=runtime --config=no-agnocast and Cyclone DDS, plus its root companion:
+
+| Package | Companion |
+| --- | --- |
+| autoware_obstacle_collision_checker | //bazel/tests/collision_checkers:obstacle_runtime_test |
+| autoware_spheric_collision_detector | //bazel/tests/collision_checkers:spheric_runtime_test |
+| autoware_predicted_path_checker | //bazel/tests/collision_checkers:predicted_runtime_test |
+| autoware_stop_mode_operator | //bazel/tests/control_operators:stop_runtime_test |
+| autoware_control_command_gate | //bazel/tests/control_operators:gate_filter_test and :gate_runtime_test |
+
+The collision fixtures supply TF during startup because these constructors wait
+for a pose. The spheric upstream runner has zero assertions; its live 3D check
+is part of the acceptance gate. The predicted-path fixture includes the actual
+stop service and retained state feedback. Stop-mode checks cover route eligibility,
+continuous stopped duration and feedback expiry.
+
+For command-gate changes, also run its :gate_runtime_test with --config=runtime
+--test_env=ENABLE_AGNOCAST=1 after preparing /dev/agnocast. Its fixture applies the
+declared heaphook only to the native child; do not add --run_under to this Python
+driver. Both executor profiles preserve the node's ROS endpoints. Focused package
+checks do not require simulator or deployment exports.

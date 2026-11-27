@@ -25027,3 +25027,42 @@ env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
   //bazel/tests/control_operators:gate_filter_test \
   //bazel/tests/control_operators:gate_runtime_test
 ```
+
+Add package-local MODULE/BUILD declarations and an adjacent versionless root
+selection. Use the generated IsFilterActivated :cc/:cc_shared providers directly
+from the mixed vehicle-command-gate package: this consumer does not need that
+package's node implementation. Preserve canonical ROS/utility runtime owners.
+Register the original class with autoware_agnocast_node(agnocast_only=False),
+matching its rclcpp::Node API and CallbackIsolatedAgnocastExecutor, with the
+original SingleThreadedExecutor fallback. Index its default parameters, launch,
+executable, component and wrapper plugin records inside the package boundary.
+
+The external peer requires builtin emergency output, rejection of invalid and
+stale sources, successful main/local selection, auxiliary commands, filter
+switching, pause/moderate-stop/emergency override and release, and fallback when
+nonfinite commands no longer refresh the selected input. Wait for a timeout
+status containing a measured duration; diagnostic_updater's initial startup OK
+message does not establish fresh input. Preserve default filtering and timeouts.
+The independent C++ case exercises symmetric clipping above half-pi.
+
+```sh
+# Probe and run from the same environment used for the enabled check.
+stat /dev/agnocast
+cat /sys/module/agnocast/version
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --local_test_jobs=1 --test_env=ENABLE_AGNOCAST=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  //bazel/tests/control_operators:gate_runtime_test
+```
+
+The device reports 2.4.1. Preloading the Python launcher itself fails during
+Agnocast process registration. Follow the existing Python-driver convention:
+pass the declared heaphook path to the fixture, preload only the node subprocess,
+and leave the ROS peer unpreloaded. The executable's startup log must identify
+the requested executor mode in both runs. The same command scenario then passes
+with ENABLE_AGNOCAST=1 and again with the ROS fallback; the half-pi case and every
+module target pass. No failures or skips remain. This node's communication uses
+its original ROS endpoints in both executor profiles. Python syntax, changed C++
+formatting and whitespace checks pass. Coverage is 186/244, five of nine packages.
+Next: joystick and control-performance analysis. No Fast DDS, simulator or
+deployment gate is selected.
