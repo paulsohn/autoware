@@ -25182,3 +25182,33 @@ source remains unchanged; Python syntax and whitespace checks pass. Coverage is
 188/244, seven of nine Phase 9.12 gates. These deterministic software checks do
 not establish real-vehicle control performance. Next: steering-offset and
 accel/brake calibration. No Fast DDS, simulator or deployment gate is selected.
+
+## 2026-11-27 — Phase 9.12: Steering-offset estimator
+
+Purpose: adopt the estimator, utility and node sources, original 14-case suite,
+component/executable, configuration and launcher. Qualify its complete algorithm
+suite and real estimate/persistence behavior in off, manual and auto modes.
+No physical steering-calibration accuracy is claimed by these software gates.
+
+The compile fails first on rclcpp/rclcpp/time.hpp, then on the obsolete
+tl_expected/expected.hpp wrapper. Inspect current AWF main, Lyrical tracker
+#13620 and the actual four-package-file diff of merged PR #13622, merge commit
+c992af10f4c463fda78a06348c139357b9f195ad (checked 2026-11-27). Align exactly
+with that correction: use rclcpp/time.hpp, rclcpp/duration.hpp and tl/expected.hpp,
+and replace tl_expected with libexpected-dev in package.xml. The expected type
+and original algorithm/assertions remain unchanged. Bazel uses the pinned native
+SDK expected provider; this does not install a host package.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  @autoware_steer_offset_estimator//... \
+  //bazel/tests/autoware_steer_offset_estimator:runtime_test
+```
+
+Results: every module target, all 14 original cases and the external live
+three-mode persistence scenario pass on Cyclone DDS with no skips. Changed C++
+formatting and whitespace checks pass. Commit the matching source correction
+separately from its Bazel declarations; the following package commit records
+the build/index and reproducible synthetic-feedback pattern.

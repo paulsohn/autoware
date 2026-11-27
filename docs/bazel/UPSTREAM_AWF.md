@@ -2911,3 +2911,20 @@ acos(0.0F), and the full module build plus ROS command behavior pass. See the
 [command-gate journal](JOURNAL.md#2026-11-27-phase-912--control-command-gate)
 for exact commands and executor results. Source correction is separate from
 Bazel declarations; no upstream submission or older ROS/colcon result is claimed.
+
+### Steering-offset estimator: matching upstream Lyrical headers
+
+- [x] Matched to merged [AWF PR #13622](https://github.com/autowarefoundation/autoware_universe/pull/13622),
+  merge commit c992af10f4c463fda78a06348c139357b9f195ad. Checked 2026-11-27:
+  inspect its actual four steering-package file patches and current main.
+
+The local build rejects rclcpp/rclcpp/time.hpp and the obsolete
+tl_expected/expected.hpp. Use the current public rclcpp time/duration paths and
+tl/expected.hpp; update the manifest from tl_expected to libexpected-dev.
+These changes match that PR's steering-package scope, including its rclcpp path
+corrections. Preserve the estimator and all original assertions. Bazel supplies
+the native expected headers from its pinned SDK. All 14 original tests, the
+complete module build and off/manual/auto live persistence checks pass locally;
+see the [steering journal](JOURNAL.md#2026-11-27-phase-912--steering-offset-estimator).
+Source compatibility is committed separately from the build definitions.
+No local colcon or physical-vehicle validation is claimed.
