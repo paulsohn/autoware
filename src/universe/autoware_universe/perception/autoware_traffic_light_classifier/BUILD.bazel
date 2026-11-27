@@ -12,12 +12,12 @@ cc_library(
     hdrs = glob(["include/**/*.hpp", "src/classifier/*.hpp"]) + ["src/traffic_light_classifier_process.hpp"],
     includes = ["include", "src"],
     defines = ["ENABLE_GPU"],
-    deps = ["@autoware_tensorrt_classifier//:autoware_tensorrt_classifier_library", "@autoware_traffic_light_utils", "@autoware_utils", "@cv_bridge//:cv_bridge_library", "@rclcpp//:rclcpp_library", "@rosdistro//cc:boost.algorithm", "@rosdistro//cc:opencv_library", "@tier4_perception_msgs//:cc"],
+    deps = ["@autoware_tensorrt_classifier//:autoware_tensorrt_classifier_library", "@autoware_traffic_light_utils", "@autoware_utils//:math_constants", "@cv_bridge//:cv_bridge_library", "@rclcpp//:rclcpp_library", "@rosdistro//cc:boost.algorithm", "@rosdistro//cc:opencv_library", "@tier4_perception_msgs//:cc"],
 )
 
 collect_transitive_dynamic_deps(
     name = "sdk_dynamic_deps",
-    dynamic_deps = ["@ament_index_cpp//:ament_index_cpp", "@autoware_tensorrt_classifier", "@autoware_tensorrt_classifier//:gpu_preprocess", "@autoware_tensorrt_common", "@autoware_traffic_light_utils//:runtime_dynamic_deps", "@autoware_utils//:runtime_dynamic_deps", "@cv_bridge//:cv_bridge", "@diagnostic_msgs//:cc_shared", "@image_transport//:image_transport", "@message_filters//:message_filters", "@rclcpp_components//:rclcpp_components", "@rosdistro//cc:opencv", "@sensor_msgs//:cc_shared", "@tier4_perception_msgs//:cc_shared"],
+    dynamic_deps = ["@ament_index_cpp//:ament_index_cpp", "@autoware_tensorrt_classifier", "@autoware_tensorrt_classifier//:gpu_preprocess", "@autoware_tensorrt_common", "@autoware_traffic_light_utils//:runtime_dynamic_deps", "@autoware_traffic_light_utils//:shared", "@autoware_utils//:runtime_dynamic_deps", "@cv_bridge//:cv_bridge", "@diagnostic_msgs//:cc_shared", "@image_transport//:image_transport", "@message_filters//:message_filters", "@rclcpp_components//:rclcpp_components", "@rosdistro//cc:opencv", "@sensor_msgs//:cc_shared", "@tier4_perception_msgs//:cc_shared"],
 )
 
 cc_shared_library(
@@ -32,7 +32,7 @@ cc_library(
     srcs = ["src/classifier_params.cpp", "src/traffic_light_classifier_node.cpp"],
     hdrs = ["src/classifier_params.hpp", "src/traffic_light_classifier_node.hpp"],
     includes = ["src"],
-    deps = [":classifier_library", "@diagnostic_msgs//:cc", "@image_transport//:image_transport_library", "@message_filters//:message_filters_library", "@rclcpp_components//:rclcpp_components_library"],
+    deps = [":classifier_library", "@autoware_utils", "@diagnostic_msgs//:cc", "@image_transport//:image_transport_library", "@message_filters//:message_filters_library", "@rclcpp_components//:rclcpp_components_library"],
 )
 
 cc_shared_library(

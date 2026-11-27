@@ -26057,3 +26057,21 @@ using the preceding [math-provider command](#phase-913-math-constants).
 All targets and nine test runners pass without skips. This pattern separates
 header-only API access from compiled implementation ownership; it does not
 require changing the source include or adding a dependency on another consumer.
+
+<a id="phase-913-classifier-composition"></a>
+
+## 2026-11-27 — Phase 9.13 prerequisite: Composable classifier utility closure
+
+Purpose: make the classifier core coexist with the map detector in a composed
+recognition library. Select @autoware_traffic_light_utils//:shared in its SDK
+closure. Replace the core's umbrella @autoware_utils compile dependency with
+:math_constants, matching its only legacy utility include. Declare the broader
+facade directly on node_library, which actually uses its diagnostics interface.
+Keep the same libraries, component indexes, executables and original sources.
+
+Verify with the full [math/facade/classifier command](#phase-913-math-constants).
+All package targets and nine test runners pass: 40 math and 60 original
+classifier cases, four live GPU profiles and both original HSV XML launches.
+No skips or failures remain. The earlier joint map/utility gate also passed
+all 24 original map-detector cases and both shared-utility cases. These are
+package-level results; the composed pipeline remains the next acceptance gate.
