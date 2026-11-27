@@ -61,6 +61,10 @@ only when your current target demonstrates the need.
   [evidence: local source selection](JOURNAL.md#2026-11-26-root-local-dependencies-without-placeholder-versions);
   [published external providers](JOURNAL.md#2026-11-22-phase-732--published-angles-dependency);
   [evidence: local interface adoption](JOURNAL.md#2026-11-17-local-interface-adoption--autoware_adapi_v1_msgs).
+- [ ] Distinguish Python commands from importable helpers and keep mutable
+  outputs outside indexed source resources.
+  [Python entrypoints and indexed resources](DEVELOPING.md#python-entrypoints-and-indexed-resources);
+  [evidence: calibration tools](JOURNAL.md#phase-912-calibrator).
 - [ ] Establish source-preservation and added-test locations.
   [Evidence: tests outside component packages](JOURNAL.md#2026-11-17-keep-added-integration-tests-outside-component-packages).
 - [ ] Separate component ownership from product-level composition.
@@ -2544,7 +2548,7 @@ The behavior plugin uses the smaller sampling providers directly. Its direct pla
 qualifies actual sampling independently from clear-road manager activation;
 no additional behavior-path executable registration is required.
 
-### Phase 9.12: Control gates, operators and calibration tools (in progress)
+### Phase 9.12: Control gates, operators and calibration tools (complete)
 
 Adopt all nine ledger packages in four execution groups: collision checking
 (obstacle, spheric, predicted path); command gate and stop-mode operator;
@@ -2558,7 +2562,20 @@ commands, performance metrics, and deterministic calibration data/tools. Real
 vehicle calibration accuracy is outside these software gates. No Fast DDS,
 simulator or deployment gate is selected. Coverage starts at 181/244.
 
-Progress: 8/9 package gates complete; current coverage 189/244 (55 remaining).
+All nine complete module gates pass. Coverage is 190/244 (54 remaining).
+Collision checks include real clear/collision/recovery behavior; command/operator
+checks cover source arbitration, filtering, stop and expiry. The command gate
+also passes its selected ROS-aware Agnocast executor profile with child-only heap
+hook preload. All four joystick configurations, analytical performance metrics
+and steering off/manual/auto persistence pass. Calibration replay verifies changed
+raw/occupancy maps and CSV exports; reporting, original helper publishers,
+service/client and the actual XML launch pass. Its scientific tools share the
+pinned generic SciPy provider with acados. Preserve the two demonstrated
+calibrator correctness/path fixes separately from build rules. See the
+[calibrator journal](JOURNAL.md#phase-912-calibrator)
+for full commands and the Python entrypoint/index pattern. No selected gate is
+skipped; hardware accuracy, Fast DDS, simulator and deployment checks are outside
+this phase. Next: Phase 9.13, traffic-light model execution and image tracking.
 
 ### Execution order through complete Universe coverage
 

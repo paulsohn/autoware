@@ -21,8 +21,8 @@ may contain multiple package commits and smaller execution batches. Update the
 ledger when a package closes or the source snapshot changes; this is a planning
 record, not a new build-time completeness validator.
 
-Current adoption progress, 2026-11-27: **189/244** packages have both definitions
-and root local overrides; **55** remain without definitions. The census table
+Current adoption progress, 2026-11-27: **190/244** packages have both definitions
+and root local overrides; **54** remain without definitions. The census table
 below preserves the initial 2026-11-23 baseline. Checked ledger items record
 completed module gates. See PLAN.md and the
 package journals for configuration and behavior evidence.
@@ -337,7 +337,7 @@ Publish sampler support before sampling plugins, and consume 9.10 checkers. Revi
 
 Use command-mode types from 9.3 and the relevant motion providers. Validate gating/state transitions, collision/path checks, joystick input messages, command outputs, diagnostics and calibration replay/tools. Pin required Python scientific/plotting inputs through Bazel. Real-vehicle calibration/control performance remains a separately evidenced hardware result.
 
-- [ ] [autoware_accel_brake_map_calibrator](../../src/universe/autoware_universe/vehicle/autoware_accel_brake_map_calibrator/package.xml)
+- [x] [autoware_accel_brake_map_calibrator](../../src/universe/autoware_universe/vehicle/autoware_accel_brake_map_calibrator/package.xml)
 - [x] [autoware_control_command_gate](../../src/universe/autoware_universe/control/autoware_control_command_gate/package.xml)
 - [x] [autoware_control_performance_analysis](../../src/universe/autoware_universe/control/autoware_control_performance_analysis/package.xml)
 - [x] [autoware_joy_controller](../../src/universe/autoware_universe/control/autoware_joy_controller/package.xml)

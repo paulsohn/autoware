@@ -25317,6 +25317,8 @@ gate is recorded in the calibrator entry below. No original source/tests change;
 whitespace checks pass. Universe coverage remains 189/244 until that module
 closes.
 
+<a id="phase-912-calibrator"></a>
+
 ## 2026-11-27 — Phase 9.12: Accel/brake map calibrator and tools
 
 Purpose: adopt the native calibrator, installed Python programs and helper
@@ -25375,3 +25377,63 @@ probe alone proves data processing. Current AWF main still hardcodes the Python
 log path; the scoped upstream comparison is in UPSTREAM_AWF.md. Python AST,
 XML parsing, actual launch and whitespace checks pass. Commit this path fix
 separately from publication and build definitions.
+
+Add the module-local MODULE/BUILD pair and root versionless dependency with its
+immediate local override. Build the native library/executable from original
+sources; declare actual SDK/shared-library owners and local message providers.
+The full package index registers the executable and original config/launch/RViz
+resources. The Python tools use rclpy, local generated interfaces, indexed
+resources and pinned NumPy/Pandas/Matplotlib/PyYAML plus the shared SciPy module.
+No original tests are moved or added inside the source package.
+
+CMake installs 15 Python files as PROGRAMS, but only ten are runnable commands.
+Expose those ten with py_binary. Keep __init__.py, config.py, calc_utils.py,
+csv_reader.py and plotter.py as their original module files when registering the
+install directory. Wrapping all 15 produces shell launchers named like Python
+modules; the real XML launch then imports a shell launcher instead of source
+and fails with SyntaxError. Correct roles fix the launch without changing
+original helpers. Give python_tools explicit scripts/test import directories
+and a resource-only ament_index data view; compose the complete package index
+from that view and registered programs. This avoids a Python-library/index/
+entrypoint cycle while retaining one ROS package identity.
+
+The root launch companion uses RCR launch_ros_binary and the component-exported
+XML. The existing CLI metadata provider already addresses RCR's entrypoint
+metadata gap; no new CLI implementation is needed. A directly invoked Bazel
+executable does not embed its rule's default args, so the subprocess passes the
+ament-index-resolved XML explicitly. Children that run in temporary directories
+receive absolute runfiles index/library paths, not workspace source paths.
+
+Keep all new companions under bazel/tests/autoware_accel_brake_map_calibrator.
+Native replay publishes fresh velocity/steering/actuator feedback and identity
+map-to-base_link TF where required, checks changed raw and occupancy maps,
+rejects an invalid export directory, verifies both finite CSV exports and a
+changed acceleration map, and checks live calibration status/log rows. The two
+feedback/pitch profiles run in separate node lifetimes and shut down cleanly.
+
+The tools companion's four cases cover: actual XML launch path propagation;
+real each_cell/four_cell data service plus shipped client saving SVG/CSV;
+original actuator/status/gear publishers and interactive accel/brake helpers
+with controlled input; and deterministic CSV statistics plus report generation.
+Require eight samples and mean 0.235 in a known bin, real log_analyzer CSV/PNG,
+and rendered StatisticsView, DelayEstimator and both ViewPlot profiles under
+Agg. The helper test checks clamp values 1.2 -> 1, -0.2 -> 0 and 0.3 -> 0.3,
+DRIVE gear and synthetic velocity-to-status output. These are behavior checks,
+not source-completeness validators. Temporary directories own every output.
+
+Results: the exact full-module test command above passes all 19 non-test targets
+and both test targets, with no failures or skips. The final check reruns native
+replay after closing CSV handles explicitly and reuses the unchanged passing
+four-case tools result. Python AST, XML, changed C++ formatting and whitespace
+checks pass. The separate full local interface/native/Python build also passes.
+Publication source fix: eb14a32e; shared writable-path fix: 19711fa9. Both dated
+AWF findings remain unmatched; steering's separate compatibility fix matches
+merged PR #13622. Update DEVELOPING's steady-state Python/index/output guidance
+and link it from the adoption checklist so a new integration applies the
+convention from its outset.
+
+All nine Phase 9.12 module gates are complete: 190/244 Universe packages have
+local definitions and root selection, leaving 54. No Fast DDS, simulator or
+deployment gate was selected or rerun. Calibration accuracy on real hardware,
+physical joystick mappings and optional RViz interaction remain separate
+qualifications. Next: Phase 9.13, traffic-light model execution and image tracking.

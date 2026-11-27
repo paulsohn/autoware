@@ -2243,3 +2243,46 @@ Keep steer_offset_param_path and calibration_file_path writable and distinct
 from indexed source resources. The fixture uses temporary YAML files for
 estimate logs and accumulated off/manual/auto calibration. Its shortened timing
 thresholds qualify software behavior; use vehicle-qualified settings on hardware.
+
+## Python entrypoints and indexed resources
+
+Use py_library for importable Python source and py_binary only for real command
+entrypoints. An upstream CMake install(PROGRAMS) list can include helper modules;
+installation mode alone does not make a file a command. Keep those helpers as
+plain Python files in the indexed install directory. A generated shell launcher
+named config.py or calc_utils.py can shadow the real source on a launcher's
+PYTHONPATH and cause an import-time SyntaxError.
+
+Declare the source import directories and Python/native dependency providers in
+the library. If commands need their own indexed resources, give the library a
+resource-only ament_index view in data. Compose a complete index from that view
+and registered executables. Both views represent the same ROS package identity;
+do not invent another package or create a library -> full index -> command ->
+library dependency cycle. Keep the package's complete index as the consumer-facing
+install provider.
+
+Use the RCR launch_ros_binary rule for launch composition. When a fixture invokes
+its executable directly through subprocess rather than bazel run, pass the
+indexed launch XML explicitly: Bazel's default args are not embedded in the
+executable. Normalize runfiles-relative index/library paths before changing a
+child's working directory; retain declared runfiles as the source of resources.
+
+Treat indexed model/configuration/map inputs as read-only. Put generated logs,
+calibrated maps and other mutable outputs in explicitly configured writable
+paths, and forward shared paths to every actual consumer in a launcher.
+
+For calibration changes, run the complete package and both root companions:
+
+```sh
+bazel test --keep_going --config=runtime --config=no-agnocast \
+  --local_test_jobs=1 --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp \
+  --test_output=errors @autoware_accel_brake_map_calibrator//... \
+  //bazel/tests/autoware_accel_brake_map_calibrator:all
+```
+
+The original XML accepts csv_default_map_dir, csv_calibrated_map_dir and
+output_log_file. Select a writable calibrated-map directory; the log defaults
+to log.csv there and is forwarded to the plotting server. Keep the indexed
+original maps separate. The software gate checks synthetic feedback, exports,
+reports, helper publishers, the real service/client and launch parameter
+propagation. It does not qualify physical calibration or optional RViz behavior.

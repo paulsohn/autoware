@@ -1,0 +1,56 @@
+load("@pip_ros//:requirements.bzl", "requirement")
+load("@rules_python//python:defs.bzl", "py_test")
+load("@launch_ros//:defs.bzl", "launch_ros_binary")
+
+py_test(
+    name = "runtime_test",
+    timeout = "long",
+    srcs = ["test_runtime.py"],
+    main = "test_runtime.py",
+    data = ["@autoware_accel_brake_map_calibrator//:ament_index"],
+    deps = [
+        "@ament_index_python",
+        "@autoware_vehicle_msgs//:py",
+        "@geometry_msgs//:py",
+        "@nav_msgs//:py",
+        "@rclpy",
+        "@std_msgs//:py",
+        "@tf2_msgs//:py",
+        "@tier4_external_api_msgs//:py",
+        "@tier4_vehicle_msgs//:py",
+    ],
+    env = {"LD_LIBRARY_PATH": "lib", "ROS_DOMAIN_ID": "86"},
+    precompile = "disabled",
+    tags = ["no-sandbox", "no-remote"],
+)
+
+py_test(
+    name = "tools_test",
+    args = ["$(rootpath :launch_probe)"],
+    timeout = "long",
+    srcs = ["test_tools.py"],
+    main = "test_tools.py",
+    data = [":launch_probe", "@autoware_accel_brake_map_calibrator//:ament_index"],
+    deps = [
+        "@autoware_accel_brake_map_calibrator//:python_tools",
+        "@rcl_interfaces//:py",
+        "@ament_index_python",
+        "@autoware_vehicle_msgs//:py",
+        "@rclpy",
+        "@tier4_external_api_msgs//:py",
+        "@tier4_vehicle_msgs//:py",
+        requirement("matplotlib"),
+        requirement("numpy"),
+    ],
+    env = {"LD_LIBRARY_PATH": "lib", "MPLBACKEND": "Agg", "ROS_DOMAIN_ID": "87"},
+    precompile = "disabled",
+    tags = ["no-sandbox", "no-remote"],
+)
+
+launch_ros_binary(
+    name = "launch_probe",
+    testonly = True,
+    src = "@autoware_accel_brake_map_calibrator//:launch/accel_brake_map_calibrator.launch.xml",
+    data = ["@autoware_accel_brake_map_calibrator//:ament_index"],
+    precompile = "disabled",
+)

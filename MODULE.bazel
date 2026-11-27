@@ -2285,6 +2285,12 @@ local_path_override(
     path = "src/universe/autoware_universe/vehicle/autoware_steer_offset_estimator",
 )
 
+bazel_dep(name = "autoware_accel_brake_map_calibrator")
+local_path_override(
+    module_name = "autoware_accel_brake_map_calibrator",
+    path = "src/universe/autoware_universe/vehicle/autoware_accel_brake_map_calibrator",
+)
+
 # Launcher source modules.
 bazel_dep(name = "sample_vehicle_description")
 local_path_override(

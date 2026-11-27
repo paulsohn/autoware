@@ -2931,6 +2931,8 @@ No local colcon or physical-vehicle validation is claimed.
 
 ### Accel/brake calibrator: publish the supplied updated maps
 
+Local source correction: `eb14a32e`.
+
 - [ ] Associate with a matching AWF correction. Checked 2026-11-27:
   [publish_map on main](https://github.com/autowarefoundation/autoware_universe/blob/main/vehicle/autoware_accel_brake_map_calibrator/src/accel_brake_map_calibrator_node.cpp)
   still reads accel_map_value_/brake_map_value_ in both publication loops.
@@ -2943,11 +2945,13 @@ accel_map_value/brake_map_value in both loops, preserving estimator behavior and
 occupancy scaling. The root regression requires both publications and exported
 acceleration CSV to change for status/TF and command/no-pitch profiles. The
 complete module and tools gates pass on Cyclone DDS; see the
-[calibrator journal](JOURNAL.md#2026-11-27-phase-912--accelbrake-map-calibrator-and-tools)
+[calibrator journal](JOURNAL.md#phase-912-calibrator)
 for exact commands. No upstream submission, colcon result or physical calibration
 accuracy is claimed.
 
 ### Accel/brake calibrator: share writable log and map paths
+
+Local source correction: `19711fa9`.
 
 - [ ] Associate with a matching AWF correction. Checked 2026-11-27:
   [the Python server](https://github.com/autowarefoundation/autoware_universe/blob/main/vehicle/autoware_accel_brake_map_calibrator/scripts/new_accel_brake_map_server.py)
@@ -2964,5 +2968,5 @@ to their actual consumers. A real XML launch verifies parameters on both live
 nodes and creates the native log in a temporary directory. A separate real
 server/client test processes deterministic logs in both interpolation modes,
 returning SVG and exact CSV content. The full Cyclone DDS module gate passes;
-see the [calibrator journal](JOURNAL.md#2026-11-27-phase-912--accelbrake-map-calibrator-and-tools).
+see the [calibrator journal](JOURNAL.md#phase-912-calibrator).
 No upstream submission or colcon/hardware validation is claimed.

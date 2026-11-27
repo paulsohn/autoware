@@ -1,0 +1,209 @@
+load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library")
+load("@rules_python//python:defs.bzl", "py_binary", "py_library")
+load("@pip_ros//:requirements.bzl", "requirement")
+
+package(default_visibility = ["//visibility:public"])
+
+exports_files(["launch/accel_brake_map_calibrator.launch.xml"])
+
+cc_library(
+    name = "autoware_accel_brake_map_calibrator",
+    srcs = ["src/accel_brake_map_calibrator_node.cpp"],
+    hdrs = glob(["include/**/*.hpp"]),
+    includes = ["include", "src"],
+    deps = [
+        "@autoware_internal_debug_msgs//:cc",
+        "@autoware_motion_utils",
+        "@autoware_raw_vehicle_cmd_converter",
+        "@autoware_utils",
+        "@autoware_vehicle_msgs//:cc",
+        "@builtin_interfaces//:cc",
+        "@diagnostic_msgs//:cc",
+        "@diagnostic_updater//:diagnostic_updater_library",
+        "@geometry_msgs//:cc",
+        "@nav_msgs//:cc",
+        "@rclcpp//:rclcpp_library",
+        "@std_msgs//:cc",
+        "@std_srvs//:cc",
+        "@tf2//:tf2_library",
+        "@tf2_geometry_msgs//:tf2_geometry_msgs_library",
+        "@tf2_ros//:tf2_ros_library",
+        "@tier4_external_api_msgs//:cc",
+        "@tier4_vehicle_msgs//:cc",
+        "@visualization_msgs//:cc",
+        "@rosdistro//cc:eigen",
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = [
+        "@autoware_raw_vehicle_cmd_converter//:runtime_dynamic_deps",
+        "@builtin_interfaces//:cc_shared",
+        "@autoware_internal_debug_msgs//:cc_shared",
+        "@autoware_motion_utils//:runtime_dynamic_deps",
+        "@autoware_utils//:runtime_dynamic_deps",
+        "@autoware_vehicle_msgs//:cc_shared",
+        "@diagnostic_msgs//:cc_shared",
+        "@diagnostic_updater//:diagnostic_updater",
+        "@geometry_msgs//:cc_shared",
+        "@nav_msgs//:cc_shared",
+        "@rclcpp//:rclcpp",
+        "@std_msgs//:cc_shared",
+        "@std_srvs//:cc_shared",
+        "@tf2//:tf2",
+        "@tf2_geometry_msgs//:tf2_geometry_msgs",
+        "@tf2_ros//:tf2_ros",
+        "@tier4_external_api_msgs//:cc_shared",
+        "@tier4_vehicle_msgs//:cc_shared",
+        "@visualization_msgs//:cc_shared",
+    ],
+)
+
+cc_binary(
+    name = "accel_brake_map_calibrator",
+    srcs = ["src/main.cpp"],
+    deps = [":autoware_accel_brake_map_calibrator"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+)
+
+# Resource-only view lets standalone Python entrypoints find this package
+# without cycling through the complete executable index.
+ament_index(
+    name = "resources",
+    package_xml = "package.xml",
+    data = glob(["config/**", "launch/**", "rviz/**", "data/**"]),
+    deps = ["@autoware_raw_vehicle_cmd_converter//:ament_index", "@rviz2//:ament_index"],
+)
+
+py_library(
+    name = "python_tools",
+    srcs = glob(["scripts/*.py", "test/*.py"]),
+    imports = ["scripts", "test"],
+    data = [":resources"],
+    deps = [
+        "@ament_index_python",
+        "@autoware_internal_debug_msgs//:py",
+        "@autoware_vehicle_msgs//:py",
+        "@rclpy",
+        "@tier4_external_api_msgs//:py",
+        "@tier4_vehicle_msgs//:py",
+        requirement("matplotlib"),
+        requirement("numpy"),
+        requirement("pandas"),
+        "@scipy",
+        requirement("pyyaml"),
+    ],
+)
+
+py_binary(
+    name = "actuation_cmd_publisher.py",
+    srcs = ["scripts/actuation_cmd_publisher.py"],
+    main = "scripts/actuation_cmd_publisher.py",
+    deps = [":python_tools"],
+    precompile = "disabled",
+)
+
+py_binary(
+    name = "accel_tester.py",
+    srcs = ["scripts/accel_tester.py"],
+    main = "scripts/accel_tester.py",
+    deps = [":python_tools"],
+    precompile = "disabled",
+)
+
+py_binary(
+    name = "brake_tester.py",
+    srcs = ["scripts/brake_tester.py"],
+    main = "scripts/brake_tester.py",
+    deps = [":python_tools"],
+    precompile = "disabled",
+)
+
+py_binary(
+    name = "delay_estimator.py",
+    srcs = ["scripts/delay_estimator.py"],
+    main = "scripts/delay_estimator.py",
+    deps = [":python_tools"],
+    precompile = "disabled",
+)
+
+py_binary(
+    name = "view_statistics.py",
+    srcs = ["scripts/view_statistics.py"],
+    main = "scripts/view_statistics.py",
+    deps = [":python_tools"],
+    precompile = "disabled",
+)
+
+py_binary(
+    name = "log_analyzer.py",
+    srcs = ["scripts/log_analyzer.py"],
+    main = "scripts/log_analyzer.py",
+    deps = [":python_tools"],
+    precompile = "disabled",
+)
+
+py_binary(
+    name = "view_plot.py",
+    srcs = ["scripts/view_plot.py"],
+    main = "scripts/view_plot.py",
+    deps = [":python_tools"],
+    precompile = "disabled",
+)
+
+py_binary(
+    name = "new_accel_brake_map_server.py",
+    srcs = ["scripts/new_accel_brake_map_server.py"],
+    main = "scripts/new_accel_brake_map_server.py",
+    deps = [":python_tools"],
+    precompile = "disabled",
+)
+
+py_binary(
+    name = "plot_csv_client_node.py",
+    srcs = ["test/plot_csv_client_node.py"],
+    main = "test/plot_csv_client_node.py",
+    deps = [":python_tools"],
+    precompile = "disabled",
+)
+
+py_binary(
+    name = "sim_actuation_status_publisher.py",
+    srcs = ["test/sim_actuation_status_publisher.py"],
+    main = "test/sim_actuation_status_publisher.py",
+    deps = [":python_tools"],
+    precompile = "disabled",
+)
+
+register_ament_files(
+    name = "executables",
+    files = [
+        ":accel_brake_map_calibrator",
+        "scripts/__init__.py",
+        ":actuation_cmd_publisher.py",
+        ":accel_tester.py",
+        ":brake_tester.py",
+        "scripts/config.py",
+        ":delay_estimator.py",
+        "scripts/plotter.py",
+        ":view_statistics.py",
+        "scripts/calc_utils.py",
+        "scripts/csv_reader.py",
+        ":log_analyzer.py",
+        ":view_plot.py",
+        ":new_accel_brake_map_server.py",
+        ":plot_csv_client_node.py",
+        ":sim_actuation_status_publisher.py",
+    ],
+    prefix = "lib/autoware_accel_brake_map_calibrator",
+    strip_prefix = "*",
+)
+
+ament_index(
+    package_xml = "package.xml",
+    deps = [":resources"],
+    data = [":executables"],
+)
