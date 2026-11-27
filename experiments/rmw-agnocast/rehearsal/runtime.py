@@ -133,17 +133,23 @@ with ExitStack() as cleanup:
             return start(label,app,network,["ros2","run","agnocast_cyclone_gateway","topic_gateway",
                                            "--config","/tmp/migration.json"])
         def bag(label,c,rmw,record_topic):
-            return start(label,c,rmw,["ros2","bag","record","--topics",record_topic,"-s","sqlite3",
+            return start(label,c,rmw,["ros2","bag","record","--topics",record_topic,
                          "--disable-keyboard-controls","-o","/tmp/"+name+"-"+label])
         def decode(label,c,rmw,record_topic):
-            script="""import glob,json,sqlite3,sys
+            script="""import json,sys
+import rosbag2_py
 from rclpy.serialization import deserialize_message
 from std_msgs.msg import String
-db=sqlite3.connect(glob.glob(sys.argv[1]+'/*.db3')[0])
-rows=db.execute('select topics.type,data from messages join topics on topics.id=topic_id where topics.name=? order by messages.id',(sys.argv[2],))
+reader=rosbag2_py.SequentialReader()
+reader.open_uri(sys.argv[1])
+metadata=reader.get_metadata()
+assert metadata.storage_identifier==rosbag2_py.get_default_storage_id()=="mcap"
+topics={t.name:t.type for t in reader.get_all_topics_and_types()}
+assert topics[sys.argv[2]]=="std_msgs/msg/String"
 values=[]
-for typ,data in rows:
- assert typ=='std_msgs/msg/String'
+while reader.has_next():
+ topic,data,*_=reader.read_next_ext()
+ assert topic==sys.argv[2]
  value=deserialize_message(data,String).data
  assert value.startswith('Hello, world! ')
  values.append(int(value.removeprefix('Hello, world! ')))

@@ -167,7 +167,7 @@ Expect successive `I heard: 'Hello, world! …'` lines in terminal A. For your o
 Leave the talker running. Open terminal C with the step 5 environment. The stock recorder joins the native graph through the same device and hook and writes serialized CDR to disk. Choose a fresh bag directory.
 
 ```bash
-ros2 bag record --storage sqlite3 -o migration-topic-bag --topics /topic
+ros2 bag record -o migration-topic-bag --topics /topic
 ```
 
 After several publications press Ctrl-C, then inspect the bag.
@@ -176,7 +176,7 @@ After several publications press Ctrl-C, then inspect the bag.
 ros2 bag info migration-topic-bag
 ```
 
-Look for /topic, std_msgs/msg/String, and a positive message count. Local delivery and disk recording have different costs. A C++ subscription can take a native loan. C-layout consumers convert the message and recording requires serialization.
+Lyrical uses MCAP by default. In the bag information, look for storage ID `mcap`, topic `/topic`, type `std_msgs/msg/String`, and a positive message count. Local delivery and disk recording have different costs. A C++ subscription can take a native loan. C-layout consumers convert the message and recording requires serialization.
 
 A stock `ros2 bag record` process subscribes through the RMW selected in its own terminal. With `RMW_IMPLEMENTATION=rmw_agnocast` and the hook loaded, it records the original local topic directly. For the export in step 7, a Cyclone recorder sees the gateway publisher on `/from_robot/topic`; the native recorder still sees the talker on `/topic`. If you omit the remap, both sides use `/topic`, and the recorder’s RMW still selects which publisher it sees. The same rule applies to Zenoh exports and to `ros2 bag record --all`. To capture both observations, run one recorder on each side with distinct bag directories. The network bag can have gaps during a gateway outage while the native bag continues recording.
 
