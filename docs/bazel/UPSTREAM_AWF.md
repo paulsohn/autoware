@@ -3067,3 +3067,34 @@ inference with both synchronization modes, ID/type/header and placeholder
 contracts, empty-input delivery and clean shutdown pass on Cyclone DDS. See the
 [fine-detector journal](JOURNAL.md#phase-913-fine-detector) for commands and limits.
 No upstream submission, older ROS/colcon or recognition-accuracy claim is made.
+
+### Traffic-light pipeline: expected package and Lyrical subscriptions
+
+Local source correction: see the [pipeline journal](JOURNAL.md#phase-913-pipeline).
+
+- [x] Associate the expected header/manifest correction with merged
+  [AWF PR #13622](https://github.com/autowarefoundation/autoware_universe/pull/13622),
+  merge commit c992af10f4c463fda78a06348c139357b9f195ad. Checked 2026-11-27:
+  its actual pipeline patch replaces tl_expected/expected.hpp with
+  tl/expected.hpp and the tl_expected manifest dependency with libexpected-dev.
+  This matches our correction; it is already fixed upstream.
+- [ ] Associate the remaining subscription/header compatibility changes with
+  matching AWF work. Checked 2026-11-27: the
+  [node header](https://github.com/autowarefoundation/autoware_universe/blob/main/perception/autoware_traffic_light_pipeline/src/traffic_light_recognition/traffic_light_recognition_node.hpp)
+  retains message_filters .h and TF2 forwarders; the
+  [subscription setup](https://github.com/autowarefoundation/autoware_universe/blob/main/perception/autoware_traffic_light_pipeline/src/traffic_light_recognition/traffic_light_recognition_node.cpp)
+  passes rmw profiles to message_filters. A scoped pipeline/message_filters PR
+  search finds no matching correction. PR #13622 does not cover these changes.
+
+The selected expected provider exposes tl/expected.hpp; the old include fails
+compilation. Use current message_filters .hpp headers and pass
+rclcpp::SensorDataQoS() directly for the same best-effort subscriptions. Use
+current TF2 .hpp include paths alongside them. No inference algorithm or
+original test/assertion changes are required. The complete pipeline gate passes
+on Cyclone DDS with an unchanged real-node empty-map case, real whole-image GPU
+inference, mapped car/pedestrian selection and both CNN classifiers. The
+root-owned FP16 profile also passes cold preparation, unchanged warm engines,
+active service checks and clean shutdown. The same aggregate gate passes all
+classifier/fine-detector suites. Commands, SDK ownership prerequisites and
+fixture ABI isolation are recorded in the journal. No upstream submission,
+older ROS/colcon, camera calibration or recognition-accuracy claim is made.

@@ -26129,3 +26129,99 @@ SONAMEs and matching parent DT_NEEDED entries; exported strong helper functions
 do not overlap. This is a Bazel identity correction, not an upstream algorithm
 patch. Update the native-library convention and adoption links with this result;
 retry the composed pipeline and affected traffic-light consumers next.
+
+<a id="phase-913-pipeline"></a>
+
+## 2026-11-27 — Phase 9.13: Composed traffic-light recognition
+
+Purpose: adopt autoware_traffic_light_pipeline as a reusable recognition library,
+ROS component/native executable and indexed configuration/launcher. Its original
+suite has one real-node empty-map case. Require that unchanged case without GPU
+skips, plus real whole-image inference with nonempty mapped car/pedestrian
+lights, selection, both classifiers, merged output identities/header, exposure
+diagnostics and reset-to-empty-map behavior. Use the existing indexed YOLOX
+batch-one detector and car/pedestrian batch-six classifiers, actual CUDA access,
+and Cyclone DDS. Keep product FP16/preparation policy outside the source module.
+
+Inspect original CMake, headers, parameter declarations, callback synchronization,
+map projection, category selection and model/test-data contracts. Add logical
+MODULE dependencies and an adjacent root override. Expose CcInfo separately from
+the original recognition/node DSOs and use each participating SDK's shared owner.
+Register the component/native command, configuration, launch and required model/
+image-transport indexes. Compile the original test source unchanged in a root
+SDK-aware runner; its existing environment override selects writable fixtures.
+New fixtures remain under bazel/tests/autoware_traffic_light_pipeline.
+
+The first composition exposes duplicated traffic-light utilities and the broad
+legacy utility facade in independent DSOs; resolve these through the preceding
+[shared-provider](#phase-913-traffic-utils-shared) and
+[narrow-constant tasks](#phase-913-classifier-composition). A later native link exposes an ELF
+name collision: both CUDA helpers use libgpu_preprocess.so despite distinct
+Bazel labels. Package-specific SONAMEs must be validated in both owning SDKs
+before this composed gate can pass; see the
+[joint SDK verification](#phase-913-classifier-gpu-identity). No inference
+algorithm changes are needed.
+
+The source expected header/manifest correction matches the actual pipeline
+patch in merged AWF PR #13622: tl/expected.hpp and libexpected-dev. Use current
+message_filters .hpp paths and direct SensorDataQoS arguments; modernize the
+included TF2 forwarders too. Upstream main still retains those latter usages
+on 2026-11-27, and a scoped pipeline/message_filters PR search finds no match.
+Keep compatibility changes separate from the Bazel integration commit.
+
+Replace this launcher's HOME/common-model-directory defaults with six individual
+model/label arguments resolved through each model repository's ament index;
+declare both model runtime dependencies. Keep its generic C++ ml_model_path
+prefix API, used by the unchanged original test and explicit writable product
+staging. The root product selects FP16 for all three backends, fingerprints the
+SDK release, configuration, ROI-remap and six model/label inputs, and stages
+copies under a caller-owned GPU/SDK cache root. It offers --prepare-only and an
+active execution mode. Neither mode writes to indexed resources; the component
+still supports JIT on cache miss. One writer per cache and hardware compatibility
+remain caller responsibilities.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  @autoware_traffic_light_pipeline//... \
+  //bazel/tests/autoware_traffic_light_pipeline:all \
+  //bazel/tests:pipeline_yolox_launch_paths_test \
+  //bazel/tests:pipeline_classifier_launch_paths_test \
+  @autoware_traffic_light_classifier//... \
+  //bazel/tests/autoware_traffic_light_classifier:all \
+  @autoware_traffic_light_fine_detector//... \
+  //bazel/tests/autoware_traffic_light_fine_detector:all
+```
+
+Results: all 73 package/product targets and all 13 selected test targets pass.
+The final aggregate invocation reuses unchanged passing artifacts: classifier
+60 original cases plus four live GPU profiles and two HSV XML launches;
+fine detector six original cases plus both exact/approximate GPU XML profiles;
+two pipeline launcher-path checks; and both native pipeline cases. No failures,
+empty suites or dependency-related skips remain. Native XML records exactly
+one original node case and one added composition case.
+
+The root fixture prepares three nonempty real engines, records each engine's
+SHA256/mtime, repeats preparation and requires identical files/cache identity.
+It then runs the active product, queries all three FP16 parameters and the
+selected cache root through ROS, and requires clean SIGINT shutdown. Initially
+putting that Python ROS peer inside the SDK-preloaded run_under process aborts
+with rclpy::InvalidHandle. Preserve SDK setup for native programs, but execute
+the declared Python ROS peer in a separate process with LD_PRELOAD removed.
+With the same service/lifecycle assertions this isolated probe passes; no ROS
+implementation workaround or relaxed assertion is needed.
+
+For positive recognition, use the original YOLOX road image and a synthetic
+lanelet map with road/crosswalk traffic lights projected over its signal housing.
+The added case requires pre-map rejection, two nonzero bounded ROIs, both mapped
+IDs/categories, finite classifier results, matching headers, merged signals,
+diagnostics and reset-to-empty-map output. Both real CNN backends and the
+whole-image CUDA detector execute. This qualifies software composition, not
+physical camera calibration, recognition accuracy or multi-camera operation.
+
+Python AST, changed C++ formatting, XML parsing and whitespace checks pass.
+The census finds 244 packages, 195 MODULE/BUILD pairs and 195 corresponding root
+overrides. All five Phase 9.13 gates are complete, with 49 Universe packages
+remaining. No Fast DDS, simulator or deployment export check is selected.
+The next phase is 9.14, CUDA sensing and LiDAR model inference.
