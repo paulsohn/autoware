@@ -25,6 +25,7 @@
 #include <algorithm>
 #include <cfloat>
 #include <cmath>
+#include <initializer_list>
 #include <memory>
 #include <optional>
 
@@ -716,6 +717,7 @@ void CudaScanGroundSegmentationFilter::extractPoints(
   output.data = cuda_blackboard::make_unique<uint8_t[]>(output_size * output.point_step);
   output.height = 1;
   output.width = output_size;
+  output.row_step = output.width * output.point_step;
 
   // Get the points
   CHECK_CUDA_ERROR(
@@ -730,11 +732,25 @@ void CudaScanGroundSegmentationFilter::classifyPointCloud(
   const cuda_blackboard::CudaPointCloud2 & input, cuda_blackboard::CudaPointCloud2 & ground,
   cuda_blackboard::CudaPointCloud2 & non_ground)
 {
+  for (auto * output : {&ground, &non_ground}) {
+    cuda::copyPointCloud2Metadata(*output, input);
+    output->height = 1;
+    output->width = 0;
+    output->row_step = 0;
+    output->data.reset();
+  }
+  if (input.width == 0 || input.height == 0) {
+    return;
+  }
+
   device_vector<Cell> cell_list(stream_, mempool_);
   device_vector<int> starting_pid(stream_, mempool_);
   device_vector<ClassifiedPointType> classified_points(stream_, mempool_);
 
   removeOutliers(input);
+  if (dev_input_points_->width == 0) {
+    return;
+  }
   sort_points(cell_list, starting_pid, classified_points);
   scanPerSectorGroundReference(cell_list, starting_pid, classified_points);
 
@@ -806,6 +822,7 @@ void CudaScanGroundSegmentationFilter::removeOutliers(
 
   dev_input_points_->height = 1;
   dev_input_points_->width = remain_size;
+  dev_input_points_->row_step = remain_size * dev_input_points_->point_step;
   dev_input_points_->data =
     cuda_blackboard::make_unique<uint8_t[]>(remain_size * dev_input_points_->point_step);
 

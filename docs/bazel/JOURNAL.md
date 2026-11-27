@@ -27232,3 +27232,41 @@ from the pinned TensorRT archive. No host spconv mapping remains.
 
 Targeted Starlark loading/analysis and whitespace checks pass. This qualifies
 the current native Linux x86_64 SDK contract, not another platform's ABI.
+
+<a id="phase-914-ground-cuda"></a>
+
+## 2026-11-27 — Phase 9.14: CUDA ground segmentation (in progress)
+
+Purpose: finish the phase with the CUDA ground classifier and its node, two
+original DSOs, command/component and indexed config/launch. Inspect CMake,
+manifest, classifier/stream/pool utilities, node layout guard and shipped Python
+container launcher. There are no original functional test sources or enabled
+test runners. Use direct CUDA/CUB and existing CUDA-preprocessor providers,
+canonical ROS/PCL dynamic owners and root-selected architecture. Do not add an
+empty CUDA-meta module for its inspected flags-only CMake effect.
+
+Acceptance: added root tests for real GPU ground/obstacle preservation, spatial
+cropping, empty/repeated frames and cloud metadata, live native node transport
+in RCLCPP and enabled Agnocast with declared heaphook/device prerequisites, and
+the actual shipped composable launch under Cyclone DDS. No anticipated source
+patch is selected. The initial four native cases reproduce compacted row sizes
+of 32/48 bytes despite a 16-byte payload, and an empty frame replays the cached
+previous points/header. Classification values themselves match ground/obstacle
+expectations. Initialize both outputs with current metadata and zero dimensions/
+data, guard empty input and zero retained points before kernels, and recompute
+row_step after both crop and class compaction. Add initial-empty/all-cropped
+coverage alongside the mixed/cropped/repeated/transport cases. Current AWF main
+retains the same paths; scoped row_step/empty-frame PR searches find no matching
+correction on 2026-11-27. Source fix and build support will be separate commits.
+All six native cases now pass in RCLCPP and enabled Agnocast, and the shipped
+Python composable launcher passes. The extra single-class case checks metadata
+on the empty half of each split. Agnocast requires a host probe of /dev/agnocast
+(character device, mode 666, module 2.4.1) and the declared heaphook preload.
+The initial fixture used a wrapper publisher for input, which cannot reach this
+component's current ROS/negotiated-only CUDA subscriber. Use a ROS input
+publisher and wrapper output subscriptions: the native fixture then proves
+ROS input -> CUDA classification -> selected ROS/Agnocast compatible output.
+Do not alter component input transport or claim Agnocast-input support.
+The shipped launch also needs the registry's :ament_package container provider;
+:ament_index alone contains no component_container executable. Exact module
+commands/results follow with the build-definition boundary.

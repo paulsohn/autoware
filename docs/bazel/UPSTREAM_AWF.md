@@ -3207,3 +3207,24 @@ No upstream submission or perception-accuracy claim is made.
   runners, indexed resources and FP16 encoder plus both task heads through cold/
   warm XML execution pass. See [the module experiment](JOURNAL.md#phase-914-ptv3).
   The CUDA/plugin GNU runtime declaration is independent Bazel SDK support.
+
+### CUDA ground segmentation: compacted row sizes and empty-frame identity
+
+- [ ] Matching upstream PR associated. Checked 2026-11-27: current
+  [classifier source](https://github.com/autowarefoundation/autoware_universe/blob/main/perception/autoware_ground_segmentation_cuda/src/cuda_scan_ground_segmentation/cuda_scan_ground_segmentation_filter.cu)
+  retains the faulty paths; scoped row_step and empty-frame PR searches find
+  no matching correction. This is a data-contract fix independent of Lyrical.
+- Reproducer: classify a 32-byte two-record PointXYZIRC cloud containing ground
+  and obstacle points. Each result has one 16-byte record but retains row_step=32.
+  A subsequent empty frame retains the cached input and replays the old points
+  and timestamp. Spatial cropping likewise preserves the pre-crop row size.
+- Fix: initialize both outputs with current metadata and empty dimensions/data,
+  return before GPU work for empty input or fully cropped input, and recompute
+  row_step whenever compaction changes width. Preserve actual classification
+  and payload fields. Root regression checks and full verification are recorded
+  in [the module experiment](JOURNAL.md#phase-914-ground-cuda).
+- Verification: all six root native cases pass in RCLCPP and enabled Agnocast
+  (heaphook preloaded, device 2.4.1), plus the shipped composable Python launch.
+  XML inspection finds no failures/errors/skips. The enabled transport uses the
+  current ROS/negotiated input and Agnocast compatible output contract; it does
+  not claim Agnocast input subscription support.
