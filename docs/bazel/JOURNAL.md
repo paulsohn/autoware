@@ -26979,3 +26979,45 @@ XML; all three input files exist inside the index. The parent
 transfusion_model_path resolves the same share and both manifests declare its
 runtime dependency. XML/package metadata and whitespace checks pass.
 Universe acceptance remains 199/244, Phase 9.14 4/7; native TransFusion is next.
+
+<a id="phase-914-transfusion"></a>
+
+## 2026-11-27 — Phase 9.14: TransFusion inference (in progress)
+
+Purpose: adopt three CUDA translation units, five native library sources, the
+node, all three original DSOs, component/command and original launch/configuration
+resources. Inspect CMake, all five original drivers and current kernel/voxel APIs
+before implementation. CMake enables detection_class_remapper and ros_utils;
+both drivers define main. Three legacy GPU drivers are commented out under
+AWF issue #7724 and their older signatures differ from current APIs. Preserve
+the complete two enabled suites and explicitly record inactive drivers instead
+of counting them as passing. Add root current-API sweep/shuffle/voxel/postprocess
+cases, actual indexed-default/manifest checks and real FP16 XML inference with
+cold/warm engines, headers and clean shutdown. Use enough distinct voxels for
+the selected model's minimum profile; a tiny cloud below the profile is not an
+inference gate.
+
+Keep original CUDA/native/component boundaries, use only required PCL ROS TF
+providers and canonical shared ROS/PCL/TensorRT/perception SDK owners. Reuse the
+validated perception SDK exports and TensorRT ABI command wrapper. Root selects
+precision/cache and stages immutable indexed inputs into writable storage.
+No anticipated source patch, Fast DDS, simulator or deployment gate is selected.
+The complete native build and both original suites pass. A deterministic GPU
+shuffle case then exposes two current implementation defects: with two valid
+points and 513 output slots, a permutation puts one valid record beyond the
+first CUDA block; it remains at the output sentinel, and 1285 padded features
+are incorrect. The kernel tests dst_idx instead of the source index and launches
+only enough threads for points_size rather than max_size. Change the predicate
+to src_idx >= points_size and launch over max_size. The same case passes after
+the two-line correction, along with sweep/voxel/known-proposal cases. The actual
+pipeline shuffles the full capacity, so omitted destinations lose valid points.
+
+AWF PR #11712 exactly matches the index change but is closed/unmerged; its diff
+does not change launch extent. Current main retains both faulty expressions on
+2026-11-27. Record these associations separately in UPSTREAM_AWF.md. This is a
+data-integrity fix independent of Lyrical, not a build-only workaround.
+
+Source-fix gate: all enabled original cases and current-API GPU cases pass;
+the complete indexed-model/FP16 cold-warm/ROS gate also passes without failures,
+errors or skips. Build/index/test declarations and complete final evidence are
+recorded at the module integration boundary.

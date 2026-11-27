@@ -106,7 +106,7 @@ __global__ void shufflePoints_kernel(
   int src_idx = indices[(point_idx + offset) % max_size];
   int dst_idx = point_idx;
 
-  if (dst_idx >= points_size) {
+  if (src_idx >= points_size) {
     shuffled_points[5 * dst_idx + 0] = INFINITY;
     shuffled_points[5 * dst_idx + 1] = INFINITY;
     shuffled_points[5 * dst_idx + 2] = INFINITY;
@@ -125,7 +125,7 @@ cudaError_t PreprocessCuda::shufflePoints_launch(
   const float * points, const unsigned int * indices, float * shuffled_points,
   const std::size_t points_size, const std::size_t max_size, const std::size_t offset)
 {
-  dim3 blocks(divup(points_size, config_.threads_for_voxel_));
+  dim3 blocks(divup(max_size, config_.threads_for_voxel_));
   dim3 threads(config_.threads_for_voxel_);
 
   if (blocks.x == 0) {

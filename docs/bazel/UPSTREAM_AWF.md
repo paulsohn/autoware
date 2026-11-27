@@ -3160,3 +3160,31 @@ FP16 engines with all three output channels, unchanged indexed inputs and clean
 node shutdown. Exact commands and profile limits are recorded in the
 [FRNet journal](JOURNAL.md#phase-914-frnet). No upstream submission or other
 compiler/platform support claim is made.
+
+### TransFusion preprocessing: preserve valid points in padded shuffles
+
+- [x] Associate the source-index correction with
+  [AWF PR #11712](https://github.com/autowarefoundation/autoware_universe/pull/11712).
+  Checked 2026-11-27: that PR is closed and unmerged; its actual diff changes
+  dst_idx >= points_size to src_idx >= points_size. Our index correction matches.
+  [Current main](https://github.com/autowarefoundation/autoware_universe/blob/main/perception/autoware_lidar_transfusion/lib/preprocess/preprocess_kernel.cu)
+  still retains the destination-index check, so this is not already fixed there.
+- [ ] Associate the launch-extent correction with matching AWF work. Current
+  main launches according to points_size although the kernel writes max_size
+  shuffled/padded slots. The inspected PR #11712 changes only the index check;
+  no matching launch-extent correction was established.
+
+A deterministic real-GPU case has two initialized points, 513 destination slots
+and a permutation placing a valid point at slot 512. The original code leaves
+that point at the output sentinel and reports 1285 incorrect padding features:
+it launches only one 256-thread block and tests the destination rather than the
+source index. Check src_idx against points_size and launch over max_size. The
+same unchanged regression then passes, with every valid record retained and
+all padded records set to infinity; sweep, voxel and known-proposal cases pass
+too. This is an implementation/data-integrity correction, independent of ROS
+Lyrical or build-system compatibility. Full original/model/ROS gate evidence is
+recorded in the [TransFusion journal](JOURNAL.md#phase-914-transfusion): all three
+enabled original cases, four GPU kernel cases, two resource and two runtime/
+default-path cases pass, including actual cold/warm FP16 execution, unchanged
+indexed weights and clean child shutdown.
+No upstream submission or perception-accuracy claim is made.
