@@ -26075,3 +26075,34 @@ classifier cases, four live GPU profiles and both original HSV XML launches.
 No skips or failures remain. The earlier joint map/utility gate also passed
 all 24 original map-detector cases and both shared-utility cases. These are
 package-level results; the composed pipeline remains the next acceptance gate.
+
+
+<a id="phase-913-classifier-gpu-identity"></a>
+
+## 2026-11-27 — Phase 9.13 prerequisite: Classifier CUDA library identity
+
+Purpose: link the classifier SDK and YOLOX SDK into one native pipeline.
+The composed executable fails to resolve the classifier's batch preprocessing
+function. readelf shows that both independently built CUDA helpers have SONAME
+libgpu_preprocess.so, so their Bazel repository names do not preserve runtime
+identity. Match the original CMake identity by setting shared_lib_name to
+libautoware_tensorrt_classifier_gpu_preprocess.so; retain the public target/API.
+No CUDA/C++ implementation change is needed.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  @autoware_tensorrt_classifier//... //bazel/tests:tensorrt_classifier_test \
+  @autoware_tensorrt_yolox//... //bazel/tests:yolox_detector_test \
+  //bazel/tests:yolox_node_test //bazel/tests:yolox_fixture_adapter_test \
+  //bazel/tests:yolox_runtime_cache_test
+```
+
+Results: all six test targets pass without skips. The classifier's five cases
+exercise CPU/CUDA preprocessing and real inference. YOLOX's 14 original cases,
+15 cache/calibration cases and fixture rejection checks also pass. Inspect
+readelf -d on each generated helper and parent SDK DSO: SONAME and DT_NEEDED
+now use the matching package-specific helper name. nm -D --defined-only finds
+no overlapping strong exported helper functions. The following YOLOX commit
+completes the paired identity correction; the final composed gate follows.

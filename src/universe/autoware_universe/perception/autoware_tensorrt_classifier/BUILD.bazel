@@ -21,6 +21,7 @@ cuda_library(
 
 cc_shared_library(
     name = "gpu_preprocess",
+    shared_lib_name = "libautoware_tensorrt_classifier_gpu_preprocess.so",
     deps = [":gpu_preprocess_library"],
 )
 
