@@ -2734,3 +2734,12 @@ camera calibration, precision, voxel profile and writable cache are consumer
 settings. The component package owns its implementation, command/component
 records and config/launch resources. Validate both native model modalities with
 `//bazel/tests/autoware_bevfusion:runtime_test` after changing that behavior.
+
+## StreamPETR model resources
+
+Resolve the three StreamPETR ONNX stages and shape metadata through
+`@autoware_camera_streampetr_models//:ament_index`. The provider lives at
+`src/models/camera_streampetr` and supports colcon `--symlink-install`.
+Its five-camera, pre-memory and post-memory dimensions are model metadata.
+Concrete engine preparation, precision and writable cache policy stay with the
+consumer. Keep indexed inputs immutable.

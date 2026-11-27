@@ -3007,3 +3007,13 @@ py_test(
     deps = ["@ament_index_python"],
     precompile = "disabled",
 )
+
+py_test(
+    name = "camera_streampetr_model_resources_test",
+    srcs = ["models/test_indexed_model_package.py"],
+    main = "models/test_indexed_model_package.py",
+    args = ["autoware_camera_streampetr_models", "3"],
+    data = ["@autoware_camera_streampetr_models//:ament_index"],
+    deps = ["@ament_index_python"],
+    precompile = "disabled",
+)

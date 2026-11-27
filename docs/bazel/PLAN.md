@@ -2733,6 +2733,12 @@ sets pass materialization, isolated-index and colcon symlink/default-path checks
 See the [provider experiment](JOURNAL.md#phase-915-bevfusion-models). Native
 camera/LiDAR and LiDAR-only execution remain the module acceptance gate.
 
+StreamPETR model v1.0 selects immutable revision
+90f37d64186686ebc458509d69d3d4ca16d185c7, with three verified ONNX stages,
+five-camera metadata and memory lengths 1024/1280. The independent index and
+colcon symlink/default-path checks pass. See the
+[provider experiment](JOURNAL.md#phase-915-camera_streampetr-models).
+
 ### Execution order through complete Universe coverage
 
 The following groups are the initial route through every remaining package.

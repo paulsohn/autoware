@@ -1,0 +1,31 @@
+load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
+
+package(default_visibility = ["//visibility:public"])
+
+MODEL_FILES = [
+    "README.md",
+    "deploy_metadata.yaml",
+    "ml_package_camera_streampetr.param.yaml",
+    "simplify_extract_img_feat.onnx",
+    "simplify_position_embedding.onnx",
+    "simplify_pts_head_memory.onnx",
+]
+
+filegroup(
+    name = "models",
+    srcs = MODEL_FILES,
+)
+
+register_ament_files(
+    name = "model_files",
+    files = MODEL_FILES + [
+        "MODEL_PROVENANCE.md",
+        "SHA256SUMS",
+    ],
+    prefix = "share/autoware_camera_streampetr_models",
+)
+
+ament_index(
+    data = [":model_files"],
+    package_xml = "package.xml",
+)

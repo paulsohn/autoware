@@ -32,6 +32,8 @@
   <depend>tf2_ros</depend>
   <depend>yaml-cpp</depend>
 
+  <exec_depend>autoware_camera_streampetr_models</exec_depend>
+
   <test_depend>ament_clang_format</test_depend>
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>autoware_lint_common</test_depend>

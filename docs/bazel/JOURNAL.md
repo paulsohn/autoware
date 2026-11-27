@@ -27847,3 +27847,54 @@ Coverage reaches 204/244 with matching local overrides, leaving 40 packages.
 Phase 9.15 has two accepted modules; BEVFormer remains deferred. Next: StreamPETR
 and its own indexed model repository. No Fast DDS, simulator or deployment-export
 gate is selected for this module.
+
+<a id="phase-915-camera_streampetr-models"></a>
+
+## 2026-11-28 — Phase 9.15: StreamPETR model provider
+
+Purpose: supply StreamPETR's three ONNX stages and model-shape metadata
+through one repository-owned module and ament package. Inspect the component's
+launch/YAML/manifests, every enclosing model-path default, the reference artifact
+role's v1.0 selection and HF immutable revision 90f37d64186686ebc458509d69d3d4ca16d185c7.
+The model card declares Apache-2.0. Clone that tag with LFS smudging disabled,
+assert the revision, fetch immutable resolve URLs, stream-check each LFS size/
+SHA-256 against the blobs API and seed both checkout/parent object stores before
+the squashed subtree import under src/models/camera_streampetr.
+
+Follow the [indexed model pattern](#phase-915-pointpainting-models): own MODULE/
+BUILD, :models/:ament_index, hashes/provenance and minimal colcon/ament_cmake
+support inside the model repository. Root selects the adjacent versionless local
+override before source consumers. Replace the standalone HOME/data_path default
+and any enclosing model-path defaults with find-pkg-share; add runtime manifest
+dependencies only to actual consumers. The inspected parent launcher tree has
+no matching model-path defaults or component launch include; its tracker channel
+names are not model consumers. Only the component gains this runtime manifest
+dependency. Preserve unrelated model families' arguments. Acceptance: all 3 materialized payload identities, provider and
+isolated-index tests, colcon --symlink-install leaf links, and actual default
+parameter/metadata resolution. Native GPU execution is the following module gate.
+The complete provider gate passes:
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_output=errors @autoware_camera_streampetr_models//... \
+  //bazel/tests:camera_streampetr_model_resources_test
+
+source /opt/ros/jazzy/setup.bash
+colcon build --base-paths src/models/camera_streampetr --symlink-install \
+  --build-base /tmp/streampetr-model-build --install-base /tmp/streampetr-model-install
+source /tmp/streampetr-model-install/setup.bash
+```
+
+All four selected targets pass, including the resource runner's two inner cases.
+Colcon finishes one data package. Resolve its share with ament_index_python,
+require each installed ONNX leaf to be a symlink, and stream its SHA-256 against
+SHA256SUMS. Sizes match: image backbone 283,354,997 bytes, position embedding
+68,390,775 bytes and temporal head 47,612,321 bytes. Resolve the actual
+streampetr.launch.xml model_path and model_param_path expressions through
+LaunchContext/parse_substitution/perform_substitutions. They select this model
+share and its ML metadata. Check the metadata's five cameras and pre/post memory
+lengths 1024/1280, and the component's exec_depend. All checks pass, alongside
+XML/manifest parsing, targeted Buildifier and whitespace checks. No native
+consumer/colcon build or full node-parameter compatibility is claimed by this
+data-provider gate. Those belong to the following complete component task.
