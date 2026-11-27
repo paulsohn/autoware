@@ -1,0 +1,19 @@
+module(name = "scipy", version = "0.0.0")
+
+bazel_dep(name = "platforms", version = "1.1.0")
+bazel_dep(name = "rules_python", version = "2.4.5")
+bazel_dep(name = "rosdistro", version = "0.0.0")
+
+pip_ros = use_extension("@rosdistro//python:defs.bzl", "pip_ros")
+use_repo(pip_ros, "pip_ros")
+
+http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
+# SciPy 1.17.1, CPython 3.14, manylinux 2.27/2.28 x86_64.
+http_archive(
+    name = "scipy_wheel",
+    type = "zip",
+    sha256 = "eee2cfda04c00a857206a4330f0c5e3e56535494e30ca445eb19ec624ae75118",
+    urls = ["https://files.pythonhosted.org/packages/0b/2e/7eea398450457ecb54e18e9d10110993fa65561c4f3add5e8eccd2b9cd41/scipy-1.17.1-cp314-cp314-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl"],
+    build_file = "//:BUILD.wheel.bazel",
+)

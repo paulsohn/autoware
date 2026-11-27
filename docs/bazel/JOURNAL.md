@@ -25236,3 +25236,35 @@ matching upstream compatibility fix are needed. Python syntax and whitespace
 checks pass. Coverage is 189/244, eight of nine Phase 9.12 packages. Next:
 accel/brake map calibration and tools. No Fast DDS, simulator or deployment gate
 is selected.
+
+## 2026-11-27 — Phase 9.12 prerequisite: Shared SciPy provider
+
+Purpose: supply the calibrator's actual scipy.signal import without host pip.
+RCR's current Python hub has no scipy target. Inspect the existing pinned
+numerical code-generation inputs and use the same SciPy 1.17.1 CPython 3.14
+manylinux x86_64 wheel (SHA-256
+eee2cfda04c00a857206a4330f0c5e3e56535494e30ca445eb19ec624ae75118),
+retaining its URL and bundled extensions/data and the SDK's NumPy provider.
+
+Put the generic provider under third_party/scipy as its own module now that
+acados and calibration tools both need it. Root selects it before acados with
+an adjacent versionless dependency/override pair. Exclude the standalone module
+from root recursive discovery. Move the archive ownership from acados to scipy;
+acados declares the logical module dependency and uses @scipy in its template
+provider. Source consumers can then use the same generic target independently
+of the solver's implementation. No new archive version or host installation is
+introduced. Limit this qualified profile to Linux x86_64/Python 3.14.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_output=errors @scipy//... @acados//...
+```
+
+Results: all selected provider/acados targets build; the SciPy native linear
+solve and noise-filter check pass, as do both existing acados runners (original
+native suite and generated solver). Bazel also reports the alias of the same
+original suite; it is not another independent test. There are no failures or
+skips. Whitespace checks pass. Universe coverage remains 189/244. Next: finish
+the calibrator using this provider. No Fast DDS, simulator or deployment gate
+is selected.

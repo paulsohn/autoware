@@ -203,6 +203,12 @@ include("//third_party/s6:s6.MODULE.bazel")
 include("//third_party/systemd:systemd.MODULE.bazel")
 include("//third_party/ostree:ostree.MODULE.bazel")
 
+bazel_dep(name = "scipy")
+local_path_override(
+    module_name = "scipy",
+    path = "third_party/scipy",
+)
+
 bazel_dep(name = "acados")
 local_path_override(
     module_name = "acados",

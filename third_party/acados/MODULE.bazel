@@ -5,6 +5,7 @@ bazel_dep(name = "bazel_skylib", version = "1.9.2")
 bazel_dep(name = "rules_cc", version = "0.2.26.rcr.0")
 bazel_dep(name = "rules_python", version = "2.4.5")
 bazel_dep(name = "rosdistro", version = "0.0.0")
+bazel_dep(name = "scipy", version = "0.0.0")
 
 pip_ros = use_extension("@rosdistro//python:defs.bzl", "pip_ros")
 use_repo(pip_ros, "pip_ros")
@@ -66,13 +67,7 @@ http_archive(
     build_file = "//:BUILD.wheel.bazel",
 )
 
-http_archive(
-    name = "scipy_wheel",
-    type = "zip",
-    sha256 = "eee2cfda04c00a857206a4330f0c5e3e56535494e30ca445eb19ec624ae75118",
-    urls = ["https://files.pythonhosted.org/packages/0b/2e/7eea398450457ecb54e18e9d10110993fa65561c4f3add5e8eccd2b9cd41/scipy-1.17.1-cp314-cp314-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl"],
-    build_file = "//:BUILD.wheel.bazel",
-)
+
 
 
 # The CasADi wheel and renderer need a GNU runtime independent of the host install.

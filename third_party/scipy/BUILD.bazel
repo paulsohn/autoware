@@ -1,0 +1,20 @@
+load("@pip_ros//:requirements.bzl", "requirement")
+load("@rules_python//python:defs.bzl", "py_test")
+
+package(default_visibility = ["//visibility:public"])
+
+exports_files(["BUILD.wheel.bazel"])
+
+alias(
+    name = "scipy",
+    actual = "@scipy_wheel//:wheel",
+    target_compatible_with = ["@platforms//os:linux", "@platforms//cpu:x86_64"],
+)
+
+py_test(
+    name = "signal_test",
+    srcs = ["test_signal.py"],
+    main = "test_signal.py",
+    deps = [":scipy", requirement("numpy")],
+    precompile = "disabled",
+)

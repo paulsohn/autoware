@@ -93,7 +93,7 @@ py_library(
     srcs = glob(["interfaces/acados_template/acados_template/**/*.py"]),
     data = [":templates"],
     imports = ["interfaces/acados_template"],
-    deps = ["@casadi_wheel//:wheel", "@scipy_wheel//:wheel", requirement("numpy"), requirement("matplotlib"), requirement("deprecated")],
+    deps = ["@casadi_wheel//:wheel", "@scipy", requirement("numpy"), requirement("matplotlib"), requirement("deprecated")],
 )
 exports_files(["README.md"])
 
