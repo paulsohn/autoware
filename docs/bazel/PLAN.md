@@ -2691,10 +2691,14 @@ simulator or deployment export gate is selected.
 
 ### Phase 9.15: BEV and multimodal perception fusion (in progress)
 
-Progress: 1/5 module gates complete; coverage is 203/244 with 41 remaining.
+Progress: 2/5 module gates complete; coverage is 204/244 with 40 remaining.
 Image-projection/PointPainting passes all 15 original and 10 companion cases,
 plus the selected enabled Agnocast camera-association gate. See its
 [module experiment](JOURNAL.md#phase-915-projection-fusion).
+BEVFusion passes four native CUDA cases and three default-path/cold-warm runtime
+cases, including both modalities and all-six-camera readiness. Its existing
+implementation stays on libc++ through the qualified Point2Voxel C adapter.
+See the [BEVFusion gate](JOURNAL.md#phase-915-bevfusion).
 
 Start with image-projection fusion and its PointPainting provider. Preserve all
 four enabled original suites, four CPU fusion components and the CUDA PointPainting

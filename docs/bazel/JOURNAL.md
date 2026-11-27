@@ -27753,3 +27753,97 @@ qualifies only this static 3D voxel operation with caller-owned preallocated vie
 other raw SDK C++ APIs still require the GNU boundary. BEVFusion's complete model/
 ROS gate remains in progress. No source compatibility patch, upstream CMake,
 Fast DDS, simulator or deployment gate is claimed by this SDK prerequisite.
+
+<a id="phase-915-bevfusion"></a>
+
+## 2026-11-28 — Phase 9.15: BEVFusion
+
+Purpose: integrate the complete LiDAR-only and six-camera/LiDAR detector using
+its v2.0 indexed models. Inspect all CMake effects, 10 C++ and four CUDA sources,
+config/launch inputs, sensor/calibration/TF/history contracts and actual sparse
+SDK calls. CMake enables no original functional tests; do not substitute linter
+execution or an empty runner for behavior acceptance. Preserve the three shared
+libraries, component, standalone command and resources. Use direct CUDA/spconv/
+TensorRT providers instead of an empty CMake CUDA dependency shim. The current
+preprocessor directly calls the sparse SDK's Point2Voxel API; validate that
+boundary rather than assuming ABI compatibility.
+
+Acceptance: real GPU sweep/voxel/camera/postprocess checks, LiDAR-only and
+camera/LiDAR FP16 cold/warm execution, ROS delivery and frame/history behavior.
+Keep camera/profile/cache policy in root companions. The component derives from
+rclcpp::Node and uses ROS/negotiated inputs; no Agnocast endpoint gate is selected.
+Routine validation uses Cyclone DDS. No source patch is selected in advance.
+The exposing build identifies the Point2Voxel GNU/libc++ boundary. The separately
+validated SDK adapter is 37e49d299; see the [ABI experiment](#phase-915-point2voxel-abi).
+Use its header-only compatibility view and GNU-owned C adapter while retaining
+the original component implementation. Preinclude the compatibility header only
+for the voxelization CUDA source. Hide TensorView inline symbols in every
+instantiating translation unit. Export the separate voxelization archive as an
+explicit root alongside the other three CUDA sources, preserving the original
+CUDA DSO. Give CPU sources their OpenCV provider and keep the PCL-dependent
+point-type SDK out of the CUDA-only graph; otherwise shared ownership duplicates
+PCL. The inspected CMake TENSORRT_VERSION_MAJOR definition is unused by these
+sources, so no duplicate major-version selection is needed in the module.
+
+All three original DSOs, component/command and indexed resources build. Four
+native GPU cases pass through real sweep/voxel/camera/suppression operations.
+CMake enables no original functional runners. The remaining module gate runs
+both indexed model variants cold/warm under their actual XML launcher, checks
+all-six-camera readiness and current output headers with history enabled, and
+retains indexed weights unchanged. Root selects FP16, cloud capacity 8192 and
+voxel min/opt/max 1/2048/4096. Synthetic 64x48 images scale to the original
+576x384 ROI; feature dimensions remain unchanged. Identity base_link extrinsics
+and distinct camera intrinsics are test choices, not source defaults. Writable
+cache and precision/profile selection remain outside the component. Native
+model execution now passes both variants. Retain the shipped undistortion setting
+in the final native gate as well as the separately tested CUDA remap operation.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast \
+  --local_test_jobs=1 --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp \
+  --test_output=errors @autoware_bevfusion//... \
+  //bazel/tests/autoware_bevfusion:all
+
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel aquery --config=runtime --config=no-agnocast --output=jsonproto \
+  '@autoware_bevfusion//:kernels + @autoware_bevfusion//:voxelization + @autoware_bevfusion//:library + @autoware_bevfusion//:node_library + @autoware_bevfusion//:autoware_bevfusion_cuda_lib + @autoware_bevfusion//:autoware_bevfusion_lib + @autoware_bevfusion//:autoware_bevfusion_component' \
+  > /tmp/bevfusion-actions.json
+```
+
+All 22 selected targets pass: 20 non-test providers and two runners. All four
+native CUDA cases and all three Python inner cases pass without failures/errors/
+skips. The Python runner checks indexed defaults and both LiDAR-only and six-
+camera/LiDAR modes. The multimodal node publishes no detections with only five
+camera inputs, then publishes the current cloud header when all six camera/
+image/extrinsic prerequisites are present. Both modes produce positive finite
+inference timing and valid finite detections when present. A second timestamp
+exercises the configured history while preserving the current header. Each
+mode prepares its real FP16 engine(s) cold and repeats warm; all three engine
+hashes/mtimes remain unchanged on warm runs, as do the three indexed ONNX input
+identities. Reuse unchanged passing kernel results in the final aggregate.
+
+Inspect the CUDA dependency-meta extras: their exported effect is -fno-lto on
+C/C++ compilation. The selected fastbuild actions already omit LTO. The aquery
+contains ten C++ compile actions, eight CUDA compile actions for the four sources,
+and three shared links, with no -flto or bitcode inputs. Direct pinned providers
+satisfy that effect in this configuration without an empty shim module. A future
+LTO configuration requires its own consumer gate. The private CMake TensorRT
+major-version definition is unused in the inspected sources; version selection
+continues through the root-selected SDK headers/provider.
+
+The complete prerequisite gate also passes the original SDK program, both new
+libc++ adapter cases, all 18 original TensorRT plugin kernel cases and both
+runtime interop cases. No TensorView constructor/destructor remains exported
+from the adapter or any of the three component DSOs. The adapter's C entrypoint
+and GNU runtime dependency are explicit. Component implementation and original
+tests remain unchanged. Targeted formatting, Python AST, whitespace and source/
+root-override census checks pass. Native model tests use the same pinned x86_64
+CUDA 13.2.2/TensorRT 10.16.1.11, LLVM/libc++ 21.1.8 and RTX 5070/595.99.02 as the
+prerequisite gates. Synthetic input/profile qualification does not establish
+model/sensor accuracy, performance or upstream CMake/colcon execution.
+
+Coverage reaches 204/244 with matching local overrides, leaving 40 packages.
+Phase 9.15 has two accepted modules; BEVFormer remains deferred. Next: StreamPETR
+and its own indexed model repository. No Fast DDS, simulator or deployment-export
+gate is selected for this module.

@@ -2722,3 +2722,15 @@ and declares the same LLVM provider for compile-time headers. Declaring only
 -fopenmp leaves Eigen without omp.h or the detector without omp_* definitions.
 Check the ELF definitions when changing this boundary: omp_get_thread_num has
 one definition in the CPU DSO and none in the PointPainting DSO.
+
+## BEVFusion consumers
+
+Use `@autoware_bevfusion//:library` with `:autoware_bevfusion_lib` and
+`:runtime_dynamic_deps` for the existing shared SDK owners. Run the indexed
+`autoware_bevfusion_node` SDK launcher. The voxelization translation unit uses
+the qualified Point2Voxel compatibility provider; keep TensorView inline
+visibility isolated in CUDA, CPU and node consumers. Model variant, concrete
+camera calibration, precision, voxel profile and writable cache are consumer
+settings. The component package owns its implementation, command/component
+records and config/launch resources. Validate both native model modalities with
+`//bazel/tests/autoware_bevfusion:runtime_test` after changing that behavior.

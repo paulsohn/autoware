@@ -2437,6 +2437,12 @@ local_path_override(
     path = "src/universe/autoware_universe/perception/autoware_image_projection_based_fusion",
 )
 
+bazel_dep(name = "autoware_bevfusion")
+local_path_override(
+    module_name = "autoware_bevfusion",
+    path = "src/universe/autoware_universe/perception/autoware_bevfusion",
+)
+
 # Launcher source modules.
 bazel_dep(name = "sample_vehicle_description")
 local_path_override(
