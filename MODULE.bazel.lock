@@ -781,6 +781,9 @@
     "https://bazel.ros.org/modules/interactive_markers/2.8.4-1.rcr.2/source.json": "de03780a233c1959d5a63be170d34eb88c573039b0e53afca83f9f070f1345da",
     "https://bazel.ros.org/modules/ittapi/3.26.3.rcr.0/MODULE.bazel": "5c5ebb4e18eced25555f80ae0a7730b568de42f2a595b17e82c5c629548385af",
     "https://bazel.ros.org/modules/ittapi/3.26.3.rcr.0/source.json": "76bc0b565313f08c1c8db56ea77b585d50e8df281c5c47cffeb701bc263719ac",
+    "https://bazel.ros.org/modules/joy/0.0.0/MODULE.bazel": "ffa4a6be40f79aaf55c0f332060461781542b18840263c78d6e23c714b66d3ce",
+    "https://bazel.ros.org/modules/joy/3.3.0-4.rcr.2/MODULE.bazel": "4239150a57e2d7c582b6e328d496a37913304cf8e8f7ffaaad84f0a13986c840",
+    "https://bazel.ros.org/modules/joy/3.3.0-4.rcr.2/source.json": "543ab7691398fb697ac9d613c3f3d32814ce60d087ef8bb63d5eddd7d35e148c",
     "https://bazel.ros.org/modules/jq.bzl/0.1.0/MODULE.bazel": "not found",
     "https://bazel.ros.org/modules/jsoncpp/1.9.5/MODULE.bazel": "not found",
     "https://bazel.ros.org/modules/jsoncpp/1.9.6.bcr.1/MODULE.bazel": "not found",
@@ -1756,6 +1759,8 @@
     "https://bazel.ros.org/modules/sdformat/16.1.0.rcr.0/source.json": "3573bb3d8929150080c269bd600848cf4ef913e0bd5539881fe25b37705e8edc",
     "https://bazel.ros.org/modules/sdformat/16.1.0/MODULE.bazel": "not found",
     "https://bazel.ros.org/modules/sdl2/2.32.0.bcr.beta.6/MODULE.bazel": "not found",
+    "https://bazel.ros.org/modules/sdl2_vendor/3.3.0-4.rcr.2/MODULE.bazel": "af0a79d8823b312412518ca4f2a25f9291262605ceefc02b923944f30b382d54",
+    "https://bazel.ros.org/modules/sdl2_vendor/3.3.0-4.rcr.2/source.json": "2ac1997d911157bf383ba38c77803cedbc47134de8b904af9b4ecadc8dbb5860",
     "https://bazel.ros.org/modules/sed/4.10.bcr.2/MODULE.bazel": "not found",
     "https://bazel.ros.org/modules/sed/4.9.bcr.3/MODULE.bazel": "not found",
     "https://bazel.ros.org/modules/semver/0.3.0.rcr.0/MODULE.bazel": "067903694ff7d070076f437ea035ff0be6f0505696cf9fad51052d0837ca9a8d",
@@ -3583,7 +3588,7 @@
     "@@rosdistro+//python:defs.bzl%pip_ros": {
       "general": {
         "bzlTransitiveDigest": "9KPSmaWfGTp6RN0By0DcuUgpR00WASpGuGN+q6IHLUY=",
-        "usagesDigest": "kGrhTvCfE87hcg2RAg9FWM4/1wbOqRhFrwg910B1xAo=",
+        "usagesDigest": "iMUFdFxU95RPJCccqfsmVzoRr5U9+Z4OqR9I1Lnipwo=",
         "recordedInputs": [
           "REPO_MAPPING:bazel_features+,bazel_features_globals bazel_features++version_extension+bazel_features_globals",
           "REPO_MAPPING:bazel_features+,bazel_features_version bazel_features++version_extension+bazel_features_version",

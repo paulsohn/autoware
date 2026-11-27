@@ -2211,6 +2211,7 @@ After changes, run the affected package's complete @module//... targets with
 | autoware_predicted_path_checker | //bazel/tests/collision_checkers:predicted_runtime_test |
 | autoware_stop_mode_operator | //bazel/tests/control_operators:stop_runtime_test |
 | autoware_control_command_gate | //bazel/tests/control_operators:gate_filter_test and :gate_runtime_test |
+| autoware_joy_controller | //bazel/tests/control_operators:joy_runtime_test |
 
 The collision fixtures supply TF during startup because these constructors wait
 for a pose. The spheric upstream runner has zero assertions; its live 3D check
@@ -2223,3 +2224,7 @@ For command-gate changes, also run its :gate_runtime_test with --config=runtime
 declared heaphook only to the native child; do not add --run_under to this Python
 driver. Both executor profiles preserve the node's ROS endpoints. Focused package
 checks do not require simulator or deployment exports.
+
+The joystick index includes the pinned RCR driver install provider. Its software
+gate uses all four original controller configurations and synthetic Joy inputs;
+real joystick device permissions and physical mappings need hardware qualification.

@@ -1,0 +1,74 @@
+load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
+load("@rclcpp_components//:defs.bzl", "rclcpp_components_register_node")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "autoware_joy_controller_library",
+    srcs = glob(["src/**/*.cpp"]),
+    hdrs = glob(['include/**/*.hpp']),
+    includes = ["include", "src"],
+    deps = [
+        "@autoware_control_msgs//:cc",
+        "@autoware_qos_utils",
+        "@autoware_utils",
+        "@autoware_vehicle_msgs//:cc",
+        "@geometry_msgs//:cc",
+        "@nav_msgs//:cc",
+        "@rclcpp//:rclcpp_library",
+        "@rclcpp_components//:rclcpp_components_library",
+        "@sensor_msgs//:cc",
+        "@std_srvs//:cc",
+        "@tier4_api_utils",
+        "@tier4_control_msgs//:cc",
+        "@tier4_external_api_msgs//:cc",
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = [
+        "@autoware_control_msgs//:cc_shared",
+        "@autoware_utils//:runtime_dynamic_deps",
+        "@autoware_vehicle_msgs//:cc_shared",
+        "@geometry_msgs//:cc_shared",
+        "@nav_msgs//:cc_shared",
+        "@rclcpp//:rclcpp",
+        "@rclcpp_components//:rclcpp_components",
+        "@sensor_msgs//:cc_shared",
+        "@std_srvs//:cc_shared",
+        "@tier4_api_utils//:runtime_dynamic_deps",
+        "@tier4_control_msgs//:cc_shared",
+        "@tier4_external_api_msgs//:cc_shared",
+    ],
+)
+
+cc_shared_library(
+    name = "component",
+    shared_lib_name = "libautoware_joy_controller_node.so",
+    deps = [":autoware_joy_controller_library"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+)
+
+rclcpp_components_register_node(
+    name = "autoware_joy_controller",
+    component = ":component",
+    node_name = "autoware_joy_controller",
+    plugin = "autoware::joy_controller::AutowareJoyControllerNode",
+)
+
+register_ament_files(
+    name = "executables",
+    files = [":autoware_joy_controller"],
+    prefix = "lib/autoware_joy_controller",
+    strip_prefix = "*",
+)
+
+ament_index(
+    package_xml = "package.xml",
+    deps = ["@joy//:ament_package"],
+    components = [":autoware_joy_controller_record"],
+    data = glob(["config/**", "launch/**"]) + [":executables"],
+)

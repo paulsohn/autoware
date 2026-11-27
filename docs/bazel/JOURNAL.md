@@ -25092,3 +25092,39 @@ outputs. The actual joystick node publishes external control, gear, indicators
 and heartbeat through the generated types in all four configured profiles. The
 complete consumer gate passes without skips. No source changes are required;
 Universe coverage remains 186/244 until the consumer's separate package commit.
+
+## 2026-11-27 — Phase 9.12: Joystick controller
+
+Purpose: adopt the original node, all four converter headers/configurations,
+component/executable and launcher including its joy_node driver. CMake declares
+no functional tests. Define the software gate using synthetic DDS inputs for
+DS4, G29, P65 and Xbox; physical device mapping remains a hardware qualification.
+
+Add local MODULE/BUILD definitions and adjacent root selection. Preserve the
+original executable and libautoware_joy_controller_node.so; name its C++ provider
+:autoware_joy_controller_library to avoid colliding with the executable label.
+Use local control/vehicle/external-API interfaces, utilities and pinned ROS SDK.
+There is no local joy source. Select RCR joy 3.3.0-4.rcr.2 at root and include
+@joy//:ament_package in the component-owned index: this provider contains the
+joy_node executable missing from the narrower driver index, as well as its SDK
+closure and install metadata. Reuse that provider rather than inventing another
+installation/index rule. The accepted lock change adds only joy/sdl2_vendor
+registry inputs and their extension usage digest.
+
+Keep the fixture under bazel/tests/control_operators. Resolve joy through its
+index, require the indexed joy_node and run joy_enumerate_devices successfully.
+For each original controller configuration serve the required emergency/engage
+endpoints and send fresh odometry and complete controller-specific arrays. G29
+uses button 24 for PS; a truncated generic button array is invalid input. Require
+steering, accelerator/brake/reverse commands, external pedal output, drive gear,
+left indicator, heartbeat, emergency activation/release and command suppression
+after joystick expiry. Await each secondary output independently because it can
+arrive after the corresponding control message. Use the prerequisite's exact
+complete-package test command above.
+
+Results: all module and driver closure targets build. Device enumeration and all
+four live profiles pass on Cyclone DDS with clean shutdown and no skips. No
+original source changes are needed. Python syntax and whitespace checks pass.
+Coverage is 187/244, six of nine Phase 9.12 packages. Next: performance metrics,
+then steering-offset and accel/brake calibration. No Fast DDS, simulator or
+deployment gate is selected.

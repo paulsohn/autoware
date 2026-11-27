@@ -94,6 +94,7 @@ single_version_override(
     version = "32.0.3-1.rcr.0",
 )
 
+bazel_dep(name = "joy", version = "3.3.0-4.rcr.2")
 bazel_dep(name = "logging_demo", version = "0.37.9-1.rcr.0")
 bazel_dep(name = "nav_msgs", version = "5.9.3-1.rcr.0")
 bazel_dep(name = "lifecycle_msgs", version = "0.0.0")
@@ -2258,6 +2259,12 @@ bazel_dep(name = "autoware_control_command_gate")
 local_path_override(
     module_name = "autoware_control_command_gate",
     path = "src/universe/autoware_universe/control/autoware_control_command_gate",
+)
+
+bazel_dep(name = "autoware_joy_controller")
+local_path_override(
+    module_name = "autoware_joy_controller",
+    path = "src/universe/autoware_universe/control/autoware_joy_controller",
 )
 
 # Launcher source modules.

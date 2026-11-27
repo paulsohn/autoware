@@ -62,3 +62,23 @@ cc_test(
     dynamic_deps = ["@autoware_control_command_gate//:runtime_dynamic_deps"],
     env = {"LD_LIBRARY_PATH": "lib"},
 )
+
+py_test(
+    name = "joy_runtime_test",
+    timeout = "long",
+    srcs = ["test_joy.py"],
+    main = "test_joy.py",
+    args = ["$(rootpath @autoware_joy_controller//:autoware_joy_controller)"],
+    data = ["@autoware_joy_controller//:autoware_joy_controller", "@autoware_joy_controller//:ament_index"],
+    deps = [
+        "@ament_index_python",
+        "@autoware_control_msgs//:py",
+        "@nav_msgs//:py",
+        "@rclpy",
+        "@sensor_msgs//:py",
+        "@tier4_external_api_msgs//:py",
+    ],
+    env = {"LD_LIBRARY_PATH": "lib", "ROS_DOMAIN_ID": "83"},
+    precompile = "disabled",
+    tags = ["no-sandbox", "no-remote"],
+)
