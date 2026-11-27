@@ -1,0 +1,13 @@
+load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
+
+package(default_visibility = ["//visibility:public"])
+
+MODEL_FILES = ['README.md', 'deploy_metadata.yaml', 'ml_package_ptv3_det3d_head.param.yaml', 'ml_package_ptv3_encoder.param.yaml', 'ml_package_ptv3_seg3d_head.param.yaml', 'ptv3_det3d_head.onnx', 'ptv3_encoder.onnx', 'ptv3_seg3d_head.onnx']
+
+filegroup(name = "models", srcs = MODEL_FILES)
+register_ament_files(
+    name = "model_files",
+    files = MODEL_FILES + ["SHA256SUMS", "MODEL_PROVENANCE.md"],
+    prefix = "share/autoware_ptv3_models",
+)
+ament_index(package_xml = "package.xml", data = [":model_files"])

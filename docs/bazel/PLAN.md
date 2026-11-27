@@ -2649,6 +2649,9 @@ native FP16 execution. The reproduced padded-shuffle data-loss correction is
 associated partly with closed/unmerged AWF PR #11712; launch extent is a separate
 fix. See its [model gate](JOURNAL.md#phase-914-transfusion-models) and
 [module gate](JOURNAL.md#phase-914-transfusion). Next: PTV3.
+Its v0.1.1 model revision d62e52800ecb7de41fa9cc530df2d5d18624cf2b
+provides all three LFS-materialized encoder/head inputs and ML metadata via a
+validated indexed/colcon provider; see the [model gate](JOURNAL.md#phase-914-ptv3-models).
 
 Accepted SDK input: keep Eigen 5.0.1.bcr.1 and select the narrowly guarded
 nvcc 13.2/libc++ 21 invocation-trait patch after the independent host/device

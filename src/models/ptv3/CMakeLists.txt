@@ -1,0 +1,5 @@
+cmake_minimum_required(VERSION 3.16)
+project(autoware_ptv3_models NONE)
+find_package(ament_cmake REQUIRED)
+install(FILES README.md deploy_metadata.yaml ml_package_ptv3_det3d_head.param.yaml ml_package_ptv3_encoder.param.yaml ml_package_ptv3_seg3d_head.param.yaml ptv3_det3d_head.onnx ptv3_encoder.onnx ptv3_seg3d_head.onnx SHA256SUMS MODEL_PROVENANCE.md DESTINATION share/${PROJECT_NAME})
+ament_package()

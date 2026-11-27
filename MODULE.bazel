@@ -317,6 +317,12 @@ local_path_override(
     path = "src/models/lidar_transfusion",
 )
 
+bazel_dep(name = "autoware_ptv3_models")
+local_path_override(
+    module_name = "autoware_ptv3_models",
+    path = "src/models/ptv3",
+)
+
 # Core source modules.
 bazel_dep(name = "agnocast_cie_config_msgs")
 local_path_override(

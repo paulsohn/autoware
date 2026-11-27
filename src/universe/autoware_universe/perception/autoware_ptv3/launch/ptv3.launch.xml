@@ -6,8 +6,7 @@
   <arg name="output/pointcloud/filtered" default="~/filtered"/>
   <arg name="output/objects" default="~/objects"/>
 
-  <arg name="data_path" default="$(env HOME)/autoware_data/ml_models" description="packages data and artifacts directory path"/>
-  <arg name="model_path" default="$(var data_path)/ptv3"/>
+  <arg name="model_path" default="$(find-pkg-share autoware_ptv3_models)"/>
   <arg name="model_variant" default="ptv3" description="Model variant: ptv3"/>
   <arg name="use_seg3d_head" default="true" description="Enable segmentation 3D head"/>
   <arg name="use_det3d_head" default="true" description="Enable detection 3D head"/>

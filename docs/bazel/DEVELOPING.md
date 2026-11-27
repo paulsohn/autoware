@@ -2603,3 +2603,11 @@ voxels for the model's minimum shape, then checks indexed defaults, cold/warm
 FP16 inference, immutable inputs and clean node shutdown. Its timing peer listens
 to debug/processing_time/total_ms. Synthetic flow does not qualify recognition
 accuracy or other precision/temporal/container profiles.
+
+PTV3 model inputs are owned by `@autoware_ptv3_models//:ament_index`
+(`src/models/ptv3` for the selected local provider). Resolve its share for
+`ptv3_encoder.onnx`, `ptv3_seg3d_head.onnx`, `ptv3_det3d_head.onnx` and their
+ML parameter files. Use the repository's minimal ament_cmake support with colcon
+`--symlink-install`, then source the install environment. Stage inputs into a
+writable product-selected cache before engine preparation; keep indexed inputs
+immutable. HOME-only downloads do not provide the required package index.

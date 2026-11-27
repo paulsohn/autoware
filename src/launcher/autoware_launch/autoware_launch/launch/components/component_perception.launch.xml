@@ -8,7 +8,7 @@
   <!-- ML model parameters -->
   <arg name="lidar_detection_model" default="centerpoint" description="If the model name is not declared, the default model in the detection composition will be used"/>
   <arg name="data_path" default="$(env HOME)/autoware_data/ml_models" description="packages data and artifacts directory path"/>
-  <arg name="ptv3_model_path" default="$(var data_path)/ptv3"/>
+  <arg name="ptv3_model_path" default="$(find-pkg-share autoware_ptv3_models)"/>
 
   <!-- Pipeline junctions -->
   <arg
@@ -110,7 +110,6 @@
           <arg name="input/pointcloud" value="$(var perception_pointcloud)"/>
           <arg name="output/pointcloud" value="$(var obstacle_segmentation_pointcloud)"/>
           <arg name="output/pointcloud/segmentation" value="$(var semantic_segmentation_pointcloud)"/>
-          <arg name="data_path" value="$(var data_path)"/>
           <arg name="model_path" value="$(var ptv3_model_path)"/>
         </include>
       </group>

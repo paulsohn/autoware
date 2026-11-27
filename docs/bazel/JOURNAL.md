@@ -27066,3 +27066,52 @@ single-frame profile qualifies software flow and data preservation, not sensor
 calibration, recognition accuracy, other precision/profile limits, temporal TF,
 composable-container/build_only or Agnocast-enabled execution. No Fast DDS,
 simulator or deployment export gate is selected. Next: PTV3.
+
+<a id="phase-914-ptv3-models"></a>
+
+## 2026-11-27 — Phase 9.14: PTV3 model provider
+
+Purpose: expose the v0.1.1 encoder and both task heads through one model-owned
+module/index at src/models/ptv3. Inspect HF immutable revision
+d62e52800ecb7de41fa9cc530df2d5d18624cf2b, all three upstream LFS hashes/sizes,
+model card, ML profiles and source/enclosing launch paths. Materialize and hash
+the payloads in an isolated full checkout, mirror its LFS objects into the parent
+repository and import a squashed subtree. Preserve upstream metadata and record
+SHA256SUMS and MODEL_PROVENANCE.md within the model repository.
+
+Own autoware_ptv3_models, :models/:ament_index and minimal NONE-language
+ament_cmake/colcon support in that boundary. Select its versionless root
+dependency with an adjacent local override before source consumers. Replace
+the standalone HOME/data_path default and both enclosing PTV3 model defaults
+with find-pkg-share; update all three owning runtime manifests together. Keep
+other model families' data_path until their own adoption boundary.
+
+Acceptance: materialization/hash and isolated-index tests, complete provider
+build and colcon --symlink-install with real launch/ML substitutions and all
+three model leaf symlinks. Native CUDA/inference is the following module task.
+The complete provider (three non-test targets) and both resource cases pass:
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_output=errors @autoware_ptv3_models//... \
+  //bazel/tests:ptv3_model_resources_test
+
+source /opt/ros/jazzy/setup.bash
+colcon build --base-paths src/models/ptv3 --symlink-install \
+  --build-base /tmp/ptv3-model-build --install-base /tmp/ptv3-model-install
+source /tmp/ptv3-model-install/setup.bash
+```
+
+The colcon package completes successfully. Resolve its share through
+ament_index_python, require every ONNX leaf to be a symlink and stream SHA-256
+against SHA256SUMS; sizes are 112,786,044 (encoder), 21,603,770 (detection) and
+14,281,175 bytes (segmentation). In LaunchContext, evaluate the standalone
+model_path, enclosing ground-segmentation model_path and component_perception
+ptv3_model_path with parse_substitution/perform_substitutions: all select that
+share. Evaluate each task's onnx_path with model_variant=ptv3 and model_path set
+to the share; all three files exist. Parse the three owner manifests and require
+the model exec_depend. Remove obsolete data_path propagation through the ML
+ground-segmentation include. XML/manifest parsing and whitespace checks pass.
+No native inference is claimed by this provider-only boundary; next expose all
+seven original runners and qualify both task heads through the real GPU node.

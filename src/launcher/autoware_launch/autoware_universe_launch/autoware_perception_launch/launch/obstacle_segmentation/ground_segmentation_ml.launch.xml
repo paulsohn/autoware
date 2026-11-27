@@ -9,9 +9,8 @@
   <arg name="output/pointcloud/segmentation" default="/perception/segmented/pointcloud"/>
   <arg name="output/pointcloud/visualization" default="/perception/segmented/pointcloud/visualization"/>
 
-  <arg name="data_path" default="$(env HOME)/autoware_data/ml_models" description="packages data and artifacts directory path"/>
   <arg name="model_variant" default="ptv3"/>
-  <arg name="model_path" default="$(var data_path)/ptv3"/>
+  <arg name="model_path" default="$(find-pkg-share autoware_ptv3_models)"/>
 
   <include file="$(find-pkg-share autoware_ptv3)/launch/ptv3.launch.xml">
     <arg name="input/pointcloud" value="$(var input/pointcloud)"/>
@@ -20,7 +19,6 @@
     <arg name="output/pointcloud/filtered" value="$(var output/pointcloud)"/>
     <arg name="pointcloud_container_name" value="$(var pointcloud_container_name)"/>
     <arg name="use_pointcloud_container" value="$(var use_pointcloud_container)"/>
-    <arg name="data_path" value="$(var data_path)"/>
     <arg name="model_variant" value="$(var model_variant)"/>
     <arg name="model_path" value="$(var model_path)"/>
   </include>

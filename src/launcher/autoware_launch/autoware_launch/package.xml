@@ -11,6 +11,7 @@
 
   <buildtool_depend>ament_cmake_auto</buildtool_depend>
 
+  <exec_depend>autoware_ptv3_models</exec_depend>
   <exec_depend>autoware_adapi_adaptors</exec_depend>
   <exec_depend>autoware_agnocast_wrapper</exec_depend>
   <exec_depend>autoware_carla_interface</exec_depend>
