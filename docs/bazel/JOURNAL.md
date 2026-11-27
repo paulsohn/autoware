@@ -25437,3 +25437,50 @@ local definitions and root selection, leaving 54. No Fast DDS, simulator or
 deployment gate was selected or rerun. Calibration accuracy on real hardware,
 physical joystick mappings and optional RViz interaction remain separate
 qualifications. Next: Phase 9.13, traffic-light model execution and image tracking.
+
+<a id="phase-913-bytetrack"></a>
+
+## 2026-11-27 — Phase 9.13: ByteTrack tracking and visualization
+
+Purpose: adopt the actual CPU tracker, wrapper, node and visualizer libraries,
+both registered components/executables and their original configuration/launch.
+CMake declares no functional tests. Inspect all lib/src sources, public node
+headers and the visualizer's raw/compressed branch; require five external core
+cases and live DDS tracking/UUID/annotated-image behavior in both transports,
+including clean shutdown. Use Cyclone DDS; these nodes use ordinary rclcpp.
+
+The complete build exposes removed message_filters .h forwarders and a changed
+subscription QoS signature. Use subscriber.hpp, sync_policies/exact_time.hpp and
+synchronizer.hpp, then pass rclcpp::QoS directly to the two message_filters
+subscribers. Keep the still-supported image_transport overload unchanged.
+An initial cv_bridge missing-header error instead comes from an omitted Bazel
+node-header dependency; declare the provider rather than changing its existing
+__has_include compatibility branch. Current AWF main retains both the removed
+headers and old message_filters QoS calls; scoped searches find no matching fix.
+
+After these compile corrections, both real nodes exchange tracked objects,
+UUIDs and drawn image pixels in raw and compressed modes, but shutdown aborts
+with an uncaught OpenCV exception from cvDestroyAllWindows. The visualizer opens
+no windows: it only draws into images and publishes them. Default its destructor
+instead of tearing down process-wide GUI state. This supports the headless SDK
+without adding a display toolkit or altering visual output. Current AWF main
+still has that call; the scoped shutdown PR search finds no matching correction.
+Keep source fixes separate from build definitions and added tests at root.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  @autoware_bytetrack//... //bazel/tests/autoware_bytetrack:all
+```
+
+Results: all 19 package targets and both external test targets pass. Five core
+cases cover empty/distinct identities, low-score association, loss/reacquisition,
+expiry/new identity and classification evidence. The live case checks both raw
+and default compressed images, nonzero/persistent UUIDs, image dimensions and
+changed pixels, empty detection propagation and zero-exit shutdown for both
+executables. No failures or skips remain. Changed C++ formatting, Python AST
+and whitespace checks pass. The host-side nvidia-smi probe also succeeds; a
+restricted shell's absent device nodes are not driver failure evidence. ByteTrack
+itself makes no GPU calls. The following build commit records its SDK/index
+pattern and closes this module; the four model-dependent gates remain pending.

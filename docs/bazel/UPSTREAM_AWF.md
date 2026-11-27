@@ -2970,3 +2970,27 @@ server/client test processes deterministic logs in both interpolation modes,
 returning SVG and exact CSV content. The full Cyclone DDS module gate passes;
 see the [calibrator journal](JOURNAL.md#phase-912-calibrator).
 No upstream submission or colcon/hardware validation is claimed.
+
+### ByteTrack visualizer: Lyrical subscription API and headless teardown
+
+- [ ] Associate the header/QoS correction with a matching AWF PR. Checked
+  2026-11-27: [the header](https://github.com/autowarefoundation/autoware_universe/blob/main/perception/autoware_bytetrack/include/autoware/bytetrack/bytetrack_visualizer_node.hpp)
+  still includes three removed message_filters .h files; the implementation
+  passes rmw profiles to message_filters subscribers, whose current API requires
+  rclcpp::QoS. Scoped ByteTrack/Lyrical and ByteTrack/message_filters PR searches
+  find no matching correction. The returned system-design PR #12921 changes
+  descriptions, not these sources; tracker #13620 supplies Lyrical context.
+- [ ] Associate the shutdown correction with a matching AWF PR. Checked
+  2026-11-27: [the destructor](https://github.com/autowarefoundation/autoware_universe/blob/main/perception/autoware_bytetrack/src/bytetrack_visualizer_node.cpp)
+  still calls cv::destroyAllWindows despite opening no windows. Scoped
+  ByteTrack/destroyAllWindows PR search finds no match.
+
+Use the current .hpp headers and pass the discovered rclcpp::QoS objects directly
+to the two message_filters subscriptions. Keep the accepted image_transport
+compatibility overload. Default the visualizer destructor: tearing down global
+GUI state throws with a headless OpenCV build and aborts an otherwise successful
+node. It has only image drawing/publication responsibilities. The complete
+module, five core cases and real raw/compressed tracking/UUID/annotated-image
+checks, including clean shutdown, pass on Cyclone DDS; see the
+[ByteTrack journal](JOURNAL.md#phase-913-bytetrack) for the exact gate. No upstream
+submission, colcon result or camera accuracy qualification is claimed.

@@ -47,10 +47,7 @@ ByteTrackVisualizerNode::ByteTrackVisualizerNode(const rclcpp::NodeOptions & nod
   image_pub_ = image_transport::create_publisher(this, "~/out/image");
 }
 
-ByteTrackVisualizerNode::~ByteTrackVisualizerNode()
-{
-  cv::destroyAllWindows();
-}
+ByteTrackVisualizerNode::~ByteTrackVisualizerNode() = default;
 
 bool ByteTrackVisualizerNode::get_topic_qos(const std::string & query_topic, rclcpp::QoS & qos)
 {
@@ -96,8 +93,8 @@ void ByteTrackVisualizerNode::on_timer()
     // All queries are succeeded. Stop the timer and start subscribing
     std::string conversion_type = use_raw_ ? "raw" : "compressed";
     image_sub_.subscribe(this, image_topic, conversion_type, image_qos.get_rmw_qos_profile());
-    rect_sub_.subscribe(this, rect_topic, rect_qos.get_rmw_qos_profile());
-    uuid_sub_.subscribe(this, uuid_topic, uuid_qos.get_rmw_qos_profile());
+    rect_sub_.subscribe(this, rect_topic, rect_qos);
+    uuid_sub_.subscribe(this, uuid_topic, uuid_qos);
     // Since rect and uuid topics inherit the header information from the source image,
     // ExactTime sync policy suits the purpose
     sync_ptr_ =
