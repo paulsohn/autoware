@@ -25998,3 +25998,21 @@ adoptions follow in separate package commits; they select this shared owner
 without changing source algorithms. The existing CcInfo/static contract remains
 available to other consumers. The composed pipeline gate remains outstanding;
 passing individual packages does not establish its complete link closure.
+
+<a id="phase-913-map-detector-ownership"></a>
+
+## 2026-11-27 — Phase 9.13 prerequisite: Map-detector utility ownership
+
+Purpose: let the map detector coexist with the traffic-light classifier without
+embedding a second traffic-light utility implementation. Keep its existing
+cc_library dependency for headers/CcInfo; remove the utility from the detector
+shared library's exported static roots and select the utility's :shared target
+in sdk_dynamic_deps. Preserve all detector algorithms, indexes and tests.
+
+Verification uses the complete three-package command in the preceding
+[shared utility experiment](#phase-913-traffic-utils-shared). All map-detector
+targets and its three original runners pass: 12 detector cases, 11 utility
+cases and one ROS-node case. All classifier and shared-utility gates also pass
+in the same invocation. No test is skipped. This ownership correction supplies
+the following composed recognition gate; it does not claim vehicle detection
+accuracy or a completed pipeline integration.

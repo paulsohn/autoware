@@ -15,13 +15,13 @@ cc_library(
 
 collect_transitive_dynamic_deps(
     name = "sdk_dynamic_deps",
-    dynamic_deps = ["@autoware_lanelet2_extension//:autoware_lanelet2_extension_lib", "@autoware_lanelet2_utils//:runtime_dynamic_deps", "@autoware_map_msgs//:cc_shared", "@autoware_planning_msgs//:cc_shared", "@autoware_traffic_light_utils//:runtime_dynamic_deps", "@autoware_utils//:runtime_dynamic_deps", "@geometry_msgs//:cc_shared", "@image_geometry//:image_geometry", "@rclcpp_components//:rclcpp_components", "@sensor_msgs//:cc_shared", "@tf2_eigen//:tf2_eigen", "@tf2_geometry_msgs//:tf2_geometry_msgs", "@tf2_ros//:tf2_ros", "@tier4_perception_msgs//:cc_shared", "@visualization_msgs//:cc_shared"],
+    dynamic_deps = ["@autoware_traffic_light_utils//:shared", "@autoware_lanelet2_extension//:autoware_lanelet2_extension_lib", "@autoware_lanelet2_utils//:runtime_dynamic_deps", "@autoware_map_msgs//:cc_shared", "@autoware_planning_msgs//:cc_shared", "@autoware_traffic_light_utils//:runtime_dynamic_deps", "@autoware_utils//:runtime_dynamic_deps", "@geometry_msgs//:cc_shared", "@image_geometry//:image_geometry", "@rclcpp_components//:rclcpp_components", "@sensor_msgs//:cc_shared", "@tf2_eigen//:tf2_eigen", "@tf2_geometry_msgs//:tf2_geometry_msgs", "@tf2_ros//:tf2_ros", "@tier4_perception_msgs//:cc_shared", "@visualization_msgs//:cc_shared"],
 )
 
 cc_shared_library(
     name = "autoware_traffic_light_map_based_detector",
     shared_lib_name = "libautoware_traffic_light_map_based_detector.so",
-    deps = [":autoware_traffic_light_map_based_detector_library", "@autoware_lanelet2_utils", "@autoware_traffic_light_utils", "@autoware_utils_debug", "@autoware_utils_diagnostics", "@autoware_utils_geometry", "@autoware_utils_math", "@autoware_utils_system", "@autoware_utils_visualization"],
+    deps = [":autoware_traffic_light_map_based_detector_library", "@autoware_lanelet2_utils", "@autoware_utils_debug", "@autoware_utils_diagnostics", "@autoware_utils_geometry", "@autoware_utils_math", "@autoware_utils_system", "@autoware_utils_visualization"],
     dynamic_deps = [":sdk_dynamic_deps"],
 )
 
