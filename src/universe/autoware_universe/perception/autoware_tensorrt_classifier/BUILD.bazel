@@ -56,6 +56,7 @@ collect_transitive_dynamic_deps(
     dynamic_deps = [
         "@autoware_tensorrt_common",
         "@rclcpp//:rclcpp",
+        "@rosdistro//cc:opencv",
     ],
 )
 

@@ -86,6 +86,7 @@ only when your current target demonstrates the need.
   [transitive schema indexes](JOURNAL.md#2026-11-23-phase-76--transitive-interface-resource-indexes);
   [evidence: nested source categories](JOURNAL.md#2026-11-21-phase-732--nested-interface-source-namespaces).
   [Native plugin registration and utility SDK ownership](DEVELOPING.md#native-plugin-libraries);
+  [shared vision SDK ownership evidence](JOURNAL.md#phase-913-classifier-opencv);
   [Qt/RViz runtime ownership and graphical prerequisites](DEVELOPING.md#rviz-plugin-packages);
   [evidence: composed utility closure](JOURNAL.md#2026-11-22-phase-733--shared-utility-sdk-ownership-in-containers);
   [shared filter-base provider evidence](JOURNAL.md#2026-11-24-phase-95--shared-cpu-filter-base-provider);

@@ -25713,3 +25713,35 @@ existing Jazzy/colcon; all seven indexed ONNX files are symlinks with matching
 hashes. No host dependency installation occurs. Changed Python/XML metadata and
 whitespace checks pass. GPU accuracy/inference remains the classifier task's
 gate, not a consequence of model-file checks. Universe coverage remains 192/244.
+
+<a id="phase-913-classifier-opencv"></a>
+
+## 2026-11-27 — Phase 9.13 prerequisite: Shared classifier OpenCV ownership
+
+Purpose: make the already adopted reusable TensorRT classifier composable with
+another vision library. The new traffic-light classifier links both that SDK
+and the canonical shared OpenCV provider. Bazel rejects the graph because the
+TensorRT classifier privately embeds OpenCV modules (first reported as ml),
+while the OpenCV shared provider owns the same static libraries.
+
+Add @rosdistro//cc:opencv to autoware_tensorrt_classifier's existing
+runtime_dynamic_deps. Its C++ implementation still depends on opencv_library;
+the shared link now imports that implementation from its canonical SDK owner.
+Do not hide the duplicate with an exports filter or put component-specific
+labels in the reusable provider. No source algorithms, precision choices or
+model inputs change. Revalidate the provider's complete existing gate separately
+before closing the consumer.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_output=errors @autoware_tensorrt_classifier//... \
+  //bazel/tests:tensorrt_classifier_test
+```
+
+Results: every provider target and all five existing classifier cases pass,
+including CPU/GPU allocation paths, actual batched RGB normalization, resize/
+letterbox behavior and engine reload. No failures or skips occur. Whitespace
+checks pass. The traffic-light consumer's full graph and suites remain its next
+gate; coverage stays 192/244. No communication, simulator or deployment rerun
+is required by this provider ownership correction.
