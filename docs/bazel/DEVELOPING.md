@@ -2066,7 +2066,13 @@ Keep code-generation wheels/tools out of the native consumer's runtime closure.
 Consumers using only mask run-length encoding depend on
 @perception_utils//:run_length_encoder_library and its :run_length_encoder
 shared provider. The full :perception_utils_library/:perception_utils pair
-composes that same codec with remapping and suppression utilities. Select the
+composes that same codec with remapping and suppression utilities.
+The full DSO also exports its object-recognition, interpolation, geometry and
+math SDK roots. Its runtime aggregate delegates internal-planning/planning
+messages to their canonical shared owners. A detector consuming these same
+libraries should use :perception_utils and :runtime_dynamic_deps as dynamic
+owners; do not statically embed a second copy or hide ownership errors.
+ Select the
 needed target rather than making a codec-only consumer own unrelated geometry
 and planning dependencies. Run @perception_utils//... after changes: all eight
 original cases across three targets must pass.

@@ -26666,3 +26666,45 @@ Python AST and whitespace checks pass.
 The payloads and model metadata remain unchanged; no fake deploy_metadata.yaml
 is added. Universe acceptance remains 197/244, Phase 9.14 2/7. The full native/
 CUDA CenterPoint gate, including an explicit original-test inventory, is next.
+
+<a id="phase-914-perception-geometry-owners"></a>
+
+## 2026-11-27 — Phase 9.14 prerequisite: Perception shared SDK ownership
+
+Purpose: compose the existing perception_utils NMS provider with CenterPoint's
+full ROS/PCL/utility closure. Shared-library analysis first reports
+CandidateTrajectory statically owned by both perception_utils and its canonical
+message DSO. Inspect the dependency through autoware_utils_geometry: it carries
+internal-planning/planning message interfaces, but perception_utils's runtime
+aggregate lacks their shared owners. Declare those two logical module inputs
+and shared message owners on runtime_dynamic_deps.
+
+The next ownership check exposes object-recognition/interpolation/geometry/math
+libraries linked statically inside the full perception DSO but not exported to
+its consumer. Declare those existing public libraries as shared-library roots,
+with direct logical module dependencies where needed. This exports the actual
+SDK used by both perception NMS and the detector; it does not duplicate message
+globals or introduce component-to-root dependencies. Keep implementations/tests
+and the independent run-length-codec provider unchanged. Inspect the final ELF
+instead of merely suppressing Bazel's ownership checks.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  @perception_utils//... @autoware_lidar_centerpoint//... \
+  @autoware_lidar_centerpoint_models//... \
+  //bazel/tests:centerpoint_model_resources_test \
+  //bazel/tests/autoware_lidar_centerpoint:all
+nm -D --defined-only --demangle bazel-bin/external/perception_utils+/libperception_utils.so
+```
+
+Selected prerequisite results: every perception_utils target and all eight
+original cases across its three runners pass. CenterPoint's native/CUDA/component
+build and all nine enabled original cases pass with the shared SDK; the four
+new current-API GPU kernel cases pass too. ELF inspection confirms public
+symbols from all four exported utility groups. No source/test assertion or
+middleware change is needed. The separate model-inference companion in the
+same invocation is still in progress when this SDK boundary closes; its result
+belongs to the CenterPoint module entry. Whitespace checks pass; no Fast DDS,
+simulator or deployment rerun is selected.

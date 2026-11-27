@@ -3,6 +3,10 @@ module(
     version = "0.0.0",
 )
 
+bazel_dep(name = "autoware_interpolation", version = "0.0.0")
+bazel_dep(name = "autoware_utils_math", version = "0.0.0")
+bazel_dep(name = "autoware_internal_planning_msgs", version = "0.0.0")
+bazel_dep(name = "autoware_planning_msgs", version = "0.0.0")
 bazel_dep(name = "autoware_object_recognition_utils", version = "0.0.0")
 bazel_dep(name = "autoware_perception_msgs", version = "0.0.0")
 bazel_dep(name = "autoware_utils_geometry", version = "0.0.0")
