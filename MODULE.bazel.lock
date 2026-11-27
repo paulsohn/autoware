@@ -527,6 +527,9 @@
     "https://bazel.ros.org/modules/composition_interfaces/0.0.0/MODULE.bazel": "26472b9c6044f17889e9d209830dc47bc6b711c9604a4cc2abbaa657c58cd113",
     "https://bazel.ros.org/modules/composition_interfaces/2.4.5-1.rcr.2/MODULE.bazel": "1aab74de439ee38ae3882a7a4deec2528582a10e78e1cf3e44c6acb2aeefcd22",
     "https://bazel.ros.org/modules/composition_interfaces/2.4.5-1.rcr.2/source.json": "db893ab57311be093a4fa63bcbbd052f323d30a90bd6f5824351a1f1a0ee88e3",
+    "https://bazel.ros.org/modules/compressed_image_transport/0.0.0/MODULE.bazel": "f7f7f42b09f2c168e19c023037eda68a2c157e46a29a491625dfd09d7fec4901",
+    "https://bazel.ros.org/modules/compressed_image_transport/6.2.6-1.rcr.0/MODULE.bazel": "4e164f0626481eeca8cbf582c897f6af2c2b97563eb181d95bbd63397b8531df",
+    "https://bazel.ros.org/modules/compressed_image_transport/6.2.6-1.rcr.0/source.json": "8e4e9b8e333840a6ce8b549b2601336458ded526c79765311d7b6c1ce5de55c0",
     "https://bazel.ros.org/modules/console_bridge/1.0.1/MODULE.bazel": "not found",
     "https://bazel.ros.org/modules/console_bridge_vendor/1.9.1-3.rcr.2/MODULE.bazel": "e868d13c64f7ad8816e762436cb690fbb74d265b89ac440a8578f84aa531708d",
     "https://bazel.ros.org/modules/console_bridge_vendor/1.9.1-3.rcr.2/source.json": "6892508a9b03a46a4827c12aa0692c9e4017d68283f2efe2c5faaf3f7e85ee95",
@@ -3589,7 +3592,7 @@
     "@@rosdistro+//python:defs.bzl%pip_ros": {
       "general": {
         "bzlTransitiveDigest": "9KPSmaWfGTp6RN0By0DcuUgpR00WASpGuGN+q6IHLUY=",
-        "usagesDigest": "WSqqSaU+lVRpZFJGPbMUel6l1pw9Hycgte7xR7xaU/w=",
+        "usagesDigest": "4G/7kx9rHQ2LkVz2WvPuHW3p3GlJRbwRlOdZinqeTZA=",
         "recordedInputs": [
           "REPO_MAPPING:bazel_features+,bazel_features_globals bazel_features++version_extension+bazel_features_globals",
           "REPO_MAPPING:bazel_features+,bazel_features_version bazel_features++version_extension+bazel_features_version",

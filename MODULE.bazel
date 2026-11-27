@@ -106,6 +106,7 @@ bazel_dep(name = "cv_bridge", version = "4.1.0-3.rcr.2")
 bazel_dep(name = "aruco", version = "5.0.5-3.rcr.2")
 bazel_dep(name = "image_geometry", version = "4.1.0-3.rcr.2")
 bazel_dep(name = "image_transport", version = "6.4.10-1.rcr.0")
+bazel_dep(name = "compressed_image_transport", version = "6.2.6-1.rcr.0")
 bazel_dep(name = "pcl_conversions", version = "2.10.0-1.rcr.0")
 bazel_dep(name = "tf2", version = "0.45.10-1.rcr.0")
 bazel_dep(name = "tf2_msgs", version = "0.0.0")
@@ -2289,6 +2290,12 @@ bazel_dep(name = "autoware_accel_brake_map_calibrator")
 local_path_override(
     module_name = "autoware_accel_brake_map_calibrator",
     path = "src/universe/autoware_universe/vehicle/autoware_accel_brake_map_calibrator",
+)
+
+bazel_dep(name = "autoware_bytetrack")
+local_path_override(
+    module_name = "autoware_bytetrack",
+    path = "src/universe/autoware_universe/perception/autoware_bytetrack",
 )
 
 # Launcher source modules.

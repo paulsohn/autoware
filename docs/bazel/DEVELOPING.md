@@ -2286,3 +2286,15 @@ to log.csv there and is forwarded to the plotting server. Keep the indexed
 original maps separate. The software gate checks synthetic feedback, exports,
 reports, helper publishers, the real service/client and launch parameter
 propagation. It does not qualify physical calibration or optional RViz behavior.
+
+## ByteTrack image tracking
+
+Run @autoware_bytetrack//... and //bazel/tests/autoware_bytetrack:all with
+--config=runtime --config=no-agnocast and Cyclone DDS after tracker/visualizer
+changes. The root core gate checks identity, low-score association, loss,
+expiry and classification evidence; its live companion runs both raw and
+compressed input through the indexed executables and verifies annotated images
+and clean shutdown. The package index includes the compressed transport plugin
+needed by the original default use_raw=false. Keep its indexed Kalman YAML in
+the declared runtime closure. This tracker consumes CPU detections and does not
+require TensorRT/GPU execution.

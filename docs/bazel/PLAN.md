@@ -2577,6 +2577,27 @@ for full commands and the Python entrypoint/index pattern. No selected gate is
 skipped; hardware accuracy, Fast DDS, simulator and deployment checks are outside
 this phase. Next: Phase 9.13, traffic-light model execution and image tracking.
 
+### Phase 9.13: Traffic-light model execution and image tracking (in progress)
+
+Progress: 1/5 module gates complete; coverage 191/244 (53 remaining).
+
+Start at 190/244 packages. Adopt ByteTrack first, preserving its tracker/wrapper,
+node and visualizer libraries, both components/executables and indexed Kalman
+configuration. There is no original functional suite; require identity through
+low-score association, temporary loss/reacquisition, expiry/new identity and live
+tracked/UUID/image outputs with raw and default compressed transport. Inspect
+actual source dependencies before retaining CUDA/OpenMP manifest shims.
+
+Then adopt calibration-status classification and traffic-light classification,
+fine detection and their composed pipeline with the complete original suites,
+declared model/metadata providers and real GPU inference. Select model revisions
+from current launch/test contracts. Keep model preparation choices in the root
+product and writable engine caches outside indexed source/model data. Use Cyclone
+DDS and the actual nodes' backend contracts; no Fast DDS, simulator or deployment
+export gate is selected. Missing runtime/model prerequisites leave the affected
+module incomplete rather than skipping tests. Commit each accepted module and
+source compatibility fix separately.
+
 ### Execution order through complete Universe coverage
 
 The following groups are the initial route through every remaining package.

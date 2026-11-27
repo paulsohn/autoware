@@ -25484,3 +25484,35 @@ and whitespace checks pass. The host-side nvidia-smi probe also succeeds; a
 restricted shell's absent device nodes are not driver failure evidence. ByteTrack
 itself makes no GPU calls. The following build commit records its SDK/index
 pattern and closes this module; the four model-dependent gates remain pending.
+
+Add the package-local MODULE/BUILD pair and adjacent versionless root selection.
+Preserve four shared-library identities: tracker internals, public ByteTrack
+wrapper, node and visualizer. Use separate C++ roots and shared SDK ownership;
+load config/kalman_filter.param.yaml through the package index as the original
+STrack constructor requires. Register both component records, executables,
+configuration and original launcher in the same package-owned index.
+
+Despite manifest/CMake CUDA/TensorRT/OpenMP declarations, this package's sources
+contain no CUDA/TensorRT APIs, OpenMP pragmas or use of TENSORRT_VERSION_MAJOR.
+The complete module and every selected behavior pass without those shims or
+flags. Keep actual Kalman, Eigen, Boost.UUID/LexicalCast, yaml-cpp, OpenCV,
+cv_bridge, image_transport, message_filters and ROS providers. Use real pinned
+BCR versions for rules_cc/Boost rather than nonexistent 0.0.0 registry records.
+No original implementation dependency is substituted with registry source.
+
+The original visualizer defaults to compressed input. Its index therefore owns
+both the existing raw image_transport plugin and compressed_image_transport;
+root pins the latter to RCR 6.2.6-1.rcr.0 after inspecting registry metadata and
+its compatible image_transport/cv_bridge releases. The external live peer uses
+fresh, exactly matched image/detection headers, a generated black PNG for
+compressed mode and raw BGR bytes otherwise. Require annotated nonblack pixels,
+tracked CAR output, nonzero/persistent UUIDs and empty-frame propagation. This
+qualifies the installed components, resources, driver outputs and clean process
+lifecycle without a GUI or camera.
+
+The complete command above passes both test targets, five core cases and both
+live transport subprofiles. Source correction is 191be4f25; final header include
+sorting changes formatting only, so the passing behavior evidence is reused.
+Coverage is 191/244 (53 remaining); Phase 9.13 is 1/5 complete. Next: indexed
+calibration-status models and their complete GPU preprocessing/inference suite.
+No Fast DDS, simulator or deployment check is selected.

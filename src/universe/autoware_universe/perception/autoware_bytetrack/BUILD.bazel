@@ -1,0 +1,99 @@
+load("@rclcpp_components//:defs.bzl", "rclcpp_components_register_node")
+load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "tracking_library",
+    srcs = glob(["lib/src/*.cpp"]),
+    hdrs = glob(["lib/include/*.h"]),
+    includes = ["lib/include"],
+    deps = ["@ament_index_cpp//:ament_index_cpp_library", "@autoware_kalman_filter", "@boost.uuid", "@rosdistro//cc:opencv_library", "@rosdistro//cc:yaml-cpp_library"],
+)
+
+collect_transitive_dynamic_deps(
+    name = "sdk_dynamic_deps",
+    dynamic_deps = ["@ament_index_cpp//:ament_index_cpp", "@cv_bridge//:cv_bridge", "@image_transport//:image_transport", "@message_filters//:message_filters", "@rclcpp_components//:rclcpp_components", "@sensor_msgs//:cc_shared", "@tier4_perception_msgs//:cc_shared", "@autoware_perception_msgs//:cc_shared", "@rosdistro//cc:opencv", "@rosdistro//cc:yaml-cpp"],
+)
+
+cc_shared_library(
+    name = "autoware_bytetrack_lib",
+    shared_lib_name = "libautoware_bytetrack_lib.so",
+    deps = [":tracking_library"],
+    dynamic_deps = [":sdk_dynamic_deps"],
+)
+
+cc_library(
+    name = "bytetrack_library",
+    srcs = ["src/bytetrack.cpp"],
+    hdrs = ["include/autoware/bytetrack/bytetrack.hpp"],
+    includes = ["include"],
+    deps = [":tracking_library"],
+)
+
+cc_shared_library(
+    name = "autoware_bytetrack",
+    shared_lib_name = "libautoware_bytetrack.so",
+    deps = [":bytetrack_library"],
+    dynamic_deps = [":autoware_bytetrack_lib", ":sdk_dynamic_deps"],
+)
+
+cc_library(
+    name = "node_library",
+    srcs = ["src/bytetrack_node.cpp"],
+    hdrs = ["include/autoware/bytetrack/bytetrack_node.hpp"],
+    includes = ["include"],
+    deps = [":bytetrack_library", "@cv_bridge//:cv_bridge_library", "@autoware_perception_msgs//:cc", "@rclcpp_components//:rclcpp_components_library", "@tier4_perception_msgs//:cc"],
+)
+
+cc_shared_library(
+    name = "autoware_bytetrack_node",
+    shared_lib_name = "libautoware_bytetrack_node.so",
+    deps = [":node_library"],
+    dynamic_deps = [":autoware_bytetrack", ":autoware_bytetrack_lib", ":sdk_dynamic_deps"],
+)
+
+cc_library(
+    name = "visualizer_library",
+    srcs = ["src/bytetrack_visualizer_node.cpp"],
+    hdrs = ["include/autoware/bytetrack/bytetrack_visualizer_node.hpp"],
+    includes = ["include"],
+    deps = ["@boost.lexical_cast", "@boost.uuid", "@cv_bridge//:cv_bridge_library", "@image_transport//:image_transport_library", "@message_filters//:message_filters_library", "@rclcpp_components//:rclcpp_components_library", "@tier4_perception_msgs//:cc", "@rosdistro//cc:opencv_library"],
+)
+
+cc_shared_library(
+    name = "autoware_bytetrack_visualizer",
+    shared_lib_name = "libautoware_bytetrack_visualizer.so",
+    deps = [":visualizer_library"],
+    dynamic_deps = [":sdk_dynamic_deps"],
+)
+
+rclcpp_components_register_node(
+    name = "bytetrack_node_exe",
+    node_name = "bytetrack_node_exe",
+    component = ":autoware_bytetrack_node",
+    plugin = "autoware::bytetrack::ByteTrackNode",
+)
+
+rclcpp_components_register_node(
+    name = "bytetrack_visualizer_node_exe",
+    node_name = "bytetrack_visualizer_node_exe",
+    component = ":autoware_bytetrack_visualizer",
+    plugin = "autoware::bytetrack::ByteTrackVisualizerNode",
+)
+
+register_ament_files(
+    name = "executables",
+    files = [":bytetrack_node_exe", ":bytetrack_visualizer_node_exe"],
+    prefix = "lib/autoware_bytetrack",
+    strip_prefix = "*",
+)
+
+ament_index(
+    package_xml = "package.xml",
+    libraries = [":autoware_bytetrack_lib", ":autoware_bytetrack", ":autoware_bytetrack_node", ":autoware_bytetrack_visualizer"],
+    components = [":bytetrack_node_exe_record", ":bytetrack_visualizer_node_exe_record"],
+    data = glob(["config/**", "launch/**"]) + [":executables", "@image_transport//:ament_index_plugin", "@compressed_image_transport//:ament_index"],
+)
