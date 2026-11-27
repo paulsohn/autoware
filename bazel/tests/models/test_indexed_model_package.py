@@ -14,6 +14,10 @@ from ament_index_python.packages import get_package_share_directory
 
 PACKAGE = sys.argv.pop(1)
 COUNT = int(sys.argv.pop(1))
+METADATA = 'deploy_metadata.yaml'
+if len(sys.argv) > 1 and sys.argv[1].startswith('--metadata='):
+    METADATA = sys.argv.pop(1).split('=', 1)[1]
+
 
 
 class IndexedModels(unittest.TestCase):
@@ -25,7 +29,7 @@ class IndexedModels(unittest.TestCase):
             payload = (share / name).read_bytes()
             self.assertFalse(payload.startswith(b'version https://git-lfs.github.com/spec/'))
             self.assertEqual(hashlib.sha256(payload).hexdigest(), digest, name)
-        self.assertTrue((share / 'deploy_metadata.yaml').is_file())
+        self.assertTrue((share / METADATA).is_file())
         self.assertTrue((share / 'MODEL_PROVENANCE.md').is_file())
 
     def test_materialized_indexed_payloads(self):

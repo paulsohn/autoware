@@ -1,0 +1,15 @@
+load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
+
+package(default_visibility = ["//visibility:public"])
+
+MODEL_FILES = ['README.md', 'base/detection_class_remapper.param.yaml', 'base/ml_package.param.yaml', 'base/pts_backbone_neck_head.onnx', 'base/pts_voxel_encoder.onnx', 'short_range/detection_class_remapper.param.yaml', 'short_range/ml_package.param.yaml', 'short_range/pts_backbone_neck_head.onnx', 'short_range/pts_voxel_encoder.onnx', 'sigma/detection_class_remapper.param.yaml', 'sigma/ml_package.param.yaml', 'sigma/pts_backbone_neck_head.onnx', 'sigma/pts_voxel_encoder.onnx', 'tiny/detection_class_remapper.param.yaml', 'tiny/ml_package.param.yaml', 'tiny/pts_backbone_neck_head.onnx', 'tiny/pts_voxel_encoder.onnx']
+
+filegroup(name = "models", srcs = MODEL_FILES)
+
+register_ament_files(
+    name = "model_files",
+    files = MODEL_FILES + ["SHA256SUMS", "MODEL_PROVENANCE.md"],
+    prefix = "share/autoware_lidar_centerpoint_models",
+)
+
+ament_index(package_xml = "package.xml", data = [":model_files"])

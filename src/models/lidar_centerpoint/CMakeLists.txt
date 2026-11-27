@@ -1,0 +1,8 @@
+cmake_minimum_required(VERSION 3.16)
+project(autoware_lidar_centerpoint_models NONE)
+find_package(ament_cmake REQUIRED)
+install(FILES README.md SHA256SUMS MODEL_PROVENANCE.md DESTINATION share/${PROJECT_NAME})
+foreach(bundle base short_range sigma tiny)
+  install(FILES ${bundle}/pts_backbone_neck_head.onnx ${bundle}/pts_voxel_encoder.onnx ${bundle}/ml_package.param.yaml ${bundle}/detection_class_remapper.param.yaml DESTINATION share/${PROJECT_NAME}/${bundle})
+endforeach()
+ament_package()

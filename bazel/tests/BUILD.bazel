@@ -2947,3 +2947,13 @@ py_test(
     deps = ["@ament_index_python", "@launch", "@launch_ros", "@launch_xml", "@rules_python//python/runfiles"],
     precompile = "disabled",
 )
+
+py_test(
+    name = "centerpoint_model_resources_test",
+    srcs = ["models/test_indexed_model_package.py"],
+    main = "models/test_indexed_model_package.py",
+    args = ["autoware_lidar_centerpoint_models", "8", "--metadata=base/ml_package.param.yaml"],
+    data = ["@autoware_lidar_centerpoint_models//:ament_index"],
+    deps = ["@ament_index_python"],
+    precompile = "disabled",
+)

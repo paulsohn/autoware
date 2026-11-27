@@ -2630,6 +2630,9 @@ Apollo is accepted with the v1.0 model revision
 cold/warm FP32 GPU XML execution, feature/clustering and portable resource checks.
 See its [model provider](JOURNAL.md#phase-914-apollo-models) and
 [module gate](JOURNAL.md#phase-914-apollo). Next: CenterPoint.
+Its v4.1 model revision 494c8171def40bd36cc2feb323e0a5acbfab132b now has
+validated LFS/index/colcon providers; see the
+[model gate](JOURNAL.md#phase-914-centerpoint-models). Native acceptance remains pending.
 
 Accepted SDK input: keep Eigen 5.0.1.bcr.1 and select the narrowly guarded
 nvcc 13.2/libc++ 21 invocation-trait patch after the independent host/device

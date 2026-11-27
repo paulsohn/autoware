@@ -26599,3 +26599,70 @@ No recognition-accuracy, physical calibration, FP16/INT8, build_only, enabled
 Agnocast, Fast DDS, simulator or deployment-export profile is qualified by this
 native FP32 gate. Other runtime configurations need their own selected evidence.
 Next: CenterPoint's model resources, native/CUDA sources and original suites.
+
+<a id="phase-914-centerpoint-models"></a>
+
+## 2026-11-27 — Phase 9.14: CenterPoint model bundles
+
+Purpose: supply repository-owned indexed base/short_range/sigma/tiny bundles for
+the CenterPoint consumer. Inspect the reference artifact role, model card,
+immutable v4.1 revision 494c8171def40bd36cc2feb323e0a5acbfab132b, all eight LFS
+hashes/sizes and the existing source/Autoware launch defaults. Each bundle owns
+two ONNX files plus versioned ML parameters and class-remapper metadata. The
+repository has no deploy_metadata.yaml; validate its actual ML metadata rather
+than inventing an upstream artifact.
+
+Use the preceding model tasks' isolated clone, materialization/hash/size checks,
+LFS-object mirroring and squashed subtree import at src/models/lidar_centerpoint.
+Keep one autoware_lidar_centerpoint_models module/package/index with :models,
+SHA256SUMS/provenance and minimal colcon/ament_cmake support. Root selects the
+local override before source consumers. Use a metadata-path argument on the
+existing generic root resource test; retain its strict deploy_metadata.yaml
+default for existing model repositories and rerun those users.
+
+Remove the standalone launcher's common data_path and resolve its base bundle
+through the model package index. Update autoware_perception_launch's
+centerpoint_model_path to the indexed bundle root; its variant and short-range
+suffixes remain intact. Add direct model runtime dependencies to both owning
+manifests. The parent common data_path still serves other unadopted families;
+leave those arguments until their own provider boundary. System-designer files
+remain out of scope. Concrete precision/cache decisions remain product-owned.
+
+Acceptance: every provider target; materialized hashes/isolated index; existing
+generic resource-test users; colcon --symlink-install with eight installed weight
+symlinks; version/remapper metadata in all four bundles; and real default-path
+resolution for standalone and enclosing XML. Native/GPU inference remains the
+following component gate.
+
+```sh
+(cd src/models/lidar_centerpoint && sha256sum -c SHA256SUMS)
+git lfs ls-files -l -I 'src/models/lidar_centerpoint/**'
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_output=errors @autoware_lidar_centerpoint_models//... \
+  //bazel/tests:centerpoint_model_resources_test //bazel/tests:apollo_model_resources_test \
+  //bazel/tests:calibration_model_resources_test \
+  //bazel/tests:traffic_classifier_model_resources_test \
+  //bazel/tests:fine_detector_model_resources_test
+# With existing sourced ROS and isolated build/install prefixes:
+colcon build --base-paths <checkout>/src/models/lidar_centerpoint \
+  --build-base <temporary>/build --install-base <temporary>/install --symlink-install
+. <temporary>/install/setup.bash
+```
+
+Results: the complete provider and all five shared-resource test targets pass,
+ten inner unittest cases with zero failures/errors/skips. All eight ONNX sizes/
+hashes match immutable HF LFS metadata. Existing Jazzy/colcon builds the augmented
+package; all eight installed weights are leaf symlinks with matching hashes.
+Use explicit install(FILES ...) per bundle to install only its four declared
+inputs. All four ML metadata files report v4.1 and resolve their remapper files.
+Repeat the preceding Apollo entry's installed-share SHA256SUMS/is_symlink checks
+for this package. Parse the real source/parent XML defaults with LaunchContext
+and perform_substitutions: model_path equals <indexed share>/base and
+centerpoint_model_path equals <indexed share>. Both directories exist and both
+owning manifests declare the model runtime dependency. XML/manifest parsing,
+Python AST and whitespace checks pass.
+
+The payloads and model metadata remain unchanged; no fake deploy_metadata.yaml
+is added. Universe acceptance remains 197/244, Phase 9.14 2/7. The full native/
+CUDA CenterPoint gate, including an explicit original-test inventory, is next.

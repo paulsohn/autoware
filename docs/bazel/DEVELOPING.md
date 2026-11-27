@@ -2483,6 +2483,16 @@ adding it solely for a header can give independent component DSOs duplicate
 static ownership. Keep the broader diagnostic dependency on the node that uses
 it, rather than importing it into the model-classifier core.
 
+CenterPoint bundles are provided by @autoware_lidar_centerpoint_models, under
+base/, short_range/, sigma/ and tiny/. Keep each pair of ONNX files together
+with its versioned ml_package.param.yaml and class-remapper parameters. The
+standalone and enclosing detector launch defaults resolve these directories
+through the model index. Run //bazel/tests:centerpoint_model_resources_test
+after editing payloads or metadata; it uses the existing ML metadata file as
+its resource check, since this repository has no deploy_metadata.yaml. Colcon
+--symlink-install installs each declared bundle file as a symlink. Keep generated
+engines in caller-owned writable caches.
+
 ## Apollo LiDAR inference
 
 @autoware_lidar_apollo_instance_segmentation owns the original shared component,
