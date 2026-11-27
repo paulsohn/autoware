@@ -3098,3 +3098,40 @@ active service checks and clean shutdown. The same aggregate gate passes all
 classifier/fine-detector suites. Commands, SDK ownership prerequisites and
 fixture ABI isolation are recorded in the journal. No upstream submission,
 older ROS/colcon, camera calibration or recognition-accuracy claim is made.
+
+### CUDA point-cloud preprocessing: Lyrical header and motion timestamps
+
+- [ ] Associate the TF2 include correction with matching AWF work. Checked
+  2026-11-27: [the current source](https://github.com/autowarefoundation/autoware_universe/blob/main/sensing/autoware_cuda_pointcloud_preprocessor/src/cuda_pointcloud_preprocessor/cuda_pointcloud_preprocessor.cu)
+  retains removed tf2/utils.h; scoped CUDA-preprocessor/Lyrical PR search finds
+  no matching correction. Use tf2/utils.hpp without changing its API usage.
+- [ ] Associate the timestamp corrections with matching AWF work. Checked
+  2026-11-27: [the current kernel implementation](https://github.com/autowarefoundation/autoware_universe/blob/main/sensing/autoware_cuda_pointcloud_preprocessor/src/cuda_pointcloud_preprocessor/undistort_kernels.cu)
+  leaves twist_stamp unassigned when 3D twist and angular-velocity samples have
+  equal timestamps, and both 2D/3D paths assert a strictly later motion stamp.
+  A scoped setupTwist3DStructs PR search finds no matching correction. Related
+  capacity/output-point-layout PRs do not establish a fix for these branches.
+
+- [ ] Associate the polar-noise-filter teardown correction with matching AWF
+  work. Checked 2026-11-27: [its destructor](https://github.com/autowarefoundation/autoware_universe/blob/main/sensing/autoware_cuda_pointcloud_preprocessor/src/cuda_outlier_filter/cuda_polar_voxel_noise_filter.cu)
+  destroys the stream/pool before the CubExecutor member releases cached CUB
+  storage. A scoped polar/CubExecutor PR search finds no matching correction.
+  The live XML test demonstrates a shutdown SIGSEGV in cudaFreeAsync; reset
+  cached storage before synchronization/stream/pool teardown. Require absence
+  of child-process death, because the launch parent can still return zero.
+
+The nonzero 3D-motion companion aborts at the timestamp assertion with matched
+motion samples 50 ms after cloud start. Assign that branch's known common stamp,
+matching the existing 2D branch. A live XML test separately aborts with a motion
+sample exactly at cloud start: queue pruning retains equal-time samples, so
+permit equality in both assertions. A zero integration interval is valid.
+These correctness fixes are independent of Lyrical/Bazel compatibility.
+
+The added regressions use a stationary landmark viewed from a vehicle with body
+vx=1/yaw-rate=1, and zero-motion samples at cloud start in both deskew modes.
+Require actual GPU coordinates, retaining the original suite/assertions. See
+the [module journal](JOURNAL.md#phase-914-cuda-preprocessor) for commands.
+All 15 original CUDA cases, five live XML profiles with clean child shutdown,
+and three native transport/numerical cases in both selected runtime profiles
+pass; the complete affected CPU suite also passes. No upstream submission or physical sensor
+accuracy claim is made.

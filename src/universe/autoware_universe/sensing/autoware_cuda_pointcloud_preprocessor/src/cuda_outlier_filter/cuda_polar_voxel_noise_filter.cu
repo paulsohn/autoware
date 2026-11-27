@@ -494,6 +494,8 @@ CudaPolarVoxelNoiseFilter::CudaPolarVoxelNoiseFilter() : primary_return_type_dev
 
 CudaPolarVoxelNoiseFilter::~CudaPolarVoxelNoiseFilter()
 {
+  // Release cached CUB storage while its allocation stream and pool are alive.
+  cub_executor_ = CubExecutor{};
   if (stream_) {
     cudaStreamSynchronize(stream_);
   }

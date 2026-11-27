@@ -26330,3 +26330,68 @@ new XML-launch companion remains a separate CUDA module gate at this point.
 Reuse the unchanged prior enabled CPU crop-box evidence; the header-only provider
 addition does not change that implementation or configuration. No Fast DDS or
 system/deployment check is selected.
+
+<a id="phase-914-cuda-preprocessor"></a>
+
+## 2026-11-27 — Phase 9.14: CUDA point-cloud preprocessing (in progress)
+
+Purpose: adopt both original shared libraries, all five components/commands,
+configuration/launch resources and both original suites (13 preprocessing/queue
+cases and two GPU concatenation cases). Require actual device execution with no
+skips, added live checks of every filter family and its applicable Agnocast
+runtime path. Inspect CMake, public headers, all CUDA/host translation units,
+point layouts, queue contracts, diagnostics, YAML/XML resources and the existing
+CUDA-blackboard adapter before defining the gate. The environment is Ubuntu
+24.04 x86_64, Bazel 9.3.2, the pinned Lyrical/LLVM/CUDA profile above, an RTX 5070
+Laptop GPU with driver 595.99.02, and a loaded /dev/agnocast character device.
+Probe both prerequisites from the same host environment as test execution.
+
+Split CUDA kernels from host collector/node sources. Preserve the two original
+library names; make both the host library and CUDA archive shared-library roots
+so the public CUDA classes are exported, rather than only the host collector
+symbols. Register all five original component classes and executable names with
+switchable wrapper commands, including native fallback. Carry original config/
+launch files and the CPU package's index for launch-default YAML resources.
+Root selects the local module; components use only logical dependency labels.
+The narrow CPU template/diagnostic providers and their shared owners are
+explained in the [prerequisite](#phase-914-concatenation-headers). Reuse canonical
+utility, CUDA-blackboard and ROS owners instead of statically duplicating them
+across core/node DSOs. Declare direct libcudacxx headers on CUDA compilation.
+
+The first compile exposes a removed tf2/utils.h include; use tf2/utils.hpp.
+Eigen's device-expression failure is isolated and resolved in the separate
+[SDK experiment](#phase-914-eigen-cuda). Keep these changes separate from build
+definitions and retain original test assertions.
+
+Three demonstrated correctness failures require small source fixes:
+
+- With equal 3D twist/IMU timestamps, the queue-merge branch never assigns
+  twist_stamp. A stationary landmark viewed at t=0 and 50 ms by a vehicle with
+  body vx=1/yaw-rate=1 aborts at the timestamp assertion. Assign the known common
+  stamp, matching the 2D branch. Both GPU outputs then recover (5, 0, 0) within
+  1e-4, using the physical inverse transform for input coordinates.
+- A live XML command aborts when a twist sample equals cloud start. Queue
+  pruning intentionally retains equal-time samples; both deskew assertions
+  incorrectly require strict inequality. Allow equality for the valid zero
+  integration interval. A direct zero-motion case checks unchanged points for
+  both 2D and 3D, while the full XML preprocessing case checks the queue/node path.
+- After valid noise filtering and a parameter update, shutdown segfaults inside
+  cudaFreeAsync. The destructor destroys its stream/pool in the body, then the
+  CubExecutor member frees its cached storage through the dead stream. Reset
+  that cache before the existing synchronization and resource teardown. The
+  original launch parent returned zero despite its child's SIGSEGV, so checking
+  only parent exit status produced a false positive. Keep the child-death
+  assertion for every XML profile; do not mask shutdown failures.
+
+
+Current AWF main retains these branches and the old TF2 include on 2026-11-27;
+scoped PR searches find no matching corrections. Associations and scope are in
+[AWF feedback](UPSTREAM_AWF.md#cuda-point-cloud-preprocessing-lyrical-header-and-motion-timestamps).
+The timestamp corrections are implementation defects, independently of Lyrical.
+
+Source-fix verification: the joint command in the prerequisite entry passes
+all 15 original CUDA cases, the complete CPU suites, all five XML profiles
+(including actual node shutdown), and the three native transport/numerical
+cases. The enabled transport/numerical gate also passes with the heap hook and
+kernel device. No original assertion is changed. Package adoption still needs
+its build/index/test declarations recorded with the complete final gate.

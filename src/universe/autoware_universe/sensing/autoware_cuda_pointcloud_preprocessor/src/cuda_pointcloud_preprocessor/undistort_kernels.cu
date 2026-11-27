@@ -231,7 +231,7 @@ std::size_t setupTwist2DStructs(
     twist.cum_theta = cum_theta;
 
     std::uint64_t twist_global_stamp_nsec = twist_stamp;
-    assert(twist_global_stamp_nsec > pointcloud_stamp_nsec);  // by construction
+    assert(twist_global_stamp_nsec >= pointcloud_stamp_nsec);  // by construction
     std::uint32_t twist_from_pointcloud_start_nsec =
       twist_global_stamp_nsec - pointcloud_stamp_nsec;
 
@@ -318,6 +318,7 @@ std::size_t setupTwist3DStructs(
       twist_stamp = angular_velocity_global_stamp_nsec;
       angular_velocity_index++;
     } else {
+      twist_stamp = input_twist_global_stamp_nsec;
       twist_index++;
       angular_velocity_index++;
     }
@@ -330,7 +331,7 @@ std::size_t setupTwist3DStructs(
     cum_transform_buffer_map = cum_transform;
 
     std::uint64_t twist_global_stamp_nsec = twist_stamp;
-    assert(twist_global_stamp_nsec > pointcloud_stamp_nsec);  // by construction
+    assert(twist_global_stamp_nsec >= pointcloud_stamp_nsec);  // by construction
     std::uint32_t twist_from_pointcloud_start_nsec =
       twist_global_stamp_nsec - pointcloud_stamp_nsec;
 

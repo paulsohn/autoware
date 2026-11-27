@@ -28,7 +28,7 @@
 #include <sensor_msgs/msg/point_field.hpp>
 
 #include <cuda_runtime.h>
-#include <tf2/utils.h>
+#include <tf2/utils.hpp>
 #include <thrust/iterator/transform_iterator.h>
 
 #include <algorithm>
