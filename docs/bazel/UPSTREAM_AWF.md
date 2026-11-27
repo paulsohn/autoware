@@ -3190,3 +3190,20 @@ enabled original cases, four GPU kernel cases, two resource and two runtime/
 default-path cases pass, including actual cold/warm FP16 execution, unchanged
 indexed weights and clean child shutdown.
 No upstream submission or perception-accuracy claim is made.
+
+### PTV3: Lyrical TF2 public headers
+
+- [ ] Matching upstream PR associated. Checked 2026-11-27: current
+  [ptv3_node.hpp](https://github.com/autowarefoundation/autoware_universe/blob/main/perception/autoware_ptv3/include/autoware/ptv3/ptv3_node.hpp)
+  retains exceptions.h/buffer.h/transform_listener.h; scoped PTV3/Lyrical PR
+  search finds no matching correction. The
+  [AWF Lyrical tracker](https://github.com/autowarefoundation/autoware/issues/7404)
+  is related context; its linked Universe #13590 addresses other toolchain issues.
+- Reproducer: build the PTV3 component against this branch's pinned Lyrical
+  TF2 headers. Compilation fails at tf2/exceptions.h, which is absent. Use the
+  current .hpp public headers for exceptions, buffer and transform listener;
+  no algorithm or TF behavior changes.
+- Verification: complete PTV3 gate, all 55 enabled original cases across seven
+  runners, indexed resources and FP16 encoder plus both task heads through cold/
+  warm XML execution pass. See [the module experiment](JOURNAL.md#phase-914-ptv3).
+  The CUDA/plugin GNU runtime declaration is independent Bazel SDK support.

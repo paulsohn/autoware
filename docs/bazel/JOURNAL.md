@@ -27115,3 +27115,30 @@ the model exec_depend. Remove obsolete data_path propagation through the ML
 ground-segmentation include. XML/manifest parsing and whitespace checks pass.
 No native inference is claimed by this provider-only boundary; next expose all
 seven original runners and qualify both task heads through the real GPU node.
+
+<a id="phase-914-ptv3"></a>
+
+## 2026-11-27 — Phase 9.14: PTV3 CUDA inference (in progress)
+
+Purpose: expose four CUDA sources, four core sources and the node as the original
+three DSOs, native SDK-aware command, component record and indexed resources.
+Inspect CMake, manifests, all seven enabled original drivers and shared fixture,
+model profiles and node input/output contracts. All seven original runners are
+mandatory; CUDA-unavailable skips do not qualify. Add a root-owned FP16 profile
+and live XML check for encoder plus segmentation/detection heads, cold and warm
+cache identities, indexed input immutability and clean shutdown. No original
+suite is excluded and no anticipated compatibility patch is selected.
+
+Use direct CUDA/CUB/Thrust/TensorRT providers rather than the inspected CMake-only
+CUDA shim. Reuse canonical message/utility/PCL/TF shared owners, root-selected
+architecture and the plugin repository's own ament index. Keep model precision,
+profile bounds and writable engine preparation policy in the root fixture.
+The first native node compile fails at removed tf2/exceptions.h. Use the current
+.hpp exceptions/buffer/transform-listener header family, without algorithm/TF
+changes. Current AWF main retains the old includes on 2026-11-27; scoped PR
+search finds no matching correction. The Lyrical tracker and its linked newer-
+toolchain issue are related context, not evidence of an equivalent patch.
+The full gate after this source correction passes all 55 original cases, both
+model-resource cases and both runtime/default-path cases. Keep the source fix
+separate from Bazel definitions; SDK/runtime details and exact commands follow
+with that integration boundary.
