@@ -27459,3 +27459,49 @@ The complete fusion graph then passes analysis without duplicate static/export
 owners. Targeted Starlark analysis and whitespace checks pass. The scope is
 native perception SDK composition, not recognition accuracy or a new global
 utility facade. Original source and tests remain unchanged.
+
+<a id="phase-915-native-command-factory"></a>
+
+## 2026-11-28 — Phase 9.15: SDK-aware switchable commands
+
+Purpose: let PointPainting use its declared TensorRT native launcher while
+preserving the wrapper's generated main, selected executors, component record
+and plugin index. Inspect autoware_agnocast_node, the generated-main template and
+tensorrt_cc_binary. Add an optional binary_rule parameter defaulting to cc_binary.
+Forward the existing name/srcs/data/deps/dynamic_deps unchanged to that factory.
+Core acquires no TensorRT or product dependency; the component selects its SDK
+factory. Existing callers retain their command construction. The exposing fusion
+gate builds all five commands, including the TensorRT-backed PointPainting one.
+
+Validate the complete existing wrapper suite in both selected backends:
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  @autoware_agnocast_wrapper//...
+
+stat /dev/agnocast
+cat /sys/module/agnocast/version
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --local_test_jobs=1 --strategy=TestRunner=local \
+  --test_env=ENABLE_AGNOCAST=1 --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp \
+  --run_under=//bazel/agnocast:with_heaphook --test_output=errors \
+  @autoware_agnocast_wrapper//:unit_tests
+
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --local_test_jobs=1 \
+  --test_env=ENABLE_AGNOCAST=1 --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp \
+  --test_output=errors @autoware_agnocast_wrapper//:launch_tests
+```
+
+All 37 native and 66 Python cases pass in each backend, without failures or
+skips. Inspect the Python inner log as Bazel's fallback XML counts the runner
+rather than its 66 cases. Probe the device in the host test environment: the
+character device is accessible and module version is 2.4.1. Keep the heaphook
+preload on native processes, not the Python driver. The initial globally
+preloaded Python runner failed before collecting tests. A sandboxed native
+attempt failed with shm_open/File exists because sandbox PID namespaces share
+host shared memory. The documented local TestRunner strategy and native-only
+preload resolve both setup failures without source changes or shared-memory
+cleanup. Reuse unchanged passing results. No Fast DDS or deployment gate.

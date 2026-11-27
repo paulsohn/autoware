@@ -377,7 +377,7 @@ Consume CenterPoint/clustering/preprocessing from earlier groups when required. 
 - [ ] [autoware_camera_streampetr](../../src/universe/autoware_universe/perception/autoware_camera_streampetr/package.xml)
 - [ ] [autoware_image_projection_based_fusion](../../src/universe/autoware_universe/perception/autoware_image_projection_based_fusion/package.xml)
 - [ ] [autoware_tensorrt_bevdet](../../src/universe/autoware_universe/perception/autoware_tensorrt_bevdet/package.xml)
-- [ ] [autoware_tensorrt_bevformer](../../src/universe/autoware_universe/perception/autoware_tensorrt_bevformer/package.xml)
+- [ ] [autoware_tensorrt_bevformer](../../src/universe/autoware_universe/perception/autoware_tensorrt_bevformer/package.xml) — Deferred pending a qualified ONNX provider. See [Phase 9.15](PLAN.md#phase-915).
 
 ### Phase 9.16: Learned prediction, planning and control
 

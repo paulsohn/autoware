@@ -49,11 +49,12 @@ _node_main = rule(
     },
 )
 
-def autoware_agnocast_node(name, component, plugin, package_name, data = [], ros2_executor = "SingleThreadedExecutor", agnocast_only = True):
+def autoware_agnocast_node(name, component, plugin, package_name, data = [], ros2_executor = "SingleThreadedExecutor", agnocast_only = True, binary_rule = cc_binary):
     """Use callback-isolated execution with the selected ROS executor fallback.
 
     Set agnocast_only=False for rclcpp::Node components, matching the ROS-aware
     CallbackIsolatedAgnocastExecutor. The default requires wrapper::Node.
+    Set binary_rule for a command that needs a declared native SDK launcher.
     Emits <name>_components and <name>_plugin for the caller's ament index.
     """
     rclcpp_components_register_nodes(
@@ -79,7 +80,7 @@ def autoware_agnocast_node(name, component, plugin, package_name, data = [], ros
         name = name + "_dynamic_deps",
         dynamic_deps = [component, Label("@rosdistro//cc:glog")],
     )
-    cc_binary(
+    binary_rule(
         name = name,
         srcs = [":" + name + "_main"],
         data = data,

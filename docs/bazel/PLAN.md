@@ -90,6 +90,8 @@ only when your current target demonstrates the need.
   [perception utility SDK ownership evidence](JOURNAL.md#phase-914-perception-geometry-owners);
   [narrow clustering message utilities](JOURNAL.md#phase-915-cluster-utilities);
   [shared perception facade owners](JOURNAL.md#phase-915-perception-facade-owners);
+  [SDK-aware switchable commands](DEVELOPING.md#switchable-standalone-nodes),
+  [wrapper factory evidence](JOURNAL.md#phase-915-native-command-factory);
   [narrow utility dependency evidence](JOURNAL.md#phase-913-classifier-composition);
   [CUDA helper identity evidence](JOURNAL.md#phase-913-yolox-gpu-identity);
   [Qt/RViz runtime ownership and graphical prerequisites](DEVELOPING.md#rviz-plugin-packages);
@@ -2682,6 +2684,8 @@ precision policies at product level, keep caches writable and indexed inputs
 immutable, and commit each module/model boundary separately. No Fast DDS,
 simulator or deployment export gate is selected.
 
+<a id="phase-915"></a>
+
 ### Phase 9.15: BEV and multimodal perception fusion (in progress)
 
 Progress: 0/5 module gates complete; coverage starts at 202/244.
@@ -2692,8 +2696,19 @@ component. Add camera projection/association, synchronization/history and actual
 GPU/model output checks. Then adopt BEVFusion, StreamPETR, BEVDet and BEVFormer,
 with separate model/vendor prerequisites and complete module gates. Inspect each
 component's concrete calibration, transform, image/LiDAR and temporal contracts
-before selecting its root-owned synthetic inference profile. No future patch is
-selected in advance. Routine validation uses Cyclone DDS; select applicable
+before selecting its root-owned synthetic inference profile. BEVFormer is deferred
+pending a qualified ONNX provider. The documented SharePoint link returns an
+HTML application page instead of the weight in the 2026-11-27 probe, and the
+user reports that the provider has expired. The suggested
+[checkpoint mirror](https://huggingface.co/changh95/bevformer-small-weights) contains
+safetensors, not ONNX. The [original model](https://github.com/fundamentalvision/BEVFormer)
+and [exporter](https://github.com/DerryHub/BEVFormer_tensorrt) are candidates for a
+separate export task. The exporter's documented CUDA 11.6/TensorRT 8.5 setup is
+not qualified against the selected SDK or the node's image/prev_bev/can_bus/
+lidar2img/use_prev_bev bindings and custom plugins. Keep this package unchecked
+and count it among the remaining packages. Resume when a matching ONNX provider
+or a validated export pipeline is available. Continue the other four packages.
+No future patch is selected in advance. Routine validation uses Cyclone DDS; select applicable
 Agnocast behavior from each component's actual transport. No Fast DDS, simulator
 or deployment export gate is selected. Keep each validated boundary separate.
 

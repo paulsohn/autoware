@@ -625,6 +625,12 @@ with register_ament_files. For a component deriving from rclcpp::Node, set
 get_node_base_interface contract; do not cast it to wrapper::Node. Other
 executor pairs need explicit support before use.
 
+For a component requiring an SDK-aware native launcher, pass its binary factory
+as `binary_rule`, for example `binary_rule = tensorrt_cc_binary`. The factory
+must accept `name`, `srcs`, `data`, `deps` and `dynamic_deps`. The wrapper still
+owns the generated main, executor selection and plugin records. Declare the SDK
+in the component module; keep it out of the generic wrapper module.
+
 Keep added behavior sources and fixtures under bazel/tests/<package>/. Root
 targets select product runtime dependencies; package BUILD files expose original
 upstream suites without introducing component-to-root labels.
