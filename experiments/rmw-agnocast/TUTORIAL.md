@@ -98,7 +98,9 @@ dpkg-query -L agnocast-heaphook-v2.4.1
 
 Use a package source supporting your host release. The tested packages came from the upstream `t4-system-software/agnocast` Noble PPA on the host. A candidate for Ubuntu 26.04 was not verified. DKMS may compile the released module for the host kernel during installation. Coordinate replacement of any different loaded version before proceeding.
 
-Find the **absolute path** of libagnocast_heaphook.so in the package listing. The tested package installs it at `/opt/ros/jazzy/lib/libagnocast_heaphook.so`; use your actual path in step 5. Continue to source Lyrical throughout. For containerized nodes, expose the host device and mount or copy the matching .so into the userspace at a known path.
+For Agnocast 2.4.1, the Ubuntu release targeted by the Debian package fixes the heap hook directory at build time. The Jammy (22.04) package uses `/opt/ros/humble/lib/` and the Noble (24.04) package uses `/opt/ros/jazzy/lib/`, even on a host that has never had Humble or Jazzy installed. Keep sourcing Lyrical for the application. The laptop ran Lyrical userspace with the Noble-built hook. As of 2026-11-27, the PPA lists Jammy and Noble for this installation procedure. On Ubuntu 26.04 (Resolute), verify package availability before using it. [Packaging rule](https://github.com/autowarefoundation/agnocast/blob/a6034b52ef9ce798a668fbafba9ce15e46436846/agnocast_heaphook/debian/rules#L15-L22) · [PPA distribution index](https://ppa.launchpadcontent.net/t4-system-software/agnocast/ubuntu/dists/)
+
+Use the absolute library path from the package listing in the native terminals below. In a container with a mounted or copied hook, use its path inside the container instead of querying the host package database.
 
 ## 4. Build your ordinary ROS project once
 
@@ -141,7 +143,9 @@ source /opt/ros/lyrical/setup.bash
 source "$HOME/rmw-agnocast-pilot/build/migration-guide/install/local_setup.bash"
 source "$HOME/ros-examples/install/local_setup.bash"
 export RMW_IMPLEMENTATION=rmw_agnocast
-export LD_PRELOAD=/opt/ros/jazzy/lib/libagnocast_heaphook.so
+AGNOCAST_HOOK="$(dpkg-query -L agnocast-heaphook-v2.4.1 | grep '/libagnocast_heaphook[.]so$')"
+test -f "$AGNOCAST_HOOK"
+export LD_PRELOAD="$AGNOCAST_HOOK"
 ```
 
 In terminal A, start the listener.
@@ -174,6 +178,8 @@ ros2 bag info migration-topic-bag
 
 Look for /topic, std_msgs/msg/String, and a positive message count. Local delivery and disk recording have different costs. A C++ subscription can take a native loan. C-layout consumers convert the message and recording requires serialization.
 
+A stock `ros2 bag record` process subscribes through the RMW selected in its own terminal. With `RMW_IMPLEMENTATION=rmw_agnocast` and the hook loaded, it records the original local topic directly. For the export in step 7, a Cyclone recorder sees the gateway publisher on `/from_robot/topic`; the native recorder still sees the talker on `/topic`. If you omit the remap, both sides use `/topic`, and the recorder’s RMW still selects which publisher it sees. The same rule applies to Zenoh exports and to `ros2 bag record --all`. To capture both observations, run one recorder on each side with distinct bag directories. The network bag can have gaps during a gateway outage while the native bag continues recording.
+
 ## 7. Record the native talker from a Cyclone peer
 
 Keep the talker from step 5 running. On the host with the Agnocast device, open a fresh gateway terminal. Use the same ROS domain as the talker and your usual working Cyclone network configuration for the peer. Install the message package on both sides. The gateway loads the installed type by name.
@@ -185,7 +191,9 @@ cd "$HOME/rmw-agnocast-pilot"
 unset LD_PRELOAD
 colcon build --paths src/rmw_agnocast_discovery_msgs src/agnocast_cyclone_gateway --executor sequential --build-base build/manual-gateway/obj --install-base build/manual-gateway/install
 source build/manual-gateway/install/local_setup.bash
-ros2 run agnocast_cyclone_gateway topic_gateway export std_msgs/msg/String /topic /from_robot/topic --heaphook /opt/ros/jazzy/lib/libagnocast_heaphook.so
+AGNOCAST_HOOK="$(dpkg-query -L agnocast-heaphook-v2.4.1 | grep '/libagnocast_heaphook[.]so$')"
+test -f "$AGNOCAST_HOOK"
+ros2 run agnocast_cyclone_gateway topic_gateway export std_msgs/msg/String /topic /from_robot/topic --heaphook "$AGNOCAST_HOOK"
 ```
 
 Use the absolute hook path from step 3. The command starts a native reader and a Cyclone writer in separate processes. The gateway advertises the DDS topic immediately. Watch for both endpoint readiness lines. The native subscription arms when a compatible DDS reader appears.
@@ -207,10 +215,10 @@ ros2 bag info robot-topic-bag
 
 Expect a positive count on /from_robot/topic. The gateway releases its native subscription after the last match disappears. Recording begins after discovery and activation. Stopping the gateway creates a gap in a volatile stream. Local subscribers continue receiving.
 
-For the reverse direction, open another gateway terminal with both overlays sourced. This example imports a distinct peer topic into the local graph.
+For the reverse direction, set `AGNOCAST_HOOK` as above in another gateway terminal with both overlays sourced. This example imports a distinct peer topic into the local graph.
 
 ```bash
-ros2 run agnocast_cyclone_gateway topic_gateway import std_msgs/msg/String /from_peer/topic /local/peer_topic --heaphook /opt/ros/jazzy/lib/libagnocast_heaphook.so
+ros2 run agnocast_cyclone_gateway topic_gateway import std_msgs/msg/String /from_peer/topic /local/peer_topic --heaphook "$AGNOCAST_HOOK"
 ```
 
 Run a listener on /local/peer_topic with the native setup from step 5. Publish on /from_peer/topic from the Cyclone peer. An import subscribes immediately. Each positional command above owns one route until Ctrl+C. Both routes use volatile history, depth 10, best-effort input and reliable output. Use `--input-reliability reliable` for a reliable source when the bridge must request retransmission, or set `--output-reliability best_effort` for compatible readers. Use `--depth` for queue depth. Each serialized sample must fit within 64 MiB. When the Cyclone writer stalls, an export keeps the sample being sent plus the newest waiting sample. New arrivals replace older waiting samples. On shutdown, the native worker reports the number replaced as `export overwritten`. A reliable DDS output covers samples the gateway publishes. For a complete archive through a peer outage, record on the native host as well. This release has laptop-to-isolated-container evidence in both directions. Two physical hosts still need qualification.
