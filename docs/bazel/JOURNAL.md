@@ -25298,3 +25298,21 @@ gate recorded below. That service returns SVG bytes and the exact CSV contents;
 the shipped client saves SVG despite the schema's image-format comment. Keep
 that existing protocol unchanged. No original schema/tests are modified;
 whitespace checks pass. This prerequisite does not change the Universe census.
+
+## 2026-11-27 — Phase 9.12 prerequisite: Calibration map update service
+
+Purpose: expose the local tier4_vehicle_msgs UpdateAccelBrakeMap service used by
+the calibrator's export endpoint. Inspect its path-string request and
+success/message response; neither requires an explicit message dependency.
+Add srv/BUILD.bazel with ros_service and select that target in the existing
+root default_generators. Preserve the original schema and existing root local
+override; native and Python consumers share this generated provider.
+
+The complete provider/consumer build command in the preceding interface entry
+passes @tier4_vehicle_msgs//... together with the full calibrator. The native
+consumer regression additionally rejects a nonexistent destination, accepts a
+writable directory and exports both finite CSV maps with an updated acceleration
+map, for both status and command feedback profiles. The full repeatable consumer
+gate is recorded in the calibrator entry below. No original source/tests change;
+whitespace checks pass. Universe coverage remains 189/244 until that module
+closes.

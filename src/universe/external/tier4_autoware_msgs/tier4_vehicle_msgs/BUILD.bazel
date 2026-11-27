@@ -16,5 +16,6 @@ default_generators(
         "//msg:ActuationStatusStamped",
         "//msg:BatteryStatus",
         "//msg:VehicleEmergencyStamped",
+        "//srv:UpdateAccelBrakeMap",
     ],
 )
