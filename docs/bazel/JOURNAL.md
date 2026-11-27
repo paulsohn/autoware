@@ -26106,3 +26106,26 @@ readelf -d on each generated helper and parent SDK DSO: SONAME and DT_NEEDED
 now use the matching package-specific helper name. nm -D --defined-only finds
 no overlapping strong exported helper functions. The following YOLOX commit
 completes the paired identity correction; the final composed gate follows.
+
+
+<a id="phase-913-yolox-gpu-identity"></a>
+
+## 2026-11-27 — Phase 9.13 prerequisite: YOLOX CUDA library identity
+
+Purpose: complete the paired CUDA helper correction for classifier/YOLOX
+composition. Set the existing YOLOX :gpu_preprocess shared_lib_name to the
+original package-specific libautoware_tensorrt_yolox_gpu_preprocess.so. Preserve
+its CUDA source, public compile/shared targets, index and all generation APIs.
+A unique Bazel label alone cannot prevent two ELF libraries sharing a SONAME.
+
+Run the complete [joint SDK command](#phase-913-classifier-gpu-identity).
+All six targets pass without skips: five classifier cases, ten original YOLOX
+label cases, three real detector cases, one ROS-node case, all 15 cache/calibration
+cases and the fixture guard. The cache gate covers cold/warm FP16, build_only,
+expected unsupported default traffic-light INT8 failure, supported level-zero
+INT8, segmentation INT8, supplied/generated calibration files, ONNX-free
+prepared inference and node prepared/JIT policy. readelf verifies distinct
+SONAMEs and matching parent DT_NEEDED entries; exported strong helper functions
+do not overlap. This is a Bazel identity correction, not an upstream algorithm
+patch. Update the native-library convention and adoption links with this result;
+retry the composed pipeline and affected traffic-light consumers next.

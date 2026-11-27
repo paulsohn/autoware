@@ -924,6 +924,12 @@ to pluginlib::ClassLoader. Consumers declare the plugin package's :ament_index
 as data so the XML, resource record and library are available in runfiles.
 Do not add a component-to-root label or scan the host ament environment.
 
+Give auxiliary shared libraries package-specific shared_lib_name values too.
+Independent CUDA helpers named :gpu_preprocess must not both become
+libgpu_preprocess.so: different Bazel repository labels do not give their ELF
+SONAMEs different identities. Preserve the component project's library names
+and inspect both SONAME and DT_NEEDED when composing native SDKs.
+
 Provide package_xml: pluginlib reads the enclosing manifest to identify the
 provider even when its XML/resource record is present. For test-only plugins,
 expose a test-specific ament_index view with the original package.xml and required
