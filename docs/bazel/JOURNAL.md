@@ -28145,3 +28145,98 @@ they do not supply vehicle odometry. A caller with motion must populate and upda
 that pose explicitly. The ROS adapter currently exposes no per-frame odometry
 input, so moving-vehicle temporal accuracy remains unqualified. No source test is
 moved or modified; the regression stays in the existing root vendor companion.
+
+<a id="phase-915-bevdet"></a>
+
+## 2026-11-28 — Phase 9.15: BEVDet
+
+Purpose: integrate the actual six-camera node with the local vendor and indexed
+v1.0 model. Inspect all three original C++ sources, component/command names,
+architecture/node parameters, camera-info/TF initialization, approximate-time
+image synchronization, temporal inputs, box/marker conversion and teardown.
+There are no original functional tests or test directory. Preserve the original
+component DSO, command and single-threaded executor. Keep synthetic sensor/model/
+precision/cache policy in root companions. This rclcpp component has no selected
+Agnocast endpoint gate; routine transport uses Cyclone DDS.
+
+Prerequisites: local bevdet_vendor 0.2.1, including its separately validated
+calibration-only input correction 580abd4be, the preceding indexed BEVDet v1.0
+provider, RCR Lyrical, LLVM/libc++ 21.1.8, CUDA 13.2.2/TensorRT 10.16.1.11,
+RTX 5070 Laptop and working driver 595.99.02. Reuse the vendor's complete six-case
+gate for JPEG/device layout, temporal history/reset, rotated suppression, default
+sample metadata and all four plugin creators. No registry implementation
+substitution, unneeded GNU SDK transition or optional NVJPEG configuration.
+
+Four focused source corrections are reproduced and validated separately:
+
+- Compilation fails at three removed message_filters/*.h headers. Use their .hpp
+  counterparts. Leave unrelated deprecated TF2 forwarders intact.
+- The next compiler failure rejects rmw_qos_profile_t in all six image subscriber
+  calls. Pass the existing SensorDataQoS object directly to the current subscribe
+  overload. Preserve best-effort delivery and depth one.
+- Native output succeeds, but the debug deletion marker changes the supplied
+  base_link header to baselink. Remove that override and inherit the actual
+  detection header, like the other markers. The ROS companion checks both headers.
+- SIGINT after native inference aborts with free(): invalid pointer, child exit
+  -6. imgs_dev_ was allocated with cudaMalloc but released by C++ delete. Pair it
+  with checked cudaFree. Both cold and warm runs must shut down without child
+  death; launcher return status alone can hide a native crash.
+
+Current Universe main retains all four paths on 2026-11-28. Scoped Lyrical,
+marker-frame and CUDA teardown PR searches found no matching fixes. See the
+bounded evidence in UPSTREAM_AWF.md. No unrelated implementation is changed.
+
+The native fixture must satisfy the vendor's actual geometry/profile contract.
+Its pinned engine allows 200000..370000 valid depth/feature/BEV ranks and
+8000..14000 intervals. Identity cameras look along the vehicle's vertical axis
+and yield only 16896 ranks/24 cells. A forward-facing surround rig with focal
+1200+i*10 yields 377578 ranks/12568 cells, exceeding the first bound. The vendor
+continues after rejected setInputShape calls, leaving unresolved dimensions and
+then reporting an allocation failure. Fix the invalid test input before changing
+the implementation/profile. Independently calculate its frustum transform from
+feature grid 16x44, depths 1..59.5 step .5, resize .44, crop y=140, camera K/extrinsic,
+and the source's integer-truncated voxel coordinates. That calculation reproduces
+377578 exactly. Select focal 800+i*10 with yaw [55,0,-55,110,180,-110], optical
+x=-vehicle-y, optical-y=-vehicle-z, optical-z=vehicle-x before yaw, and height 1.5m.
+It gives 315810 valid ranks/11617 cells within both limits. The root fixture owns
+that calibration and precision selection. SDK API errors or failed forward
+execution fail acceptance. The vendor profile was not widened for synthetic data.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast \
+  --local_test_jobs=1 --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp \
+  --test_output=errors @autoware_tensorrt_bevdet//... \
+  //bazel/tests/autoware_tensorrt_bevdet:helpers_test \
+  //bazel/tests/autoware_tensorrt_bevdet:runtime_test
+```
+
+The complete working-tree gate passes all 14 selected targets: 12 component
+targets and two runners with three native helper and two Python cases. Inspect
+XML/inner logs for zero failures/errors/skips and nonempty runners. Native helpers
+check class/threshold/shape/twist conversion, camera intrinsic/TF extraction and
+two-camera BGR planar device layout. The Python suite resolves actual indexed
+model/config defaults and runs the shipped native launch twice. Use six camera
+info topics and transient-local static camera TF. The node must wait with only
+five calibrations, wait for the sixth synchronized image, publish current
+base_link object and marker headers, and publish a later stamped frame with the
+same temporal engine. Small synthetic input images exercise the original resize
+to 1600x900, followed by the model's 256x704 preprocessing. Explicitly select FP16
+and debug markers through a root-owned parameter file.
+
+Stage the indexed ONNX into a temporary writable model/cache directory. The
+existing node appends _fp16.engine to its engine_path base, which already ends
+in .engine in the shipped parameters; validate the actual file rather than
+assuming a shorter filename. The cold engine is nonempty, its hash/mtime stays
+unchanged on the warm run, and indexed model input identities stay unchanged.
+Both native runs shut down cleanly, with no TensorRT API or forward-execution
+error. This is stationary synthetic inference, not a sensor-accuracy, moving-
+vehicle temporal or performance qualification. The adapter supplies no per-frame
+odometry; its calibration-only sample now has valid stationary defaults.
+
+Source corrections are committed separately from Bazel definitions. The next
+boundary owns package-local MODULE/BUILD, the adjacent versionless source override
+and root companions. Targeted formatting, Python syntax and whitespace checks
+pass. Reuse unchanged model provider/index/colcon and full vendor evidence.
+No upstream CMake implementation build, Fast DDS, simulator, OCI or deployment
+export is claimed. BEVFormer remains explicitly deferred.

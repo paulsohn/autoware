@@ -3350,3 +3350,41 @@ cover actual GPU image layout/JPEG decoding, rotated suppression, temporal ring
 storage/reset and four plugin creators. The subsequent consumer gate validates
 native cold/warm inference separately. No upstream CMake or sensor accuracy
 result is claimed by this focused correction.
+
+
+## BEVDet Lyrical subscriptions, marker frame and CUDA teardown
+
+- [ ] Associate the three message_filters .hpp includes and six QoS subscription
+  corrections with an upstream issue or PR. Checked 2026-11-28: current Universe
+  main retains the legacy paths/API; scoped BEVDet Lyrical PR search finds none.
+  AWF's [Lyrical tracker](https://github.com/autowarefoundation/autoware/issues/7404)
+  provides transition context, not local validation evidence.
+- [ ] Associate the debug marker frame correction. Current
+  [marker_utils.cpp](https://github.com/autowarefoundation/autoware_universe/blob/main/perception/autoware_tensorrt_bevdet/src/marker_utils.cpp)
+  overrides the inherited header with baselink. Scoped PR search finds no match.
+- [ ] Associate the device-memory teardown correction. Current
+  [bevdet_node.cpp](https://github.com/autowarefoundation/autoware_universe/blob/main/perception/autoware_tensorrt_bevdet/src/bevdet_node.cpp)
+  still deletes imgs_dev_ with the C++ allocator. A scoped CUDA/destructor search
+  finds vendor-version updates and unrelated changes, not a matching correction.
+
+Package: autoware_tensorrt_bevdet 0.53.0 with local bevdet_vendor 0.2.1,
+indexed model v1.0, RCR Lyrical, LLVM/libc++ 21.1.8,
+CUDA 13.2.2/TensorRT 10.16.1.11 and RTX 5070 Laptop. Compile the existing node:
+message_filters/subscriber.h is absent, and after updating the three headers the
+six subscribe calls reject rmw_qos_profile_t. Pass the original best-effort,
+depth-one rclcpp QoS object directly. The source include/API fixes leave callback
+synchronization and transport policy unchanged.
+
+The native six-camera experiment then publishes base_link objects but baselink
+on its debug deletion marker. Remove the incorrect frame override. On SIGINT,
+the same process reports free(): invalid pointer and exits -6 because imgs_dev_
+comes from cudaMalloc. Use checked cudaFree to match its allocator. Check native
+child death as well as the launcher's status, which alone can miss this failure.
+
+The [BEVDet experiment](JOURNAL.md#phase-915-bevdet) contains the command and
+calibration/profile constraints. All three helper and two Python cases pass,
+including native FP16 cold/warm execution, six-camera waiting, current object/
+marker headers, reused engine identity and clean shutdown. The separately
+qualified vendor has six passing cases. These focused fixes are independent of
+Bazel metadata and product precision/cache policy. No upstream CMake or real
+sensor accuracy result is claimed.

@@ -59,7 +59,6 @@ visualization_msgs::msg::MarkerArray createMarkerArray(
   visualization_msgs::msg::Marker deletion_marker;
   deletion_marker.header = detected_objects.header;
 
-  deletion_marker.header.frame_id = "baselink";
   deletion_marker.ns = "bevdet_boxes";
   deletion_marker.id = id++;
   deletion_marker.action = visualization_msgs::msg::Marker::DELETEALL;

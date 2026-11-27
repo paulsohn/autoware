@@ -125,24 +125,15 @@ void TRTBEVDetNode::startImageSubscription()
   using std::placeholders::_5;
   using std::placeholders::_6;
 
-  sub_f_img_.subscribe(
-    this, "~/input/topic_img_front", rclcpp::SensorDataQoS{}.keep_last(1).get_rmw_qos_profile());
-  sub_b_img_.subscribe(
-    this, "~/input/topic_img_back", rclcpp::SensorDataQoS{}.keep_last(1).get_rmw_qos_profile());
+  sub_f_img_.subscribe(this, "~/input/topic_img_front", rclcpp::SensorDataQoS{}.keep_last(1));
+  sub_b_img_.subscribe(this, "~/input/topic_img_back", rclcpp::SensorDataQoS{}.keep_last(1));
 
-  sub_fl_img_.subscribe(
-    this, "~/input/topic_img_front_left",
-    rclcpp::SensorDataQoS{}.keep_last(1).get_rmw_qos_profile());
+  sub_fl_img_.subscribe(this, "~/input/topic_img_front_left", rclcpp::SensorDataQoS{}.keep_last(1));
   sub_fr_img_.subscribe(
-    this, "~/input/topic_img_front_right",
-    rclcpp::SensorDataQoS{}.keep_last(1).get_rmw_qos_profile());
+    this, "~/input/topic_img_front_right", rclcpp::SensorDataQoS{}.keep_last(1));
 
-  sub_bl_img_.subscribe(
-    this, "~/input/topic_img_back_left",
-    rclcpp::SensorDataQoS{}.keep_last(1).get_rmw_qos_profile());
-  sub_br_img_.subscribe(
-    this, "~/input/topic_img_back_right",
-    rclcpp::SensorDataQoS{}.keep_last(1).get_rmw_qos_profile());
+  sub_bl_img_.subscribe(this, "~/input/topic_img_back_left", rclcpp::SensorDataQoS{}.keep_last(1));
+  sub_br_img_.subscribe(this, "~/input/topic_img_back_right", rclcpp::SensorDataQoS{}.keep_last(1));
 
   sync_ = std::make_shared<Sync>(
     MultiCameraApproxSync(10), sub_fl_img_, sub_f_img_, sub_fr_img_, sub_bl_img_, sub_b_img_,
@@ -257,7 +248,7 @@ cv::Mat TRTBEVDetNode::cloneAndResize(const sensor_msgs::msg::Image::ConstShared
 
 TRTBEVDetNode::~TRTBEVDetNode()
 {
-  delete imgs_dev_;
+  CHECK_CUDA(cudaFree(imgs_dev_));
 }
 }  // namespace tensorrt_bevdet
 }  // namespace autoware
