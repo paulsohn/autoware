@@ -2371,6 +2371,12 @@ local_path_override(
     path = "src/universe/autoware_universe/perception/autoware_lidar_apollo_instance_segmentation",
 )
 
+bazel_dep(name = "autoware_lidar_centerpoint")
+local_path_override(
+    module_name = "autoware_lidar_centerpoint",
+    path = "src/universe/autoware_universe/perception/autoware_lidar_centerpoint",
+)
+
 # Launcher source modules.
 bazel_dep(name = "sample_vehicle_description")
 local_path_override(

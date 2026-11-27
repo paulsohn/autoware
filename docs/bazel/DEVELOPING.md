@@ -2524,3 +2524,25 @@ feature layouts/reset and deterministic postprocessing. GPU cases run each real
 XML twice and require immutable inputs, portable model paths, output headers,
 empty-input rejection and clean node shutdown. These synthetic profiles qualify
 integration, not recognition accuracy or other precisions.
+
+## CenterPoint LiDAR inference
+
+@autoware_lidar_centerpoint owns the original CUDA/native/component libraries,
+indexed command and XML/configuration resources. Its :ament_index includes
+@autoware_lidar_centerpoint_models//:ament_index. Keep whole bundles together:
+model_path selects weights, version/precision/shape parameters and class-remapper
+metadata. Use a writable staged copy or explicit caller-owned engine paths;
+never generate engines inside immutable indexed resources. Product composition
+chooses precision, GPU/SDK/cache identity and temporal/TF configuration.
+
+The full gate is @autoware_lidar_centerpoint//... plus
+//bazel/tests/autoware_lidar_centerpoint:all and
+//bazel/tests:centerpoint_model_resources_test with --config=runtime
+--config=no-agnocast and Cyclone DDS. The package-local rules retain all three
+enabled original suites. Three old GPU drivers remain disabled in original CMake
+and use stale APIs; they are not passing evidence. The root kernel companion
+checks current sweep/voxel/features/scatter/postprocess APIs on a real GPU.
+The root runtime companion selects single-frame FP16 for base, short_range,
+sigma and tiny, and checks cold/warm engines, immutable inputs, headers and
+clean node shutdown. Select other runtime/temporal/container profiles explicitly
+when changing those paths; synthetic inputs do not qualify recognition accuracy.

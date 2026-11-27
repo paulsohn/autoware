@@ -26708,3 +26708,88 @@ middleware change is needed. The separate model-inference companion in the
 same invocation is still in progress when this SDK boundary closes; its result
 belongs to the CenterPoint module entry. Whitespace checks pass; no Fast DDS,
 simulator or deployment rerun is selected.
+
+<a id="phase-914-centerpoint"></a>
+
+## 2026-11-27 — Phase 9.14: CenterPoint inference
+
+Purpose: integrate the complete current CenterPoint module: four CUDA sources,
+seven native library sources, node/component/command, all public headers and
+launch/configuration resources. Before implementation, inspect original CMake,
+all six test drivers, current public kernel/voxel APIs, model manifests and the
+CUDA-blackboard input path. The original CMake enables detection_class_remapper,
+ros_utils and ml_package_version. Three other original drivers are commented
+out under AWF issue #7724 (GPU test infrastructure); current source inspection
+also shows their old free-function/constructor/stream signatures no longer match
+the implementation. Do not count disabled drivers as passing or silently remove
+an enabled group. Preserve the complete three enabled original suites and add
+root GPU companions against current preprocessing/postprocessing APIs, plus
+actual XML-launched model execution and portable indexed resource checks.
+
+Keep the original CUDA/native/component DSO identities. Compile CUDA separately
+and use canonical shared ROS/PCL/utility/TensorRT/CUDA-blackboard owners. Keep
+host/component headers out of the small kernel provider. Register the original
+component/command and reuse the TensorRT SDK/ABI runtime launcher. Root selects
+all local sources and the existing v4.1 model provider. Concrete precision,
+profile and writable cache policies remain root-owned. No source patch is needed.
+Use only pcl_ros_tf_library/pcl_ros_tf for the actual transforms.hpp API, rather
+than importing the whole PCL ROS filter/component implementation.
+
+The initial build exposes the full perception SDK ownership issue fixed in
+prerequisite d6718e967 above. Another declaration error links gtest_main into
+two original drivers that already define main; keep their gtest dependency and
+use gtest_main only for the version suite. Preserve all original assertions.
+The CUDA archive calls the host divup helper from lib/utils.cpp. Put that pure
+helper in a small cc_library owned/exported by the CUDA DSO; excluding it from
+the native core avoids an implicit CUDA↔core link cycle and gives standalone
+GPU consumers a complete dependency graph. Keep all three original DSO names.
+
+The root GPU companion uses small current-API buffers: 4/5-feature sweep
+translation/intensity/time; voxel packing/range rejection and feature generation;
+channel/cell scatter; empty-heatmap rejection and known-box decode. These are
+four real-device cases, independent of the disabled legacy drivers. The root
+Python profile selects FP16 for each base/short_range/sigma/tiny bundle, copies
+its weights/metadata into writable temporary storage and uses a 1024-point,
+single-frame/base_link configuration. It runs the real standalone XML twice per
+bundle, requires valid headers/finite outputs and positive processing timing,
+then clean node shutdown. Both engines must be nonempty after cold inference;
+SHA-256/mtime must remain unchanged after warm inference, and indexed ONNX
+SHA-256/mtime must remain unchanged throughout.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  @perception_utils//... @autoware_lidar_centerpoint//... \
+  @autoware_lidar_centerpoint_models//... \
+  //bazel/tests:centerpoint_model_resources_test \
+  //bazel/tests/autoware_lidar_centerpoint:all
+
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel aquery --config=runtime --config=no-agnocast --output=jsonproto \
+  '@autoware_lidar_centerpoint//:kernels + @autoware_lidar_centerpoint//:utils_library + @autoware_lidar_centerpoint//:library + @autoware_lidar_centerpoint//:node_library + @autoware_lidar_centerpoint//:autoware_lidar_centerpoint_cuda_lib + @autoware_lidar_centerpoint//:autoware_lidar_centerpoint_lib + @autoware_lidar_centerpoint//:autoware_lidar_centerpoint_component' \
+  > /tmp/centerpoint-actions.json
+```
+
+Results: all 39 selected targets pass (29 non-test, ten test targets). All nine
+enabled original cases across three runners, eight original perception-utils
+cases, four new GPU kernel cases, two resource cases, two real-launch-default/
+manifest cases and four cold/warm model profiles pass. XML/log inspection finds
+zero failures/errors/skips or empty suites. The model runner takes 85.7 s, with
+all eight actual XML launches exiting cleanly; the whole gate takes 125.2 s,
+reusing unchanged dependencies. This is execution evidence, not an inference
+performance benchmark. The three disabled legacy drivers remain inactive and
+are not counted as passing; current-API kernel coverage is recorded explicitly.
+
+The action audit finds eight CUDA compile actions (PIC/non-PIC), eight native
+compile actions and three DSO links, without -flto or bitcode inputs. The direct
+CUDA/TensorRT providers therefore satisfy this non-LTO consumer without an empty
+CUDA finder/meta module; unused CMake cublas/curand link entries add no direct
+consumer API requirement. Python AST, changed C++ formatting, package/launcher
+XML and whitespace checks pass. The census is 198/244 definitions with matching
+root overrides: Phase 9.14 is 3/7 complete, with 46 Universe packages remaining.
+
+This qualifies native single-frame FP16 software flow for all four bundles, not
+recognition accuracy, physical calibration, multiple-frame TF/densification,
+FP32/INT8, composable-container/build_only or Agnocast-enabled execution. No
+Fast DDS, simulator or deployment export gate is selected. Next: FRNet.

@@ -1,0 +1,43 @@
+load("@launch_ros//:defs.bzl", "launch_ros_binary")
+load("@pip_ros//:requirements.bzl", "requirement")
+load("@rules_cc//cc:defs.bzl", "cc_test")
+load("@rules_python//python:defs.bzl", "py_test")
+
+cc_test(
+    name = "kernels_test",
+    srcs = ["test_kernels.cpp"],
+    deps = ["@autoware_lidar_centerpoint//:kernels", "@googletest//:gtest_main"],
+    dynamic_deps = ["@autoware_lidar_centerpoint//:autoware_lidar_centerpoint_cuda_lib"],
+    tags = ["no-sandbox", "no-remote", "requires-gpu"],
+)
+
+launch_ros_binary(
+    name = "launch_probe",
+    testonly = True,
+    src = "@autoware_lidar_centerpoint//:launch/lidar_centerpoint.launch.xml",
+    data = ["@autoware_lidar_centerpoint//:ament_index"],
+    precompile = "disabled",
+)
+
+py_test(
+    name = "model_paths_test",
+    srcs = ["test_model_paths.py"],
+    main = "test_model_paths.py",
+    args = ["$(rlocationpath @autoware_lidar_centerpoint//:launch/lidar_centerpoint.launch.xml)", "$(rlocationpath @autoware_perception_launch//:launch/object_recognition/detection/detector/lidar_dnn_detector.launch.xml)", "$(rlocationpath @autoware_lidar_centerpoint//:package.xml)", "$(rlocationpath @autoware_perception_launch//:package.xml)"],
+    data = ["@autoware_lidar_centerpoint//:launch/lidar_centerpoint.launch.xml", "@autoware_perception_launch//:launch/object_recognition/detection/detector/lidar_dnn_detector.launch.xml", "@autoware_lidar_centerpoint//:package.xml", "@autoware_perception_launch//:package.xml", "@autoware_lidar_centerpoint_models//:ament_index"],
+    deps = ["@ament_index_python", "@launch", "@launch_ros", "@launch_xml", "@rules_python//python/runfiles"],
+    precompile = "disabled",
+)
+
+py_test(
+    name = "runtime_test",
+    srcs = ["test_runtime.py"],
+    main = "test_runtime.py",
+    args = ["$(rootpath :launch_probe)"],
+    deps = ["@ament_index_python", "@autoware_internal_debug_msgs//:py", "@autoware_perception_msgs//:py", "@rclpy", "@sensor_msgs//:py", requirement("pyyaml")],
+    data = [":launch_probe", "@autoware_lidar_centerpoint//:ament_index"],
+    env = {"ENABLE_AGNOCAST": "0", "LD_LIBRARY_PATH": "lib", "ROS_DOMAIN_ID": "98"},
+    tags = ["no-sandbox", "no-remote", "requires-gpu"],
+    precompile = "disabled",
+    timeout = "long",
+)

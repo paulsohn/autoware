@@ -1,0 +1,165 @@
+load("@rclcpp_components//:defs.bzl", "rclcpp_components_register_node")
+load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
+load("@rules_cuda//cuda:defs.bzl", "cuda_library")
+load("@tensorrt//:defs.bzl", "tensorrt_cc_binary")
+
+package(default_visibility = ["//visibility:public"])
+
+_GPU_HEADERS = glob([
+    "include/**/centerpoint_config.hpp",
+    "include/**/cuda_utils.hpp",
+    "include/**/utils.hpp",
+    "include/**/network/*.hpp",
+    "include/**/postprocess/*.hpp",
+    "include/**/preprocess/preprocess_kernel.hpp",
+    "include/**/preprocess/point_type.hpp",
+])
+
+cc_library(
+    name = "utils_library",
+    srcs = ["lib/utils.cpp"],
+    hdrs = ["include/autoware/lidar_centerpoint/utils.hpp"],
+    includes = ["include"],
+)
+
+cuda_library(
+    name = "kernels",
+    srcs = glob(["lib/**/*.cu"]),
+    hdrs = _GPU_HEADERS,
+    includes = ["include"],
+    copts = ["-std=c++17", "--expt-relaxed-constexpr", "--extended-lambda"],
+    deps = [":utils_library", "@cuda//:cuda_runtime", "@cuda//:libcudacxx"],
+)
+
+cc_shared_library(
+    name = "autoware_lidar_centerpoint_cuda_lib",
+    shared_lib_name = "libautoware_lidar_centerpoint_cuda_lib.so",
+    deps = [":kernels", ":utils_library"],
+)
+
+cc_library(
+    name = "library",
+    srcs = glob(["lib/**/*.cpp"], exclude = ["lib/utils.cpp"]),
+    hdrs = glob(["include/**/*.hpp"], exclude = _GPU_HEADERS + ["include/autoware/lidar_centerpoint/node.hpp"]),
+    includes = ["include"],
+    deps = [
+        ":kernels",
+        "@autoware_cuda_utils",
+        "@autoware_object_recognition_utils",
+        "@autoware_perception_msgs//:cc",
+        "@autoware_point_types",
+        "@autoware_tensorrt_common//:autoware_tensorrt_common_library",
+        "@autoware_utils",
+        "@cuda_blackboard",
+        "@pcl_conversions//:pcl_conversions_library",
+        "@pcl_ros//:pcl_ros_tf_library",
+        "@tf2_eigen//:tf2_eigen_library",
+        "@tf2_ros//:tf2_ros_library",
+        "@tf2_sensor_msgs//:tf2_sensor_msgs_library",
+        "@rosdistro//cc:boost.optional",
+        "@rosdistro//cc:pcl_common",
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "sdk_dynamic_deps",
+    dynamic_deps = [
+        "@autoware_internal_debug_msgs//:cc_shared",
+        "@autoware_object_recognition_utils//:runtime_dynamic_deps",
+        "@autoware_perception_msgs//:cc_shared",
+        "@autoware_tensorrt_common",
+        "@autoware_utils//:runtime_dynamic_deps",
+        "@cuda_blackboard//:cuda_blackboard_shared",
+        "@cuda_blackboard//:runtime_dynamic_deps",
+        "@diagnostic_updater//:diagnostic_updater",
+        "@pcl_conversions//:pcl_conversions",
+        "@pcl_ros//:pcl_ros_tf",
+        "@perception_utils",
+        "@perception_utils//:runtime_dynamic_deps",
+        "@rclcpp_components//:rclcpp_components",
+        "@tf2_eigen//:tf2_eigen",
+        "@tf2_geometry_msgs//:tf2_geometry_msgs",
+        "@tf2_ros//:tf2_ros",
+        "@tf2_sensor_msgs//:tf2_sensor_msgs",
+        "@rosdistro//cc:pcl",
+    ],
+)
+
+cc_shared_library(
+    name = "autoware_lidar_centerpoint_lib",
+    shared_lib_name = "libautoware_lidar_centerpoint_lib.so",
+    deps = [":library"],
+    dynamic_deps = [":autoware_lidar_centerpoint_cuda_lib", ":sdk_dynamic_deps"],
+)
+
+cc_library(
+    name = "node_library",
+    srcs = ["src/node.cpp"],
+    hdrs = ["include/autoware/lidar_centerpoint/node.hpp"],
+    includes = ["include"],
+    deps = [
+        ":library",
+        "@autoware_internal_debug_msgs//:cc",
+        "@diagnostic_updater//:diagnostic_updater_library",
+        "@perception_utils//:perception_utils_library",
+        "@rclcpp_components//:rclcpp_components_library",
+        "@tf2_geometry_msgs//:tf2_geometry_msgs_library",
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = [":autoware_lidar_centerpoint_cuda_lib", ":autoware_lidar_centerpoint_lib", ":sdk_dynamic_deps"],
+)
+
+cc_shared_library(
+    name = "autoware_lidar_centerpoint_component",
+    shared_lib_name = "libautoware_lidar_centerpoint_component.so",
+    deps = [":node_library"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+)
+
+rclcpp_components_register_node(
+    name = "centerpoint_native",
+    node_name = "autoware_lidar_centerpoint_node",
+    component = ":autoware_lidar_centerpoint_component",
+    plugin = "autoware::lidar_centerpoint::LidarCenterPointNode",
+)
+
+tensorrt_cc_binary(
+    name = "autoware_lidar_centerpoint_node",
+    srcs = [":centerpoint_native_main.cpp"],
+    deps = ["@rclcpp_components//:rclcpp_components_library"],
+    dynamic_deps = [":autoware_lidar_centerpoint_component", ":runtime_dynamic_deps"],
+)
+
+register_ament_files(
+    name = "executables",
+    files = [":autoware_lidar_centerpoint_node"],
+    prefix = "lib/autoware_lidar_centerpoint",
+    strip_prefix = "*",
+)
+
+ament_index(
+    package_xml = "package.xml",
+    libraries = [":autoware_lidar_centerpoint_cuda_lib", ":autoware_lidar_centerpoint_lib", ":autoware_lidar_centerpoint_component"],
+    components = [":centerpoint_native_record"],
+    data = glob(["config/**", "launch/**"]) + [":executables"],
+    deps = ["@autoware_lidar_centerpoint_models//:ament_index"],
+)
+
+# These are all enabled original CMake suites. Its three obsolete GPU drivers
+# remain disabled upstream; root companions exercise the current GPU APIs.
+[
+    cc_test(
+        name = "test_" + suite,
+        srcs = ["test/test_" + suite + ".cpp"],
+        deps = [":library", "@googletest//:" + ("gtest_main" if suite == "ml_package_version" else "gtest")],
+        dynamic_deps = [":autoware_lidar_centerpoint_lib", ":runtime_dynamic_deps"],
+    )
+    for suite in ["detection_class_remapper", "ros_utils", "ml_package_version"]
+]
+
+exports_files(["launch/lidar_centerpoint.launch.xml", "package.xml"])
