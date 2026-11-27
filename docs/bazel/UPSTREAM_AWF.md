@@ -3045,3 +3045,23 @@ CNN/lamp GPU inference, four live backend/type profiles and both real HSV XML
 launches pass on Cyclone DDS. See the [classifier journal](JOURNAL.md#phase-913-traffic-classifier)
 for commands and fixture/resource details. No recognition-accuracy, interactive
 debug-GUI, older ROS/colcon or upstream submission claim is made.
+
+### Traffic-light fine detector: message filters and obsolete filesystem dispatch
+
+- [ ] Associate with matching AWF corrections. Checked 2026-11-27:
+  [the header](https://github.com/autowarefoundation/autoware_universe/blob/main/perception/autoware_traffic_light_fine_detector/src/traffic_light_fine_detector_node.hpp)
+  still uses four removed message_filters .h forwarders; and
+  [the implementation](https://github.com/autowarefoundation/autoware_universe/blob/main/perception/autoware_traffic_light_fine_detector/src/traffic_light_fine_detector_node.cpp)
+  passes rmw profiles to the current rclcpp::QoS subscriber API and selects an
+  unavailable experimental filesystem fallback on the pinned Clang toolchain.
+  Scoped fine-detector/Lyrical and fine-detector/filesystem PR searches find
+  no matching correction.
+
+Use current .hpp paths and pass rclcpp::QoS{1} directly to rough/expected ROI
+subscriptions. The filesystem include/namespace dispatch has no users in this
+source: remove the complete unused block, leaving inference/matching unchanged.
+The full package, six original geometry cases and actual XML-launched FP16 GPU
+inference with both synchronization modes, ID/type/header and placeholder
+contracts, empty-input delivery and clean shutdown pass on Cyclone DDS. See the
+[fine-detector journal](JOURNAL.md#phase-913-fine-detector) for commands and limits.
+No upstream submission, older ROS/colcon or recognition-accuracy claim is made.

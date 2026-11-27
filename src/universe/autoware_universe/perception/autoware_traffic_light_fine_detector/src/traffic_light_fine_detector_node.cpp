@@ -14,17 +14,8 @@
 
 #include "traffic_light_fine_detector_node.hpp"
 
-#include <map>
-
-#if (defined(_MSC_VER) or (defined(__GNUC__) and (7 <= __GNUC_MAJOR__)))
-#include <filesystem>
-namespace fs = ::std::filesystem;
-#else
-#include <experimental/filesystem>
-namespace fs = ::std::experimental::filesystem;
-#endif
-
 #include <algorithm>
+#include <map>
 #include <memory>
 #include <string>
 #include <utility>
@@ -106,8 +97,8 @@ void TrafficLightFineDetectorNode::connectCb()
     expect_roi_sub_.unsubscribe();
   } else if (!image_sub_.getSubscriber()) {
     image_sub_.subscribe(this, "~/input/image", "raw", rmw_qos_profile_sensor_data);
-    rough_roi_sub_.subscribe(this, "~/input/rois", rclcpp::QoS{1}.get_rmw_qos_profile());
-    expect_roi_sub_.subscribe(this, "~/expect/rois", rclcpp::QoS{1}.get_rmw_qos_profile());
+    rough_roi_sub_.subscribe(this, "~/input/rois", rclcpp::QoS{1});
+    expect_roi_sub_.subscribe(this, "~/expect/rois", rclcpp::QoS{1});
   }
 }
 

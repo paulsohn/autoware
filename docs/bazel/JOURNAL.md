@@ -25899,3 +25899,47 @@ builds under existing Jazzy/colcon; all three indexed weights are symlinks with
 matching hashes. Changed XML/package metadata and whitespace checks pass. No
 host dependency installation or inference-accuracy claim is made. Universe
 coverage remains 193/244; the fine detector's complete native/GPU gate is next.
+
+<a id="phase-913-fine-detector"></a>
+
+## 2026-11-27 — Phase 9.13: Traffic-light fine detector
+
+Purpose: adopt the original fine-detector/process sources, component/executable,
+config/launcher, six original geometry cases and real GPU inference. Inspect the
+callback's rough/expected ROI matching and missing-detection placeholder contract.
+Use the preceding indexed v3.0 batch-six model. Require the full original suite
+and actual XML launch with exact and approximate synchronization, nonempty rough
+inputs, ID/type/header preservation, bounded output ROIs, execution timing,
+empty-frame propagation and clean shutdown. Synthetic images qualify software
+flow and placeholder behavior, not detection accuracy.
+
+The compile exposes removed message_filters .h forwarders, obsolete rmw-profile
+arguments and a compiler-dispatched experimental filesystem header unavailable
+in the selected libc++. Use the four current .hpp paths and rclcpp::QoS{1} for
+both ROI subscriptions. Retain the accepted image_transport sensor overload.
+The filesystem include/namespace dispatch is unused throughout the source; remove
+that whole block. Removing only its header leaves an invalid obsolete namespace
+alias, so the fix must cover the complete block. No detection or matching
+algorithm changes are needed. Current AWF main retains these issues; scoped
+fine-detector/Lyrical and filesystem PR searches find no matching correction.
+Commit source compatibility separately from build definitions.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  @autoware_traffic_light_fine_detector//... \
+  //bazel/tests/autoware_traffic_light_fine_detector:all
+```
+
+Results: the complete package and both test targets pass, with six original
+cases and the live two-profile scenario. The actual XML-launched SDK executable
+builds a real FP16 batch-six engine, performs multiscale GPU inference on rough
+ROIs, publishes positive finite timing and preserves car/pedestrian IDs/types.
+A missing visual detection remains an identified zero-sized placeholder as the
+source contract specifies; nonzero ROIs remain inside the image. Empty expected
+inputs produce empty outputs, both synchronization modes work and both launches
+exit cleanly. No failures or skips remain. Reuse the unchanged passing GPU result
+in the final original-runner link check; its source already owns main, so link
+gtest rather than gtest_main. C++ formatting, Python AST/XML and whitespace checks
+pass. Field accuracy and physical cameras remain separate qualifications.
