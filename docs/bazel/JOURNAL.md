@@ -25651,3 +25651,65 @@ unchanged passing evidence in the final rerun. Coverage is 192/244 (52 remaining
 two of five Phase 9.13 modules complete. Next: indexed traffic-light models,
 classification, fine detection and composed recognition. No Fast DDS, simulator
 or deployment export gate is selected.
+
+<a id="phase-913-traffic-classifier-models"></a>
+
+## 2026-11-27 — Phase 9.13 prerequisite: Indexed traffic-light classifier models
+
+Purpose: provide the actual car/pedestrian CNN and lamp-recognizer inputs named
+by current classifiers and Autoware launch defaults. Select the reference v4.0
+revision of https://huggingface.co/AutowareFoundation/traffic_light_classifier,
+immutable commit 527c4905afd8f1bfcc03253529a105f7fa5a6d36. Its README declares
+Apache-2.0. Preserve seven ONNX files (car/pedestrian batch 1/4/6 plus recognizer),
+both label sets, recognizer parameters and deployment metadata.
+
+Use the isolated clone/LFS/materialization/mirroring/subtree pattern from the
+calibration model entry. Verify every payload size and SHA-256 against the HF
+immutable revision API before import; record all seven hashes in SHA256SUMS and
+provenance inside the repository. The repository owns module/package
+autoware_traffic_light_classifier_models with :models/:ament_index and minimal
+ament_cmake --symlink-install support. Root selects it before source consumers.
+Do not put precision, engine preparation or writable caches into this provider.
+
+Update all seven affected Autoware launcher XML files and both standalone
+classifier launchers to use this package's indexed weights/labels/metadata.
+Add the runtime dependency to their three owning package manifests. Where a
+launcher no longer uses data_path, remove the argument. The fine-detector paths
+still need their next provider task; preserve those existing uses until then,
+rather than guessing a new source. Leave system-design artifacts and reference
+Ansible/repositories files outside this task. The composed pipeline's own model
+configuration is handled with its later module gate.
+
+Export the newly checked launcher files from their existing resource-only
+module. Extend the shared launcher-path companion to evaluate every declared
+local filename default when an indexed expression contains a variable. This
+covers CNN and recognizer filename alternatives while keeping actual ROS launch
+substitution and indexed existence checks. It does not spawn nodes or validate
+source-directory completeness. Recheck the already adopted YOLOX launch paths
+because they share the helper and launcher files.
+
+```sh
+(cd src/models/traffic_light_classifier && sha256sum -c SHA256SUMS)
+git lfs ls-files -l -I 'src/models/traffic_light_classifier/**'
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_output=errors @autoware_traffic_light_classifier_models//... \
+  //bazel/tests:traffic_classifier_model_resources_test \
+  //bazel/tests:traffic_classifier_launch_paths_test \
+  //bazel/tests:yolox_launch_paths_test
+# With an existing sourced ROS environment and isolated build/install prefixes:
+colcon build --base-paths <checkout>/src/models/traffic_light_classifier \
+  --build-base <temporary>/build --install-base <temporary>/install --symlink-install
+. <temporary>/install/setup.bash
+# Resolve autoware_traffic_light_classifier_models with ament_index_python;
+# require all seven SHA256SUMS entries to be installed symlinks with matching hashes.
+```
+
+Results: the full model provider and all three test targets pass. Resource cases
+check seven actual payloads and isolated relocated index lookup; launch tests
+resolve model/label/parameter defaults and manifest dependencies, including
+conditional filename alternatives. The augmented model package also builds in
+existing Jazzy/colcon; all seven indexed ONNX files are symlinks with matching
+hashes. No host dependency installation occurs. Changed Python/XML metadata and
+whitespace checks pass. GPU accuracy/inference remains the classifier task's
+gate, not a consequence of model-file checks. Universe coverage remains 192/244.

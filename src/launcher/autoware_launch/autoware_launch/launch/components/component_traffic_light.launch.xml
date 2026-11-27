@@ -26,9 +26,9 @@
 
   <!-- Parameter paths -->
   <arg name="data_path" default="$(env HOME)/autoware_data/ml_models" description="packages data and artifacts directory path"/>
-  <arg name="traffic_light_recognition/classification/car/label_path" default="$(var data_path)/traffic_light_classifier/lamp_labels.txt"/>
-  <arg name="traffic_light_recognition/classification/pedestrian/label_path" default="$(var data_path)/traffic_light_classifier/lamp_labels_ped.txt"/>
-  <arg name="traffic_light_recognition/classification/lamp_recognizer_ml_param_path" default="$(var data_path)/traffic_light_classifier/lamp_recognizer_ml.param.yaml"/>
+  <arg name="traffic_light_recognition/classification/car/label_path" default="$(find-pkg-share autoware_traffic_light_classifier_models)/lamp_labels.txt"/>
+  <arg name="traffic_light_recognition/classification/pedestrian/label_path" default="$(find-pkg-share autoware_traffic_light_classifier_models)/lamp_labels_ped.txt"/>
+  <arg name="traffic_light_recognition/classification/lamp_recognizer_ml_param_path" default="$(find-pkg-share autoware_traffic_light_classifier_models)/lamp_recognizer_ml.param.yaml"/>
   <arg
     name="traffic_light_car_classifier_model"
     default="traffic_light_classifier_mobilenetv2_batch_6.onnx"
@@ -49,8 +49,8 @@
     default="traffic_light_lamp_recognizer_comlops.onnx"
     if="$(eval &quot;'$(var traffic_light_recognition/classification/pedestrian/classifier_type)' == '2'&quot;)"
   />
-  <arg name="traffic_light_recognition/classification/car/model_path" default="$(var data_path)/traffic_light_classifier/$(var traffic_light_car_classifier_model)"/>
-  <arg name="traffic_light_recognition/classification/pedestrian/model_path" default="$(var data_path)/traffic_light_classifier/$(var traffic_light_ped_classifier_model)"/>
+  <arg name="traffic_light_recognition/classification/car/model_path" default="$(find-pkg-share autoware_traffic_light_classifier_models)/$(var traffic_light_car_classifier_model)"/>
+  <arg name="traffic_light_recognition/classification/pedestrian/model_path" default="$(find-pkg-share autoware_traffic_light_classifier_models)/$(var traffic_light_ped_classifier_model)"/>
 
   <group if="$(var use_traffic_light_recognition)">
     <push-ros-namespace namespace="perception"/>

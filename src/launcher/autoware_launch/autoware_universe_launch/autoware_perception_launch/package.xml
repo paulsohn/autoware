@@ -67,6 +67,8 @@
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>autoware_lint_common</test_depend>
 
+  <exec_depend>autoware_traffic_light_classifier_models</exec_depend>
+
   <export>
     <build_type>ament_cmake</build_type>
   </export>

@@ -35,6 +35,8 @@
   <depend>tier4_perception_msgs</depend>
   <test_depend>ament_cmake_ros</test_depend>
 
+  <exec_depend>autoware_traffic_light_classifier_models</exec_depend>
+
   <export>
     <build_type>ament_cmake</build_type>
   </export>

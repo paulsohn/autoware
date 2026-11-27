@@ -1,0 +1,5 @@
+cmake_minimum_required(VERSION 3.16)
+project(autoware_traffic_light_classifier_models NONE)
+find_package(ament_cmake REQUIRED)
+install(FILES README.md deploy_metadata.yaml lamp_labels.txt lamp_labels_ped.txt lamp_recognizer_ml.param.yaml ped_traffic_light_classifier_mobilenetv2_batch_1.onnx ped_traffic_light_classifier_mobilenetv2_batch_4.onnx ped_traffic_light_classifier_mobilenetv2_batch_6.onnx traffic_light_classifier_mobilenetv2_batch_1.onnx traffic_light_classifier_mobilenetv2_batch_4.onnx traffic_light_classifier_mobilenetv2_batch_6.onnx traffic_light_lamp_recognizer_comlops.onnx SHA256SUMS MODEL_PROVENANCE.md DESTINATION share/${PROJECT_NAME})
+ament_package()
