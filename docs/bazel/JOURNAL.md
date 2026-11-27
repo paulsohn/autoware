@@ -25841,3 +25841,61 @@ Coverage is 193/244 (51 remaining), three of five Phase 9.13 modules complete.
 Next: indexed fine-detector models, its complete suite/GPU behavior, then the
 composed recognition pipeline. No broader communication, simulator or deployment
 check is required by this module task.
+
+<a id="phase-913-fine-models"></a>
+
+## 2026-11-27 — Phase 9.13 prerequisite: Indexed traffic-light fine-detector models
+
+Purpose: provide the actual batch-six fine-detector default and its related
+batch-one/four variants. Inspect current standalone and Autoware launch names
+and the reference v3.0 selection. Import
+https://huggingface.co/AutowareFoundation/traffic_light_fine_detector at immutable
+revision 3f0616ffda0c19fc84fc455f988421c0df970e5d as a squashed subtree under
+src/models/traffic_light_fine_detector. Its README declares Apache-2.0.
+
+Follow the preceding model tasks' isolated clone, git lfs pull, hash/size
+verification, object mirroring and local-revision subtree import pattern.
+Each of the three ONNX payloads is 35,794,092 bytes; verify against immutable HF
+LFS metadata and record their SHA-256 values in repository-owned SHA256SUMS.
+Retain labels, deployment metadata, README and .gitattributes. Keep model/package
+autoware_traffic_light_fine_detector_models, its :models/:ament_index and minimal
+colcon/ament_cmake support within that repository. Root selects its override
+before source consumers; engine precision/profiles/caches remain caller-owned.
+
+Update six affected XML files: the standalone fine detector, component traffic
+light launcher, fine detector/recognition compositions, and the rough/whole
+recognition parents' now-redundant data_path forwarding. Add the model runtime
+dependency to the three owning package manifests. All traffic-light families
+now have indexed providers, so remove the common traffic-light data_path
+argument and propagation rather than retaining a HOME fallback. The top-level
+Autoware include already passes no such argument. Other model families keep
+their own later adoption boundary; reference Ansible/repositories and system
+design files remain unchanged. The not-yet-adopted composed pipeline's own
+model configuration belongs to its following module gate.
+
+```sh
+(cd src/models/traffic_light_fine_detector && sha256sum -c SHA256SUMS)
+git lfs ls-files -l -I 'src/models/traffic_light_fine_detector/**'
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_output=errors @autoware_traffic_light_fine_detector_models//... \
+  //bazel/tests:fine_detector_model_resources_test \
+  //bazel/tests:fine_detector_launch_paths_test \
+  //bazel/tests:traffic_classifier_launch_paths_test \
+  //bazel/tests:yolox_launch_paths_test
+# With existing ROS and isolated build/install prefixes:
+colcon build --base-paths <checkout>/src/models/traffic_light_fine_detector \
+  --build-base <temporary>/build --install-base <temporary>/install --symlink-install
+. <temporary>/install/setup.bash
+# Resolve autoware_traffic_light_fine_detector_models through ament_index_python;
+# require all three SHA256SUMS payloads to be symlinks with matching hashes.
+```
+
+Results: the complete model provider and all four root test targets pass.
+Resource cases verify materialized hashes and isolated relocated index lookup;
+launcher checks resolve real model/label defaults and runtime dependencies,
+including the shared classifier/YOLOX inputs. The augmented model package also
+builds under existing Jazzy/colcon; all three indexed weights are symlinks with
+matching hashes. Changed XML/package metadata and whitespace checks pass. No
+host dependency installation or inference-accuracy claim is made. Universe
+coverage remains 193/244; the fine detector's complete native/GPU gate is next.

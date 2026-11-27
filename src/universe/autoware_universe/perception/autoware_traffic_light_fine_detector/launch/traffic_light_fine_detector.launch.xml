@@ -1,13 +1,12 @@
 <launch>
-  <arg name="data_path" default="$(env HOME)/autoware_data/ml_models" description="packages data and artifacts directory path"/>
 
   <arg name="input/image" default="/image_raw"/>
   <arg name="input/rois" default="/traffic_light_map_based_detector/output/rois"/>
   <arg name="expect/rois" default="~/expect/rois"/>
   <arg name="output/rois" default="~/output/rois"/>
   <arg name="param_path" default="$(find-pkg-share autoware_traffic_light_fine_detector)/config/traffic_light_fine_detector.param.yaml" description="fine detector param path"/>
-  <arg name="model_path" default="$(var data_path)/traffic_light_fine_detector/tlr_car_ped_yolox_s_batch_6.onnx" description="model path"/>
-  <arg name="label_path" default="$(var data_path)/traffic_light_fine_detector/tlr_labels.txt" description="label path"/>
+  <arg name="model_path" default="$(find-pkg-share autoware_traffic_light_fine_detector_models)/tlr_car_ped_yolox_s_batch_6.onnx" description="model path"/>
+  <arg name="label_path" default="$(find-pkg-share autoware_traffic_light_fine_detector_models)/tlr_labels.txt" description="label path"/>
   <arg name="build_only" default="false" description="exit after trt engine is built"/>
 
   <node pkg="autoware_traffic_light_fine_detector" exec="traffic_light_fine_detector_node" name="traffic_light_fine_detector" output="screen">

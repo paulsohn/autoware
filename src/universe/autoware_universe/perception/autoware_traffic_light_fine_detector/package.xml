@@ -30,6 +30,8 @@
 
   <test_depend>autoware_lint_common</test_depend>
 
+  <exec_depend>autoware_traffic_light_fine_detector_models</exec_depend>
+
   <export>
     <build_type>ament_cmake</build_type>
   </export>

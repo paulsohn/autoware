@@ -2864,3 +2864,35 @@ py_test(
     deps = ["@ament_index_python", "@launch", "@launch_ros", "@launch_xml", "@rules_python//python/runfiles"],
     precompile = "disabled",
 )
+
+py_test(
+    name = "fine_detector_model_resources_test",
+    srcs = ["models/test_indexed_model_package.py"],
+    main = "models/test_indexed_model_package.py",
+    args = ["autoware_traffic_light_fine_detector_models", "3"],
+    data = ["@autoware_traffic_light_fine_detector_models//:ament_index"],
+    deps = ["@ament_index_python"],
+    precompile = "disabled",
+)
+
+filegroup(
+    name = "fine_detector_launch_inputs",
+    testonly = True,
+    srcs = [
+        "@autoware_launch//:launch/components/component_traffic_light.launch.xml",
+        "@autoware_launch//:package.xml",
+        "@autoware_perception_launch//:launch/traffic_light_recognition/traffic_light_detector_fine.launch.xml",
+        "@autoware_perception_launch//:launch/traffic_light_recognition/traffic_light_recognition_fine.launch.xml",
+        "@autoware_perception_launch//:package.xml",
+    ],
+)
+
+py_test(
+    name = "fine_detector_launch_paths_test",
+    srcs = ["models/test_launch_paths.py"],
+    main = "models/test_launch_paths.py",
+    args = ["autoware_traffic_light_fine_detector_models", "$(rlocationpaths :fine_detector_launch_inputs)"],
+    data = [":fine_detector_launch_inputs", "@autoware_traffic_light_fine_detector_models//:ament_index"],
+    deps = ["@ament_index_python", "@launch", "@launch_ros", "@launch_xml", "@rules_python//python/runfiles"],
+    precompile = "disabled",
+)

@@ -274,6 +274,12 @@ local_path_override(
     path = "src/models/traffic_light_classifier",
 )
 
+bazel_dep(name = "autoware_traffic_light_fine_detector_models")
+local_path_override(
+    module_name = "autoware_traffic_light_fine_detector_models",
+    path = "src/models/traffic_light_fine_detector",
+)
+
 bazel_dep(name = "autoware_yabloc_pose_initializer_models")
 local_path_override(
     module_name = "autoware_yabloc_pose_initializer_models",

@@ -1,0 +1,5 @@
+cmake_minimum_required(VERSION 3.16)
+project(autoware_traffic_light_fine_detector_models NONE)
+find_package(ament_cmake REQUIRED)
+install(FILES README.md deploy_metadata.yaml tlr_car_ped_yolox_s_batch_1.onnx tlr_car_ped_yolox_s_batch_4.onnx tlr_car_ped_yolox_s_batch_6.onnx tlr_labels.txt SHA256SUMS MODEL_PROVENANCE.md DESTINATION share/${PROJECT_NAME})
+ament_package()

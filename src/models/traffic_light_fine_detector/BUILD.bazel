@@ -1,0 +1,15 @@
+load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
+
+package(default_visibility = ["//visibility:public"])
+
+MODEL_FILES = ['README.md', 'deploy_metadata.yaml', 'tlr_car_ped_yolox_s_batch_1.onnx', 'tlr_car_ped_yolox_s_batch_4.onnx', 'tlr_car_ped_yolox_s_batch_6.onnx', 'tlr_labels.txt']
+
+filegroup(name = "models", srcs = MODEL_FILES)
+
+register_ament_files(
+    name = "model_files",
+    files = MODEL_FILES + ["SHA256SUMS", "MODEL_PROVENANCE.md"],
+    prefix = "share/autoware_traffic_light_fine_detector_models",
+)
+
+ament_index(package_xml = "package.xml", data = [":model_files"])
