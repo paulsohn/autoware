@@ -34,3 +34,5 @@ ros_service(
         "//msg:TextFile",
     ],
 )
+
+ros_service(name = "GetAccelBrakeMapCalibrationData", src = "GetAccelBrakeMapCalibrationData.srv", deps = [])

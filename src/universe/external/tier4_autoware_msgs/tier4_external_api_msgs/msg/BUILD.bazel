@@ -69,3 +69,11 @@ ros_message(
     src = "Heartbeat.msg",
     deps = ["@builtin_interfaces//msg:Time"],
 )
+
+ros_message(name = "CalibrationStatus", src = "CalibrationStatus.msg", deps = [])
+
+ros_message(
+    name = "CalibrationStatusArray",
+    src = "CalibrationStatusArray.msg",
+    deps = ["@builtin_interfaces//msg:Time", "//msg:CalibrationStatus"],
+)

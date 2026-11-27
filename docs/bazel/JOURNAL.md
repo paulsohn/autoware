@@ -25268,3 +25268,33 @@ original suite; it is not another independent test. There are no failures or
 skips. Whitespace checks pass. Universe coverage remains 189/244. Next: finish
 the calibrator using this provider. No Fast DDS, simulator or deployment gate
 is selected.
+
+## 2026-11-27 — Phase 9.12 prerequisite: Calibration status and data interfaces
+
+Purpose: expose the local external API schemas consumed by the native calibrator
+and its Python map server/client. Inspect CalibrationStatus.msg,
+CalibrationStatusArray.msg and GetAccelBrakeMapCalibrationData.srv in the
+existing tier4_external_api_msgs snapshot; preserve those schemas unchanged.
+
+Declare the two messages under msg/BUILD.bazel and the service under
+srv/BUILD.bazel, and select all three in the package's default_generators.
+CalibrationStatus has only scalar fields. Its array requires builtin_interfaces
+Time and the same-package status target; the data service has no explicit
+message dependencies. The service macro supplies its standard event dependency.
+Use the existing root local override and generated native/Python providers;
+there is no second interface list or source-directory completeness check.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel build --keep_going --config=runtime --config=no-agnocast \
+  @tier4_external_api_msgs//... @tier4_vehicle_msgs//... \
+  @autoware_accel_brake_map_calibrator//...
+```
+
+Results: both complete interface modules and the actual native/Python consumer
+build successfully. The calibrator's live status publisher and real Python
+GetAccelBrakeMapCalibrationData server/client additionally pass in the module
+gate recorded below. That service returns SVG bytes and the exact CSV contents;
+the shipped client saves SVG despite the schema's image-format comment. Keep
+that existing protocol unchanged. No original schema/tests are modified;
+whitespace checks pass. This prerequisite does not change the Universe census.

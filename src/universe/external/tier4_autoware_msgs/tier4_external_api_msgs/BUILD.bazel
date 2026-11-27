@@ -10,6 +10,8 @@ default_generators(
     ],
     package_xml = "package.xml",
     deps = [
+        "//msg:CalibrationStatus",
+        "//msg:CalibrationStatusArray",
         "//msg:ControlCommand",
         "//msg:ControlCommandStamped",
         "//msg:GearShift",
@@ -21,6 +23,7 @@ default_generators(
         "//msg:MapHash",
         "//msg:ResponseStatus",
         "//msg:TextFile",
+        "//srv:GetAccelBrakeMapCalibrationData",
         "//srv:Engage",
         "//srv:GetTextFile",
         "//srv:SetEmergency",
