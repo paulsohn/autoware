@@ -10,6 +10,13 @@ default_generators(
     ],
     package_xml = "package.xml",
     deps = [
+        "//msg:ControlCommand",
+        "//msg:ControlCommandStamped",
+        "//msg:GearShift",
+        "//msg:GearShiftStamped",
+        "//msg:TurnSignal",
+        "//msg:TurnSignalStamped",
+        "//msg:Heartbeat",
         "//msg:Emergency",
         "//msg:MapHash",
         "//msg:ResponseStatus",

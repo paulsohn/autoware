@@ -25066,3 +25066,29 @@ its original ROS endpoints in both executor profiles. Python syntax, changed C++
 formatting and whitespace checks pass. Coverage is 186/244, five of nine packages.
 Next: joystick and control-performance analysis. No Fast DDS, simulator or
 deployment gate is selected.
+
+## 2026-11-27 — Phase 9.12 prerequisite: Joystick external-API interfaces
+
+Purpose: satisfy the joystick controller's current public-header and publisher
+closure from local tier4_external_api_msgs. The first compile cannot find
+control_command_stamped.hpp; inspect that header and the seven underlying local
+schemas rather than selecting an older registry snapshot.
+
+Declare ControlCommand, GearShift and TurnSignal as scalar ros_message targets;
+add their three Stamped wrappers with Time plus their own message dependency,
+and Heartbeat with Time. Select all seven in the existing default_generators
+list. No schema source or duplicated root interface/plugin list is needed.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  @tier4_external_api_msgs//... @autoware_joy_controller//... \
+  //bazel/tests/control_operators:joy_runtime_test
+```
+
+Results: the entire message package builds, including native, Python and protobuf
+outputs. The actual joystick node publishes external control, gear, indicators
+and heartbeat through the generated types in all four configured profiles. The
+complete consumer gate passes without skips. No source changes are required;
+Universe coverage remains 186/244 until the consumer's separate package commit.

@@ -27,3 +27,45 @@ ros_message(
     src = "TextFile.msg",
     deps = [],
 )
+
+ros_message(
+    name = "ControlCommand",
+    src = "ControlCommand.msg",
+    deps = [],
+)
+
+ros_message(
+    name = "ControlCommandStamped",
+    src = "ControlCommandStamped.msg",
+    deps = ["@builtin_interfaces//msg:Time", "//msg:ControlCommand"],
+)
+
+ros_message(
+    name = "GearShift",
+    src = "GearShift.msg",
+    deps = [],
+)
+
+ros_message(
+    name = "GearShiftStamped",
+    src = "GearShiftStamped.msg",
+    deps = ["@builtin_interfaces//msg:Time", "//msg:GearShift"],
+)
+
+ros_message(
+    name = "TurnSignal",
+    src = "TurnSignal.msg",
+    deps = [],
+)
+
+ros_message(
+    name = "TurnSignalStamped",
+    src = "TurnSignalStamped.msg",
+    deps = ["@builtin_interfaces//msg:Time", "//msg:TurnSignal"],
+)
+
+ros_message(
+    name = "Heartbeat",
+    src = "Heartbeat.msg",
+    deps = ["@builtin_interfaces//msg:Time"],
+)
