@@ -1,0 +1,21 @@
+load("@rules_cc//cc:defs.bzl", "cc_test")
+
+cc_test(
+    name = "gpu_test",
+    srcs = ["test_gpu.cpp"],
+    dynamic_deps = [
+        "@bevdet_vendor",
+        "@rosdistro//cc:libjpeg",
+        "@rosdistro//cc:yaml-cpp",
+    ],
+    tags = [
+        "no-remote",
+        "no-sandbox",
+        "requires-gpu",
+    ],
+    deps = [
+        "@autoware_cuda_utils",
+        "@bevdet_vendor//:library",
+        "@googletest//:gtest_main",
+    ],
+)

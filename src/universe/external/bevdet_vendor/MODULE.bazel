@@ -1,0 +1,13 @@
+module(
+    name = "bevdet_vendor",
+    version = "0.0.0",
+)
+
+bazel_dep(name = "eigen", version = "0.0.0")
+bazel_dep(name = "rosdistro", version = "0.0.0")
+bazel_dep(name = "tensorrt", version = "0.0.0")
+bazel_dep(name = "rules_cc", version = "0.2.26.rcr.0")
+bazel_dep(name = "rules_cuda", version = "0.4.0")
+
+cuda = use_extension("@rules_cuda//cuda:extensions.bzl", "toolchain")
+use_repo(cuda, "cuda")

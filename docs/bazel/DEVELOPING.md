@@ -2764,3 +2764,11 @@ The standalone model_path and enclosing bevdet_model_path select this package's
 share; override runtime engine/cache locations through the component's parameters.
 The model provider supports colcon --symlink-install. Native model and SDK
 compatibility require the consumer's complete gate.
+
+
+BEVDet consumers use @bevdet_vendor//:library for headers/static declarations and
+@bevdet_vendor for the shared implementation and four plugin registrars. Keep one
+shared owner for the vendor and its registry-selected YAML/JPEG libraries.
+The provider preserves the CMake default CPU JPEG path; NVJPEG is a separate
+configuration requiring its own SDK provider and behavior gate. Run
+//bazel/tests/bevdet_vendor:gpu_test after changing these contracts.

@@ -28071,3 +28071,59 @@ Targeted Buildifier on the provider/new test declaration and whitespace checks
 pass. Publish the materialized LFS object before pushing the augmented subtree.
 No C++ implementation, GPU inference, Fast DDS, simulator or deployment-export
 gate is claimed by this prerequisite.
+
+<a id="phase-915-bevdet-vendor"></a>
+
+## 2026-11-28 — Phase 9.15: BEVDet vendor
+
+Purpose: expose the existing local bevdet_vendor implementation, including CPU
+JPEG decoding, GPU preprocessing/rotated suppression, temporal feature storage,
+and all four TensorRT plugins. Inspect the complete CMake source list, public
+headers, precision selection, parser/builder/runtime API and optional defines.
+The CMake target has five C++ and seven CUDA sources, no functional tests or
+registered example target, and does not enable __HAVE_NVJPEG__. Preserve that
+existing CPU decoder path rather than introducing a new CUDA component.
+
+Acceptance: all original library sources and plugin registration retained, GPU
+RGB/HWC-to-BGR/CHW conversion, rotated suppression, temporal buffer history and
+precision/creator behavior through root companions. The complete six-camera
+native model gate belongs to the subsequent consumer task. Use pinned direct
+CUDA/TensorRT, Eigen, YAML and JPEG providers and the local source snapshot.
+Root selects its adjacent versionless override before Universe consumers.
+Own MODULE/BUILD with the vendor snapshot. Build seven CUDA sources in an
+alwayslinked cuda_library so all four static plugin registrars survive. Compile
+all five original C++ sources, including the intentionally disabled NVJPEG
+translation unit, in a CPU library and expose both archives as roots of the
+original libbevdet_vendor.so. Public headers remain with their implementation;
+CPU Eigen/YAML/JPEG ownership stays explicit. The CMake-only TensorRT discovery
+shim and CCCL search logic are replaced by actual TensorRT/CCCL providers;
+compiling every source verifies those exported header/library effects. Link the
+registry-selected YAML/JPEG shared owners, register the original package index,
+and use no component-to-root label. No source or SDK patch is needed.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast \
+  --local_test_jobs=1 --test_output=errors @bevdet_vendor//... \
+  //bazel/tests/bevdet_vendor:gpu_test
+```
+
+All five selected targets pass: four vendor targets and one native runner with
+five cases, zero failures/errors/skips. The CPU JPEG test encodes a small known
+RGB image with the pinned library and decodes it through the original CPU path
+into device BGR planes, allowing bounded JPEG loss. A separate exact-byte case
+checks interleaved-to-planar conversion. Temporal history checks initial priming,
+current/prior buffers, stored ego pose, reset and new-scene priming. Rotated NMS
+suppresses an overlapping box and keeps a separated box. Both precision settings
+and all four Preprocess/BEVPool/AlignBEV/GatherBEV v1 creators are visible through
+the selected TensorRT registry. Use the SDK's global getPluginRegistry entrypoint;
+placing that function in nvinfer1 is a test compilation error, not a vendor bug.
+All seven CUDA sources compile through the selected toolchain, with the vendor's
+existing deprecation/unused warnings. Root companions stay outside the source.
+
+Targeted Buildifier/clang-format and whitespace checks pass. No optional NVJPEG,
+upstream CMake implementation build, Fast DDS, simulator or deployment-export
+gate is selected. This vendor gate does not claim a model inference result;
+execute the six-camera native model in the following consumer task. Reuse these
+unchanged checks when composing that consumer. This external vendor prerequisite
+does not change the 244-package Universe coverage count.

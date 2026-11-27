@@ -1,0 +1,68 @@
+load("@rosdistro//ament:defs.bzl", "ament_index")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library")
+load("@rules_cuda//cuda:defs.bzl", "cuda_library")
+
+package(default_visibility = ["//visibility:public"])
+
+cuda_library(
+    name = "kernels",
+    srcs = glob(["src/*.cu"]),
+    hdrs = glob(
+        ["include/*.h"],
+        exclude = [
+            "include/bevdet.h",
+            "include/data.h",
+            "include/nvjpegdecoder.h",
+            "include/cpu_jpegdecoder.h",
+        ],
+    ),
+    copts = [
+        "-std=c++17",
+        "--expt-relaxed-constexpr",
+        "--extended-lambda",
+    ],
+    includes = ["include"],
+    deps = [
+        "@cuda//:cuda_runtime",
+        "@cuda//:libcudacxx",
+        "@tensorrt",
+    ],
+    alwayslink = True,
+)
+
+cc_library(
+    name = "library",
+    srcs = glob(["src/*.cpp"]),
+    hdrs = [
+        "include/bevdet.h",
+        "include/cpu_jpegdecoder.h",
+        "include/data.h",
+        "include/nvjpegdecoder.h",
+    ],
+    copts = ["-Wno-deprecated-declarations"],
+    includes = ["include"],
+    deps = [
+        ":kernels",
+        "@eigen",
+        "@rosdistro//cc:libjpeg_library",
+        "@rosdistro//cc:yaml-cpp_library",
+    ],
+)
+
+cc_shared_library(
+    name = "bevdet_vendor",
+    dynamic_deps = [
+        "@rosdistro//cc:yaml-cpp",
+        "@rosdistro//cc:libjpeg",
+    ],
+    shared_lib_name = "libbevdet_vendor.so",
+    deps = [
+        ":kernels",
+        ":library",
+    ],
+)
+
+ament_index(
+    libraries = [":bevdet_vendor"],
+    package_xml = "package.xml",
+)
