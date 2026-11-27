@@ -26231,3 +26231,44 @@ the package-local MODULE/BUILD, adjacent root override, indexed model launcher,
 root-owned FP16 profile and root-only verification companions. PLAN.md and the
 coverage ledger close Phase 9.13 at 195/244; developer instructions describe
 steady-state preparation/run commands and the SDK/Python process boundary.
+<a id="phase-914-eigen-cuda"></a>
+
+## 2026-11-27 — Phase 9.14 prerequisite: Eigen CUDA traits
+
+Purpose: compile the CUDA preprocessor's actual undistortion expressions with
+Eigen 5.0.1, CUDA 13.2.2/nvcc and LLVM/libc++ 21.1.8 on Ubuntu 24.04 x86_64,
+Bazel 9.3.2 and sm_120. The build fails because std::invoke_result cannot infer
+Eigen scalar-product/sum functor result types. Inspect Eigen's Meta.h/Macros.h
+and the original matrix expressions before altering compiler or library inputs.
+A generic //third_party/cuda:eigen_test reproduces the failure with a device
+matrix/vector expression, independently of ROS/Autoware. Setting the documented
+EIGEN_HAS_STD_INVOKE_RESULT=0 also fails: libc++ result_of uses the same invocation
+machinery. Do not disable validation or change the matrix algorithm.
+
+Pin the already-selected Eigen 5.0.1.bcr.1 directly at root and apply a Meta.h
+patch guarded to nvcc 13.2 with libc++ 21, using cuda::std::invoke_result.
+Preserve full INVOKE semantics and matrix layouts; other compiler/library paths
+retain std::invoke_result. Declare libcudacxx headers on CUDA consumers. Compile
+a small .cu helper through cuda_library, link it into cc_test and evaluate the
+same matrix/vector expression on both host and real device. The expected vector
+is (3, 6, 9); CUDA allocation, launch, copy and release must also succeed.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=no-agnocast --test_output=errors //third_party/cuda:eigen_test
+# Baseline experiment, before selecting the patch, also fails with:
+# --@rules_cuda//cuda:copts=-DEIGEN_HAS_STD_INVOKE_RESULT=0
+```
+
+Results: both host/device cases pass with zero failures/errors/skips. The
+joint consumer gate below rebuilds the CPU preprocessor and CUDA consumer:
+all 185 original CPU C++ cases, eight original Python concatenation scenarios,
+existing CPU companions and all 15 original CUDA cases pass. The added nonzero
+3D-motion case also passes after its independently diagnosed timestamp fix.
+The broader new XML-launch gate remains a separate module acceptance task.
+
+This is a tested workaround within the product's explicitly unsupported
+nvcc/libc++ profile, not a vendor-support or general Eigen/RCR defect claim.
+The pinned Eigen source retains std::invoke_result; no matching upstream fix
+was established on 2026-11-27. Re-evaluate the guard and repeat both paths when
+changing SDK/compiler/Eigen versions; other versions and ARM remain unqualified.

@@ -1,0 +1,1 @@
+exports_files(["nvcc_libcpp_invoke_result.patch"])

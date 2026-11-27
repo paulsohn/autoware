@@ -1,3 +1,5 @@
+load("@rules_cuda//cuda:defs.bzl", "cuda_library")
+load("@rules_cc//cc:defs.bzl", "cc_test")
 package(default_visibility = ["//visibility:public"])
 
 exports_files([
@@ -6,3 +8,18 @@ exports_files([
     "patches/cuda_crt_libcpp21_h.patch",
     "patches/cuda_crt_libcpp21_hpp.patch",
 ])
+
+cuda_library(
+    name = "eigen_test_kernel",
+    testonly = True,
+    srcs = ["test_eigen.cu"],
+    copts = ["-std=c++17", "--expt-relaxed-constexpr"],
+    deps = ["@cuda//:cuda_runtime", "@cuda//:libcudacxx", "@rosdistro//cc:eigen"],
+)
+
+cc_test(
+    name = "eigen_test",
+    srcs = ["test_eigen.cpp"],
+    deps = [":eigen_test_kernel", "@googletest//:gtest_main", "@rosdistro//cc:eigen"],
+    tags = ["no-remote", "no-sandbox", "requires-gpu"],
+)

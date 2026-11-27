@@ -1776,6 +1776,15 @@ explicit policy override and pinned CRT compatibility patches; it is tested
 here but not vendor-supported. Revalidate the patches when changing either SDK
 or standard library. ARM/SBSA has not been validated.
 
+Eigen 5.0.1.bcr.1 also has a root-selected compatibility patch for nvcc 13.2
+with libc++ 21. It uses CUDA's invocation-result trait for device expressions;
+normal C++ compilation retains the standard trait. CUDA consumers of Eigen
+must declare @cuda//:libcudacxx as well as their Eigen/runtime providers.
+Run //third_party/cuda:eigen_test on a real GPU to check host and device matrix/
+vector expressions when changing these inputs. Keep the compiler/version guard
+and patch verification current; do not infer compatibility from header parsing
+alone.
+
 For the existing CUDA-utils header target, depend on `@autoware_cuda_utils`.
 Its direct CUDA runtime/CCCL providers replace the CMake-only dependency-meta
 shim for the current non-LTO configuration. If LTO is introduced, inspect the

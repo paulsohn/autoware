@@ -191,7 +191,8 @@ only when your current target demonstrates the need.
   [validated model storage/index pattern](JOURNAL.md#2026-11-19-phase-644--repository-owned-yolox-models).
 - [ ] Inspect build-system-only shims before creating empty Bazel modules.
   [Working rule](../../AGENTS.md#working-rules);
-  [evidence: CUDA foundation](JOURNAL.md#2026-11-18-phase-61--cuda-utils-and-pinned-toolkit).
+  [evidence: CUDA foundation](JOURNAL.md#2026-11-18-phase-61--cuda-utils-and-pinned-toolkit);
+  [host/device Eigen expression evidence](JOURNAL.md#phase-914-eigen-cuda).
 - [ ] Check dependency API, header layout and transitive build-rule selection before changing source.
   [Provider conventions](DEVELOPING.md#dependency-declarations);
   [evidence: CGAL templates and rule baseline](JOURNAL.md#2026-11-23-phase-94--cgal-polygon-provider).
@@ -2612,6 +2613,27 @@ and clean shutdown. Canonical utility/vision owners and package-specific CUDA
 helper SONAMEs permit composition without source algorithm changes. See the
 [pipeline journal](JOURNAL.md#phase-913-pipeline) for commands and limitations.
 Next: Phase 9.14, CUDA sensing and LiDAR model inference.
+
+### Phase 9.14: CUDA sensing and LiDAR model inference (in progress)
+
+Progress: 0/7 module gates complete; coverage 195/244 (49 remaining).
+
+Accepted SDK input: keep Eigen 5.0.1.bcr.1 and select the narrowly guarded
+nvcc 13.2/libc++ 21 invocation-trait patch after the independent host/device
+reproducer and affected original suites pass; see the
+[SDK experiment](JOURNAL.md#phase-914-eigen-cuda).
+
+Start at 195/244 packages. Adopt CUDA point-cloud preprocessing first, preserving
+all five components/commands, both libraries and all 15 original cases. Require
+actual GPU filtering/concatenation, added filter-family behavior and component
+communication with Cyclone DDS. Build Agnocast support unconditionally and check
+the applicable enabled runtime path with the existing CUDA-blackboard providers.
+Then adopt Apollo, CenterPoint, FRNet, TransFusion and PTV3 with complete original
+suites, real GPU/model profiles and repository-owned model indexes. Finish CUDA
+ground segmentation after its preprocessing provider. Select concrete model and
+precision policies at product level, keep caches writable and indexed inputs
+immutable, and commit each module/model boundary separately. No Fast DDS,
+simulator or deployment export gate is selected.
 
 ### Execution order through complete Universe coverage
 

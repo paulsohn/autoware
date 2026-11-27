@@ -20,6 +20,13 @@ bazel_dep(name = "rules_pkg", version = "1.3.0")
 bazel_dep(name = "rules_img", version = "0.3.22")
 bazel_dep(name = "llvm", version = "0.8.25.rcr.0")
 bazel_dep(name = "boost.container_hash", version = "1.90.0.bcr.1")
+bazel_dep(name = "eigen", version = "5.0.1.bcr.1")
+single_version_override(
+    module_name = "eigen",
+    version = "5.0.1.bcr.1",
+    patch_strip = 1,
+    patches = ["//third_party/eigen:nvcc_libcpp_invoke_result.patch"],
+)
 bazel_dep(name = "rosdistro", version = "lyrical.2026-10-05.rcr.3")
 # Patch the already-selected rcr.4 registration rule; keep that release pinned.
 single_version_override(

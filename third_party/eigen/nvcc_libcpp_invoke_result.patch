@@ -1,0 +1,57 @@
+Eigen 5.0.1.bcr.1, CUDA 13.2/nvcc with LLVM libc++ 21.
+Observed failure: Eigen matrix scalar/product/sum expressions fail in device code
+because std::invoke_result cannot infer their callable types on this combination.
+Rationale/scope: use the CUDA toolkit's std::invoke_result equivalent only for
+nvcc 13.2 with libc++ 21. Preserve full INVOKE semantics, host/nonmatching compiler
+paths and matrix layouts. CUDA consumers must declare libcudacxx headers.
+Verification: the unpatched //third_party/cuda:eigen_test reproduces the failure;
+the patched host/device cases pass on sm_120. The affected CPU suite passes
+185 original C++ cases plus all eight original Python scenarios; the CUDA
+preprocessor passes all 15 original cases and its nonzero 3D-motion regression.
+Upstream status: local compatibility experiment, checked 2026-11-27; Eigen's
+EIGEN_HAS_STD_INVOKE_RESULT=0 fallback also fails through libc++ result_of.
+Reference: https://gitlab.com/libeigen/eigen/-/blob/5.0.1/Eigen/src/Core/util/Meta.h
+
+--- a/Eigen/src/Core/util/Meta.h
++++ b/Eigen/src/Core/util/Meta.h
+@@ -30,6 +30,11 @@
+ 
+ // Define portable (u)int{32,64} types
+ #include <cstdint>
++
++#if defined(__NVCC__) && defined(_LIBCPP_VERSION) && _LIBCPP_VERSION / 10000 == 21 && \
++    __CUDACC_VER_MAJOR__ == 13 && __CUDACC_VER_MINOR__ == 2
++#include <cuda/std/type_traits>
++#endif
+ 
+ namespace Eigen {
+ namespace numext {
+@@ -367,18 +372,26 @@
+  * Post C++17: Uses std::invoke_result
+  */
+ #if EIGEN_HAS_STD_INVOKE_RESULT
++#if defined(__NVCC__) && defined(_LIBCPP_VERSION) && _LIBCPP_VERSION / 10000 == 21 && \
++    __CUDACC_VER_MAJOR__ == 13 && __CUDACC_VER_MINOR__ == 2
++template <typename F, typename... ArgTypes>
++using invoke_result_traits = ::cuda::std::invoke_result<F, ArgTypes...>;
++#else
++template <typename F, typename... ArgTypes>
++using invoke_result_traits = std::invoke_result<F, ArgTypes...>;
++#endif
+ template <typename T>
+ struct result_of;
+ 
+ template <typename F, typename... ArgTypes>
+ struct result_of<F(ArgTypes...)> {
+-  typedef typename std::invoke_result<F, ArgTypes...>::type type1;
++  typedef typename invoke_result_traits<F, ArgTypes...>::type type1;
+   typedef remove_all_t<type1> type;
+ };
+ 
+ template <typename F, typename... ArgTypes>
+ struct invoke_result {
+-  typedef typename std::invoke_result<F, ArgTypes...>::type type1;
++  typedef typename invoke_result_traits<F, ArgTypes...>::type type1;
+   typedef remove_all_t<type1> type;
+ };
+ #else

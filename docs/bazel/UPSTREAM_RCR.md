@@ -99,6 +99,29 @@ not apply these headers broadly or silently enable an unsupported combination;
 retain the policy choice and version-specific complete-suite evidence. This
 finding is not an Autoware implementation or Lyrical source correction.
 
+#### Eigen device expressions on the same unsupported libc++ profile
+
+- [ ] Associate the documented workaround with upstream review; no matching
+  Eigen/RCR fix or new submission was established on 2026-11-27.
+
+With the same CUDA 13.2.2/nvcc and LLVM/libc++ 21.1.8 profile, the selected
+Eigen 5.0.1.bcr.1 fails to infer matrix-product/sum callable types through
+std::invoke_result. The minimal real-device reproducer is
+bazel test --config=no-agnocast //third_party/cuda:eigen_test, before selecting
+the local patch. EIGEN_HAS_STD_INVOKE_RESULT=0 also fails through result_of.
+The root-selected third_party/eigen/nvcc_libcpp_invoke_result.patch uses
+cuda::std::invoke_result only for this compiler/library combination, with an
+explicit libcudacxx provider. Both host/device cases pass after the patch,
+followed by all original CPU/CUDA preprocessor cases; see the
+[reproduction and consumer evidence](JOURNAL.md#phase-914-eigen-cuda).
+
+Suggested action: document this additional compatibility boundary alongside the
+CRT workaround, and review an appropriately scoped Eigen/CCCL correction with
+those maintainers. This is not evidence that another compiler/profile needs
+this patch or that RCR's rule implementation is incorrect. The pinned
+[Eigen trait implementation](https://gitlab.com/libeigen/eigen/-/blob/5.0.1/Eigen/src/Core/util/Meta.h)
+uses std::invoke_result; no broader current-upstream-fix claim is made.
+
 ### Registered Python executables lose their launcher and runfiles
 
 - [ ] Associate with a matching upstream change. Reviewed 2026-11-22: the
