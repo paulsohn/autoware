@@ -2554,3 +2554,23 @@ The root runtime companion selects single-frame FP16 for base, short_range,
 sigma and tiny, and checks cold/warm engines, immutable inputs, headers and
 clean node shutdown. Select other runtime/temporal/container profiles explicitly
 when changing those paths; synthetic inputs do not qualify recognition accuracy.
+
+## FRNet LiDAR segmentation
+
+@autoware_lidar_frnet owns the original CUDA/native/component libraries, indexed
+command and XML/configuration resources. Declare :ament_index and choose the
+matching sensor_model (ot128/qt128) from autoware_lidar_frnet_models. Use complete
+model and diagnostic parameters. The indexed command includes the TensorRT
+SDK/ABI launcher; stage ONNX inputs in writable caller-owned storage for current
+runtime engine generation. Keep precision/profile/cache policy product-owned.
+
+Run every module target plus //bazel/tests/autoware_lidar_frnet:all and
+//bazel/tests:frnet_model_resources_test with --config=runtime
+--config=no-agnocast and Cyclone DDS. Original CMake has no functional suite;
+root companions cover four layouts/conversion policy, parameter errors,
+ego projection/cropping, known postprocessing and both actual FP16 sensor models.
+The three runtime cases include original-default lookup and cold/warm XML
+execution. Subscribe to compatible PointCloud2 outputs with SensorDataQoS.
+Require all three channels, immutable indexed weights, unchanged warm engines
+and clean node shutdown. Recognition accuracy and other runtime/profile variants
+need separate selected evidence.

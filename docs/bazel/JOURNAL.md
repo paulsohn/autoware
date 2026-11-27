@@ -26849,7 +26849,7 @@ Phase 9.14 3/7; the native FRNet gate is next.
 
 <a id="phase-914-frnet"></a>
 
-## 2026-11-27 — Phase 9.14: FRNet segmentation (in progress)
+## 2026-11-27 — Phase 9.14: FRNet segmentation
 
 Purpose: adopt both CUDA kernels, native pipeline/node sources, three original
 shared libraries, component/command and original launch/config resources using
@@ -26871,7 +26871,7 @@ selects precision/cache policy and stages indexed ONNX/metadata into writable
 storage. Components retain parameterized model/profile APIs. No Fast DDS,
 simulator or deployment gate is selected.
 
-The first CUDA compile fails on M_PIf in project2d with the pinned CUDA 13.2.2/
+Source correction: b8a8ded96. The first CUDA compile fails on M_PIf in project2d with the pinned CUDA 13.2.2/
 nvcc and LLVM/libc++ 21.1.8 sysroot. Include math_constants.h and use the toolkit's
 single-precision CUDART_PI_F, leaving the projection math unchanged. Current AWF
 main retains M_PIf on 2026-11-27 and a scoped PR search finds no matching fix;
@@ -26879,7 +26879,53 @@ see [the association](UPSTREAM_AWF.md#frnet-cuda-preprocessing-portable-single-p
 The real-device quarter-turn projection/crop/field check and postprocessing case
 pass after the correction, along with both CPU layout/parameter cases.
 
-Source correction verification: the complete module command below passes all
-CPU/layout, device-kernel, indexed-resource and actual OT128/QT128 FP16 cold/warm
-cases with zero failures/errors/skips. Package build/test/index declarations and
-full acceptance evidence are recorded with the integration boundary.
+The CPU companion round-trips all four supported layouts and conversion policy,
+and checks palette/filter-class errors. The two direct GPU cases require actual
+ego-box removal, expected quarter-turn azimuth bin, retained intensity/channel,
+known labels/confidence/RGB colors and filtered return-type/channel preservation.
+No original assertion is removed; there is no upstream functional test driver.
+
+The root runtime companion selects FP16 and stages one indexed ONNX per sensor
+into writable temporary storage, retaining each sensor's actual ML profile.
+Publish an 8192-point synthetic angular scan within the model's dynamic profile,
+subscribe to all three compatible PointCloud2 channels with SensorDataQoS, and
+require segmentation/visualization/filtered messages, full headers, valid layouts/
+byte counts, bounded class IDs and finite probabilities (with FP16 rounding
+allowance). Require positive processing timing and absence of child-process death
+on shutdown. The fixture checks the actual XML/YAML substitutions and source
+runtime dependency as another case. Each OT128/QT128 model runs twice: require
+nonempty cold engines, unchanged warm engine SHA-256/mtime and immutable indexed
+ONNX SHA-256/mtime. Native compilation uses only needed TF/point-type providers;
+unused CMake PCL ROS/object-recognition linkage is not imported.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  @autoware_lidar_frnet//... @autoware_lidar_frnet_models//... \
+  //bazel/tests:frnet_model_resources_test //bazel/tests/autoware_lidar_frnet:all
+
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel aquery --config=runtime --config=no-agnocast --output=jsonproto \
+  '@autoware_lidar_frnet//:kernels + @autoware_lidar_frnet//:library + @autoware_lidar_frnet//:node_library + @autoware_lidar_frnet//:autoware_lidar_frnet_cuda_lib + @autoware_lidar_frnet//:autoware_lidar_frnet_lib + @autoware_lidar_frnet//:autoware_lidar_frnet_component' \
+  > /tmp/frnet-actions.json
+```
+
+Results: all 26 selected targets pass (22 non-test and four test targets).
+All nine inner cases pass: two CPU, two device-kernel, two model-resource and
+three runtime/default-path cases. XML and unittest logs contain no failures,
+errors, dependency-related skips or empty suites. All four real XML launches
+finish cleanly. Model execution takes 91.3 s; the full gate takes 117.6 s,
+reusing unchanged dependencies. These durations are gate observations, not an
+inference performance benchmark. Four CUDA compile actions, two native compile
+actions and three DSO links contain no -flto/bitcode inputs. Together with the
+complete consumer gate, this validates direct SDK providers instead of the
+inspected CMake-only CUDA shim for this non-LTO profile.
+
+Python AST, changed C++ formatting, XML/manifest and whitespace checks pass.
+The census reaches 199/244 MODULE/BUILD pairs with corresponding root overrides:
+Phase 9.14 is 4/7 complete, with 45 Universe packages remaining. The selected
+native FP16 profiles qualify software flow, not physical sensor calibration,
+semantic accuracy, other precisions/profile limits, composable-container/
+build_only or Agnocast-enabled execution. No Fast DDS, simulator or deployment
+export gate is selected. Next: TransFusion.

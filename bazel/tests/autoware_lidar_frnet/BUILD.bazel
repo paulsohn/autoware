@@ -1,0 +1,40 @@
+load("@launch_ros//:defs.bzl", "launch_ros_binary")
+load("@pip_ros//:requirements.bzl", "requirement")
+load("@rules_cc//cc:defs.bzl", "cc_test")
+load("@rules_python//python:defs.bzl", "py_test")
+
+cc_test(
+    name = "types_test",
+    srcs = ["test_types.cpp"],
+    deps = ["@autoware_lidar_frnet//:library", "@googletest//:gtest_main"],
+    dynamic_deps = ["@autoware_lidar_frnet//:autoware_lidar_frnet_lib", "@autoware_lidar_frnet//:runtime_dynamic_deps"],
+)
+
+cc_test(
+    name = "kernels_test",
+    srcs = ["test_kernels.cpp"],
+    deps = ["@autoware_lidar_frnet//:kernels", "@googletest//:gtest_main"],
+    dynamic_deps = ["@autoware_lidar_frnet//:autoware_lidar_frnet_cuda_lib"],
+    tags = ["no-sandbox", "no-remote", "requires-gpu"],
+)
+
+launch_ros_binary(
+    name = "launch_probe",
+    testonly = True,
+    src = "@autoware_lidar_frnet//:launch/lidar_frnet.launch.xml",
+    data = ["@autoware_lidar_frnet//:ament_index"],
+    precompile = "disabled",
+)
+
+py_test(
+    name = "runtime_test",
+    srcs = ["test_runtime.py"],
+    main = "test_runtime.py",
+    args = ["$(rootpath :launch_probe)"],
+    deps = ["@ament_index_python", "@autoware_internal_debug_msgs//:py", "@rclpy", "@sensor_msgs//:py", "@launch", "@launch_ros", "@launch_xml", requirement("pyyaml")],
+    data = [":launch_probe", "@autoware_lidar_frnet//:ament_index"],
+    env = {"ENABLE_AGNOCAST": "0", "LD_LIBRARY_PATH": "lib", "ROS_DOMAIN_ID": "99"},
+    tags = ["no-sandbox", "no-remote", "requires-gpu"],
+    precompile = "disabled",
+    timeout = "long",
+)

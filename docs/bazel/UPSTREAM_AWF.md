@@ -3140,6 +3140,8 @@ accuracy claim is made.
 
 ### FRNet CUDA preprocessing: portable single-precision pi
 
+Local source correction: `b8a8ded96`.
+
 - [ ] Associate the constant correction with matching AWF work. Checked
   2026-11-27: [the current CUDA projection implementation](https://github.com/autowarefoundation/autoware_universe/blob/main/perception/autoware_lidar_frnet/lib/preprocess/preprocess_kernel.cu)
   still uses M_PIf. A scoped FRNet/M_PIf PR search finds no matching correction.

@@ -2618,7 +2618,7 @@ Next: Phase 9.14, CUDA sensing and LiDAR model inference.
 
 ### Phase 9.14: CUDA sensing and LiDAR model inference (in progress)
 
-Progress: 3/7 module gates complete; coverage 198/244 (46 remaining).
+Progress: 4/7 module gates complete; coverage 199/244 (45 remaining).
 
 CUDA preprocessing is accepted: all 15 original CUDA cases, five live original
 XML profiles, three native transport/numerical cases in both selected runtime
@@ -2638,8 +2638,11 @@ four new GPU kernel cases pass; inactive legacy drivers are inventoried
 explicitly. See its [model gate](JOURNAL.md#phase-914-centerpoint-models) and
 [module gate](JOURNAL.md#phase-914-centerpoint). Next: FRNet.
 FRNet model v2.0 revision a53a1c11b0b28d31fd50a03abef5db0e830a5b3c has
-validated OT128/QT128 LFS/index/colcon providers; see its
-[model gate](JOURNAL.md#phase-914-frnet-models). Native acceptance is pending.
+validated OT128/QT128 LFS/index/colcon providers and cold/warm FP16 XML execution,
+plus complete CPU/layout and device-kernel companions. Its demonstrated M_PIf
+compile failure is corrected with CUDA's single-precision constant. See its
+[model gate](JOURNAL.md#phase-914-frnet-models) and
+[module gate](JOURNAL.md#phase-914-frnet). Next: TransFusion.
 
 Accepted SDK input: keep Eigen 5.0.1.bcr.1 and select the narrowly guarded
 nvcc 13.2/libc++ 21 invocation-trait patch after the independent host/device
