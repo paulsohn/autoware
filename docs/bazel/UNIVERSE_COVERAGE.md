@@ -21,8 +21,8 @@ may contain multiple package commits and smaller execution batches. Update the
 ledger when a package closes or the source snapshot changes; this is a planning
 record, not a new build-time completeness validator.
 
-Current adoption progress, 2026-11-27: **193/244** packages have both definitions
-and root local overrides; **51** remain without definitions. The census table
+Current adoption progress, 2026-11-27: **194/244** packages have both definitions
+and root local overrides; **50** remain without definitions. The census table
 below preserves the initial 2026-11-23 baseline. Checked ledger items record
 completed module gates. See PLAN.md and the
 package journals for configuration and behavior evidence.
@@ -354,7 +354,7 @@ Compose the CPU traffic-light stages from 9.7 with the existing YOLOX/classifier
 - [x] [autoware_bytetrack](../../src/universe/autoware_universe/perception/autoware_bytetrack/package.xml)
 - [x] [autoware_calibration_status_classifier](../../src/universe/autoware_universe/sensing/autoware_calibration_status_classifier/package.xml)
 - [x] [autoware_traffic_light_classifier](../../src/universe/autoware_universe/perception/autoware_traffic_light_classifier/package.xml)
-- [ ] [autoware_traffic_light_fine_detector](../../src/universe/autoware_universe/perception/autoware_traffic_light_fine_detector/package.xml)
+- [x] [autoware_traffic_light_fine_detector](../../src/universe/autoware_universe/perception/autoware_traffic_light_fine_detector/package.xml)
 - [ ] [autoware_traffic_light_pipeline](../../src/universe/autoware_universe/perception/autoware_traffic_light_pipeline/package.xml)
 
 ### Phase 9.14: CUDA sensing and LiDAR model inference

@@ -25943,3 +25943,26 @@ exit cleanly. No failures or skips remain. Reuse the unchanged passing GPU resul
 in the final original-runner link check; its source already owns main, so link
 gtest rather than gtest_main. C++ formatting, Python AST/XML and whitespace checks
 pass. Field accuracy and physical cameras remain separate qualifications.
+
+Add the local MODULE/BUILD pair and adjacent root override. Preserve the original
+shared-library identity, component record, native executable and indexed launch/
+configuration. Consume the existing YOLOX C++ and CUDA shared owners plus ROS,
+image_transport and OpenCV providers directly; no CUDA-dependency meta facade is
+needed. The indexed command uses the existing TensorRT SDK launcher for builder
+and GNU-runtime discovery. Keep the original geometry source/main unchanged.
+
+The root companion runs the actual original XML twice, choosing exact/approximate
+sync through a temporary parameter YAML. Copy only the selected ONNX to writable
+cache storage; labels come from the model repository's index. Publish synchronized
+synthetic image, rough ROIs and expected car/pedestrian ROIs; subscribe before
+startup so the original lazy input connection opens. Require live output plus
+timing and a nonempty engine, then empty-input output and clean termination.
+Sharing the temporary cache between these same-model/precision profiles avoids
+another cold preparation while retaining both communication behaviors. No input
+or engine file is written into indexed source/model resources.
+
+Source correction: 1ccd9f7b6. The complete command above passes all module targets
+and both original/live gates, without failures or skips. Coverage is 194/244
+(50 remaining), four of five Phase 9.13 modules complete. The composed pipeline
+is the remaining phase task; no Fast DDS, simulator or deployment export check
+is selected.

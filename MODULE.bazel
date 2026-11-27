@@ -2328,6 +2328,12 @@ local_path_override(
     path = "src/universe/autoware_universe/perception/autoware_traffic_light_classifier",
 )
 
+bazel_dep(name = "autoware_traffic_light_fine_detector")
+local_path_override(
+    module_name = "autoware_traffic_light_fine_detector",
+    path = "src/universe/autoware_universe/perception/autoware_traffic_light_fine_detector",
+)
+
 # Launcher source modules.
 bazel_dep(name = "sample_vehicle_description")
 local_path_override(

@@ -3048,6 +3048,8 @@ debug-GUI, older ROS/colcon or upstream submission claim is made.
 
 ### Traffic-light fine detector: message filters and obsolete filesystem dispatch
 
+Local source correction: `1ccd9f7b6`.
+
 - [ ] Associate with matching AWF corrections. Checked 2026-11-27:
   [the header](https://github.com/autowarefoundation/autoware_universe/blob/main/perception/autoware_traffic_light_fine_detector/src/traffic_light_fine_detector_node.hpp)
   still uses four removed message_filters .h forwarders; and

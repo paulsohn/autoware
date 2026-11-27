@@ -1,0 +1,23 @@
+load("@launch_ros//:defs.bzl", "launch_ros_binary")
+load("@rules_python//python:defs.bzl", "py_test")
+
+launch_ros_binary(
+    name = "launch_probe",
+    testonly = True,
+    src = "@autoware_traffic_light_fine_detector//:launch/traffic_light_fine_detector.launch.xml",
+    data = ["@autoware_traffic_light_fine_detector//:ament_index"],
+    precompile = "disabled",
+)
+
+py_test(
+    name = "runtime_test",
+    srcs = ["test_runtime.py"],
+    main = "test_runtime.py",
+    args = ["$(rootpath :launch_probe)"],
+    data = [":launch_probe", "@autoware_traffic_light_fine_detector//:ament_index"],
+    deps = ["@ament_index_python", "@autoware_internal_debug_msgs//:py", "@rclpy", "@sensor_msgs//:py", "@tier4_perception_msgs//:py"],
+    env = {"LD_LIBRARY_PATH": "lib", "ROS_DOMAIN_ID": "92"},
+    precompile = "disabled",
+    tags = ["no-sandbox", "no-remote", "requires-gpu"],
+    timeout = "long",
+)

@@ -2352,3 +2352,22 @@ launcher defaults. The shared path helper also serves :yolox_launch_paths_test;
 run it when changing that helper or shared launch files. Colcon users build and
 source the augmented model package with --symlink-install. Interactive debug
 windows and field recognition accuracy require separate qualification.
+
+## Traffic-light fine detection
+
+Run @autoware_traffic_light_fine_detector//... with
+//bazel/tests/autoware_traffic_light_fine_detector:all using --config=runtime,
+--config=no-agnocast and Cyclone DDS. The complete gate retains six geometry
+cases and executes the original XML with real FP16 GPU inference in exact and
+approximate synchronization modes. Expected IDs without a matched detection
+remain zero-sized ROIs; they must not silently disappear. Recognition accuracy
+requires qualified camera data beyond this synthetic flow check.
+
+Declare @autoware_traffic_light_fine_detector_models//:ament_index and resolve
+weights/labels through that package. The current JIT API needs a writable ONNX/
+engine-cache copy; callers select it with model_path while labels remain indexed
+inputs. Run //bazel/tests:fine_detector_model_resources_test and
+:fine_detector_launch_paths_test after provider/default changes. Shared traffic
+launcher edits also run :traffic_classifier_launch_paths_test and
+:yolox_launch_paths_test. The traffic-light launch graph uses each model
+repository's index and has no common data_path argument.

@@ -2581,7 +2581,7 @@ this phase. Next: Phase 9.13, traffic-light model execution and image tracking.
 
 ### Phase 9.13: Traffic-light model execution and image tracking (in progress)
 
-Progress: 3/5 module gates complete; coverage 193/244 (51 remaining).
+Progress: 4/5 module gates complete; coverage 194/244 (50 remaining).
 
 Start at 190/244 packages. Adopt ByteTrack first, preserving its tracker/wrapper,
 node and visualizer libraries, both components/executables and indexed Kalman
