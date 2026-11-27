@@ -2967,3 +2967,13 @@ py_test(
     deps = ["@ament_index_python"],
     precompile = "disabled",
 )
+
+py_test(
+    name = "transfusion_model_resources_test",
+    srcs = ["models/test_indexed_model_package.py"],
+    main = "models/test_indexed_model_package.py",
+    args = ["autoware_lidar_transfusion_models", "1"],
+    data = ["@autoware_lidar_transfusion_models//:ament_index"],
+    deps = ["@ament_index_python"],
+    precompile = "disabled",
+)

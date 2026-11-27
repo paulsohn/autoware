@@ -36,6 +36,7 @@
   <exec_depend>autoware_lidar_centerpoint</exec_depend>
   <exec_depend>autoware_lidar_centerpoint_models</exec_depend>
   <exec_depend>autoware_lidar_transfusion</exec_depend>
+  <exec_depend>autoware_lidar_transfusion_models</exec_depend>
   <exec_depend>autoware_map_based_prediction</exec_depend>
   <exec_depend>autoware_multi_object_tracker</exec_depend>
   <exec_depend>autoware_object_merger</exec_depend>

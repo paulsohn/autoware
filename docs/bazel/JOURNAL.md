@@ -26929,3 +26929,53 @@ native FP16 profiles qualify software flow, not physical sensor calibration,
 semantic accuracy, other precisions/profile limits, composable-container/
 build_only or Agnocast-enabled execution. No Fast DDS, simulator or deployment
 export gate is selected. Next: TransFusion.
+
+<a id="phase-914-transfusion-models"></a>
+
+## 2026-11-27 — Phase 9.14: TransFusion model provider
+
+Purpose: supply the v2.1 TransFusion ONNX and its ML/remapper metadata through
+one repository-owned indexed module. Inspect immutable HF revision
+8f07eb93038bfd62e35d1f78e56a6b3fb76b12aa, its LFS hash/172,460,238-byte size,
+model card, source XML/YAML and enclosing detector launch defaults. Use the same
+isolated-checkout/materialization/hash/object-mirroring/squashed-subtree pattern
+at src/models/lidar_transfusion. Keep source metadata and LFS attributes; record
+SHA256SUMS and immutable provenance inside the repository.
+
+The provider owns autoware_lidar_transfusion_models, :models/:ament_index and
+minimal colcon/ament_cmake support; root selects its adjacent local override
+before consumers. Remove the standalone common data_path/HOME default and use
+its indexed model_path. Its remapper default now selects the model-owned file,
+matching the enclosing launcher's existing policy. Update the enclosing
+transfusion_model_path and both owning runtime manifests together. Other model
+families' common data_path remains until their own provider boundary; reference
+Ansible/repositories and system-designer files remain unchanged.
+
+Acceptance: the complete provider, materialized payload/isolated-index tests,
+colcon --symlink-install and actual standalone/parent model/metadata/remapper
+substitutions. Native/GPU inference remains a separate following module gate.
+```sh
+(cd src/models/lidar_transfusion && sha256sum -c SHA256SUMS)
+git lfs ls-files -l -I 'src/models/lidar_transfusion/**'
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_output=errors @autoware_lidar_transfusion_models//... \
+  //bazel/tests:transfusion_model_resources_test
+# With existing sourced ROS and isolated build/install prefixes:
+colcon build --base-paths <checkout>/src/models/lidar_transfusion \
+  --build-base <temporary>/build --install-base <temporary>/install --symlink-install
+. <temporary>/install/setup.bash
+```
+
+Results: every provider target and both inner resource cases pass without
+failures/errors/skips. The materialized 172,460,238-byte model matches immutable
+upstream LFS size/hash. Existing Jazzy/colcon builds the augmented ament package;
+the installed ONNX is a symlink with a matching hash. Repeat the preceding model
+entries' installed-share SHA256SUMS/is_symlink checks. Resolve model_path from
+the real standalone XML with LaunchContext/perform_substitutions and require the
+installed share. With model_name=transfusion and that model_path, resolve
+onnx_path from source transfusion.param.yaml plus the ML/remapper defaults from
+XML; all three input files exist inside the index. The parent
+transfusion_model_path resolves the same share and both manifests declare its
+runtime dependency. XML/package metadata and whitespace checks pass.
+Universe acceptance remains 199/244, Phase 9.14 4/7; native TransFusion is next.

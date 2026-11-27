@@ -2643,6 +2643,9 @@ plus complete CPU/layout and device-kernel companions. Its demonstrated M_PIf
 compile failure is corrected with CUDA's single-precision constant. See its
 [model gate](JOURNAL.md#phase-914-frnet-models) and
 [module gate](JOURNAL.md#phase-914-frnet). Next: TransFusion.
+TransFusion v2.1 revision 8f07eb93038bfd62e35d1f78e56a6b3fb76b12aa has
+validated LFS/index/colcon and launcher-input providers; see its
+[model gate](JOURNAL.md#phase-914-transfusion-models). Native acceptance is pending.
 
 Accepted SDK input: keep Eigen 5.0.1.bcr.1 and select the narrowly guarded
 nvcc 13.2/libc++ 21 invocation-trait patch after the independent host/device

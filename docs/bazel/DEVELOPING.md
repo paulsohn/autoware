@@ -2507,6 +2507,14 @@ the augmented package with --symlink-install and source its environment.
 Keep generated engines in caller-owned storage; precision/profile/cache policy
 belongs to product composition.
 
+TransFusion's @autoware_lidar_transfusion_models index owns its ONNX, ML shape
+parameters and class-remapper parameters. Both standalone and enclosing detector
+launch defaults resolve that same repository. Run
+//bazel/tests:transfusion_model_resources_test after model/metadata changes.
+Colcon users build the augmented package with --symlink-install. Stage mutable
+engines separately; the model provider does not choose product precision/cache
+policy.
+
 ## Apollo LiDAR inference
 
 @autoware_lidar_apollo_instance_segmentation owns the original shared component,

@@ -16,7 +16,7 @@
   <arg name="bevfusion_model_path" default="$(var data_path)/bevfusion"/>
   <arg name="centerpoint_model_path" default="$(find-pkg-share autoware_lidar_centerpoint_models)"/>
   <arg name="centerpoint_common_param_path" default="$(find-pkg-share autoware_lidar_centerpoint)/config/centerpoint_common.param.yaml"/>
-  <arg name="transfusion_model_path" default="$(var data_path)/lidar_transfusion"/>
+  <arg name="transfusion_model_path" default="$(find-pkg-share autoware_lidar_transfusion_models)"/>
 
   <!-- short_range Lidar detector parameters -->
   <arg name="use_short_range_detection" default="false" description="use short range detection for redundant VRU detection"/>
