@@ -15,6 +15,7 @@ ros_interface_set(
         ros_interface_package("@agnocast_cie_config_msgs//:cc", "@agnocast_cie_config_msgs//:cc_shared"),
         ros_interface_package("@autoware_common_msgs//:cc", "@autoware_common_msgs//:cc_shared"),
         ros_interface_package("@autoware_control_msgs//:cc", "@autoware_control_msgs//:cc_shared"),
+        ros_interface_package("@autoware_control_performance_analysis//:cc", "@autoware_control_performance_analysis//:cc_shared"),
         ros_interface_package("@autoware_control_validator//:cc", "@autoware_control_validator//:cc_shared"),
         ros_interface_package("@autoware_internal_debug_msgs//:cc", "@autoware_internal_debug_msgs//:cc_shared"),
         ros_interface_package(
@@ -104,3 +105,5 @@ interface_serialization_test(package = "yabloc_particle_filter", name = "yabloc_
 interface_serialization_test(package = "tier4_system_msgs", name = "tier4_system_serialization_test")
 
 interface_serialization_test(package = "autoware_trajectory_validator", name = "trajectory_validator_serialization_test")
+
+interface_serialization_test(package = "autoware_control_performance_analysis", name = "control_performance_serialization_test")

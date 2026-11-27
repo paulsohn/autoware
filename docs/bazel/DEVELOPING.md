@@ -2228,3 +2228,11 @@ checks do not require simulator or deployment exports.
 The joystick index includes the pinned RCR driver install provider. Its software
 gate uses all four original controller configurations and synthetic Joy inputs;
 real joystick device permissions and physical mappings need hardware qualification.
+
+For control-performance changes, run @autoware_control_performance_analysis//...
+and //bazel/tests/autoware_control_performance_analysis:runtime_test with Cyclone
+DDS. The mixed package has separate core/node C++ providers and generated
+:cc/:cc_shared/:py interface providers. Changes to its schemas or collection
+selection also run //bazel/interfaces:descriptor_test, :python_interfaces_test
+and :control_performance_serialization_test. The software fixture checks known
+tracking errors and recovery; vehicle accuracy requires separate measurements.

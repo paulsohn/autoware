@@ -1,0 +1,27 @@
+load("@rosidl_default_generators//:defs.bzl", "ros_message")
+
+package(default_visibility = ["//visibility:public"])
+
+ros_message(
+    name = "Error",
+    src = "Error.msg",
+    deps = [],
+)
+
+ros_message(
+    name = "FloatStamped",
+    src = "FloatStamped.msg",
+    deps = ["@std_msgs//msg:Header"],
+)
+
+ros_message(
+    name = "ErrorStamped",
+    src = "ErrorStamped.msg",
+    deps = ["@std_msgs//msg:Header", "//msg:Error"],
+)
+
+ros_message(
+    name = "DrivingMonitorStamped",
+    src = "DrivingMonitorStamped.msg",
+    deps = ["//msg:FloatStamped"],
+)

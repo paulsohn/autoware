@@ -2267,6 +2267,12 @@ local_path_override(
     path = "src/universe/autoware_universe/control/autoware_joy_controller",
 )
 
+bazel_dep(name = "autoware_control_performance_analysis")
+local_path_override(
+    module_name = "autoware_control_performance_analysis",
+    path = "src/universe/autoware_universe/control/autoware_control_performance_analysis",
+)
+
 # Launcher source modules.
 bazel_dep(name = "sample_vehicle_description")
 local_path_override(

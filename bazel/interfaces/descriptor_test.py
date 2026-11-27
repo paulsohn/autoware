@@ -18,7 +18,11 @@ class TestDescriptors(unittest.TestCase):
 
     def test_mixed_component_package(self):
         descriptors = MANIFEST.read_text().splitlines()
-        for name in ['autoware_planning_validator/msg/PlanningValidatorStatus',
+        for name in ['autoware_control_performance_analysis/msg/Error',
+                     'autoware_control_performance_analysis/msg/ErrorStamped',
+                     'autoware_control_performance_analysis/msg/FloatStamped',
+                     'autoware_control_performance_analysis/msg/DrivingMonitorStamped',
+                     'autoware_planning_validator/msg/PlanningValidatorStatus',
                      'autoware_control_validator/msg/ControlValidatorStatus',
                      'autoware_vehicle_cmd_gate/msg/IsFilterActivated',
                      'autoware_operation_mode_transition_manager/msg/OperationModeTransitionManagerDebug',

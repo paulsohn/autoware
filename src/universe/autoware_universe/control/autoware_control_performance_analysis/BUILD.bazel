@@ -1,0 +1,114 @@
+load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
+load("@rclcpp_components//:defs.bzl", "rclcpp_components_register_node")
+
+load("@rosidl_default_generators//:defs.bzl", "default_generators")
+
+package(default_visibility = ["//visibility:public"])
+
+default_generators(
+    dependencies = ["@builtin_interfaces", "@std_msgs"],
+    deps = ["//msg:Error", "//msg:ErrorStamped", "//msg:FloatStamped", "//msg:DrivingMonitorStamped"],
+)
+
+cc_library(
+    name = "autoware_control_performance_analysis",
+    srcs = ["src/control_performance_analysis_core.cpp", "src/control_performance_analysis_utils.cpp"],
+    hdrs = [
+        "include/autoware/control_performance_analysis/control_performance_analysis_core.hpp",
+        "include/autoware/control_performance_analysis/control_performance_analysis_utils.hpp",
+    ],
+    includes = ["include", "src"],
+    deps = [
+        ":cc",
+        "@autoware_control_msgs//:cc",
+        "@autoware_internal_debug_msgs//:cc",
+        "@autoware_motion_utils",
+        "@autoware_planning_msgs//:cc",
+        "@autoware_signal_processing",
+        "@autoware_utils",
+        "@autoware_vehicle_msgs//:cc",
+        "@geometry_msgs//:cc",
+        "@nav_msgs//:cc",
+        "@rclcpp//:rclcpp_library",
+        "@rclcpp_components//:rclcpp_components_library",
+        "@sensor_msgs//:cc",
+        "@std_msgs//:cc",
+        "@tf2//:tf2_library",
+        "@tf2_eigen//:tf2_eigen_library",
+        "@tf2_ros//:tf2_ros_library",
+        "@rosdistro//cc:boost.geometry",
+        "@rosdistro//cc:eigen",
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = [
+        ":cc_shared",
+        "@autoware_control_msgs//:cc_shared",
+        "@autoware_internal_debug_msgs//:cc_shared",
+        "@autoware_motion_utils//:runtime_dynamic_deps",
+        "@autoware_planning_msgs//:cc_shared",
+        "@autoware_utils//:runtime_dynamic_deps",
+        "@autoware_vehicle_msgs//:cc_shared",
+        "@geometry_msgs//:cc_shared",
+        "@nav_msgs//:cc_shared",
+        "@rclcpp//:rclcpp",
+        "@rclcpp_components//:rclcpp_components",
+        "@sensor_msgs//:cc_shared",
+        "@std_msgs//:cc_shared",
+        "@tf2//:tf2",
+        "@tf2_eigen//:tf2_eigen",
+        "@tf2_ros//:tf2_ros",
+    ],
+)
+
+cc_shared_library(
+    name = "core",
+    shared_lib_name = "libcontrol_performance_analysis_core.so",
+    # Both core and node-owned vehicle information use these compiled utilities.
+    deps = [
+        ":autoware_control_performance_analysis",
+        "@autoware_utils_geometry",
+        "@autoware_utils_math",
+    ],
+    dynamic_deps = [":runtime_dynamic_deps"],
+)
+
+cc_library(
+    name = "node_library",
+    srcs = ["src/control_performance_analysis_node.cpp"],
+    hdrs = ["include/autoware/control_performance_analysis/control_performance_analysis_node.hpp"],
+    deps = [":autoware_control_performance_analysis", "@autoware_vehicle_info_utils"],
+)
+
+cc_shared_library(
+    name = "component",
+    shared_lib_name = "libcontrol_performance_analysis_node.so",
+    deps = [":node_library"],
+    dynamic_deps = [":core", ":runtime_dynamic_deps"],
+)
+
+rclcpp_components_register_node(
+    name = "autoware_control_performance_analysis_node",
+    component = ":component",
+    node_name = "autoware_control_performance_analysis_node",
+    plugin = "autoware::control_performance_analysis::ControlPerformanceAnalysisNode",
+)
+
+register_ament_files(
+    name = "executables",
+    files = [":autoware_control_performance_analysis_node"],
+    prefix = "lib/autoware_control_performance_analysis",
+    strip_prefix = "*",
+)
+
+ament_index(
+    package_xml = "package.xml",
+    components = [":autoware_control_performance_analysis_node_record"],
+    data = glob(["config/**", "launch/**"]) + [":executables", ":idl"],
+    libraries = [":cc_shared", ":py", ":core"],
+    deps = ["@autoware_vehicle_info_utils//:ament_index"],
+)

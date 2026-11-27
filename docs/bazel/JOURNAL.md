@@ -25128,3 +25128,57 @@ original source changes are needed. Python syntax and whitespace checks pass.
 Coverage is 187/244, six of nine Phase 9.12 packages. Next: performance metrics,
 then steering-offset and accel/brake calibration. No Fast DDS, simulator or
 deployment gate is selected.
+
+## 2026-11-27 — Phase 9.12: Control-performance analysis
+
+Purpose: adopt the package's four owned messages, reusable metric core and node,
+original executable/configuration/launcher. Inspect the three source files,
+public headers, message schemas and CMake's separate core/node libraries; there
+is no original functional suite. Qualify analytical straight-path metrics and
+recovery plus the mixed package's generated interface consumer contract.
+
+Add package-local MODULE/BUILD rules and versionless root selection. Declare
+Error, FloatStamped, ErrorStamped and DrivingMonitorStamped with their actual
+same-package and std_msgs/Header dependencies, and use default_generators for
+native/Python/type-support outputs. Keep the two original shared-library names.
+The core C++ provider owns metric/utility sources and headers; node_library owns
+the node source/header and its vehicle-info dependency. Register the component,
+executable, interface IDL, generated libraries and original resources in its own
+index, including vehicle-info resources required by the original launcher.
+
+The initial broad core dependency assignment gives undefined vehicle-info
+functions at the executable link: those functions are needed by the node, not
+the metric core. Move their provider to node_library. Bazel then identifies
+geometry/math libraries used privately by both DSOs. Make those actual utility
+providers explicit exported roots of the core shared library, preserving one
+owner without a broad exports_filter or source changes. Keep both modules as
+direct child dependencies for their logical labels.
+
+Select the generated :cc/:cc_shared providers in bazel/interfaces/BUILD.bazel.
+Extend the existing descriptor and Python/index consumer tests and add the
+standard serialization companion; do not add a second interface list to the
+plugin consumer. The live external peer supplies a straight trajectory, control,
+steering and constant-speed odometry. Require near-zero baseline heading error,
+then a 1 m lateral displacement with the analytical value approximation 2.342,
+zero reference curvature/velocity error, finite error/driving outputs, and
+recovery after returning to the path. Preserve original filtering parameters.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  @autoware_control_performance_analysis//... \
+  //bazel/tests/autoware_control_performance_analysis:runtime_test \
+  //bazel/interfaces:descriptor_test \
+  //bazel/interfaces:python_interfaces_test \
+  //bazel/interfaces:control_performance_serialization_test
+```
+
+Results: all module targets and all four selected test targets pass with no
+skips. The aggregate Python/index consumer discovers the new mixed package,
+all four types appear in canonical descriptors, and serialization passes. The
+actual node's metric/displacement/recovery gate passes on Cyclone DDS. Original
+source remains unchanged; Python syntax and whitespace checks pass. Coverage is
+188/244, seven of nine Phase 9.12 gates. These deterministic software checks do
+not establish real-vehicle control performance. Next: steering-offset and
+accel/brake calibration. No Fast DDS, simulator or deployment gate is selected.
