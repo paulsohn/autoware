@@ -20,3 +20,9 @@ cc_test(
         "@googletest//:gtest",
     ],
 )
+
+cc_library(
+    name = "constants",
+    hdrs = ["include/autoware_utils_math/constants.hpp"],
+    strip_include_prefix = "include",
+)

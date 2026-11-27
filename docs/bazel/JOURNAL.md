@@ -26016,3 +26016,29 @@ cases and one ROS-node case. All classifier and shared-utility gates also pass
 in the same invocation. No test is skipped. This ownership correction supplies
 the following composed recognition gate; it does not claim vehicle detection
 accuracy or a completed pipeline integration.
+
+<a id="phase-913-math-constants"></a>
+
+## 2026-11-27 — Phase 9.13 prerequisite: Header-only math constants
+
+Purpose: resolve a second composed-library failure after sharing traffic-light
+utilities. The classifier core needs only autoware_utils/math/constants.hpp,
+but its umbrella CcInfo imports debug, geometry and other compiled utility
+implementations also embedded by the map detector. Inspect actual includes
+before adding a provider. Add :constants to autoware_utils_math for its existing
+constants header only; preserve the original complete library and all tests.
+No C++ source or algorithm changes are needed.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  @autoware_utils_math//... @autoware_utils//... \
+  @autoware_traffic_light_classifier//... \
+  //bazel/tests/autoware_traffic_light_classifier:all
+```
+
+Results: all nine test targets pass, including all 40 original math cases,
+60 original classifier cases, four live GPU profiles and both HSV XML launches.
+No tests skip. The following facade/consumer commits use this header-only
+provider; the broad math library remains available for trigonometry users.
