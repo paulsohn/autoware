@@ -26042,3 +26042,18 @@ Results: all nine test targets pass, including all 40 original math cases,
 60 original classifier cases, four live GPU profiles and both HSV XML launches.
 No tests skip. The following facade/consumer commits use this header-only
 provider; the broad math library remains available for trigonometry users.
+
+<a id="phase-913-legacy-constants"></a>
+
+## 2026-11-27 — Phase 9.13 prerequisite: Narrow legacy constant facade
+
+Purpose: retain the classifier's original legacy include without importing the
+entire compatibility facade's compiled dependencies. Add :math_constants to
+@autoware_utils with only include/autoware_utils/math/constants.hpp and a
+dependency on @autoware_utils_math//:constants. Preserve the umbrella target.
+The existing facade has no original functional suite. Build all its targets and
+exercise the narrow provider through the complete classifier and math suites
+using the preceding [math-provider command](#phase-913-math-constants).
+All targets and nine test runners pass without skips. This pattern separates
+header-only API access from compiled implementation ownership; it does not
+require changing the source include or adding a dependency on another consumer.

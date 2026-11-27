@@ -42,3 +42,10 @@ collect_transitive_dynamic_deps(
         "@visualization_msgs//:cc_shared",
     ],
 )
+
+cc_library(
+    name = "math_constants",
+    hdrs = ["include/autoware_utils/math/constants.hpp"],
+    strip_include_prefix = "include",
+    deps = ["@autoware_utils_math//:constants"],
+)
