@@ -3277,3 +3277,46 @@ bazel/tests/autoware_image_projection_based_fusion.
 These findings do not claim sensor/detection accuracy or validation through
 upstream CMake/colcon. Offer focused include, feature-decoding, overlap and
 history regression patches with the source corrections.
+
+
+## StreamPETR normalized polygon parsing and model/runtime defaults
+
+- [ ] Associate the normalized-parser correction with an upstream issue or PR.
+  Checked 2026-11-28: current Universe main and
+  [PR #13267](https://github.com/autowarefoundation/autoware_universe/pull/13267)
+  retain the aliased YAML assignment. That PR changes temporal memory, raster
+  edges and the mask switch, not normalized-map parsing. A scoped normalized-mask
+  search found no matching correction.
+- [ ] Associate the selected v1.0 model/runtime parameter compatibility finding.
+  [PR #12834](https://github.com/autowarefoundation/autoware_universe/pull/12834)
+  proposes removing the example and distributing complete parameters with models.
+  It does not supply the missing options in the immutable provider tested here.
+
+Package: autoware_camera_streampetr in the imported Universe snapshot, with model
+AutowareFoundation/camera_streampetr v1.0 at
+90f37d64186686ebc458509d69d3d4ca16d185c7. Environment: RCR Lyrical,
+LLVM/libc++ 21.1.8, CUDA 13.2.2/TensorRT 10.16.1.11, RTX 5070 Laptop and Cyclone DDS.
+
+The [polygon parser](https://github.com/autowarefoundation/autoware_universe/blob/main/perception/autoware_camera_streampetr/lib/network/camera_ego_mask.cpp)
+starts with points_node aliased to polygon_node. Assigning its points child
+replaces the underlying map before the normalized flag is read. A normalized
+[0,.5] square on an 8x8 image leaves pixel (1,1) unmasked. Rebind with
+points_node.reset(polygon_node["points"]) so reading normalized still sees the
+map. The root GPU regression checks the parsed flag, raster, actual RGB fill
+and invalid forms. It fails before and passes after the focused correction.
+
+The shipped native launch with the selected HF metadata aborts at the required
+model_params.backbone_path. The metadata supplies shape/class information but
+not the runtime paths/options required by the current node. Load component
+runtime/example defaults before model-specific metadata and node overrides;
+merge the duplicate model_params YAML mapping. This is compatibility with this
+selected published model revision, not a claim about every model provider.
+Longer-term upstream can ship a complete versioned parameter contract with each
+model, following #12834, and validate it with the matching node.
+
+The [StreamPETR experiment](JOURNAL.md#phase-915-streampetr) records the reproducer
+and full module gate. Four GPU and two Python cases pass, including five-camera
+readiness, temporal update/desync recovery, native FP16 cold/warm inference and
+unchanged model/engine identities. No upstream CMake or real sensor accuracy
+result is claimed. Keep the parser fix independent of deployment precision or
+model policy when proposing it upstream.

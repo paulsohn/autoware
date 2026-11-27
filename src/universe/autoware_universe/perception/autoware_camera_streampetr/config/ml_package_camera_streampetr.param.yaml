@@ -1,5 +1,5 @@
-# This is just an example file, the actual model param file comes with the model onnx files
-# and is stored in the artifacts directory (~/autoware_data/ml_models/camera_streampetr by default).
+# Defaults for runtime options and model parameters. Model-package metadata overrides
+# these example shapes/classes in the launch file.
 
 /**:
   ros__parameters:
@@ -14,7 +14,6 @@
       pre_memory_length: 1024 # Input memory length for the temporal model
       post_memory_length: 1280 # Output memory length for the temporal model
 
-    model_params:
       trt_precision: "fp16" # TensorRT precision mode: "fp16" or "fp32"
       use_temporal: true # Can the model use temporal information or not.
 

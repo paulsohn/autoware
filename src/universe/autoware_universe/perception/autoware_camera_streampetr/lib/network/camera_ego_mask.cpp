@@ -121,7 +121,7 @@ EgoMaskPolygon parse_polygon_node(
   if (polygon_node.IsSequence()) {
     points_node = polygon_node;
   } else if (polygon_node.IsMap()) {
-    points_node = polygon_node["points"];
+    points_node.reset(polygon_node["points"]);
     if (!points_node || !points_node.IsSequence()) {
       throw std::runtime_error("polygons YAML: each map entry must have a 'points' sequence.");
     }

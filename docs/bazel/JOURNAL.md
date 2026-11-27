@@ -27898,3 +27898,78 @@ lengths 1024/1280, and the component's exec_depend. All checks pass, alongside
 XML/manifest parsing, targeted Buildifier and whitespace checks. No native
 consumer/colcon build or full node-parameter compatibility is claimed by this
 data-provider gate. Those belong to the following complete component task.
+
+<a id="phase-915-streampetr"></a>
+
+## 2026-11-28 — Phase 9.15: StreamPETR
+
+Purpose: integrate the five-camera temporal detector and its three indexed model
+stages. Inspect CMake/manifests, all four C++ and five CUDA sources, synchronization,
+calibration/TF/ego-pose inputs, masks, preprocessing, temporal memory and decoding.
+CMake enables no functional original tests and the package has no test directory.
+The complete selected acceptance suite therefore adds four native GPU cases and
+two Python cases under bazel/tests/autoware_camera_streampetr. This rclcpp component
+has no selected Agnocast endpoint gate. Routine transport uses Cyclone DDS.
+
+Prerequisites: the preceding independently indexed StreamPETR v1.0 provider,
+RCR Lyrical, LLVM/libc++ 21.1.8, pinned CUDA 13.2.2/TensorRT 10.16.1.11,
+RTX 5070 Laptop with working driver 595.99.02, and the previously qualified
+perception/utility SDK providers. Keep the original MultiThreadedExecutor,
+command and three shared-library names. The source needs no spconv boundary or
+additional TensorRT plugin provider. Do not add them speculatively.
+
+Two source issues are reproduced and corrected separately from build definitions:
+
+- The shipped launch with the selected immutable HF v1.0 metadata aborts with
+  UninitializedStaticallyTypedParameterException for model_params.backbone_path.
+  That metadata owns shapes/classes but omits runtime paths, precision, workspace
+  and postprocessing options. The component already has these in its example
+  YAML, but the launch does not load it and it repeats the model_params mapping.
+  Merge the duplicate mapping and load component defaults before model metadata,
+  then node overrides. Preserve model-specific shapes/classes and allow caller
+  precision/cache settings. The native gate uses this actual composition rather
+  than supplying all missing values in a test-only file.
+- A normalized polygon spanning [0, .5] in an 8x8 image leaves interior pixel
+  (1,1) zero and unchanged RGB after masking. YAML::Node assignment through a
+  handle aliased to polygon_node replaces that map with its points sequence
+  before normalized is read. Rebind points_node with reset() to preserve the map.
+  The regression checks the parsed flag, raster interior/exterior, GPU RGB fill
+  and invalid YAML forms. It fails before and passes after the one-line fix.
+
+Upstream main and the relevant PRs were inspected on 2026-11-28. The current
+normalized parser still assigns the alias, including PR #13267's head; its
+raster/temporal changes do not fix this parser. PR #12834 intends removal of the
+example in favor of complete model metadata, but does not complete our selected
+immutable v1.0 metadata. See UPSTREAM_AWF.md for the bounded findings. Unrelated
+memory/performance/pose changes were not applied from those PRs.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast \
+  --local_test_jobs=1 --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp \
+  --test_output=errors @autoware_camera_streampetr//... \
+  //bazel/tests/autoware_camera_streampetr:gpu_test \
+  //bazel/tests/autoware_camera_streampetr:runtime_test
+```
+
+The full working-tree gate passes all four GPU and two Python cases, with no
+failures/errors/skips or empty runners. GPU checks exercise BGR-to-RGB, planar
+normalization, camera offsets/crop and downsampling, normalized masks and RGB
+fill, timestamp rebasing across two frames, and decoded range filtering/circle
+suppression. The Python suite validates indexed defaults and executes all three
+FP16 models cold and warm through the shipped native launch. Supply calibrated
+480x640 images for five cameras, map-to-base_link TF and identity camera
+extrinsics. Subscribe to the private output: the node intentionally does no
+image work without an output subscriber. Publish non-anchor cameras before the
+anchor. It must wait with only four images, publish current base_link headers and
+finite inference timing when complete, carry temporal state to a subsequent
+frame, reject a deliberately desynchronized batch and recover after its reset.
+Both native runs shut down cleanly with no child death. All three engine hashes/
+mtimes stay unchanged on the warm run; indexed ONNX inputs remain unchanged.
+Synthetic output checks do not establish detection accuracy or performance.
+
+The separately committed source corrections are validated using the complete
+working-tree integration. The package-local Bazel definitions and root companions
+are the next commit boundary. No upstream CMake implementation build, Fast DDS,
+simulator or deployment-export gate is claimed. The model provider's preceding
+isolated-index and colcon symlink evidence is unchanged and reused.
