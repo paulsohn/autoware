@@ -89,6 +89,7 @@ only when your current target demonstrates the need.
   [shared vision SDK ownership evidence](JOURNAL.md#phase-913-classifier-opencv);
   [perception utility SDK ownership evidence](JOURNAL.md#phase-914-perception-geometry-owners);
   [narrow clustering message utilities](JOURNAL.md#phase-915-cluster-utilities);
+  [shared perception facade owners](JOURNAL.md#phase-915-perception-facade-owners);
   [narrow utility dependency evidence](JOURNAL.md#phase-913-classifier-composition);
   [CUDA helper identity evidence](JOURNAL.md#phase-913-yolox-gpu-identity);
   [Qt/RViz runtime ownership and graphical prerequisites](DEVELOPING.md#rviz-plugin-packages);

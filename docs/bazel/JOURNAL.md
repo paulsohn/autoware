@@ -27414,3 +27414,48 @@ the original clustering DSO defines none of them. Fusion graph analysis succeeds
 with the narrow utility owner and without shape-estimation implementation.
 Whitespace and targeted Starlark analysis checks pass. Existing source and tests
 remain unchanged. GPU/model inference is not part of this CPU utility boundary.
+
+<a id="phase-915-perception-facade-owners"></a>
+
+## 2026-11-27 — Phase 9.15: shared perception facade owners
+
+Purpose: compose CPU image projection and its derived CenterPoint detector
+without embedding the same compiled utility facade twice. After narrowing the
+clustering conversion dependency, analysis identifies duplicate static ownership
+of autoware_utils_debug in the CPU fusion DSO and CenterPoint core DSO. Inspect
+both dependency graphs and the facade's compiled sources. The common perception
+SDK already exports object recognition, interpolation, geometry and math. Export
+its remaining shared compiled debug/diagnostics/system/visualization dependencies as roots,
+and declare those logical module dependencies. Both consumers then use one
+existing CPU SDK owner. No implementation changes or extra facade module.
+Carry the debug utility's runtime owners and diagnostic-updater/visualization
+message DSOs as well; otherwise the new facade roots would embed canonical
+message libraries a second time. Both CPU and detector consumers now import the
+same utility definitions from the existing perception SDK.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast \
+  --local_test_jobs=1 --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp \
+  --test_output=errors @perception_utils//... \
+  @autoware_lidar_centerpoint//... //bazel/tests/autoware_lidar_centerpoint:all \
+  @autoware_lidar_transfusion//... //bazel/tests/autoware_lidar_transfusion:all \
+  @autoware_ptv3//... //bazel/tests/autoware_ptv3:all
+```
+
+The combined foundation gate also includes every clustering target and its
+three existing transport tests. All 122 selected targets pass: 95 non-test and
+27 test targets. Every perception-utils original case passes (five NMS, two
+remapper and one run-length case). Complete CenterPoint, TransFusion and PTV3
+original suites and their kernel/model/default-path companions pass, including
+cold/warm GPU inference. Inspect XML/logs: no failures/errors/skips or empty
+suites. Reuse unchanged individual results from the exposing aggregate when the
+final foundation command repeats them; unrelated fusion test build errors are
+not counted as foundation successes.
+
+nm -D --defined-only -C on libperception_utils.so confirms strong public debug
+(20), diagnostics (four), system (one) and visualization (three) definitions.
+The complete fusion graph then passes analysis without duplicate static/export
+owners. Targeted Starlark analysis and whitespace checks pass. The scope is
+native perception SDK composition, not recognition accuracy or a new global
+utility facade. Original source and tests remain unchanged.

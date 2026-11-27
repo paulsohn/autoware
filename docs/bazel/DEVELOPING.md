@@ -2665,3 +2665,13 @@ consumer needs only cluster-message conversion or centroid helpers. Carry
 clustering SDK and index also carry that shared helper. Each conversion function
 has one owner with SONAME `libautoware_euclidean_cluster_utils.so`. Do not depend
 on detector/shape-estimation implementations solely to convert messages.
+
+## Shared perception utility exports
+
+When composing perception SDKs that use the `autoware_utils` facade, import the
+existing `@perception_utils` shared owner and its `:runtime_dynamic_deps`.
+That owner exports object-recognition/interpolation and the compiled geometry,
+math, debug, diagnostics, system and visualization utilities. Do not embed a
+second copy of these compiled facade dependencies in another DSO in that graph.
+Carry canonical ROS message and diagnostic-updater owners with the SDK. Keep
+static header providers separate from shared symbol ownership.

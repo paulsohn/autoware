@@ -42,6 +42,8 @@ cc_library(
 collect_transitive_dynamic_deps(
     name = "runtime_dynamic_deps",
     dynamic_deps = [
+        "@autoware_utils_debug//:runtime_dynamic_deps",
+        "@diagnostic_updater//:diagnostic_updater",
         "@autoware_internal_planning_msgs//:cc_shared",
         "@autoware_planning_msgs//:cc_shared",
         ":run_length_encoder",
@@ -50,6 +52,7 @@ collect_transitive_dynamic_deps(
         "@autoware_perception_msgs//:cc_shared",
         "@rclcpp//:rclcpp",
         "@std_msgs//:cc_shared",
+        "@visualization_msgs//:cc_shared",
     ],
 )
 
@@ -62,6 +65,10 @@ cc_shared_library(
         "@autoware_interpolation",
         "@autoware_utils_geometry",
         "@autoware_utils_math",
+        "@autoware_utils_debug",
+        "@autoware_utils_diagnostics",
+        "@autoware_utils_system",
+        "@autoware_utils_visualization",
     ],
 )
 
