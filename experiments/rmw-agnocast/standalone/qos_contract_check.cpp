@@ -118,6 +118,52 @@ static void topics(rclcpp::Node & node)
                "recovered\n";
 }
 
+static void best_available_services(const std::shared_ptr<rclcpp::Node> & node)
+{
+  auto defaults = rclcpp::ServicesQoS();
+  auto default_durations = [&](const rclcpp::QoS & qos) {
+    return qos.deadline() == defaults.deadline() &&
+           qos.liveliness_lease_duration() == defaults.liveliness_lease_duration();
+  };
+  bool passed = true;
+  for (bool deadline : {true, false}) {
+    auto best = defaults;
+    if (deadline)
+      best.deadline(rmw_time_t RMW_QOS_DEADLINE_BEST_AVAILABLE);
+    else
+      best.liveliness_lease_duration(rmw_time_t RMW_QOS_LIVELINESS_LEASE_DURATION_BEST_AVAILABLE);
+    for (bool best_on_server : {true, false}) {
+      std::string name = std::string("/best_") + (deadline ? "deadline_" : "lease_") +
+                         (best_on_server ? "server" : "client");
+      auto server = node->create_service<Service>(
+        name,
+        [](std::shared_ptr<Service::Request> req, std::shared_ptr<Service::Response> res) {
+          res->success = req->data;
+        },
+        best_on_server ? best : defaults);
+      auto client = node->create_client<Service>(name, best_on_server ? defaults : best);
+      bool server_qos = default_durations(server->get_request_subscription_actual_qos()) &&
+                        default_durations(server->get_response_publisher_actual_qos());
+      bool client_qos = default_durations(client->get_request_publisher_actual_qos()) &&
+                        default_durations(client->get_response_subscription_actual_qos());
+      bool ready = client->wait_for_service(1s);
+      bool reply = false;
+      if (ready) {
+        auto request = std::make_shared<Service::Request>();
+        request->data = true;
+        auto future = client->async_send_request(request);
+        reply = rclcpp::spin_until_future_complete(node, future, 2s) ==
+                  rclcpp::FutureReturnCode::SUCCESS &&
+                future.get()->success;
+      }
+      std::cout << name << " ready=" << ready << " reply=" << reply << " server_qos=" << server_qos
+                << " client_qos=" << client_qos << std::endl;
+      passed &= ready && reply && server_qos && client_qos;
+    }
+  }
+  require(passed, "BEST_AVAILABLE service durations must resolve to service defaults");
+}
+
 static void services(std::shared_ptr<rclcpp::Node> node, const std::string & role)
 {
   auto qos = rclcpp::ServicesQoS()
@@ -178,6 +224,8 @@ int main(int argc, char ** argv)
     auto node = std::make_shared<rclcpp::Node>("qos_" + role);
     if (role == "topics")
       topics(*node);
+    else if (role == "best_available")
+      best_available_services(node);
     else
       services(node, role);
     rclcpp::shutdown();

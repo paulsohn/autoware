@@ -4710,3 +4710,11 @@ Ran two five-round three-LiDAR batches with native bundled CIE, standalone CIE, 
 For the laptop pilot, accept the measured CPU tradeoff and defer CPU tuning. The 1.52× ratio includes startup and shutdown. If a deployment CPU budget becomes binding or sustained load causes missed deadlines, measure steady-state CPU separately before choosing an optimization.
 
 [Exact reproduction commands, per-cloud and per-group records, paired timing and resource measurements](../rmw-agnocast/standalone/workload-results/rehearsal-3f60d0929/README.md)
+
+## Resolve BEST_AVAILABLE service durations before native route selection
+
+On 2b18c535f the new rclcpp SetBool probe created four pairs on distinct names. Each pair requested either the Lyrical BEST_AVAILABLE deadline or lease on one endpoint, using ServicesQoS defaults on the other. It exercised both assignments of client and server. All four discovery waits timed out. The endpoint with the sentinel also failed the actual-QoS check. No pair reached a reply. This reproduced the failure with the unchanged native RMW and the released hook.
+
+The Lyrical definitions of RMW_QOS_DEADLINE_BEST_AVAILABLE and RMW_QOS_LIVELINESS_LEASE_DURATION_BEST_AVAILABLE in rmw/types.h specify the corresponding service defaults for clients and services. Rpc now normalizes those durations before encoding a native route, then supplies its effective profile to every private request and response endpoint. A default-equivalent lease takes the ordinary availability path. Explicit finite leases retain their heartbeat.
+
+To repeat with a built laptop rehearsal, export LYRICAL_ROOT from build/agnocast-lyrical/universe-root and run experiments/buffer/run-lyrical.sh env -i HOME=/tmp PATH=/usr/bin:/bin bash experiments/rmw-agnocast/rehearsal/contracts.sh build/rehearsal-confirm. Each of the four lines beginning /best_ now reports ready=1, reply=1, server_qos=1 and client_qos=1. Each QoS check covers both durations on the request and response sides. The two-process finite-lease test passed idle, expiry, resume and death, and the deadline and bounded-reader checks passed. Rehearsal conformance.sh followed by compare.py matched all 230 previous outcomes: 133 RMW passes, the same five skips, and 92 rclcpp passes.

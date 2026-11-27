@@ -81,11 +81,17 @@ struct Rpc
     if (!hash || !hash->version) throw std::runtime_error("service type has no hash");
     if (name.empty()) throw std::invalid_argument("empty service name");
     endpoints::resolve_defaults(qos);
+    if (rmw_time_equal(qos.deadline, RMW_QOS_DEADLINE_BEST_AVAILABLE))
+      qos.deadline = rmw_qos_profile_services_default.deadline;
+    if (
+      rmw_time_equal(
+        qos.liveliness_lease_duration, RMW_QOS_LIVELINESS_LEASE_DURATION_BEST_AVAILABLE))
+      qos.liveliness_lease_duration = rmw_qos_profile_services_default.liveliness_lease_duration;
     path = name + "/h" + hex(hash->value, sizeof(hash->value));
     // Request and response reverse the offer and request, so both directions require equal periods.
-    if (deadline_ns(q.deadline) != INT64_MAX)
-      path += "/deadline" + std::to_string(deadline_ns(q.deadline));
-    auto lease_ns = deadline_ns(q.liveliness_lease_duration);
+    if (deadline_ns(qos.deadline) != INT64_MAX)
+      path += "/deadline" + std::to_string(deadline_ns(qos.deadline));
+    auto lease_ns = deadline_ns(qos.liveliness_lease_duration);
     if (lease_ns != INT64_MAX) {
       if (lease_ns < 1000000) throw std::invalid_argument("service lease must be at least 1 ms");
       path += "/lease" + std::to_string(lease_ns) + "/r" + std::to_string(qos.reliability) + "/d" +
@@ -118,12 +124,12 @@ Handle * create(
   try {
     auto ep = std::make_unique<Rpc>(n, name, ts, *qos);
     if constexpr (std::is_same_v<Handle, rmw_client_t>) {
-      ep->writer = rpc_writer(n, (ep->path + "/request").c_str(), *qos);
+      ep->writer = rpc_writer(n, (ep->path + "/request").c_str(), ep->qos);
       if (rmw_get_gid_for_publisher(ep->writer, &ep->gid) != RMW_RET_OK) return nullptr;
       ep->reader =
-        rpc_reader(n, (ep->path + "/c" + hex(ep->gid.data, sizeof(ep->gid.data))).c_str(), *qos);
+        rpc_reader(n, (ep->path + "/c" + hex(ep->gid.data, sizeof(ep->gid.data))).c_str(), ep->qos);
     } else
-      ep->reader = rpc_reader(n, (ep->path + "/request").c_str(), *qos);
+      ep->reader = rpc_reader(n, (ep->path + "/request").c_str(), ep->qos);
     const auto * desc = ts->get_type_description_func(ts);
     rmw_qos_profile_t actual{};
     if (!desc || rmw_subscription_get_actual_qos(ep->reader, &actual) != RMW_RET_OK) return nullptr;

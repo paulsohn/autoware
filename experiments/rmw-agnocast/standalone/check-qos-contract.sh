@@ -7,6 +7,7 @@ out=$(mktemp -d)
 cd "$out"
 run=(env RMW_IMPLEMENTATION=rmw_agnocast "LD_PRELOAD=$hook" ROS_DISABLE_LOANED_MESSAGES=1)
 "${run[@]}" "$probe" topics
+"${run[@]}" "$probe" best_available
 "${run[@]}" "$probe" server >server.log 2>&1 &
 server=$!
 "${run[@]}" "$probe" client &
