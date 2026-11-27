@@ -2987,3 +2987,13 @@ py_test(
     deps = ["@ament_index_python"],
     precompile = "disabled",
 )
+
+py_test(
+    name = "pointpainting_model_resources_test",
+    srcs = ["models/test_indexed_model_package.py"],
+    main = "models/test_indexed_model_package.py",
+    args = ["autoware_image_projection_based_fusion_models", "2"],
+    data = ["@autoware_image_projection_based_fusion_models//:ament_index"],
+    deps = ["@ament_index_python"],
+    precompile = "disabled",
+)

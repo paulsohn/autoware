@@ -2646,3 +2646,13 @@ frames and recompute row_step after compaction. Preserve xyz/intensity/channel
 payloads. Synthetic tests qualify software contracts, not terrain accuracy or
 throughput. The existing legacy stream warning remains until a separately scoped
 stream-API migration.
+
+## PointPainting model resources
+
+Resolve PointPainting weights and ML/remapper parameters through
+`@autoware_image_projection_based_fusion_models//:ament_index`. The selected local
+provider lives at `src/models/image_projection_based_fusion`. Its minimal
+ament_cmake package supports colcon `--symlink-install`; source that environment
+before launch. Stage weights in a writable consumer-owned cache for engine
+preparation. Keep indexed inputs immutable. HOME downloads alone do not supply
+the required package index.

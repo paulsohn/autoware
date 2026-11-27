@@ -22,7 +22,7 @@
   </arg>
   <arg name="data_path" default="$(env HOME)/autoware_data/ml_models" description="packages data and artifacts directory path"/>
   <arg name="bevfusion_model_path" default="$(var data_path)/bevfusion"/>
-  <arg name="pointpainting_model_path" default="$(var data_path)/image_projection_based_fusion"/>
+  <arg name="pointpainting_model_path" default="$(find-pkg-share autoware_image_projection_based_fusion_models)"/>
   <arg name="camera_2d_detector/model_path" default="$(find-pkg-share autoware_tensorrt_yolox_models)/yolox-sPlus-opt-pseudoV2-T4-960x960-T4-seg16cls.onnx"/>
   <arg name="camera_2d_detector/label_path" default="$(find-pkg-share autoware_tensorrt_yolox_models)/label.txt"/>
   <arg name="camera_2d_detector/color_map_path" default="$(find-pkg-share autoware_tensorrt_yolox_models)/semseg_color_map.csv"/>

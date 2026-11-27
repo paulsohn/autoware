@@ -2680,6 +2680,26 @@ precision policies at product level, keep caches writable and indexed inputs
 immutable, and commit each module/model boundary separately. No Fast DDS,
 simulator or deployment export gate is selected.
 
+### Phase 9.15: BEV and multimodal perception fusion (in progress)
+
+Progress: 0/5 module gates complete; coverage starts at 202/244.
+
+Start with image-projection fusion and its PointPainting provider. Preserve all
+four enabled original suites, four CPU fusion components and the CUDA PointPainting
+component. Add camera projection/association, synchronization/history and actual
+GPU/model output checks. Then adopt BEVFusion, StreamPETR, BEVDet and BEVFormer,
+with separate model/vendor prerequisites and complete module gates. Inspect each
+component's concrete calibration, transform, image/LiDAR and temporal contracts
+before selecting its root-owned synthetic inference profile. No future patch is
+selected in advance. Routine validation uses Cyclone DDS; select applicable
+Agnocast behavior from each component's actual transport. No Fast DDS, simulator
+or deployment export gate is selected. Keep each validated boundary separate.
+
+PointPainting model v5.0 selects immutable revision
+33119d71afd53fbc3994dcffc71e6247b76cdd5a, matching the inspected source/reference
+artifact policy; verify materialized hashes and indexed/colcon paths before
+native inference. See the [model experiment](JOURNAL.md#phase-915-pointpainting-models).
+
 ### Execution order through complete Universe coverage
 
 The following groups are the initial route through every remaining package.

@@ -27321,3 +27321,55 @@ Synthetic classification does not qualify terrain/sensor accuracy or performance
 The legacy CUDA-blackboard stream API still emits its existing warning; no
 stream-API migration, Agnocast input feature, Fast DDS, simulator or deployment
 export gate is claimed. Next: Phase 9.15 BEV and multimodal perception fusion.
+
+<a id="phase-915-pointpainting-models"></a>
+
+## 2026-11-27 — Phase 9.15: PointPainting model provider
+
+Purpose: provide the image-projection fusion package's encoder/backbone weights
+and ML/remapper metadata through a repository-owned model index. Inspect source
+XML/YAML and all enclosing camera/LiDAR launch defaults, the reference artifact
+role's v5.0 selection and HF immutable revision
+33119d71afd53fbc3994dcffc71e6247b76cdd5a. Its model card declares Apache-2.0.
+Clone the HF tag with LFS smudging disabled, assert the selected commit, fetch
+each resolve/<immutable-sha>/<file> payload, and stream size/SHA-256 checks against
+the HF blobs API. Seed both checkout/parent LFS object stores and import a
+squashed subtree at src/models/image_projection_based_fusion.
+
+Own MODULE/BUILD, :models/:ament_index, SHA256SUMS, provenance, package.xml and
+minimal NONE-language ament_cmake support inside that model boundary. Root selects
+an adjacent versionless dependency/local override before source consumers.
+Replace standalone HOME/data_path and all three enclosing PointPainting model
+defaults with find-pkg-share. Add the model runtime dependency to source and
+parent manifests. Preserve unrelated families' data_path until their adoption.
+Do not extend Ansible or repositories reference implementations.
+
+Acceptance: complete provider/resource tests, isolated index lookup, both LFS
+payload identities, colcon --symlink-install leaf symlinks and actual standalone/
+parent model/metadata/remapper substitutions. Native inference is the following
+module gate. The provider and both resource cases pass:
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_output=errors @autoware_image_projection_based_fusion_models//... \
+  //bazel/tests:pointpainting_model_resources_test
+
+source /opt/ros/jazzy/setup.bash
+colcon build --base-paths src/models/image_projection_based_fusion \
+  --symlink-install --build-base /tmp/pointpainting-model-build \
+  --install-base /tmp/pointpainting-model-install
+source /tmp/pointpainting-model-install/setup.bash
+```
+
+All four selected targets pass: three non-test targets and the resource runner's
+two inner cases. Colcon finishes one package. Resolve its share with
+ament_index_python, require both ONNX leaves to be symlinks and stream their
+SHA-256 against SHA256SUMS. Verify sizes 20,140,082 and 7,621 bytes. Resolve the
+standalone model_path and all three parent pointpainting_model_path defaults
+with LaunchContext and parse_substitution/perform_substitutions. All select that
+share. With model_name=pointpainting and model_path set to the share, resolve the
+encoder/head ONNX, ML parameter and class-remapper substitutions. Every file
+exists inside the share; both manifests declare the model exec_depend. The
+resource runner also resolves a copied isolated index. XML/manifest parsing and
+whitespace checks pass. This provider gate does not claim native inference.

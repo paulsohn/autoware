@@ -323,6 +323,12 @@ local_path_override(
     path = "src/models/ptv3",
 )
 
+bazel_dep(name = "autoware_image_projection_based_fusion_models")
+local_path_override(
+    module_name = "autoware_image_projection_based_fusion_models",
+    path = "src/models/image_projection_based_fusion",
+)
+
 # Core source modules.
 bazel_dep(name = "agnocast_cie_config_msgs")
 local_path_override(
