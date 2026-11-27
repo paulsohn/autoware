@@ -10,6 +10,7 @@ exports_files(
         "launch/traffic_light_recognition/traffic_light_recognition_fine.launch.xml",
         "launch/traffic_light_recognition/traffic_light_recognition_rough.launch.xml",
         "launch/traffic_light_recognition/traffic_light_detector_fine.launch.xml",
+        "launch/obstacle_segmentation/ground_segmentation_ml.launch.xml",
         "package.xml",
     ],
     visibility = ["//visibility:public"],

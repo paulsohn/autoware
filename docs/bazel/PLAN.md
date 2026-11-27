@@ -116,6 +116,7 @@ only when your current target demonstrates the need.
   [Runtime-only dlopen resources and ABI closure](DEVELOPING.md#tensorrt-sdk-and-native-tests);
   [node-free publisher metadata evidence](JOURNAL.md#phase-913-traffic-classifier);
   [evidence: TensorRT SDK](JOURNAL.md#2026-11-18-phase-62--tensorrt-binary-sdk);
+  [explicit plugin-command SDK/GNU runtime](JOURNAL.md#phase-914-plugin-command-runtime);
   [vendor RTTI and exception binding](JOURNAL.md#2026-11-23-phase-652--tensorrt-calibration-and-c-runtime-compatibility).
   [Writable engine caches and caller-owned identity](DEVELOPING.md#common-library-engine-cache);
   [cache failure/invalidation evidence](JOURNAL.md#2026-11-23-phase-652--preserve-the-tensorrt-engine-output-identity);
@@ -2618,7 +2619,7 @@ Next: Phase 9.14, CUDA sensing and LiDAR model inference.
 
 ### Phase 9.14: CUDA sensing and LiDAR model inference (in progress)
 
-Progress: 5/7 module gates complete; coverage 200/244 (44 remaining).
+Progress: 6/7 module gates complete; coverage 201/244 (43 remaining).
 
 CUDA preprocessing is accepted: all 15 original CUDA cases, five live original
 XML profiles, three native transport/numerical cases in both selected runtime
@@ -2652,6 +2653,10 @@ fix. See its [model gate](JOURNAL.md#phase-914-transfusion-models) and
 Its v0.1.1 model revision d62e52800ecb7de41fa9cc530df2d5d18624cf2b
 provides all three LFS-materialized encoder/head inputs and ML metadata via a
 validated indexed/colcon provider; see the [model gate](JOURNAL.md#phase-914-ptv3-models).
+PTV3 is accepted: all 55 original cases and FP16 cold/warm encoder plus both
+task heads pass. Select the explicit pinned plugin/GNU runtime and current TF2
+headers; see its [module gate](JOURNAL.md#phase-914-ptv3).
+Next: CUDA ground segmentation.
 
 Accepted SDK input: keep Eigen 5.0.1.bcr.1 and select the narrowly guarded
 nvcc 13.2/libc++ 21 invocation-trait patch after the independent host/device

@@ -1135,6 +1135,12 @@ local_path_override(
     path = "src/universe/autoware_universe/perception/autoware_tensorrt_plugins",
 )
 
+bazel_dep(name = "autoware_ptv3")
+local_path_override(
+    module_name = "autoware_ptv3",
+    path = "src/universe/autoware_universe/perception/autoware_ptv3",
+)
+
 bazel_dep(name = "autoware_tensorrt_classifier")
 local_path_override(
     module_name = "autoware_tensorrt_classifier",

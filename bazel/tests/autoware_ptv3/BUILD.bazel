@@ -1,0 +1,24 @@
+load("@launch_ros//:defs.bzl", "launch_ros_binary")
+load("@pip_ros//:requirements.bzl", "requirement")
+load("@rules_python//python:defs.bzl", "py_test")
+
+launch_ros_binary(
+    name = "launch_probe",
+    testonly = True,
+    src = "@autoware_ptv3//:launch/ptv3.launch.xml",
+    data = ["@autoware_ptv3//:ament_index"],
+    precompile = "disabled",
+)
+
+py_test(
+    name = "runtime_test",
+    srcs = ["test_runtime.py"],
+    main = "test_runtime.py",
+    args = ["$(rootpath :launch_probe)", "$(rootpath @autoware_perception_launch//:launch/obstacle_segmentation/ground_segmentation_ml.launch.xml)", "$(rootpath @autoware_perception_launch//:package.xml)"],
+    deps = ["@ament_index_python", "@autoware_internal_debug_msgs//:py", "@autoware_perception_msgs//:py", "@rclpy", "@sensor_msgs//:py", "@launch", "@launch_ros", "@launch_xml", requirement("pyyaml")],
+    data = [":launch_probe", "@autoware_ptv3//:ament_index", "@autoware_perception_launch//:launch/obstacle_segmentation/ground_segmentation_ml.launch.xml", "@autoware_perception_launch//:package.xml"],
+    env = {"ENABLE_AGNOCAST": "0", "LD_LIBRARY_PATH": "lib", "ROS_DOMAIN_ID": "101"},
+    tags = ["no-sandbox", "no-remote", "requires-gpu"],
+    precompile = "disabled",
+    timeout = "long",
+)

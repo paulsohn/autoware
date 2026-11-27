@@ -27118,7 +27118,7 @@ seven original runners and qualify both task heads through the real GPU node.
 
 <a id="phase-914-ptv3"></a>
 
-## 2026-11-27 — Phase 9.14: PTV3 CUDA inference (in progress)
+## 2026-11-27 — Phase 9.14: PTV3 CUDA inference
 
 Purpose: expose four CUDA sources, four core sources and the node as the original
 three DSOs, native SDK-aware command, component record and indexed resources.
@@ -27142,6 +27142,58 @@ The full gate after this source correction passes all 55 original cases, both
 model-resource cases and both runtime/default-path cases. Keep the source fix
 separate from Bazel definitions; SDK/runtime details and exact commands follow
 with that integration boundary.
+
+The native command explicitly selects the spconv GNU 13 runtime and pinned DSO
+alongside the plugin target; see the SDK task below. The initial CUDA shared
+owner reaches PCL and ROS messages through point_types. Share the canonical
+SDK dynamic owners with the CUDA DSO rather than linking these libraries twice.
+Use TENSORRT_VERSION_MAJOR from the selected SDK's defs, not a numeric source
+constant. All seven original drivers compile unchanged, including the host-side
+Thrust detection test; no CUDA-only test rewrite is necessary.
+
+The root runtime companion uses 20736 distinct-voxel PointXYZIRC samples and
+FP16, single-frame base_link densification with a 24000-point capacity. Select
+encoder [16000, 20000, 24000] and pooled maxima [24000, 16000, 8000, 4000], with
+1 GiB builder workspace per task. Retain the model's original feature/grid/class
+metadata. Subscribe to segmentation, visualization, filtered clouds, detected
+objects and debug/processing_time/total_ms before publishing input. Require
+all outputs, matching headers, consistent cloud byte/row sizes, bounded counts,
+finite object fields and positive timing. The two real XML executions use one
+writable staged cache: all three nonempty engines keep SHA-256/mtime on warm
+reuse, and all three indexed ONNX identities remain unchanged. Strictly reject
+child process death even if the outer launch returns zero. The source/parent
+indexed defaults, plugin path and owning manifests are checked separately.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast \
+  --local_test_jobs=1 --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp \
+  --test_output=errors @autoware_ptv3//... @autoware_ptv3_models//... \
+  //bazel/tests:ptv3_model_resources_test //bazel/tests/autoware_ptv3:all
+
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel aquery --config=runtime --config=no-agnocast --output=jsonproto \
+  '@autoware_ptv3//:kernels + @autoware_ptv3//:library + @autoware_ptv3//:node_library + @autoware_ptv3//:autoware_ptv3_cuda_lib + @autoware_ptv3//:autoware_ptv3_lib + @autoware_ptv3//:autoware_ptv3_component' \
+  > /tmp/ptv3-actions.json
+```
+
+All 31 selected targets pass (22 non-test and nine test targets). Inspect original
+XML: configuration 16, serialized pooling three, preprocess 16, sweep six,
+segmentation postprocess seven, detection postprocess one and ROS utilities six;
+all 55 cases pass with no skips/failures/errors or empty runners. Both resource
+cases and both runtime/default-path cases pass; live cold/warm takes 87.5 s
+and is not an inference benchmark. The final gate reuses unchanged passing
+results after rebuilding the formatted node include list. Eight CUDA compile,
+five native compile and three DSO link actions have no -flto/bitcode inputs.
+Together with the complete gate, this preserves the inspected shim's non-LTO
+contract. Source correction is bbc12736d; SDK prerequisite is ca8f303bd.
+
+Python AST, changed header formatting, XML and whitespace checks pass. Coverage
+reaches 201/244 with 43 definitions remaining; Phase 9.14 is 6/7 complete. This
+qualifies the selected native FP16 profile and both task heads, not accuracy,
+maximum-capacity/other precision profiles, temporal TF, build_only, composable-
+container or Agnocast-enabled inference. No Fast DDS, simulator or deployment
+export gate is selected. Next: CUDA ground segmentation.
 
 <a id="phase-914-plugin-command-runtime"></a>
 

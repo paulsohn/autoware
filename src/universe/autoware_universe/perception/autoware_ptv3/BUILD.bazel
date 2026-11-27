@@ -1,0 +1,112 @@
+load("@rclcpp_components//:defs.bzl", "rclcpp_components_register_node")
+load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
+load("@rules_cuda//cuda:defs.bzl", "cuda_library")
+load("@tensorrt//:defs.bzl", "TENSORRT_VERSION_MAJOR", "tensorrt_cc_binary")
+
+package(default_visibility = ["//visibility:public"])
+
+_GPU_HEADERS = glob(["include/**/ptv3_config.hpp", "include/**/utils.hpp", "include/**/preprocess/point_type.hpp", "include/**/preprocess/preprocess_kernel.hpp", "include/**/preprocess/sweep_kernel.hpp", "include/**/postprocess/*.hpp"])
+
+cuda_library(
+    name = "kernels",
+    srcs = glob(["lib/**/*.cu"]),
+    hdrs = _GPU_HEADERS,
+    includes = ["include"],
+    copts = ["-std=c++17", "--expt-relaxed-constexpr", "--extended-lambda"],
+    deps = ["@autoware_cuda_utils", "@autoware_point_types", "@cuda//:cuda_runtime", "@cuda//:cub", "@cuda//:thrust"],
+)
+
+cc_shared_library(
+    name = "autoware_ptv3_cuda_lib",
+    shared_lib_name = "libautoware_ptv3_cuda_lib.so",
+    deps = [":kernels"],
+    dynamic_deps = [":sdk_dynamic_deps"],
+)
+
+cc_library(
+    name = "library",
+    srcs = glob(["lib/**/*.cpp"]),
+    hdrs = glob(["include/**/*.hpp"], exclude = _GPU_HEADERS + ["include/autoware/ptv3/ptv3_node.hpp"]),
+    includes = ["include"],
+    local_defines = ["TENSORRT_VERSION_MAJOR=" + TENSORRT_VERSION_MAJOR],
+    deps = [":kernels", "@autoware_cuda_utils", "@autoware_object_recognition_utils", "@autoware_perception_msgs//:cc", "@autoware_point_types", "@autoware_tensorrt_common//:autoware_tensorrt_common_library", "@autoware_utils", "@cuda_blackboard", "@pcl_conversions//:pcl_conversions_library", "@pcl_ros//:pcl_ros_tf_library", "@tf2_eigen//:tf2_eigen_library", "@tf2_ros//:tf2_ros_library", "@tf2_sensor_msgs//:tf2_sensor_msgs_library", "@rosdistro//cc:boost.optional", "@rosdistro//cc:pcl_common"],
+)
+
+collect_transitive_dynamic_deps(
+    name = "sdk_dynamic_deps",
+    dynamic_deps = ["@autoware_internal_debug_msgs//:cc_shared", "@autoware_object_recognition_utils//:runtime_dynamic_deps", "@autoware_perception_msgs//:cc_shared", "@autoware_tensorrt_common", "@autoware_utils//:runtime_dynamic_deps", "@cuda_blackboard//:cuda_blackboard_shared", "@cuda_blackboard//:runtime_dynamic_deps", "@diagnostic_updater//:diagnostic_updater", "@pcl_conversions//:pcl_conversions", "@pcl_ros//:pcl_ros_tf", "@perception_utils", "@perception_utils//:runtime_dynamic_deps", "@rclcpp_components//:rclcpp_components", "@tf2_eigen//:tf2_eigen", "@tf2_geometry_msgs//:tf2_geometry_msgs", "@tf2_ros//:tf2_ros", "@tf2_sensor_msgs//:tf2_sensor_msgs", "@rosdistro//cc:pcl"],
+)
+
+cc_shared_library(
+    name = "autoware_ptv3_lib",
+    shared_lib_name = "libautoware_ptv3_lib.so",
+    deps = [":library"],
+    dynamic_deps = [":autoware_ptv3_cuda_lib", ":sdk_dynamic_deps"],
+)
+
+cc_library(
+    name = "node_library",
+    srcs = ["src/ptv3_node.cpp"],
+    hdrs = ["include/autoware/ptv3/ptv3_node.hpp"],
+    includes = ["include"],
+    deps = [":library", "@autoware_internal_debug_msgs//:cc", "@diagnostic_updater//:diagnostic_updater_library", "@perception_utils//:perception_utils_library", "@rclcpp_components//:rclcpp_components_library", "@tf2_geometry_msgs//:tf2_geometry_msgs_library"],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = [":autoware_ptv3_cuda_lib", ":autoware_ptv3_lib", ":sdk_dynamic_deps"],
+)
+
+cc_shared_library(
+    name = "autoware_ptv3_component",
+    shared_lib_name = "libautoware_ptv3_component.so",
+    deps = [":node_library"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+)
+
+rclcpp_components_register_node(
+    name = "ptv3_native",
+    node_name = "autoware_ptv3_node",
+    component = ":autoware_ptv3_component",
+    plugin = "autoware::ptv3::PTv3Node",
+)
+
+tensorrt_cc_binary(
+    name = "autoware_ptv3_node",
+    srcs = [":ptv3_native_main.cpp"],
+    libstdcxx_runtime = "@spconv//:gnu_runtime",
+    runtime_libraries = ["@spconv//:runtime_library"],
+    data = ["@autoware_tensorrt_plugins//:plugins"],
+    deps = ["@rclcpp_components//:rclcpp_components_library"],
+    dynamic_deps = [":autoware_ptv3_component", ":runtime_dynamic_deps"],
+)
+
+register_ament_files(
+    name = "executables",
+    files = [":autoware_ptv3_node"],
+    prefix = "lib/autoware_ptv3",
+    strip_prefix = "*",
+)
+
+ament_index(
+    package_xml = "package.xml",
+    libraries = [":autoware_ptv3_cuda_lib", ":autoware_ptv3_lib", ":autoware_ptv3_component"],
+    components = [":ptv3_native_record"],
+    data = glob(["config/**", "launch/**"]) + [":executables"],
+    deps = ["@autoware_ptv3_models//:ament_index", "@autoware_tensorrt_plugins//:ament_index"],
+)
+
+[
+    cc_test(
+        name = suite,
+        srcs = ["test/" + suite + ".cpp", "test/ptv3_test_fixture.hpp"],
+        deps = [":library", "@googletest//:gtest_main"],
+        dynamic_deps = [":autoware_ptv3_lib", ":runtime_dynamic_deps"],
+        tags = ["no-sandbox", "no-remote", "requires-gpu"],
+    )
+    for suite in ["ptv3_config_test", "serialized_pooling_metadata_test", "test_preprocess_kernel", "test_sweep_kernel", "postprocess_kernel_test", "detection3d_postprocess_test", "ros_utils_test"]
+]
+
+exports_files(["launch/ptv3.launch.xml", "config/ptv3.param.yaml", "package.xml"])

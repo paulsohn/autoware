@@ -2604,6 +2604,8 @@ FP16 inference, immutable inputs and clean node shutdown. Its timing peer listen
 to debug/processing_time/total_ms. Synthetic flow does not qualify recognition
 accuracy or other precision/temporal/container profiles.
 
+## PTV3 LiDAR inference
+
 PTV3 model inputs are owned by `@autoware_ptv3_models//:ament_index`
 (`src/models/ptv3` for the selected local provider). Resolve its share for
 `ptv3_encoder.onnx`, `ptv3_seg3d_head.onnx`, `ptv3_det3d_head.onnx` and their
@@ -2618,3 +2620,10 @@ Native TensorRT commands that load spconv-backed plugins must pass
 with the plugin target in `data`. This declares the GNU ABI and native SDK
 lookup directories. Keep that preload within the native command; run Python ROS
 peers in their own environment. Default consumers retain the TensorRT runtime.
+
+`@autoware_ptv3//...` exposes the CUDA/core/component DSOs, native command and
+all seven original test runners. Include its `:ament_index` for config/launch,
+model and plugin resource closure. Run the complete original suite with the
+model-resource test and `//bazel/tests/autoware_ptv3:all` for the native FP16
+encoder/dual-head cold/warm profile. Engine cache/profile policy stays with the
+root consumer. Other profiles and recognition accuracy require their own gates.
