@@ -4707,4 +4707,6 @@ The KeepAll publisher retained 16.74 MiB of physically allocated pool blocks aft
 
 Ran two five-round three-LiDAR batches with native bundled CIE, standalone CIE, Cyclone DDS and Zenoh, all O3 and sequential. The new runner checks the actual standalone RMW and dependency paths to avoid measuring an older performance overlay. In the first batch, one paired launch exceeded the engineering milestone at 1.23× p95. The repeat batch had no such excursion. All 960 outputs and metadata passed including 480 intentional partial groups. Across both batches standalone/native full-group latency was 0.91× at median and 0.76× at p95. Whole-launch CPU was 1.52×. Keep the bounded reader policy for this laptop pilot and retain the five explicit conformance skips. This experiment required benchmark changes only. Minimum host MemAvailable across all Universe launches was 10388 MiB.
 
+For the laptop pilot, accept the measured CPU tradeoff and defer CPU tuning. The 1.52× ratio includes startup and shutdown. If a deployment CPU budget becomes binding or sustained load causes missed deadlines, measure steady-state CPU separately before choosing an optimization.
+
 [Exact reproduction commands, per-cloud and per-group records, paired timing and resource measurements](../rmw-agnocast/standalone/workload-results/rehearsal-3f60d0929/README.md)
