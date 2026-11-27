@@ -21,8 +21,8 @@ may contain multiple package commits and smaller execution batches. Update the
 ledger when a package closes or the source snapshot changes; this is a planning
 record, not a new build-time completeness validator.
 
-Current adoption progress, 2026-11-27: **195/244** packages have both definitions
-and root local overrides; **49** remain without definitions. The census table
+Current adoption progress, 2026-11-27: **196/244** packages have both definitions
+and root local overrides; **48** remain without definitions. The census table
 below preserves the initial 2026-11-23 baseline. Checked ledger items record
 completed module gates. See PLAN.md and the
 package journals for configuration and behavior evidence.
@@ -361,7 +361,7 @@ Compose the CPU traffic-light stages from 9.7 with the existing YOLOX/classifier
 
 Use 9.4 preprocessing and inspect actual CUDA-blackboard/SDK dependencies. Qualify CUDA filters and supported model/precision/shape profiles with real GPU execution and original suites. Import only the required model repository revisions with validated materialization/indexes. A CUDA/TensorRT CMake shim may be omitted only after its effects and full consumer gate are verified.
 
-- [ ] [autoware_cuda_pointcloud_preprocessor](../../src/universe/autoware_universe/sensing/autoware_cuda_pointcloud_preprocessor/package.xml)
+- [x] [autoware_cuda_pointcloud_preprocessor](../../src/universe/autoware_universe/sensing/autoware_cuda_pointcloud_preprocessor/package.xml)
 - [ ] [autoware_lidar_apollo_instance_segmentation](../../src/universe/autoware_universe/perception/autoware_lidar_apollo_instance_segmentation/package.xml)
 - [ ] [autoware_lidar_centerpoint](../../src/universe/autoware_universe/perception/autoware_lidar_centerpoint/package.xml)
 - [ ] [autoware_lidar_frnet](../../src/universe/autoware_universe/perception/autoware_lidar_frnet/package.xml)

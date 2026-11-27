@@ -3101,6 +3101,8 @@ older ROS/colcon, camera calibration or recognition-accuracy claim is made.
 
 ### CUDA point-cloud preprocessing: Lyrical header and motion timestamps
 
+Local source correction: `92fe5164f`.
+
 - [ ] Associate the TF2 include correction with matching AWF work. Checked
   2026-11-27: [the current source](https://github.com/autowarefoundation/autoware_universe/blob/main/sensing/autoware_cuda_pointcloud_preprocessor/src/cuda_pointcloud_preprocessor/cuda_pointcloud_preprocessor.cu)
   retains removed tf2/utils.h; scoped CUDA-preprocessor/Lyrical PR search finds

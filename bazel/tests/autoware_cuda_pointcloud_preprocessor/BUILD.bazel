@@ -1,0 +1,35 @@
+load("@rules_cc//cc:defs.bzl", "cc_test")
+load("@launch_ros//:defs.bzl", "launch_ros_binary")
+load("@pip_ros//:requirements.bzl", "requirement")
+load("@rules_python//python:defs.bzl", "py_test")
+
+launch_ros_binary(
+    name = "launch_probe",
+    testonly = True,
+    src = "@autoware_cuda_pointcloud_preprocessor//:launch/cuda_voxel_grid_downsample_filter.launch.xml",
+    data = ["@autoware_cuda_pointcloud_preprocessor//:ament_index"],
+    precompile = "disabled",
+)
+
+py_test(
+    name = "runtime_test",
+    srcs = ["test_runtime.py"],
+    main = "test_runtime.py",
+    args = ["$(rootpath :launch_probe)"],
+    data = [":launch_probe", "@autoware_cuda_pointcloud_preprocessor//:ament_index"],
+    deps = ["@ament_index_python", "@rclpy", "@sensor_msgs//:py", "@geometry_msgs//:py", "@autoware_internal_debug_msgs//:py", "@rcl_interfaces//:py", requirement("pyyaml")],
+    env = {"ENABLE_AGNOCAST": "0", "LD_LIBRARY_PATH": "lib", "ROS_DOMAIN_ID": "95"},
+    tags = ["no-sandbox", "no-remote", "requires-gpu"],
+    precompile = "disabled",
+    timeout = "long",
+)
+
+cc_test(
+    name = "transport_test",
+    srcs = ["test_transport.cpp"],
+    deps = ["@autoware_cuda_pointcloud_preprocessor//:node_library", "@ament_index_cpp//:ament_index_cpp_library", "@googletest//:gtest"],
+    dynamic_deps = ["@autoware_cuda_pointcloud_preprocessor//:cuda_pointcloud_preprocessor", "@autoware_cuda_pointcloud_preprocessor//:cuda_pointcloud_preprocessor_lib", "@autoware_cuda_pointcloud_preprocessor//:runtime_dynamic_deps"],
+    data = ["@autoware_cuda_pointcloud_preprocessor//:ament_index", "@agnocast_heaphook"],
+    env = {"ROS_DOMAIN_ID": "96", "AGNOCAST_BRIDGE_MODE": "off"},
+    tags = ["no-sandbox", "no-remote", "requires-gpu"],
+)

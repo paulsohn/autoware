@@ -1808,6 +1808,25 @@ The host provides the compatible NVIDIA driver/device, not a build toolkit.
 Check its XML for all 17 cases and zero skips/errors/failures; a missing-device
 skip or zero registered cases is not a completed module gate.
 
+### CUDA point-cloud preprocessing
+
+Build all five indexed commands, both public DSOs and original suites through
+@autoware_cuda_pointcloud_preprocessor//.... The module indexes the CPU
+preprocessor's YAML resources used by its original XML launchers. Use complete
+vehicle/sensor parameters; the demo preprocessor YAML needs an explicit
+crop_box.negative array matching the crop-box arrays. Keep concrete vehicle
+policy in product configuration.
+
+For a preprocessing change, run the complete original suite and
+//bazel/tests/autoware_cuda_pointcloud_preprocessor:all with --config=runtime
+--config=no-agnocast and Cyclone DDS. The five XML profiles check filtering,
+parameter updates, headers and child-process shutdown; a launch parent's zero
+exit code alone does not prove clean node exit. Run the transport_test target
+with ENABLE_AGNOCAST=1 and --run_under=//bazel/agnocast:with_heaphook when changing
+its wrapper/CUDA transport path. Prepare /dev/agnocast first. Its wrapper-aware
+PointCloud2 peer matches the existing compatible Agnocast output; a native-only
+CUDA-blackboard subscriber is not an Agnocast message peer.
+
 ## TensorRT SDK and native tests
 
 Consumers declare `@tensorrt` for the selected headers/shared libraries and the

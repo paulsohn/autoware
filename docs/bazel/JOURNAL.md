@@ -26231,6 +26231,7 @@ the package-local MODULE/BUILD, adjacent root override, indexed model launcher,
 root-owned FP16 profile and root-only verification companions. PLAN.md and the
 coverage ledger close Phase 9.13 at 195/244; developer instructions describe
 steady-state preparation/run commands and the SDK/Python process boundary.
+
 <a id="phase-914-eigen-cuda"></a>
 
 ## 2026-11-27 — Phase 9.14 prerequisite: Eigen CUDA traits
@@ -26333,7 +26334,7 @@ system/deployment check is selected.
 
 <a id="phase-914-cuda-preprocessor"></a>
 
-## 2026-11-27 — Phase 9.14: CUDA point-cloud preprocessing (in progress)
+## 2026-11-27 — Phase 9.14: CUDA point-cloud preprocessing
 
 Purpose: adopt both original shared libraries, all five components/commands,
 configuration/launch resources and both original suites (13 preprocessing/queue
@@ -26384,14 +26385,67 @@ Three demonstrated correctness failures require small source fixes:
   assertion for every XML profile; do not mask shutdown failures.
 
 
-Current AWF main retains these branches and the old TF2 include on 2026-11-27;
+Source correction: 92fe5164f. Current AWF main retains these branches and the old
+TF2 include on 2026-11-27;
 scoped PR searches find no matching corrections. Associations and scope are in
 [AWF feedback](UPSTREAM_AWF.md#cuda-point-cloud-preprocessing-lyrical-header-and-motion-timestamps).
 The timestamp corrections are implementation defects, independently of Lyrical.
 
-Source-fix verification: the joint command in the prerequisite entry passes
-all 15 original CUDA cases, the complete CPU suites, all five XML profiles
-(including actual node shutdown), and the three native transport/numerical
-cases. The enabled transport/numerical gate also passes with the heap hook and
-kernel device. No original assertion is changed. Package adoption still needs
-its build/index/test declarations recorded with the complete final gate.
+The root Python companion launches each original XML with small synthetic point
+clouds and complete YAML-derived parameters: voxel centroids/intensity; noise
+partition and a live threshold update; outlier partition/ratio diagnostic;
+extended-layout preprocessing; and two-input concatenation. Add the missing
+crop_box.negative mask explicitly in the fixture, without silently changing
+original configuration. Require full headers/fields, clean SIGINT shutdown and
+absence of child-process death even if ros2 launch itself returns zero.
+
+The native companion uses a wrapper-aware PointCloud2 peer on both sides of the
+actual preprocessor. Its GPU/coordinate cases also check cudaMemoryTypeDevice.
+An initial RCLCPP-only CUDA-blackboard subscriber times out under ENABLE_AGNOCAST=1:
+the existing enabled publisher deliberately sends compatible messages through
+Agnocast. Select the matching wrapper subscription; do not alter production
+transport or enable a bridge to hide the fixture mismatch. The CIE executor
+retains the node's native TF/twist support while processing Agnocast callbacks.
+
+Run the [joint original/behavior gate](#phase-914-concatenation-headers), then:
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_env=ENABLE_AGNOCAST=1 \
+  --run_under=//bazel/agnocast:with_heaphook --test_output=errors \
+  //bazel/tests/autoware_cuda_pointcloud_preprocessor:transport_test
+```
+
+Results: all 192 selected build/test targets pass, including all 26 test targets.
+The XML companion runs five cases; the native companion runs three in each
+selected runtime profile. All 15 original CUDA cases, 185 original CPU C++ cases,
+eight original Python scenarios, existing CPU companions and two Eigen SDK
+cases pass. XML/log inspection finds no failures/errors/skips, empty suites or
+child-process death. The enabled gate passes all three native cases with the
+built heap hook and kernel device. Unchanged original/CPU results are reused
+from the passing joint gate; changed GPU/behavior cases execute again.
+
+The CMake-only CUDA dependency-meta shim exports no implementation/resources;
+its extras append only -fno-lto to host C/CXX flags. The real consumer works
+with direct CUDA providers. Audit the configured actions after the suite:
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel aquery --config=runtime --config=no-agnocast --output=jsonproto \
+  '@autoware_cuda_pointcloud_preprocessor//:kernels + @autoware_cuda_pointcloud_preprocessor//:node_library + @autoware_cuda_pointcloud_preprocessor//:cuda_pointcloud_preprocessor_lib + @autoware_cuda_pointcloud_preprocessor//:cuda_pointcloud_preprocessor' \
+  > /tmp/cuda-preprocessor-actions.json
+```
+
+All 23 selected CUDA/host compile and DSO link actions contain no -flto or bitcode
+inputs. Omit the empty shim for this non-LTO product configuration; revisit its
+exported effect and repeat the complete affected gate if LTO is enabled.
+Python AST, changed C++ formatting, XML parsing and whitespace checks pass.
+The census is 196/244 Universe MODULE/BUILD pairs with matching root overrides:
+Phase 9.14 is 1/7 complete, with 48 Universe packages remaining.
+
+These synthetic checks qualify software integration, not physical sensor
+calibration, field filter settings, throughput or a full inter-process CUDA
+sensor chain. The demo preprocessor profile requires an explicit crop-box
+negative mask as described above. No Fast DDS, simulator or deployment export
+gate is selected. Next: the Apollo model provider and inference module.

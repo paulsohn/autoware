@@ -2347,6 +2347,12 @@ local_path_override(
     path = "src/universe/autoware_universe/perception/autoware_traffic_light_pipeline",
 )
 
+bazel_dep(name = "autoware_cuda_pointcloud_preprocessor")
+local_path_override(
+    module_name = "autoware_cuda_pointcloud_preprocessor",
+    path = "src/universe/autoware_universe/sensing/autoware_cuda_pointcloud_preprocessor",
+)
+
 # Launcher source modules.
 bazel_dep(name = "sample_vehicle_description")
 local_path_override(

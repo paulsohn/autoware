@@ -1,0 +1,153 @@
+load("@autoware_agnocast_wrapper//:defs.bzl", "autoware_agnocast_node")
+load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
+load("@rules_cuda//cuda:defs.bzl", "cuda_library")
+
+package(default_visibility = ["//visibility:public"])
+
+cuda_library(
+    name = "kernels",
+    srcs = glob(["src/**/*.cu"]),
+    hdrs = glob(["include/**/*.hpp"]),
+    includes = ["include"],
+    copts = ["-std=c++17", "--expt-relaxed-constexpr", "--extended-lambda", "-diag-suppress=20012"],
+    deps = [
+        "@cuda//:libcudacxx",
+        "@autoware_cuda_utils",
+        "@autoware_point_types",
+        "@autoware_pointcloud_preprocessor//:concatenate_headers",
+        "@autoware_sensing_msgs//:cc",
+        "@autoware_utils",
+        "@cuda_blackboard",
+        "@geometry_msgs//:cc",
+        "@rclcpp//:rclcpp_library",
+        "@sensor_msgs//:cc",
+        "@rosdistro//cc:eigen",
+    ],
+)
+
+cc_library(
+    name = "library",
+    srcs = [
+        "src/cuda_concatenate_data/cuda_combine_cloud_handler.cpp",
+        "src/cuda_concatenate_data/cuda_cloud_collector.cpp",
+        "src/cuda_concatenate_data/cuda_collector_matcher.cpp",
+    ],
+    hdrs = glob(["include/**/*.hpp"]),
+    includes = ["include"],
+    deps = [":kernels"] + [
+        "@autoware_cuda_utils",
+        "@autoware_point_types",
+        "@autoware_pointcloud_preprocessor//:concatenate_headers",
+        "@autoware_sensing_msgs//:cc",
+        "@autoware_utils",
+        "@cuda_blackboard",
+        "@geometry_msgs//:cc",
+        "@rclcpp//:rclcpp_library",
+        "@sensor_msgs//:cc",
+        "@rosdistro//cc:eigen",
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = [
+        "@autoware_pointcloud_preprocessor//:concatenate_core_shared",
+        "@autoware_pointcloud_preprocessor//:core_dynamic_deps",
+        "@autoware_pointcloud_preprocessor//:filter_base_runtime_dynamic_deps",
+        "@autoware_utils//:runtime_dynamic_deps",
+        "@cuda_blackboard//:cuda_blackboard_shared",
+        "@cuda_blackboard//:runtime_dynamic_deps",
+        "@autoware_internal_debug_msgs//:cc_shared",
+        "@diagnostic_updater//:diagnostic_updater",
+        "@geometry_msgs//:cc_shared",
+        "@nav_msgs//:cc_shared",
+        "@tf2_msgs//:cc_shared",
+        "@rcl_interfaces//:cc_shared",
+    ],
+)
+
+cc_shared_library(
+    name = "cuda_pointcloud_preprocessor_lib",
+    shared_lib_name = "libcuda_pointcloud_preprocessor_lib.so",
+    deps = [":library", ":kernels"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+)
+
+cc_library(
+    name = "node_library",
+    srcs = glob(["src/**/*_node.cpp"]),
+    deps = [
+        ":library",
+        "@autoware_agnocast_wrapper//:autoware_agnocast_wrapper_library",
+        "@autoware_pointcloud_preprocessor//:concatenate_headers",
+        "@autoware_pointcloud_preprocessor//:pointcloud_layout_library",
+        "@autoware_pointcloud_preprocessor//:filter_base_headers",
+        "@autoware_pointcloud_preprocessor//:diagnostics_headers",
+        "@autoware_internal_debug_msgs//:cc",
+        "@diagnostic_updater//:diagnostic_updater_library",
+        "@rclcpp_components//:rclcpp_components_library",
+        "@rosdistro//cc:pcl_common",
+        "@tf2_geometry_msgs//:tf2_geometry_msgs_library",
+        "@tf2_ros//:tf2_ros_library",
+    ],
+)
+
+cc_shared_library(
+    name = "cuda_pointcloud_preprocessor",
+    shared_lib_name = "libcuda_pointcloud_preprocessor.so",
+    deps = [":node_library"],
+    dynamic_deps = [":cuda_pointcloud_preprocessor_lib", ":runtime_dynamic_deps"],
+)
+
+_COMMANDS = [
+    ("cuda_concatenate_and_time_sync_node", "CudaPointCloudConcatenateDataSynchronizerComponent"),
+    ("cuda_pointcloud_preprocessor_node", "CudaPointcloudPreprocessorNode"),
+    ("cuda_voxel_grid_downsample_filter_node", "CudaVoxelGridDownsampleFilterNode"),
+    ("cuda_polar_voxel_outlier_filter_node", "CudaPolarVoxelOutlierFilterNode"),
+    ("cuda_polar_voxel_noise_filter_node", "CudaPolarVoxelNoiseFilterNode"),
+]
+
+[
+    autoware_agnocast_node(
+        name = command,
+        component = ":cuda_pointcloud_preprocessor",
+        plugin = "autoware::cuda_pointcloud_preprocessor::" + plugin,
+        package_name = "autoware_cuda_pointcloud_preprocessor",
+        agnocast_only = False,
+    )
+    for command, plugin in _COMMANDS
+]
+
+register_ament_files(
+    name = "executables",
+    files = [":" + command for command, _ in _COMMANDS],
+    prefix = "lib/autoware_cuda_pointcloud_preprocessor",
+    strip_prefix = "*",
+)
+
+ament_index(
+    package_xml = "package.xml",
+    libraries = [":cuda_pointcloud_preprocessor_lib", ":cuda_pointcloud_preprocessor"],
+    components = [":" + command + "_components" for command, _ in _COMMANDS],
+    data = glob(["config/**", "launch/**"]) + [":executables"] + [":" + command + "_plugin" for command, _ in _COMMANDS],
+    deps = ["@autoware_pointcloud_preprocessor//:ament_index"],
+)
+
+[
+    cc_test(
+        name = name,
+        srcs = [source],
+        deps = [":library", "@googletest//:" + gtest],
+        dynamic_deps = [":cuda_pointcloud_preprocessor_lib", ":runtime_dynamic_deps"],
+        tags = ["no-remote", "no-sandbox", "requires-gpu"],
+        env = {"ENABLE_AGNOCAST": "0"},
+    )
+    for name, source, gtest in [
+        ("test_cuda_combine_cloud_handler", "test/cuda_concatenate_data/test_cuda_combine_cloud_handler.cpp", "gtest"),
+        ("test_cuda_pointcloud_preprocessor", "test/test_cuda_pointcloud_preprocessor.cpp", "gtest_main"),
+    ]
+]
+
+exports_files(glob(["launch/*.xml"]))
