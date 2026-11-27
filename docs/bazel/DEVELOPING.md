@@ -2482,3 +2482,29 @@ current include). The broad utility facade includes compiled implementations;
 adding it solely for a header can give independent component DSOs duplicate
 static ownership. Keep the broader diagnostic dependency on the node that uses
 it, rather than importing it into the model-classifier core.
+
+## Apollo LiDAR inference
+
+@autoware_lidar_apollo_instance_segmentation owns the original shared component,
+indexed command and XML/configuration resources. Declare its :ament_index and
+use the original model_16/model_64/model_128 choices; their defaults resolve
+through autoware_lidar_apollo_instance_segmentation_models. The indexed command
+includes the TensorRT SDK/ABI runtime launcher; do not bypass it when building
+engines. Component APIs remain parameterized.
+
+Stage an indexed ONNX into a writable caller-owned cache and pass onnx_file to
+that path when using current runtime generation. Never generate an engine next
+to immutable indexed weights. Product composition chooses precision and must
+keep GPU/SDK/model/config compatibility in its cache identity. The root fixture
+selects FP32 and demonstrates cold generation plus unchanged warm engines for
+all three models; it is not a production cache manager.
+
+For changes to the module, run all module targets and
+//bazel/tests/autoware_lidar_apollo_instance_segmentation:all with
+--config=runtime --config=no-agnocast and Cyclone DDS, plus
+//bazel/tests:apollo_model_resources_test and //bazel/tests:apollo_launch_paths_test.
+The original package has no functional C++ suite; the added CPU cases cover
+feature layouts/reset and deterministic postprocessing. GPU cases run each real
+XML twice and require immutable inputs, portable model paths, output headers,
+empty-input rejection and clean node shutdown. These synthetic profiles qualify
+integration, not recognition accuracy or other precisions.

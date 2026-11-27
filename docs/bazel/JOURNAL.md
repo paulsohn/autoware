@@ -26526,3 +26526,76 @@ All three resolve; the owning package.xml declares the model runtime dependency.
 XML parsing, package metadata and whitespace checks pass. The original HF ref
 needs these added package files for colcon; a HOME download alone is insufficient.
 Universe coverage remains 196/244 (Phase 9.14 1/7); native Apollo adoption is next.
+
+<a id="phase-914-apollo"></a>
+
+## 2026-11-27 — Phase 9.14: Apollo LiDAR inference
+
+Purpose: adopt all seven original sources, public headers, the original shared
+library/component/command and every launch/config resource, using the preceding
+indexed models. Original CMake declares lint checks but no functional C++ or
+runtime tests. Define the complete module gate before implementation: build all
+module targets; added feature-map and deterministic clustering cases; indexed
+launcher-path checks; and real XML-launched FP32 GPU inference for all three
+supported model choices, including cache creation/reuse, headers and clean node
+shutdown. Synthetic data qualifies integration, not perception accuracy.
+
+Use direct CUDA/TensorRT providers instead of empty CMake finder shims. Compile
+all original sources in a component library with canonical shared ROS/PCL/utility
+SDK owners. Register the original component/executable and wrap its generated
+native main with the existing TensorRT SDK launcher for builder-resource/GNU ABI
+discovery. Components remain parameterized: the root fixture selects FP32 and
+stages indexed ONNX inputs into writable temporary storage for engine caches.
+No HOME fallback or indexed-resource write is permitted. Keep both the public
+include directory and its nested namespace directory: the original feature
+header includes util.hpp by basename. No source compatibility patch is needed
+on the selected toolchain; do not modernize older includes that still compile.
+
+The root CPU companion checks all four intensity/constant feature layouts,
+height/range rejection, max/mean height, log-count and normalized intensity,
+then verifies that another empty frame clears state. Its synthetic 12-plane
+network output qualifies clustering, confidence/classification, ground removal
+and retained cluster/header independently of recognition accuracy.
+The real XML companion selects FP32, copies one indexed ONNX to temporary
+storage, and runs each of model_16/model_64/model_128 twice. A nonempty synthetic
+cloud traverses the real TensorRT/CUDA inference and cluster path; require
+output headers, finite bounded object fields when detected, positive processing
+timing, empty-input rejection and clean child shutdown. Require a nonempty
+engine after cold execution and identical engine SHA-256/mtime after warm
+execution. Indexed source SHA-256/mtime must remain unchanged. The root fixture,
+not the reusable component/model repository, owns precision/cache selection.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  @autoware_lidar_apollo_instance_segmentation//... \
+  @autoware_lidar_apollo_instance_segmentation_models//... \
+  //bazel/tests:apollo_model_resources_test //bazel/tests:apollo_launch_paths_test \
+  //bazel/tests/autoware_lidar_apollo_instance_segmentation:all
+
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel aquery --config=runtime --config=no-agnocast --output=jsonproto \
+  '@autoware_lidar_apollo_instance_segmentation//:library + @autoware_lidar_apollo_instance_segmentation//:autoware_lidar_apollo_instance_segmentation + @autoware_lidar_apollo_instance_segmentation//:autoware_lidar_apollo_instance_segmentation_node_binary' \
+  > /tmp/apollo-actions.json
+```
+
+Results: all 21 selected targets pass (17 non-test and four test targets), with
+zero failures/errors/skips or empty suites. The CPU runner records two cases;
+the Python companions run two resource cases, two actual-default/runtime-
+dependency cases and three cold/warm model cases. All six real XML executions
+finish cleanly. GPU/model behavior takes 46.5 s; the complete gate takes 79.1 s,
+reusing unchanged dependencies. XML wrappers report a single outer case, so
+inspect their unittest logs too before claiming all inner cases executed.
+
+The eight selected native compile actions and two DSO/command link actions have
+no -flto or bitcode inputs. With the inspected CUDA shim exporting only host
+-fno-lto, the direct SDK providers preserve this non-LTO configuration; no empty
+shim module is needed. Python AST, changed C++ formatting, XML/package metadata
+and whitespace checks pass. The census reaches 197/244 pairs and corresponding
+root overrides: Phase 9.14 is 2/7 complete, with 47 Universe packages remaining.
+
+No recognition-accuracy, physical calibration, FP16/INT8, build_only, enabled
+Agnocast, Fast DDS, simulator or deployment-export profile is qualified by this
+native FP32 gate. Other runtime configurations need their own selected evidence.
+Next: CenterPoint's model resources, native/CUDA sources and original suites.

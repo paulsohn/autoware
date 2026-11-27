@@ -1,0 +1,89 @@
+load("@rclcpp_components//:defs.bzl", "rclcpp_components_register_node")
+load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library")
+load("@tensorrt//:defs.bzl", "tensorrt_cc_binary")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "library",
+    srcs = glob(["src/*.cpp"]),
+    hdrs = glob(["include/**/*.hpp"]),
+    includes = ["include", "include/autoware/lidar_apollo_instance_segmentation"],
+    deps = [
+        "@ament_index_cpp//:ament_index_cpp_library",
+        "@autoware_cuda_utils",
+        "@autoware_internal_debug_msgs//:cc",
+        "@autoware_perception_msgs//:cc",
+        "@autoware_tensorrt_common//:autoware_tensorrt_common_library",
+        "@autoware_utils",
+        "@pcl_conversions//:pcl_conversions_library",
+        "@rclcpp_components//:rclcpp_components_library",
+        "@sensor_msgs//:cc",
+        "@tf2_eigen//:tf2_eigen_library",
+        "@tf2_geometry_msgs//:tf2_geometry_msgs_library",
+        "@tf2_ros//:tf2_ros_library",
+        "@tf2_sensor_msgs//:tf2_sensor_msgs_library",
+        "@tier4_perception_msgs//:cc",
+        "@rosdistro//cc:pcl_common",
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = [
+        "@ament_index_cpp//:ament_index_cpp",
+        "@autoware_internal_debug_msgs//:cc_shared",
+        "@autoware_perception_msgs//:cc_shared",
+        "@autoware_tensorrt_common",
+        "@autoware_utils//:runtime_dynamic_deps",
+        "@pcl_conversions//:pcl_conversions",
+        "@rclcpp_components//:rclcpp_components",
+        "@sensor_msgs//:cc_shared",
+        "@tf2_eigen//:tf2_eigen",
+        "@tf2_geometry_msgs//:tf2_geometry_msgs",
+        "@tf2_ros//:tf2_ros",
+        "@tf2_sensor_msgs//:tf2_sensor_msgs",
+        "@tier4_perception_msgs//:cc_shared",
+        "@rosdistro//cc:pcl",
+    ],
+)
+
+cc_shared_library(
+    name = "autoware_lidar_apollo_instance_segmentation",
+    shared_lib_name = "libautoware_lidar_apollo_instance_segmentation.so",
+    deps = [":library"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+)
+
+rclcpp_components_register_node(
+    name = "apollo_native",
+    node_name = "autoware_lidar_apollo_instance_segmentation_node",
+    component = ":autoware_lidar_apollo_instance_segmentation",
+    plugin = "autoware::lidar_apollo_instance_segmentation::LidarInstanceSegmentationNode",
+)
+
+tensorrt_cc_binary(
+    name = "autoware_lidar_apollo_instance_segmentation_node",
+    srcs = [":apollo_native_main.cpp"],
+    deps = ["@rclcpp_components//:rclcpp_components_library"],
+    dynamic_deps = [":autoware_lidar_apollo_instance_segmentation", ":runtime_dynamic_deps"],
+)
+
+register_ament_files(
+    name = "executables",
+    files = [":autoware_lidar_apollo_instance_segmentation_node"],
+    prefix = "lib/autoware_lidar_apollo_instance_segmentation",
+    strip_prefix = "*",
+)
+
+ament_index(
+    package_xml = "package.xml",
+    libraries = [":autoware_lidar_apollo_instance_segmentation"],
+    components = [":apollo_native_record"],
+    data = glob(["config/**", "launch/**"]) + [":executables"],
+    deps = ["@autoware_lidar_apollo_instance_segmentation_models//:ament_index"],
+)
+
+exports_files(["launch/lidar_apollo_instance_segmentation.launch.xml", "package.xml"])

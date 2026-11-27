@@ -2617,14 +2617,19 @@ Next: Phase 9.14, CUDA sensing and LiDAR model inference.
 
 ### Phase 9.14: CUDA sensing and LiDAR model inference (in progress)
 
-Progress: 1/7 module gates complete; coverage 196/244 (48 remaining).
+Progress: 2/7 module gates complete; coverage 197/244 (47 remaining).
 
 CUDA preprocessing is accepted: all 15 original CUDA cases, five live original
 XML profiles, three native transport/numerical cases in both selected runtime
 profiles and the complete affected CPU suite pass. Keep the source timestamp/
 teardown corrections separate from build support. Direct CUDA providers satisfy
 the inspected shim's non-LTO effect; see the
-[module gate](JOURNAL.md#phase-914-cuda-preprocessor). Next: Apollo models/inference.
+[module gate](JOURNAL.md#phase-914-cuda-preprocessor).
+Apollo is accepted with the v1.0 model revision
+0b4e73bcfecfa9660c3d2782e2888aca5c2fdc2b: all three indexed model choices pass
+cold/warm FP32 GPU XML execution, feature/clustering and portable resource checks.
+See its [model provider](JOURNAL.md#phase-914-apollo-models) and
+[module gate](JOURNAL.md#phase-914-apollo). Next: CenterPoint.
 
 Accepted SDK input: keep Eigen 5.0.1.bcr.1 and select the narrowly guarded
 nvcc 13.2/libc++ 21 invocation-trait patch after the independent host/device

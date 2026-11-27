@@ -1,0 +1,31 @@
+load("@launch_ros//:defs.bzl", "launch_ros_binary")
+load("@rules_cc//cc:defs.bzl", "cc_test")
+load("@rules_python//python:defs.bzl", "py_test")
+
+cc_test(
+    name = "features_test",
+    srcs = ["test_features.cpp"],
+    deps = ["@autoware_lidar_apollo_instance_segmentation//:library", "@googletest//:gtest_main"],
+    dynamic_deps = ["@autoware_lidar_apollo_instance_segmentation", "@autoware_lidar_apollo_instance_segmentation//:runtime_dynamic_deps"],
+)
+
+launch_ros_binary(
+    name = "launch_probe",
+    testonly = True,
+    src = "@autoware_lidar_apollo_instance_segmentation//:launch/lidar_apollo_instance_segmentation.launch.xml",
+    data = ["@autoware_lidar_apollo_instance_segmentation//:ament_index"],
+    precompile = "disabled",
+)
+
+py_test(
+    name = "runtime_test",
+    srcs = ["test_runtime.py"],
+    main = "test_runtime.py",
+    args = ["$(rootpath :launch_probe)"],
+    deps = ["@ament_index_python", "@autoware_internal_debug_msgs//:py", "@rclpy", "@sensor_msgs//:py", "@tier4_perception_msgs//:py"],
+    data = [":launch_probe", "@autoware_lidar_apollo_instance_segmentation//:ament_index"],
+    env = {"ENABLE_AGNOCAST": "0", "LD_LIBRARY_PATH": "lib", "ROS_DOMAIN_ID": "97"},
+    tags = ["no-sandbox", "no-remote", "requires-gpu"],
+    precompile = "disabled",
+    timeout = "long",
+)

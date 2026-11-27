@@ -2359,6 +2359,12 @@ local_path_override(
     path = "src/universe/autoware_universe/sensing/autoware_cuda_pointcloud_preprocessor",
 )
 
+bazel_dep(name = "autoware_lidar_apollo_instance_segmentation")
+local_path_override(
+    module_name = "autoware_lidar_apollo_instance_segmentation",
+    path = "src/universe/autoware_universe/perception/autoware_lidar_apollo_instance_segmentation",
+)
+
 # Launcher source modules.
 bazel_dep(name = "sample_vehicle_description")
 local_path_override(
