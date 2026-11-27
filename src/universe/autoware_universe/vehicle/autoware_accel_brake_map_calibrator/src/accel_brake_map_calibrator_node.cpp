@@ -1381,7 +1381,7 @@ void AccelBrakeMapCalibrator::publish_map(
   for (int i = 0; i < h; i++) {
     for (int j = 0; j < w; j++) {
       const double value =
-        get_map_column_from_unified_index(accel_map_value_, brake_map_value_, i).at(j);
+        get_map_column_from_unified_index(accel_map_value, brake_map_value, i).at(j);
       // convert acc to 0~100 int value
       int8_t int_value =
         static_cast<int8_t>(max_occ_value * ((value - min_accel_) / (max_accel_ - min_accel_)));
@@ -1413,7 +1413,7 @@ void AccelBrakeMapCalibrator::publish_map(
   for (int i = 0; i < h; i++) {
     for (int j = 0; j < w; j++) {
       vec[i * w + j] = static_cast<float>(
-        get_map_column_from_unified_index(accel_map_value_, brake_map_value_, i).at(j));
+        get_map_column_from_unified_index(accel_map_value, brake_map_value, i).at(j));
     }
   }
   float_map.data = vec;

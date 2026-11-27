@@ -2928,3 +2928,21 @@ complete module build and off/manual/auto live persistence checks pass locally;
 see the [steering journal](JOURNAL.md#2026-11-27-phase-912--steering-offset-estimator).
 Source compatibility is committed separately from the build definitions.
 No local colcon or physical-vehicle validation is claimed.
+
+### Accel/brake calibrator: publish the supplied updated maps
+
+- [ ] Associate with a matching AWF correction. Checked 2026-11-27:
+  [publish_map on main](https://github.com/autowarefoundation/autoware_universe/blob/main/vehicle/autoware_accel_brake_map_calibrator/src/accel_brake_map_calibrator_node.cpp)
+  still reads accel_map_value_/brake_map_value_ in both publication loops.
+  A scoped calibrator/publish_map PR search finds no matching correction.
+
+With real feedback, the updated raw and occupancy topics contain the original
+map even after calibration changes its estimates and exported CSV. The function
+ignores its map arguments and reads original members instead. Use the supplied
+accel_map_value/brake_map_value in both loops, preserving estimator behavior and
+occupancy scaling. The root regression requires both publications and exported
+acceleration CSV to change for status/TF and command/no-pitch profiles. The
+complete module and tools gates pass on Cyclone DDS; see the
+[calibrator journal](JOURNAL.md#2026-11-27-phase-912--accelbrake-map-calibrator-and-tools)
+for exact commands. No upstream submission, colcon result or physical calibration
+accuracy is claimed.

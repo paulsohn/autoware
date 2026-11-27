@@ -25316,3 +25316,42 @@ map, for both status and command feedback profiles. The full repeatable consumer
 gate is recorded in the calibrator entry below. No original source/tests change;
 whitespace checks pass. Universe coverage remains 189/244 until that module
 closes.
+
+## 2026-11-27 — Phase 9.12: Accel/brake map calibrator and tools
+
+Purpose: adopt the native calibrator, installed Python programs and helper
+modules, original configuration/launch/RViz resources and local interface
+closure. Inspect CMake, both native sources, public headers, all 15 installed
+Python files and their imports. There is no original functional test suite:
+test/ contains two installed demonstration programs, not assertions. Define the
+module gate as a full build plus native replay/export, reporting, helper
+publishers, the real data service/client and the actual XML launcher. Use Cyclone
+DDS; real-vehicle calibration accuracy and optional RViz interaction are outside
+this software gate. Scientific dependencies come from the pinned SDK and the
+shared SciPy provider, not host apt/pip.
+
+The first replay exposes a genuine publication defect: updated map topics remain
+identical to the original map while the estimator and exported CSV change.
+publish_map accepts map arguments but both occupancy and raw loops read the
+original member arrays instead. Read the supplied arguments in both loops;
+preserve estimation and occupancy conversion. The external regression requires
+both updated publications to differ and the exported acceleration CSV to change,
+using both (status, TF pitch) and (command, no pitch) profiles. Commit this source
+fix separately from the Bazel declarations and keep the added regression at root.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  @autoware_accel_brake_map_calibrator//... \
+  //bazel/tests/autoware_accel_brake_map_calibrator:all
+```
+
+The full command passes all module targets and both companion targets: native
+replay/export has one test with two feedback subprofiles, and tools has four
+cases. No failures or skips remain. Updated raw and occupancy maps, finite CSV
+exports, invalid/valid destination responses and active calibration status pass.
+Current AWF main still contains the publication defect; the dated upstream
+comparison is in UPSTREAM_AWF.md. Changed C++ formatting and whitespace checks
+pass. The following source-path correction and build/index additions complete
+this same module task.
