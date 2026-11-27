@@ -1,6 +1,6 @@
 load("@rosdistro//ament:defs.bzl", "ament_index")
 load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
-load("@rules_cc//cc:defs.bzl", "cc_library", "cc_test")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -21,18 +21,26 @@ collect_transitive_dynamic_deps(
     name = "runtime_dynamic_deps",
     dynamic_deps = [
         "@autoware_perception_msgs//:cc_shared",
+        "@lanelet2_core//:lanelet2_core",
         "@tier4_perception_msgs//:cc_shared",
         "@tf2//:tf2",
     ],
 )
 
-ament_index(package_xml = "package.xml")
+cc_shared_library(
+    name = "shared",
+    shared_lib_name = "libautoware_traffic_light_utils.so",
+    deps = [":autoware_traffic_light_utils"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+)
+
+ament_index(package_xml = "package.xml", libraries = [":shared"])
 
 cc_test(
     name = "test_traffic_light_utils",
     srcs = glob(["test/*.cpp"]),
     data = [":ament_index"],
-    dynamic_deps = [":runtime_dynamic_deps"],
+    dynamic_deps = [":shared", ":runtime_dynamic_deps"],
     deps = [
         ":autoware_traffic_light_utils",
         "@googletest//:gtest_main",

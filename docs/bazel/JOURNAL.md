@@ -25966,3 +25966,35 @@ and both original/live gates, without failures or skips. Coverage is 194/244
 (50 remaining), four of five Phase 9.13 modules complete. The composed pipeline
 is the remaining phase task; no Fast DDS, simulator or deployment export check
 is selected.
+
+<a id="phase-913-traffic-utils-shared"></a>
+
+## 2026-11-27 — Phase 9.13 prerequisite: Shared traffic-light utilities
+
+Purpose: compose independently built traffic-light classifier and map-detector
+libraries in one recognition process. Bazel's shared-library analysis reports
+that both embed autoware_traffic_light_utils statically. Inspect their CcInfo
+roots and the utility's original two-case suite before changing ownership.
+Expose a public :shared cc_shared_library rooted at the existing utility
+cc_library, retain that compile-time target, and register the shared object in
+the package index. Include the canonical Lanelet2 owner in runtime_dynamic_deps;
+otherwise the new library embeds Lanelet2/Boost objects already owned by the
+map SDK. Link the original tests through the same shared provider.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  @autoware_traffic_light_utils//... \
+  @autoware_traffic_light_map_based_detector//... \
+  @autoware_traffic_light_classifier//... \
+  //bazel/tests/autoware_traffic_light_classifier:all
+```
+
+Results: all 12 test targets pass without skips, including the utility's two
+original cases, the map detector's 24 cases, all 60 classifier cases, four live
+GPU classification profiles and both original HSV XML launches. Consumer
+adoptions follow in separate package commits; they select this shared owner
+without changing source algorithms. The existing CcInfo/static contract remains
+available to other consumers. The composed pipeline gate remains outstanding;
+passing individual packages does not establish its complete link closure.
