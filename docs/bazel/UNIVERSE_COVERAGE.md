@@ -21,8 +21,8 @@ may contain multiple package commits and smaller execution batches. Update the
 ledger when a package closes or the source snapshot changes; this is a planning
 record, not a new build-time completeness validator.
 
-Current adoption progress, 2026-11-27: **201/244** packages have both definitions
-and root local overrides; **43** remain without definitions. The census table
+Current adoption progress, 2026-11-27: **202/244** packages have both definitions
+and root local overrides; **42** remain without definitions. The census table
 below preserves the initial 2026-11-23 baseline. Checked ledger items record
 completed module gates. See PLAN.md and the
 package journals for configuration and behavior evidence.
@@ -367,7 +367,7 @@ Use 9.4 preprocessing and inspect actual CUDA-blackboard/SDK dependencies. Quali
 - [x] [autoware_lidar_frnet](../../src/universe/autoware_universe/perception/autoware_lidar_frnet/package.xml)
 - [x] [autoware_lidar_transfusion](../../src/universe/autoware_universe/perception/autoware_lidar_transfusion/package.xml)
 - [x] [autoware_ptv3](../../src/universe/autoware_universe/perception/autoware_ptv3/package.xml)
-- [ ] [autoware_ground_segmentation_cuda](../../src/universe/autoware_universe/perception/autoware_ground_segmentation_cuda/package.xml)
+- [x] [autoware_ground_segmentation_cuda](../../src/universe/autoware_universe/perception/autoware_ground_segmentation_cuda/package.xml)
 
 ### Phase 9.15: BEV and multimodal perception fusion
 

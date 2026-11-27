@@ -1,0 +1,34 @@
+load("@rules_cc//cc:defs.bzl", "cc_test")
+load("@launch_ros//:defs.bzl", "launch_ros_binary")
+load("@rules_python//python:defs.bzl", "py_test")
+
+cc_test(
+    name = "gpu_transport_test",
+    srcs = ["test_gpu_transport.cpp"],
+    deps = ["@autoware_ground_segmentation_cuda//:node_library", "@ament_index_cpp//:ament_index_cpp_library", "@googletest//:gtest"],
+    dynamic_deps = ["@autoware_ground_segmentation_cuda//:cuda_ground_segmentation", "@autoware_ground_segmentation_cuda//:cuda_ground_segmentation_lib", "@autoware_ground_segmentation_cuda//:runtime_dynamic_deps"],
+    data = ["@autoware_ground_segmentation_cuda//:ament_index", "@agnocast_heaphook"],
+    env = {"ROS_DOMAIN_ID": "102", "AGNOCAST_BRIDGE_MODE": "off"},
+    tags = ["no-remote", "no-sandbox", "requires-gpu"],
+)
+
+launch_ros_binary(
+    name = "launch_probe",
+    testonly = True,
+    src = "@autoware_ground_segmentation_cuda//:launch/cuda_scan_ground_filter.launch.py",
+    data = ["@autoware_ground_segmentation_cuda//:ament_index"],
+    precompile = "disabled",
+)
+
+py_test(
+    name = "runtime_test",
+    srcs = ["test_runtime.py"],
+    main = "test_runtime.py",
+    args = ["$(rootpath :launch_probe)"],
+    deps = ["@ament_index_python", "@rclpy", "@sensor_msgs//:py"],
+    data = [":launch_probe", "@autoware_ground_segmentation_cuda//:ament_index"],
+    env = {"ENABLE_AGNOCAST": "0", "LD_LIBRARY_PATH": "lib", "ROS_DOMAIN_ID": "103"},
+    precompile = "disabled",
+    tags = ["no-remote", "no-sandbox", "requires-gpu"],
+    timeout = "moderate",
+)

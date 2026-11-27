@@ -1,0 +1,67 @@
+load("@rclcpp_components//:defs.bzl", "rclcpp_components_register_node")
+load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library")
+load("@rules_cuda//cuda:defs.bzl", "cuda_library")
+
+package(default_visibility = ["//visibility:public"])
+
+cuda_library(
+    name = "kernels",
+    srcs = ["src/cuda_scan_ground_segmentation/cuda_scan_ground_segmentation_filter.cu"],
+    hdrs = glob(["include/**/*.hpp", "include/**/*.cuh"], exclude = ["include/autoware/cuda_scan_ground_segmentation/cuda_scan_ground_segmentation_filter_node.hpp"]),
+    includes = ["include"],
+    copts = ["-std=c++17", "--expt-relaxed-constexpr", "-diag-suppress=20012"],
+    deps = ["@autoware_cuda_pointcloud_preprocessor//:library", "@autoware_cuda_utils", "@autoware_point_types", "@cuda_blackboard", "@cuda//:cuda_runtime", "@cuda//:cub"],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = ["@autoware_cuda_pointcloud_preprocessor//:cuda_pointcloud_preprocessor_lib", "@autoware_cuda_pointcloud_preprocessor//:runtime_dynamic_deps", "@autoware_pointcloud_preprocessor//:filter_base_runtime_dynamic_deps", "@autoware_utils//:runtime_dynamic_deps"],
+)
+
+cc_shared_library(
+    name = "cuda_ground_segmentation_lib",
+    shared_lib_name = "libcuda_ground_segmentation_lib.so",
+    deps = [":kernels"],
+    dynamic_deps = [":runtime_dynamic_deps"],
+)
+
+cc_library(
+    name = "node_library",
+    srcs = ["src/cuda_scan_ground_segmentation/cuda_scan_ground_segmentation_filter_node.cpp"],
+    hdrs = ["include/autoware/cuda_scan_ground_segmentation/cuda_scan_ground_segmentation_filter_node.hpp"],
+    includes = ["include"],
+    deps = [":kernels", "@autoware_pointcloud_preprocessor//:filter_base_headers", "@autoware_utils", "@rclcpp_components//:rclcpp_components_library"],
+)
+
+cc_shared_library(
+    name = "cuda_ground_segmentation",
+    shared_lib_name = "libcuda_ground_segmentation.so",
+    deps = [":node_library"],
+    dynamic_deps = [":cuda_ground_segmentation_lib", ":runtime_dynamic_deps"],
+)
+
+rclcpp_components_register_node(
+    name = "cuda_scan_ground_segmentation_filter_node",
+    node_name = "cuda_scan_ground_segmentation_filter_node",
+    component = ":cuda_ground_segmentation",
+    plugin = "autoware::cuda_ground_segmentation::CudaScanGroundSegmentationFilterNode",
+)
+
+register_ament_files(
+    name = "executables",
+    files = [":cuda_scan_ground_segmentation_filter_node"],
+    prefix = "lib/autoware_ground_segmentation_cuda",
+    strip_prefix = "*",
+)
+
+ament_index(
+    package_xml = "package.xml",
+    libraries = [":cuda_ground_segmentation_lib", ":cuda_ground_segmentation"],
+    components = [":cuda_scan_ground_segmentation_filter_node_record"],
+    data = glob(["config/**", "launch/**"]) + [":executables"],
+    deps = ["@rclcpp_components//:ament_package"],
+)
+
+exports_files(["launch/cuda_scan_ground_filter.launch.py", "config/cuda_scan_ground_segmentation_filter.param.yaml"])

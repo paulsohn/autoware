@@ -2627,3 +2627,22 @@ model and plugin resource closure. Run the complete original suite with the
 model-resource test and `//bazel/tests/autoware_ptv3:all` for the native FP16
 encoder/dual-head cold/warm profile. Engine cache/profile policy stays with the
 root consumer. Other profiles and recognition accuracy require their own gates.
+
+## CUDA ground segmentation
+
+`@autoware_ground_segmentation_cuda//:ament_index` carries the original two DSOs,
+component/command, config/launch and RCR's published container package. Use the
+module's `//...` targets and `//bazel/tests/autoware_ground_segmentation_cuda:all`
+for routine Cyclone DDS validation. The native companion also supports the
+explicit enabled-Agnocast/heaphook gate recorded in the journal; check the device
+from that execution environment first. Build support remains unconditional.
+
+This component currently consumes ROS/negotiated CUDA-blackboard input. Its
+compatible outputs use ROS or Agnocast according to runtime selection. Use a
+ROS input publisher and matching output subscriptions when testing that contract;
+a wrapper-only Agnocast input publisher does not reach the existing subscriber.
+The GPU classifier must return current metadata for empty/class-empty/all-cropped
+frames and recompute row_step after compaction. Preserve xyz/intensity/channel
+payloads. Synthetic tests qualify software contracts, not terrain accuracy or
+throughput. The existing legacy stream warning remains until a separately scoped
+stream-API migration.

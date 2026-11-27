@@ -27235,7 +27235,7 @@ the current native Linux x86_64 SDK contract, not another platform's ABI.
 
 <a id="phase-914-ground-cuda"></a>
 
-## 2026-11-27 — Phase 9.14: CUDA ground segmentation (in progress)
+## 2026-11-27 — Phase 9.14: CUDA ground segmentation
 
 Purpose: finish the phase with the CUDA ground classifier and its node, two
 original DSOs, command/component and indexed config/launch. Inspect CMake,
@@ -27270,3 +27270,54 @@ Do not alter component input transport or claim Agnocast-input support.
 The shipped launch also needs the registry's :ament_package container provider;
 :ament_index alone contains no component_container executable. Exact module
 commands/results follow with the build-definition boundary.
+
+The package-local CUDA library declares its .cu/.cuh/header inputs and the
+existing CUDA-preprocessor/point-type/CUB providers. Preserve the two CMake DSO
+names and component class, generate/register the standalone command, and index
+config/launch plus the published container package. Source correction is
+b4e7265db. Keep all new fixture code in bazel/tests/autoware_ground_segmentation_cuda.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast \
+  --local_test_jobs=1 --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp \
+  --test_output=errors @autoware_ground_segmentation_cuda//... \
+  //bazel/tests/autoware_ground_segmentation_cuda:all
+
+stat /dev/agnocast
+cat /sys/module/agnocast/version
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_env=ENABLE_AGNOCAST=1 \
+  --run_under=//bazel/agnocast:with_heaphook --test_output=errors \
+  //bazel/tests/autoware_ground_segmentation_cuda:gpu_transport_test
+
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel aquery --config=runtime --config=no-agnocast --output=jsonproto \
+  '@autoware_ground_segmentation_cuda//:kernels + @autoware_ground_segmentation_cuda//:node_library + @autoware_ground_segmentation_cuda//:cuda_ground_segmentation_lib + @autoware_ground_segmentation_cuda//:cuda_ground_segmentation' \
+  > /tmp/ground-cuda-actions.json
+```
+
+All 15 selected targets pass (13 non-test, two test targets). Six native cases
+pass in each selected runtime profile without failures/errors/skips: mixed
+classification with original intensity/channel/xyz preservation, spatial crop,
+empty-after-valid without replay, initial empty/all-cropped frames, single-class
+empty split metadata, and real node transport. The shipped Python container
+launch case passes with both ground/non-ground outputs, current header/fields,
+correct 16-byte record/row sizes and strict clean child shutdown. Original CMake
+has no functional suite to expose; the six native and one launch cases form the
+complete added companion suite. The final routine gate reuses unchanged passing
+launch evidence. Two CUDA compile actions, one native compile and two DSO links
+contain no -flto/bitcode inputs, preserving the inspected CUDA shim's flags-only
+effect with the complete consumer gate. Python AST, changed C++/CUDA formatting,
+XML parsing, source census and whitespace checks pass.
+
+Coverage reaches 202/244 with matching root local overrides; 42 Universe packages
+remain. Phase 9.14 is complete at 7/7 module gates, reusing each unchanged module's
+recorded passing evidence rather than rerunning the full system. The selected
+GPU/runtime environment is the same pinned x86_64 CUDA 13.2/TensorRT 10.16,
+LLVM/libc++ 21 and RTX 5070/driver 595.99.02 as the preceding module gates.
+Synthetic classification does not qualify terrain/sensor accuracy or performance.
+The legacy CUDA-blackboard stream API still emits its existing warning; no
+stream-API migration, Agnocast input feature, Fast DDS, simulator or deployment
+export gate is claimed. Next: Phase 9.15 BEV and multimodal perception fusion.

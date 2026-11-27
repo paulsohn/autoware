@@ -2617,9 +2617,9 @@ helper SONAMEs permit composition without source algorithm changes. See the
 [pipeline journal](JOURNAL.md#phase-913-pipeline) for commands and limitations.
 Next: Phase 9.14, CUDA sensing and LiDAR model inference.
 
-### Phase 9.14: CUDA sensing and LiDAR model inference (in progress)
+### Phase 9.14: CUDA sensing and LiDAR model inference (complete)
 
-Progress: 6/7 module gates complete; coverage 201/244 (43 remaining).
+Progress: 7/7 module gates complete; coverage 202/244 (42 remaining).
 
 CUDA preprocessing is accepted: all 15 original CUDA cases, five live original
 XML profiles, three native transport/numerical cases in both selected runtime
@@ -2631,32 +2631,37 @@ Apollo is accepted with the v1.0 model revision
 0b4e73bcfecfa9660c3d2782e2888aca5c2fdc2b: all three indexed model choices pass
 cold/warm FP32 GPU XML execution, feature/clustering and portable resource checks.
 See its [model provider](JOURNAL.md#phase-914-apollo-models) and
-[module gate](JOURNAL.md#phase-914-apollo). Next: CenterPoint.
+[module gate](JOURNAL.md#phase-914-apollo).
 CenterPoint's v4.1 model revision 494c8171def40bd36cc2feb323e0a5acbfab132b has
 validated LFS/index/colcon providers and native FP16 cold/warm execution for all
 four bundles. All nine enabled original cases, eight perception SDK cases and
 four new GPU kernel cases pass; inactive legacy drivers are inventoried
 explicitly. See its [model gate](JOURNAL.md#phase-914-centerpoint-models) and
-[module gate](JOURNAL.md#phase-914-centerpoint). Next: FRNet.
+[module gate](JOURNAL.md#phase-914-centerpoint).
 FRNet model v2.0 revision a53a1c11b0b28d31fd50a03abef5db0e830a5b3c has
 validated OT128/QT128 LFS/index/colcon providers and cold/warm FP16 XML execution,
 plus complete CPU/layout and device-kernel companions. Its demonstrated M_PIf
 compile failure is corrected with CUDA's single-precision constant. See its
 [model gate](JOURNAL.md#phase-914-frnet-models) and
-[module gate](JOURNAL.md#phase-914-frnet). Next: TransFusion.
+[module gate](JOURNAL.md#phase-914-frnet).
 TransFusion v2.1 revision 8f07eb93038bfd62e35d1f78e56a6b3fb76b12aa passes
 LFS/index/colcon, all enabled originals, four current-API GPU cases and cold/warm
 native FP16 execution. The reproduced padded-shuffle data-loss correction is
 associated partly with closed/unmerged AWF PR #11712; launch extent is a separate
 fix. See its [model gate](JOURNAL.md#phase-914-transfusion-models) and
-[module gate](JOURNAL.md#phase-914-transfusion). Next: PTV3.
-Its v0.1.1 model revision d62e52800ecb7de41fa9cc530df2d5d18624cf2b
+[module gate](JOURNAL.md#phase-914-transfusion).
+PTV3 model v0.1.1 revision d62e52800ecb7de41fa9cc530df2d5d18624cf2b
 provides all three LFS-materialized encoder/head inputs and ML metadata via a
 validated indexed/colcon provider; see the [model gate](JOURNAL.md#phase-914-ptv3-models).
 PTV3 is accepted: all 55 original cases and FP16 cold/warm encoder plus both
 task heads pass. Select the explicit pinned plugin/GNU runtime and current TF2
 headers; see its [module gate](JOURNAL.md#phase-914-ptv3).
-Next: CUDA ground segmentation.
+CUDA ground segmentation is accepted with both original DSOs/command/component,
+six native cases in RCLCPP and enabled Agnocast, and the shipped composable launch.
+The tested ROS/negotiated-input and compatible-output contract is explicit; the
+reproduced empty-frame/row-size correction is a separate source commit. See its
+[module gate](JOURNAL.md#phase-914-ground-cuda).
+Next: Phase 9.15, BEV and multimodal perception fusion.
 
 Accepted SDK input: keep Eigen 5.0.1.bcr.1 and select the narrowly guarded
 nvcc 13.2/libc++ 21 invocation-trait patch after the independent host/device
