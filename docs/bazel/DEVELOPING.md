@@ -2093,6 +2093,15 @@ a relocated standalone index. Colcon users build the model package with
 symlinks. Upstream HF refs alone lack the added package/build metadata.
 The repositories/ and ansible/ reference downloads are not runtime resource providers.
 Other model repositories are adopted at their actual consumer boundaries.
+
+Apollo's three HDL-64/VLP-16/VLS-128 weights live in the indexed package
+@autoware_lidar_apollo_instance_segmentation_models. Its standalone launcher
+selects the original model/base-name choices through that package, with no
+common data_path/HOME fallback. Run //bazel/tests:apollo_model_resources_test
+for materialization/hash and isolated-index checks. As with other model
+repositories, colcon users build the augmented package and source its index;
+engine caches belong in writable caller-owned storage.
+
 The five affected YOLOX launcher files use the indexed package exclusively;
 run //bazel/tests:yolox_launch_paths_test after changing their defaults or
 runtime dependencies. It resolves actual launch substitutions and checks the

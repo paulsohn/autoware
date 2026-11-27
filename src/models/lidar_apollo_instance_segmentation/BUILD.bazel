@@ -1,0 +1,15 @@
+load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
+
+package(default_visibility = ["//visibility:public"])
+
+MODEL_FILES = ['README.md', 'deploy_metadata.yaml', 'hdl-64.onnx', 'vlp-16.onnx', 'vls-128.onnx']
+
+filegroup(name = "models", srcs = MODEL_FILES)
+
+register_ament_files(
+    name = "model_files",
+    files = MODEL_FILES + ["SHA256SUMS", "MODEL_PROVENANCE.md"],
+    prefix = "share/autoware_lidar_apollo_instance_segmentation_models",
+)
+
+ament_index(package_xml = "package.xml", data = [":model_files"])

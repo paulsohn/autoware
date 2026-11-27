@@ -1,0 +1,5 @@
+cmake_minimum_required(VERSION 3.16)
+project(autoware_lidar_apollo_instance_segmentation_models NONE)
+find_package(ament_cmake REQUIRED)
+install(FILES README.md deploy_metadata.yaml hdl-64.onnx vlp-16.onnx vls-128.onnx SHA256SUMS MODEL_PROVENANCE.md DESTINATION share/${PROJECT_NAME})
+ament_package()

@@ -26449,3 +26449,80 @@ calibration, field filter settings, throughput or a full inter-process CUDA
 sensor chain. The demo preprocessor profile requires an explicit crop-box
 negative mask as described above. No Fast DDS, simulator or deployment export
 gate is selected. Next: the Apollo model provider and inference module.
+
+<a id="phase-914-apollo-models"></a>
+
+## 2026-11-27 — Phase 9.14: Apollo model resource provider
+
+Purpose: provide the three Apollo ONNX inputs through a repository-owned model
+module/index before adopting its native inference component. Inspect the
+reference artifact role, HF model card, immutable revision/LFS metadata and all
+three standalone launch selections. The selected v1.0 revision is
+0b4e73bcfecfa9660c3d2782e2888aca5c2fdc2b; preserve HDL-64, VLP-16 and VLS-128
+weights plus deployment metadata. All inputs use the source's existing Apache-2.0
+terms. Do not extend reference Ansible/repositories.
+
+Clone the model repository separately, pin the immutable revision, materialize
+LFS payloads and compare each hash/size with immutable HF metadata before import.
+If using a shallow clone, fetch its history before git subtree add: Git rejects
+a shallow root during the containing-repository fetch. Mirror the verified LFS
+object store into the containing repository's .git/lfs/objects, then add the
+checkout as a squashed subtree at src/models/lidar_apollo_instance_segmentation.
+Keep .gitattributes and record SHA256SUMS/provenance inside that boundary.
+
+The repository owns one autoware_lidar_apollo_instance_segmentation_models module,
+:models, :ament_index, package.xml and minimal ament_cmake support. Root selects
+its adjacent local override before source consumers. Replace the standalone
+launcher's common data_path/HOME default with this package's indexed ONNX path;
+its existing three base_name choices remain intact. Declare the runtime model
+dependency on the owning source package. The enclosing autoware_launch Apollo
+include forwards no model/data path, so no parent path edit is required.
+Keep precision and writable engine preparation policy out of the model provider.
+
+Acceptance: all provider targets, three hash/size/materialization checks, isolated
+relocated ament lookup, colcon --symlink-install with hash-matching installed
+symlinks, and actual launcher-default resolution for all three model choices.
+Native GPU inference remains the following component gate; no inference or
+Universe module acceptance is claimed by this resource-only task.
+
+```sh
+(cd src/models/lidar_apollo_instance_segmentation && sha256sum -c SHA256SUMS)
+git lfs ls-files -l -I 'src/models/lidar_apollo_instance_segmentation/**'
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_output=errors @autoware_lidar_apollo_instance_segmentation_models//... \
+  //bazel/tests:apollo_model_resources_test
+# In an existing sourced ROS/colcon environment, use an isolated temporary prefix:
+checkout=$PWD
+apollo_install=$(mktemp -d /tmp/apollo-model-colcon.XXXXXX)
+colcon --log-base "$apollo_install/log" build \
+  --base-paths "$checkout/src/models/lidar_apollo_instance_segmentation" \
+  --build-base "$apollo_install/build" --install-base "$apollo_install/install" \
+  --symlink-install
+. "$apollo_install/install/setup.bash"
+python3 - <<'CHECK'
+from pathlib import Path
+import hashlib
+from ament_index_python.packages import get_package_share_directory
+share = Path(get_package_share_directory('autoware_lidar_apollo_instance_segmentation_models'))
+for row in (share / 'SHA256SUMS').read_text().splitlines():
+    digest, name = row.split()
+    file = share / name
+    assert file.is_symlink()
+    assert hashlib.sha256(file.read_bytes()).hexdigest() == digest
+CHECK
+```
+
+Results: all three provider targets and the two-case resource test pass, including
+all three materialized SHA-256 payloads and isolated relocated index lookup.
+The installed 64/16-channel files are 11,906,335 bytes each; the 128-channel file
+is 11,906,144 bytes, matching immutable upstream metadata. Existing Jazzy/colcon
+builds the augmented ament package and all three installed weights are symlinks
+with matching hashes. For launch resolution, parse the actual standalone XML's
+onnx_file default with launch.frontend.parse_substitution/perform_substitutions,
+set base_name in LaunchContext successively to hdl-64, vlp-16 and vls-128, and
+require each path to equal the installed package share plus <base_name>.onnx.
+All three resolve; the owning package.xml declares the model runtime dependency.
+XML parsing, package metadata and whitespace checks pass. The original HF ref
+needs these added package files for colcon; a HOME download alone is insufficient.
+Universe coverage remains 196/244 (Phase 9.14 1/7); native Apollo adoption is next.

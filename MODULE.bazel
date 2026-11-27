@@ -293,6 +293,12 @@ local_path_override(
     path = "src/models/yabloc_pose_initializer",
 )
 
+bazel_dep(name = "autoware_lidar_apollo_instance_segmentation_models")
+local_path_override(
+    module_name = "autoware_lidar_apollo_instance_segmentation_models",
+    path = "src/models/lidar_apollo_instance_segmentation",
+)
+
 # Core source modules.
 bazel_dep(name = "agnocast_cie_config_msgs")
 local_path_override(

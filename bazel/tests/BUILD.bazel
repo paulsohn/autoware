@@ -2921,3 +2921,13 @@ filegroup(
         ("classifier", "autoware_traffic_light_classifier_models"),
     ]
 ]
+
+py_test(
+    name = "apollo_model_resources_test",
+    srcs = ["models/test_indexed_model_package.py"],
+    main = "models/test_indexed_model_package.py",
+    args = ["autoware_lidar_apollo_instance_segmentation_models", "3"],
+    data = ["@autoware_lidar_apollo_instance_segmentation_models//:ament_index"],
+    deps = ["@ament_index_python"],
+    precompile = "disabled",
+)
