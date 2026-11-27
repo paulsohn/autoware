@@ -1,6 +1,12 @@
 #!/usr/bin/env bash
 set -eu
 out=${1:?fresh output directory}
+rehearsal=0
+if [[ ${2:-} == --cie-rehearsal ]]; then
+  rehearsal=1
+  export SYNC_REHEARSAL_WORKSPACE="/ws/${3:?supply current built rehearsal workspace relative to checkout}"
+  set -- "$out" --cie-regression
+fi
 if [[ ${2:-} == --cie-nominal ]]; then
   nominal=1
   set -- "$out" --cie-regression
@@ -17,6 +23,7 @@ if [[ ${2:-} == --cie-regression ]]; then
   rounds=(1 2 3 4)
   if ((nominal)); then unset SYNC_DOUBLE_RATE; else export SYNC_DOUBLE_RATE=1; fi
 fi
+if ((rehearsal)); then rounds=(1 2 3 4 5); fi
 for round in "${rounds[@]}"; do
   modes=(native standalone poll cyclone zenoh)
   if [[ $round == 2 ]]; then modes=(zenoh cyclone poll standalone native); fi
@@ -59,6 +66,10 @@ for round in "${rounds[@]}"; do
       3) modes=(default native drain);;
       4) modes=(drain native default);;
     esac
+  fi
+  if ((rehearsal)); then
+    modes=(native default cyclone zenoh)
+    if ((round % 2 == 0)); then modes=(zenoh cyclone default native); fi
   fi
   for mode in "${modes[@]}"; do
     log="$out/$mode-$round.log"

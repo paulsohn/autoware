@@ -12,14 +12,29 @@ if [[ -n ${SYNC_CIE_EXECUTABLE:-} ]]; then source build/standalone/release-cie/i
 source build/standalone/poll-install/local_setup.bash
 export RMW_IMPLEMENTATION=rmw_agnocast ROS_DOMAIN_ID=173 ENABLE_AGNOCAST=0
 test ! -e /opt/ros/lyrical/lib/libddsc.so
-test "$(ros2 pkg prefix rmw_agnocast)" = /ws/build/standalone/poll-install/rmw_agnocast
+runtime=/ws/build/standalone/poll-install/rmw_agnocast
+rclcpp_lib=/ws/build/standalone/release-path/install/rclcpp/lib
+agnocast_lib=/ws/build/standalone/o3-install/agnocastlib/lib
+hook=/ws/build/migration-guide/packaged-hook-check/libagnocast_heaphook.so
+if [[ -n ${SYNC_REHEARSAL_WORKSPACE:-} ]]; then
+  source "$SYNC_REHEARSAL_WORKSPACE/install/local_setup.bash"
+  runtime="$SYNC_REHEARSAL_WORKSPACE/install/rmw_agnocast"
+  rclcpp_lib="$SYNC_REHEARSAL_WORKSPACE/install/rclcpp/lib"
+  agnocast_lib="$SYNC_REHEARSAL_WORKSPACE/install/agnocastlib/lib"
+  hook="$SYNC_REHEARSAL_WORKSPACE/libagnocast_heaphook.so"
+  resolved=$(ldd "$runtime/lib/librmw_agnocast.so")
+  grep -Fq "librclcpp.so => $rclcpp_lib/" <<< "$resolved"
+  grep -Fq "libagnocast.so => $agnocast_lib/" <<< "$resolved"
+  echo "Rehearsal RMW $(sha256sum "$runtime/lib/librmw_agnocast.so")"
+fi
+test "$(ros2 pkg prefix rmw_agnocast)" = "$runtime"
 if [[ -n ${SYNC_TYPED_CROP_CONTROL:-} ]]; then
   deps=$(ldd "$SYNC_CROP_COMPONENT_PREFIX/lib/libuniverse_crop.so")
-  grep -Fq 'librclcpp.so => /ws/build/standalone/release-path/install/rclcpp/lib/' <<< "$deps"
-  grep -Fq 'libagnocast.so => /ws/build/standalone/o3-install/agnocastlib/lib/' <<< "$deps"
+  grep -Fq "librclcpp.so => $rclcpp_lib/" <<< "$deps"
+  grep -Fq "libagnocast.so => $agnocast_lib/" <<< "$deps"
   grep -q 'not found' <<< "$deps" && exit 1
 fi
-export LD_PRELOAD=/ws/build/migration-guide/packaged-hook-check/libagnocast_heaphook.so
+export LD_PRELOAD="$hook"
 ulimit -c 0
 if [[ ${1:-} == --ownership ]]; then
   probe=/ws/build/rmw-agnocast/load-install/agnocast_rmw_loan_probe/lib/agnocast_rmw_loan_probe/loadable_probe

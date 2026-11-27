@@ -42,6 +42,13 @@ if [[ $1 == lidar ]]; then
   done
   check build/universe-pipeline-native/obj/universe_crop_benchmark native_crop_container
 fi
-check build/standalone/poll-obj/rmw_agnocast rmw_agnocast
+if [[ -n ${SYNC_REHEARSAL_WORKSPACE:-} ]]; then
+  rehearsal=${SYNC_REHEARSAL_WORKSPACE#/ws/}
+  check "$rehearsal/build/rmw_agnocast" rmw_agnocast
+  check "$rehearsal/build/rclcpp" rclcpp
+  check "$rehearsal/build/agnocastlib" agnocast
+else
+  check build/standalone/poll-obj/rmw_agnocast rmw_agnocast
+fi
 check build/standalone/o3-obj/agnocastlib agnocast
 check build/standalone/release-path/obj/rclcpp rclcpp
