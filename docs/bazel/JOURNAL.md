@@ -26846,3 +26846,40 @@ All four selected weight/metadata paths resolve to existing indexed files.
 The source manifest declares the model runtime dependency. XML/package metadata,
 Python AST and whitespace checks pass. Universe acceptance remains 198/244,
 Phase 9.14 3/7; the native FRNet gate is next.
+
+<a id="phase-914-frnet"></a>
+
+## 2026-11-27 — Phase 9.14: FRNet segmentation (in progress)
+
+Purpose: adopt both CUDA kernels, native pipeline/node sources, three original
+shared libraries, component/command and original launch/config resources using
+the preceding OT128/QT128 model provider. Inspect CMake, manifest, all point
+formats/layout helpers, preprocess/grouping/interpolation and segmentation/
+visualization/filter kernels, TensorRT profiles and active-subscriber branches.
+Original CMake declares lint only, with no functional suite. Define acceptance
+before implementation: complete module build, added CPU layout/parameter checks,
+real-device preprocess/postprocess behavior, actual XML/YAML model-path lookup,
+and real FP16 GPU execution for both sensor profiles with outputs, immutable
+inputs, cold/warm engine behavior and clean child shutdown. No skipped/missing
+GPU prerequisite satisfies this gate.
+
+Keep kernel and host/component boundaries and all three original DSO names.
+Use direct CUDA/TensorRT providers and the existing SDK/ABI command wrapper;
+select canonical shared ROS/utility/CUDA-blackboard/PCL owners. Do not import
+unused CMake PCL ROS or object-recognition implementation dependencies. Root
+selects precision/cache policy and stages indexed ONNX/metadata into writable
+storage. Components retain parameterized model/profile APIs. No Fast DDS,
+simulator or deployment gate is selected.
+
+The first CUDA compile fails on M_PIf in project2d with the pinned CUDA 13.2.2/
+nvcc and LLVM/libc++ 21.1.8 sysroot. Include math_constants.h and use the toolkit's
+single-precision CUDART_PI_F, leaving the projection math unchanged. Current AWF
+main retains M_PIf on 2026-11-27 and a scoped PR search finds no matching fix;
+see [the association](UPSTREAM_AWF.md#frnet-cuda-preprocessing-portable-single-precision-pi).
+The real-device quarter-turn projection/crop/field check and postprocessing case
+pass after the correction, along with both CPU layout/parameter cases.
+
+Source correction verification: the complete module command below passes all
+CPU/layout, device-kernel, indexed-resource and actual OT128/QT128 FP16 cold/warm
+cases with zero failures/errors/skips. Package build/test/index declarations and
+full acceptance evidence are recorded with the integration boundary.

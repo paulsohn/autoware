@@ -20,6 +20,7 @@
 
 #include <cuda_fp16.h>
 #include <cuda_runtime.h>
+#include <math_constants.h>
 #include <thrust/binary_search.h>
 #include <thrust/device_vector.h>
 #include <thrust/execution_policy.h>
@@ -153,7 +154,7 @@ __device__ int2 project2d(const float3 point, const uint32_t scale_x, const uint
   float depth = sqrtf(point.x * point.x + point.y * point.y + point.z * point.z);
   float yaw = -atan2f(point.y, point.x);
   float pitch = asinf(point.z / depth);
-  float proj_x = 0.5f * (yaw / M_PIf + 1.0f);
+  float proj_x = 0.5f * (yaw / CUDART_PI_F + 1.0f);
   float proj_y = 1.0f - (pitch + fabs(const_fov.down)) / const_fov.total;
   proj_x *= static_cast<float>(scale_x);
   proj_y *= static_cast<float>(scale_y);

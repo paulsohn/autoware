@@ -3137,3 +3137,24 @@ All 15 original CUDA cases, five live XML profiles with clean child shutdown,
 and three native transport/numerical cases in both selected runtime profiles
 pass; the complete affected CPU suite also passes. No upstream submission or physical sensor
 accuracy claim is made.
+
+### FRNet CUDA preprocessing: portable single-precision pi
+
+- [ ] Associate the constant correction with matching AWF work. Checked
+  2026-11-27: [the current CUDA projection implementation](https://github.com/autowarefoundation/autoware_universe/blob/main/perception/autoware_lidar_frnet/lib/preprocess/preprocess_kernel.cu)
+  still uses M_PIf. A scoped FRNet/M_PIf PR search finds no matching correction.
+
+The pinned CUDA 13.2.2/nvcc, LLVM/libc++ 21.1.8 and hermetic sysroot fail to
+compile project2d with "identifier M_PIf is undefined". Include the CUDA-owned
+math_constants.h and use CUDART_PI_F. Preserve single-precision arithmetic and
+the projection algorithm; no ROS API or model-data change is required. This is
+a CUDA/toolchain compatibility correction, independently of ROS Lyrical.
+
+The root GPU case projects a positive-y point into the expected quarter-turn
+azimuth bin while checking ego-box removal and retained intensity/channel.
+Both direct kernel cases, both CPU layout/parameter cases, both model-resource
+cases and three runtime/default-path cases pass. OT128/QT128 execute cold/warm
+FP16 engines with all three output channels, unchanged indexed inputs and clean
+node shutdown. Exact commands and profile limits are recorded in the
+[FRNet journal](JOURNAL.md#phase-914-frnet). No upstream submission or other
+compiler/platform support claim is made.
