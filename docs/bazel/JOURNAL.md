@@ -25355,3 +25355,23 @@ Current AWF main still contains the publication defect; the dated upstream
 comparison is in UPSTREAM_AWF.md. Changed C++ formatting and whitespace checks
 pass. The following source-path correction and build/index additions complete
 this same module task.
+
+A separate path defect blocks writable runtime output: the Python server always
+reads package-share/config/log.csv, while the native launcher hardcodes the
+same indexed source destination and does not forward selected map directories
+to the server. Declare a server log_file parameter with its original default.
+Add an XML output_log_file argument, defaulting to the selected calibrated-map
+directory's log.csv, and forward it plus both map directories to the proper
+native/server parameters. Original defaults remain usable; deployments/tests
+can now select writable output without modifying read-only indexed inputs.
+
+The exact whole-module command above passes the real XML launch with temporary
+output paths. GetParameters on both live processes confirms the selected
+log/map paths and the native log file is created. The separate service test
+supplies deterministic log data, exercises each_cell and four_cell, checks SVG
+bytes and exact acceleration/brake CSV responses, then runs the shipped client
+to save those artifacts. Do not mock the service or claim the launch parameter
+probe alone proves data processing. Current AWF main still hardcodes the Python
+log path; the scoped upstream comparison is in UPSTREAM_AWF.md. Python AST,
+XML parsing, actual launch and whitespace checks pass. Commit this path fix
+separately from publication and build definitions.

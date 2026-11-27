@@ -72,7 +72,8 @@ class DrawGraph(Node):
             print("invalid method.")
             self.calibration_method = "each_cell"
 
-        self.log_file = package_path + "/config/log.csv"
+        self.declare_parameter("log_file", package_path + "/config/log.csv")
+        self.log_file = self.get_parameter("log_file").value
 
         config_file = package_path + "/config/accel_brake_map_calibrator.param.yaml"
         if Path(config_file).exists():

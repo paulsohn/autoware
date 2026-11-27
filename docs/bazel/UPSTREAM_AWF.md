@@ -2946,3 +2946,23 @@ complete module and tools gates pass on Cyclone DDS; see the
 [calibrator journal](JOURNAL.md#2026-11-27-phase-912--accelbrake-map-calibrator-and-tools)
 for exact commands. No upstream submission, colcon result or physical calibration
 accuracy is claimed.
+
+### Accel/brake calibrator: share writable log and map paths
+
+- [ ] Associate with a matching AWF correction. Checked 2026-11-27:
+  [the Python server](https://github.com/autowarefoundation/autoware_universe/blob/main/vehicle/autoware_accel_brake_map_calibrator/scripts/new_accel_brake_map_server.py)
+  still hardcodes package-share/config/log.csv, and
+  [the launcher](https://github.com/autowarefoundation/autoware_universe/blob/main/vehicle/autoware_accel_brake_map_calibrator/launch/accel_brake_map_calibrator.launch.xml)
+  does not forward a configurable log path and selected map directories to it.
+  A scoped calibrator/log_file PR search finds no matching correction.
+
+Indexed source resources can be read-only, while logs and calibrated maps are
+mutable runtime outputs. Add a server log_file parameter retaining its original
+default, and an XML output_log_file argument defaulting to the selected
+calibrated-map directory. Forward the shared log path and both map directories
+to their actual consumers. A real XML launch verifies parameters on both live
+nodes and creates the native log in a temporary directory. A separate real
+server/client test processes deterministic logs in both interpolation modes,
+returning SVG and exact CSV content. The full Cyclone DDS module gate passes;
+see the [calibrator journal](JOURNAL.md#2026-11-27-phase-912--accelbrake-map-calibrator-and-tools).
+No upstream submission or colcon/hardware validation is claimed.
