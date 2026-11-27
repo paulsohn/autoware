@@ -688,3 +688,31 @@ cc_test(
 )
 
 exports_files(["test/test_concatenate_node_component.py"])
+
+# CUDA concatenation instantiates these templates without unrelated CPU filters.
+cc_library(
+    name = "concatenate_headers",
+    hdrs = glob(
+        ["include/autoware/pointcloud_preprocessor/concatenate_data/*.hpp",
+         "include/autoware/pointcloud_preprocessor/concatenate_data/*.ipp"],
+        exclude = _CORE_HEADERS + ["include/autoware/pointcloud_preprocessor/concatenate_data/concatenate_pointclouds.hpp"],
+    ),
+    includes = ["include"],
+    deps = [
+        ":concatenate_core",
+        ":pointcloud_layout_library",
+        "@autoware_internal_debug_msgs//:cc",
+        "@autoware_utils",
+        "@managed_transform_buffer//:managed_transform_buffer_library",
+        "@message_filters//:message_filters_library",
+        "@point_cloud_msg_wrapper",
+        "@rclcpp//:rclcpp_library",
+    ],
+)
+
+cc_library(
+    name = "diagnostics_headers",
+    hdrs = glob(["include/autoware/pointcloud_preprocessor/diagnostics/*.hpp"]),
+    includes = ["include"],
+    deps = ["@autoware_utils", "@rclcpp//:rclcpp_library"],
+)

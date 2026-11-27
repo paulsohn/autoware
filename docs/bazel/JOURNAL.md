@@ -26272,3 +26272,61 @@ nvcc/libc++ profile, not a vendor-support or general Eigen/RCR defect claim.
 The pinned Eigen source retains std::invoke_result; no matching upstream fix
 was established on 2026-11-27. Re-evaluate the guard and repeat both paths when
 changing SDK/compiler/Eigen versions; other versions and ARM remain unqualified.
+
+<a id="phase-914-concatenation-headers"></a>
+
+## 2026-11-27 — Phase 9.14 prerequisite: CPU preprocessing header providers
+
+Purpose: let the CUDA module instantiate the CPU package's existing cloud
+collector/matcher/node templates and diagnostics without importing unrelated
+CPU filter implementation. Inspect the .hpp/.ipp includes and shared owners
+before using the umbrella :headers target. That broad target pulls Lanelet2
+utilities, PCL extensions and CGAL/GMP/MPFR into both CUDA DSOs and fails Bazel's
+shared-library ownership analysis.
+
+Add :concatenate_headers for existing concatenation headers/ipp templates,
+with :concatenate_core, :pointcloud_layout_library and their actual ROS/utility
+compile dependencies. Retain the physical include directory for sibling .ipp
+includes. Add :diagnostics_headers for existing diagnostic headers, depending
+only on their utility/RCLCPP providers. Reuse :filter_base_headers for filter
+nodes. Keep all existing implementations, tests and public targets unchanged.
+These are public component APIs, consumed through logical module labels; no
+component-to-metarepository dependency is introduced.
+
+The CUDA consumer selects the existing shared owners :concatenate_core_shared,
+:core_dynamic_deps and :filter_base_runtime_dynamic_deps. Avoid the CPU package's
+full runtime_dynamic_deps aggregate when those are sufficient: it unnecessarily
+loads image_transport and its plugin loader before main, causing an unrelated
+missing-package-index abort. The narrow compile providers and runtime owners
+must agree; a header-only boundary does not remove its implementation's shared
+SDK requirements.
+
+Joint consumer command (the new XML companion is initially incomplete, as
+explained below; the CPU prerequisite's whole selected suite passes):
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  //third_party/cuda:eigen_test @autoware_pointcloud_preprocessor//... \
+  @autoware_cuda_pointcloud_preprocessor//... \
+  //bazel/tests:pointcloud_preprocessor_behavior_test \
+  //bazel/tests:pointcloud_concatenate_core_example_test \
+  //bazel/tests:pointcloud_concatenate_component_test \
+  //bazel/tests:pointcloud_fast_voxel_test \
+  //bazel/tests:pointcloud_comparison_test \
+  //bazel/tests/autoware_cuda_pointcloud_preprocessor:all
+```
+
+Validation: this invocation passes all CPU
+module targets, all 185 original C++ cases across 16 runners, all eight original
+Python component scenarios, the existing four crop-box/polygon cases, two voxel
+regressions, the standalone example and all three comparison-negative checks.
+The Python comparison runner reports one wrapper case; its subprocesses perform
+the three original fixture-mutation checks. All 15 original CUDA cases and its
+new device-transport/3D-motion cases also pass with the narrow providers.
+Zero failures/errors/skips occur in these selected module suites; the independent
+new XML-launch companion remains a separate CUDA module gate at this point.
+Reuse the unchanged prior enabled CPU crop-box evidence; the header-only provider
+addition does not change that implementation or configuration. No Fast DDS or
+system/deployment check is selected.

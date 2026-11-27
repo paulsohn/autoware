@@ -1785,6 +1785,14 @@ vector expressions when changing these inputs. Keep the compiler/version guard
 and patch verification current; do not infer compatibility from header parsing
 alone.
 
+CUDA preprocessing consumers of CPU concatenation templates should use
+@autoware_pointcloud_preprocessor//:concatenate_headers, plus the existing
+:concatenate_core_shared/:core_dynamic_deps owners. Filter nodes can use
+:filter_base_headers and :diagnostics_headers with the filter-base runtime
+owners. Keep narrower providers paired with their shared SDK dependencies;
+using the CPU umbrella headers/runtime aggregate imports unrelated filters and
+plugin initializers into a CUDA-only consumer.
+
 For the existing CUDA-utils header target, depend on `@autoware_cuda_utils`.
 Its direct CUDA runtime/CCCL providers replace the CMake-only dependency-meta
 shim for the current non-LTO configuration. If LTO is introduced, inspect the
