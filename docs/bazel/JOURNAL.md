@@ -27373,3 +27373,44 @@ encoder/head ONNX, ML parameter and class-remapper substitutions. Every file
 exists inside the share; both manifests declare the model exec_depend. The
 resource runner also resolves a copied isolated index. XML/manifest parsing and
 whitespace checks pass. This provider gate does not claim native inference.
+
+<a id="phase-915-cluster-utilities"></a>
+
+## 2026-11-27 — Phase 9.15: clustering message-utility SDK
+
+Purpose: expose the existing lib/utils.cpp message conversion functions without
+requiring clustering/shape-estimation implementation. Image projection uses only
+convertObjectMsg2SensorMsg. Its initial broad clustering dependency brings the
+shape-estimation SDK into the PointPainting graph and collides with the existing
+perception utility owner's object-recognition symbols. Inspect every declaration
+in include/autoware/euclidean_cluster/utils.hpp and all existing callers.
+
+Split lib/utils.cpp into :utils_library/:utils_shared with canonical message,
+PCL-conversion/PCL owners and a package-specific SONAME. Make the existing
+clustering library depend on that static provider and the original clustering
+SDK use the shared owner. Index the extra owned DSO. No source implementation or
+original test changes. The fusion consumer uses this narrow provider and the
+same perception SDK owner as CenterPoint, avoiding duplicate facade ownership.
+Acceptance is complete: every original clustering runner, all three existing
+root transports, the SDK/command/index build and exposing fusion graph pass.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast \
+  --local_test_jobs=1 --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp \
+  --test_output=errors @autoware_euclidean_cluster//... \
+  //bazel/tests:euclidean_cluster_transport_test \
+  //bazel/tests:voxel_grid_based_euclidean_cluster_transport_test \
+  //bazel/tests:label_based_euclidean_cluster_transport_test
+```
+
+These targets pass in the combined foundation gate with perception-utils and the
+three affected LiDAR modules. Inspect XML: all 27 original clustering cases pass
+across voxel-grid (six), label clustering (13) and label node (eight), plus one
+case in each of the three existing transport companions. No runner is empty and
+there are no failures/errors/skips. nm -D --defined-only -C shows the four public
+conversion/centroid definitions only in libautoware_euclidean_cluster_utils.so;
+the original clustering DSO defines none of them. Fusion graph analysis succeeds
+with the narrow utility owner and without shape-estimation implementation.
+Whitespace and targeted Starlark analysis checks pass. Existing source and tests
+remain unchanged. GPU/model inference is not part of this CPU utility boundary.

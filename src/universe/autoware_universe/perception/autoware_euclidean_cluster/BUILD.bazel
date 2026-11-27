@@ -7,11 +7,32 @@ load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
 package(default_visibility = ["//visibility:public"])
 
 cc_library(
+    name = "utils_library",
+    srcs = ["lib/utils.cpp"],
+    hdrs = ["include/autoware/euclidean_cluster/utils.hpp"],
+    includes = ["include"],
+    deps = ["@geometry_msgs//:cc", "@pcl_conversions//:pcl_conversions_library", "@sensor_msgs//:cc", "@tier4_perception_msgs//:cc"],
+)
+
+collect_transitive_dynamic_deps(
+    name = "utils_dynamic_deps",
+    dynamic_deps = ["@geometry_msgs//:cc_shared", "@pcl_conversions//:pcl_conversions", "@sensor_msgs//:cc_shared", "@tier4_perception_msgs//:cc_shared", "@rosdistro//cc:pcl"],
+)
+
+cc_shared_library(
+    name = "utils_shared",
+    shared_lib_name = "libautoware_euclidean_cluster_utils.so",
+    deps = [":utils_library"],
+    dynamic_deps = [":utils_dynamic_deps"],
+)
+
+cc_library(
     name = "euclidean_cluster_library",
-    srcs = glob(["lib/*.cpp"]),
-    hdrs = glob(["include/**/*.hpp"]),
+    srcs = glob(["lib/*.cpp"], exclude = ["lib/utils.cpp"]),
+    hdrs = glob(["include/**/*.hpp"], exclude = ["include/autoware/euclidean_cluster/utils.hpp"]),
     includes = ["include"],
     deps = [
+        ":utils_library",
         "@autoware_object_recognition_utils",
         "@autoware_perception_msgs//:cc",
         "@autoware_point_types",
@@ -35,6 +56,7 @@ cc_library(
 collect_transitive_dynamic_deps(
     name = "sdk_dynamic_deps",
     dynamic_deps = [
+        ":utils_shared",
         "@autoware_agnocast_wrapper",
         "@autoware_object_recognition_utils//:runtime_dynamic_deps",
         "@autoware_perception_msgs//:cc_shared",
@@ -140,7 +162,7 @@ ament_index(
         ":voxel_grid_based_euclidean_cluster_node_components",
         ":label_based_euclidean_cluster_node_components",
     ],
-    libraries = [":euclidean_cluster"] + [
+    libraries = [":euclidean_cluster", ":utils_shared"] + [
         ":euclidean_cluster_component",
         ":voxel_grid_based_euclidean_cluster_component",
         ":label_based_euclidean_cluster_component",

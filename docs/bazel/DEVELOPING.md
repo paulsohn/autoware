@@ -2656,3 +2656,12 @@ ament_cmake package supports colcon `--symlink-install`; source that environment
 before launch. Stage weights in a writable consumer-owned cache for engine
 preparation. Keep indexed inputs immutable. HOME downloads alone do not supply
 the required package index.
+
+## Clustering message-conversion SDK
+
+Use `@autoware_euclidean_cluster//:utils_library` and `:utils_shared` when a
+consumer needs only cluster-message conversion or centroid helpers. Carry
+`:utils_dynamic_deps` for the canonical message/PCL owners. The original
+clustering SDK and index also carry that shared helper. Each conversion function
+has one owner with SONAME `libautoware_euclidean_cluster_utils.so`. Do not depend
+on detector/shape-estimation implementations solely to convert messages.
