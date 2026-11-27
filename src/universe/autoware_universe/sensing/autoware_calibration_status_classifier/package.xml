@@ -29,6 +29,7 @@
   <depend>tf2_eigen</depend>
   <depend>tf2_ros</depend>
 
+  <exec_depend>autoware_calibration_status_classifier_models</exec_depend>
   <exec_depend>autoware_image_transport_decompressor</exec_depend>
 
   <test_depend>ament_index_cpp</test_depend>

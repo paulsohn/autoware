@@ -25516,3 +25516,54 @@ sorting changes formatting only, so the passing behavior evidence is reused.
 Coverage is 191/244 (53 remaining); Phase 9.13 is 1/5 complete. Next: indexed
 calibration-status models and their complete GPU preprocessing/inference suite.
 No Fast DDS, simulator or deployment check is selected.
+
+<a id="phase-913-calibration-model"></a>
+
+## 2026-11-27 — Phase 9.13 prerequisite: Indexed calibration-status model
+
+Purpose: supply the actual LiDAR-camera classification model before compiling
+its consumers. Inspect the original launch/test filenames and the reference
+artifact selection v2.0. Import
+https://huggingface.co/AutowareFoundation/calibration_status_classifier at immutable
+revision ea54ddcf78063f65f54dd091d0ed1bc27d89ebd2 as a squashed subtree under
+src/models/calibration_status_classifier. Its README declares Apache-2.0.
+
+Clone the tagged repository in isolation with GIT_LFS_SKIP_SMUDGE=1, then run
+git lfs pull. Compare its materialized 44,825,085-byte ONNX with HF revision
+metadata: SHA-256
+13d6119e8dc73945ab0efe76b0c9492e2536187fdc7963ba62b8625900f54474.
+Mirror the clone's verified .git/lfs/objects into the parent's LFS storage before
+git subtree add --squash from that local immutable revision. Keep the upstream
+.gitattributes and push objects to the containing repository's own remote.
+
+The repository owns module/package autoware_calibration_status_classifier_models,
+:models, :ament_index, package.xml and minimal ament_cmake support. Register the
+original ONNX, model parameters, deployment metadata and README plus provenance
+and hashes inside its own share boundary. Root selects the local override before
+source consumers. Change the original calibration launcher to resolve model_path
+from that package and declare the exec dependency; remove its data_path/HOME
+argument. Leave reference Ansible/repository manifests unchanged. Precision and
+writable engine policy belong to consumers/products, not this input provider.
+
+```sh
+(cd src/models/calibration_status_classifier && sha256sum -c SHA256SUMS)
+git lfs ls-files -l -I 'src/models/calibration_status_classifier/**'
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_output=errors @autoware_calibration_status_classifier_models//... \
+  //bazel/tests:calibration_model_resources_test
+# In an existing sourced ROS/colcon environment, with isolated build/install paths:
+colcon build --base-paths <checkout>/src/models/calibration_status_classifier \
+  --build-base <temporary>/build --install-base <temporary>/install --symlink-install
+. <temporary>/install/setup.bash
+python3 -c 'from ament_index_python.packages import get_package_share_directory; from pathlib import Path; p=Path(get_package_share_directory("autoware_calibration_status_classifier_models"))/"calibration_status_classifier.onnx"; assert p.is_symlink(); assert p.stat().st_size == 44825085; print(p)'
+```
+
+Results: every model target and both resource cases pass. The test checks actual
+payload hashes/index lookup and an isolated copied/relocated ament prefix. Git
+LFS marks the ONNX materialized. The augmented model repository also builds with
+existing Jazzy/colcon --symlink-install; indexed ONNX is a symlink of the expected
+size. No host dependencies are installed or used as Bazel SDK inputs. XML and
+package metadata parse and whitespace checks pass. Model inference and actual
+consumer launch remain the following module's gate; no accuracy claim follows
+from file/index checks. Universe coverage remains 191/244.

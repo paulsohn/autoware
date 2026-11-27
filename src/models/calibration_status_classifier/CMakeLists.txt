@@ -1,0 +1,5 @@
+cmake_minimum_required(VERSION 3.16)
+project(autoware_calibration_status_classifier_models NONE)
+find_package(ament_cmake REQUIRED)
+install(FILES calibration_status_classifier.onnx ml_package_calibration_status_classifier.param.yaml deploy_metadata.yaml README.md SHA256SUMS MODEL_PROVENANCE.md DESTINATION share/${PROJECT_NAME})
+ament_package()

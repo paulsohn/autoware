@@ -2818,3 +2818,13 @@ cc_test(
     data = ["@autoware_trajectory_selector//:ament_index", "@autoware_test_utils//:ament_index", "@agnocast_heaphook"],
     tags = ["no-sandbox", "no-remote"],
 )
+
+py_test(
+    name = "calibration_model_resources_test",
+    srcs = ["models/test_indexed_model_package.py"],
+    main = "models/test_indexed_model_package.py",
+    args = ["autoware_calibration_status_classifier_models", "1"],
+    data = ["@autoware_calibration_status_classifier_models//:ament_index"],
+    deps = ["@ament_index_python"],
+    precompile = "disabled",
+)

@@ -262,6 +262,12 @@ local_path_override(
     path = "src/models/tensorrt_yolox",
 )
 
+bazel_dep(name = "autoware_calibration_status_classifier_models")
+local_path_override(
+    module_name = "autoware_calibration_status_classifier_models",
+    path = "src/models/calibration_status_classifier",
+)
+
 bazel_dep(name = "autoware_yabloc_pose_initializer_models")
 local_path_override(
     module_name = "autoware_yabloc_pose_initializer_models",

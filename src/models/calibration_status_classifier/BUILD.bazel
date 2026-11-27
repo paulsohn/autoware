@@ -1,0 +1,15 @@
+load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
+
+package(default_visibility = ["//visibility:public"])
+
+MODEL_FILES = ["calibration_status_classifier.onnx", "ml_package_calibration_status_classifier.param.yaml", "deploy_metadata.yaml", "README.md"]
+
+filegroup(name = "models", srcs = MODEL_FILES)
+
+register_ament_files(
+    name = "model_files",
+    files = MODEL_FILES + ["SHA256SUMS", "MODEL_PROVENANCE.md"],
+    prefix = "share/autoware_calibration_status_classifier_models",
+)
+
+ament_index(package_xml = "package.xml", data = [":model_files"])
