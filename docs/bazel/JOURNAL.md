@@ -27142,3 +27142,41 @@ The full gate after this source correction passes all 55 original cases, both
 model-resource cases and both runtime/default-path cases. Keep the source fix
 separate from Bazel definitions; SDK/runtime details and exact commands follow
 with that integration boundary.
+
+<a id="phase-914-plugin-command-runtime"></a>
+
+## 2026-11-27 — Phase 9.14: declared plugin-command SDK runtime
+
+Purpose: let a native TensorRT consumer load the already-adopted spconv-backed
+plugin without consulting host installations. The real PTV3 XML launch fails
+with GLIBCXX_3.4.32 not found: its default TensorRT GNU 12 runtime is too old
+for the GNU 13 plugin, and libspconv resolves from /usr/local/lib. Inspect the
+existing spconv ABI transition, selected GNU runtime and plugin DSO runfiles.
+
+Expose the existing native helper's GNU runtime selection to tensorrt_cc_binary
+and accept explicit runtime_libraries. Include these files in its baked launcher
+runfiles and prepend their directories for native SDK discovery. Export the
+spconv provider's pinned DSO as :runtime_library; do not add host search paths
+or apply a global GNU preload to Python ROS peers. PTV3 selects :gnu_runtime
+and :runtime_library explicitly alongside the plugin data dependency. Default
+TensorRT consumers retain their existing runtime choice.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast \
+  --local_test_jobs=1 --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp \
+  --test_output=errors @tensorrt//... @spconv//... \
+  @autoware_tensorrt_plugins//... //bazel/tests:tensorrt_plugins_test \
+  //bazel/tests:tensorrt_runtime_cache_test
+```
+
+All 16 selected targets pass (11 non-test and five test targets). Their XML
+contains 33 non-skipped cases: TensorRT ABI (one), spconv ABI (one), original
+plugin kernels (18), plugin registry/serialization (two) and engine/cache (11).
+The PTV3 cold/warm encoder and both task heads also pass. Read the live native
+process's /proc/PID/maps during cold preparation: libspconv comes from the
+Bazel-fetched SDK, libstdc++.so.6 from the declared GNU 13 toolchain and libnvinfer
+from the pinned TensorRT archive. No host spconv mapping remains.
+
+Targeted Starlark loading/analysis and whitespace checks pass. This qualifies
+the current native Linux x86_64 SDK contract, not another platform's ABI.

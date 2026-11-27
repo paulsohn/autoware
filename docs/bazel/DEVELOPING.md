@@ -2611,3 +2611,10 @@ ML parameter files. Use the repository's minimal ament_cmake support with colcon
 `--symlink-install`, then source the install environment. Stage inputs into a
 writable product-selected cache before engine preparation; keep indexed inputs
 immutable. HOME-only downloads do not provide the required package index.
+
+Native TensorRT commands that load spconv-backed plugins must pass
+`libstdcxx_runtime = "@spconv//:gnu_runtime"` and
+`runtime_libraries = ["@spconv//:runtime_library"]` to `tensorrt_cc_binary`,
+with the plugin target in `data`. This declares the GNU ABI and native SDK
+lookup directories. Keep that preload within the native command; run Python ROS
+peers in their own environment. Default consumers retain the TensorRT runtime.

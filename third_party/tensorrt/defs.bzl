@@ -27,7 +27,7 @@ _runtime_launcher = rule(
     outputs = {"out": "%{name}.py"},
 )
 
-def _native_program(name, srcs, deps, data, local_defines, dynamic_deps, libstdcxx_runtime, run_under, timeout, tags, is_test):
+def _native_program(name, srcs, deps, data, local_defines, dynamic_deps, libstdcxx_runtime, run_under, timeout, tags, is_test, runtime_libraries = []):
     """Make bare-name builder dlopen portable for tests and ordinary executables."""
     binary = name + "_binary"
     cc_binary(
@@ -44,7 +44,7 @@ def _native_program(name, srcs, deps, data, local_defines, dynamic_deps, libstdc
         Label("@tensorrt_artifacts//:usr/lib/x86_64-linux-gnu/libnvinfer.so.10"),
         libstdcxx_runtime or Label("@tensorrt_libstdcxx//:lib/libstdc++.so.6.0.30"),
         Label("@tensorrt_libgcc//:lib/libgcc_s.so.1"),
-    ]
+    ] + runtime_libraries
     runner_args = ["--run-under", "$(rlocationpath " + str(run_under) + ")"] if run_under else []
     runner_data = [run_under] if run_under else []
     main = Label("//:test_runner.py")
@@ -71,6 +71,6 @@ def tensorrt_cc_test(name, srcs, deps, data = [], local_defines = [], dynamic_de
     """Run a native suite with the declared SDK and GNU runtime."""
     _native_program(name, srcs, deps, data, local_defines, dynamic_deps, libstdcxx_runtime, run_under, timeout, tags, True)
 
-def tensorrt_cc_binary(name, srcs = [], deps = [], data = [], dynamic_deps = [], local_defines = [], tags = []):
+def tensorrt_cc_binary(name, srcs = [], deps = [], data = [], dynamic_deps = [], local_defines = [], tags = [], libstdcxx_runtime = None, runtime_libraries = []):
     """Run a native preparation tool with the same SDK discovery as native tests."""
-    _native_program(name, srcs, deps, data, local_defines, dynamic_deps, None, None, None, tags, False)
+    _native_program(name, srcs, deps, data, local_defines, dynamic_deps, libstdcxx_runtime, None, None, tags, False, runtime_libraries)

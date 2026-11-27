@@ -23,3 +23,5 @@ cc_library(
         ":spconv_so",
     ],
 )
+
+exports_files(["usr/local/lib/libspconv.so"])

@@ -47,3 +47,8 @@ spconv_filegroup(
     name = "gnu_runtime",
     srcs = ["@llvm//runtimes/libstdcxx:libstdcxx_shared_soname"],
 )
+
+filegroup(
+    name = "runtime_library",
+    srcs = ["@spconv_artifacts//:usr/local/lib/libspconv.so"],
+)
