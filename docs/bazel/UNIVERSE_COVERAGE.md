@@ -21,8 +21,8 @@ may contain multiple package commits and smaller execution batches. Update the
 ledger when a package closes or the source snapshot changes; this is a planning
 record, not a new build-time completeness validator.
 
-Current adoption progress, 2026-11-27: **202/244** packages have both definitions
-and root local overrides; **42** remain without definitions. The census table
+Current adoption progress, 2026-11-28: **203/244** packages have both definitions
+and root local overrides; **41** remain without definitions. The census table
 below preserves the initial 2026-11-23 baseline. Checked ledger items record
 completed module gates. See PLAN.md and the
 package journals for configuration and behavior evidence.
@@ -375,7 +375,7 @@ Consume CenterPoint/clustering/preprocessing from earlier groups when required. 
 
 - [ ] [autoware_bevfusion](../../src/universe/autoware_universe/perception/autoware_bevfusion/package.xml)
 - [ ] [autoware_camera_streampetr](../../src/universe/autoware_universe/perception/autoware_camera_streampetr/package.xml)
-- [ ] [autoware_image_projection_based_fusion](../../src/universe/autoware_universe/perception/autoware_image_projection_based_fusion/package.xml)
+- [x] [autoware_image_projection_based_fusion](../../src/universe/autoware_universe/perception/autoware_image_projection_based_fusion/package.xml)
 - [ ] [autoware_tensorrt_bevdet](../../src/universe/autoware_universe/perception/autoware_tensorrt_bevdet/package.xml)
 - [ ] [autoware_tensorrt_bevformer](../../src/universe/autoware_universe/perception/autoware_tensorrt_bevformer/package.xml) — Deferred pending a qualified ONNX provider. See [Phase 9.15](PLAN.md#phase-915).
 

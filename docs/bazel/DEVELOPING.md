@@ -2681,3 +2681,19 @@ math, debug, diagnostics, system and visualization utilities. Do not embed a
 second copy of these compiled facade dependencies in another DSO in that graph.
 Carry canonical ROS message and diagnostic-updater owners with the SDK. Keep
 static header providers separate from shared symbol ownership.
+
+## Image-projection fusion SDKs
+
+CPU consumers use `@autoware_image_projection_based_fusion//:fusion_library`
+with `:autoware_image_projection_based_fusion` and `:runtime_dynamic_deps` as
+shared owners. PointPainting consumers use `:pointpainting_library`,
+`:pointpainting_lib` and `:pointpainting_dynamic_deps`. Keep synthetic camera
+profiles, precision selection and writable model caches in product/test targets.
+The component module exposes the original tests and shipped resources.
+
+The CPU fusion DSO owns the pinned LLVM OpenMP runtime through an always-linked
+cc_import exported as a shared-library root. PointPainting imports that owner
+and declares the same LLVM provider for compile-time headers. Declaring only
+-fopenmp leaves Eigen without omp.h or the detector without omp_* definitions.
+Check the ELF definitions when changing this boundary: omp_get_thread_num has
+one definition in the CPU DSO and none in the PointPainting DSO.

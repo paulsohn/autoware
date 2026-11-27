@@ -1,0 +1,105 @@
+load("@launch_ros//:defs.bzl", "launch_ros_binary")
+load("@pip_ros//:requirements.bzl", "requirement")
+load("@rules_cc//cc:defs.bzl", "cc_test")
+load("@rules_python//python:defs.bzl", "py_test")
+
+cc_test(
+    name = "projection_kernels_test",
+    srcs = ["test_projection_and_kernels.cpp"],
+    dynamic_deps = [
+        "@autoware_image_projection_based_fusion//:autoware_image_projection_based_fusion",
+        "@autoware_image_projection_based_fusion//:pointpainting_cuda_lib",
+        "@autoware_image_projection_based_fusion//:runtime_dynamic_deps",
+    ],
+    tags = [
+        "no-remote",
+        "no-sandbox",
+        "requires-gpu",
+    ],
+    deps = [
+        "@autoware_cuda_utils",
+        "@autoware_image_projection_based_fusion//:fusion_library",
+        "@autoware_image_projection_based_fusion//:pointpainting_kernels",
+        "@googletest//:gtest_main",
+    ],
+)
+
+launch_ros_binary(
+    name = "launch_probe",
+    testonly = True,
+    src = "@autoware_image_projection_based_fusion//:launch/roi_detected_object_fusion.launch.xml",
+    data = ["@autoware_image_projection_based_fusion//:ament_index"],
+    precompile = "disabled",
+)
+
+py_test(
+    name = "runtime_test",
+    timeout = "long",
+    srcs = ["test_runtime.py"],
+    args = ["$(rootpath :launch_probe)"],
+    data = [
+        "pointcloud.launch.py",
+        ":launch_probe",
+        "@autoware_image_projection_based_fusion//:ament_index",
+        "@rclcpp_components//:ament_package",
+    ],
+    env = {
+        "ENABLE_AGNOCAST": "0",
+        "LD_LIBRARY_PATH": "lib",
+        "ROS_DOMAIN_ID": "104",
+    },
+    main = "test_runtime.py",
+    precompile = "disabled",
+    tags = [
+        "no-remote",
+        "no-sandbox",
+        "requires-gpu",
+    ],
+    deps = [
+        "@ament_index_python",
+        "@autoware_internal_debug_msgs//:py",
+        "@autoware_perception_msgs//:py",
+        "@rclpy",
+        "@sensor_msgs//:py",
+        "@tier4_perception_msgs//:py",
+        requirement("pyyaml"),
+    ],
+)
+
+cc_test(
+    name = "paint_features_test",
+    srcs = ["test_paint_features.cpp"],
+    dynamic_deps = [
+        "@autoware_image_projection_based_fusion//:pointpainting_lib",
+        "@autoware_image_projection_based_fusion//:pointpainting_dynamic_deps",
+    ],
+    env = {"ENABLE_AGNOCAST": "0"},
+    deps = [
+        "@autoware_image_projection_based_fusion//:pointpainting_library",
+        "@googletest//:gtest",
+    ],
+)
+
+cc_test(
+    name = "transport_test",
+    srcs = ["test_transport.cpp"],
+    data = [
+        "@agnocast_heaphook",
+        "@autoware_image_projection_based_fusion//:ament_index",
+    ],
+    dynamic_deps = [
+        "@autoware_image_projection_based_fusion//:autoware_image_projection_based_fusion",
+        "@autoware_image_projection_based_fusion//:runtime_dynamic_deps",
+        "@ament_index_cpp//:ament_index_cpp",
+    ],
+    env = {"ROS_DOMAIN_ID": "105"},
+    tags = [
+        "no-remote",
+        "no-sandbox",
+    ],
+    deps = [
+        "@ament_index_cpp//:ament_index_cpp_library",
+        "@autoware_image_projection_based_fusion//:fusion_library",
+        "@googletest//:gtest",
+    ],
+)

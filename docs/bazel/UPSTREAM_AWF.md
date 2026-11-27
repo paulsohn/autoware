@@ -3242,7 +3242,7 @@ No upstream submission or perception-accuracy claim is made.
   is transition context only.
 
 Package: autoware_image_projection_based_fusion 0.53.0, source inputs at
-5354db106 before the local corrections. Environment: Ubuntu 24.04 x86_64,
+5354db106 before the local corrections; local fix a56ece8b5. Environment: Ubuntu 24.04 x86_64,
 RCR Lyrical, LLVM/libc++ 21.1.8, CUDA 13.2.2/TensorRT 10.16.1.11 and RTX 5070.
 The source changes are independent of Bazel ownership rules:
 

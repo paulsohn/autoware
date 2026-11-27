@@ -1,0 +1,251 @@
+load("@autoware_agnocast_wrapper//:defs.bzl", "autoware_agnocast_node")
+load("@rosdistro//ament:defs.bzl", "ament_index", "register_ament_files")
+load("@rosdistro//cc:defs.bzl", "collect_transitive_dynamic_deps")
+load("@rules_cc//cc:defs.bzl", "cc_import", "cc_library", "cc_shared_library", "cc_test")
+load("@rules_cuda//cuda:defs.bzl", "cuda_library")
+load("@tensorrt//:defs.bzl", "tensorrt_cc_binary")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_import(
+    name = "openmp_runtime",
+    static_library = "@llvm-project//openmp:libomp",
+    alwayslink = True,
+)
+
+cc_library(
+    name = "fusion_library",
+    srcs = glob(
+        ["src/**/*.cpp"],
+        exclude = ["src/pointpainting_fusion/*.cpp"],
+    ),
+    hdrs = glob(
+        ["include/**/*.hpp"],
+        exclude = ["include/autoware/image_projection_based_fusion/pointpainting_fusion/*.hpp"],
+    ),
+    copts = [
+        "-fopenmp",
+        "-Wno-unknown-pragmas",
+    ],
+    includes = ["include"],
+    deps = [
+        ":openmp_runtime",
+        "@autoware_agnocast_wrapper//:autoware_agnocast_wrapper_library",
+        "@autoware_euclidean_cluster//:utils_library",
+        "@autoware_internal_debug_msgs//:cc",
+        "@autoware_object_recognition_utils",
+        "@autoware_perception_msgs//:cc",
+        "@autoware_point_types",
+        "@autoware_pointcloud_preprocessor//:concatenate_headers",
+        "@autoware_sensing_msgs//:cc",
+        "@autoware_utils",
+        "@autoware_utils_debug",
+        "@autoware_utils_diagnostics",
+        "@cv_bridge//:cv_bridge_library",
+        "@diagnostic_updater//:diagnostic_updater_library",
+        "@image_geometry//:image_geometry_library",
+        "@llvm-project//openmp:libomp",
+        "@message_filters//:message_filters_library",
+        "@pcl_conversions//:pcl_conversions_library",
+        "@perception_utils//:run_length_encoder_library",
+        "@rclcpp_components//:rclcpp_components_library",
+        "@rosdistro//cc:boost.optional",
+        "@rosdistro//cc:opencv_library",
+        "@rosdistro//cc:pcl_common",
+        "@sensor_msgs//:cc",
+        "@tf2_eigen//:tf2_eigen_library",
+        "@tf2_geometry_msgs//:tf2_geometry_msgs_library",
+        "@tf2_ros//:tf2_ros_library",
+        "@tf2_sensor_msgs//:tf2_sensor_msgs_library",
+        "@tier4_perception_msgs//:cc",
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "runtime_dynamic_deps",
+    dynamic_deps = [
+        "@autoware_agnocast_wrapper",
+        "@autoware_euclidean_cluster//:utils_shared",
+        "@autoware_euclidean_cluster//:utils_dynamic_deps",
+        "@autoware_internal_debug_msgs//:cc_shared",
+        "@autoware_object_recognition_utils//:runtime_dynamic_deps",
+        "@autoware_perception_msgs//:cc_shared",
+        "@autoware_pointcloud_preprocessor//:core_dynamic_deps",
+        "@autoware_sensing_msgs//:cc_shared",
+        "@autoware_utils//:runtime_dynamic_deps",
+        "@autoware_utils_debug//:runtime_dynamic_deps",
+        "@cv_bridge//:cv_bridge",
+        "@cv_bridge//:transitive_dynamic_deps",
+        "@diagnostic_updater//:diagnostic_updater",
+        "@image_geometry//:image_geometry",
+        "@image_geometry//:transitive_dynamic_deps",
+        "@message_filters//:message_filters",
+        "@perception_utils//:run_length_encoder",
+        "@perception_utils",
+        "@perception_utils//:runtime_dynamic_deps",
+        "@pcl_conversions//:pcl_conversions",
+        "@rclcpp_components//:rclcpp_components",
+        "@sensor_msgs//:cc_shared",
+        "@tf2_eigen//:tf2_eigen",
+        "@tf2_geometry_msgs//:tf2_geometry_msgs",
+        "@tf2_ros//:tf2_ros",
+        "@tf2_sensor_msgs//:tf2_sensor_msgs",
+        "@tier4_perception_msgs//:cc_shared",
+        "@rosdistro//cc:opencv",
+        "@rosdistro//cc:pcl",
+    ],
+)
+
+cc_shared_library(
+    name = "autoware_image_projection_based_fusion",
+    dynamic_deps = [":runtime_dynamic_deps"],
+    shared_lib_name = "libautoware_image_projection_based_fusion.so",
+    deps = [
+        ":fusion_library",
+        ":openmp_runtime",
+    ],
+)
+
+cuda_library(
+    name = "pointpainting_kernels",
+    srcs = ["src/pointpainting_fusion/preprocess_kernel.cu"],
+    hdrs = ["include/autoware/image_projection_based_fusion/pointpainting_fusion/preprocess_kernel.hpp"],
+    copts = ["-std=c++17"],
+    includes = ["include"],
+    deps = ["@cuda//:cuda_runtime"],
+)
+
+cc_shared_library(
+    name = "pointpainting_cuda_lib",
+    shared_lib_name = "libpointpainting_cuda_lib.so",
+    deps = [":pointpainting_kernels"],
+)
+
+cc_library(
+    name = "pointpainting_library",
+    srcs = glob(["src/pointpainting_fusion/*.cpp"]),
+    hdrs = glob(
+        ["include/autoware/image_projection_based_fusion/pointpainting_fusion/*.hpp"],
+        exclude = ["include/autoware/image_projection_based_fusion/pointpainting_fusion/preprocess_kernel.hpp"],
+    ),
+    copts = ["-fopenmp"],
+    includes = ["include"],
+    deps = [
+        ":fusion_library",
+        ":openmp_runtime",
+        ":pointpainting_kernels",
+        "@autoware_lidar_centerpoint//:kernels",
+        "@autoware_lidar_centerpoint//:library",
+        "@llvm-project//openmp:libomp",
+        "@pcl_ros//:pcl_ros_tf_library",
+        "@perception_utils//:perception_utils_library",
+    ],
+)
+
+collect_transitive_dynamic_deps(
+    name = "pointpainting_dynamic_deps",
+    dynamic_deps = [
+        ":autoware_image_projection_based_fusion",
+        ":pointpainting_cuda_lib",
+        ":runtime_dynamic_deps",
+        "@autoware_lidar_centerpoint//:runtime_dynamic_deps",
+        "@pcl_ros//:pcl_ros_tf",
+        "@perception_utils",
+        "@perception_utils//:runtime_dynamic_deps",
+    ],
+)
+
+cc_shared_library(
+    name = "pointpainting_lib",
+    dynamic_deps = [":pointpainting_dynamic_deps"],
+    shared_lib_name = "libpointpainting_lib.so",
+    deps = [":pointpainting_library"],
+)
+
+_COMMANDS = [
+    ("roi_detected_object_fusion_node", "RoiDetectedObjectFusionNode"),
+    ("roi_cluster_fusion_node", "RoiClusterFusionNode"),
+    ("segmentation_pointcloud_fusion_node", "SegmentPointCloudFusionNode"),
+    ("roi_pointcloud_fusion_node", "RoiPointCloudFusionNode"),
+]
+
+[
+    autoware_agnocast_node(
+        name = command,
+        package_name = "autoware_image_projection_based_fusion",
+        component = ":autoware_image_projection_based_fusion",
+        plugin = "autoware::image_projection_based_fusion::" + plugin,
+    )
+    for command, plugin in _COMMANDS
+]
+
+autoware_agnocast_node(
+    name = "pointpainting_fusion_node",
+    package_name = "autoware_image_projection_based_fusion",
+    binary_rule = tensorrt_cc_binary,
+    component = ":pointpainting_lib",
+    plugin = "autoware::image_projection_based_fusion::PointPaintingFusionNode",
+)
+
+register_ament_files(
+    name = "executables",
+    files = [":" + command for command, _ in _COMMANDS] + [":pointpainting_fusion_node"],
+    prefix = "lib/autoware_image_projection_based_fusion",
+    strip_prefix = "*",
+)
+
+ament_index(
+    components = [":" + command + "_components" for command, _ in _COMMANDS] + [":pointpainting_fusion_node_components"],
+    data = glob([
+        "config/**",
+        "launch/**",
+    ]) + [":executables"] + [":" + command + "_plugin" for command, _ in _COMMANDS] + [":pointpainting_fusion_node_plugin"],
+    libraries = [
+        ":autoware_image_projection_based_fusion",
+        ":pointpainting_cuda_lib",
+        ":pointpainting_lib",
+    ],
+    package_xml = "package.xml",
+    deps = [
+        "@autoware_agnocast_wrapper//:ament_package",
+        "@autoware_image_projection_based_fusion_models//:ament_index",
+    ],
+)
+
+[
+    cc_test(
+        name = "test_" + suite,
+        srcs = ["test/test_" + suite + ".cpp"],
+        dynamic_deps = [
+            ":autoware_image_projection_based_fusion",
+            ":runtime_dynamic_deps",
+        ],
+        deps = [
+            ":fusion_library",
+            "@googletest//:gtest",
+        ],
+    )
+    for suite in [
+        "calc_iou_functions",
+        "utils",
+        "geometry",
+    ]
+]
+
+cc_test(
+    name = "test_pointpainting",
+    srcs = ["test/test_pointpainting_fusion.cpp"],
+    dynamic_deps = [
+        ":pointpainting_lib",
+        ":pointpainting_dynamic_deps",
+    ],
+    deps = [
+        ":pointpainting_library",
+        "@googletest//:gtest_main",
+    ],
+)
+
+exports_files(glob([
+    "launch/*",
+    "config/*",
+]) + ["package.xml"])

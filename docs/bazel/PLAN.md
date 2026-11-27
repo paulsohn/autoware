@@ -92,6 +92,8 @@ only when your current target demonstrates the need.
   [shared perception facade owners](JOURNAL.md#phase-915-perception-facade-owners);
   [SDK-aware switchable commands](DEVELOPING.md#switchable-standalone-nodes),
   [wrapper factory evidence](JOURNAL.md#phase-915-native-command-factory);
+  [composed OpenMP ownership](DEVELOPING.md#image-projection-fusion-sdks),
+  [fusion evidence](JOURNAL.md#phase-915-projection-fusion);
   [narrow utility dependency evidence](JOURNAL.md#phase-913-classifier-composition);
   [CUDA helper identity evidence](JOURNAL.md#phase-913-yolox-gpu-identity);
   [Qt/RViz runtime ownership and graphical prerequisites](DEVELOPING.md#rviz-plugin-packages);
@@ -2688,7 +2690,10 @@ simulator or deployment export gate is selected.
 
 ### Phase 9.15: BEV and multimodal perception fusion (in progress)
 
-Progress: 0/5 module gates complete; coverage starts at 202/244.
+Progress: 1/5 module gates complete; coverage is 203/244 with 41 remaining.
+Image-projection/PointPainting passes all 15 original and 10 companion cases,
+plus the selected enabled Agnocast camera-association gate. See its
+[module experiment](JOURNAL.md#phase-915-projection-fusion).
 
 Start with image-projection fusion and its PointPainting provider. Preserve all
 four enabled original suites, four CPU fusion components and the CUDA PointPainting

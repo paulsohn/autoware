@@ -27614,3 +27614,9 @@ RTX 5070 Laptop and driver 595.99.02. Targeted Buildifier/clang-format, Python A
 and whitespace checks pass. No upstream CMake build, sensor accuracy/performance,
 Fast DDS, simulator or deployment-export result is claimed. Next: BEVFusion and
 its independently indexed model provider. BEVFormer remains explicitly deferred.
+
+Source corrections are a56ece8b5. The Bazel-definition boundary contains the
+component MODULE/BUILD, adjacent root source override and root companions.
+A fresh source census finds 203/244 MODULE/BUILD pairs, each with a matching
+versionless root dependency/local override. Coverage is 203/244 with 41 pending;
+Phase 9.15 has one accepted module and one explicitly deferred BEVFormer item.
