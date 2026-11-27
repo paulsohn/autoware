@@ -1,0 +1,68 @@
+load("@launch_ros//:defs.bzl", "launch_ros_binary")
+load("@pip_ros//:requirements.bzl", "requirement")
+load("@rules_cc//cc:defs.bzl", "cc_test")
+load("@rules_python//python:defs.bzl", "py_test")
+
+cc_test(
+    name = "gpu_test",
+    srcs = ["test_gpu.cpp"],
+    dynamic_deps = [
+        "@autoware_camera_streampetr//:autoware_camera_streampetr_cuda_lib",
+        "@autoware_camera_streampetr//:autoware_camera_streampetr_lib",
+        "@autoware_camera_streampetr//:sdk_dynamic_deps",
+    ],
+    tags = [
+        "no-remote",
+        "no-sandbox",
+        "requires-gpu",
+    ],
+    deps = [
+        "@autoware_camera_streampetr//:library",
+        "@googletest//:gtest_main",
+    ],
+)
+
+launch_ros_binary(
+    name = "launch_probe",
+    testonly = True,
+    src = "@autoware_camera_streampetr//:launch/streampetr.launch.xml",
+    data = ["@autoware_camera_streampetr//:ament_index"],
+    precompile = "disabled",
+)
+
+py_test(
+    name = "runtime_test",
+    timeout = "long",
+    srcs = ["test_runtime.py"],
+    args = ["$(rootpath :launch_probe)"],
+    data = [
+        ":launch_probe",
+        "@autoware_camera_streampetr//:ament_index",
+    ],
+    env = {
+        "ENABLE_AGNOCAST": "0",
+        "LD_LIBRARY_PATH": "lib",
+        "RMW_IMPLEMENTATION": "rmw_cyclonedds_cpp",
+        "ROS_DOMAIN_ID": "107",
+    },
+    main = "test_runtime.py",
+    precompile = "disabled",
+    tags = [
+        "no-remote",
+        "no-sandbox",
+        "requires-gpu",
+    ],
+    deps = [
+        "@ament_index_python",
+        "@autoware_internal_debug_msgs//:py",
+        "@autoware_perception_msgs//:py",
+        "@geometry_msgs//:py",
+        "@launch",
+        "@launch_ros",
+        "@launch_xml",
+        "@rclpy",
+        "@sensor_msgs//:py",
+        "@tf2_msgs//:py",
+        requirement("pyyaml"),
+    ],
+)

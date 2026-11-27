@@ -135,6 +135,8 @@ only when your current target demonstrates the need.
   [evidence: sparse SDK](JOURNAL.md#2026-11-19-phase-641--sparse-convolution-sdk-compatibility).
 - [ ] Declare caller-owned resources for dynamic runtime package selection.
   [Launch resource convention](DEVELOPING.md#launch-resource-composition);
+  [model/runtime parameter composition](DEVELOPING.md#streampetr-model-resources),
+  [native default-contract evidence](JOURNAL.md#phase-915-streampetr);
   [evidence: global loader](JOURNAL.md#2026-11-18-phase-532--global-parameter-loader).
   [Indexed tutorial resources](DEVELOPING.md#tutorial-vehicle-and-map-resources);
   [evidence: official map](JOURNAL.md#2026-11-21-phase-733--official-tutorial-map-and-scenario-resources).
@@ -2691,7 +2693,7 @@ simulator or deployment export gate is selected.
 
 ### Phase 9.15: BEV and multimodal perception fusion (in progress)
 
-Progress: 2/5 module gates complete; coverage is 204/244 with 40 remaining.
+Progress: 3/5 module gates complete; coverage is 205/244 with 39 remaining.
 Image-projection/PointPainting passes all 15 original and 10 companion cases,
 plus the selected enabled Agnocast camera-association gate. See its
 [module experiment](JOURNAL.md#phase-915-projection-fusion).
@@ -2699,6 +2701,9 @@ BEVFusion passes four native CUDA cases and three default-path/cold-warm runtime
 cases, including both modalities and all-six-camera readiness. Its existing
 implementation stays on libc++ through the qualified Point2Voxel C adapter.
 See the [BEVFusion gate](JOURNAL.md#phase-915-bevfusion).
+StreamPETR passes all four GPU and two Python cases, including its three native
+FP16 stages, five-camera readiness, temporal updates and desynchronization
+recovery. See the [StreamPETR gate](JOURNAL.md#phase-915-streampetr).
 
 Start with image-projection fusion and its PointPainting provider. Preserve all
 four enabled original suites, four CPU fusion components and the CUDA PointPainting

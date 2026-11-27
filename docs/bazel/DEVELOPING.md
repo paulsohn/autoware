@@ -2743,3 +2743,13 @@ Resolve the three StreamPETR ONNX stages and shape metadata through
 Its five-camera, pre-memory and post-memory dimensions are model metadata.
 Concrete engine preparation, precision and writable cache policy stay with the
 consumer. Keep indexed inputs immutable.
+
+The component launch composes component defaults, model-package metadata and
+node overrides in that order. Keep YAML mapping keys unique. A provider's shape
+metadata alone does not establish the node's runtime parameter contract; validate
+the shipped launch with its actual model revision. To select precision, workspace
+or engine output paths, supply model_params overrides through node_param_path.
+The component API stays parameterized and the root product chooses that policy.
+Run //bazel/tests/autoware_camera_streampetr:gpu_test and :runtime_test for affected
+GPU/native behavior. The latter stages inputs into a temporary writable cache;
+indexed model files remain read-only.

@@ -27968,8 +27968,33 @@ Both native runs shut down cleanly with no child death. All three engine hashes/
 mtimes stay unchanged on the warm run; indexed ONNX inputs remain unchanged.
 Synthetic output checks do not establish detection accuracy or performance.
 
-The separately committed source corrections are validated using the complete
-working-tree integration. The package-local Bazel definitions and root companions
-are the next commit boundary. No upstream CMake implementation build, Fast DDS,
+Source corrections are 682f4613a, validated with the complete integration.
+The following build-definition boundary owns package-local MODULE/BUILD, the
+adjacent versionless root override and the root companions. No upstream CMake implementation build, Fast DDS,
 simulator or deployment-export gate is claimed. The model provider's preceding
 isolated-index and colcon symlink evidence is unchanged and reused.
+
+
+Minimum integration pattern: use cuda_library for the five CUDA sources and
+cc_library for the CPU network/store and node. Preserve the three original DSO
+names and expose one shared owner for each existing utility/message dependency.
+The network header itself includes nav_msgs, geometry_msgs and TF2; declaring
+these only on the node does not make them available when compiling network.cpp.
+Keep those dependencies on their actual library consumer. Resolve YAML through
+the selected rosdistro provider, which owns its real release; an unnecessary
+child yaml-cpp@0.0.0 declaration fails registry resolution before compilation.
+The inspected CUDA metapackage supplies no implementation and only disables LTO;
+use direct CUDA/TensorRT providers under the already qualified non-LTO setup.
+Keep future LTO validation separate.
+
+Register the original StreamPetrNode component and native command with the
+MultiThreadedExecutor. Use the TensorRT command factory for builder-resource and
+runtime-library discovery, without an unneeded spconv or GNU13 SDK transition.
+Index libraries, command, configuration, launch and the independent model index.
+Root companions consume these logical targets; no source component depends on
+metarepository labels. The final selected gate passes all 19 targets: 17 non-test
+targets and two runners containing four GPU and two Python cases. Reuse unchanged
+provider/colcon evidence. Targeted Buildifier, clang-format, Python syntax and
+whitespace checks pass. A fresh 244-package census finds 205 local MODULE/BUILD
+pairs with adjacent versionless root overrides, leaving 39 without definitions.
+Phase 9.15 has three accepted modules; BEVDet is next and BEVFormer stays deferred.
