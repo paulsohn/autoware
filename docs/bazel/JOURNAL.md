@@ -27998,3 +27998,76 @@ provider/colcon evidence. Targeted Buildifier, clang-format, Python syntax and
 whitespace checks pass. A fresh 244-package census finds 205 local MODULE/BUILD
 pairs with adjacent versionless root overrides, leaving 39 without definitions.
 Phase 9.15 has three accepted modules; BEVDet is next and BEVFormer stays deferred.
+
+<a id="phase-915-tensorrt_bevdet-models"></a>
+
+## 2026-11-28 — Phase 9.15: BEVDet model provider
+
+Purpose: supply the tensorrt_bevdet model bundles and matching deployment parameters
+through one repository-owned module and ament package. Inspect the component's
+launch/YAML/manifests, every enclosing model-path default, the reference artifact
+role's v1.0 selection and HF immutable revision 391466349a1b39c93b9865364a8088110ca8d97b.
+The model card declares Apache-2.0. Clone that tag with LFS smudging disabled,
+assert the revision, fetch immutable resolve URLs, stream-check each LFS size/
+SHA-256 against the blobs API and seed both checkout/parent object stores before
+the squashed subtree import under src/models/tensorrt_bevdet.
+
+Follow the [indexed model pattern](#phase-915-pointpainting-models): own MODULE/
+BUILD, :models/:ament_index, hashes/provenance and minimal colcon/ament_cmake
+support inside the model repository. Root selects the adjacent versionless local
+override before source consumers. Replace the standalone HOME/data_path default
+and any enclosing model-path defaults with find-pkg-share; add runtime manifest
+dependencies only to actual consumers. The inspected parent launcher tree has
+1 matching model-path defaults. Preserve unrelated model families'
+arguments. Acceptance: all 1 materialized payload identities, provider and
+isolated-index tests, colcon --symlink-install leaf links, and actual default
+parameter/metadata resolution. Native GPU execution is the following module gate.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_output=errors @autoware_tensorrt_bevdet_models//... \
+  //bazel/tests:tensorrt_bevdet_model_resources_test
+
+# Use an existing ROS/ament installation only to check this data-only CMake package.
+source /opt/ros/jazzy/setup.bash
+export ROS_LOG_DIR=/tmp/phase915-bevdet-interop-ros-log
+colcon --log-base /tmp/phase915-bevdet-colcon-log build \
+  --base-paths src/models/tensorrt_bevdet --symlink-install \
+  --build-base /tmp/phase915-bevdet-model-build \
+  --install-base /tmp/phase915-bevdet-model-install
+source /tmp/phase915-bevdet-model-install/setup.bash
+python3 - <<'CHECK'
+from pathlib import Path
+import hashlib
+from ament_index_python.packages import get_package_share_directory
+share = Path(get_package_share_directory("autoware_tensorrt_bevdet_models"))
+for row in (share / "SHA256SUMS").read_text().splitlines():
+    digest, name = row.split()
+    path = share / name
+    assert path.is_symlink()
+    with path.open("rb") as stream:
+        assert hashlib.file_digest(stream, "sha256").hexdigest() == digest
+    assert path.stat().st_size == 304801539
+CHECK
+```
+
+All four provider targets pass, including the two inner materialization and
+relocated-index cases. The sole weight has 304,801,539 materialized bytes and
+the immutable upstream SHA-256 recorded in SHA256SUMS. The data-only colcon build
+passes, with the leaf model a symlink to the tracked checkout. Resolve the actual
+standalone model_path and parent bevdet_model_path substitutions to that indexed
+share, resolve the ONNX name from bevdet.param.yaml/model_name, check v1.0 metadata,
+and check both source/parent runtime manifest dependencies. Those checks pass.
+Keep the sibling StreamPETR/BEVFormer choices untouched. The model card places
+model-specific architecture/preprocessing parameters with the source component;
+the provider contains the weight and deployment version. Native SDK/model
+compatibility is not established by this provider gate.
+
+A default-sandbox log write to HOME interrupted the first interoperability probe
+once the data package had built. A caller-selected writable ROS_LOG_DIR lets the
+same validator complete. No native dependency is taken from that host ROS install.
+Targeted Buildifier on the provider/new test declaration and whitespace checks
+pass. Publish the materialized LFS object before pushing the augmented subtree.
+No C++ implementation, GPU inference, Fast DDS, simulator or deployment-export
+gate is claimed by this prerequisite.

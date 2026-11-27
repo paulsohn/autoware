@@ -341,6 +341,12 @@ local_path_override(
     path = "src/models/camera_streampetr",
 )
 
+bazel_dep(name = "autoware_tensorrt_bevdet_models")
+local_path_override(
+    module_name = "autoware_tensorrt_bevdet_models",
+    path = "src/models/tensorrt_bevdet",
+)
+
 # Core source modules.
 bazel_dep(name = "agnocast_cie_config_msgs")
 local_path_override(

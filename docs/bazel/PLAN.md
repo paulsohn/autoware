@@ -2744,6 +2744,12 @@ five-camera metadata and memory lengths 1024/1280. The independent index and
 colcon symlink/default-path checks pass. See the
 [provider experiment](JOURNAL.md#phase-915-camera_streampetr-models).
 
+BEVDet model v1.0 selects immutable revision
+391466349a1b39c93b9865364a8088110ca8d97b. Its single materialized weight,
+independent index, colcon symlink and standalone/parent path checks pass.
+See the [provider experiment](JOURNAL.md#phase-915-tensorrt_bevdet-models).
+The local vendor and native six-camera consumer remain the acceptance gate.
+
 ### Execution order through complete Universe coverage
 
 The following groups are the initial route through every remaining package.

@@ -3017,3 +3017,16 @@ py_test(
     deps = ["@ament_index_python"],
     precompile = "disabled",
 )
+
+py_test(
+    name = "tensorrt_bevdet_model_resources_test",
+    srcs = ["models/test_indexed_model_package.py"],
+    args = [
+        "autoware_tensorrt_bevdet_models",
+        "1",
+    ],
+    data = ["@autoware_tensorrt_bevdet_models//:ament_index"],
+    main = "models/test_indexed_model_package.py",
+    precompile = "disabled",
+    deps = ["@ament_index_python"],
+)

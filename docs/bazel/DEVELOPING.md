@@ -2753,3 +2753,14 @@ The component API stays parameterized and the root product chooses that policy.
 Run //bazel/tests/autoware_camera_streampetr:gpu_test and :runtime_test for affected
 GPU/native behavior. The latter stages inputs into a temporary writable cache;
 indexed model files remain read-only.
+
+
+## BEVDet model resources
+
+Resolve the BEVDet weight and deployment version through
+@autoware_tensorrt_bevdet_models//:ament_index from src/models/tensorrt_bevdet.
+The source component owns its architecture/preprocessing and node parameters.
+The standalone model_path and enclosing bevdet_model_path select this package's
+share; override runtime engine/cache locations through the component's parameters.
+The model provider supports colcon --symlink-install. Native model and SDK
+compatibility require the consumer's complete gate.
