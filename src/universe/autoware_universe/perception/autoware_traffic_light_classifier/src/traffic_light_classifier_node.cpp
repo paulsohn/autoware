@@ -70,7 +70,7 @@ TrafficLightClassifierNode::TrafficLightClassifierNode(const rclcpp::NodeOptions
   // the output had subscribers; always-on is simpler, and the callback no-ops until classifier_
   // is set.)
   image_sub_.subscribe(this, "~/input/image", "raw", rmw_qos_profile_sensor_data);
-  roi_sub_.subscribe(this, "~/input/rois", rclcpp::QoS{1}.get_rmw_qos_profile());
+  roi_sub_.subscribe(this, "~/input/rois", rclcpp::QoS{1});
 
   int classifier_type = this->declare_parameter<int>("classifier_type");
   std::shared_ptr<ClassifierInterface> classifier_ptr;

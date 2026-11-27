@@ -3018,3 +3018,28 @@ inference, plus a real manual-service/diagnostic/preview node check pass on
 Cyclone DDS. See the [calibration classifier journal](JOURNAL.md#phase-913-calibration-classifier)
 for the full command and no-skip fixtures. No upstream submission, colcon result
 or hardware calibration accuracy is claimed.
+
+### Traffic-light classifier: Lyrical message filters and HSV launch defaults
+
+- [ ] Associate the message-filter correction with a matching AWF PR. Checked
+  2026-11-27: [the node header](https://github.com/autowarefoundation/autoware_universe/blob/main/perception/autoware_traffic_light_classifier/src/traffic_light_classifier_node.hpp)
+  still includes subscriber.h, approximate_time.h, synchronizer.h and
+  time_synchronizer.h; its ROI subscription passes an rmw profile instead of
+  the current rclcpp::QoS argument. Scoped traffic-classifier/Lyrical PR search
+  finds no matching correction.
+- [ ] Associate the HSV launch correction with a matching AWF PR. Checked
+  2026-11-27: both [car](https://github.com/autowarefoundation/autoware_universe/blob/main/perception/autoware_traffic_light_classifier/launch/car_traffic_light_classifier.launch.xml)
+  and [pedestrian](https://github.com/autowarefoundation/autoware_universe/blob/main/perception/autoware_traffic_light_classifier/launch/pedestrian_traffic_light_classifier.launch.xml)
+  launchers define model_path only for CNN/recognizer while substituting it
+  unconditionally. Scoped traffic-classifier/model_path/HSV PR search finds
+  no matching correction.
+
+Use current .hpp paths and pass rclcpp::QoS{1} directly, retaining the same ROI
+reliability and existing image_transport compatibility overload. Initialize the
+unused model_path to empty before conditional assignments: classifier_type:=0
+otherwise fails with "launch configuration 'model_path' does not exist" before
+starting its supported HSV backend. All 60 original cases, including actual
+CNN/lamp GPU inference, four live backend/type profiles and both real HSV XML
+launches pass on Cyclone DDS. See the [classifier journal](JOURNAL.md#phase-913-traffic-classifier)
+for commands and fixture/resource details. No recognition-accuracy, interactive
+debug-GUI, older ROS/colcon or upstream submission claim is made.

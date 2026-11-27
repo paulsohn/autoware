@@ -25745,3 +25745,75 @@ letterbox behavior and engine reload. No failures or skips occur. Whitespace
 checks pass. The traffic-light consumer's full graph and suites remain its next
 gate; coverage stays 192/244. No communication, simulator or deployment rerun
 is required by this provider ownership correction.
+
+<a id="phase-913-traffic-classifier"></a>
+
+## 2026-11-27 — Phase 9.13: Traffic-light classifier
+
+Purpose: adopt the GPU-enabled classification core, ROS node, original debug
+component/executable, both standalone launchers and model/image resources.
+Inventory six original runners before implementing: 13 utility cases, 14 core
+cases, nine HSV cases, two ROS integration cases, ten CNN cases and twelve lamp
+recognizer cases (60 total). Require every original case, actual CNN/recognizer
+GPU inference, live car/pedestrian backend output, empty input propagation and
+both original XML entrypoints on the supported HSV path. Interactive debug UI
+and field recognition accuracy are separate qualifications; no Fast DDS,
+simulator or deployment export gate is selected.
+
+The reusable TensorRT classifier first exposes a shared OpenCV ownership
+conflict; the preceding independently validated provider correction resolves it.
+The source node also uses four removed message_filters .h forwarders and passes
+an rmw profile to the updated subscriber API. Use the matching .hpp paths and
+rclcpp::QoS{1}, preserving reliable ROI input and the accepted image_transport
+sensor overload. Current AWF main still has the removed headers; scoped
+traffic-classifier/Lyrical PR search finds no matching fix. Keep source
+compatibility corrections separate from Bazel definitions.
+
+Add the local module/root override, preserve the core/node/debug DSO identities
+and both registered executables, and declare actual CUDA/TensorRT, ROS, OpenCV
+and utility providers. ENABLE_GPU propagates with the core headers so callers
+see the same API. Use the existing TensorRT native launcher for declared builder
+and GNU-runtime discovery. Preserve the original four CPU runners locally;
+export the two original model runners for root-owned SDK/fixture composition.
+The fixture copies indexed weights/metadata into temporary writable caches,
+sets the original TLC_TEST_DATA_DIR override and rejects skipped/empty XML suites.
+Do not change original assertions to accommodate a missing model or GPU.
+
+CMake installs test/test_data as share/<package>/test_data, not a retained test/
+subdirectory. An initial index layout breaks eight exposure cases and both real
+GPU crop tests despite successful engine generation. Register the exact installed
+hierarchy with strip_prefix=test/test_data, preserving the eight original PNGs.
+No test image or implementation patch is needed for that packaging error.
+
+```sh
+env -i HOME="$HOME" PATH="$HOME/.local/bin:/usr/bin:/bin" \
+  bazel test --keep_going --config=runtime --config=no-agnocast --local_test_jobs=1 \
+  --test_env=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp --test_output=errors \
+  @autoware_traffic_light_classifier//... \
+  //bazel/tests/autoware_traffic_light_classifier:all
+```
+
+The live peer runs car/pedestrian CNN and car/pedestrian lamp backends through
+the actual indexed executable, with fresh synchronized image/ROI headers.
+Require signal identity/type, finite elements, empty-result propagation and
+clean shutdown. Provide the required build_only=false parameter explicitly when
+bypassing XML; the original launcher supplies it normally. Copy only the selected
+three ONNX inputs into writable cache storage; never generate engines beside
+indexed model inputs. All four live profiles pass.
+
+Actual XML execution exposes another original defect: classifier_type:=0 (HSV)
+leaves model_path undefined in both launchers, although the node's unused model
+parameter is always substituted. Initialize that variable to an empty string
+before the existing conditional CNN/recognizer assignments. Both original XML
+launches then exchange real car/pedestrian HSV signals and shut down cleanly.
+Current AWF main retains this missing default; the scoped HSV/model_path PR
+search finds no matching fix. Keep this source correction separate from the
+header/QoS and build-definition commits.
+
+All 60 original cases and both additional targets pass (eight test targets),
+with no failures or skips. The final model fixtures use a resource-only index
+view plus the independent model provider: unrelated XML/executable changes
+should not invalidate cold GPU core suites. The complete consumer-facing index
+still owns every component/executable/resource. This uses one ROS package
+identity, following the established indexed-resource convention. Final fixture
+validation is recorded with the module build commit below.
